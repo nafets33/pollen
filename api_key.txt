@@ -1,0 +1,6 @@
+# api key
+id
+AK85ML32BZ66RBKZJINU
+
+secret
+iLpcJuPYOOEcsvL1F3ZJ9vgw2UmqkEVcBHlpGv6W
