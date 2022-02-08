@@ -8,6 +8,8 @@ import sys
 from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
+import pandas_ta as ta
+
 load_dotenv()
 
 NY = 'America/New_York'
@@ -120,40 +122,143 @@ spy = api.get_quotes("SPY", "2022-01-26", "2022-01-26", limit=10).df
     #        'bid_size', 'conditions', 'tape'],
     #       dtype='object')
 
-api.get_account()
-    # Account({   'account_blocked': False,
-    #     'account_number': '603397580',
-    #     'accrued_fees': '0',
-    #     'buying_power': '80010',
-    #     'cash': '40005',
-    #     'created_at': '2022-01-23T22:11:15.978765Z',
-    #     'crypto_status': 'PAPER_ONLY',
-    #     'currency': 'USD',
-    #     'daytrade_count': 0,
-    #     'daytrading_buying_power': '0',
-    #     'equity': '40005',
-    #     'id': '2fae9699-b24f-4d06-80ec-d531b61e9458',
-    #     'initial_margin': '0',
-    #     'last_equity': '40005',
-    #     'last_maintenance_margin': '0',
-    #     'long_market_value': '0',
-    #     'maintenance_margin': '0',
-    #     'multiplier': '2',
-    #     'non_marginable_buying_power': '40005',
-    #     'pattern_day_trader': False,
-    #     'pending_transfer_in': '40000',
-    #     'portfolio_value': '40005',
-    #     'regt_buying_power': '80010',
-    #     'short_market_value': '0',
-    #     'shorting_enabled': True,
-    #     'sma': '40005',
-    #     'status': 'ACTIVE',
-    #     'trade_suspended_by_user': False,
-    #     'trading_blocked': False,
-    #     'transfers_blocked': False})
 
 isOpen = api.get_clock().is_open
 
-aapl = api.get_barset('AAPL', 'day', limit=365) # return as df (time, open, high, low, close)
-df = aapl.df
-aapl_data = df['AAPL'].reset_index()
+SYMBOL = 'SPY'
+timeframe = 'day' # day, minute
+time_limit = 45
+ticker = api.get_barset('{}'.format(SYMBOL), '{}'.format(timeframe), limit=time_limit) # return as df (time, open, high, low, close)
+df = ticker.df
+ticker_data = df['{}'.format(SYMBOL)].reset_index()
+macd = ticker_data.ta.macd(close='close', fast=12, slow=26, append=True)
+
+# check for submitted orders WEB Socket will return orders then get executed
+position = api.get_position('SPY') 
+spdn = api.get_position('SPDN')
+open_orders_list = api.list_orders(status='open')
+https://alpaca.markets/docs/api-references/trading-api/orders/
+
+spdn_order = api.get_order_by_client_order_id('247b28e6-c5b0-4486-b919-2c310a8f1434')
+
+x = api.replace_order(qty=1, time_in_force='gtc', limit_price='15', order_id='45876739-4d8f-4796-9096-b60fcf12a800')
+
+# x returns new client_order_id seen below
+spdn_order = api.get_order_by_client_order_id('7c335d05-3873-4c90-b393-f5ffd60d50e8')
+
+after, until (timestamps), direction (desc, asc), nested?, symbols
+
+# use Id for replace
+replace = api.replace_order(qty=1, time_in_force='gtc', limit_price='14.71', order_id='98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
+# id 98d15a9f-0f1e-4f0f-80c6-1b34719957ec
+r = api.get_order_by_client_order_id('98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
+
+Position({   'asset_class': 'us_equity',
+    'asset_id': 'b28f4066-5c6d-479b-a2af-85dc1a8f16fb',
+    'asset_marginable': False,
+    'avg_entry_price': '449.2',
+    'change_today': '0.0033090372490274',
+    'cost_basis': '449.2',
+    'current_price': '448.74',
+    'exchange': 'ARCA',
+    'lastday_price': '447.26',
+    'market_value': '448.74',
+    'qty': '1',
+    'side': 'long',
+    'symbol': 'SPY',
+    'unrealized_intraday_pl': '-0.46',
+    'unrealized_intraday_plpc': '-0.0010240427426536',
+    'unrealized_pl': '-0.46',
+    'unrealized_plpc': '-0.0010240427426536'})
+
+
+""" submit order return """
+In [14]: api.submit_order(
+    ...:     symbol="SPY",
+    ...:     qty=1,
+    ...:     side="buy",
+    ...:     time_in_force="gtc",
+    ...:     type="limit",  # market
+    ...:     limit_price=449.20,
+    ...:     client_order_id="001",
+    ...: )
+Out[14]: 
+Order({   'asset_class': 'us_equity',
+    'asset_id': 'b28f4066-5c6d-479b-a2af-85dc1a8f16fb',
+    'canceled_at': None,
+    'client_order_id': '001',
+    'created_at': '2022-02-08T16:20:07.813040847Z',
+    'expired_at': None,
+    'extended_hours': False,
+    'failed_at': None,
+    'filled_at': None,
+    'filled_avg_price': None,
+    'filled_qty': '0',
+    'hwm': None,
+    'id': '5dbcb543-956b-4eec-b9b8-fc768d517da9',
+    'legs': None,
+    'limit_price': '449.2',
+    'notional': None,
+    'order_class': '',
+    'order_type': 'limit',
+    'qty': '1',
+    'replaced_at': None,
+    'replaced_by': None,
+    'replaces': None,
+    'side': 'buy',
+    'status': 'accepted',
+    'stop_price': None,
+    'submitted_at': '2022-02-08T16:20:07.812422547Z',
+    'symbol': 'SPY',
+    'time_in_force': 'gtc',
+    'trail_percent': None,
+    'trail_price': None,
+    'type': 'limit',
+    'updated_at': '2022-02-08T16:20:07.813040847Z'})
+
+api.get_assapi.get_order_by_client_order_id(client_order_id="001")
+
+
+In [50]: api.get_order_by_client_order_id(client_order_id="004")
+Out[50]: 
+Order({   'asset_class': 'us_equity',
+    'asset_id': '7c7fa08a-c321-46fa-a907-cc7080548f92',
+    'canceled_at': None,
+    'client_order_id': '004',
+    'created_at': '2022-02-08T17:34:15.733439312Z',
+    'expired_at': None,
+    'extended_hours': False,
+    'failed_at': None,
+    'filled_at': None,
+    'filled_avg_price': None,
+    'filled_qty': '0',
+    'hwm': None,
+    'id': '45876739-4d8f-4796-9096-b60fcf12a800',
+    'legs': None,
+    'limit_price': '14.9',
+    'notional': None,
+    'order_class': '',
+    'order_type': 'limit',
+    'qty': '1',
+    'replaced_at': None,
+    'replaced_by': None,
+    'replaces': None,
+    'side': 'sell',
+    'status': 'new',
+    'stop_price': None,
+    'submitted_at': '2022-02-08T17:34:15.732848252Z',
+    'symbol': 'SPDN',
+    'time_in_force': 'gtc',
+    'trail_percent': None,
+    'trail_price': None,
+    'type': 'limit',
+    'updated_at': '2022-02-08T17:34:15.758800321Z'})
+
+
+sell_x_c = api.submit_order(symbol='SPDN', 
+        qty=1, 
+        side='sell', 
+        time_in_force='gtc', 
+        type='limit', # market
+        limit_price=14.80, 
+        client_order_id='004') # optional make sure it unique though to call later!

@@ -10,6 +10,8 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
+import pandas_ta as ta
+
 load_dotenv()
 
 logging.basicConfig(
@@ -21,7 +23,7 @@ logging.basicConfig(
 api_key_id = os.environ.get('APCA_API_KEY_ID')
 api_secret = os.environ.get('APCA_API_SECRET_KEY')
 base_url = "https://api.alpaca.markets"
-feed = "iex"  # change to "sip" if you have a paid account
+feed = "sip"  # change to "sip" if you have a paid account vs "iex"
 
 rest = AsyncRest(key_id=api_key_id,
                     secret_key=api_secret)
@@ -31,9 +33,9 @@ api = tradeapi.REST(key_id=api_key_id,
                     base_url=URL(base_url), api_version='v2')
 
 
-# List of all Available stocks to trade
-active_assets = api.list_assets(status='active')
-aapl_asset = api.get_asset('AAPL') # if security avail to trade
+# # List of all Available stocks to trade
+# active_assets = api.list_assets(status='active')
+# aapl_asset = api.get_asset('AAPL') # if security avail to trade
 
 
 # for The last price a stock traded at, curent quote, last 1 min bar
@@ -69,6 +71,7 @@ conn = tradeapi.stream2.StreamConn(
     api_key_id, api_secret, base_url=base_url, data_url=ws_url, data_stream='alpacadatav1'
 )
 
+print("Bees Hunt")
 @conn.on(r'^account_updates$')
 async def on_account_updates(conn, channel, account):
     print('account', account)
@@ -102,38 +105,6 @@ ws_thread.start()
 
 
 
-# submit order
-def submit_order(symbol, qty, side, type, limit_price, client_order_id, time_in_force, order_class=False, stop_loss=False, take_profit=False):
-    
-    # api.submit_order(symbol='TSLA', 
-    #         qty=1, 
-    #         side='buy', 
-    #         time_in_force='gtc', 
-    #         type='limit', 
-    #         limit_price=400.00, 
-    #         client_order_id='001') # optional make sure it unique though to call later!
 
-    """stop loss order""" 
-    # api.submit_order(symbol='TSLA', 
-    #         qty=1, 
-    #         side='buy', 
-    #         time_in_force='gtc', 
-    #         type='limit', 
-    #         limit_price=400.00, 
-    #         client_order_id=001, 
-    #         order_class='bracket', 
-    #         stop_loss=dict(stop_price='360.00'), 
-	#         take_profit=dict(limit_price='440.00'))
-    if type == 'market':
-        api.submit_order(symbol=symbol,
-        qty=qty,
-        side=side,
-        type=type,
-        time_in_force=time_in_force)
-    pass
-
-# check for submitted orders WEB Socket will return orders then get executed
-position = api.get_position('TSLA') 
-position = api.get_order_by_client_order_id('001')
 
 
