@@ -1,3 +1,4 @@
+from cgitb import reset
 import logging
 from enum import Enum
 import time
@@ -11,14 +12,14 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
+load_dotenv()
+logging.basicConfig(
+    filename='hive_utils.log',
+    level=logging.WARNING,
+    format='%(asctime)s:%(levelname)s:%(message)s',
+)
 
 def return_api_keys(base_url, api_key_id, api_secret):
-    load_dotenv()
-    logging.basicConfig(
-        filename='hive_utils.log',
-        level=logging.WARNING,
-        format='%(asctime)s:%(levelname)s:%(message)s',
-    )
 
     api_key_id = os.environ.get('APCA_API_KEY_ID')
     api_secret = os.environ.get('APCA_API_SECRET_KEY')
@@ -33,7 +34,10 @@ def return_api_keys(base_url, api_key_id, api_secret):
                         base_url=URL(base_url), api_version='v2')
     return [{'rest': rest, 'api': api}]
 
+keys = return_api_keys()
 
+rest = keys['rest']
+api = keys['api']
 
 def wait_for_market_open():
 	clock = api.get_clock()

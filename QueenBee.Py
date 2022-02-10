@@ -20,6 +20,8 @@ logging.basicConfig(
 	format='%(asctime)s:%(levelname)s:%(message)s',
 )
 
-return_api_keys = return_api_keys()
+keys = return_api_keys()
+rest = keys['rest']
+api = keys['api']
 
 client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG']
