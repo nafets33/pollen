@@ -117,7 +117,7 @@ loop.run_until_complete(main(symbols))
 print(f"took {time.time() - start_time} sec")
 
 # return Data
-spy = api.get_quotes("SPY", "2022-01-26", "2022-01-26", limit=10).df
+spy = api.get_quotes("SPY", "2022-02-09", "2022-02-09", limit=10).df
     # Index(['ask_exchange', 'ask_price', 'ask_size', 'bid_exchange', 'bid_price',
     #        'bid_size', 'conditions', 'tape'],
     #       dtype='object')
@@ -126,8 +126,8 @@ spy = api.get_quotes("SPY", "2022-01-26", "2022-01-26", limit=10).df
 isOpen = api.get_clock().is_open
 
 SYMBOL = 'SPY'
-timeframe = 'day' # day, minute
-time_limit = 45
+timeframe = 'minute' # day, minute
+time_limit = 500
 ticker = api.get_barset('{}'.format(SYMBOL), '{}'.format(timeframe), limit=time_limit) # return as df (time, open, high, low, close)
 df = ticker.df
 ticker_data = df['{}'.format(SYMBOL)].reset_index()
