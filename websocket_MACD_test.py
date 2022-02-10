@@ -47,29 +47,13 @@ def run_connection(conn):
 async def print_quote(q):
     print('quote', q)
 
-async def quote_callback(q):
-    print('quote', q)
-
-async def on_account_updates(conn, channel, account):
-    print('account', account)
-
-async def on_trade_updates(conn, channel, trade):
-    print('trade', trade)
 
 if __name__ == '__main__':
     conn = Stream(ALPACA_API_KEY,
                   ALPACA_SECRET_KEY,
                   base_url=URL('https://api.alpaca.markets'),
                   data_feed='sip')
-    # @conn.on(r'^account_updates$')
-    # async def on_account_updates(conn, channel, account):
-    #     print('account', account)
 
-    # @conn.on(r'^trade_updates$')
-    # async def on_trade_updates(conn, channel, trade):
-    #     print('trade', trade)
-    
+    conn.subscribe_quotes(print_quote, 'SPY')
 
-    # conn.subscribe_quotes(print_quote, 'AAPL')
-    conn.subscribe_quotes(quote_callback, 'IBM')
     run_connection(conn)
