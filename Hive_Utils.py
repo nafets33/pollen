@@ -1,4 +1,5 @@
 from cgitb import reset
+from datetime import datetime
 import logging
 from enum import Enum
 import time
@@ -12,19 +13,33 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
+import datetime
+system = 'windows' #mac, windows
 load_dotenv()
+
+if system != 'windows':
+    db_root = os.environ.get('db_root_mac')
+else:
+    db_root = os.environ.get('db_root_winodws')
+
+
 logging.basicConfig(
     filename='hive_utils.log',
     level=logging.WARNING,
     format='%(asctime)s:%(levelname)s:%(message)s',
 )
 
+api_key_id = os.environ.get('APCA_API_KEY_ID')
+api_secret = os.environ.get('APCA_API_SECRET_KEY')
+base_url = "https://api.alpaca.markets"
+
+
 def return_api_keys(base_url, api_key_id, api_secret):
 
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
-    feed = "iex"  # change to "sip" if you have a paid account
+    # api_key_id = os.environ.get('APCA_API_KEY_ID')
+    # api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    # base_url = "https://api.alpaca.markets"
+    # feed = "sip"  # change to "sip" if you have a paid account
 
     rest = AsyncRest(key_id=api_key_id,
                         secret_key=api_secret)
@@ -34,10 +49,10 @@ def return_api_keys(base_url, api_key_id, api_secret):
                         base_url=URL(base_url), api_version='v2')
     return [{'rest': rest, 'api': api}]
 
-keys = return_api_keys()
+keys = return_api_keys(base_url, api_key_id, api_secret)
 
-rest = keys['rest']
-api = keys['api']
+rest = keys[0]['rest']
+api = keys[0]['api']
 
 def wait_for_market_open():
 	clock = api.get_clock()
@@ -163,11 +178,39 @@ def return_account_info(api):
             'sma': info.sma}
 
 
-# Return order Status
-def clientId_order_status(api, client_id_order):
-    open_orders_list = api.list_orders(status='open')
-    if client_id_order:
-        order_token = api.get_order_by_client_order_id(client_id_order)
-    else:
-        order_token = False
-    return [True, spdn_order, open_orders_list]
+def return_barset(api, SYMBOL, timeframe, time_limit):
+    # SYMBOL = 'SPY'
+    # timeframe = 'minute' # day, minute
+    # time_limit = 500
+    ticker = api.get_barset('{}'.format(SYMBOL), '{}'.format(timeframe), limit=time_limit) # return as df (time, open, high, low, close)
+    df = ticker.df
+    ticker_data = df['{}'.format(SYMBOL)].reset_index()
+    macd = ticker_data.ta.macd(close='close', fast=12, slow=26, append=True)
+    print(ticker_data.iloc[499])
+    return 
+
+# # Return order Status
+# def clientId_order_status(api, client_id_order):
+#     open_orders_list = api.list_orders(status='open')
+#     if client_id_order:
+#         order_token = api.get_order_by_client_order_id(client_id_order)
+#     else:
+#         order_token = False
+#     return [True, spdn_order, open_orders_list]
+
+
+
+def convert_nano_utc_timestamp_to_est_datetime(19_digit_trc_time):
+    time = 1644523144856422000
+    dt = datetime.datetime.utcfromtimestamp(19_digit_trc_time // 1000000000) # 9 zeros
+    dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+    return dt
+
+
+def read_db(db_root, symbol=False):
+    # spy_stream
+    # spy_barset
+    if symbol:
+        stream = pd.read_csv(os.path.join(db_root, symbol + '_stream'), dtype=str, encoding='utf8', engine='python')
+        barset = pd.read_csv(os.path.join(db_root, symbol + '_barset'),  dtype=str, encoding='utf8', engine='python')
+    return [stream, barset]

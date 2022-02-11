@@ -117,7 +117,7 @@ loop.run_until_complete(main(symbols))
 print(f"took {time.time() - start_time} sec")
 
 # return Data
-spy = api.get_quotes("SPY", "2022-02-09", "2022-02-09", limit=10).df
+spy = api.get_quotes("TSLA", "2022-02-10", "2022-02-10", limit=500).df
     # Index(['ask_exchange', 'ask_price', 'ask_size', 'bid_exchange', 'bid_price',
     #        'bid_size', 'conditions', 'tape'],
     #       dtype='object')
@@ -126,12 +126,16 @@ spy = api.get_quotes("SPY", "2022-02-09", "2022-02-09", limit=10).df
 isOpen = api.get_clock().is_open
 
 SYMBOL = 'SPY'
-timeframe = 'minute' # day, minute
-time_limit = 500
-ticker = api.get_barset('{}'.format(SYMBOL), '{}'.format(timeframe), limit=time_limit) # return as df (time, open, high, low, close)
-df = ticker.df
+timeframe = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute)
+ticker = api.get_bars('{}'.format(SYMBOL), timeframe, '2022-02-11', '2022-02-11') # return as df (time, open, high, low, close)
+df = ticker.df.reset_index()
+
 ticker_data = df['{}'.format(SYMBOL)].reset_index()
 macd = ticker_data.ta.macd(close='close', fast=12, slow=26, append=True)
+print(ticker_data.iloc[499])
+
+# get latest_quote
+api.get_latest_quote("SPY")
 
 # check for submitted orders WEB Socket will return orders then get executed
 position = api.get_position('SPY') 
@@ -262,3 +266,8 @@ sell_x_c = api.submit_order(symbol='SPDN',
         type='limit', # market
         limit_price=14.80, 
         client_order_id='004') # optional make sure it unique though to call later!
+
+
+
+def convert_nano_timestamp_to_datetime(t):
+    return datetime.datetime.utcfromtimestamp(t // 1000000000)

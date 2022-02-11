@@ -24,6 +24,8 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 # from asyncio import loop
 
+
+
 load_dotenv()
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
@@ -55,5 +57,6 @@ if __name__ == '__main__':
                   data_feed='sip')
 
     conn.subscribe_quotes(print_quote, 'SPY')
+    # conn.subscribe_quotes(print_quote, 'AAPL')
 
     run_connection(conn)
