@@ -1,5 +1,6 @@
 import logging
 from enum import Enum
+from symtable import Symbol
 import time
 import alpaca_trade_api as tradeapi
 import asyncio
@@ -13,6 +14,8 @@ from dotenv import load_dotenv
 import threading
 from Hive_Utils import return_api_keys, read_csv_db, account_info
 import sys
+import datetime
+from datetime import timedelta
 load_dotenv()
 
 logging.basicConfig(
@@ -22,15 +25,25 @@ logging.basicConfig(
 )
 
 # Main Arguments
-client_num_LT = sys.argv[1]
-client_num_ST = sys.argv[2]
+num = {1: .15, 2: .25, 3: .40, 4: .60, 5: .8}
+client_num_LT = 1
+client_num_ST = 3
+client_days1yrmac_input = 233 # Tier 1
+client_daysT2Mac_input = 5 # Tier 2
+client_daysT3Mac_input = 233 # Tier 3
+
+
+# client_num_LT = sys.argv[1]
+# client_num_ST = sys.argv[2]
+# client_days1yrmac_input = sys.argv[3]
+
+start_date = datetime.datetime.now().strftime('%Y-%m-%d')
+end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
 # Customer Setup
-num = {1: .15, 2: .25, 3: .40, 4: .60, 5: .8}
 Long_Term_Client_Input = num[client_num_LT]
 MidDayLag_Alloc = num[client_num_ST]
 DayRiskAlloc = 1 - (Long_Term_Client_Input + MidDayLag_Alloc)
-
 
 # Keys
 api_key_id = os.environ.get('APCA_API_KEY_ID')
@@ -41,7 +54,7 @@ rest = keys[0]['rest']
 api = keys[0]['api']
 
 # SYMBOLS>>>Tickers
-client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG']
+client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG', 'VIX']
 LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
 BeeHunter = {
 	'LongX3': {'TQQQ': 'TQQQ', 'SPXL': 'SPXL'},
@@ -76,14 +89,6 @@ if round(portvalue_BeeHunter_iniate + portvalue_MID_iniate + portvalue_LT_iniate
 
 # MAX Intra-Day (4x)
 
-def StartTheDay():
-	db = read_csv_db(db_root=os.path.join((os.getcwd()), 'db'))
-	return_bars = # return 1 yr Mac
-	# return 5 day Mac
-	# return 1 Day Mac
-	# return RSI
-	# return VIX
-
 def return_bars(api, symbol, timeframe, start_date, end_date):
     # SYMBOL = 'SPY'
     # time = 1
@@ -92,7 +97,33 @@ def return_bars(api, symbol, timeframe, start_date, end_date):
     ticker = api.get_bars(symbol, timeframe, start_date, end_date) # '2022-02-11', '2022-02-11'
     df = ticker.df.reset_index()
 
-    macd = df.ta.macd(close='close', fast=12, slow=26, append=True)
+    # macd = df.ta.macd(close='close', fast=12, slow=26, append=True)
     # print(df.iloc[-1])
 
-    return 
+    return df
+
+
+def FamilyNest(df):
+	macd = df.ta.macd(close='close', fast=12, slow=26, append=True)
+
+def StartTheDay():
+	db = read_csv_db(db_root=os.path.join((os.getcwd()), 'db'))
+	# symbol = 'SPY'
+	perMin = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
+	FiveperMin = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
+	tday = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
+
+	start_date1yr = (datetime.datetime.now() - datetime.timedelta(days=client_days1yrmac_input)).strftime('%Y-%m-%d')
+	end_date1yr = start_date
+	# spy_1yr = return_bars(api=api, symbol='SPY', timeframe=perMin, start_date=start_date, end_date=end_date) # return 1 yr Mac
+	spy_1yr = return_bars(api=api, symbol='SPY', timeframe=tday, start_date=start_date1yr, end_date=end_date1yr) # return 1 yr Mac
+	
+	start_day_5day = (datetime.datetime.now() - datetime.timedelta(days=client_daysT2Mac_input)).strftime('%Y-%m-%d')
+	end_date_5day = start_date
+	spy_5day = return_bars(api=api, symbol='SPY', timeframe=FiveperMin, start_date=start_day_5day, end_date=end_date_5day) # return 5 day Mac
+	
+	spy_1min = return_bars(api=api, symbol='SPY', timeframe=perMin, start_date=start_date, end_date=end_date) # return 1 Day Mac
+	
+	# return RSI
+	# return VIX
+
