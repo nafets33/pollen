@@ -12,11 +12,20 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
-from Hive_Utils import return_api_keys, read_csv_db, account_info
+from Hive_Utils import return_api_keys, read_csv_db, refresh_account_info, return_trade_bars, return_bars
 import sys
 import datetime
 from datetime import timedelta
+import pytz
+
+est = pytz.timezone("US/Eastern")
+system = 'windows' #mac, windows
 load_dotenv()
+
+if system != 'windows':
+    db_root = os.environ.get('db_root_mac')
+else:
+    db_root = os.environ.get('db_root_winodws')
 
 logging.basicConfig(
 	filename='QueenBee.log',
@@ -64,66 +73,104 @@ BeeHunter = {
 #LongTerm_symbols = ?Weight Each Symbol? or just you assests and filter on Market Cap & VOL SECTOR, EBITDA, Free Cash Flow
 
 """Account Infomation """
-# def init_main_portfolio_account():
-info = api.get_account()
-account_number = info.account_number
-accrued_fees = float(info.accrued_fees)
-buying_power = float(info.buying_power)
-cash = float(info.cash)
-daytrade_count = info.daytrade_count
-last_equity = float(info.last_equity)
-portfolio_value = float(info.portfolio_value)
-sma = info.sma
-# return True
+acc_info = 	refresh_account_info(api)
 
 # Main Alloc
-portvalue_LT_iniate = float(portfolio_value) * Long_Term_Client_Input
-portvalue_MID_iniate = float(portfolio_value) * MidDayLag_Alloc
-portvalue_BeeHunter_iniate = float(portfolio_value) * DayRiskAlloc
-BeeHunter_Max_Intra_day = 3.9 * cash
+portvalue_LT_iniate = acc_info[1]['portfolio_value'] * Long_Term_Client_Input
+portvalue_MID_iniate = acc_info[1]['portfolio_value'] * MidDayLag_Alloc
+portvalue_BeeHunter_iniate = acc_info[1]['portfolio_value'] * DayRiskAlloc
+
 
 # check alloc correct
-if round(portvalue_BeeHunter_iniate + portvalue_MID_iniate + portvalue_LT_iniate - float(portfolio_value),4) > 1:
+if round(portvalue_BeeHunter_iniate + portvalue_MID_iniate + portvalue_LT_iniate - acc_info[1]['portfolio_value'],4) > 1:
 	print("break in Rev Alloc")
 	sys.exit()
 
 # MAX Intra-Day (4x)
 
-def return_bars(api, symbol, timeframe, start_date, end_date):
-    # SYMBOL = 'SPY'
-    # time = 1
-    # timeframe = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
-    
-    ticker = api.get_bars(symbol, timeframe, start_date, end_date) # '2022-02-11', '2022-02-11'
-    df = ticker.df.reset_index()
+def return_MACD(df, fast, slow):
+	# fast=12
+	# slow=26
+	macd = df.ta.macd(close='close', fast=fast, slow=slow, append=True) 
+	return macd
 
-    # macd = df.ta.macd(close='close', fast=12, slow=26, append=True)
-    # print(df.iloc[-1])
+def return_VWAP(df):
+	# VWAP
+	df = df.assign(
+		vwap=df.eval(
+			'wgtd = close * volume', inplace=False
+		).groupby(df['timestamp']).cumsum().eval('wgtd / volume')
+	)
+	return df
 
-    return df
-
-
-def FamilyNest(df):
-	macd = df.ta.macd(close='close', fast=12, slow=26, append=True)
-
-def StartTheDay():
-	db = read_csv_db(db_root=os.path.join((os.getcwd()), 'db'))
+def return_db(csv_name, symbol):
+	symbol = True
+	csv_name = "SPY_bars.csv"
+	symbol, filename = csv_name.split("_")
+	type='bars'
+	db = read_csv_db(db_root=(os.path.join((os.getcwd()), 'db')), type=type, symbol=symbol)
 	# symbol = 'SPY'
 	perMin = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
 	FiveperMin = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
 	tday = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
 
+
+def return_ticker_min(symbol, time, sec_n):
+	# how should 1 day 1 min be built? start to now every time? 
+	# or store in dict and return increment? WINNER
+		# first call returns up until now & then second returns stored main_df
+
+	now = datetime.datetime.now()
+	main_time = pd.DataFrame()
+
+	symbol = 'SPY'
+	sec_n = 10000 # 1 day: 27000, 5min: 330
+	min = sec_n / 60
+	time = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
+
+	start_date_iso = datetime.datetime.now().strftime('%Y-%m-%d') + ' 19:00'
+	a = datetime.datetime.strptime(start_date_iso, '%Y-%m-%d %H:%M')
+	# a = datetime.datetime.now()
+	b = a + datetime.timedelta(0, sec_n) # days, seconds, then other fields.
+	end_date_iso = str(b)[:16]
+	
+	now = datetime.datetime.now()
+
+	# spy_1min = return_bars(api=api, symbol='SPY', timeframe=time, start_date=start_date, end_date=end_date) # return 1 Day Mac
+	spy_1min = return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None)
+	spy_1min = spy_1min.reset_index()
+	df_calc = return_VWAP(spy_1min)
+	df_calc = return_MACD(spy_1min, fast=12, slow=16)
+
+
+def return_ticker_5day(symbol, time):
+	time = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
+	start_day_5day = (datetime.datetime.now() - datetime.timedelta(days=client_daysT2Mac_input)).strftime('%Y-%m-%d')
+	end_date_5day = start_date
+	spy_5day = return_bars(api=api, symbol=symbol, timeframe=time, start_date=start_day_5day, end_date=end_date_5day) # return 5 day Mac
+
+
+def return_ticker_1yr(symbol, time):
+	time = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
 	start_date1yr = (datetime.datetime.now() - datetime.timedelta(days=client_days1yrmac_input)).strftime('%Y-%m-%d')
 	end_date1yr = start_date
 	# spy_1yr = return_bars(api=api, symbol='SPY', timeframe=perMin, start_date=start_date, end_date=end_date) # return 1 yr Mac
-	spy_1yr = return_bars(api=api, symbol='SPY', timeframe=tday, start_date=start_date1yr, end_date=end_date1yr) # return 1 yr Mac
-	
-	start_day_5day = (datetime.datetime.now() - datetime.timedelta(days=client_daysT2Mac_input)).strftime('%Y-%m-%d')
-	end_date_5day = start_date
-	spy_5day = return_bars(api=api, symbol='SPY', timeframe=FiveperMin, start_date=start_day_5day, end_date=end_date_5day) # return 5 day Mac
-	
-	spy_1min = return_bars(api=api, symbol='SPY', timeframe=perMin, start_date=start_date, end_date=end_date) # return 1 Day Mac
-	
-	# return RSI
-	# return VIX
+	spy_1yr = return_bars(api=api, symbol=symbol, timeframe=time, start_date=start_date1yr, end_date=end_date1yr) # return 1 yr Mac
 
+
+# return RSI
+# return VIX
+
+# check before executing final Trade [distance between bid/ask, momentum value of ticker, momentum of market] 
+start_date_iso = datetime.datetime.now().strftime('%Y-%m-%d') + ' 19:00'
+a = datetime.datetime.strptime(start_date_iso, '%Y-%m-%d %H:%M')
+now = datetime.datetime.now()
+a - now
+b = a + datetime.timedelta(0, sec_n) # days, seconds, then other fields.
+return_ticker_min(symbol='SPY', time=False, sec_n)
+#### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
+
+# Day Trading Margin Requirements
+# dtbp = 4 x prev_eod_excess_margin
+# prev_eod_excess_margin = prev_equity - prev_maintenance_margin
+# dtbp = 4 x (prev_equity - prev_maintenance_margin)

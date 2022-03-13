@@ -1,0 +1,65 @@
+# Make Honey
+# lets really make Honey
+# PollenFamily33! 
+# WeLoveYou33!
+
+
+# variables
+
+""" Logic of Weights 
+# create 3 weights on how much to place buy
+# 3 weights on time of day (9-10:30, 10:30-Noon, Noon-2:30, 2:30-4)
+# 1yr indicates Day_Allocation from Total Funds (2 funds, Long, Day)
+    > weight decreases over time to opposite direction
+# RSI (20-50 % weight for Trade_Funds)
+    > RSI Profit Take Override?
+# Mac (50-80 % weight for Trade_Funds)
+    > if Both 5day and 1day point up vs down
+    > if they contradict lean to 1 days and lower Trade_Funds
+    > If VIX in between relative mean lower Trade_Funds
+    > If % profit equal
+    > If Momentum equal lower_short
+    > Time since last Mac(LE,SE) together
+    > MacLE if weigh neg ticks and sells (maybe in vol) to consider hold period before profit take?
+    > 1day Indicator follwed by 5 day gives more weight to hold time frame consider more profit
+    > when both 1 day and 5 day have contridiction in same time frames (5day up, 1day down and vice versa)
+    > HOW TO ingore Triggers? Base of Volume? Number of Trades, or stick with 5day?
+# Increase in Tick on Highest Market Cap (Goog, appl...) weight to increasee Trade_Funds
+# When Market opens X % up or down creation caution on Ups and Downs
+# How far away from VWAP at each time interval of day? The further away towards end of session gives more weight to return to it (10:30, Noon, 2:30)
+      
+"""
+ # Global 
+Tickers_Dict = {}
+securities_that_correlate_with_spy = []
+
+
+1year_MacSE = 
+1year_MacLE = 
+5day_MacSE = 
+5day_MacLE = 
+1day_MacSE = 
+1day_MacLE = 
+
+1year_RSI = 
+1year_RSI = 
+5day_RSI = 
+5day_RSI = 
+1day_RSI = 
+1day_RSI = 
+
+OR 
+
+RSI_TimeSeries =
+MACSE_TimeSeries = 
+MACLE_TimeSeries = 
+
+time_since_last_RSI OR RSI weight_index (20=X, 50=Y, 80=Z)
+time_since_last_MACLE
+time_since_last_MACSE
+time_since_last_MACLE_TIMESERIES_together
+time_since_last_MACSE_TIMESERIES_together
+
+
+
+Momentum =

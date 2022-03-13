@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 import time
 import alpaca_trade_api as tradeapi
@@ -135,139 +136,158 @@ macd = ticker_data.ta.macd(close='close', fast=12, slow=26, append=True)
 print(ticker_data.iloc[499])
 
 # get latest_quote
-api.get_latest_quote("SPY")
+q = api.get_latest_quote("SPY")
+d = vars(q)
+d["_raw"]
+
+api.get_latest_trade("SPY")
+Out[55]: 
+TradeV2({   'c': [' ', 'F'],
+    'i': 52983610165572,
+    'p': 423.93,
+    's': 100,
+    't': '2022-03-11T17:55:17.593651968Z',
+    'x': 'P',
+    'z': 'B'})
 
 # check for submitted orders WEB Socket will return orders then get executed
 position = api.get_position('SPY') 
 spdn = api.get_position('SPDN')
+open_orders_list = api.list_orders(status='closed')
 open_orders_list = api.list_orders(status='open')
 https://alpaca.markets/docs/api-references/trading-api/orders/
 
-spdn_order = api.get_order_by_client_order_id('247b28e6-c5b0-4486-b919-2c310a8f1434')
-
-x = api.replace_order(qty=1, time_in_force='gtc', limit_price='15', order_id='45876739-4d8f-4796-9096-b60fcf12a800')
-
-# x returns new client_order_id seen below
-spdn_order = api.get_order_by_client_order_id('7c335d05-3873-4c90-b393-f5ffd60d50e8')
-
-after, until (timestamps), direction (desc, asc), nested?, symbols
-
-# use Id for replace
-replace = api.replace_order(qty=1, time_in_force='gtc', limit_price='14.71', order_id='98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
-# id 98d15a9f-0f1e-4f0f-80c6-1b34719957ec
-r = api.get_order_by_client_order_id('98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
-
-Position({   'asset_class': 'us_equity',
-    'asset_id': 'b28f4066-5c6d-479b-a2af-85dc1a8f16fb',
-    'asset_marginable': False,
-    'avg_entry_price': '449.2',
-    'change_today': '0.0033090372490274',
-    'cost_basis': '449.2',
-    'current_price': '448.74',
-    'exchange': 'ARCA',
-    'lastday_price': '447.26',
-    'market_value': '448.74',
-    'qty': '1',
-    'side': 'long',
-    'symbol': 'SPY',
-    'unrealized_intraday_pl': '-0.46',
-    'unrealized_intraday_plpc': '-0.0010240427426536',
-    'unrealized_pl': '-0.46',
-    'unrealized_plpc': '-0.0010240427426536'})
 
 
-""" submit order return """
-In [14]: api.submit_order(
-    ...:     symbol="SPY",
-    ...:     qty=1,
-    ...:     side="buy",
-    ...:     time_in_force="gtc",
-    ...:     type="limit",  # market
-    ...:     limit_price=449.20,
-    ...:     client_order_id="001",
-    ...: )
-Out[14]: 
-Order({   'asset_class': 'us_equity',
-    'asset_id': 'b28f4066-5c6d-479b-a2af-85dc1a8f16fb',
-    'canceled_at': None,
-    'client_order_id': '001',
-    'created_at': '2022-02-08T16:20:07.813040847Z',
-    'expired_at': None,
-    'extended_hours': False,
-    'failed_at': None,
-    'filled_at': None,
-    'filled_avg_price': None,
-    'filled_qty': '0',
-    'hwm': None,
-    'id': '5dbcb543-956b-4eec-b9b8-fc768d517da9',
-    'legs': None,
-    'limit_price': '449.2',
-    'notional': None,
-    'order_class': '',
-    'order_type': 'limit',
-    'qty': '1',
-    'replaced_at': None,
-    'replaced_by': None,
-    'replaces': None,
-    'side': 'buy',
-    'status': 'accepted',
-    'stop_price': None,
-    'submitted_at': '2022-02-08T16:20:07.812422547Z',
-    'symbol': 'SPY',
-    'time_in_force': 'gtc',
-    'trail_percent': None,
-    'trail_price': None,
-    'type': 'limit',
-    'updated_at': '2022-02-08T16:20:07.813040847Z'})
+order1 = api.submit_order(symbol='SPY', 
+        qty=1, 
+        side='buy', # buy, sell 
+        time_in_force='gtc', # 'day'
+        type='market', # 'market'
+        ) # optional make sure it unique though to call later!
+order2 = api.submit_order(symbol='SPY', 
+        qty=1, 
+        side='sell', # buy, sell 
+        time_in_force='gtc', # 'day'
+        type='market', # 'market'
+        ) # optional make sure it unique though to call later!
+
 
 api.get_assapi.get_order_by_client_order_id(client_order_id="001")
 
+replace = api.replace_order(qty=1, time_in_force='gtc', limit_price='14.71', order_id='98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
 
-In [50]: api.get_order_by_client_order_id(client_order_id="004")
-Out[50]: 
-Order({   'asset_class': 'us_equity',
-    'asset_id': '7c7fa08a-c321-46fa-a907-cc7080548f92',
-    'canceled_at': None,
-    'client_order_id': '004',
-    'created_at': '2022-02-08T17:34:15.733439312Z',
-    'expired_at': None,
-    'extended_hours': False,
-    'failed_at': None,
-    'filled_at': None,
-    'filled_avg_price': None,
-    'filled_qty': '0',
-    'hwm': None,
-    'id': '45876739-4d8f-4796-9096-b60fcf12a800',
-    'legs': None,
-    'limit_price': '14.9',
-    'notional': None,
-    'order_class': '',
-    'order_type': 'limit',
-    'qty': '1',
-    'replaced_at': None,
-    'replaced_by': None,
-    'replaces': None,
-    'side': 'sell',
-    'status': 'new',
-    'stop_price': None,
-    'submitted_at': '2022-02-08T17:34:15.732848252Z',
-    'symbol': 'SPDN',
-    'time_in_force': 'gtc',
-    'trail_percent': None,
-    'trail_price': None,
-    'type': 'limit',
-    'updated_at': '2022-02-08T17:34:15.758800321Z'})
-
-
-sell_x_c = api.submit_order(symbol='SPDN', 
-        qty=1, 
-        side='sell', 
-        time_in_force='gtc', 
-        type='limit', # market
-        limit_price=14.80, 
-        client_order_id='004') # optional make sure it unique though to call later!
 
 
 
 def convert_nano_timestamp_to_datetime(t):
     return datetime.datetime.utcfromtimestamp(t // 1000000000)
+
+def convert_todatetime_string(date_string):
+    # In [94]: date_string
+    # Out[94]: '2022-03-11T19:41:50.649448Z'
+    # In [101]: date_string[:19]
+    # Out[101]: '2022-03-11T19:41:50'
+    return datetime.datetime.fromisoformat(date_string[:19])
+
+
+df1 = df.assign(
+    vwap=df.eval(
+        'wgtd = close * volume', inplace=False
+    ).groupby(df['timestamp']).cumsum().eval('wgtd / volume')
+)
+df
+
+
+ts = pd.Timestamp('2022-02-17 09:30:00', tz='EST')
+
+
+
+
+# Function to check if trade has one of inputted conditions
+def has_condition(condition_list, condition_check):
+  if type(condition_list) is not list: 
+    # Assume none is a regular trade?
+    in_list = False
+  else:
+    # There are one or more conditions in the list
+    in_list = any(condition in condition_list for condition in condition_check)
+
+  return in_list
+
+exclude_conditions = [
+'B',
+'W',
+'4',
+'7',
+'9',
+'C',
+'G',
+'H',
+'I',
+'M',
+'N',
+'P',
+'Q',
+'R',
+'T',
+'U',
+'V',
+'Z'
+]
+
+# fetch trades over whatever timeframe you need
+s = datetime.datetime.now()
+start_time = pd.to_datetime('2022-02-18 19:00', utc=True)
+end_time = pd.to_datetime('2022-02-18 20:00', utc=True)
+symbol = 'SPY'
+
+trades_df = api.get_trades(symbol=symbol, start=start_time.isoformat(), end=end_time.isoformat(), limit=None).df
+
+# convert to market time for easier reading
+trades_df = trades_df.tz_convert('America/New_York')
+
+# add a column to easily identify the trades to exclude using our function from above
+trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
+
+# filter to only look at trades which aren't excluded
+valid_trades = trades_df.query('not exclude')
+
+# Resample the valid trades to calculate the OHLCV bars
+agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': 'sum'}
+min_bars = valid_trades.resample('1T').agg(agg_functions)
+e = datetime.datetime.now()
+print(e-s)
+
+# VWAP
+df1 = df.assign(
+    vwap=df.eval(
+        'wgtd = close * volume', inplace=False
+    ).groupby(df['timestamp']).cumsum().eval('wgtd / volume')
+)
+df
+
+# timezome est
+ts = pd.Timestamp('2022-02-17 09:30:00', tz='EST')
+
+s = datetime.datetime.now()
+x = return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None)
+e = datetime.datetime.now()
+print(e-s)
+
+
+
+import logging
+logging.basicConfig(level=logging.INFO)
+
+def hypotenuse(a, b):
+    """Compute the hypotenuse"""
+    return (a**2 + b**2)**0.5
+
+kwargs = {'a':3, 'b':4, 'c':hypotenuse(3, 4)}
+
+logging.debug("a = {a}, b = {b}".format(**kwargs))
+logging.info("Hypotenuse of {a}, {b} is {c}".format(**kwargs))
+logging.warning("a={a} and b={b} are equal".format(**kwargs))
+logging.error("a={a} and b={b} cannot be negative".format(**kwargs))
+logging.critical("Hypotenuse of {a}, {b} is {c}".format(**kwargs))
