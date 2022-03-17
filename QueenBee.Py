@@ -121,17 +121,72 @@ def relative_strength_index(frame):
 
     return frame
 
+def return_RSI(df):
+	window_length = 14
+	df['diff'] = df.diff(1)
+	df['gain'] = df['diff'].clip(lower=0).round(2)
+	df['loss'] = df['diff'].clip(upper=0).abs().round(2)
+	# Get initial Averages
+	df['avg_gain'] = df['gain'].rolling(window=window_length, min_periods=window_length).mean()[:window_length+1]
+	df['avg_loss'] = df['loss'].rolling(window=window_length, min_periods=window_length).mean()[:window_length+1]
+	# Get WMS averages
+	# Average Gains
+	for i, row in enumerate(df['avg_gain'].iloc[window_length+1:]):
+		df['avg_gain'].iloc[i + window_length + 1] =\
+			(df['avg_gain'].iloc[i + window_length] *
+			(window_length - 1) +
+			df['gain'].iloc[i + window_length + 1])\
+			/ window_length
+	# Average Losses
+	for i, row in enumerate(df['avg_loss'].iloc[window_length+1:]):
+		df['avg_loss'].iloc[i + window_length + 1] =\
+			(df['avg_loss'].iloc[i + window_length] *
+			(window_length - 1) +
+			df['loss'].iloc[i + window_length + 1])\
+			/ window_length
 
-def return_db(csv_name, symbol):
-	symbol = True
-	csv_name = "SPY_bars.csv"
-	symbol, filename = csv_name.split("_")
-	type='bars'
-	db = read_csv_db(db_root=(os.path.join((os.getcwd()), 'db')), type=type, symbol=symbol)
-	# symbol = 'SPY'
-	perMin = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
-	FiveperMin = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
-	tday = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
+	# Calculate RS Values
+	df['rs'] = df['avg_gain'] / df['avg_loss']
+	# Calculate RSI
+	df['rsi'] = 100 - (100 / (1.0 + df['rs']))
+
+
+def return_RSI(df):
+	# Define function to calculate the RSI
+from typing import Callable
+close = df['close']
+length = 14
+def calc_rsi(over: pd.Series, fn_roll: Callable) -> pd.Series:
+    # Get the difference in price from previous step
+    delta = over.diff()
+    # Get rid of the first row, which is NaN since it did not have a previous row to calculate the differences
+    delta = delta[1:] 
+
+    # Make the positive gains (up) and negative gains (down) Series
+    up, down = delta.clip(lower=0), delta.clip(upper=0).abs()
+
+    roll_up, roll_down = fn_roll(up), fn_roll(down)
+    rs = roll_up / roll_down
+    rsi = 100.0 - (100.0 / (1.0 + rs))
+
+    # Avoid division-by-zero if `roll_down` is zero
+    # This prevents inf and/or nan values.
+    rsi[:] = np.select([roll_down == 0, roll_up == 0, True], [100, 0, rsi])
+    rsi.name = 'rsi'
+
+    # Assert range
+    valid_rsi = rsi[length - 1:]
+    assert ((0 <= valid_rsi) & (valid_rsi <= 100)).all()
+    # Note: rsi[:length - 1] is excluded from above assertion because it is NaN for SMA.
+
+    return rsi
+
+# Calculate RSI using MA of choice
+# Reminder: Provide ≥ `1 + length` extra data points!
+rsi_ema = calc_rsi(close, lambda s: s.ewm(span=length).mean())
+rsi_sma = calc_rsi(close, lambda s: s.rolling(length).mean())
+rsi_rma = calc_rsi(close, lambda s: s.ewm(alpha=1 / length).mean())  # Approximates TradingView.
+
 
 def return_ticker_min(symbol, time, ndays, trading_days_df=trading_days_df):
 	
@@ -141,9 +196,9 @@ def return_ticker_min(symbol, time, ndays, trading_days_df=trading_days_df):
 	mk_hrs_data = m[1] # market hours data frame only (0 = all, 1=mk hours, 3=afterhours)
 	mk_hrs_data['vwap_original'] = mk_hrs_data['vwap']
 	# del mk_hrs_data['vwap']
-	df_calc = return_VWAP(mk_hrs_data)
-	df_calc = relative_strength_index(df_calc)
-	df_calc = return_MACD(mk_hrs_data, fast=12, slow=16)
+	df_vwap = return_VWAP(mk_hrs_data)
+	df_vwap_rsi = relative_strength_index(df_vwap)
+	df_vwap_rsi_macd = return_MACD(df_vwap_rsi, fast=12, slow=16)
 
 
 def return_ticker_5day(symbol, timetype, ndays):
@@ -160,16 +215,25 @@ def return_ticker_1yr(symbol, time):
 	spy_1yr = return_bars(api=api, symbol=symbol, timeframe=time, start_date=start_date1yr, end_date=end_date1yr) # return 1 yr Mac
 
 
-# return RSI
 # return VIX
 
+
+def return_db(csv_name, symbol):
+	symbol = True
+	csv_name = "SPY_bars.csv"
+	symbol, filename = csv_name.split("_")
+	type='bars'
+	db = read_csv_db(db_root=(os.path.join((os.getcwd()), 'db')), type=type, symbol=symbol)
+	# symbol = 'SPY'
+	perMin = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
+	FiveperMin = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
+	tday = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
+
+
+
 # check before executing final Trade [distance between bid/ask, momentum value of ticker, momentum of market] 
-start_date_iso = datetime.datetime.now().strftime('%Y-%m-%d') + ' 19:00'
-a = datetime.datetime.strptime(start_date_iso, '%Y-%m-%d %H:%M')
-now = datetime.datetime.now()
-a - now
-b = a + datetime.timedelta(0, sec_n) # days, seconds, then other fields.
-return_ticker_min(symbol='SPY', time=False, sec_n)
+
+
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
 
 # Day Trading Margin Requirements
