@@ -291,3 +291,39 @@ logging.info("Hypotenuse of {a}, {b} is {c}".format(**kwargs))
 logging.warning("a={a} and b={b} are equal".format(**kwargs))
 logging.error("a={a} and b={b} cannot be negative".format(**kwargs))
 logging.critical("Hypotenuse of {a}, {b} is {c}".format(**kwargs))
+
+
+# Assumes api and api_data are instantiated REST objects for the trading account and the data account respectively.
+# These can be the same but I separate them to be able to use data in several accounts
+
+import pandas as pd
+
+def return_bars(symbol, timetype, ndays):
+    try:
+        # ndays = 10
+        # timetype = "1Day" # "1Min"
+        # symbol = 'SPY'
+        
+        # First get the current day and all trading days
+        current_day = api.get_clock().timestamp.date().isoformat()
+        trading_days = api.get_calendar()
+
+        # Convert trading days to a Dataframe for easier manipulation
+        # Select the 10 days before the current day
+        trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+        symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays)
+
+        # Fetch bars for those days
+        symbol_data = api.get_bars(symbol, timetype,
+                                    start=symbol_n_days.head(1).date,
+                                    end=symbol_n_days.tail(1).date, 
+                                    adjustment='all').df.reset_index()
+        est = pytz.timezone("US/Eastern")
+        symbol_data['timestamp_est'] = symbol_data['timestamp'].apply(lambda x: x.astimezone(est))
+        return symbol_data
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+
+
+THANKYOU_DAN_THEMAN = return_bars(symbol='SPY', timetype='1Min', ndays=10)
