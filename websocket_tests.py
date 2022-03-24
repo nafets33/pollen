@@ -6,6 +6,10 @@ in case of ws disconnection.
 from asyncore import loop
 import logging
 import time
+import collections
+from collections import deque
+
+from pip import main
 from alpaca_trade_api.stream import Stream
 from alpaca_trade_api.common import URL
 from dotenv import load_dotenv
@@ -23,6 +27,7 @@ import sys
 from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 import pytz
+import random
 # from asyncio import loop
 
 load_dotenv()
@@ -30,6 +35,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 est = pytz.timezone("US/Eastern")
 
+# Load Roots
 system = 'windows' #mac, windows
 load_dotenv()
 
@@ -38,9 +44,14 @@ if system != 'windows':
 else:
     db_root = os.environ.get('db_root_winodws')
 
-
+# KEYS
 ALPACA_API_KEY = os.environ.get('APCA_API_KEY_ID')
 ALPACA_SECRET_KEY = os.environ.get('APCA_API_SECRET_KEY')
+
+main_dict = {}
+dq = deque([], 30)  # fast way to handle running list
+
+
 def run_connection(conn):
     try:
         conn.run()
@@ -57,9 +68,9 @@ def run_connection(conn):
 
 
 async def print_quote(q):
-    print('quote', q)
-    stream = pd.read_csv(os.path.join(db_root, '_stream.csv'), dtype=str, encoding='utf8', engine='python')
-    print("Read")
+    # print('quote', q)
+    dq.append(q)
+
 
 async def quote_callback(q):
     stream = pd.read_csv(os.path.join(db_root, '_stream.csv'), dtype=str, encoding='utf8', engine='python')
@@ -73,8 +84,16 @@ async def on_account_updates(conn, channel, account):
 async def on_trade_updates(tu):
     print('trade update', tu)
 
+
+async def print_crypto_trade(t):
+    print('crypto trade', t)
+
+
 # tickers = ['SPY', 'QQQ', 'SPLX', 'SQQQ', 'TQQQ']
-tickers = ['SPY']
+# tick selection Logic (top 10, highest beta, top movers from prv day)
+
+tickers = ['AAPL', 'TSLA', 'GOOG', 'FB', 'AMZN']
+ticker_tiers = {} # top {N_50} tickers of entire market 
 if __name__ == '__main__':
     conn = Stream(ALPACA_API_KEY,
                   ALPACA_SECRET_KEY,
@@ -83,11 +102,21 @@ if __name__ == '__main__':
 
     # conn.subscribe_bars(print_quote, *tickers)
     # conn.subscribe_quotes(quote_callback, *tickers)
-    # conn.subscribe_trades(print_quote, *tickers) # trades Exlcude Conditions
+    # conn.subscribe_crypto_trades(print_crypto_trade, 'BTCUSD') # CRYPTO BTC
+    conn.subscribe_trades(print_quote, *tickers) # Returns Trades: Exlcude Conditions????
+    # conn.subscribe_trades(print_quote, 'SPY') # Returns Trades: Exlcude Conditions????
+
     conn.subscribe_trade_updates(on_trade_updates)
     run_connection(conn)
 
 
+
+
+
+
+
+
+###<<<<<<<<END>>>>>>>>>>>>>###
 # @conn.on(r'^account_updates$')
 # async def on_account_updates(conn, channel, account):
 #     print('account', account)

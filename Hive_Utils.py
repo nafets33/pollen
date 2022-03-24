@@ -17,6 +17,15 @@ from dotenv import load_dotenv
 import threading
 import datetime
 import pytz
+from typing import Callable
+import pickle
+import random
+from tqdm import tqdm
+from stocksymbol import StockSymbol
+import requests
+
+
+
 
 est = pytz.timezone("US/Eastern")
 
@@ -39,19 +48,28 @@ api_secret = os.environ.get('APCA_API_SECRET_KEY')
 base_url = "https://api.alpaca.markets"
 
 
-def return_api_keys(base_url, api_key_id, api_secret):
+def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
     # api_key_id = os.environ.get('APCA_API_KEY_ID')
     # api_secret = os.environ.get('APCA_API_SECRET_KEY')
     # base_url = "https://api.alpaca.markets"
+    # base_url_paper = "https://paper-api.alpaca.markets"
     # feed = "sip"  # change to "sip" if you have a paid account
+    
+    if prod == False:
+        rest = AsyncRest(key_id=api_key_id,
+                    secret_key=api_secret)
 
-    rest = AsyncRest(key_id=api_key_id,
-                        secret_key=api_secret)
+        api = tradeapi.REST(key_id=api_key_id,
+                    secret_key=api_secret,
+                    base_url=URL(base_url), api_version='v2')
+    else:
+        rest = AsyncRest(key_id=api_key_id,
+                            secret_key=api_secret)
 
-    api = tradeapi.REST(key_id=api_key_id,
-                        secret_key=api_secret,
-                        base_url=URL(base_url), api_version='v2')
+        api = tradeapi.REST(key_id=api_key_id,
+                            secret_key=api_secret,
+                            base_url=URL(base_url), api_version='v2')
     return [{'rest': rest, 'api': api}]
 
 keys = return_api_keys(base_url, api_key_id, api_secret)
@@ -70,84 +88,50 @@ end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
 def return_bars(symbol, time, ndays, trading_days_df):
     try:
-        # ndays = 1
-        # time = "1Min" #"1Day" # "1Min"
-        # symbol = 'SPY'
-        
-        # # First get the current day and all trading days
-        # current_day = api.get_clock().timestamp.date().isoformat()
-        # trading_days = api.get_calendar()
+        s = datetime.datetime.now()
+        # ndays = 0 # today 1=yesterday...  # TEST
+        # time = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
+        # symbol = 'SPY'  # TEST
+        # current_day = api.get_clock().timestamp.date().isoformat()  # TEST MOVED TO GLOBAL
+        # trading_days = api.get_calendar()  # TEST MOVED TO GLOBAL
+        # trading_days_df = pd.DataFrame([day._raw for day in trading_days])  # TEST MOVED TO GLOBAL
+        # est = pytz.timezone("US/Eastern") # GlovalVar
 
-        # # Convert trading days to a Dataframe for easier manipulation
-        # # Select the 10 days before the current day
-        # ADDED Above as Global var
         symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays)
 
         # Fetch bars for those days
         symbol_data = api.get_bars(symbol, time,
                                     start=symbol_n_days.head(1).date,
                                     end=symbol_n_days.tail(1).date, 
-                                    adjustment='all').df.reset_index()
-        # est = pytz.timezone("US/Eastern") # GlovalVar
-        symbol_data['timestamp_est'] = symbol_data['timestamp'].apply(lambda x: x.astimezone(est))
-        symbol_data['timestamp_est_timestamp'] = symbol_data['timestamp_est'].apply(lambda x: datetime.datetime.fromtimestamp(x.timestamp()))
+                                    adjustment='all').df
     
-        day = symbol_data["timestamp_est"].iloc[0].day
-        month = symbol_data["timestamp_est"].iloc[0].month
-        year = symbol_data["timestamp_est"].iloc[0].year
-        
-        formater = "%Y-%m-%d %H:%M:%S"
-        str_timestamp = "{}-{}-{} 09:30:00".format(year, month, day)
-        market_reg_open = datetime.datetime.strptime(str_timestamp, formater)
-        str_timestamp = "{}-{}-{} 16:00:00".format(year, month, day)
-        market_reg_close = datetime.datetime.strptime(str_timestamp, formater)
 
-        symbol_data['after_hours_tag'] = np.where((symbol_data['timestamp_est_timestamp']>=market_reg_open) & (symbol_data['timestamp_est_timestamp']<=market_reg_close), "MarketHours", "AfterHours")
-        market_hours_data = symbol_data[symbol_data['after_hours_tag']=='MarketHours'].copy()
-        after_hours_data = symbol_data[symbol_data['after_hours_tag']=='AfterHours'].copy()
+        symbol_data['index_timestamp'] = symbol_data.index
+        symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+        symbol_data['timestamp_est_timestamp'] = symbol_data['timestamp_est'].apply(lambda x: datetime.datetime.fromtimestamp(x.timestamp()))
 
+        # set index to EST time
+        symbol_data = symbol_data.reset_index()
+        symbol_data = symbol_data.set_index('timestamp_est') 
+
+        # Make two dataframes one with just market hour data the other with after hour data
+        if "Day" in time:
+            market_hours_data = symbol_data  # keeping as copy since main func will want to return markethours
+            after_hours_data =  None
+        else:
+            market_hours_data = symbol_data.between_time('9:30', '16:00')
+            after_hours_data =  symbol_data.between_time('16:00', '9:30')           
+
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
         return [symbol_data, market_hours_data, after_hours_data]
     # handle error
     except Exception as e:
         print("sending email of error", e)
-# r = return_bars(symbol='SPY', time='1Min', ndays=10, trading_days_df=trading_days_df)
+# r = return_bars(symbol='SPY', time='1Day', ndays=233, trading_days_df=trading_days_df)
 
-
-def init_log(root, dirname, name, update_df=False, update_type=False, update_write=False, cols=False):
-    # dirname = 'db'
-    # root_token=os.path.join(root, dirname)
-    # name='hive_utils_log.csv'
-    # cols = ['type', 'log_note']
-    # update_df = pd.DataFrame(list(zip(['info'], ['text'])), columns = ['type', 'log_note'])
-    # update_write=True
-    
-    root_token=os.path.join(root, dirname)
-    
-    if os.path.exists(os.path.join(root_token, name)) == False:
-        with open(os.path.join(root_token, name), 'w') as f:
-            df = pd.DataFrame()
-            for i in cols:
-                df[i] = ''
-            df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
-            print(name, "created")
-            return df
-    else:
-        df = pd.read_csv(os.path.join(root_token, name), dtype=str, encoding='utf8')
-        if update_type == 'append':
-            # df = df.append(update_df, ignore_index=True, sort=False)
-            df = pd.concat([df, update_df], ignore_index=True)
-            if update_write:
-                df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
-                return df
-            else:
-                return df
-        else:
-            return df
-# # TESTS
-# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', cols=False)
-# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', update_df=update_df, update_type='append', update_write=True, cols=False)
-
-# trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 
 def return_snapshots(ticker_list):
     # ticker_list = ['SPY', 'AAPL'] # TEST
@@ -178,6 +162,7 @@ def return_snapshots(ticker_list):
         return_dict.update(di)        
     return return_dict
 # data = return_snapshots(ticker_list=['SPY', 'AAPL'])
+
 
 def submit_order(symbol, qty, side, type, limit_price, client_order_id, time_in_force, order_class=False, stop_loss=False, take_profit=False):
     
@@ -214,7 +199,7 @@ def submit_order(symbol, qty, side, type, limit_price, client_order_id, time_in_
     #         client_order_id=001, 
     #         order_class='bracket', 
     #         stop_loss=dict(stop_price='360.00'), 
-	#         take_profit=dict(limit_price='440.00'))
+    #         take_profit=dict(limit_price='440.00'))
 
 
 
@@ -246,71 +231,190 @@ def refresh_account_info(api):
                 ]
 
 
+def init_log(root, dirname, name, update_df=False, update_type=False, update_write=False, cols=False):
+    # dirname = 'db'
+    # root_token=os.path.join(root, dirname)
+    # name='hive_utils_log.csv'
+    # cols = ['type', 'log_note']
+    # update_df = pd.DataFrame(list(zip(['info'], ['text'])), columns = ['type', 'log_note'])
+    # update_write=True
+    
+    root_token=os.path.join(root, dirname)
+    
+    if os.path.exists(os.path.join(root_token, name)) == False:
+        with open(os.path.join(root_token, name), 'w') as f:
+            df = pd.DataFrame()
+            for i in cols:
+                df[i] = ''
+            df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
+            print(name, "created")
+            return df
+    else:
+        df = pd.read_csv(os.path.join(root_token, name), dtype=str, encoding='utf8')
+        if update_type == 'append':
+            # df = df.append(update_df, ignore_index=True, sort=False)
+            df = pd.concat([df, update_df], ignore_index=True)
+            if update_write:
+                df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
+                return df
+            else:
+                return df
+        else:
+            return df
+# # TESTS
+# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', cols=False)
+# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', update_df=update_df, update_type='append', update_write=True, cols=False)
+
+def init_index_ticker(index_list, db_root, init=True):
+    # index_list = [
+    #     'DJA', 'DJI', 'DJT', 'DJUSCL', 'DJU',
+    #     'NDX', 'IXIC', 'IXCO', 'INDS', 'INSR', 'OFIN', 'IXTC', 'TRAN', 'XMI', 
+    #     'XAU', 'HGX', 'OSX', 'SOX', 'UTY',
+    #     'OEX', 'MID', 'SPX',
+    #     'SCOND', 'SCONS', 'SPN', 'SPF', 'SHLTH', 'SINDU', 'SINFT', 'SMATR', 'SREAS', 'SUTIL']
+    api_key = 'b2c87662-0dce-446c-862b-d64f25e93285'
+    ss = StockSymbol(api_key)
+    
+    "Create DB folder if needed"
+    index_ticker_db = os.path.join(db_root, "index_tickers")
+    if os.path.exists(index_ticker_db) == False:
+        os.mkdir(index_ticker_db)
+        print("Ticker Index db Initiated")
+
+    if init:
+        us = ss.get_symbol_list(market="US")
+        df = pd.DataFrame(us)
+        df.to_csv(os.path.join(index_ticker_db, 'US.csv'), index=False, encoding='utf8')
+
+        for tic_index in index_list: 
+            try:
+                index = ss.get_symbol_list(index=tic_index)
+                df = pd.DataFrame(index)
+                df.to_csv(os.path.join(index_ticker_db, tic_index + '.csv'), index=False, encoding='utf8')
+            except Exception as e:
+                print(tic_index, e, datetime.datetime.now())
+
+    # examples:
+    # symbol_list_us = ss.get_symbol_list(market="US")
+    # symbol_only_list = ss.get_symbol_list(market="malaysia", symbols_only=True)
+    # # https://stock-symbol.herokuapp.com/market_index_list
+    # symbol_list_dow = ss.get_symbol_list(index="DJI")
+
+    # symbol_list_dow = ss.get_symbol_list(index="SPX")
+    # ndx = ss.get_symbol_list(index="NDX")
+    # ndx_df = pd.DataFrame(ndx)
+    
+    # Dow Jones Composite Average (DJA)
+    # Dow Jones Industrial Average (DJI)
+    # Dow Jones Transportation Average (DJT)
+    # Dow Jones U.S. Coal (DJUSCL)
+    # Dow Jones Utility Average (DJU)
+    # NASDAQ 100 (NDX)
+    # NASDAQ COMPOSITE (IXIC)
+    # NASDAQ COMPUTER (IXCO)
+    # NASDAQ INDUSTRIAL (INDS)
+    # NASDAQ INSURANCE (INSR)
+    # NASDAQ OTHER FINANCE (OFIN)
+    # NASDAQ TELECOMMUNICATIONS (IXTC)
+    # NASDAQ TRANSPORTATION (TRAN)
+    # NYSE ARCA MAJOR MARKET (XMI)
+    # PHLX GOLD AND SILVER SECTOR INDEX (XAU)
+    # PHLX HOUSING SECTOR (HGX)
+    # PHLX OIL SERVICE SECTOR (OSX)
+    # PHLX SEMICONDUCTOR (SOX)
+    # PHLX UTILITY SECTOR (UTY)
+    # S&P 100 (OEX)
+    # S&P 400 (MID)
+    # S&P 500 (SPX)
+    # S&P 500 Communication Services (S5TELS)
+    # S&P 500 Consumer Discretionary (S5COND)
+    # S&P 500 Consumer Staples (S5CONS)
+    # S&P 500 Energy (SPN)
+    # S&P 500 Financials (SPF)
+    # S&P 500 Health Care (S5HLTH)
+    # S&P 500 Industrials (S5INDU)
+    # S&P 500 Information Technology (S5INFT)
+    # S&P 500 Materials (S5MATR)
+    # S&P 500 Real Estate (S5REAS)
+    # S&P 500 Utilities (S5UTIL)"""
+    return True
+
+
+def get_ticker_statatistics(symbol):
+    try:
+        url = f"https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
+        dataframes = pd.read_html(requests.get(url, headers={'User-agent': 'Mozilla/5.0'}).text)
+    except Exception as e:
+        print(symbol, e)
+    return dataframes
+
+
+# NOT IN USE
 def return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None):
     # symbol = 'SPY'
     # start_date_iso = '2022-03-10 19:00' # 2 PM EST start_date_iso = '2022-03-10 14:30'
-	# end_date_iso = '2022-03-10 19:15' # end_date_iso = '2022-03-10 20:00'
-	# Function to check if trade has one of inputted conditions
-	def has_condition(condition_list, condition_check):
-		if type(condition_list) is not list: 
-			# Assume none is a regular trade?
-			in_list = False
-		else:
-			# There are one or more conditions in the list
-			in_list = any(condition in condition_list for condition in condition_check)
+    # end_date_iso = '2022-03-10 19:15' # end_date_iso = '2022-03-10 20:00'
+    # Function to check if trade has one of inputted conditions
+    def has_condition(condition_list, condition_check):
+        if type(condition_list) is not list: 
+            # Assume none is a regular trade?
+            in_list = False
+        else:
+            # There are one or more conditions in the list
+            in_list = any(condition in condition_list for condition in condition_check)
 
-		return in_list
+        return in_list
 
-	exclude_conditions = [
-	'B',
-	'W',
-	'4',
-	'7',
-	'9',
-	'C',
-	'G',
-	'H',
-	'I',
-	'M',
-	'N',
-	'P',
-	'Q',
-	'R',
-	'T',
-	'U',
-	'V',
-	'Z'
-	]
+    exclude_conditions = [
+    'B',
+    'W',
+    '4',
+    '7',
+    '9',
+    'C',
+    'G',
+    'H',
+    'I',
+    'M',
+    'N',
+    'P',
+    'Q',
+    'R',
+    'T',
+    'U',
+    'V',
+    'Z'
+    ]
 
-	# fetch trades over whatever timeframe you need
-	start_time = pd.to_datetime(start_date_iso, utc=True)
-	end_time = pd.to_datetime(end_date_iso, utc=True)
+    # fetch trades over whatever timeframe you need
+    start_time = pd.to_datetime(start_date_iso, utc=True)
+    end_time = pd.to_datetime(end_date_iso, utc=True)
 
-	trades_df = api.get_trades(symbol=symbol, start=start_time.isoformat(), end=end_time.isoformat(), limit=limit).df
+    trades_df = api.get_trades(symbol=symbol, start=start_time.isoformat(), end=end_time.isoformat(), limit=limit).df
 
-	# convert to market time for easier reading
-	trades_df = trades_df.tz_convert('America/New_York')
+    # convert to market time for easier reading
+    trades_df = trades_df.tz_convert('America/New_York')
 
-	# add a column to easily identify the trades to exclude using our function from above
-	trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
+    # add a column to easily identify the trades to exclude using our function from above
+    trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
 
-	# filter to only look at trades which aren't excluded
-	valid_trades = trades_df.query('not exclude')
+    # filter to only look at trades which aren't excluded
+    valid_trades = trades_df.query('not exclude')
 
-	# # Resample the valid trades to calculate the OHLCV bars
-	# agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': 'sum'}
-	# min_bars = valid_trades.resample('1T').agg(agg_functions)
+    # # Resample the valid trades to calculate the OHLCV bars
+    # agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': 'sum'}
+    # min_bars = valid_trades.resample('1T').agg(agg_functions)
 
-	# Resample the trades to calculate the OHLCV bars
-	agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
+    # Resample the trades to calculate the OHLCV bars
+    agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
 
-	valid_trades = trades_df.query('not exclude')
-	min_bars = valid_trades.resample('1T').agg(agg_functions)
+    valid_trades = trades_df.query('not exclude')
+    min_bars = valid_trades.resample('1T').agg(agg_functions)
 
-	min_bars = min_bars.droplevel(0, 'columns')
-	min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+    min_bars = min_bars.droplevel(0, 'columns')
+    min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
 
-	return min_bars
+    return min_bars
 
 
 def log_script(log_file, loginfo_dict):
@@ -384,257 +488,56 @@ def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     dt = dt.strftime('%Y-%m-%d %H:%M:%S')
     return dt
 
+
 def convert_datetime_toEST(datetimeobject):
     out = datetime.datetime.fromisoformat(d).replace(tzinfo=timezone.utc).astimezone(ZoneInfo("America/New_York"))
 
+
 def wait_for_market_open():
-	clock = api.get_clock()
-	if not clock.is_open:
-		time_to_open = (clock.next_open - clock.timestamp).total_seconds()
-		time.sleep(round(time_to_open))
+    clock = api.get_clock()
+    if not clock.is_open:
+        time_to_open = (clock.next_open - clock.timestamp).total_seconds()
+        time.sleep(round(time_to_open))
 
 
 def time_to_market_close():
-	clock = api.get_clock()
-	return (clock.next_close - clock.timestamp).total_seconds()
+    clock = api.get_clock()
+    return (clock.next_close - clock.timestamp).total_seconds()
 
 
-""" XXXXXXXXXXX depricated functions XXXXXXXXXX"""
-
-def old_return_bars(api, symbol, timeframe, start_date, end_date):
-    # symbol = 'SPY'
-    # time = 1
-    # timeframe = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
-    # start_date = '2022-02-15'
-	# end_date = '2022-02-15'
-	start_date = pd.to_datetime('2022-02-17 19:00', utc=True)
-	end_date = pd.to_datetime('2022-02-17 19:15', utc=True)
-	ticker = api.get_bars(symbol, timeframe, start_date.isoformat(), end_date.isoformat())
-	df = ticker.df.reset_index()
-	df['timestamp_est'] = df['timestamp'].apply(lambda x: x.astimezone(est))
-
-    # macd = df.ta.macd(close='close', fast=12, slow=26, append=True)
-    # print(df.iloc[-1])
-
-	return df
+def PickleData(pickle_file, data_to_store): 
+    # initializing data to be stored in db
+    p_timestamp = {'p_time': datetime.datetime.now()} 
+    
+    if os.path.exists(os.path.join(os.getcwd(), 'examplePickle')) == False:
+        print("init")
+        db = {} 
+        db['jp_timestamp'] = p_timestamp 
+        dbfile = open(pickle_file, 'ab') 
+        pickle.dump(db, dbfile)                   
+        dbfile.close() 
 
 
-def old_return_latest_trade(api, symbol):
-    resp = api.get_latest_trade(symbol)
-    di = {}
-    d = vars(resp)
-    data = d["_raw"] # raw data
-    dataname = d["_reversed_mapping"] # data names
-    for k,v in dataname.items():
-        if v in data.keys():
-            di[str(k)] = data[v]
-    data['time_est'] = convert_todatetime_string(data['t']) # add est
-    # QuoteV2({   'ap': 448.27,
-    #     'as': 3,
-    #     'ax': 'X',
-    #     'bp': 448.25,
-    #     'bs': 4,
-    #     'bx': 'T',
-    #     'c': ['R'],
-    #     't': '2022-02-11T16:19:51.467033352Z',    
-    #     'z': 'B'})
-    return data
+    data = data_to_store
+    if data:
+        print("WINNNER")
+        dbfile = open(pickle_file, 'rb+')      
+        db = pickle.load(dbfile)
+        dbfile.seek(0)
+        dbfile.truncate()
+        latest = data
+        db['latest'] = latest
+        print(db)
+        pickle.dump(db, dbfile)                   
+        dbfile.close()
+    
+    return True
 
 
-def old_return_latest_quote(api, symbol, tradeconditions=True):
-    resp = api.get_latest_quote(symbol)
-    di = {}
-    d = vars(resp)
-    data = d["_raw"] # raw data
-    dataname = d["_reversed_mapping"] # data names
-    for k,v in dataname.items():
-        if v in data.keys():
-            di[str(k)] = data[v]
-    data['time_est'] = convert_todatetime_string(data['t']) # add est
-    # QuoteV2({   'ap': 448.27,
-    #     'as': 3,
-    #     'ax': 'X',
-    #     'bp': 448.25,
-    #     'bs': 4,
-    #     'bx': 'T',
-    #     'c': ['R'],
-    #     't': '2022-02-11T16:19:51.467033352Z',    
-    #     'z': 'B'})
-    return data
-# # Return order Status
-# def clientId_order_status(api, client_id_order):
-#     open_orders_list = api.list_orders(status='open')
-#     if client_id_order:
-#         order_token = api.get_order_by_client_order_id(client_id_order)
-#     else:
-#         order_token = False
-#     return [True, spdn_order, open_orders_list]
-
-
-
-
-
-
-""" entity_v2.py Alpaca symbol matching"""
-# trade_mapping_v2 = {
-#     "i": "id",
-#     "S": "symbol",
-#     "c": "conditions",
-#     "x": "exchange",
-#     "p": "price",
-#     "s": "size",
-#     "t": "timestamp",
-#     "z": "tape",  # stocks only
-#     "tks": "takerside"  # crypto only
-# }
-
-# quote_mapping_v2 = {
-#     "S":  "symbol",
-#     "x": "exchange",  # crypto only
-#     "ax": "ask_exchange",
-#     "ap": "ask_price",
-#     "as": "ask_size",
-#     "bx": "bid_exchange",
-#     "bp": "bid_price",
-#     "bs": "bid_size",
-#     "c":  "conditions",  # stocks only
-#     "t":  "timestamp",
-#     "z":  "tape"  # stocks only
-# }
-
-# bar_mapping_v2 = {
-#     "S":  "symbol",
-#     "x": "exchange",  # crypto only
-#     "o":  "open",
-#     "h":  "high",
-#     "l":  "low",
-#     "c":  "close",
-#     "v":  "volume",
-#     "t":  "timestamp",
-#     "n":  "trade_count",
-#     "vw": "vwap"
-# }
-
-# status_mapping_v2 = {
-#     "S":  "symbol",
-#     "sc": "status_code",
-#     "sm": "status_message",
-#     "rc": "reason_code",
-#     "rm": "reason_message",
-#     "t":  "timestamp",
-#     "z":  "tape"
-# }
-
-# luld_mapping_v2 = {
-#     "S": "symbol",
-#     "u": "limit_up_price",
-#     "d": "limit_down_price",
-#     "i": "indicator",
-#     "t": "timestamp",
-#     "z": "tape"
-# }
-
-# cancel_error_mapping_v2 = {
-#     "S": "symbol",
-#     "i": "id",
-#     "x": "exchange",
-#     "p": "price",
-#     "s": "size",
-#     "a": "cancel_error_action",
-#     "z": "tape",
-#     "t": "timestamp",
-# }
-
-# correction_mapping_v2 = {
-#     "S": "symbol",
-#     "x": "exchange",
-#     "oi": "original_id",
-#     "op": "original_price",
-#     "os": "original_size",
-#     "oc": "original_conditions",
-#     "ci": "corrected_id",
-#     "cp": "corrected_price",
-#     "cs": "corrected_size",
-#     "cc": "corrected_conditions",
-#     "z": "tape",
-#     "t": "timestamp",
-# }
-
-""" snapshot"""
-# snapshots = api.get_snapshots(['AAPL', 'IBM'])
-# snapshots['AAPL'].latest_trade.price
-
-# In [34]: vars(api.get_snapshot("SPY"))
-# Out[34]: 
-# {'latest_trade': TradeV2({   'c': [' ', 'M'],
-#      'i': 52983677401155,
-#      'p': 420.07,
-#      's': 2018694,
-#      't': '2022-03-12T01:00:00.00258816Z',
-#      'x': 'P',
-#      'z': 'B'}),
-#  'latest_quote': QuoteV2({   'ap': 419.95,
-#      'as': 245,
-#      'ax': 'P',
-#      'bp': 419.94,
-#      'bs': 19,
-#      'bx': 'P',
-#      'l': 419.91,
-#      'n': 56,
-#      'o': 419.92,
-#      't': '2022-03-12T00:59:00Z',
-#      'v': 2397,
-#      'vw': 419.929908}),
-#  'daily_bar': BarV2({   'c': 420.07,
-#      'h': 428.77,
-#      'l': 419.53,
-#      'n': 809145,
-#      'o': 428.18,
-#      't': '2022-03-11T05:00:00Z',
-#      'v': 90803923,
-#      'vw': 424.040193}),
-#  'prev_daily_bar': BarV2({   'c': 425.48,
-#      'h': 426.43,
-#      'l': 420.44,
-#      'n': 891241,
-#      'o': 422.73,
-#      't': '2022-03-10T05:00:00Z',
-#      'v': 91933914,
-#      'vw': 423.871044})}
-
-
-
-"""Order Return ref"""
-# Out[14]: 
-# Order({   'asset_class': 'us_equity',
-#     'asset_id': 'b28f4066-5c6d-479b-a2af-85dc1a8f16fb',
-#     'canceled_at': None,
-#     'client_order_id': '001',
-#     'created_at': '2022-02-08T16:20:07.813040847Z',
-#     'expired_at': None,
-#     'extended_hours': False,
-#     'failed_at': None,
-#     'filled_at': None,
-#     'filled_avg_price': None,
-#     'filled_qty': '0',
-#     'hwm': None,
-#     'id': '5dbcb543-956b-4eec-b9b8-fc768d517da9',
-#     'legs': None,
-#     'limit_price': '449.2',
-#     'notional': None,
-#     'order_class': '',
-#     'order_type': 'limit',
-#     'qty': '1',
-#     'replaced_at': None,
-#     'replaced_by': None,
-#     'replaces': None,
-#     'side': 'buy',
-#     'status': 'accepted',
-#     'stop_price': None,
-#     'submitted_at': '2022-02-08T16:20:07.812422547Z',
-#     'symbol': 'SPY',
-#     'time_in_force': 'gtc',
-#     'trail_percent': None,
-#     'trail_price': None,
-#     'type': 'limit',
-#     'updated_at': '2022-02-08T16:20:07.813040847Z'})
+def ReadPickleData(pickle_file): 
+    # for reading also binary mode is important 
+    dbfile = open(pickle_file, 'rb')      
+    db = pickle.load(dbfile) 
+    for keys in db: 
+        print(keys, '=>', db[keys]) 
+    dbfile.close()
