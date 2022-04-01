@@ -28,6 +28,7 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 import pytz
 import random
+from Hive_Utils import PickleData
 # from asyncio import loop
 
 load_dotenv()
@@ -49,7 +50,7 @@ ALPACA_API_KEY = os.environ.get('APCA_API_KEY_ID')
 ALPACA_SECRET_KEY = os.environ.get('APCA_API_SECRET_KEY')
 
 main_dict = {}
-dq = deque([], 30)  # fast way to handle running list
+dq = deque([], 100)  # fast way to handle running list
 
 
 def run_connection(conn):
@@ -70,10 +71,12 @@ def run_connection(conn):
 async def print_quote(q):
     # print('quote', q)
     dq.append(q)
+    pickle_file = os.path.join(db_root, 'now_tic.pkl')
+    PickleData(pickle_file, data_to_store={'now_tic': dq})
 
 
 async def quote_callback(q):
-    stream = pd.read_csv(os.path.join(db_root, '_stream.csv'), dtype=str, encoding='utf8', engine='python')
+    # stream = pd.read_csv(os.path.join(db_root, '_stream.csv'), dtype=str, encoding='utf8', engine='python')
     print('quote', q)
 
 

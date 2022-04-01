@@ -23,11 +23,10 @@ import random
 from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
+from collections import defaultdict
 
 
-
-
-est = pytz.timezone("US/Eastern")
+est = pytz.timezone("America/New_York")
 
 system = 'windows' #mac, windows
 load_dotenv()
@@ -89,6 +88,7 @@ end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 def return_bars(symbol, time, ndays, trading_days_df):
     try:
         s = datetime.datetime.now()
+        error_dict = {}
         # ndays = 0 # today 1=yesterday...  # TEST
         # time = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
         # symbol = 'SPY'  # TEST
@@ -97,22 +97,31 @@ def return_bars(symbol, time, ndays, trading_days_df):
         # trading_days_df = pd.DataFrame([day._raw for day in trading_days])  # TEST MOVED TO GLOBAL
         # est = pytz.timezone("US/Eastern") # GlovalVar
 
-        symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays)
-
-        # Fetch bars for those days
-        symbol_data = api.get_bars(symbol, time,
-                                    start=symbol_n_days.head(1).date,
-                                    end=symbol_n_days.tail(1).date, 
-                                    adjustment='all').df
-    
-
+        try:
+            # Fetch bars for those days
+            # s_fetch = datetime.datetime.now()
+            symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays)
+            symbol_data = api.get_bars(symbol, time,
+                                        start=symbol_n_days.head(1).date,
+                                        end=symbol_n_days.tail(1).date, 
+                                        adjustment='all').df
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[symbol] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[symbol] = e   
         symbol_data['index_timestamp'] = symbol_data.index
         symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
-        symbol_data['timestamp_est_timestamp'] = symbol_data['timestamp_est'].apply(lambda x: datetime.datetime.fromtimestamp(x.timestamp()))
-
+        # symbol_data['timestamp_est_timestamp'] = symbol_data['timestamp_est'].apply(lambda x: datetime.datetime.fromtimestamp(x.timestamp()))
+        del symbol_data['index_timestamp']
+        
         # set index to EST time
         symbol_data = symbol_data.reset_index()
-        symbol_data = symbol_data.set_index('timestamp_est') 
+        symbol_data = symbol_data.set_index('timestamp_est')
+        del symbol_data['timestamp']
 
         # Make two dataframes one with just market hour data the other with after hour data
         if "Day" in time:
@@ -126,7 +135,7 @@ def return_bars(symbol, time, ndays, trading_days_df):
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         # 0:00:00.310582: 2022-03-21 14:44 to return day 0
         # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
-        return [symbol_data, market_hours_data, after_hours_data]
+        return [True, symbol_data, market_hours_data, after_hours_data]
     # handle error
     except Exception as e:
         print("sending email of error", e)
@@ -138,29 +147,46 @@ def return_snapshots(ticker_list):
     """ The Following will convert get_snapshots into a dict"""
     snapshots = api.get_snapshots(ticker_list)
     # snapshots['AAPL'].latest_trade.price # FYI This also avhices same goal
-    
     return_dict = {}
-    for ticker in snapshots:
-        di = {ticker: {}}
-        token_dict = vars(snapshots[ticker])
-        for i in token_dict:
-            unpack_dict = vars(token_dict[i])
-            data = unpack_dict["_raw"] # raw data
-            dataname = unpack_dict["_reversed_mapping"] # data names
-            temp_dict = {i : {}} # revised dict with datanames
-            for k, v in dataname.items():
-                if v in data.keys():
-                    t = {}
-                    t[str(k)] = data[v]
-                    temp_dict[i].update(t)
-                    if v == 't':
-                        temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
-                        # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
-                        # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
-                di[ticker].update(temp_dict)
-        
-        return_dict.update(di)        
-    return return_dict
+
+    # handle errors
+    error_dict = {}
+    for i in snapshots:
+        if snapshots[i] == None:
+            error_dict[i] = None
+
+    try:    
+        for ticker in snapshots:
+            if ticker not in error_dict.keys():
+                    di = {ticker: {}}
+                    token_dict = vars(snapshots[ticker])
+                    temp_dict = {}
+                    # for k, v in token_dict.items():
+                    #     snapshots[ticker]
+
+
+                    for i in token_dict:
+                        unpack_dict = vars(token_dict[i])
+                        data = unpack_dict["_raw"] # raw data
+                        dataname = unpack_dict["_reversed_mapping"] # data names
+                        temp_dict = {i : {}} # revised dict with datanames
+                        for k, v in dataname.items():
+                            if v in data.keys():
+                                t = {}
+                                t[str(k)] = data[v]
+                                temp_dict[i].update(t)
+                                # if v == 't':
+                                #     temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
+                                #     # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
+                                #     # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
+                            di[ticker].update(temp_dict)                       
+                    return_dict.update(di)
+
+    except Exception as e:
+        print("logme", ticker, e)
+        error_dict[ticker] = "Failed To Unpack"
+
+    return [return_dict, error_dict]
 # data = return_snapshots(ticker_list=['SPY', 'AAPL'])
 
 
@@ -350,6 +376,7 @@ def get_ticker_statatistics(symbol):
 
 
 # NOT IN USE
+
 def return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None):
     # symbol = 'SPY'
     # start_date_iso = '2022-03-10 19:00' # 2 PM EST start_date_iso = '2022-03-10 14:30'
@@ -482,6 +509,19 @@ def convert_todatetime_string(date_string):
     return datetime.datetime.fromisoformat(date_string[:19])
 
 
+def convert_Todatetime_return_est_stringtime(date_string):
+    # In [94]: date_string
+    # Out[94]: '2022-03-11T19:41:50.649448Z'
+    # In [101]: date_string[:19]
+    # Out[101]: '2022-03-11T19:41:50'
+    d = datetime.datetime.fromisoformat(date_string[:19])
+    d = datetime.datetime.fromisoformat(v[:19])
+    j = d.replace(tzinfo=datetime.timezone.utc)
+    fmt = '%Y-%m-%dT%H:%M:%S'
+    est_date = j.astimezone(pytz.timezone('US/Eastern')).strftime(fmt)
+    return est_date
+
+
 def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     time = 1644523144856422000
     dt = datetime.datetime.utcfromtimestamp(digit_trc_time // 1000000000) # 9 zeros
@@ -489,8 +529,8 @@ def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     return dt
 
 
-def convert_datetime_toEST(datetimeobject):
-    out = datetime.datetime.fromisoformat(d).replace(tzinfo=timezone.utc).astimezone(ZoneInfo("America/New_York"))
+# def convert_datetime_toEST(datetimeobject):
+#     out = datetime.datetime.fromisoformat(d).replace(tzinfo=timezone.utc).astimezone(ZoneInfo("America/New_York"))
 
 
 def wait_for_market_open():
@@ -509,7 +549,7 @@ def PickleData(pickle_file, data_to_store):
     # initializing data to be stored in db
     p_timestamp = {'p_time': datetime.datetime.now()} 
     
-    if os.path.exists(os.path.join(os.getcwd(), 'examplePickle')) == False:
+    if os.path.exists(pickle_file) == False:
         print("init")
         db = {} 
         db['jp_timestamp'] = p_timestamp 
@@ -541,3 +581,14 @@ def ReadPickleData(pickle_file):
     for keys in db: 
         print(keys, '=>', db[keys]) 
     dbfile.close()
+
+
+def read_wiki_index():
+    table=pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+    df = table[0]
+    # sp500 = df['Symbol'].tolist()
+    # df.to_csv('S&P500-Info.csv')
+    # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
+    return df
+
+

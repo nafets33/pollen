@@ -1,3 +1,4 @@
+# QueenBee
 import logging
 from enum import Enum
 from symtable import Symbol
@@ -13,7 +14,7 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
-from Hive_Utils import return_api_keys, read_csv_db, refresh_account_info, return_bars, return_snapshots, init_index_ticker
+from Hive_Utils import return_api_keys, read_csv_db, refresh_account_info, return_bars, return_snapshots, init_index_ticker, convert_Todatetime_return_est_stringtime
 import sys
 import datetime
 from datetime import date, timedelta
@@ -25,6 +26,7 @@ import pickle
 from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
+from collections import defaultdict
 
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 
@@ -92,22 +94,15 @@ MidDayLag_Alloc = num[client_num_ST]
 DayRiskAlloc = 1 - (Long_Term_Client_Input + MidDayLag_Alloc)
 
 
-""" Return Tickers of SP500 & Nasdaq / Other Tickers"""
-
-client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG', 'VIX']
-LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
-BeeHunter = {
-    'LongX3': {'TQQQ': 'TQQQ', 'SPXL': 'SPXL'},
-    'ShortX3': {'SQQQ':'SQQQ', 'SPXU': 'SPXU'},
-    'Long':  {'SPY': 'SPY', 'QQQQ': 'QQQQ'}
-}
-
 index_list = [
     'DJA', 'DJI', 'DJT', 'DJUSCL', 'DJU',
     'NDX', 'IXIC', 'IXCO', 'INDS', 'INSR', 'OFIN', 'IXTC', 'TRAN', 'XMI', 
     'XAU', 'HGX', 'OSX', 'SOX', 'UTY',
     'OEX', 'MID', 'SPX',
     'SCOND', 'SCONS', 'SPN', 'SPF', 'SHLTH', 'SINDU', 'SINFT', 'SMATR', 'SREAS', 'SUTIL']
+
+
+get_bars_cols = ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'trade_count', 'vwap', 'index_timestamp', 'timestamp_est_timestamp']
 
 
 # Create DB folder if needed
@@ -118,23 +113,28 @@ if os.path.exists(index_ticker_db) == False:
     init_index_ticker(index_list, db_root, init=True)
 
 
-#LongTerm_symbols = ?Weight Each Symbol? or just you assests and filter on Market Cap & VOL SECTOR, EBITDA, Free Cash Flow
-
-"""Account Infomation """
-acc_info = 	refresh_account_info(api)
-
-# Main Alloc
-portvalue_LT_iniate = acc_info[1]['portfolio_value'] * Long_Term_Client_Input
-portvalue_MID_iniate = acc_info[1]['portfolio_value'] * MidDayLag_Alloc
-portvalue_BeeHunter_iniate = acc_info[1]['portfolio_value'] * DayRiskAlloc
+def return_timestamp_string():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S %p')
 
 
-# check alloc correct
-if round(portvalue_BeeHunter_iniate + portvalue_MID_iniate + portvalue_LT_iniate - acc_info[1]['portfolio_value'],4) > 1:
-    print("break in Rev Alloc")
-    sys.exit()
+def return_index_tickers(db_root, ext):
+    s = datetime.datetime.now()
+    ext = '.csv'
 
-
+    index_dict = {}
+    index_dir = os.path.join(db_root, 'index_tickers')
+    full_ticker_list = []
+    all_indexs = [i.split(".")[0] for i in os.listdir(index_dir)]
+    for i in all_indexs:
+        df = pd.read_csv(os.path.join(index_dir, i+ext), dtype=str, encoding='utf8', engine='python')
+        df = df.fillna('')
+        tics = df['symbol'].tolist()
+        for j in tics:
+            full_ticker_list.append(j)
+        index_dict[i] = df
+    
+    return [index_dict, list(set(full_ticker_list))]
+# index_ticker_db = return_index_tickers(db_root, ext='.csv')
 
 """TICKER Calculation Functions"""
 def append_MACD(df, fast, slow):
@@ -149,7 +149,7 @@ def return_VWAP(df):
     df = df.assign(
         vwap=df.eval(
             'wgtd = close * volume', inplace=False
-        ).groupby(df['timestamp']).cumsum().eval('wgtd / volume')
+        ).groupby(df['timestamp_est']).cumsum().eval('wgtd / volume')
     )
     return df
 
@@ -201,31 +201,271 @@ def return_RSI(df, length):
 
 
 """TICKER ChartData Functions"""
-def return_getbars_WithIndicators(symbol, time, ndays, trading_days_df=trading_days_df):
+
+def return_getbars_WithIndicators(bars_data, MACD):
     # time = '1Minute' #TEST
     # symbol = 'SPY' #TEST
+    # ndays = 1
+    # bars_data = return_bars(symbol, time, ndays, trading_days_df=trading_days_df)
 
-    s = datetime.datetime.now() #TEST
-    m = return_bars(symbol=symbol, time=time, ndays=ndays, trading_days_df=trading_days_df)
-    mk_hrs_data = m[1] # market hours data frame only (0 = all, 1=mk hours, 3=afterhours)
-    mk_hrs_data['vwap_original'] = mk_hrs_data['vwap']
-    # del mk_hrs_data['vwap']
-    df_vwap = return_VWAP(mk_hrs_data)
-    df_vwap_rsi_macd = return_RSI(df=df_vwap, length=14)
-    append_MACD(df_vwap_rsi_macd, fast=12, slow=16)
+    try:
+        s = datetime.datetime.now() #TEST
+        bars_data['vwap_original'] = bars_data['vwap']
+        # del mk_hrs_data['vwap']
+        df_vwap = return_VWAP(bars_data)
+        df_vwap_rsi_macd = return_RSI(df=df_vwap, length=14)
+        append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+        # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
+        return [True, df_vwap_rsi_macd]
+    except Exception as e:
+        # print("log error")
+            return [False, e]
+# bee = return_getbars_WithIndicators(bars_data=)
+
+
+def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with Indicator Data
+    # ticker_list = ['SPY', 'QQQ']
+    # chart_times = {"1Minute": 1, "5Minute": 5, "30Minute": 18, "1Hour": 48, "2Hour": 72, "1Day": 233}
+    # MACD={'fast': 16, 'slow': 29} 
+   
+    error_dict = {}
+    s = datetime.datetime.now()
+    dfs_index_tickers = {}
+    for ticker in tqdm(ticker_list):
+        for time_frames, ndays in chart_times.items(): # 1day: 250, 1minute: 0
+            try:
+                bars_data = return_bars(symbol=ticker, time=time_frames, ndays=ndays, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
+                df_bars_data = bars_data[2] # mkhrs if in minutes
+                df_bars_data = df_bars_data.reset_index()
+                if bars_data[0] == False:
+                    error_dict["NoData"] = bars_data[1] # symbol already included in value
+                else:
+                    name = ticker + "_" + time_frames
+                    dfs_index_tickers[name] = df_bars_data
+            except Exception as e:
+                print(e)
+                print(ticker, time_frames, ndays)
+    
     e = datetime.datetime.now()
-    # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-    # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
-    return df_vwap_rsi_macd
-# bee = return_getbars_WithIndicators(symbol="SPY", time="1Minute", ndays=1)
+    msg = {'function':'init_ticker_charts_data',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    print(msg)
+    # dfs_index_tickers['SPY_5Minute']
+    return [dfs_index_tickers, error_dict]
+# Return_Init_ChartData = init_ticker_charts_data(ticker_list=ticker_list, chart_times=chart_times)
 
 
-def Rebuild_bar_with_latest(symbols, df):
-    snapshot = return_snapshots(ticker_list=symbols)
+def Return_Snapshots_Rebuild(df_tickers_data):
+    ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
+    
+    snapshots = api.get_snapshots(ticker_list)
+
+    float_cols = ['close', 'high', 'open', 'low', 'vwap']
+    int_cols = ['volume', 'trade_count']
+    main_return_dict = {}
+
+    def response_returned(ticker_list):
+        return_dict = {}
+        for ticker in ticker_list:
+            dl = {
+            'close': snapshots[ticker].daily_bar.close,
+            'high': snapshots[ticker].daily_bar.high,
+            'low': snapshots[ticker].daily_bar.low,
+            'timestamp_est': snapshots[ticker].daily_bar.timestamp,
+            'open': snapshots[ticker].daily_bar.open,
+            'volume': snapshots[ticker].daily_bar.volume,
+            'trade_count': snapshots[ticker].daily_bar.trade_count,
+            'vwap': snapshots[ticker].daily_bar.vwap
+            }
+            df_daily = pd.Series(dl).to_frame().T  # reshape dataframe
+            for i in float_cols:
+                df_daily[i] = df_daily[i].apply(lambda x: float(x))
+            for i in int_cols:
+                df_daily[i] = df_daily[i].apply(lambda x: int(x))
+            df_daily = df_daily.rename(columns={'timestamp': 'timestamp_est'})
+            
+            return_dict[ticker + "_day"] = df_daily
+
+            d = {'close': snapshots[ticker].minute_bar.close,
+            'high': snapshots[ticker].minute_bar.high,
+            'low': snapshots[ticker].minute_bar.low,
+            'timestamp': snapshots[ticker].minute_bar.timestamp,
+            'open': snapshots[ticker].minute_bar.open,
+            'volume': snapshots[ticker].minute_bar.volume,
+            'trade_count': snapshots[ticker].minute_bar.trade_count,
+            'vwap': snapshots[ticker].minute_bar.vwap
+            }
+            df_minute = pd.Series(d).to_frame().T
+            for i in float_cols:
+                df_minute[i] = df_minute[i].apply(lambda x: float(x))
+            for i in int_cols:
+                df_minute[i] = df_minute[i].apply(lambda x: int(x))
+            df_minute = df_minute.rename(columns={'timestamp': 'timestamp_est'})
+
+            return_dict[ticker + "_minute"] = df_minute
+        
+        return return_dict
+    snapshot_ticker_data = response_returned(ticker_list)
+
+    for ticker, chartdata in df_tickers_data.items():
+        # ticker = "SPY_5Minute"
+        symbol_snapshots = {k:v for (k,v) in snapshot_ticker_data.items() if k.split("_")[0] == ticker.split("_")[0]}
+        symbol, timeframe = ticker.split("_")
+        if "Day" in timeframe:
+            df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}'] # stapshot df
+            df_rebuild = pd.concat([chartdata, df_day_snapshot]).reset_index() # concat minute
+            df_rebuild = df_rebuild.reset_index()
+            main_return_dict[ticker] = df_rebuild
+        if "Minute" in timeframe:
+            # chartdata = df_tickers_data["SPY_5Minute"]
+            df_minute_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
+            df_rebuild = pd.concat([chartdata, df_minute_snapshot]).reset_index() # concat minute
+            main_return_dict[ticker] = df_rebuild
+            # assert ensure df is solid (dtypes are correct)
+
+    return main_return_dict
+# beer = Return_Snapshots_Rebuild(df_tickers_data)
+
+    
+def Return_ChartData_Rebuild(df_tickers_data, chart_times):
+    df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data)
+    main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
+    for ticker_time, df_data in df_tickers_data_rebuilt.items():
+        df_data_new = return_getbars_WithIndicators(bars_data=df_data, MACD={'fast': 12, 'slow': 26})
+        if df_data_new[0] == True:
+            main_rebuild_dict[ticker_time] = df_data_new[1]
+    return main_rebuild_dict
+# PollenBee_Charts = Return_ChartData_Rebuild(ticker_list=main_index_tickers, chart_times=chart_times)
 
 
-def open_orders_bee_manager(orders):
+"""
+We All Shall prosper through the depths of our connected hearts,
+Not all will share my world,
+So I put forth my best mind of virtue and good 
+Always bee better
+"""
+if '_name_' == '_main_':
+    print("Buzz Buzz Where My Honey")
+    QUEEN = {} # The Queens Mind
+
+    s_mainbeetime = datetime.datetime.now()
+    #LongTerm_symbols = ?Weight Each Symbol? or just you assests and filter on Market Cap & VOL SECTOR, EBITDA, Free Cash Flow
+    """Account Infomation """
+    acc_info = refresh_account_info(api)
+    # Main Alloc
+    portvalue_LT_iniate = acc_info[1]['portfolio_value'] * Long_Term_Client_Input
+    portvalue_MID_iniate = acc_info[1]['portfolio_value'] * MidDayLag_Alloc
+    portvalue_BeeHunter_iniate = acc_info[1]['portfolio_value'] * DayRiskAlloc
+
+    # check alloc correct
+    if round(portvalue_BeeHunter_iniate + portvalue_MID_iniate + portvalue_LT_iniate - acc_info[1]['portfolio_value'],4) > 1:
+        print("break in Rev Alloc")
+        sys.exit()
+
+    """ Return Index Charts & Data for All Tickers Wanted"""
+    """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
+    # s = datetime.datetime.now()
+    all_alpaca_tickers = api.list_assets()
+    alpaca_symbols_dict = {}
+    for n, v in tqdm(enumerate(all_alpaca_tickers)):
+        if all_alpaca_tickers[n].status == 'active':
+            
+            alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
+
+    symbol_shortable_list = []
+    t = []
+    for ticker, v in alpaca_symbols_dict.items():
+        if v['_raw']['shortable'] == True:
+            symbol_shortable_list.append(ticker)
+        if v['_raw']['easy_to_borrow'] == True:
+            t.append(ticker)
+    
+    # alpaca_symbols_dict[list(alpaca_symbols_dict.keys())[100]]
+    # e = datetime.datetime.now()
+    # print(e-s) # 0:00:00.490031
+
+    market_exchanges_tickers = defaultdict(list)
+
+    for k, v in alpaca_symbols_dict.items():
+        market_exchanges_tickers[v['_raw']['exchange']].append(k)
+    # market_exchanges = ['OTC', 'NASDAQ', 'NYSE', 'ARCA', 'AMEX', 'BATS']
+
+    index_ticker_db = return_index_tickers(db_root, ext='.csv')
+    
+    main_index_dict = index_ticker_db[0]
+    main_symbols_full_list = index_ticker_db[1]
+    not_avail_in_alpaca =[i for i in main_symbols_full_list if i not in alpaca_symbols_dict]
+    main_symbols_full_list = [i for i in main_symbols_full_list if i in alpaca_symbols_dict]
+
+    client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG', 'VIX'] # Should be from CSV file OR UI List from app
+    LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
+    BeeHunter = {
+        'LongX3': {'TQQQ': 'TQQQ', 'SPXL': 'SPXL'},
+        'ShortX3': {'SQQQ':'SQQQ', 'SPXU': 'SPXU'},
+        'Long':  {'SPY': 'SPY', 'QQQQ': 'QQQQ'}
+    }
+    main_index_tickers = ['SPY', 'QQQ']
+    """ Return Index Charts & Data for All Tickers Wanted"""
+    """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
+    
+    """ Create Chart Data  BUZZ BUZZ """
+    chart_times = {
+        "1Minute": 1, "5Minute": 5, "30Minute": 18, 
+        "1Hour": 48, "2Hour": 72, 
+        "1Day": 250}
+    
+    
+    """ Tell Story of Main Tickers #  # Return Readable Information about Tickers and Indicators """
+    # >>> Initiate your Charts
+    df_tickers_data = Return_Init_ChartData(ticker_list=main_index_tickers, chart_times=chart_times)
+    errors = df_tickers_data[1]
+    if errors:
+        print("logme")
+    df_tickers_data = df_tickers_data[0]
+    # Initiate your Charts <<<
+    PollenBee_Charts = Return_ChartData_Rebuild(df_tickers_data=df_tickers_data, chart_times=chart_times)
+    """ >>># STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
+    
+    # >>> Continue to Rebuild ChartData
+    # >>> Buy Sell Weights 
+    
+    e_mainbeetime = datetime.datetime.now()
+    msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    print(msg)
+
+
+    # # >>> all tickers  # this should run as a night job and pickle the data to read for the morning?
+
+    # s= datetime.datetime.now()
+    # df = init_ticker_charts_data(ticker_list=main_symbols_full_list, chart_times={"1Day": 30}, MACD={'fast': 16, 'slow': 29})
+    # errs = df[1]
+    # main_ticker_chart_data = df[0]
+    # e=datetime.datetime.now()
+    # msg = {'function':'NA',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    # print(msg)  # 8-10mins to return 7700 tickers for 1Day 233 days -  5Min, 5days 
+
+    """# mark final times and return values"""
+    e_mainbeetime = datetime.datetime.now()
+    msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    print(msg)
+
+sys.exit()
+def open_orders_beeManager(orders):
+    
+    def order_pulse(time_in_trade):
+        decision = {}
+        time_in_trade = 4 # 3 Mins
+        return decision
+
     # order is open manage when trade will be closed
+    time_trade_horizion = # guage on when to trade out (i.e. critical mass for profits)
+    profit_take_block1 = .03 # % to sell
+    profit_take_block2 = .05 # % to sell
+    profit_take_ALL = # Full Position
+    exit_trade_block1 = .02 # % to sell
+    exit_trade_block2 = .02 # % to sell
+    exit_trade_ALL = # Full Position
     return True
 
 
@@ -247,31 +487,15 @@ def QueenBee(): # Order Management
     if open_orders: # based on indicators decide whether to close position
         open_orders_bee_manager(orders)
 
-
-
-"""Iniaite Ticker Charts with Indicators"""
-s = datetime.datetime.now()
-dfs_index_tickers = {}
-main_index_tickers = ['SPY', 'QQQ']
-chart_times = {"1Minute": 1, "5Minute": 5, "30Minute": 18, "1Hour": 48, "2Hour": 72, "1Day": 233}
-for ticker in main_index_tickers:
-    for time_frames, times in chart_times.items():
-        try:
-            bee = return_getbars_WithIndicators(symbol=ticker, time=time_frames, ndays=times)
-            name = ticker + "_" + time_frames
-            dfs_index_tickers[name] = bee
-        except Exception as e:
-            print(e)
-            print(ticker, time_frames, times)
-e = datetime.datetime.now()
-print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
-
-# Rebuild Current Bar for Each timeframe 1Min, 5Min, 30min, 1hr, 2hr, 1day
-spy_1min = dfs_index_tickers['SPY_5Minute']
-
 a = 0
 while True:
-    return_last_trade_price
+    def Rebuild_bar_with_latest(ticker_list, chart_times):
+        snapshots = api.get_snapshots(main_index_tickers)
+        # ['daily_bar', 'latest_quote', 'latest_trade', 'minute_bar', 'prev_daily_bar']
+        for tic in ticker_list:
+            main_tic = 
+            return_last_trade_price = snapshots[tic].latest_trade.price
+
     if last_trade_price_min - ticker_last_trade_price_min > 2:
         refresh(ticker_data)
     
@@ -280,19 +504,25 @@ while True:
     order_managment(ticker_obj_list)
 
 
+each historgram bump by N:Value increases BUY (when Critial Mass of Weights agree to buy, you buy an allocation per chart and each has its own timeframe)
+
+
 # return VIX
 
 
-def return_db(csv_name, symbol):
-    symbol = True
-    csv_name = "SPY_bars.csv"
-    symbol, filename = csv_name.split("_")
-    type='bars'
-    db = read_csv_db(db_root=(os.path.join((os.getcwd()), 'db')), type=type, symbol=symbol)
-    # symbol = 'SPY'
-    perMin = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
-    FiveperMin = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
-    tday = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
+
+
+
+# def return_db(csv_name, symbol):
+#     symbol = True
+#     csv_name = "SPY_bars.csv"
+#     symbol, filename = csv_name.split("_")
+#     type='bars'
+#     db = read_csv_db(db_root=(os.path.join((os.getcwd()), 'db')), type=type, symbol=symbol)
+#     # symbol = 'SPY'
+#     perMin = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Minute) # every second
+#     FiveperMin = tradeapi.TimeFrame(5, tradeapi.TimeFrameUnit.Minute) # every second
+#     tday = tradeapi.TimeFrame(1, tradeapi.TimeFrameUnit.Day) # every day
 
 
 
