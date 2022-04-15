@@ -1,3 +1,145 @@
+from ast import Break
+from math import floor
+from termcolor import colored as cl
+import matplotlib.pyplot as plt
+def get_macd(df_main, price, slow, fast, smooth):
+    exp1 = price.ewm(span = fast, adjust = False).mean()
+    exp2 = price.ewm(span = slow, adjust = False).mean()
+    macd = pd.DataFrame(exp1 - exp2).rename(columns = {'close':'macd'})
+    signal = pd.DataFrame(macd.ewm(span = smooth, adjust = False).mean()).rename(columns = {'macd':'signal'})
+    hist = pd.DataFrame(macd['macd'] - signal['signal']).rename(columns = {0:'hist'})
+    frames =  [macd, signal, hist]
+    df = pd.concat(frames, join = 'inner', axis = 1)
+    return pd.concat(df_main, df)
+    return df
+
+googl_macd = get_macd(googl['close'], 26, 12, 9)
+googl_macd.tail()
+
+
+def plot_macd(prices, macd, signal, hist):
+    ax1 = plt.subplot2grid((8,1), (0,0), rowspan = 5, colspan = 1)
+    ax2 = plt.subplot2grid((8,1), (5,0), rowspan = 3, colspan = 1)
+
+    ax1.plot(prices)
+    ax2.plot(macd, color = 'grey', linewidth = 1.5, label = 'MACD')
+    ax2.plot(signal, color = 'skyblue', linewidth = 1.5, label = 'SIGNAL')
+
+    for i in range(len(prices)):
+        if str(hist[i])[0] == '-':
+            ax2.bar(prices.index[i], hist[i], color = '#ef5350')
+        else:
+            ax2.bar(prices.index[i], hist[i], color = '#26a69a')
+
+    plt.legend(loc = 'lower right')
+    plt.show()
+
+# plot_macd(googl['close'], googl_macd['macd'], googl_macd['signal'], googl_macd['hist'])
+
+plot_macd(spy['close'], spy['MACD_12_26_9'], spy['MACDs_12_26_9'], spy['MACDh_12_26_9'])
+
+plot_macd(x['close'], x['MACD_12_26_9'], x['MACDs_12_26_9'], x['MACDh_12_26_9'])
+
+
+ax1 = plt.subplot2grid((8,1), (0,0), rowspan = 5, colspan = 1)
+ax2 = plt.subplot2grid((8,1), (5,0), rowspan = 3, colspan = 1)
+
+googl = spy
+ax1.plot(googl['close'], color = 'skyblue', linewidth = 2, label = 'GOOGL')
+ax1.plot(googl.index, buy_price, marker = '^', color = 'green', markersize = 10, label = 'BUY SIGNAL', linewidth = 0)
+ax1.plot(googl.index, sell_price, marker = 'v', color = 'r', markersize = 10, label = 'SELL SIGNAL', linewidth = 0)
+ax1.legend()
+ax1.set_title('GOOGL MACD SIGNALS')
+ax2.plot(googl_macd['macd'], color = 'grey', linewidth = 1.5, label = 'MACD')
+ax2.plot(googl_macd['signal'], color = 'skyblue', linewidth = 1.5, label = 'SIGNAL')
+
+for i in range(len(googl_macd)):
+    if str(googl_macd['hist'][i])[0] == '-':
+        ax2.bar(googl_macd.index[i], googl_macd['hist'][i], color = '#ef5350')
+    else:
+        ax2.bar(googl_macd.index[i], googl_macd['hist'][i], color = '#26a69a')
+        
+plt.legend(loc = 'lower right')
+plt.show()
+
+    exclude_conditions = [
+    'B',
+    'W',
+    '4',
+    '7',
+    '9',
+    'C',
+    'G',
+    'H',
+    'I',
+    'M',
+    'N',
+    'P',
+    'Q',
+    'R',
+    'T',
+    'U',
+    'V',
+    'Z'
+    ]
+
+def submit_best_limit_order(symbol, qty, side, client_order_id=False):
+    # side = 'buy'
+    # qty = '1'
+    # symbol = 'BABA'
+    snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
+    conditions = snapshot.latest_quote.conditions
+    while True:
+        print(conditions)
+        valid = [j for j in conditions if j in exclude_conditions]
+        if valid:
+            break
+        else:
+            snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
+            conditions = snapshot.latest_quote.conditions    
+    
+    # print(snapshot) 
+    last_trade = snapshot.latest_trade.price
+    ask = snapshot.latest_quote.ask_price
+    bid = snapshot.latest_quote.bid_price
+    maker_dif =  ask - bid
+    maker_delta = (maker_dif / ask) * 100
+    # check to ensure bid / ask not far
+    set_price = round(ask - (maker_dif / 2), 2)
+
+    if client_order_id:
+        order = api.submit_order(symbol=symbol, 
+                qty=qty, 
+                side=side, # buy, sell 
+                time_in_force='gtc', # 'day'
+                type='limit', # 'market'
+                limit_price=set_price,
+                client_order_id=client_order_id) # optional make sure it unique though to call later! 
+
+    else:
+        order = api.submit_order(symbol=symbol, 
+            qty=qty, 
+            side=side, # buy, sell 
+            time_in_force='gtc', # 'day'
+            type='limit', # 'market'
+            limit_price=set_price,)
+            # client_order_id='test1') # optional make sure it unique though to call later!
+    return order
+# order = submit_best_limit_order(symbol='BABA', qty=1, side='buy', client_order_id=False)
+
+def order_filled(client_order_id):
+    order_status = api.get_order_by_client_order_id(client_order_id=client_order_id)
+    filled_qty = order_status.filled_qty
+    order_status.status
+    order_status.filled_avg_price
+    while True:
+        if order_status.status == 'filled':
+            print("order fully filled")
+            break
+    return True
+
+order = submit_best_limit_order(symbol='BABA', qty=1, side='sell', client_order_id=client_order_id)
+
 
 In [84]: market_hours_data.columns
 Out[84]: 
@@ -133,7 +275,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
 bee = return_getbars_WithIndicators(bars_data=df_bars_data, MACD=MACD)
 if bee[0] == False:
     error_dict["Indicators"] = {ticker: bee[1]}
-else:
+else: a
     name = ticker + "_" + time_frames
     dfs_index_tickers[name] = bee[1]
 

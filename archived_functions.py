@@ -5,6 +5,22 @@
 # dtbp = 4 x prev_eod_excess_margin
 # prev_eod_excess_margin = prev_equity - prev_maintenance_margin
 # dtbp = 4 x (prev_equity - prev_maintenance_margin)
+        BETTY_bee[ticker_time] = {}
+        # 1. whats is tier?  >>> 2. how long since prv High/Low?
+        for mac_name in ['macd', 'signal', 'hist']:
+            ticker_time_tiers = CHARLIE_bee[ticker_time]
+            current_value = df_i[mac_name].iloc[-1] # df_i['macd'].iloc[-1]
+
+            if current_value < 0:
+                chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "RED" in k}
+            else:
+                chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "GREEN" in k}
+            
+            for tier_macname_sector, tier_range in chart_range.items():
+                if abs(current_value) <= abs(tier_range[0]) and abs(current_value) >= abs(tier_range[1]):
+                    BETTY_bee[ticker_time][mac_name] = {tier_macname_sector: tier_range, 'current_value': current_value}
+
+
 
 
 """ Return Tickers of SP500 & Nasdaq / Other Tickers"""

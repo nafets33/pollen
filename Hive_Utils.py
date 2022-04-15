@@ -46,6 +46,10 @@ api_key_id = os.environ.get('APCA_API_KEY_ID')
 api_secret = os.environ.get('APCA_API_SECRET_KEY')
 base_url = "https://api.alpaca.markets"
 
+exclude_conditions = [
+    'B','W','4','7','9','C','G','H','I','M','N',
+    'P','Q','R','T','U','V','Z'
+]
 
 def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
@@ -105,6 +109,14 @@ def return_bars(symbol, time, ndays, trading_days_df):
                                         start=symbol_n_days.head(1).date,
                                         end=symbol_n_days.tail(1).date, 
                                         adjustment='all').df
+            if ndays == 0:
+                symbol_n_days_2 = trading_days_df.query('date < @current_day').tail(1)
+                symbol_data_2 = api.get_bars(symbol, time,
+                                            start=symbol_n_days_2.head(1).date,
+                                            end=symbol_n_days_2.tail(1).date, 
+                                            adjustment='all').df
+                symbol_data = pd.concat([symbol_data_2, symbol_data], join='outer', axis=0)
+
             # e_fetch = datetime.datetime.now()
             # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
             if len(symbol_data) == 0:
@@ -113,6 +125,7 @@ def return_bars(symbol, time, ndays, trading_days_df):
         except Exception as e:
             # print(" log info")
             error_dict[symbol] = e   
+
         symbol_data['index_timestamp'] = symbol_data.index
         symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
         # symbol_data['timestamp_est_timestamp'] = symbol_data['timestamp_est'].apply(lambda x: datetime.datetime.fromtimestamp(x.timestamp()))
@@ -140,7 +153,6 @@ def return_bars(symbol, time, ndays, trading_days_df):
     except Exception as e:
         print("sending email of error", e)
 # r = return_bars(symbol='SPY', time='1Day', ndays=233, trading_days_df=trading_days_df)
-
 
 def return_snapshots(ticker_list):
     # ticker_list = ['SPY', 'AAPL'] # TEST
@@ -189,23 +201,78 @@ def return_snapshots(ticker_list):
     return [return_dict, error_dict]
 # data = return_snapshots(ticker_list=['SPY', 'AAPL'])
 
+def submit_best_limit_order(symbol, qty, side, client_order_id=False):
+    # side = 'buy'
+    # qty = '1'
+    # symbol = 'BABA'
+    snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
+    conditions = snapshot.latest_quote.conditions
+    while True:
+        print(conditions)
+        valid = [j for j in conditions if j in exclude_conditions]
+        if valid:
+            break
+        else:
+            snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
+            conditions = snapshot.latest_quote.conditions    
+    
+    # print(snapshot) 
+    last_trade = snapshot.latest_trade.price
+    ask = snapshot.latest_quote.ask_price
+    bid = snapshot.latest_quote.bid_price
+    maker_dif =  ask - bid
+    maker_delta = (maker_dif / ask) * 100
+    # check to ensure bid / ask not far
+    set_price = round(ask - (maker_dif / 2), 2)
+
+    if client_order_id:
+        order = api.submit_order(symbol=symbol, 
+                qty=qty, 
+                side=side, # buy, sell 
+                time_in_force='gtc', # 'day'
+                type='limit', # 'market'
+                limit_price=set_price,
+                client_order_id=client_order_id) # optional make sure it unique though to call later! 
+
+    else:
+        order = api.submit_order(symbol=symbol, 
+            qty=qty, 
+            side=side, # buy, sell 
+            time_in_force='gtc', # 'day'
+            type='limit', # 'market'
+            limit_price=set_price,)
+            # client_order_id='test1') # optional make sure it unique though to call later!
+    return order
+# order = submit_best_limit_order(symbol='BABA', qty=1, side='buy', client_order_id=False)
+
+def order_filled_completely(client_order_id):
+    order_status = api.get_order_by_client_order_id(client_order_id=client_order_id)
+    filled_qty = order_status.filled_qty
+    order_status.status
+    order_status.filled_avg_price
+    while True:
+        if order_status.status == 'filled':
+            print("order fully filled")
+            break
+    return True
+
 
 def submit_order(symbol, qty, side, type, limit_price, client_order_id, time_in_force, order_class=False, stop_loss=False, take_profit=False):
     
-    # order = api.submit_order(symbol='SPY', 
-    #         qty=1, 
-    #         side='buy', # buy, sell 
-    #         time_in_force='gtc', # 'day'
-    #         type='limit', # 'market'
-    #         limit_price=425.15, 
-    #         client_order_id='006') # optional make sure it unique though to call later!
-    # order = api.submit_order(symbol='AAPL', 
-    #         qty=1, 
-    #         side='buy', # buy, sell 
-    #         time_in_force='gtc', # 'day'
-    #         type='market', # 'market'
-    #         # limit_price=425.15, 
-    #         client_order_id='008') # optional make sure it unique though to call later!
+    order = api.submit_order(symbol='BABA', 
+            qty=1, 
+            side='buy', # buy, sell 
+            time_in_force='gtc', # 'day'
+            type='limit', # 'market'
+            limit_price=425.15, 
+            client_order_id='test1') # optional make sure it unique though to call later!
+    order = api.submit_order(symbol='BABA', 
+            qty=1, 
+            side='sell', # buy, sell 
+            time_in_force='gtc', # 'day'
+            type='market', # 'market'
+            # limit_price=425.15, 
+            client_order_id='test1') # optional make sure it unique though to call later!
 
     if type == 'market':
         order = api.submit_order(symbol=symbol,
@@ -376,6 +443,57 @@ def get_ticker_statatistics(symbol):
 
 
 # NOT IN USE
+def stream_tickers_23seconds(ticker_list):
+    ticker_list = ['IBM', 'AAPL']
+
+    # First get the current time
+    current_time = api.get_clock().timestamp
+    previous_30_sec = current_time - pd.Timedelta('30sec')
+
+    def has_condition(condition_list, condition_check):
+        if type(condition_list) is not list: 
+            # Assume none is a regular trade?
+            in_list = False
+        else:
+            # There are one or more conditions in the list
+            in_list = any(condition in condition_list for condition in condition_check)
+
+        return in_list
+
+    exclude_conditions = [
+    'B','W','4','7','9','C','G','H',
+    'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
+    ]
+
+    # Fetch trades for the 30 seconds before the current time
+    trades_df = api.get_trades(ticker_list,
+                                start=previous_30_sec.isoformat(),
+                                end=current_time.isoformat(), 
+                                limit=10000).df
+    # convert to market time for easier reading
+    trades_df = trades_df.tz_convert('America/New_York')
+
+    # add a column to easily identify the trades to exclude using our function from above
+    trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
+
+    # filter to only look at trades which aren't excluded
+    valid_trades = trades_df.query('not exclude')
+
+    # # Resample the valid trades to calculate the OHLCV bars
+    # agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': 'sum'}
+    # min_bars = valid_trades.resample('1T').agg(agg_functions)
+
+    # Resample the trades to calculate the OHLCV bars
+    agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
+
+    valid_trades = trades_df.query('not exclude')
+    min_bars = valid_trades.resample('1T').agg(agg_functions)
+
+    min_bars = min_bars.droplevel(0, 'columns')
+    min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+
+    return min_bars
+
 
 def return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None):
     # symbol = 'SPY'
@@ -547,40 +665,49 @@ def time_to_market_close():
 
 def PickleData(pickle_file, data_to_store): 
     # initializing data to be stored in db
-    p_timestamp = {'p_time': datetime.datetime.now()} 
-    
-    if os.path.exists(pickle_file) == False:
-        print("init")
-        db = {} 
-        db['jp_timestamp'] = p_timestamp 
-        dbfile = open(pickle_file, 'ab') 
-        pickle.dump(db, dbfile)                   
-        dbfile.close() 
+    try:
+        p_timestamp = {'file_creation': datetime.datetime.now()} 
+        
+        if os.path.exists(pickle_file) == False:
+            print("init")
+            db = {} 
+            db['jp_timestamp'] = p_timestamp 
+            dbfile = open(pickle_file, 'ab') 
+            pickle.dump(db, dbfile)                   
+            dbfile.close() 
 
-
-    data = data_to_store
-    if data:
-        print("WINNNER")
-        dbfile = open(pickle_file, 'rb+')      
-        db = pickle.load(dbfile)
-        dbfile.seek(0)
-        dbfile.truncate()
-        latest = data
-        db['latest'] = latest
-        print(db)
-        pickle.dump(db, dbfile)                   
-        dbfile.close()
-    
-    return True
+        if data_to_store:
+            p_timestamp = {'last_modified': datetime.datetime.now()}
+            dbfile = open(pickle_file, 'rb+')      
+            db = pickle.load(dbfile)
+            dbfile.seek(0)
+            dbfile.truncate()
+            for k, v in data_to_store.items(): 
+                db[k] = v
+            db['last_modified'] = p_timestamp 
+            # print(db)
+            pickle.dump(db, dbfile)                   
+            dbfile.close()
+        
+        return True
+    except Exception as e:
+        print("logme", e)
+        return False
 
 
 def ReadPickleData(pickle_file): 
     # for reading also binary mode is important 
-    dbfile = open(pickle_file, 'rb')      
-    db = pickle.load(dbfile) 
-    for keys in db: 
-        print(keys, '=>', db[keys]) 
-    dbfile.close()
+    try:
+        dbfile = open(pickle_file, 'rb')      
+        db = pickle.load(dbfile) 
+        # for keys in db: 
+        #     print(keys, '=>', db[keys])
+        dbfile.close()
+        return db
+        
+    except Exception as e:
+        print("logme", e)
+        return False
 
 
 def read_wiki_index():
@@ -592,3 +719,8 @@ def read_wiki_index():
     return df
 
 
+def append_MACD(df, fast, slow):
+    # fast=12
+    # slow=26
+    macd = df.ta.macd(close='close', fast=fast, slow=slow, append=True) 
+    return macd

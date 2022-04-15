@@ -152,10 +152,10 @@ TradeV2({   'c': [' ', 'F'],
 
 # check for submitted orders WEB Socket will return orders then get executed
 position = api.get_position('SPY') 
-spdn = api.get_position('SPDN')
+spdn = api.get_position('BABA')
 open_orders_list = api.list_orders(status='closed')
 open_orders_list = api.list_orders(status='open')
-https://alpaca.markets/docs/api-references/trading-api/orders/
+# REFERENCE FOR ALL FIELDS https://alpaca.markets/docs/api-references/trading-api/orders/
 
 
 
@@ -173,7 +173,7 @@ order2 = api.submit_order(symbol='SPY',
         ) # optional make sure it unique though to call later!
 
 
-api.get_assapi.get_order_by_client_order_id(client_order_id="001")
+api.get_order_by_client_order_id(client_order_id=client_order_id)
 
 replace = api.replace_order(qty=1, time_in_force='gtc', limit_price='14.71', order_id='98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
 
