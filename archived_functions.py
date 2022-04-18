@@ -1,6 +1,89 @@
 # archived_functions
 
 
+    def count_sequential_n_inList(df, item_list):
+        item_list = df['tier_macd'].to_list()
+        df_token = df['tier_macd'].copy()
+        # item_dict = dict(zip(df.index, df['tier_macd']))
+        # res_dict = {}
+        d = defaultdict(int)
+        res_list = []
+        # for i, el in item_dict.items():
+        #     if i == 0:
+        #         res_dict[i] = 0
+        #         d[el]+=1
+        #         res_list.append(d[el])
+        #         d[el]+=1
+        #     else:
+        #         seq_el = item_dict[i-1]
+        #         # seq_el = item_list[i-1]
+        #         if el == seq_el:
+        #             d[el]+=1
+        #             res_dict[i] = d[el]
+        #             res_list.append(d[el])
+        #         else:
+        #             d[el]=0
+        #             res_dict[i] = d[el]
+        #             res_list.append(d[el])
+        
+        for i, el in enumerate(item_list):
+            # ipdb.set_trace()
+            if i == 0:
+                res_list.append(d[el])
+                d[el]+=1
+            else:
+                seq_el = item_list[i-1]
+                if el == seq_el:
+                    d[el]+=1
+                    res_list.append(d[el])
+                else:
+                    d[el]=0
+                    res_list.append(d[el])
+        df2 = pd.DataFrame(res_list, columns=['seq_'+mac_name])
+        df_new = pd.concat([df, df2], axis=1)
+        return df_new
+
+        def tier_time_patterns(df, names):
+            # {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}
+            names = ['macd', 'signal', 'hist']
+            for name in names:
+                tier_name = f'tier_{name}' # tier_macd
+                item_list = df[tier_name].to_list()
+                res = count_sequential_n_inList(item_list)
+
+                tier_list = list(set(df[tier_name].to_list()))
+
+                
+                for tier in tier_list:
+                    if tier.lower().startswith('t'): # ensure tier
+                        df_tier = df[df[tier_name] == tier].copy()
+                        x = df_tier["timestamp_est"].to_list()
+
+
+
+# [0, 0, 0, 1, 2]                    
+
+
+        # how long since prv High/Low? 
+        # when was the last time you were in higest tier
+        # how many times have you reached tiers
+        # how long have you stayed in your tier?
+        # side of tier, are you closer to exit or enter of next tier?
+        macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
+        macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
+
+# this counts seq. Numbers and upates past numbers
+from itertools import count
+from collections import defaultdict
+
+c = defaultdict(count)
+x = df[tier_name].to_list()
+
+x = [2,3,4,2,2,2]
+
+[next(c[n]) for n in x ]
+
+
 # Day Trading Margin Requirements
 # dtbp = 4 x prev_eod_excess_margin
 # prev_eod_excess_margin = prev_equity - prev_maintenance_margin

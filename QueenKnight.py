@@ -1,6 +1,7 @@
 # QueenBee
 import logging
 from enum import Enum
+from signal import signal
 from symtable import Symbol
 import time
 import alpaca_trade_api as tradeapi
@@ -27,6 +28,7 @@ from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
+import ipdb
 
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 
@@ -375,7 +377,7 @@ def Return_ChartData_Story(PollenBee_Charts_dict):
 
     # >/ create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
     # >/ what current macd tier values in comparison to max/min
-
+    s = datetime.datetime.now()
     story = {}
 
     CHARLIE_bee = {}  # holds all ranges for ticker and passes info to BETTY_bee
@@ -395,7 +397,7 @@ def Return_ChartData_Story(PollenBee_Charts_dict):
         }
 
         # create tiers
-        for tier in range(1, macd_tier_range + 1): # Teirs of MinMax
+        for tier in range(1, macd_tier_range + 1): # Tiers of MinMax
             for mac_name in ['macd', 'signal', 'hist']:
                 divder_max = mac_world['{}_high'.format(mac_name)] / macd_tier_range
                 minvalue = mac_world['{}_low'.format(mac_name)]
@@ -424,7 +426,7 @@ def Return_ChartData_Story(PollenBee_Charts_dict):
         # BETTY_bee = {}  # 'SPY_1Minute': {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}    
         
         # Map in CHARLIE_bee tier 
-        def map_values_tier(value, ticker_time_tiers):
+        def map_values_tier(mac_name, value, ticker_time_tiers, tier_range_set_value=False): # map in tier name or tier range high low
             # ticker_time_tiers = CHARLIE_bee[ticker_time]
             if value < 0:
                 chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "RED" in k}
@@ -433,31 +435,124 @@ def Return_ChartData_Story(PollenBee_Charts_dict):
             
             for tier_macname_sector, tier_range in chart_range.items():
                 if abs(value) <= abs(tier_range[0]) and abs(value) >= abs(tier_range[1]):
-                    return tier_macname_sector
+                    if tier_range_set_value == 'high':
+                        return tier_range[0]
+                    elif tier_range_set_value == 'low':
+                        return tier_range[1]
+                    else:
+                        return tier_macname_sector
+        
         ticker_time_tiers = CHARLIE_bee[ticker_time]
-        df['tier_macd'] = df['macd'].apply(lambda x: map_values_tier(x, ticker_time_tiers))
-        df['tier_signal'] = df['signal'].apply(lambda x: map_values_tier(x, ticker_time_tiers))
-        df['tier_hist'] = df['hist'].apply(lambda x: map_values_tier(x, ticker_time_tiers))
-        
-        # how long since prv High/Low? 
-        # when was the last time you were in higest tier
-        # how many times have you reached tiers
-        macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
-        macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
+        df['tier_macd'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers))
+        df['tier_macd_range-high'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='high'))
+        df['tier_macd_range-low'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='low'))
+
+        df['tier_signal'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers))
+        df['tier_signal_range-high'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='high'))
+        df['tier_signal_range-low'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='low'))
+
+        df['tier_hist'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers))
+        df['tier_hist_range-high'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='high'))
+        df['tier_hist_range-low'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='low'))
+
+        # Add Seq columns of tiers, return [0,1,2,0,1,0,0,1,2,3,0] (how Long in Tier)
+        def count_sequential_n_inList(df, item_list):
+            # item_list = df['tier_macd'].to_list()
+            d = defaultdict(int)
+            res_list = []
+            for i, el in enumerate(item_list):
+                # ipdb.set_trace()
+                if i == 0:
+                    res_list.append(d[el])
+                    d[el]+=1
+                else:
+                    seq_el = item_list[i-1]
+                    if el == seq_el:
+                        d[el]+=1
+                        res_list.append(d[el])
+                    else:
+                        d[el]=0
+                        res_list.append(d[el])
+            df2 = pd.DataFrame(res_list, columns=['seq_'+mac_name])
+            df_new = pd.concat([df, df2], axis=1)
+            return df_new
+
+            def tier_time_patterns(df, names):
+                # {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}
+                names = ['macd', 'signal', 'hist']
+                for name in names:
+                    tier_name = f'tier_{name}' # tier_macd
+                    item_list = df[tier_name].to_list()
+                    res = count_sequential_n_inList(item_list)
+
+                    tier_list = list(set(df[tier_name].to_list()))
+
+                    
+                    for tier in tier_list:
+                        if tier.lower().startswith('t'): # ensure tier
+                            df_tier = df[df[tier_name] == tier].copy()
+                            x = df_tier["timestamp_est"].to_list()
 
 
-    
-    story = {'PollenBeeStory': BETTY_bee}
+
+    # [0, 0, 0, 1, 2]                    
+
+
+            # how long since prv High/Low? 
+            # when was the last time you were in higest tier
+            # how many times have you reached tiers
+            # how long have you stayed in your tier?
+            # side of tier, are you closer to exit or enter of next tier?
+            macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
+            macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
+        for mac_name in ['macd', 'signal', 'hist']:
+            df = count_sequential_n_inList(df=df, item_list=df['tier_'+mac_name].to_list())
+
+        def mark_macd_signal_cross(df): # Mark the signal macd crosses 
+            m=df['macd'].to_list()
+            s=df['signal'].to_list()
+            cross_list=[]
+            for i, macdvalue in enumerate(m):
+                if i != 0:
+                    prior_mac = m[i-1]
+                    prior_signal = s[i-1]
+                    now_mac = macdvalue
+                    now_signal = s[i]
+                    # ipdb.set_trace()
+                    if now_mac > now_signal and prior_mac <= prior_signal:
+                        cross_list.append('buy_cross')
+                    elif now_mac < now_signal and prior_mac >= prior_signal:
+                        cross_list.append('sell_cross')
+                    else:
+                        cross_list.append('hold')
+                else:
+                    cross_list.append('hold')
+            df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
+            df_new = pd.concat([df, df2], axis=1)
+            return df_new
+        df = mark_macd_signal_cross(df=df)
+
+        df['name'] = ticker_time
+        story[ticker_time] = df
+        # print(df['name'].iloc[-1], df['close'].iloc[-1], df['tier_macd'].iloc[-1], df['timestamp_est'].iloc[-1])
         
+        # add momentem ( when macd < signal & past 3 macds are > X Value or %)
+        
+        # when did macd and signal share same tier?
+        # OR When did macd and signal last cross macd < signal
+        # what is momentum of past intervals (3, 5, 8...)
+    story = {'PollenBeeStory': story}
+    e = datetime.datetime.now()
+    print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
     return story
 
 
 print(
 """
-We All Shall prosper through the depths of our connected hearts,
+We all shall prosper through the depths of our connected hearts,
 Not all will share my world,
-So I put forth my best mind of virtue and good 
-Always bee better
+So I put forth my best mind of virtue and goodness, 
+Always Bee Better
 """
 )
 
@@ -542,7 +637,7 @@ MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 
 """ Initiate your Charts with Indicators """
 # >>> Initiate your Charts
-df_tickers_data = Return_Init_ChartData(ticker_list=main_index_tickers, chart_times=chart_times)
+df_tickers_data = Return_Init_ChartData(ticker_list=client_symbols, chart_times=chart_times)
 errors = df_tickers_data[1]
 if errors:
     print("logme")
@@ -557,7 +652,7 @@ print(msg)
 
 # >>> Continue to Rebuild ChartData
 while True:
-    time.sleep(.33)
+    # time.sleep(.033)
     s = datetime.datetime.now()
     PollenBee_Charts = Return_ChartData_Rebuild(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
     PollenBee_Story = Return_ChartData_Story(PollenBee_Charts_dict=PollenBee_Charts['charts'])
@@ -565,12 +660,15 @@ while True:
     
     if PickleData(pickle_file=PB_Story_Pickle, data_to_store=PollenBee_Story) == False:
         print("Logme")
-    if PickleData(pickle_file=PB_Charts_Pickle, data_to_store=PollenBee_Charts['charts']) == False:
-        print("Logme")
+    # if PickleData(pickle_file=PB_Charts_Pickle, data_to_store=PollenBee_Charts['charts']) == False:
+    #     print("Logme")
     e = datetime.datetime.now()
-    print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
     r = ReadPickleData(pickle_file=PB_Story_Pickle)
-    print(r["last_modified"])
+    # r["PollenBeeStory"]["GOOG_1Day"].iloc[-1]
+    # print(r["last_modified"])
+    
+    print("bee END", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
+    time.sleep(3)
 
 # >>> Buy Sell Weights 
 

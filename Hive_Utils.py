@@ -442,6 +442,9 @@ def get_ticker_statatistics(symbol):
     return dataframes
 
 
+def timestamp_string():
+    return datetime.datetime.now().strftime("%m-%d-%Y %I.%M%p")
+
 # NOT IN USE
 def stream_tickers_23seconds(ticker_list):
     ticker_list = ['IBM', 'AAPL']
