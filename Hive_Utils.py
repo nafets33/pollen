@@ -89,12 +89,35 @@ start_date = datetime.datetime.now().strftime('%Y-%m-%d')
 end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
-def return_bars(symbol, time, ndays, trading_days_df):
+        # Add Seq columns of tiers, return [0,1,2,0,1,0,0,1,2,3,0] (how Long in Tier)
+def count_sequential_n_inList(df, item_list, name): # df['tier_macd'].to_list()
+    # item_list = df['tier_macd'].to_list()
+    d = defaultdict(int)
+    res_list = []
+    for i, el in enumerate(item_list):
+        # ipdb.set_trace()
+        if i == 0:
+            res_list.append(d[el])
+            d[el]+=1
+        else:
+            seq_el = item_list[i-1]
+            if el == seq_el:
+                d[el]+=1
+                res_list.append(d[el])
+            else:
+                d[el]=0
+                res_list.append(d[el])
+    df2 = pd.DataFrame(res_list, columns=['seq_'+name])
+    df_new = pd.concat([df, df2], axis=1)
+    return df_new
+
+
+def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False):
     try:
         s = datetime.datetime.now()
         error_dict = {}
         # ndays = 0 # today 1=yesterday...  # TEST
-        # time = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
+        # timeframe = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
         # symbol = 'SPY'  # TEST
         # current_day = api.get_clock().timestamp.date().isoformat()  # TEST MOVED TO GLOBAL
         # trading_days = api.get_calendar()  # TEST MOVED TO GLOBAL
@@ -102,20 +125,33 @@ def return_bars(symbol, time, ndays, trading_days_df):
         # est = pytz.timezone("US/Eastern") # GlovalVar
 
         try:
-            # Fetch bars for those days
+            # Fetch bars for prior ndays and then add on today
             # s_fetch = datetime.datetime.now()
-            symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays)
-            symbol_data = api.get_bars(symbol, time,
-                                        start=symbol_n_days.head(1).date,
-                                        end=symbol_n_days.tail(1).date, 
+            if edate_input != False:
+                end_date = edate_input
+            else:
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+            if sdate_input != False:
+                start_date = sdate_input
+            else:
+                if ndays == 0:
+                    start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                else:
+                    start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+
+            # symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays).tail(1)
+            symbol_data = api.get_bars(symbol, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
                                         adjustment='all').df
-            if ndays == 0:
-                symbol_n_days_2 = trading_days_df.query('date < @current_day').tail(1)
-                symbol_data_2 = api.get_bars(symbol, time,
-                                            start=symbol_n_days_2.head(1).date,
-                                            end=symbol_n_days_2.tail(1).date, 
-                                            adjustment='all').df
-                symbol_data = pd.concat([symbol_data_2, symbol_data], join='outer', axis=0)
+
+            # symbol_n_days_2 = trading_days_df.query('date < @current_day').tail(0) # Today THIS IS BLANK?
+            # symbol_data_2 = api.get_bars(symbol, time,
+            #                             start=symbol_n_days_2.head(1).date, # these are blank
+            #                             end=symbol_n_days_2.tail(1).date, # these are blank
+            #                             adjustment='all').df
+            # symbol_data = pd.concat([symbol_data_2, symbol_data], join='outer', axis=0)
 
             # e_fetch = datetime.datetime.now()
             # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
@@ -126,15 +162,16 @@ def return_bars(symbol, time, ndays, trading_days_df):
             # print(" log info")
             error_dict[symbol] = e   
 
+        # set index to EST time
         symbol_data['index_timestamp'] = symbol_data.index
         symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
-        # symbol_data['timestamp_est_timestamp'] = symbol_data['timestamp_est'].apply(lambda x: datetime.datetime.fromtimestamp(x.timestamp()))
         del symbol_data['index_timestamp']
-        
-        # set index to EST time
-        symbol_data = symbol_data.reset_index()
+        # symbol_data['timestamp'] = symbol_data['timestamp_est']
+        # symbol_data = symbol_data.reset_index()
         symbol_data = symbol_data.set_index('timestamp_est')
-        del symbol_data['timestamp']
+        # del symbol_data['timestamp']
+        # symbol_data['timestamp_est'] = symbol_data.index
+        symbol_data['symbol'] = symbol
 
         # Make two dataframes one with just market hour data the other with after hour data
         if "Day" in time:
@@ -142,7 +179,9 @@ def return_bars(symbol, time, ndays, trading_days_df):
             after_hours_data =  None
         else:
             market_hours_data = symbol_data.between_time('9:30', '16:00')
-            after_hours_data =  symbol_data.between_time('16:00', '9:30')           
+            market_hours_data = market_hours_data.reset_index()
+            after_hours_data =  symbol_data.between_time('16:00', '9:30')
+            after_hours_data = after_hours_data.reset_index()          
 
         e = datetime.datetime.now()
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
@@ -152,54 +191,116 @@ def return_bars(symbol, time, ndays, trading_days_df):
     # handle error
     except Exception as e:
         print("sending email of error", e)
-# r = return_bars(symbol='SPY', time='1Day', ndays=233, trading_days_df=trading_days_df)
+# r = return_bars(symbol='SPY', timeframe='1Minute', ndays=0, trading_days_df=trading_days_df)
 
-def return_snapshots(ticker_list):
-    # ticker_list = ['SPY', 'AAPL'] # TEST
-    """ The Following will convert get_snapshots into a dict"""
-    snapshots = api.get_snapshots(ticker_list)
-    # snapshots['AAPL'].latest_trade.price # FYI This also avhices same goal
-    return_dict = {}
+def return_bars_list(ticker_list, chart_times):
+    try:
+        s = datetime.datetime.now()
+        # ticker_list = ['SPY', 'QQQ']
+        # chart_times = {
+        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
+        #     "1Day_1Year": 250
+        #     }
+        return_dict = {}
+        error_dict = {}
 
-    # handle errors
-    error_dict = {}
-    for i in snapshots:
-        if snapshots[i] == None:
-            error_dict[i] = None
+        try:
+            for charttime, ndays in chart_times.items():
+                start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                symbol_data = api.get_bars(ticker_list, timeframe=charttime.split("_")[0],
+                                            start=start_date,
+                                            end=end_date,
+                                            adjustment='all').df
+                
+                # set index to EST time
+                symbol_data['index_timestamp'] = symbol_data.index
+                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+                del symbol_data['index_timestamp']
+                # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                symbol_data = symbol_data.reset_index(drop=True)
+                # symbol_data = symbol_data.set_index('timestamp')
+                # del symbol_data['timestamp']
+                # symbol_data['timestamp_est'] = symbol_data.index
+                return_dict[charttime] = symbol_data
 
-    try:    
-        for ticker in snapshots:
-            if ticker not in error_dict.keys():
-                    di = {ticker: {}}
-                    token_dict = vars(snapshots[ticker])
-                    temp_dict = {}
-                    # for k, v in token_dict.items():
-                    #     snapshots[ticker]
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[ticker_list] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[ticker_list] = e      
 
-
-                    for i in token_dict:
-                        unpack_dict = vars(token_dict[i])
-                        data = unpack_dict["_raw"] # raw data
-                        dataname = unpack_dict["_reversed_mapping"] # data names
-                        temp_dict = {i : {}} # revised dict with datanames
-                        for k, v in dataname.items():
-                            if v in data.keys():
-                                t = {}
-                                t[str(k)] = data[v]
-                                temp_dict[i].update(t)
-                                # if v == 't':
-                                #     temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
-                                #     # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
-                                #     # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
-                            di[ticker].update(temp_dict)                       
-                    return_dict.update(di)
-
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        return [True, return_dict]
+    # handle error
     except Exception as e:
-        print("logme", ticker, e)
-        error_dict[ticker] = "Failed To Unpack"
+        print("sending email of error", e)
+        return [False, e]
+# r = return_bars_list(ticker_list, chart_times)
 
-    return [return_dict, error_dict]
-# data = return_snapshots(ticker_list=['SPY', 'AAPL'])
+def rebuild_timeframe_bars(ticker_list, timedelta_input=False):
+    # ticker_list = ['IBM', 'AAPL', 'SPY', 'QQQQ']
+    try:
+        # First get the current time
+        current_time = api.get_clock().timestamp
+        current_sec = str(current_time.second)
+        if timedelta_input:
+            current_sec = timedelta_input 
+        previous_time = current_time - pd.Timedelta(f'{current_sec}{"sec"}')
+
+        def has_condition(condition_list, condition_check):
+            if type(condition_list) is not list: 
+                # Assume none is a regular trade?
+                in_list = False
+            else:
+                # There are one or more conditions in the list
+                in_list = any(condition in condition_list for condition in condition_check)
+
+            return in_list
+
+        exclude_conditions = [
+        'B','W','4','7','9','C','G','H',
+        'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
+        ]
+        # Fetch trades for the X seconds before the current time
+        trades_df = api.get_trades(ticker_list,
+                                    start=previous_time.isoformat(),
+                                    end=current_time.isoformat(), 
+                                    limit=50000).df
+        # convert to market time for easier reading
+        trades_df = trades_df.tz_convert('America/New_York')
+
+        # add a column to easily identify the trades to exclude using our function from above
+        trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
+
+        # filter to only look at trades which aren't excluded
+        valid_trades = trades_df.query('not exclude')
+        print(len(trades_df), len(valid_trades))
+        # x=trades_df['conditions'].to_list()
+        # y=[str(i) for i in x]
+        # print(set(y))
+
+        minbars_dict = {}
+        for ticker in ticker_list:
+            df = valid_trades[valid_trades['symbol']==ticker].copy()
+            # Resample the trades to calculate the OHLCV bars
+            agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
+            min_bars = df.resample('1T').agg(agg_functions)
+            min_bars = min_bars.droplevel(0, 'columns')
+            min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+            minbars_dict[ticker] = min_bars
+        return minbars_dict
+    except Exception as e:
+        print("rebuild_timeframe_bars", e)
+        return {}
+# r = rebuild_timeframe_bars(ticker_list)
 
 def submit_best_limit_order(symbol, qty, side, client_order_id=False):
     # side = 'buy'
@@ -207,14 +308,15 @@ def submit_best_limit_order(symbol, qty, side, client_order_id=False):
     # symbol = 'BABA'
     snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
     conditions = snapshot.latest_quote.conditions
+    c=0
     while True:
         print(conditions)
         valid = [j for j in conditions if j in exclude_conditions]
-        if valid:
+        if len(valid) == 0 or c > 10:
             break
         else:
             snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
-            conditions = snapshot.latest_quote.conditions    
+            c+=1   
     
     # print(snapshot) 
     last_trade = snapshot.latest_trade.price
@@ -446,56 +548,52 @@ def timestamp_string():
     return datetime.datetime.now().strftime("%m-%d-%Y %I.%M%p")
 
 # NOT IN USE
-def stream_tickers_23seconds(ticker_list):
-    ticker_list = ['IBM', 'AAPL']
+def return_snapshots(ticker_list):
+    # ticker_list = ['SPY', 'AAPL'] # TEST
+    """ The Following will convert get_snapshots into a dict"""
+    snapshots = api.get_snapshots(ticker_list)
+    # snapshots['AAPL'].latest_trade.price # FYI This also avhices same goal
+    return_dict = {}
 
-    # First get the current time
-    current_time = api.get_clock().timestamp
-    previous_30_sec = current_time - pd.Timedelta('30sec')
+    # handle errors
+    error_dict = {}
+    for i in snapshots:
+        if snapshots[i] == None:
+            error_dict[i] = None
 
-    def has_condition(condition_list, condition_check):
-        if type(condition_list) is not list: 
-            # Assume none is a regular trade?
-            in_list = False
-        else:
-            # There are one or more conditions in the list
-            in_list = any(condition in condition_list for condition in condition_check)
+    try:    
+        for ticker in snapshots:
+            if ticker not in error_dict.keys():
+                    di = {ticker: {}}
+                    token_dict = vars(snapshots[ticker])
+                    temp_dict = {}
+                    # for k, v in token_dict.items():
+                    #     snapshots[ticker]
 
-        return in_list
 
-    exclude_conditions = [
-    'B','W','4','7','9','C','G','H',
-    'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
-    ]
+                    for i in token_dict:
+                        unpack_dict = vars(token_dict[i])
+                        data = unpack_dict["_raw"] # raw data
+                        dataname = unpack_dict["_reversed_mapping"] # data names
+                        temp_dict = {i : {}} # revised dict with datanames
+                        for k, v in dataname.items():
+                            if v in data.keys():
+                                t = {}
+                                t[str(k)] = data[v]
+                                temp_dict[i].update(t)
+                                # if v == 't':
+                                #     temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
+                                #     # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
+                                #     # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
+                            di[ticker].update(temp_dict)                       
+                    return_dict.update(di)
 
-    # Fetch trades for the 30 seconds before the current time
-    trades_df = api.get_trades(ticker_list,
-                                start=previous_30_sec.isoformat(),
-                                end=current_time.isoformat(), 
-                                limit=10000).df
-    # convert to market time for easier reading
-    trades_df = trades_df.tz_convert('America/New_York')
+    except Exception as e:
+        print("logme", ticker, e)
+        error_dict[ticker] = "Failed To Unpack"
 
-    # add a column to easily identify the trades to exclude using our function from above
-    trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
-
-    # filter to only look at trades which aren't excluded
-    valid_trades = trades_df.query('not exclude')
-
-    # # Resample the valid trades to calculate the OHLCV bars
-    # agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': 'sum'}
-    # min_bars = valid_trades.resample('1T').agg(agg_functions)
-
-    # Resample the trades to calculate the OHLCV bars
-    agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
-
-    valid_trades = trades_df.query('not exclude')
-    min_bars = valid_trades.resample('1T').agg(agg_functions)
-
-    min_bars = min_bars.droplevel(0, 'columns')
-    min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
-
-    return min_bars
+    return [return_dict, error_dict]
+# data = return_snapshots(ticker_list=['SPY', 'AAPL'])
 
 
 def return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None):

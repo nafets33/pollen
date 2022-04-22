@@ -1,6 +1,67 @@
 # archived_functions
 
 
+def Return_Bars_list_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
+    # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
+    # ticker_time = "SPY_1Minute_1Day"
+
+    ticker, time_name, days = ticker_time.split("_")
+    error_dict = {}
+    s = datetime.datetime.now()
+    dfs_index_tickers = {}
+    try:
+        # return market hours data from bars
+        bars_data = return_bars(symbol=ticker, time=time_name, ndays=0, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
+        df_bars_data = bars_data[2] # mkhrs if in minutes
+        df_bars_data = df_bars_data.reset_index()
+        if bars_data[0] == False:
+            error_dict["NoData"] = bars_data[1] # symbol already included in value
+        else:
+            dfs_index_tickers[ticker_time] = df_bars_data
+    except Exception as e:
+        print(ticker_time, e)
+    
+    e = datetime.datetime.now()
+    msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    # print(msg)
+    # dfs_index_tickers['SPY_5Minute']
+    return [dfs_index_tickers, error_dict, msg]
+# Return_Bars_LatestDayRebuild(ticker_time)
+
+
+def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with Indicator Data
+    # ticker_list = ['SPY', 'QQQ']
+    # chart_times = {"1Minute": 1, "5Minute": 5, "30Minute": 18, "1Hour": 48, "2Hour": 72, "1Day": 233}
+    # MACD={'fast': 16, 'slow': 29} 
+   
+    error_dict = {}
+    s = datetime.datetime.now()
+    dfs_index_tickers = {}
+    for ticker in tqdm(ticker_list):
+        for time_frames, ndays in chart_times.items(): # 1day: 250, 1minute: 0
+            try:
+                bars_data = return_bars(symbol=ticker, time=time_frames, ndays=ndays, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
+                df_bars_data = bars_data[2] # mkhrs if in minutes
+                df_bars_data = df_bars_data.reset_index()
+                if bars_data[0] == False:
+                    error_dict["NoData"] = bars_data[1] # symbol already included in value
+                else:
+                    name = ticker + "_" + time_frames
+                    dfs_index_tickers[name] = df_bars_data
+            except Exception as e:
+                print(e)
+                print(ticker, time_frames, ndays)
+    
+    e = datetime.datetime.now()
+    msg = {'function':'init_ticker_charts_data',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    print(msg)
+    # dfs_index_tickers['SPY_5Minute']
+    return [dfs_index_tickers, error_dict]
+# Return_Init_ChartData = init_ticker_charts_data(ticker_list=ticker_list, chart_times=chart_times)
+
+
+
+
     def count_sequential_n_inList(df, item_list):
         item_list = df['tier_macd'].to_list()
         df_token = df['tier_macd'].copy()
