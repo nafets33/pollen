@@ -29,14 +29,19 @@ from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
 import ipdb
+import tempfile
+import shutil
+
+# trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 
 prod = True
-# trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 
 pd.options.mode.chained_assignment = None
 
 client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG'] # Should be from CSV file OR UI List from app
-client_symbols = ['SPY', 'QQQ']
+client_symbols = ['SPY']
+
+init_chart_fields = ['timestamp_est', 'open', 'high', 'low', 'close', 'volume', 'trade_count', 'vwap' 'symbol']
 
 est = pytz.timezone("US/Eastern")
 
@@ -74,12 +79,13 @@ rest_paper = keys_paper[0]['rest']
 api_paper = keys_paper[0]['api']
 
 """# Dates """
-current_day = api.get_clock().timestamp.date().isoformat()
+# current_day = api.get_clock().timestamp.date().isoformat()
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 
-start_date = datetime.datetime.now().strftime('%Y-%m-%d')
-end_date = datetime.datetime.now().strftime('%Y-%m-%d')
+current_day = datetime.datetime.now().day
+current_month = datetime.datetime.now().month
+current_year = datetime.datetime.now().year
 
 # misc
 exclude_conditions = [
@@ -119,9 +125,12 @@ if os.path.exists(index_ticker_db) == False:
     print("Ticker Index db Initiated")
     init_index_ticker(index_list, db_root, init=True)
 
+# init files needed
+
 PB_Story_Pickle = os.path.join(db_root, 'PollenBeeStory.pkl')
 PB_Charts_Pickle = os.path.join(db_root, 'PollenBeeCharts.pkl')
-
+if os.path.exists(PB_Story_Pickle):
+    os.remove(PB_Story_Pickle)
 
 
 #### ALL FUNCTIONS NECTOR ####
@@ -220,9 +229,12 @@ def return_RSI(df, length):
 
     return df
 
+
 def print_line_of_error():
     exc_type, exc_obj, exc_tb = sys.exc_info()
     print(exc_type, exc_tb.tb_lineno)
+
+
 
 """TICKER ChartData Functions"""
 
@@ -256,7 +268,9 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
     #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
     #     "1Day_1Year": 250}
-   
+
+    msg = {'function':'Return_Init_ChartData','datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    print(msg)
     error_dict = {}
     s = datetime.datetime.now()
     dfs_index_tickers = {}
@@ -288,13 +302,13 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
     # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
     # ticker_time = "SPY_1Minute_1Day"
 
-    ticker, time_name, days = ticker_time.split("_")
+    ticker, timeframe, days = ticker_time.split("_")
     error_dict = {}
     s = datetime.datetime.now()
     dfs_index_tickers = {}
     try:
         # return market hours data from bars
-        bars_data = return_bars(symbol=ticker, timeframe=time_name, ndays=0, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
+        bars_data = return_bars(symbol=ticker, timeframe=timeframe, ndays=0, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
         df_bars_data = bars_data[2] # mkhrs if in minutes
         # df_bars_data = df_bars_data.reset_index()
         if bars_data[0] == False:
@@ -312,7 +326,7 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
 # Return_Bars_LatestDayRebuild(ticker_time)
 
 
-def Return_Snapshots_Rebuild(df_tickers_data): # from snapshots & consider using day.min.chart to rebuild other timeframes
+def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & consider using day.min.chart to rebuild other timeframes
     ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
 
     snapshots = api.get_snapshots(ticker_list)
@@ -337,6 +351,11 @@ def Return_Snapshots_Rebuild(df_tickers_data): # from snapshots & consider using
     int_cols = ['volume', 'trade_count']
     main_return_dict = {}
     min_bars_dict = rebuild_timeframe_bars(ticker_list)
+    if min_bars_dict['resp'] == False:
+        print("Min Bars Error", min_bars_dict)
+        min_bars_dict = {k:{} for k in ticker_list}
+    else:
+        min_bars_dict = min_bars_dict['resp']
 
     def response_returned(ticker_list):
         return_dict = {}
@@ -361,26 +380,26 @@ def Return_Snapshots_Rebuild(df_tickers_data): # from snapshots & consider using
             return_dict[ticker + "_day"] = df_daily
             
             if len(min_bars_dict[ticker]) != 0:
-                d = {'close': min_bars_dict[ticker].close,
-                'high': min_bars_dict[ticker].high,
-                'low': min_bars_dict[ticker].low,
-                'timestamp_est': min_bars_dict[ticker].timestamp_est,
-                'open': min_bars_dict[ticker].open,
-                'volume': min_bars_dict[ticker].volume,
-                'trade_count': min_bars_dict[ticker].trade_count,
+                d = {'close': min_bars_dict[ticker].close.iloc[-1],
+                'high': min_bars_dict[ticker].high.iloc[-1],
+                'low': min_bars_dict[ticker].low.iloc[-1],
+                'timestamp_est': min_bars_dict[ticker].timestamp_est.iloc[-1],
+                'open': min_bars_dict[ticker].open.iloc[-1],
+                'volume': min_bars_dict[ticker].volume.iloc[-1],
+                'trade_count': min_bars_dict[ticker].trade_count.iloc[-1],
                 'vwap': 0, #snapshots[ticker].latest_trade.vwap
                 }
             else:
                 print("Min Bar Not returned (AFTERHRS)")
                 d = {
-                'close': snapshots[ticker].minute_bar.close,
-                'high': snapshots[ticker].minute_bar.high,
-                'low': snapshots[ticker].minute_bar.low,
-                'timestamp_est': snapshots[ticker].minute_bar.timestamp,
-                'open': snapshots[ticker].minute_bar.open,
-                'volume': snapshots[ticker].minute_bar.volume,
-                'trade_count': snapshots[ticker].minute_bar.trade_count,
-                'vwap': snapshots[ticker].minute_bar.vwap
+                'close': snapshots[ticker].latest_trade.price,
+                'high': 0, # snapshots[ticker].minute_bar.high,
+                'low': 0, # snapshots[ticker].minute_bar.low,
+                'timestamp_est': snapshots[ticker].latest_trade.timestamp,
+                'open': 0, # snapshots[ticker].minute_bar.open,
+                'volume': 0, # snapshots[ticker].minute_bar.volume,
+                'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
+                'vwap': 0, # snapshots[ticker].minute_bar.vwap
                 }
             df_minute = pd.Series(d).to_frame().T
             for i in float_cols:
@@ -401,28 +420,19 @@ def Return_Snapshots_Rebuild(df_tickers_data): # from snapshots & consider using
         if "day" in timeframe.lower():
             df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}'] # stapshot df
             df_day_snapshot['symbol'] = symbol
-            # df_day_snapshot = df_day_snapshot.set_index('timestamp')
-            # df_day_snapshot['timestamp_est'] = df_day_snapshot.index
-            df = df.head(-1) # drop last row which has current day
-            df_rebuild = pd.concat([df, df_day_snapshot], join='outer', axis=0).reset_index() # concat minute
-            main_return_dict[ticker_time] = df_rebuild
-        elif "1minute" in timeframe.lower():
-            df_minute_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
-            df_minute_snapshot['symbol'] = symbol
-            # df_minute_snapshot = df_minute_snapshot.set_index('timestamp')
-            # df_minute_snapshot['timestamp_est'] = df_minute_snapshot.index
-            df_rebuild = pd.concat([df, df_minute_snapshot], join='outer', axis=0).reset_index() # concat minute
+            df = df.head(-1) # drop last row which has current day / added minute
+            df_rebuild = pd.concat([df, df_day_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
             main_return_dict[ticker_time] = df_rebuild
         else:
-            # df = df_tickers_data["SPY_5Minute"]
-            df_minute_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
-            df_minute_snapshot['symbol'] = symbol
-            # df_minute_snapshot = df_minute_snapshot.set_index('timestamp')
-            # df_minute_snapshot['timestamp_est'] = df_minute_snapshot.index
-            df_rebuild = pd.concat([df, df_minute_snapshot], join='outer', axis=0).reset_index() # concat minute
-            main_return_dict[ticker_time] = df_rebuild
-            # assert ensure df is solid (dtypes are correct)
-            # ipdb.set_trace()
+            df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
+            df_snapshot['symbol'] = symbol
+            if init:
+                df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
+                main_return_dict[ticker_time] = df_rebuild
+            else:
+                df = df.head(-1) # drop last row which has current day
+                df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
+                main_return_dict[ticker_time] = df_rebuild
 
     return main_return_dict
 
@@ -432,131 +442,124 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
     return_dict = {}
     rebuild_confirmation = {}
     for ticker_time, df in df_tickers_data.items():
-        ticker, time, days = ticker_time.split("_")
-        # ipdb.set_trace()
+        ticker, timeframe, days = ticker_time.split("_")
+        last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
+        now = datetime.datetime.now()
+        timedelta_minutes = (now - last).seconds / 60
+        now_day = now.day
+        last_day = last.day
+        if now_day != last_day:
+            return_dict[ticker_time] = df
+            continue
 
-        if "1minute" == time.lower():
-            if api.get_clock().timestamp.day != df['timestamp_est'].iloc[-2].day:
-                return_dict[ticker_time] = df
+        if "1minute" == timeframe.lower():
+            if timedelta_minutes > 2:
+                dfn = Return_Bars_LatestDayRebuild(ticker_time)
+                if len(dfn[1]) == 0:
+                    df_latest = dfn[0][ticker_time]
+                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df_replace = df[df['timetag']!= 'tag'].copy()
+                    del df_replace['timetag']
+                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
+                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
+                    return_dict[ticker_time] = df_return_me
+                    rebuild_confirmation[ticker_time] = "rebuild"
             else:
-                last = df['timestamp_est'].iloc[-2]
-                now = api.get_clock().timestamp
-                timedelta_minutes = (now - last).seconds / 60
-                if timedelta_minutes > 1:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                    if len(dfn[1]) == 0:
-                        replace_times = dfn[0][ticker_time]['timestamp_est'].to_list()
-                        df_replace = df[~df['timestamp_est'].isin(replace_times)].copy()
-                        df_return = pd.concat([df_replace, dfn[0][ticker_time]], join='outer', axis=0)
-                        return_dict[ticker_time] = df_return
-                        rebuild_confirmation[ticker_time] = "rebuild"
-
-                else:
-                    return_dict[ticker_time] = df
-
-        elif "5minute" == time.lower():
-            if api.get_clock().timestamp.day != df['timestamp_est'].iloc[-2].day:
                 return_dict[ticker_time] = df
-            else:
-                last = df['timestamp_est'].iloc[-2]
-                now = api.get_clock().timestamp
-                timedelta_minutes = (now - last).seconds / 60
-                if timedelta_minutes > 5:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                    if len(dfn[1]) == 0:
-                        replace_times = dfn[0][ticker_time]['timestamp_est'].to_list()
-                        df_replace = df[~df['timestamp_est'].isin(replace_times)].copy()
-                        df_return = pd.concat([df_replace, dfn[0][ticker_time]], join='outer', axis=0)
-                        return_dict[ticker_time] = df_return
-                        rebuild_confirmation[ticker_time] = "rebuild"
 
-                else:
-                    return_dict[ticker_time] = df
+        elif "5minute" == timeframe.lower():
+            if timedelta_minutes > 5:
+                dfn = Return_Bars_LatestDayRebuild(ticker_time)
+                if len(dfn[1]) == 0:
+                    df_latest = dfn[0][ticker_time]
+                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df_replace = df[df['timetag']!= 'tag'].copy()
+                    del df_replace['timetag']
+                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
+                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
+                    return_dict[ticker_time] = df_return_me
+                    rebuild_confirmation[ticker_time] = "rebuild"
+            else:
+                return_dict[ticker_time] = df
         
-        elif "30minute" == time.lower():
-            if api.get_clock().timestamp.day != df['timestamp_est'].iloc[-2].day:
-                return_dict[ticker_time] = df
+        elif "30minute" == timeframe.lower():
+            if timedelta_minutes > 30:
+                dfn = Return_Bars_LatestDayRebuild(ticker_time)
+                if len(dfn[1]) == 0:
+                    df_latest = dfn[0][ticker_time]
+                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df_replace = df[df['timetag']!= 'tag'].copy()
+                    del df_replace['timetag']
+                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
+                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
+                    return_dict[ticker_time] = df_return_me
+                    rebuild_confirmation[ticker_time] = "rebuild"
             else:
-                last = df['timestamp_est'].iloc[-2]
-                now = api.get_clock().timestamp
-                timedelta_minutes = (now - last).seconds / 60
-                if timedelta_minutes > 30:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                    if len(dfn[1]) == 0:
-                        replace_times = dfn[0][ticker_time]['timestamp_est'].to_list()
-                        df_replace = df[~df['timestamp_est'].isin(replace_times)].copy()
-                        df_return = pd.concat([df_replace, dfn[0][ticker_time]], join='outer', axis=0)
-                        return_dict[ticker_time] = df_return
-                        rebuild_confirmation[ticker_time] = "rebuild"
-
-                else:
-                    return_dict[ticker_time] = df
-
-        elif "1hour" == time.lower():
-            if api.get_clock().timestamp.day != df['timestamp_est'].iloc[-2].day:
                 return_dict[ticker_time] = df
+
+        elif "1hour" == timeframe.lower():
+            if timedelta_minutes > 60:
+                dfn = Return_Bars_LatestDayRebuild(ticker_time)
+                if len(dfn[1]) == 0:
+                    df_latest = dfn[0][ticker_time]
+                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df_replace = df[df['timetag']!= 'tag'].copy()
+                    del df_replace['timetag']
+                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
+                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
+                    return_dict[ticker_time] = df_return_me
+                    rebuild_confirmation[ticker_time] = "rebuild"
             else:
-                last = df['timestamp_est'].iloc[-2]
-                now = api.get_clock().timestamp
-                timedelta_minutes = (now - last).seconds / 60
-                if timedelta_minutes > 60:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                    if len(dfn[1]) == 0:
-                        replace_times = dfn[0][ticker_time]['timestamp_est'].to_list()
-                        df_replace = df[~df['timestamp_est'].isin(replace_times)].copy()
-                        df_return = pd.concat([df_replace, dfn[0][ticker_time]], join='outer', axis=0)
-                        return_dict[ticker_time] = df_return
-                        rebuild_confirmation[ticker_time] = "rebuild"
-
-                else:
-                    return_dict[ticker_time] = df
-
-        elif "2hour" == time.lower():
-            if api.get_clock().timestamp.day != df['timestamp_est'].iloc[-2].day:
                 return_dict[ticker_time] = df
-            else:
-                last = df['timestamp_est'].iloc[-2]
-                now = api.get_clock().timestamp
-                timedelta_minutes = (now - last).seconds / 60
-                if timedelta_minutes > 120:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                    if len(dfn[1]) == 0:
-                        replace_times = dfn[0][ticker_time]['timestamp_est'].to_list()
-                        df_replace = df[~df['timestamp_est'].isin(replace_times)].copy()
-                        df_return = pd.concat([df_replace, dfn[0][ticker_time]], join='outer', axis=0)
-                        return_dict[ticker_time] = df_return
-                        rebuild_confirmation[ticker_time] = "rebuild"
 
-                else:
-                    return_dict[ticker_time] = df
+        elif "2hour" == timeframe.lower():
+            if timedelta_minutes > 120:
+                dfn = Return_Bars_LatestDayRebuild(ticker_time)
+                if len(dfn[1]) == 0:
+                    df_latest = dfn[0][ticker_time]
+                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df_replace = df[df['timetag']!= 'tag'].copy()
+                    del df_replace['timetag']
+                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
+                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
+                    return_dict[ticker_time] = df_return_me
+                    rebuild_confirmation[ticker_time] = "rebuild"
+            else:
+                return_dict[ticker_time] = df
 
         else:
             return_dict[ticker_time] = df
+    
+    # add back in snapshot init
     return {"ticker_time": return_dict, "rebuild_confirmation": rebuild_confirmation}
 
 
 def pollen_hunt(df_tickers_data, MACD):
     # Check to see if any charts need to be Recreate as times lapsed
     df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-    print(df_tickers_data_rebuilt['rebuild_confirmation'].keys())
+    if len(df_tickers_data_rebuilt['rebuild_confirmation'].keys()) > 0:
+        print(df_tickers_data_rebuilt['rebuild_confirmation'].keys())
     
     # re-add snapshot
     df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
     
     main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
+    chart_rebuild_dict = {}
     for ticker_time, bars_data in df_tickers_data_rebuilt.items():
+        chart_rebuild_dict[ticker_time] = bars_data
         df_data_new = return_getbars_WithIndicators(bars_data=bars_data, MACD=MACD)
         if df_data_new[0] == True:
             main_rebuild_dict[ticker_time] = df_data_new[1]
         else:
             print("error", ticker_time)
     
-    QUEEN['pollencharts'] = main_rebuild_dict
-    return {'charts': main_rebuild_dict}  # {SPY_1Minute: df}
+    QUEEN['pollencharts'] = chart_rebuild_dict
+    QUEEN['pollencharts_nectar'] = main_rebuild_dict
+    return {'pollencharts_nector': main_rebuild_dict}
 # PollenBee_Charts = pollen_hunt(ticker_list=main_index_tickers)
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
-def pollen_story(chart_dict):
+def pollen_story(pollen_nectar):
     # where is max and depending on which time consider different weights of buy...
     # define weights in global and do multiple weights for different scenarios..
     # 1. 1 Month Leads + 3 + 6 month lead the 1 & 5 day...
@@ -575,7 +578,7 @@ def pollen_story(chart_dict):
     betty_bee = {}  
     macd_tier_range = 6
     # ipdb.set_trace()
-    for ticker_time, df_i in chart_dict.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+    for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
         CHARLIE_bee[ticker_time] = {} 
         df = df_i.fillna(0).copy()
         df = df.reset_index(drop=True)
@@ -780,8 +783,12 @@ print("Buzz Buzz Where My Honey")
 # Intiaite Main tickers
 # Order Manage Loop
 
-QUEEN = {'pollenstory': {},
-    'pollenstory_info': {}} # The Queens Mind
+QUEEN = { # The Queens Mind
+    'pollenstory': {}, # latest story
+    'pollencharts': {}, # latest rebuild
+    'pollencharts_nectar': {}, # latest charts with indicators
+    'pollenstory_info': {} # Misc Info
+    } 
 
 s_mainbeetime = datetime.datetime.now()
 #LongTerm_symbols = ?Weight Each Symbol? or just you assests and filter on Market Cap & VOL SECTOR, EBITDA, Free Cash Flow
@@ -864,7 +871,7 @@ if errors:
 df_tickers_data_init = res['init_charts']
 
 # add snapshot to initial chartdata -1
-df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init)
+df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
 # df_tickers_data_rebuilt["SPY_5Minute_5Day"].iloc[-1]
 # df_tickers_data_rebuilt["SPY_1Day_1Year"].iloc[-1]
 # for ticker_time in list(df_tickers_data.keys()):
@@ -885,11 +892,11 @@ print(msg)
 while True:
     # time.sleep(.033)
     s = datetime.datetime.now()
-    pollen = pollen_hunt(QUEEN['pollencharts'], MACD=MACD_12_26_9)
-    pollens_honey = pollen_story(chart_dict=pollen['charts'])
+    pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
+    pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'])
+    # print(QUEEN["pollencharts"]["SPY_1Minute_1Day"].tail(3).timestamp_est)
     
-    
-    if PickleData(pickle_file=PB_Story_Pickle, data_to_store=pollens_honey) == False:
+    if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
         print("Logme")
     # if PickleData(pickle_file=PB_Charts_Pickle, data_to_store=PollenBee_Charts['charts']) == False:
     #     print("Logme")
@@ -897,6 +904,7 @@ while True:
     e = datetime.datetime.now()
     # print("bee END", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))  
     # r = ReadPickleData(pickle_file=PB_Story_Pickle)
+    # r.keys()
     # ticker_story = r['pollen_story'].keys()
     # for ticker in ticker_story:
     #     g_1min = r["pollen_story"]["{}{}{}".format(ticker, "_", )]['macd_tier'].iloc[-1]
@@ -907,7 +915,7 @@ while True:
     # print(r["last_modified"])
     
     # print("bee END", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    time.sleep(.03)
+    time.sleep(3)
 
 # >>> Buy Sell Weights 
 

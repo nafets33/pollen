@@ -174,7 +174,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         symbol_data['symbol'] = symbol
 
         # Make two dataframes one with just market hour data the other with after hour data
-        if "Day" in time:
+        if "day" in timeframe:
             market_hours_data = symbol_data  # keeping as copy since main func will want to return markethours
             after_hours_data =  None
         else:
@@ -245,15 +245,24 @@ def return_bars_list(ticker_list, chart_times):
         return [False, e]
 # r = return_bars_list(ticker_list, chart_times)
 
-def rebuild_timeframe_bars(ticker_list, timedelta_input=False):
+def rebuild_timeframe_bars(ticker_list, timedelta_input=False, min_input=False, sec_input=False):
     # ticker_list = ['IBM', 'AAPL', 'SPY', 'QQQQ']
     try:
         # First get the current time
-        current_time = api.get_clock().timestamp
-        current_sec = str(current_time.second)
+        current_time = datetime.datetime.now()
+        current_sec = current_time.second
+        if current_sec < 3:
+            time.sleep(1)
+            current_time = datetime.datetime.now()
+            current_sec = current_time.second
+
         if timedelta_input:
             current_sec = timedelta_input 
-        previous_time = current_time - pd.Timedelta(f'{current_sec}{"sec"}')
+
+        min_input = 0
+        sec_input = current_sec
+        current_time = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        previous_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=min_input, seconds=sec_input)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         def has_condition(condition_list, condition_check):
             if type(condition_list) is not list: 
@@ -271,9 +280,9 @@ def rebuild_timeframe_bars(ticker_list, timedelta_input=False):
         ]
         # Fetch trades for the X seconds before the current time
         trades_df = api.get_trades(ticker_list,
-                                    start=previous_time.isoformat(),
-                                    end=current_time.isoformat(), 
-                                    limit=50000).df
+                                    start=previous_time,
+                                    end=current_time, 
+                                    limit=30000).df
         # convert to market time for easier reading
         trades_df = trades_df.tz_convert('America/New_York')
 
@@ -282,7 +291,7 @@ def rebuild_timeframe_bars(ticker_list, timedelta_input=False):
 
         # filter to only look at trades which aren't excluded
         valid_trades = trades_df.query('not exclude')
-        print(len(trades_df), len(valid_trades))
+        # print(len(trades_df), len(valid_trades))
         # x=trades_df['conditions'].to_list()
         # y=[str(i) for i in x]
         # print(set(y))
@@ -295,11 +304,13 @@ def rebuild_timeframe_bars(ticker_list, timedelta_input=False):
             min_bars = df.resample('1T').agg(agg_functions)
             min_bars = min_bars.droplevel(0, 'columns')
             min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+            min_bars = min_bars.reset_index()
+            min_bars = min_bars.rename(columns={'timestamp': 'timestamp_est'})
             minbars_dict[ticker] = min_bars
-        return minbars_dict
+        return {'resp': minbars_dict}
     except Exception as e:
         print("rebuild_timeframe_bars", e)
-        return {}
+        return {'resp': False, 'msg': [e, current_time, previous_time]}
 # r = rebuild_timeframe_bars(ticker_list)
 
 def submit_best_limit_order(symbol, qty, side, client_order_id=False):
@@ -742,7 +753,7 @@ def convert_Todatetime_return_est_stringtime(date_string):
 
 
 def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
-    time = 1644523144856422000
+    digit_trc_time = 1644523144856422000
     dt = datetime.datetime.utcfromtimestamp(digit_trc_time // 1000000000) # 9 zeros
     dt = dt.strftime('%Y-%m-%d %H:%M:%S')
     return dt
@@ -750,7 +761,10 @@ def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
 
 # def convert_datetime_toEST(datetimeobject):
 #     out = datetime.datetime.fromisoformat(d).replace(tzinfo=timezone.utc).astimezone(ZoneInfo("America/New_York"))
-
+# while True:
+#     clock = api.get_clock()
+#     print(clock)
+#     time.sleep(1)
 
 def wait_for_market_open():
     clock = api.get_clock()
@@ -770,7 +784,7 @@ def PickleData(pickle_file, data_to_store):
         p_timestamp = {'file_creation': datetime.datetime.now()} 
         
         if os.path.exists(pickle_file) == False:
-            print("init")
+            print("init", pickle_file)
             db = {} 
             db['jp_timestamp'] = p_timestamp 
             dbfile = open(pickle_file, 'ab') 
