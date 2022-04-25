@@ -32,6 +32,10 @@ import ipdb
 import tempfile
 import shutil
 
+queens_chess_piece = sys.argv[1] # 'castle', 'knight'
+if queens_chess_piece.lower() not in ['castle', 'knight']:
+    print("wrong chess move")
+    sys.exit()
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 
 prod = True
@@ -39,7 +43,7 @@ prod = True
 pd.options.mode.chained_assignment = None
 
 client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG'] # Should be from CSV file OR UI List from app
-client_symbols = ['SPY']
+client_symbols = ['SPY', 'QQQ']
 
 init_chart_fields = ['timestamp_est', 'open', 'high', 'low', 'close', 'volume', 'trade_count', 'vwap' 'symbol']
 
@@ -416,7 +420,6 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
     for ticker_time, df in df_tickers_data.items():
         symbol_snapshots = {k:v for (k,v) in snapshot_ticker_data.items() if k.split("_")[0] == ticker_time.split("_")[0]}
         symbol, timeframe, days = ticker_time.split("_")
-        # ipdb.set_trace()
         if "day" in timeframe.lower():
             df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}'] # stapshot df
             df_day_snapshot['symbol'] = symbol
@@ -441,6 +444,13 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
     # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
     return_dict = {}
     rebuild_confirmation = {}
+
+    def tag_current_day(timestamp):
+        if timestamp.day == current_day and timestamp.month == current_month and timestamp.year == current_year:
+            return 'tag'
+        else:
+            return '0'
+
     for ticker_time, df in df_tickers_data.items():
         ticker, timeframe, days = ticker_time.split("_")
         last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
@@ -457,7 +467,7 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
                 dfn = Return_Bars_LatestDayRebuild(ticker_time)
                 if len(dfn[1]) == 0:
                     df_latest = dfn[0][ticker_time]
-                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
                     df_replace = df[df['timetag']!= 'tag'].copy()
                     del df_replace['timetag']
                     df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
@@ -468,11 +478,11 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
                 return_dict[ticker_time] = df
 
         elif "5minute" == timeframe.lower():
-            if timedelta_minutes > 5:
+            if timedelta_minutes > 6:
                 dfn = Return_Bars_LatestDayRebuild(ticker_time)
                 if len(dfn[1]) == 0:
                     df_latest = dfn[0][ticker_time]
-                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
                     df_replace = df[df['timetag']!= 'tag'].copy()
                     del df_replace['timetag']
                     df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
@@ -483,11 +493,12 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
                 return_dict[ticker_time] = df
         
         elif "30minute" == timeframe.lower():
-            if timedelta_minutes > 30:
+            if timedelta_minutes > 31:
                 dfn = Return_Bars_LatestDayRebuild(ticker_time)
                 if len(dfn[1]) == 0:
                     df_latest = dfn[0][ticker_time]
-                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+
+                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
                     df_replace = df[df['timetag']!= 'tag'].copy()
                     del df_replace['timetag']
                     df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
@@ -498,11 +509,11 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
                 return_dict[ticker_time] = df
 
         elif "1hour" == timeframe.lower():
-            if timedelta_minutes > 60:
+            if timedelta_minutes > 61:
                 dfn = Return_Bars_LatestDayRebuild(ticker_time)
                 if len(dfn[1]) == 0:
                     df_latest = dfn[0][ticker_time]
-                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
                     df_replace = df[df['timetag']!= 'tag'].copy()
                     del df_replace['timetag']
                     df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
@@ -513,11 +524,11 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
                 return_dict[ticker_time] = df
 
         elif "2hour" == timeframe.lower():
-            if timedelta_minutes > 120:
+            if timedelta_minutes > 121:
                 dfn = Return_Bars_LatestDayRebuild(ticker_time)
                 if len(dfn[1]) == 0:
                     df_latest = dfn[0][ticker_time]
-                    df['timetag'] = np.where((df['timestamp_est'].day == current_day) & ((df['timestamp_est'].month == current_month)) & (df['timestamp_est'].year == current_year), 'tag', '0')
+                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
                     df_replace = df[df['timetag']!= 'tag'].copy()
                     del df_replace['timetag']
                     df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
@@ -577,7 +588,7 @@ def pollen_story(pollen_nectar):
     CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
     betty_bee = {}  
     macd_tier_range = 6
-    # ipdb.set_trace()
+
     for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
         CHARLIE_bee[ticker_time] = {} 
         df = df_i.fillna(0).copy()
@@ -657,6 +668,8 @@ def pollen_story(pollen_nectar):
         #>/ how many times have you reached tiers
         # >/how long have you stayed in your tier?
             # side of tier, are you closer to exit or enter of next tier?
+            # how far away from MACD CROSS?
+            # ARE you a startcase Hist?
         def count_sequential_n_inList(df, item_list, mac_name): # df['tier_macd'].to_list()
             # item_list = df['tier_macd'].to_list()
             d = defaultdict(int) # you have totals here to return!!!
@@ -665,7 +678,6 @@ def pollen_story(pollen_nectar):
             res_dist_list = []
             set_index = {'start': 0}
             for i, el in enumerate(item_list):
-                # ipdb.set_trace()
                 if i == 0:
                     d[el]+=1
                     d_total_tier_counts[el] += 1
@@ -737,7 +749,6 @@ def pollen_story(pollen_nectar):
                     prior_signal = s[i-1]
                     now_mac = macdvalue
                     now_signal = s[i]
-                    # ipdb.set_trace()
                     if now_mac > now_signal and prior_mac <= prior_signal:
                         cross_list.append('buy_cross')
                     elif now_mac < now_signal and prior_mac >= prior_signal:
@@ -760,7 +771,8 @@ def pollen_story(pollen_nectar):
         # when did macd and signal share same tier?
         # OR When did macd and signal last cross macd < signal
         # what is momentum of past intervals (3, 5, 8...)
-    story = {'pollen_story': story}
+    # story = {'pollen_story': story}
+    QUEEN['pollenstory'] = story
     e = datetime.datetime.now()
     print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
     return story
@@ -858,48 +870,54 @@ if prod: # Return Ticker and Acct Info
         "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
         "1Hour_3Month": 48, "2Hour_6Month": 72, 
         "1Day_1Year": 250}
+    # chart_times = {
+    #     "1Minute_1Day": 0
+    # }
 
     # Macd Settings
     MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 
 """ Initiate your Charts with Indicators """
-# >>> Initiate your Charts
-res = Return_Init_ChartData(ticker_list=client_symbols, chart_times=chart_times)
-errors = res['errors']
-if errors:
-    print("logme")
-df_tickers_data_init = res['init_charts']
+if queens_chess_piece == 'castle':
+    # >>> Initiate your Charts
+    res = Return_Init_ChartData(ticker_list=client_symbols, chart_times=chart_times)
+    errors = res['errors']
+    if errors:
+        print("logme")
+    df_tickers_data_init = res['init_charts']
 
-# add snapshot to initial chartdata -1
-df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
-# df_tickers_data_rebuilt["SPY_5Minute_5Day"].iloc[-1]
-# df_tickers_data_rebuilt["SPY_1Day_1Year"].iloc[-1]
-# for ticker_time in list(df_tickers_data.keys()):
-#     print(ticker_time, df_tickers_data[ticker_time].iloc[-1]['timestamp_est'], df_tickers_data[ticker_time].iloc[-2]['timestamp_est'])
+    # add snapshot to initial chartdata -1
+    df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
+    # df_tickers_data_rebuilt["SPY_5Minute_5Day"].iloc[-1]
+    # df_tickers_data_rebuilt["SPY_1Day_1Year"].iloc[-1]
+    # for ticker_time in list(df_tickers_data.keys()):
+    #     print(ticker_time, df_tickers_data[ticker_time].iloc[-1]['timestamp_est'], df_tickers_data[ticker_time].iloc[-2]['timestamp_est'])
 
-# give it all to the QUEEN put directkly in function
-pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
-# for ticker_time in list(QUEEN['pollencharts'].keys()):
-#     print(ticker_time, QUEEN['pollencharts'][ticker_time].iloc[-1]['timestamp_est'], QUEEN['pollencharts'][ticker_time].iloc[-2]['timestamp_est'])
-# >>> Initiate your Charts <<<
+    # give it all to the QUEEN put directkly in function
+    pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
+    # for ticker_time in list(QUEEN['pollencharts'].keys()):
+    #     print(ticker_time, QUEEN['pollencharts'][ticker_time].iloc[-1]['timestamp_est'], QUEEN['pollencharts'][ticker_time].iloc[-2]['timestamp_est'])
+    # >>> Initiate your Charts <<<
 
-"""# mark final times and return values"""
-e_mainbeetime = datetime.datetime.now()
-msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
-print(msg)
+    """# mark final times and return values"""
+    e_mainbeetime = datetime.datetime.now()
+    msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    print(msg)
 
 # >>> Continue to Rebuild ChartData
 while True:
     # time.sleep(.033)
     s = datetime.datetime.now()
-    pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
-    pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'])
-    # print(QUEEN["pollencharts"]["SPY_1Minute_1Day"].tail(3).timestamp_est)
+    if queens_chess_piece == 'castle':
+        pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
+        if PickleData(pickle_file=PB_Charts_Pickle, data_to_store=QUEEN) == False:
+            print("Logme")
     
-    if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-        print("Logme")
-    # if PickleData(pickle_file=PB_Charts_Pickle, data_to_store=PollenBee_Charts['charts']) == False:
-    #     print("Logme")
+    if queens_chess_piece == 'knight':
+        pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'])
+        if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+            print("Logme")    
+
 
     e = datetime.datetime.now()
     # print("bee END", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))  
@@ -915,7 +933,7 @@ while True:
     # print(r["last_modified"])
     
     # print("bee END", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    time.sleep(3)
+    time.sleep(.33)
 
 # >>> Buy Sell Weights 
 

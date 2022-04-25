@@ -1,5 +1,72 @@
 # archived_functions
 
+def return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None):
+    # symbol = 'SPY'
+    # start_date_iso = '2022-03-10 19:00' # 2 PM EST start_date_iso = '2022-03-10 14:30'
+    # end_date_iso = '2022-03-10 19:15' # end_date_iso = '2022-03-10 20:00'
+    # Function to check if trade has one of inputted conditions
+    def has_condition(condition_list, condition_check):
+        if type(condition_list) is not list: 
+            # Assume none is a regular trade?
+            in_list = False
+        else:
+            # There are one or more conditions in the list
+            in_list = any(condition in condition_list for condition in condition_check)
+
+        return in_list
+
+    exclude_conditions = [
+    'B',
+    'W',
+    '4',
+    '7',
+    '9',
+    'C',
+    'G',
+    'H',
+    'I',
+    'M',
+    'N',
+    'P',
+    'Q',
+    'R',
+    'T',
+    'U',
+    'V',
+    'Z'
+    ]
+
+    # fetch trades over whatever timeframe you need
+    start_time = pd.to_datetime(start_date_iso, utc=True)
+    end_time = pd.to_datetime(end_date_iso, utc=True)
+
+    trades_df = api.get_trades(symbol=symbol, start=start_time.isoformat(), end=end_time.isoformat(), limit=limit).df
+
+    # convert to market time for easier reading
+    trades_df = trades_df.tz_convert('America/New_York')
+
+    # add a column to easily identify the trades to exclude using our function from above
+    trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
+
+    # filter to only look at trades which aren't excluded
+    valid_trades = trades_df.query('not exclude')
+
+    # # Resample the valid trades to calculate the OHLCV bars
+    # agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': 'sum'}
+    # min_bars = valid_trades.resample('1T').agg(agg_functions)
+
+    # Resample the trades to calculate the OHLCV bars
+    agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
+
+    valid_trades = trades_df.query('not exclude')
+    min_bars = valid_trades.resample('1T').agg(agg_functions)
+
+    min_bars = min_bars.droplevel(0, 'columns')
+    min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+
+    return min_bars
+
+
 
 def Return_Bars_list_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
     # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
