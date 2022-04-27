@@ -251,7 +251,7 @@ def rebuild_timeframe_bars(ticker_list, timedelta_input=False, min_input=False, 
         # First get the current time
         current_time = datetime.datetime.now()
         current_sec = current_time.second
-        if current_sec < 3:
+        if current_sec < 5:
             time.sleep(1)
             current_time = datetime.datetime.now()
             current_sec = current_time.second
@@ -546,6 +546,64 @@ def init_index_ticker(index_list, db_root, init=True):
     return True
 
 
+def PickleData(pickle_file, data_to_store): 
+    # initializing data to be stored in db
+    try:
+        p_timestamp = {'file_creation': datetime.datetime.now()} 
+        
+        if os.path.exists(pickle_file) == False:
+            print("init", pickle_file)
+            db = {} 
+            db['jp_timestamp'] = p_timestamp 
+            dbfile = open(pickle_file, 'ab') 
+            pickle.dump(db, dbfile)                   
+            dbfile.close() 
+
+        if data_to_store:
+            p_timestamp = {'last_modified': datetime.datetime.now()}
+            dbfile = open(pickle_file, 'rb+')      
+            db = pickle.load(dbfile)
+            dbfile.seek(0)
+            dbfile.truncate()
+            for k, v in data_to_store.items(): 
+                db[k] = v
+            db['last_modified'] = p_timestamp 
+            # print(db)
+            pickle.dump(db, dbfile)                   
+            dbfile.close()
+        
+        return True
+    except Exception as e:
+        print("logme", e)
+        return False
+
+
+def ReadPickleData(pickle_file): 
+    # for reading also binary mode is important try 3 times
+    try:
+        dbfile = open(pickle_file, 'rb')      
+        db = pickle.load(dbfile) 
+        dbfile.close()
+        return db
+    except Exception as e:
+        try:
+            time.sleep(.33)
+            dbfile = open(pickle_file, 'rb')      
+            db = pickle.load(dbfile) 
+            dbfile.close()
+            return db
+        except Exception as e:
+            try:
+                time.sleep(.33)
+                dbfile = open(pickle_file, 'rb')      
+                db = pickle.load(dbfile) 
+                dbfile.close()
+                return db
+            except Exception as e:
+                print("CRITICAL ERROR logme", e)
+                return False
+
+
 def get_ticker_statatistics(symbol):
     try:
         url = f"https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
@@ -558,7 +616,34 @@ def get_ticker_statatistics(symbol):
 def timestamp_string():
     return datetime.datetime.now().strftime("%m-%d-%Y %I.%M%p")
 
-# NOT IN USE
+
+def print_line_of_error():
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    print(exc_type, exc_tb.tb_lineno)
+
+
+def return_index_tickers(index_dir, ext):
+    s = datetime.datetime.now()
+    # ext = '.csv'
+    # index_dir = os.path.join(db_root, 'index_tickers')
+
+    index_dict = {}
+    full_ticker_list = []
+    all_indexs = [i.split(".")[0] for i in os.listdir(index_dir)]
+    for i in all_indexs:
+        df = pd.read_csv(os.path.join(index_dir, i+ext), dtype=str, encoding='utf8', engine='python')
+        df = df.fillna('')
+        tics = df['symbol'].tolist()
+        for j in tics:
+            full_ticker_list.append(j)
+        index_dict[i] = df
+    
+    return [index_dict, list(set(full_ticker_list))]
+
+
+
+
+# NOT IN USE #
 def return_snapshots(ticker_list):
     # ticker_list = ['SPY', 'AAPL'] # TEST
     """ The Following will convert get_snapshots into a dict"""
@@ -692,13 +777,6 @@ def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     return dt
 
 
-# def convert_datetime_toEST(datetimeobject):
-#     out = datetime.datetime.fromisoformat(d).replace(tzinfo=timezone.utc).astimezone(ZoneInfo("America/New_York"))
-# while True:
-#     clock = api.get_clock()
-#     print(clock)
-#     time.sleep(1)
-
 def wait_for_market_open():
     clock = api.get_clock()
     if not clock.is_open:
@@ -711,51 +789,6 @@ def time_to_market_close():
     return (clock.next_close - clock.timestamp).total_seconds()
 
 
-def PickleData(pickle_file, data_to_store): 
-    # initializing data to be stored in db
-    try:
-        p_timestamp = {'file_creation': datetime.datetime.now()} 
-        
-        if os.path.exists(pickle_file) == False:
-            print("init", pickle_file)
-            db = {} 
-            db['jp_timestamp'] = p_timestamp 
-            dbfile = open(pickle_file, 'ab') 
-            pickle.dump(db, dbfile)                   
-            dbfile.close() 
-
-        if data_to_store:
-            p_timestamp = {'last_modified': datetime.datetime.now()}
-            dbfile = open(pickle_file, 'rb+')      
-            db = pickle.load(dbfile)
-            dbfile.seek(0)
-            dbfile.truncate()
-            for k, v in data_to_store.items(): 
-                db[k] = v
-            db['last_modified'] = p_timestamp 
-            # print(db)
-            pickle.dump(db, dbfile)                   
-            dbfile.close()
-        
-        return True
-    except Exception as e:
-        print("logme", e)
-        return False
-
-
-def ReadPickleData(pickle_file): 
-    # for reading also binary mode is important 
-    try:
-        dbfile = open(pickle_file, 'rb')      
-        db = pickle.load(dbfile) 
-        # for keys in db: 
-        #     print(keys, '=>', db[keys])
-        dbfile.close()
-        return db
-        
-    except Exception as e:
-        print("logme", e)
-        return False
 
 
 def read_wiki_index():

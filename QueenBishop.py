@@ -635,12 +635,11 @@ def pollen_story(pollen_nectar):
             # how long since prv High/Low?
             # when was the last time you were in higest tier
         #>/ how many times have you reached tiers
-        #>/ how long have you stayed in your tier?
+        # >/how long have you stayed in your tier?
             # side of tier, are you closer to exit or enter of next tier?
             # how far away from MACD CROSS?
             # ARE you a startcase Hist?
         def count_sequential_n_inList(df, item_list, mac_name): # df['tier_macd'].to_list()
-            # how long you been in tier AND 
             # item_list = df['tier_macd'].to_list()
             d = defaultdict(int) # you have totals here to return!!!
             d_total_tier_counts = defaultdict(int)
@@ -926,10 +925,12 @@ while True:
 
     
     if queens_chess_piece.lower() == 'knight': # Read Bees Story
+        time.sleep(1)
         s = datetime.datetime.now()
         root, name = os.path.split(PB_Story_Pickle)
         castle = ReadPickleData(pickle_file=os.path.join(root, 'castle.pkl'))
-        bishop = ReadPickleData(pickle_file=os.path.join(root, 'bishop.pkl'))  
+        bishop = ReadPickleData(pickle_file=os.path.join(root, 'bishop.pkl'))
+        
         if castle == False or bishop == False:
             print("Failed in Read, logme")
             continue
@@ -940,10 +941,22 @@ while True:
             if lastmod > QUEEN["self_last_modified"]:
                 QUEEN["self_last_modified"] = lastmod
                 spy = pollenstory['SPY_1Minute_1Day']
-                print(spy[['macd_cross', 'tier_macd', 'tier_signal', 'tier_hist', 'rsi_rma', 'nowdate']].tail(10))
+                print(spy[['macd_cross', 'tier_macd', 'tier_signal', 'tier_hist', 'rsi_rma', 'nowdate']].tail(2))
 
-                e = datetime.datetime.now()
-                print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
+            e = datetime.datetime.now()
+            print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))  
+    # r = ReadPickleData(pickle_file=PB_Story_Pickle)
+    # r.keys()
+    # ticker_story = r['pollen_story'].keys()
+    # for ticker in ticker_story:
+    #     g_1min = r["pollen_story"]["{}{}{}".format(ticker, "_", )]['macd_tier'].iloc[-1]
+    #     gmain_1min = r["pollen_story"]["GOOG_1Minute"]['macd_tier'].iloc[-1]
+    #     if g_1min != gmain_1min:
+    #         print("google 1min tier changed", gmain_1min, g_1min)
+
+    # print(r["last_modified"])
+    
+    # print("bee END", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
 
 # >>> Buy Sell Weights 
