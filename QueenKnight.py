@@ -15,7 +15,7 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
-from Hive_Utils import ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import sys
 import datetime
 from datetime import date, timedelta
@@ -35,13 +35,42 @@ import shutil
 prod = True
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
-system = 'windows' #mac, windows
 load_dotenv()
 # >>> initiate db directories
+system = 'windows' #mac, windows
 if system != 'windows':
     db_root = os.environ.get('db_root_mac')
 else:
     db_root = os.environ.get('db_root_winodws')
+
+queens_chess_piece = sys.argv[1] # 'castle', 'knight'
+if queens_chess_piece.lower() not in ['castle', 'knight', 'bishop']:
+    print("wrong chess move")
+    sys.exit()
+
+scriptname = os.path.basename(__file__)
+log_dir = dst = os.path.join(db_root, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if os.path.exists(log_file) == False:
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.DEBUG)
+else:
+    # copy log file to log dir & del current log file
+    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+    dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
+    shutil.copy(log_file, dst_path)
+    os.remove(log_file)
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.DEBUG)
 
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
@@ -53,13 +82,8 @@ client_symbols = df_client.tickers.to_list()
 # client_num_ST = sys.argv[3]
 # client_days1yrmac_input = sys.argv[4]
 
-queens_chess_piece = sys.argv[1] # 'castle', 'knight'
-if queens_chess_piece.lower() not in ['castle', 'knight', 'bishop']:
-    print("wrong chess move")
-    sys.exit()
+
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
-
-
 
 
 """ Keys """
@@ -208,6 +232,29 @@ def return_RSI(df, length):
     return df
 
 
+def mark_macd_signal_cross(df): # Mark the signal macd crosses 
+    m=df['macd'].to_list()
+    s=df['signal'].to_list()
+    cross_list=[]
+    for i, macdvalue in enumerate(m):
+        if i != 0:
+            prior_mac = m[i-1]
+            prior_signal = s[i-1]
+            now_mac = macdvalue
+            now_signal = s[i]
+            if now_mac > now_signal and prior_mac <= prior_signal:
+                cross_list.append('buy_cross')
+            elif now_mac < now_signal and prior_mac >= prior_signal:
+                cross_list.append('sell_cross')
+            else:
+                cross_list.append('hold')
+        else:
+            cross_list.append('hold')
+    df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
+    df_new = pd.concat([df, df2], axis=1)
+    return df_new
+
+
 """TICKER ChartData Functions"""
 
 def return_getbars_WithIndicators(bars_data, MACD):
@@ -249,7 +296,8 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     if bars[1]: # rebuild and split back to ticker_time with market hours only
         bars_dfs = bars[1]
         for timeframe, df in bars_dfs.items():
-            if '1day' in timeframe.lower():
+            time_frame=timeframe.split("_")[0] # '1day_1year'
+            if '1day' in time_frame.lower():
                 for ticker in ticker_list:
                     df_return = df[df['symbol']==ticker].copy()
                     dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
@@ -572,6 +620,9 @@ def pollen_story(pollen_nectar):
         'hist_low': df['hist'].min(),
         }
 
+        # mac cross
+        df = mark_macd_signal_cross(df=df)
+
         # Create Tiers
         for tier in range(1, macd_tier_range + 1): # Tiers of MinMax
             for mac_name in ['macd', 'signal', 'hist']:
@@ -638,7 +689,7 @@ def pollen_story(pollen_nectar):
         #>/ how long have you stayed in your tier?
             # side of tier, are you closer to exit or enter of next tier?
             # how far away from MACD CROSS?
-            # ARE you a startcase Hist?
+            # ARE you a startcase Hist? # linear regression 
         def count_sequential_n_inList(df, item_list, mac_name): # df['tier_macd'].to_list()
             # how long you been in tier AND 
             # item_list = df['tier_macd'].to_list()
@@ -694,44 +745,25 @@ def pollen_story(pollen_nectar):
 
             macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
             macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
-        for mac_name in ['macd', 'signal', 'hist']:
-            df = count_sequential_n_inList(df=df, item_list=df['tier_'+mac_name].to_list(), mac_name=mac_name)
         
-            # distance from prior HIGH LOW
-            toptier = f'{"tier1"}{"_"}{mac_name}{"-GREEN"}'
-            bottomtier = f'{"tier1"}{"_"}{mac_name}{"-RED"}'
-            # Current Distance from top and bottom
-            for tb in [toptier, bottomtier]:
-                df_t = df[df['tier_'+mac_name]==tb].copy()
-                last_time_tier_found = df_t.iloc[-1].story_index
-                distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
-                betty_bee[f'{ticker_time}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
-                # print(distance_from_last_tier)
+        try:
+            for mac_name in ['macd', 'signal', 'hist']:
+                df = count_sequential_n_inList(df=df, item_list=df['tier_'+mac_name].to_list(), mac_name=mac_name)
 
+                # distance from prior HIGH LOW
+                toptier = f'{"tier1"}{"_"}{mac_name}{"-GREEN"}'
+                bottomtier = f'{"tier1"}{"_"}{mac_name}{"-RED"}'
+                # Current Distance from top and bottom
+                for tb in [toptier, bottomtier]:
+                    df_t = df[df['tier_'+mac_name]==tb].copy()
+                    last_time_tier_found = df_t.iloc[-1].story_index
+                    distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
+                    betty_bee[f'{ticker_time}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
+                QUEEN['pollenstory_info']['betty_bee'] = betty_bee
+        except Exception as e:
+            msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
+            logging.error(msg)
         
-        def mark_macd_signal_cross(df): # Mark the signal macd crosses 
-            m=df['macd'].to_list()
-            s=df['signal'].to_list()
-            cross_list=[]
-            for i, macdvalue in enumerate(m):
-                if i != 0:
-                    prior_mac = m[i-1]
-                    prior_signal = s[i-1]
-                    now_mac = macdvalue
-                    now_signal = s[i]
-                    if now_mac > now_signal and prior_mac <= prior_signal:
-                        cross_list.append('buy_cross')
-                    elif now_mac < now_signal and prior_mac >= prior_signal:
-                        cross_list.append('sell_cross')
-                    else:
-                        cross_list.append('hold')
-                else:
-                    cross_list.append('hold')
-            df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
-            df_new = pd.concat([df, df2], axis=1)
-            return df_new
-        df = mark_macd_signal_cross(df=df)
-
         df['name'] = ticker_time
         story[ticker_time] = df
         # print(df['name'].iloc[-1], df['close'].iloc[-1], df['tier_macd'].iloc[-1], df['timestamp_est'].iloc[-1])
@@ -787,7 +819,7 @@ if queens_chess_piece == 'bishop':
     if os.path.exists(PB_Story_Pickle):
         os.remove(PB_Story_Pickle)
     chart_times = {
-            "1Minute_1Day": 0, "5Minute_5Day": 5,}
+            "1Minute_1Day": 1, "5Minute_5Day": 5,}
 
 
 s_mainbeetime = datetime.datetime.now()
@@ -861,7 +893,9 @@ if queens_chess_piece.lower() in ['castle', 'bishop']:
     res = Return_Init_ChartData(ticker_list=client_symbols, chart_times=chart_times)
     errors = res['errors']
     if errors:
-        print("logme")
+        msg = ("Return_Init_ChartData Failed", "--", errors)
+        print(msg)
+        logging.critical(msg)
         sys.exit()
     df_tickers_data_init = res['init_charts']
     # add snapshot to initial chartdata -1
@@ -875,63 +909,44 @@ if queens_chess_piece.lower() in ['castle', 'bishop']:
     e_mainbeetime = datetime.datetime.now()
     msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
     print(msg)
-
-# if queens_chess_piece.lower() == 'bishop':
-#     # >>> Initiate your Charts
-#     res = Return_Init_ChartData(ticker_list=client_symbols, chart_times=chart_times)
-#     errors = res['errors']
-#     if errors:
-#         print("logme")
-#         sys.exit()
-#     df_tickers_data_init = res['init_charts']
-#     # add snapshot to initial chartdata -1
-#     df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
-#     # give it all to the QUEEN
-#     pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
-#     QUEEN['pollencharts'] = pollen['pollencharts']
-#     QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
  
     """# mark final times and return values"""
     e_mainbeetime = datetime.datetime.now()
     msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
     print(msg)
 
-# >>> Continue to Rebuild ChartData
+# >>> Continue to Rebuild ChartData and Story
 while True:
     if queens_chess_piece.lower() in ['castle', 'bishop']:
         s = datetime.datetime.now()
+        if s > datetime.datetime(s.year, s.month, s.day, 16):
+            logging.info("Happy Bee Day End")
+            print("Great Job! See you Tomorrow")
+            break
         pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
         QUEEN['pollencharts'] = pollen['pollencharts']
         QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
         pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'])
         QUEEN['pollenstory'] = pollens_honey['pollen_story']
         if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-            print("CRITICAL Pickle Data Failed, Logme")
+            msg=("Pickle Data Failed")
+            logging.critical(msg)
             continue
         e = datetime.datetime.now()
         print(queens_chess_piece, str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
-    # if queens_chess_piece.lower() == 'bishop': # long Term Bees
-    #     s = datetime.datetime.now()
-    #     pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
-    #     QUEEN['pollencharts'] = pollen['pollencharts']
-    #     QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
-    #     pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'])
-    #     QUEEN['pollenstory'] = pollens_honey['pollen_story']
-    #     if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-    #         print("CRITICAL Pickle Data Failed, Logme")
-    #         continue
-    #     e = datetime.datetime.now()
-    #     print("castle", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-
-    
     if queens_chess_piece.lower() == 'knight': # Read Bees Story
         s = datetime.datetime.now()
+        if s > datetime.datetime(s.year, s.month, s.day, 16):
+            logging.info("Happy Bee Day End")
+            print("Great Job! See you Tomorrow")
+            break
         root, name = os.path.split(PB_Story_Pickle)
         castle = ReadPickleData(pickle_file=os.path.join(root, 'castle.pkl'))
         bishop = ReadPickleData(pickle_file=os.path.join(root, 'bishop.pkl'))  
         if castle == False or bishop == False:
-            print("Failed in Read, logme")
+            msg = ("Failed in Reading of Castle of Bishop Pickle File")
+            logging.warning(msg)
             continue
         else:
             pollenstory = {**bishop['pollenstory'], **castle['pollenstory']} # combine daytrade and longterm info
@@ -940,7 +955,7 @@ while True:
             if lastmod > QUEEN["self_last_modified"]:
                 QUEEN["self_last_modified"] = lastmod
                 spy = pollenstory['SPY_1Minute_1Day']
-                print(spy[['macd_cross', 'tier_macd', 'tier_signal', 'tier_hist', 'rsi_rma', 'nowdate']].tail(10))
+                print(spy[['tier_macd', 'macd', 'signal', 'hist', 'rsi_rma', 'nowdate']].tail(5))
 
                 e = datetime.datetime.now()
                 print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
