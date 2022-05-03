@@ -160,7 +160,6 @@ def return_timestamp_string():
 index_ticker_db = return_index_tickers(index_dir=os.path.join(db_root, 'index_tickers'), ext='.csv')
 
 
-
 """TICKER Calculation Functions"""
 
 def return_macd(df_main, fast, slow, smooth):
@@ -586,7 +585,7 @@ def pollen_hunt(df_tickers_data, MACD):
 # PollenBee_Charts = pollen_hunt(ticker_list=main_index_tickers)
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
-def pollen_story(pollen_nectar):
+def pollen_story(pollen_nectar, QUEEN):
     # where is max and depending on which time consider different weights of buy...
     # define weights in global and do multiple weights for different scenarios..
     # 1. 1 Month Leads + 3 + 6 month lead the 1 & 5 day...
@@ -603,7 +602,7 @@ def pollen_story(pollen_nectar):
 
     CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
     betty_bee = {}  
-    macd_tier_range = 6
+    macd_tier_range = 33
 
     for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
         CHARLIE_bee[ticker_time] = {} 
@@ -721,7 +720,7 @@ def pollen_story(pollen_nectar):
             # Join in Data and send info to the QUEEN
             QUEEN['pollenstory_info'][ticker_time] = d_total_tier_counts
             dfseq = pd.DataFrame(res_list, columns=['seq_'+mac_name])
-            dfrunning = pd.DataFrame(res_list, columns=['running_'+mac_name])
+            dfrunning = pd.DataFrame(res_dist_list, columns=['running_'+mac_name])
             df_new = pd.concat([df, dfseq, dfrunning], axis=1)
             return df_new
 
@@ -760,6 +759,29 @@ def pollen_story(pollen_nectar):
                     distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
                     betty_bee[f'{ticker_time}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
                 QUEEN['pollenstory_info']['betty_bee'] = betty_bee
+        
+                # create running sum of past x(3/5) values and determine slope
+                l = [0,0,0,0,0,0,1,2,3,4,3,2,1,0,1,2,3,10]
+                final = []
+                final_avg = []
+                count_set = 5
+                for i, value in enumerate(l):
+                    if i < count_set:
+                        final.append(0)
+                        final_avg.append(0)
+                    else:
+                        # ipdb.set_trace()
+                        prior_index = i - count_set
+                        running_total = sum(l[prior_index:i])
+                        final.append(running_total)
+                        # print(running_total)
+                        
+                        prior_value = final[i-1]
+                        if prior_value==0 or value==0:
+                            final_avg.append(0)
+                        else:
+                            pct_change_from_prior = (value - prior_value) / value
+                            final_avg.append(pct_change_from_prior)
         except Exception as e:
             msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
             logging.error(msg)
@@ -776,10 +798,10 @@ def pollen_story(pollen_nectar):
     # QUEEN['pollenstory'] = story
     e = datetime.datetime.now()
     # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    return {'pollen_story': story}
+    return {'pollen_story': story, 'betty_bee': betty_bee}
 
 
-print(
+print( # Love what you desire and never let go, bee forever
 """
 We all shall prosper through the depths of our connected hearts,
 Not all will share my world,
@@ -884,9 +906,9 @@ if prod: # Return Ticker and Acct Info
     """ Return Index Charts & Data for All Tickers Wanted"""
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
 
-    # Macd Settings
-    MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 
+# Macd Settings
+MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 """ Initiate your Charts with Indicators """
 if queens_chess_piece.lower() in ['castle', 'bishop']:
     # >>> Initiate your Charts
@@ -926,7 +948,7 @@ while True:
         pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
         QUEEN['pollencharts'] = pollen['pollencharts']
         QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
-        pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'])
+        pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'], QUEEN=QUEEN)
         QUEEN['pollenstory'] = pollens_honey['pollen_story']
         if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
             msg=("Pickle Data Failed")
