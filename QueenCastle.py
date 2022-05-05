@@ -59,7 +59,7 @@ if os.path.exists(log_file) == False:
                         filemode='a',
                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
 else:
     # copy log file to log dir & del current log file
     datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
@@ -70,7 +70,7 @@ else:
                         filemode='a',
                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
 
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
@@ -255,6 +255,19 @@ def mark_macd_signal_cross(df): # Mark the signal macd crosses
     return df_new
 
 
+def return_sma_slope(df, y_list, time_measure_list):
+        # df=pollenstory['SPY_1Minute_1Day'].copy()
+        # time_measure_list = [3, 23, 33]
+        # y_list = ['close', 'macd', 'hist']
+        for mtime in time_measure_list:
+            for el in y_list:
+                sma_name = f'{el}{"_sma-"}{mtime}'
+                slope_name = f'{el}{"_slope-"}{mtime}'
+                df[sma_name] = df[el].rolling(mtime).mean().fillna(0)
+                df[slope_name] = np.degrees(np.arctan(df[sma_name].diff()/mtime))
+        return df
+
+
 """TICKER ChartData Functions"""
 
 def return_getbars_WithIndicators(bars_data, MACD):
@@ -271,10 +284,11 @@ def return_getbars_WithIndicators(bars_data, MACD):
         df_vwap_rsi = return_RSI(df=df_vwap, length=14)
         # append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
         df_vwap_rsi_macd = return_macd(df_main=df_vwap_rsi, fast=MACD['fast'], slow=MACD['slow'], smooth=MACD['smooth'])
+        df_vwap_rsi_macd_smaslope = return_sma_slope(df=df_vwap_rsi_macd, time_measure_list=[3, 23, 33], y_list=['close', 'macd', 'hist'])
         e = datetime.datetime.now()
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
         # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
-        return [True, df_vwap_rsi_macd]
+        return [True, df_vwap_rsi_macd_smaslope]
     except Exception as e:
         print("log error", print_line_of_error())
         return [False, e, print_line_of_error()]
@@ -812,7 +826,8 @@ Always Bee Better
 )
 
 # if '_name_' == '_main_':
-print("Buzz Buzz Where My Honey")
+# print("Buzz Buzz Where My Honey")
+logging.info("Buzz Buzz Where My Honey")
 # Account Info
 # Check System
 # All Symbols and Tickers
