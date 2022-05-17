@@ -58,16 +58,171 @@ QUEEN = { # The Queens Mind
     'self_last_modified' : datetime.datetime.now(),
     }
 
-db_root = os.environ.get('db_root_winodws')
+# Client Tickers
+src_root, db_dirname = os.path.split(db_root)
+client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
+df_client = pd.read_csv(client_ticker_file, dtype=str)
+client_symbols = df_client.tickers.to_list()
 
-# read bishop daya
-queens_chess_piece = 'bishop'
-PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-r = ReadPickleData(pickle_file=PB_Story_Pickle)
-pollenstory = r['pollenstory']
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
+castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))  
+if castle == False or bishop == False:
+    print("Failed in Reading of Castle of Bishop Pickle File")
+else:
+    pollenstory = {**bishop['pollenstory'], **castle['pollenstory']} # combine daytrade and longterm info
+# p = pollen_story(pollen_nectar=pollenstory, QUEEN=QUEEN) # re run story
 
-p = pollen_story(pollen_nectar=pollenstory, QUEEN=QUEEN)
+spy = pollenstory['SPY_1Minute_1Day']
 
+r = rebuild_timeframe_bars(ticker_list=client_symbols, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+resp = r['resp'] # return slope of collective tics
+df = resp[resp['symbol']=='GOOG'].copy()
+df = df.reset_index()
+df_len = len(df)
+if df_len > 2:
+    df['price_delta'] = df['price'].rolling(window=2).apply(lambda x: x.iloc[1] - x.iloc[0]).fillna(0)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
+    # slope1, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price_delta'])
+else:
+    print(df)
+print(slope)
+# print(slope1)
+print(sum(df['price_delta'].tail(int(round(df_len/2,0)))))
+
+
+
+r = rebuild_timeframe_bars(ticker_list=client_symbols, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+resp = r['resp'] # return slope of collective tics
+for symbol in set(resp['symbol'].to_list()):
+    df = resp[resp['symbol']==symbol].copy()
+    df = df.reset_index()
+    df_len = len(df)
+    rolling_times = [round(df_len / 4), round(df_len / 2)]
+    df = return_sma_slope(df=df, y_list=['price'], time_measure_list=rolling_times)
+# add weight to index each new index greater weight
+index_max = df_len
+df['index_weight'] = df
+
+# return change 
+df['price_delta'] = df['price'].rolling(window=2).apply(lambda x: x.iloc[1] - x.iloc[0])
+df['price_delta_pct'] = df['price'].rolling(window=2).apply(lambda x: (x.iloc[1] - x.iloc[0])/ x.iloc[0])
+
+
+def return_degree_angle(x, y):
+    # 45 degree angle
+    # x = [1, 2, 3]
+    # y = [1, 2, 3]
+
+    #calculate
+    degree = np.math.atan2(y[-1] - y[0], x[-1] - x[0])
+    degree = np.degrees(degree)
+
+    return degree
+
+
+def return_ema_slope(df, y_list, time_measure_list):
+        # df=pollenstory['SPY_1Minute_1Day'].copy()
+        # time_measure_list = [3, 23, 33]
+        # y_list = ['close', 'macd', 'hist']
+        for mtime in time_measure_list:
+            for el in y_list:
+                sma_name = f'{el}{"_sma-"}{mtime}'
+                slope_name = f'{el}{"_slope-"}{mtime}'
+                df[sma_name] = df[el].rolling(mtime).mean().fillna(0)
+                df[slope_name] = np.degrees(np.arctan(df[sma_name].diff()/mtime))
+        return df
+
+# Momementem 2 ways, 2 way is much faster
+# 1.
+df['momentum'] = np.where(df['price_delta'] > 0, 1, -1)
+df['3_day_momentum'] = df.momentum.rolling(3).mean()
+
+# 2.
+from scipy.ndimage import uniform_filter1d
+def rolling_mean(ar, W=3):
+    hW = (W-1)//2
+    out = uniform_filter1d(momentum.astype(float), size=W, origin=hW)
+    out[:W-1] = np.nan
+    return out
+
+momentum = 2*(df['price_delta'] > 0) - 1
+df['out'] = rolling_mean(momentum, W=3)
+
+# this works but not sure how it compares???
+alpha = 0.1    # This is my smoothing parameter
+window = 24
+weights = list(reversed([(1-alpha)**n for n in range(window)]))
+def f(w):
+    def g(x):
+        return sum(w*x) / sum(w)
+    return g
+T_ = pd.DataFrame()
+T_ = df['price'].rolling(window=24).apply(f(weights))
+T_ = T_.dropna()
+
+def pct_delta(price_list):
+    # return pct change from prior value
+    # l = [1,1.2,1,2,2.5,3,1,1.2,1.3,1.4,1.6,1.8,1.4,1.5,2,2,3,1]
+    l = price_list
+    final = []
+    for i, value in enumerate(l):
+        if i < 1:
+            final.append(0)
+        else:
+            prior_value = l[i-1]
+            if prior_value==0 or value==0:
+                final.append(0)
+            else:
+                pct_change_from_prior = round((value - prior_value) / value, 10)
+                final.append(pct_change_from_prior)
+    return final
+pct_change = pct_delta(df['price'].values)
+
+
+# df['pct_change'] = df['price'].apply(lambda x: pct_delta(x))
+
+distribution = df['price']
+weights = df['size']
+def weighted_average_m1(distribution, weights):
+  
+    numerator = sum([distribution[i]*weights[i] for i in range(len(distribution))])
+    denominator = sum(weights)
+    
+    return round(numerator/denominator,2)
+
+weighted_average_m1(distribution, weights)
+
+
+from pykalman import KalmanFilter
+
+spy = pollenstory['SPY_1Day_1Year']
+kf = KalmanFilter(transition_matrices = [1],
+                  observation_matrices = [1],
+                  initial_state_mean = 0,
+                  initial_state_covariance = 1,
+                  observation_covariance = 1,
+                  transition_covariance = 0.0001)
+mean, cov = kf.filter(spy['close'].values)
+mean, std = mean.squeeze(), np.std(cov.squeeze())
+plt.figure(figsize=(12,6))
+plt.plot(spy['close'].values - mean, 'red', lw=1.5)
+plt.show()
+
+
+# df = from above last 30 seconds pull
+kf = KalmanFilter(transition_matrices = [1],
+                  observation_matrices = [1],
+                  initial_state_mean = 0,
+                  initial_state_covariance = 1,
+                  observation_covariance = 1,
+                  transition_covariance = 0.0001)
+mean, cov = kf.filter(df['price'].values)
+mean, std = mean.squeeze(), np.std(cov.squeeze())
+plt.figure(figsize=(12,6))
+plt.plot(df['price'].values - mean, 'red', lw=1.5)
+plt.show()
 
 spy = p['pollen_story']['SPY_1Minute_1Day']
 # spy['f'] = spy['timestamp_est'].apply(lambda x: x.day==29)==True
@@ -256,3 +411,93 @@ slope, intercept, r_value, p_value, std_err = linregress(x, y)
 # display(spy)
 # print "Dataframe 2:"
 # display(HTML(spy.to_html()))
+
+
+def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
+    # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
+    try:
+        # First get the current time
+        if build_current_minute:
+            current_time = datetime.datetime.now()
+            current_sec = current_time.second
+            if current_sec < 5:
+                time.sleep(1)
+                current_time = datetime.datetime.now()
+                sec_input = current_time.second
+                min_input = 0
+        else:
+            sec_input = sec_input
+            min_input = min_input
+
+        current_time = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        previous_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=min_input, seconds=sec_input)).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        def has_condition(condition_list, condition_check):
+            if type(condition_list) is not list: 
+                # Assume none is a regular trade?
+                in_list = False
+            else:
+                # There are one or more conditions in the list
+                in_list = any(condition in condition_list for condition in condition_check)
+
+            return in_list
+
+        exclude_conditions = [
+        'B','W','4','7','9','C','G','H',
+        'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
+        ]
+        # Fetch trades for the X seconds before the current time
+        trades_df = api.get_trades(ticker_list,
+                                    start=previous_time,
+                                    end=current_time, 
+                                    limit=30000).df
+        # convert to market time for easier reading
+        trades_df = trades_df.tz_convert('America/New_York')
+
+        # add a column to easily identify the trades to exclude using our function from above
+        trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
+
+        # filter to only look at trades which aren't excluded
+        valid_trades = trades_df.query('not exclude')
+        # print(len(trades_df), len(valid_trades))
+        # x=trades_df['conditions'].to_list()
+        # y=[str(i) for i in x]
+        # print(set(y))
+        if build_current_minute:
+            minbars_dict = {}
+            for ticker in ticker_list:
+                df = valid_trades[valid_trades['symbol']==ticker].copy()
+                # Resample the trades to calculate the OHLCV bars
+                agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
+                min_bars = df.resample('1T').agg(agg_functions)
+                min_bars = min_bars.droplevel(0, 'columns')
+                min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+                min_bars = min_bars.reset_index()
+                min_bars = min_bars.rename(columns={'timestamp': 'timestamp_est'})
+                minbars_dict[ticker] = min_bars
+                return {'resp': minbars_dict}
+        else:
+            return {'resp': valid_trades}
+    except Exception as e:
+        print("rebuild_timeframe_bars", e)
+        return {'resp': False, 'msg': [e, current_time, previous_time]}
+# r = rebuild_timeframe_bars(ticker_list, sec_input=30)
+
+
+def QueenBee(): # Order Management
+    acc_info = 	refresh_account_info(api)
+    open_orders = 
+    num_of_trades = 
+    day_profitloss = 
+    max_num_of_trades = 10
+    happy_ending = .02 #2%
+    bee_ticks = # current tick momentum
+    bee_1min = # current momentum (use combination of RSI, MACD to Determine weight of BUY/SELL)
+    bee_5min = # current momentum (use combination of RSI, MACD to Determine weight of BUY/SELL)
+    bee_1month = # current momentum (use combination of RSI, MACD to Determine weight of BUY/SELL)
+    bee_3month = # current momentum (use combination of RSI, MACD to Determine weight of BUY/SELL)
+    bee_6month = # current momentum (use combination of RSI, MACD to Determine weight of BUY/SELL)
+    bee_1yr = # current momentum (use combination of RSI, MACD to Determine weight of BUY/SELL)
+
+    if open_orders: # based on indicators decide whether to close position
+        open_orders_bee_manager(orders)

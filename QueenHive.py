@@ -36,20 +36,16 @@ if system != 'windows':
 else:
     db_root = os.environ.get('db_root_winodws')
 
-# logging.basicConfig(
-#     filename='hive_utils.log',
-#     level=logging.INFO,
-#     format='%(asctime)s:%(levelname)s:%(message)s',
-# )
-
-api_key_id = os.environ.get('APCA_API_KEY_ID')
-api_secret = os.environ.get('APCA_API_SECRET_KEY')
-base_url = "https://api.alpaca.markets"
-
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
     'P','Q','R','T','U','V','Z'
 ]
+
+# keys
+api_key_id = os.environ.get('APCA_API_KEY_ID')
+api_secret = os.environ.get('APCA_API_SECRET_KEY')
+base_url = "https://api.alpaca.markets"
+
 
 def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
@@ -91,6 +87,7 @@ end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
+### Story
 def pollen_story(pollen_nectar, QUEEN):
     # where is max and depending on which time consider different weights of buy...
     # define weights in global and do multiple weights for different scenarios..
@@ -107,14 +104,19 @@ def pollen_story(pollen_nectar, QUEEN):
     story = {}
 
     CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
+    ANGEl_bee = {}  # hold degree angle of macd values
     betty_bee = {}  
     macd_tier_range = 33
 
     for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
-        CHARLIE_bee[ticker_time] = {} 
+        CHARLIE_bee[ticker_time] = {}
+        ANGEl_bee[ticker_time] = {}
+        
+        
         df = df_i.fillna(0).copy()
         df = df.reset_index(drop=True)
         df['story_index'] = df.index
+        df_len = len(df)
         df['nowdate'] = df['timestamp_est'].apply(lambda x: f'{x.hour}{":"}{x.minute}{":"}{x.second}')
         mac_world = {
         'macd_high': df['macd'].max(),
@@ -251,7 +253,7 @@ def pollen_story(pollen_nectar, QUEEN):
             macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
             macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
         
-        try:
+        try:  # count_sequential_n_inList
             for mac_name in ['macd', 'signal', 'hist']:
                 df = count_sequential_n_inList(df=df, item_list=df['tier_'+mac_name].to_list(), mac_name=mac_name)
 
@@ -265,32 +267,23 @@ def pollen_story(pollen_nectar, QUEEN):
                     distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
                     betty_bee[f'{ticker_time}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
                 QUEEN['pollenstory_info']['betty_bee'] = betty_bee
-        
-                # create running sum of past x(3/5) values and determine slope
-                l = [0,0,0,0,0,0,1,2,3,4,3,2,1,0,1,2,3,10]
-                final = []
-                final_avg = []
-                count_set = 5
-                for i, value in enumerate(l):
-                    if i < count_set:
-                        final.append(0)
-                        final_avg.append(0)
-                    else:
-                        # ipdb.set_trace()
-                        prior_index = i - count_set
-                        running_total = sum(l[prior_index:i])
-                        final.append(running_total)
-                        # print(running_total)
-                        
-                        prior_value = final[i-1]
-                        if prior_value==0 or value==0:
-                            final_avg.append(0)
-                        else:
-                            pct_change_from_prior = (value - prior_value) / value
-                            final_avg.append(pct_change_from_prior)
+
         except Exception as e:
             msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
             logging.error(msg)
+        
+        # return degree angle 0, 45, 90
+        
+        var_list = ['macd', 'hist', 'signal', 'price', 'rsi_ema']
+        var_timeframes = [3, 6, 8, 10, 25, 33]
+        for var in var_list:
+            for type, t in var_timeframes.items():
+                # apply rollowing angle
+                x = df.iloc[df_len - t:df_len]
+                y = [i for i in range(t)]
+                name = f'{ticker_time}{"-"}{var}{"--"}{str(t)}'
+                ANGEl_bee[ticker_time][name] = return_degree_angle(x, y)
+        QUEEN['pollenstory_info']['ANGEl_bee'] = ANGEl_bee
         
         df['name'] = ticker_time
         story[ticker_time] = df
@@ -303,7 +296,7 @@ def pollen_story(pollen_nectar, QUEEN):
         # what is momentum of past intervals (3, 5, 8...)
     # QUEEN['pollenstory'] = story
     e = datetime.datetime.now()
-    # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
+    print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
     return {'pollen_story': story, 'betty_bee': betty_bee}
 
 
@@ -330,6 +323,18 @@ def mark_macd_signal_cross(df): # Mark the signal macd crosses
     return df_new
 
 
+def return_degree_angle(x, y):
+    # 45 degree angle
+    # x = [1, 2, 3]
+    # y = [1, 2, 3]
+
+    #calculate
+    degree = np.math.atan2(y[-1] - y[0], x[-1] - x[0])
+    degree = np.degrees(degree)
+
+    return degree
+
+### BARS
 def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False):
     try:
         s = datetime.datetime.now()
@@ -461,22 +466,22 @@ def return_bars_list(ticker_list, chart_times):
         return [False, e]
 # r = return_bars_list(ticker_list, chart_times)
 
-def rebuild_timeframe_bars(ticker_list, timedelta_input=False, min_input=False, sec_input=False):
-    # ticker_list = ['IBM', 'AAPL', 'SPY', 'QQQQ']
+def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
+    # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
     try:
         # First get the current time
-        current_time = datetime.datetime.now()
-        current_sec = current_time.second
-        if current_sec < 5:
-            time.sleep(1)
+        if build_current_minute:
             current_time = datetime.datetime.now()
             current_sec = current_time.second
+            if current_sec < 5:
+                time.sleep(1)
+                current_time = datetime.datetime.now()
+                sec_input = current_time.second
+                min_input = 0
+        else:
+            sec_input = sec_input
+            min_input = min_input
 
-        if timedelta_input:
-            current_sec = timedelta_input 
-
-        min_input = 0
-        sec_input = current_sec
         current_time = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         previous_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=min_input, seconds=sec_input)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -511,24 +516,28 @@ def rebuild_timeframe_bars(ticker_list, timedelta_input=False, min_input=False, 
         # x=trades_df['conditions'].to_list()
         # y=[str(i) for i in x]
         # print(set(y))
-
-        minbars_dict = {}
-        for ticker in ticker_list:
-            df = valid_trades[valid_trades['symbol']==ticker].copy()
-            # Resample the trades to calculate the OHLCV bars
-            agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
-            min_bars = df.resample('1T').agg(agg_functions)
-            min_bars = min_bars.droplevel(0, 'columns')
-            min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
-            min_bars = min_bars.reset_index()
-            min_bars = min_bars.rename(columns={'timestamp': 'timestamp_est'})
-            minbars_dict[ticker] = min_bars
-        return {'resp': minbars_dict}
+        if build_current_minute:
+            minbars_dict = {}
+            for ticker in ticker_list:
+                df = valid_trades[valid_trades['symbol']==ticker].copy()
+                # Resample the trades to calculate the OHLCV bars
+                agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
+                min_bars = df.resample('1T').agg(agg_functions)
+                min_bars = min_bars.droplevel(0, 'columns')
+                min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
+                min_bars = min_bars.reset_index()
+                min_bars = min_bars.rename(columns={'timestamp': 'timestamp_est'})
+                minbars_dict[ticker] = min_bars
+                return {'resp': minbars_dict}
+        else:
+            return {'resp': valid_trades}
     except Exception as e:
         print("rebuild_timeframe_bars", e)
         return {'resp': False, 'msg': [e, current_time, previous_time]}
-# r = rebuild_timeframe_bars(ticker_list)
+# r = rebuild_timeframe_bars(ticker_list, sec_input=30)
 
+
+### Orders 
 def submit_best_limit_order(symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
@@ -623,12 +632,6 @@ def submit_order(symbol, qty, side, type, limit_price, client_order_id, time_in_
     #         stop_loss=dict(stop_price='360.00'), 
     #         take_profit=dict(limit_price='440.00'))
 
-
-
-    if 'name' == 'main':
-        submit_order()
-
-
 def refresh_account_info(api):
             """
             # Account({   'account_blocked': False, 'account_number': '603397580', 'accrued_fees': '0', 'buying_power': '80010',
@@ -652,43 +655,6 @@ def refresh_account_info(api):
                 }
                 ]
 
-
-def init_log(root, dirname, name, update_df=False, update_type=False, update_write=False, cols=False):
-    # dirname = 'db'
-    # root_token=os.path.join(root, dirname)
-    # name='hive_utils_log.csv'
-    # cols = ['type', 'log_note', 'timestamp']
-    # update_df = pd.DataFrame(list(zip(['info'], ['text'])), columns = ['type', 'log_note'])
-    # update_write=True
-    
-    root_token=os.path.join(root, dirname)
-    
-    if os.path.exists(os.path.join(root_token, name)) == False:
-        with open(os.path.join(root_token, name), 'w') as f:
-            df = pd.DataFrame()
-            for i in cols:
-                if i == 'timestamp':
-                    df[i] = datetime.datetime.now()
-                else:
-                    df[i] = ''
-            df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
-            print(name, "created")
-            return df
-    else:
-        df = pd.read_csv(os.path.join(root_token, name), dtype=str, encoding='utf8')
-        if update_type == 'append':
-            # df = df.append(update_df, ignore_index=True, sort=False)
-            df = pd.concat([df, update_df], join='outer', ignore_index=True, axis=0)
-            if update_write:
-                df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
-                return df
-            else:
-                return df
-        else:
-            return df
-# # TESTS
-# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', cols=['type', 'log_note', 'timestamp'])
-# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', update_df=update_df, update_type='append', update_write=True, cols=False)
 
 def init_index_ticker(index_list, db_root, init=True):
     # index_list = [
@@ -836,6 +802,11 @@ def timestamp_string():
     return datetime.datetime.now().strftime("%m-%d-%Y %I.%M%p")
 
 
+def return_timestamp_string():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S %p')
+
+
+
 def print_line_of_error():
     exc_type, exc_obj, exc_tb = sys.exc_info()
     print(exc_type, exc_tb.tb_lineno)
@@ -862,7 +833,12 @@ def return_index_tickers(index_dir, ext):
 
 
 
-# NOT IN USE #
+
+##################################################
+##################################################
+################ NOT IN USE ######################
+##################################################
+
 def return_snapshots(ticker_list):
     # ticker_list = ['SPY', 'AAPL'] # TEST
     """ The Following will convert get_snapshots into a dict"""

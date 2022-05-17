@@ -441,7 +441,7 @@ def init_log(root, dirname, name, update_df=False, update_type=False, update_wri
     # dirname = 'db'
     # root_token=os.path.join(root, dirname)
     # name='hive_utils_log.csv'
-    # cols = ['type', 'log_note']
+    # cols = ['type', 'log_note', 'timestamp']
     # update_df = pd.DataFrame(list(zip(['info'], ['text'])), columns = ['type', 'log_note'])
     # update_write=True
     
@@ -451,7 +451,10 @@ def init_log(root, dirname, name, update_df=False, update_type=False, update_wri
         with open(os.path.join(root_token, name), 'w') as f:
             df = pd.DataFrame()
             for i in cols:
-                df[i] = ''
+                if i == 'timestamp':
+                    df[i] = datetime.datetime.now()
+                else:
+                    df[i] = ''
             df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
             print(name, "created")
             return df
@@ -459,7 +462,7 @@ def init_log(root, dirname, name, update_df=False, update_type=False, update_wri
         df = pd.read_csv(os.path.join(root_token, name), dtype=str, encoding='utf8')
         if update_type == 'append':
             # df = df.append(update_df, ignore_index=True, sort=False)
-            df = pd.concat([df, update_df], ignore_index=True)
+            df = pd.concat([df, update_df], join='outer', ignore_index=True, axis=0)
             if update_write:
                 df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
                 return df
@@ -468,7 +471,7 @@ def init_log(root, dirname, name, update_df=False, update_type=False, update_wri
         else:
             return df
 # # TESTS
-# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', cols=False)
+# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', cols=['type', 'log_note', 'timestamp'])
 # log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', update_df=update_df, update_type='append', update_write=True, cols=False)
 
 def init_index_ticker(index_list, db_root, init=True):
@@ -787,8 +790,6 @@ def wait_for_market_open():
 def time_to_market_close():
     clock = api.get_clock()
     return (clock.next_close - clock.timestamp).total_seconds()
-
-
 
 
 def read_wiki_index():

@@ -822,7 +822,7 @@ while True:
                     # hist slope 3 is positive, > .033%
                     # close slope 3 is positive > .033%
                     # macd slope is positive > .033%
-                # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 
+                # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 (past Num(3,6,10) degree angle: V )
                 # macd peaked or macd peaked in past 3 (take sum of past 3 and measure middle dveation from -2 vs 0)
                 macd_buy_cross = np.where(
                     (symbol['macd_cross'] == 'buy_cross')

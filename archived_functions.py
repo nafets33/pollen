@@ -1,5 +1,68 @@
 # archived_functions
 
+
+
+def init_log(root, dirname, name, update_df=False, update_type=False, update_write=False, cols=False):
+    # dirname = 'db'
+    # root_token=os.path.join(root, dirname)
+    # name='hive_utils_log.csv'
+    # cols = ['type', 'log_note', 'timestamp']
+    # update_df = pd.DataFrame(list(zip(['info'], ['text'])), columns = ['type', 'log_note'])
+    # update_write=True
+    
+    root_token=os.path.join(root, dirname)
+    
+    if os.path.exists(os.path.join(root_token, name)) == False:
+        with open(os.path.join(root_token, name), 'w') as f:
+            df = pd.DataFrame()
+            for i in cols:
+                if i == 'timestamp':
+                    df[i] = datetime.datetime.now()
+                else:
+                    df[i] = ''
+            df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
+            print(name, "created")
+            return df
+    else:
+        df = pd.read_csv(os.path.join(root_token, name), dtype=str, encoding='utf8')
+        if update_type == 'append':
+            # df = df.append(update_df, ignore_index=True, sort=False)
+            df = pd.concat([df, update_df], join='outer', ignore_index=True, axis=0)
+            if update_write:
+                df.to_csv(os.path.join(root_token, name), index=False, encoding='utf8')
+                return df
+            else:
+                return df
+        else:
+            return df
+# # TESTS
+# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', cols=['type', 'log_note', 'timestamp'])
+# log_file = init_log(root=os.getcwd(), dirname='db', name='hive_utils_log.csv', update_df=update_df, update_type='append', update_write=True, cols=False)
+
+
+# create running sum of past x(3/5) values and determine slope
+l = [0,0,0,0,0,0,1,2,3,4,3,2,1,0,1,2,3,10]
+final = []
+final_avg = []
+count_set = 5
+for i, value in enumerate(l):
+    if i < count_set:
+        final.append(0)
+        final_avg.append(0)
+    else:
+        # ipdb.set_trace()
+        prior_index = i - count_set
+        running_total = sum(l[prior_index:i])
+        final.append(running_total)
+        # print(running_total)
+        
+        prior_value = final[i-1]
+        if prior_value==0 or value==0:
+            final_avg.append(0)
+        else:
+            pct_change_from_prior = (value - prior_value) / value
+            final_avg.append(pct_change_from_prior)
+
 def return_trade_bars(symbol, start_date_iso, end_date_iso, limit=None):
     # symbol = 'SPY'
     # start_date_iso = '2022-03-10 19:00' # 2 PM EST start_date_iso = '2022-03-10 14:30'
