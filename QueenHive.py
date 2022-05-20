@@ -88,7 +88,7 @@ end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
-def pollen_story(pollen_nectar, QUEEN):
+def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     # where is max and depending on which time consider different weights of buy...
     # define weights in global and do multiple weights for different scenarios..
     # 1. 1 Month Leads + 3 + 6 month lead the 1 & 5 day...
@@ -102,15 +102,15 @@ def pollen_story(pollen_nectar, QUEEN):
     # >/ what current macd tier values in comparison to max/min
     s = datetime.datetime.now()
     story = {}
-
+    ANGEl_bee = {}  
+    ANGEl_bee[queens_chess_piece] = {} # hold degree angle of macd values
     CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
-    ANGEl_bee = {}  # hold degree angle of macd values
     betty_bee = {}  
     macd_tier_range = 33
 
     for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
         CHARLIE_bee[ticker_time] = {}
-        ANGEl_bee[ticker_time] = {}
+        ANGEl_bee[queens_chess_piece][ticker_time] = {}
         
         
         df = df_i.fillna(0).copy()
@@ -274,15 +274,16 @@ def pollen_story(pollen_nectar, QUEEN):
         
         # return degree angle 0, 45, 90
         
-        var_list = ['macd', 'hist', 'signal', 'price', 'rsi_ema']
+        var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
         var_timeframes = [3, 6, 8, 10, 25, 33]
         for var in var_list:
-            for type, t in var_timeframes.items():
+            for t in var_timeframes:
                 # apply rollowing angle
-                x = df.iloc[df_len - t:df_len]
-                y = [i for i in range(t)]
-                name = f'{ticker_time}{"-"}{var}{"--"}{str(t)}'
-                ANGEl_bee[ticker_time][name] = return_degree_angle(x, y)
+                if df_len >= t:
+                    x = df.iloc[df_len - t:df_len][var].to_list()
+                    y = [1, 2]
+                    name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
+                    ANGEl_bee[queens_chess_piece][ticker_time][name] = return_degree_angle(x, y)
         QUEEN['pollenstory_info']['ANGEl_bee'] = ANGEl_bee
         
         df['name'] = ticker_time
@@ -326,11 +327,11 @@ def mark_macd_signal_cross(df): # Mark the signal macd crosses
 def return_degree_angle(x, y):
     # 45 degree angle
     # x = [1, 2, 3]
-    # y = [1, 2, 3]
+    # y = [1,2]
 
     #calculate
-    degree = np.math.atan2(y[-1] - y[0], x[-1] - x[0])
-    degree = np.degrees(degree)
+    e = np.math.atan2(y[-1] - y[0], x[-1] - x[0])
+    degree = np.degrees(e)
 
     return degree
 

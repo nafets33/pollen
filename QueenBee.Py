@@ -294,7 +294,7 @@ def return_RSI(df, length):
 
     return df
 
-
+QUEEN['bee'] = {}
 def mark_macd_signal_cross(df): # Mark the signal macd crosses 
     m=df['macd'].to_list()
     s=df['signal'].to_list()
@@ -363,9 +363,10 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
     #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
     #     "1Day_1Year": 250}
-    print(ticker_list, chart_times)
-    msg = {'function':'Return_Init_ChartData','datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    msg = (ticker_list, chart_times)
+    logging.info(msg)
     print(msg)
+
     error_dict = {}
     s = datetime.datetime.now()
     dfs_index_tickers = {}
@@ -680,6 +681,7 @@ logging.info("Buzz Buzz Where My Honey")
 # Intiaite Main tickers
 # Order Manage Loop
 QUEEN = { # The Queens Mind
+    'bee': {},
     'pollenstory': {}, # latest story
     'pollencharts': {}, # latest rebuild
     'pollencharts_nectar': {}, # latest charts with indicators
@@ -734,11 +736,7 @@ if queens_chess_piece.lower() in ['castle', 'bishop']:
     """# mark final times and return values"""
     e_mainbeetime = datetime.datetime.now()
     msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
-    print(msg)
- 
-    """# mark final times and return values"""
-    e_mainbeetime = datetime.datetime.now()
-    msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    logging.info(msg)
     print(msg)
 
 # >>> Continue to Rebuild ChartData and Story
@@ -752,7 +750,7 @@ while True:
         pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
         QUEEN['pollencharts'] = pollen['pollencharts']
         QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
-        pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'], QUEEN=QUEEN)
+        pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
         QUEEN['pollenstory'] = pollens_honey['pollen_story']
         if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
             msg=("Pickle Data Failed")
@@ -786,55 +784,55 @@ while True:
                 spy = pollenstory['SPY_1Minute_1Day']
                 print(spy[['macd_cross', 'macd_slope-3', 'close_slope-3', 'macd', 'nowdate']].tail(5))
                 
-                def bid_ask_devation(symbol):
-                    devation = .01  #(bid - ask) / ask
-                    return devation
+                # def bid_ask_devation(symbol):
+                #     devation = .01  #(bid - ask) / ask
+                #     return devation
 
-                def generate_order_id():
-                    var_1 = 'buy'
-                    var_2 = 'type'  # create category types based on framework of scenarios
-                    now = return_timestamp_string()
-                    x = now
-                    # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
-                    id = now + "_" + str(var_1) + "_" + str(var_2)
-                    return id # OR just return the string iteslf? that is better no?
-                def queens_order_managment(prod, spy, symbols):
-                    prod = 'sandbox'
-                    symbols = {'sting': ['spy']}  # sting: fast day trade
-                    symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
-                    symbol = spy
-                    qty = 1
-                    side = 'buy'
-                    type = 'market'  #'limit', 'market'
-                    time_in_force = 'gtc'
-                    client_order_id = generate_order_id()
+                # def generate_order_id():
+                #     var_1 = 'buy'
+                #     var_2 = 'type'  # create category types based on framework of scenarios
+                #     now = return_timestamp_string()
+                #     x = now
+                #     # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
+                #     id = now + "_" + str(var_1) + "_" + str(var_2)
+                #     return id # OR just return the string iteslf? that is better no?
+                # def queens_order_managment(prod, spy, symbols):
+                #     prod = 'sandbox'
+                #     symbols = {'sting': ['spy']}  # sting: fast day trade
+                #     symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
+                #     symbol = spy
+                #     qty = 1
+                #     side = 'buy'
+                #     type = 'market'  #'limit', 'market'
+                #     time_in_force = 'gtc'
+                #     client_order_id = generate_order_id()
 
-                    # Buy in Prod or Sandbox
-                    if prod:
-                        api =api
-                    else:
-                        api = api_paper
+                #     # Buy in Prod or Sandbox
+                #     if prod:
+                #         api =api
+                #     else:
+                #         api = api_paper
 
 
-                prod = 'sandbox'
-                # >>> >>>> macd_buy_cross <<< <<<
-                    # cross = buy
-                    # hist slope 3 is positive, > .033%
-                    # close slope 3 is positive > .033%
-                    # macd slope is positive > .033%
-                # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 (past Num(3,6,10) degree angle: V )
-                # macd peaked or macd peaked in past 3 (take sum of past 3 and measure middle dveation from -2 vs 0)
-                macd_buy_cross = np.where(
-                    (symbol['macd_cross'] == 'buy_cross')
-                    & 
-                    (symbol['hist_slope-3'] > .033)
-                    &
-                    (symbol['close_slope-3'] > .033)
-                    &
-                    (symbol['macd_slope-3'] > .033)
-                    , 
-                    't', # queens_order_managment(prod), # execute order managment to be considered to place order
-                    'nothing') # do nothing
+                # prod = 'sandbox'
+                # # >>> >>>> macd_buy_cross <<< <<<
+                #     # cross = buy
+                #     # hist slope 3 is positive, > .033%
+                #     # close slope 3 is positive > .033%
+                #     # macd slope is positive > .033%
+                # # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 (past Num(3,6,10) degree angle: V )
+                # # macd peaked or macd peaked in past 3 (take sum of past 3 and measure middle dveation from -2 vs 0)
+                # macd_buy_cross = np.where(
+                #     (symbol['macd_cross'] == 'buy_cross')
+                #     & 
+                #     (symbol['hist_slope-3'] > .033)
+                #     &
+                #     (symbol['close_slope-3'] > .033)
+                #     &
+                #     (symbol['macd_slope-3'] > .033)
+                #     , 
+                #     't', # queens_order_managment(prod), # execute order managment to be considered to place order
+                #     'nothing') # do nothing
 
                 e = datetime.datetime.now()
                 print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))

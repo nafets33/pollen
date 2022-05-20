@@ -45,10 +45,10 @@ est = pytz.timezone("US/Eastern")
 load_dotenv()
 # >>> initiate db directories
 system = 'windows' #mac, windows
-if system != 'windows':
-    db_root = os.environ.get('db_root_mac')
-else:
-    db_root = os.environ.get('db_root_winodws')
+# if system != 'windows':
+#     db_root = os.environ.get('db_root_mac')
+# else:
+#     db_root = os.environ.get('db_root_winodws')
 
 QUEEN = { # The Queens Mind
     'pollenstory': {}, # latest story
@@ -58,6 +58,8 @@ QUEEN = { # The Queens Mind
     'self_last_modified' : datetime.datetime.now(),
     }
 
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
 client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
@@ -66,16 +68,92 @@ client_symbols = df_client.tickers.to_list()
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
+
+# if queens_chess_piece.lower() == 'knight': # Read Bees Story
+# Read chart story data
 castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
 bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))  
 if castle == False or bishop == False:
-    print("Failed in Reading of Castle of Bishop Pickle File")
+    msg = ("Failed in Reading of Castle of Bishop Pickle File")
+    print(msg)
+    logging.warning(msg)
+    # continue
 else:
     pollenstory = {**bishop['pollenstory'], **castle['pollenstory']} # combine daytrade and longterm info
-# p = pollen_story(pollen_nectar=pollenstory, QUEEN=QUEEN) # re run story
+    # make recording of last modified
+    lastmod = bishop["last_modified"]["last_modified"]
+    if lastmod > QUEEN["self_last_modified"]:
+        QUEEN["self_last_modified"] = lastmod
+        spy = pollenstory['SPY_1Minute_1Day']
+        print(spy[['macd_cross', 'macd_slope-3', 'close_slope-3', 'macd', 'nowdate']].tail(5))
+        
+        def bid_ask_devation(symbol):
+            devation = .01  #(bid - ask) / ask
+            return devation
+
+        def generate_order_id():
+            var_1 = 'buy'
+            var_2 = 'type'  # create category types based on framework of scenarios
+            now = return_timestamp_string()
+            x = now
+            # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
+            id = now + "_" + str(var_1) + "_" + str(var_2)
+            return id # OR just return the string iteslf? that is better no?
+        
+        def queens_order_managment(prod, spy, symbols):
+            prod = 'sandbox'
+            symbols = {'sting': ['spy']}  # sting: fast day trade
+            symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
+            symbol = spy
+            qty = 1
+            side = 'buy'
+            type = 'market'  #'limit', 'market'
+            time_in_force = 'gtc'
+            client_order_id = generate_order_id()
+
+            # Buy in Prod or Sandbox
+            if prod:
+                api =api
+            else:
+                api = api_paper
+
+
+        prod = 'sandbox'
+        # >>> >>>> macd_buy_cross <<< <<<
+            # cross = buy
+            # hist slope 3 is positive, > .033%
+            # close slope 3 is positive > .033%
+            # macd slope is positive > .033%
+        # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 (past Num(3,6,10) degree angle: V )
+        # macd peaked or macd peaked in past 3 (take sum of past 3 and measure middle dveation from -2 vs 0)
+        symbol = spy
+        symbol['macd_buy_cross'] = np.where(
+            (symbol['macd_cross'] == 'buy_cross')
+            & 
+            (symbol['hist_slope-3'] > .033) | (symbol['hist_slope-6'] > .01)
+            &
+            (symbol['close_slope-3'] > .033)
+            &
+            (symbol['macd_slope-3'] > .033),
+            't', # queens_order_managment(prod), # execute order managment to be considered to place order
+            'nothing') # do nothing
+        t = symbol[symbol['macd_buy_cross']=='t'].copy()
+
+        e = datetime.datetime.now()
+        print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
 spy = pollenstory['SPY_1Minute_1Day']
 
+c = spy
+c2 = c[:120].copy()
+c3=c2[['hist','hist_sma-3','hist_slope-3', 'hist_slope-6']].copy()
+c=c2[['hist','hist_slope-3', 'hist_slope-6']].plot(figsize=(14,7))
+# c=spy[['slope']].plot(figsize=(14,7))
+plt.show()
+t['t'] = np.where(t['macd'] > 0, t['macd'][0] + t['macd'][:-1], '')
+
+
+# worker bee
 r = rebuild_timeframe_bars(ticker_list=client_symbols, build_current_minute=False, min_input=0, sec_input=30) # return all tics
 resp = r['resp'] # return slope of collective tics
 df = resp[resp['symbol']=='GOOG'].copy()
@@ -104,6 +182,8 @@ for symbol in set(resp['symbol'].to_list()):
 # add weight to index each new index greater weight
 index_max = df_len
 df['index_weight'] = df
+
+
 
 # return change 
 df['price_delta'] = df['price'].rolling(window=2).apply(lambda x: x.iloc[1] - x.iloc[0])
@@ -302,6 +382,7 @@ btc = spy
 btc['sma20'] = btc.rolling(20).mean()['close']
 btc['slope'] = np.degrees(np.arctan(btc['sma20'].diff()/20))
 btc = btc[['close','sma20','slope']].copy()
+
 c=btc[['close','sma20']].plot(figsize=(14,7))
 c=btc[['slope']].plot(figsize=(14,7))
 plt.show()
@@ -351,7 +432,7 @@ x = t["index"].to_list()
 y = t["hist"].to_list()
 
 
-a=linregress(x, y)
+x = []
 # a=linregress(y, x) # hello flip me Buzzzt.?
 
 slope, intercept, r_value, p_value, std_err = linregress(x, y)
@@ -501,3 +582,35 @@ def QueenBee(): # Order Management
 
     if open_orders: # based on indicators decide whether to close position
         open_orders_bee_manager(orders)
+
+
+
+def lds(arr, n):
+    lds = [0] * n
+    max = 0
+    for i in range(n):
+        lds[i] = 1
+ 
+    for i in range(1, n):
+        for j in range(i):
+            if (arr[i] <= arr[j] and
+                lds[i] <= lds[j] + 1):
+                lds[i] = lds[j] + 1
+ 
+    for i in range(n):
+        if (max < lds[i]):
+            max = lds[i]
+            
+    return max
+def bullish_engulfing(data):
+     open_p = list(data['open'])
+     close_p = list(data['close'])
+     tmp = close_p[-10:]
+     dec_seq = lds(tmp, len(tmp))
+     
+     DECREASING_FACTOR = 0.65
+     if(dec_seq/len(tmp) >= DECREASING_FACTOR):
+          if(open_p[-1] < close_p[-1] and open_p[-2] > close_p[-2] and open_p[-1] < close_p[-2] and close_p[-1] > open_p[-2]):
+               return True
+          return False
+     return False
