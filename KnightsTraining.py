@@ -36,6 +36,31 @@ from scipy.stats import linregress
 from scipy import stats
 import math
 import matplotlib.pyplot as plt
+import mplfinance as mpf
+
+def return_degree_angle(x, y):
+    # 45 degree angle
+    # x = [1, 2, 3]
+    # y = [1, 2, 3]
+
+    #calculate
+    degree = np.math.atan2(y[-1] - y[0], x[-1] - x[0])
+    degree = np.degrees(degree)
+
+    return degree
+
+
+def return_ema_slope(df, y_list, time_measure_list):
+        # df=pollenstory['SPY_1Minute_1Day'].copy()
+        # time_measure_list = [3, 23, 33]
+        # y_list = ['close', 'macd', 'hist']
+        for mtime in time_measure_list:
+            for el in y_list:
+                sma_name = f'{el}{"_sma-"}{mtime}'
+                slope_name = f'{el}{"_slope-"}{mtime}'
+                df[sma_name] = df[el].rolling(mtime).mean().fillna(0)
+                df[slope_name] = np.degrees(np.arctan(df[sma_name].diff()/mtime))
+        return df
 
 
 
@@ -66,8 +91,6 @@ client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
 df_client = pd.read_csv(client_ticker_file, dtype=str)
 client_symbols = df_client.tickers.to_list()
 
-main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
 
 # if queens_chess_piece.lower() == 'knight': # Read Bees Story
 # Read chart story data
@@ -79,7 +102,7 @@ if castle == False or bishop == False:
     logging.warning(msg)
     # continue
 else:
-    pollenstory = {**bishop['pollenstory'], **castle['pollenstory']} # combine daytrade and longterm info
+    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
     # make recording of last modified
     lastmod = bishop["last_modified"]["last_modified"]
     if lastmod > QUEEN["self_last_modified"]:
@@ -126,23 +149,52 @@ else:
             # macd slope is positive > .033%
         # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 (past Num(3,6,10) degree angle: V )
         # macd peaked or macd peaked in past 3 (take sum of past 3 and measure middle dveation from -2 vs 0)
-        symbol = spy
-        symbol['macd_buy_cross'] = np.where(
-            (symbol['macd_cross'] == 'buy_cross')
-            & 
-            (symbol['hist_slope-3'] > .033) | (symbol['hist_slope-6'] > .01)
-            &
-            (symbol['close_slope-3'] > .033)
-            &
-            (symbol['macd_slope-3'] > .033),
-            't', # queens_order_managment(prod), # execute order managment to be considered to place order
-            'nothing') # do nothing
-        t = symbol[symbol['macd_buy_cross']=='t'].copy()
+        def knight_sight():
+            trigger_dict = {}
+            symbol = spy
+            symbol['macd_buy_cross'] = np.where(
+                (symbol['macd_cross'] == 'buy_cross') & 
+                (symbol['hist_slope-3'] > .033) | (symbol['hist_slope-6'] > .01) &
+                (symbol['close_slope-3'] > .033) &
+                (symbol['macd_slope-3'] > .033),
+                't', # queens_order_managment(prod), # execute order managment to be considered to place order
+                'nothing') # do nothing
+            t = symbol[symbol['macd_buy_cross']=='t'].copy()
+            if symbol['macd_buy_cross'].iloc[-1] == 't':
+                trigger_dict['macd_buy_cross'] = 't'
 
+            # Mac is very LOW and the prior hist slow was steep and we are not in a BUY CROSS Cycle Yet
+            symbol['buy_high-deviation'] = np.where(
+                (symbol['macd_cross'].str.contains("buy_hold")==False) & # is not in BUY cycle
+                (symbol['macd'] < -1.5) &
+                (symbol['macd_slope-3'] > .33)&
+                (symbol['hist_slope-3'] > .3) |(symbol['hist_slope-6'] > .10) 
+                ,"t2", 'nothing'
+            )
+            if symbol['macd_buy_cross'].iloc[-1] == 't':
+                trigger_dict['macd_buy_cross'] = 't'
+
+
+            np.where(
+                (symbol['vwap'] < - 3) # 
+                ,"vwap_deivation", 'nothing'
+            )
+        
+            return {"df": df, "bee_triggers": trigger_dict}
+
+def queens_conscience():
+    # what time is it? Block of Day? [9-9:30, 10-11, 11-1,1-3,3-4]
+    # read triggers
+    # validate triggers
+    # pass to order function
+
+        
         e = datetime.datetime.now()
         print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
 spy = pollenstory['SPY_1Minute_1Day']
+
+
 
 c = spy
 c2 = c[:120].copy()
@@ -152,6 +204,54 @@ c=c2[['hist','hist_slope-3', 'hist_slope-6']].plot(figsize=(14,7))
 plt.show()
 t['t'] = np.where(t['macd'] > 0, t['macd'][0] + t['macd'][:-1], '')
 
+spy = pollenstory['SPY_5Minute_5Day']
+
+df_apple = spy
+
+x = np.arange(0,len(df_apple))
+fig, (ax, ax2) = plt.subplots(2, figsize=(12,8), gridspec_kw={'height_ratios': [4, 1]})
+for idx, val in df_apple.iterrows():
+    color = '#2CA453'
+    if val['open'] > val['close']: color= '#F04730'
+    ax.plot([x[idx], x[idx]], [val['low'], val['high']], color=color)
+    ax.plot([x[idx], x[idx]-0.1], [val['open'], val['open']], color=color)
+    ax.plot([x[idx], x[idx]+0.1], [val['close'], val['close']], color=color)
+    
+# ticks top plot
+ax2.set_xticks(x[::3])
+ax2.set_xticklabels(df_apple.timestamp_est.dt.timestamp_est[::3])
+ax.set_xticks(x, minor=True)
+# labels
+ax.set_ylabel('USD')
+ax2.set_ylabel('Volume')
+# grid
+ax.xaxis.grid(color='black', linestyle='dashed', which='both', alpha=0.1)
+ax2.set_axisbelow(True)
+ax2.yaxis.grid(color='black', linestyle='dashed', which='both', alpha=0.1)
+# remove spines
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_visible(False)
+ax.spines['top'].set_visible(False)
+ax2.spines['right'].set_visible(False)
+ax2.spines['left'].set_visible(False)
+# plot volume
+ax2.bar(x, df_apple['volume'], color='lightgrey')
+# get max volume + 10%
+mx = df_apple['volume'].max()*1.1
+# define tick locations - 0 to max in 4 steps
+yticks_ax2 = np.arange(0, mx+1, mx/4)
+# create labels for ticks. Replace 1.000.000 by 'mi'
+yticks_labels_ax2 = ['{:.2f} mi'.format(i/1000000) for i in yticks_ax2]
+ax2.yaxis.tick_right() # Move ticks to the left side
+# plot y ticks / skip first and last values (0 and max)
+plt.yticks(yticks_ax2[1:-1], yticks_labels_ax2[1:-1])
+plt.ylim(0,mx)
+ 
+# title
+ax.set_title('Apple Stock Price\n', loc='left', fontsize=20)
+# no spacing between the subplots
+plt.subplots_adjust(wspace=0, hspace=0)
+plt.show()
 
 # worker bee
 r = rebuild_timeframe_bars(ticker_list=client_symbols, build_current_minute=False, min_input=0, sec_input=30) # return all tics
@@ -171,18 +271,6 @@ print(sum(df['price_delta'].tail(int(round(df_len/2,0)))))
 
 
 
-r = rebuild_timeframe_bars(ticker_list=client_symbols, build_current_minute=False, min_input=0, sec_input=30) # return all tics
-resp = r['resp'] # return slope of collective tics
-for symbol in set(resp['symbol'].to_list()):
-    df = resp[resp['symbol']==symbol].copy()
-    df = df.reset_index()
-    df_len = len(df)
-    rolling_times = [round(df_len / 4), round(df_len / 2)]
-    df = return_sma_slope(df=df, y_list=['price'], time_measure_list=rolling_times)
-# add weight to index each new index greater weight
-index_max = df_len
-df['index_weight'] = df
-
 
 
 # return change 
@@ -190,29 +278,6 @@ df['price_delta'] = df['price'].rolling(window=2).apply(lambda x: x.iloc[1] - x.
 df['price_delta_pct'] = df['price'].rolling(window=2).apply(lambda x: (x.iloc[1] - x.iloc[0])/ x.iloc[0])
 
 
-def return_degree_angle(x, y):
-    # 45 degree angle
-    # x = [1, 2, 3]
-    # y = [1, 2, 3]
-
-    #calculate
-    degree = np.math.atan2(y[-1] - y[0], x[-1] - x[0])
-    degree = np.degrees(degree)
-
-    return degree
-
-
-def return_ema_slope(df, y_list, time_measure_list):
-        # df=pollenstory['SPY_1Minute_1Day'].copy()
-        # time_measure_list = [3, 23, 33]
-        # y_list = ['close', 'macd', 'hist']
-        for mtime in time_measure_list:
-            for el in y_list:
-                sma_name = f'{el}{"_sma-"}{mtime}'
-                slope_name = f'{el}{"_slope-"}{mtime}'
-                df[sma_name] = df[el].rolling(mtime).mean().fillna(0)
-                df[slope_name] = np.degrees(np.arctan(df[sma_name].diff()/mtime))
-        return df
 
 # Momementem 2 ways, 2 way is much faster
 # 1.
@@ -276,43 +341,41 @@ weighted_average_m1(distribution, weights)
 
 
 from pykalman import KalmanFilter
+def kalmanfilter():
+    spy = pollenstory['SPY_1Day_1Year']
+    kf = KalmanFilter(transition_matrices = [1],
+                    observation_matrices = [1],
+                    initial_state_mean = 0,
+                    initial_state_covariance = 1,
+                    observation_covariance = 1,
+                    transition_covariance = 0.0001)
+    mean, cov = kf.filter(spy['close'].values)
+    mean, std = mean.squeeze(), np.std(cov.squeeze())
+    plt.figure(figsize=(12,6))
+    plt.plot(spy['close'].values - mean, 'red', lw=1.5)
+    plt.show()
 
-spy = pollenstory['SPY_1Day_1Year']
-kf = KalmanFilter(transition_matrices = [1],
-                  observation_matrices = [1],
-                  initial_state_mean = 0,
-                  initial_state_covariance = 1,
-                  observation_covariance = 1,
-                  transition_covariance = 0.0001)
-mean, cov = kf.filter(spy['close'].values)
-mean, std = mean.squeeze(), np.std(cov.squeeze())
-plt.figure(figsize=(12,6))
-plt.plot(spy['close'].values - mean, 'red', lw=1.5)
-plt.show()
+
+    # df = from above last 30 seconds pull
+    kf = KalmanFilter(transition_matrices = [1],
+                    observation_matrices = [1],
+                    initial_state_mean = 0,
+                    initial_state_covariance = 1,
+                    observation_covariance = 1,
+                    transition_covariance = 0.0001)
+    mean, cov = kf.filter(df['price'].values)
+    mean, std = mean.squeeze(), np.std(cov.squeeze())
+    plt.figure(figsize=(12,6))
+    plt.plot(df['price'].values - mean, 'red', lw=1.5)
+    plt.show()
 
 
-# df = from above last 30 seconds pull
-kf = KalmanFilter(transition_matrices = [1],
-                  observation_matrices = [1],
-                  initial_state_mean = 0,
-                  initial_state_covariance = 1,
-                  observation_covariance = 1,
-                  transition_covariance = 0.0001)
-mean, cov = kf.filter(df['price'].values)
-mean, std = mean.squeeze(), np.std(cov.squeeze())
-plt.figure(figsize=(12,6))
-plt.plot(df['price'].values - mean, 'red', lw=1.5)
-plt.show()
-
-spy = p['pollen_story']['SPY_1Minute_1Day']
-# spy['f'] = spy['timestamp_est'].apply(lambda x: x.day==29)==True
-# spy = spy[spy['f']==True]
-
-# remove past day from 1 min 
-yesterday = datetime.datetime.now() - timedelta(days=1)
-datetime.datetime.strptime(yesterday, "%Y-%m-%d")
-spy=spy[spy['timestamp_est'] > "2022-04-29"]
-spy=spy[spy['timestamp_est'] < yesterday.isoformat()].copy()  # WORKS
+def filterout_priorday(df, timeindex=False):# remove past day from 1 min 
+    yesterday = datetime.datetime.now() - timedelta(days=1)
+    # datetime.datetime.strptime(yesterday, "%Y-%m-%d")
+    # df=df[df['timestamp_est'] > "2022-04-29"]
+    df=df[df['timestamp_est'] < yesterday.isoformat()].copy()  # WORKS
+    return df
 
 # t = spy[["macd", "seq_macd", "running_macd", "tier_macd"]]
 def linear_regression(pollenstory, x_list, y_list, regression_times, init=False):
@@ -413,10 +476,9 @@ btc = btc[['timestamp_est', 'close', 'hist','sma20','slope']].copy()
 btc.tail(10)
 t = btc.set_index('timestamp_est')
 t = t.between_time('13:00', '13:12')
-t
-btc[['close','sma20']].plot(figsize=(14,7))
-btc[['slope']].plot(figsize=(14,7))
-plt.show()
+
+
+
 
 # return by prior times
 spy = spy.set_index('timestamp_est')
@@ -430,12 +492,6 @@ t = spy.between_time('9:50', '9:56')
 t = t.reset_index()
 x = t["index"].to_list()
 y = t["hist"].to_list()
-
-
-x = []
-# a=linregress(y, x) # hello flip me Buzzzt.?
-
-slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
 
 # from QueenBishop import QUEEN
@@ -477,92 +533,7 @@ slope, intercept, r_value, p_value, std_err = linregress(x, y)
 #     time.sleep(1)
 
 
-# Index(['open', 'high', 'low', 'close', 'volume', 'trade_count', 'vwap',
-#        'symbol', 'timestamp_est', 'vwap_original', 'rsi_ema', 'rsi_sma',
-#        'rsi_rma', 'macd', 'signal', 'hist', 'story_index', 'tier_macd',
-#        'tier_macd_range-high', 'tier_macd_range-low', 'tier_signal',
-#        'tier_signal_range-high', 'tier_signal_range-low', 'tier_hist',
-#        'tier_hist_range-high', 'tier_hist_range-low', 'seq_macd',
-#        'running_macd', 'seq_signal', 'running_signal', 'seq_hist',
-#        'running_hist', 'macd_cross', 'name'],
-#       dtype='object')
 
-#       # Assuming that dataframes df1 and df2 are already defined:
-# print "Dataframe 1:"
-# display(spy)
-# print "Dataframe 2:"
-# display(HTML(spy.to_html()))
-
-
-def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
-    # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
-    try:
-        # First get the current time
-        if build_current_minute:
-            current_time = datetime.datetime.now()
-            current_sec = current_time.second
-            if current_sec < 5:
-                time.sleep(1)
-                current_time = datetime.datetime.now()
-                sec_input = current_time.second
-                min_input = 0
-        else:
-            sec_input = sec_input
-            min_input = min_input
-
-        current_time = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-        previous_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=min_input, seconds=sec_input)).strftime('%Y-%m-%dT%H:%M:%SZ')
-
-        def has_condition(condition_list, condition_check):
-            if type(condition_list) is not list: 
-                # Assume none is a regular trade?
-                in_list = False
-            else:
-                # There are one or more conditions in the list
-                in_list = any(condition in condition_list for condition in condition_check)
-
-            return in_list
-
-        exclude_conditions = [
-        'B','W','4','7','9','C','G','H',
-        'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
-        ]
-        # Fetch trades for the X seconds before the current time
-        trades_df = api.get_trades(ticker_list,
-                                    start=previous_time,
-                                    end=current_time, 
-                                    limit=30000).df
-        # convert to market time for easier reading
-        trades_df = trades_df.tz_convert('America/New_York')
-
-        # add a column to easily identify the trades to exclude using our function from above
-        trades_df['exclude'] = trades_df.conditions.apply(has_condition, condition_check=exclude_conditions)
-
-        # filter to only look at trades which aren't excluded
-        valid_trades = trades_df.query('not exclude')
-        # print(len(trades_df), len(valid_trades))
-        # x=trades_df['conditions'].to_list()
-        # y=[str(i) for i in x]
-        # print(set(y))
-        if build_current_minute:
-            minbars_dict = {}
-            for ticker in ticker_list:
-                df = valid_trades[valid_trades['symbol']==ticker].copy()
-                # Resample the trades to calculate the OHLCV bars
-                agg_functions = {'price': ['first', 'max', 'min', 'last'], 'size': ['sum', 'count']}
-                min_bars = df.resample('1T').agg(agg_functions)
-                min_bars = min_bars.droplevel(0, 'columns')
-                min_bars.columns=['open', 'high', 'low' , 'close', 'volume', 'trade_count']
-                min_bars = min_bars.reset_index()
-                min_bars = min_bars.rename(columns={'timestamp': 'timestamp_est'})
-                minbars_dict[ticker] = min_bars
-                return {'resp': minbars_dict}
-        else:
-            return {'resp': valid_trades}
-    except Exception as e:
-        print("rebuild_timeframe_bars", e)
-        return {'resp': False, 'msg': [e, current_time, previous_time]}
-# r = rebuild_timeframe_bars(ticker_list, sec_input=30)
 
 
 def QueenBee(): # Order Management
@@ -585,23 +556,16 @@ def QueenBee(): # Order Management
 
 
 
-def lds(arr, n):
-    lds = [0] * n
-    max = 0
-    for i in range(n):
-        lds[i] = 1
- 
-    for i in range(1, n):
-        for j in range(i):
-            if (arr[i] <= arr[j] and
-                lds[i] <= lds[j] + 1):
-                lds[i] = lds[j] + 1
- 
-    for i in range(n):
-        if (max < lds[i]):
-            max = lds[i]
-            
-    return max
+
+
+
+
+
+
+
+
+### SAVE ###
+
 def bullish_engulfing(data):
      open_p = list(data['open'])
      close_p = list(data['close'])
@@ -614,3 +578,32 @@ def bullish_engulfing(data):
                return True
           return False
      return False
+    
+
+
+slope, intercept, r_value, p_value, std_err = linregress(x, y)
+
+
+def pollenstory():
+    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+    return pollenstory
+
+
+pollenstory = pollenstory()
+df = pollenstory['SPY_1Minute_1Day']
+df = df.set_index('timestamp_est')
+df_t = df.between_time('11:00', '11:12')
+df_t = df_t[df_t.index.day == 27]
+
+df_t['prior_slopedelta'] = (df_t['macd_slope-3'] - df_t['macd_slope-3'].shift(1)).fillna(0)
+
+p=plt.figure(figsize=(12,6))
+p=plt.plot(df_t[['macd', 'macd_slope-3', 'prior_slopedelta']], lw=1.5)
+# plt.show()
+
+
+# prior slope delta
+
+

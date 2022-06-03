@@ -24,6 +24,7 @@ from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
+import talib
 
 
 est = pytz.timezone("America/New_York")
@@ -31,10 +32,8 @@ est = pytz.timezone("America/New_York")
 system = 'windows' #mac, windows
 load_dotenv()
 
-if system != 'windows':
-    db_root = os.environ.get('db_root_mac')
-else:
-    db_root = os.environ.get('db_root_winodws')
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
 
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
@@ -103,15 +102,13 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     s = datetime.datetime.now()
     story = {}
     ANGEl_bee = {}  
-    ANGEl_bee[queens_chess_piece] = {} # hold degree angle of macd values
     CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
     betty_bee = {}  
     macd_tier_range = 33
 
     for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
         CHARLIE_bee[ticker_time] = {}
-        ANGEl_bee[queens_chess_piece][ticker_time] = {}
-        
+        ANGEl_bee[ticker_time] = {}
         
         df = df_i.fillna(0).copy()
         df = df.reset_index(drop=True)
@@ -159,35 +156,39 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
         # BETTY_bee = {}  # 'SPY_1Minute': {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}    
         
-        # Map in CHARLIE_bee tier 
-        def map_values_tier(mac_name, value, ticker_time_tiers, tier_range_set_value=False): # map in tier name or tier range high low
-            # ticker_time_tiers = CHARLIE_bee[ticker_time]
-            if value < 0:
-                chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "RED" in k}
-            else:
-                chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "GREEN" in k}
+        # Map in CHARLIE_bee tier
+        def map_tiers(): # map in into main df
+            def map_values_tier(mac_name, value, ticker_time_tiers, tier_range_set_value=False): # map in tier name or tier range high low
+                # ticker_time_tiers = CHARLIE_bee[ticker_time]
+                if value < 0:
+                    chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "RED" in k}
+                else:
+                    chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "GREEN" in k}
+                
+                for tier_macname_sector, tier_range in chart_range.items():
+                    if abs(value) <= abs(tier_range[0]) and abs(value) >= abs(tier_range[1]):
+                        if tier_range_set_value == 'high':
+                            return tier_range[0]
+                        elif tier_range_set_value == 'low':
+                            return tier_range[1]
+                        else:
+                            return tier_macname_sector
             
-            for tier_macname_sector, tier_range in chart_range.items():
-                if abs(value) <= abs(tier_range[0]) and abs(value) >= abs(tier_range[1]):
-                    if tier_range_set_value == 'high':
-                        return tier_range[0]
-                    elif tier_range_set_value == 'low':
-                        return tier_range[1]
-                    else:
-                        return tier_macname_sector
-        
-        ticker_time_tiers = CHARLIE_bee[ticker_time]
-        df['tier_macd'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers))
-        df['tier_macd_range-high'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='high'))
-        df['tier_macd_range-low'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='low'))
+            ticker_time_tiers = CHARLIE_bee[ticker_time]
+            df['tier_macd'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers))
+            df['tier_macd_range-high'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='high'))
+            df['tier_macd_range-low'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='low'))
 
-        df['tier_signal'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers))
-        df['tier_signal_range-high'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='high'))
-        df['tier_signal_range-low'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='low'))
+            df['tier_signal'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers))
+            df['tier_signal_range-high'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='high'))
+            df['tier_signal_range-low'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='low'))
 
-        df['tier_hist'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers))
-        df['tier_hist_range-high'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='high'))
-        df['tier_hist_range-low'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='low'))
+            df['tier_hist'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers))
+            df['tier_hist_range-high'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='high'))
+            df['tier_hist_range-low'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='low'))
+            
+            return True
+        map_tiers()
 
         # Add Seq columns of tiers, return [0,1,2,0,1,0,0,1,2,3,0] (how Long in Tier)
             # how long since prv High/Low?
@@ -225,33 +226,35 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                         res_list.append(d[el])
                         set_index['start'] = i - 1
                         res_dist_list.append(0)
+            
             # Join in Data and send info to the QUEEN
-            QUEEN['pollenstory_info'][ticker_time] = d_total_tier_counts
+            # QUEEN[queens_chess_piece]['pollenstory_info'][ticker_time][''] = d_total_tier_counts
+            bee_tier_totals = d_total_tier_counts
             dfseq = pd.DataFrame(res_list, columns=['seq_'+mac_name])
             dfrunning = pd.DataFrame(res_dist_list, columns=['running_'+mac_name])
             df_new = pd.concat([df, dfseq, dfrunning], axis=1)
             return df_new
 
-            def tier_time_patterns(df, names):
-                # {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}
-                names = ['macd', 'signal', 'hist']
-                for name in names:
-                    tier_name = f'tier_{name}' # tier_macd
-                    item_list = df[tier_name].to_list()
-                    res = count_sequential_n_inList(item_list)
+        
+        
+        def tier_time_patterns(df, names):
+            # {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}
+            names = ['macd', 'signal', 'hist']
+            for name in names:
+                tier_name = f'tier_{name}' # tier_macd
+                item_list = df[tier_name].to_list()
+                res = count_sequential_n_inList(item_list)
 
-                    tier_list = list(set(df[tier_name].to_list()))
+                tier_list = list(set(df[tier_name].to_list()))
 
-                    
-                    for tier in tier_list:
-                        if tier.lower().startswith('t'): # ensure tier
-                            df_tier = df[df[tier_name] == tier].copy()
-                            x = df_tier["timestamp_est"].to_list()
+                
+                for tier in tier_list:
+                    if tier.lower().startswith('t'): # ensure tier
+                        df_tier = df[df[tier_name] == tier].copy()
+                        x = df_tier["timestamp_est"].to_list()
 
-
-
-            macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
-            macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
+        # macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
+        # macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
         
         try:  # count_sequential_n_inList
             for mac_name in ['macd', 'signal', 'hist']:
@@ -266,7 +269,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                     last_time_tier_found = df_t.iloc[-1].story_index
                     distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
                     betty_bee[f'{ticker_time}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
-                QUEEN['pollenstory_info']['betty_bee'] = betty_bee
+                QUEEN[queens_chess_piece]['pollenstory_info']['betty_bee'] = betty_bee
 
         except Exception as e:
             msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
@@ -283,45 +286,88 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                     x = df.iloc[df_len - t:df_len][var].to_list()
                     y = [1, 2]
                     name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
-                    ANGEl_bee[queens_chess_piece][ticker_time][name] = return_degree_angle(x, y)
-        QUEEN['pollenstory_info']['ANGEl_bee'] = ANGEl_bee
+                    ANGEl_bee[ticker_time][name] = return_degree_angle(x, y)
+        QUEEN[queens_chess_piece]['pollenstory_info']['ANGEl_bee'] = ANGEl_bee
         
+        # add close price momentum
+        try:
+            close = df['close']
+            df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
+            df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
+        except Exception as e:
+            msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
+            logging.error(msg)
+        
+        # devation from vwap
+        df['vwap_deviation'] = df['close'] - df['vwap_original']
+
+        # # add timeblocks [9:30 - 10, 10-12, 12-1, 1-3, 3-4]:: NOT SURE ABOUT TIMEBLOCK YET?
+        # def add_timeblock(dt):
+        #     if dt.hour > 9 and dt.hour < 10:
+        #         return 1
+        #     elif dt.hour == 10 and dt.hour < 12:
+        #         return 2
+        #     elif dt.hour == 12 and dt.hour < 1 
+        # df['timeblock'] = 
+        
+        # add to story
         df['name'] = ticker_time
         story[ticker_time] = df
-        # print(df['name'].iloc[-1], df['close'].iloc[-1], df['tier_macd'].iloc[-1], df['timestamp_est'].iloc[-1])
         
         # add momentem ( when macd < signal & past 3 macds are > X Value or %)
         
         # when did macd and signal share same tier?
-        # OR When did macd and signal last cross macd < signal
-        # what is momentum of past intervals (3, 5, 8...)
     # QUEEN['pollenstory'] = story
     e = datetime.datetime.now()
     print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    return {'pollen_story': story, 'betty_bee': betty_bee}
+    return {'pollen_story': story}
 
 
-def mark_macd_signal_cross(df): # Mark the signal macd crosses 
-    m=df['macd'].to_list()
-    s=df['signal'].to_list()
-    cross_list=[]
-    for i, macdvalue in enumerate(m):
-        if i != 0:
-            prior_mac = m[i-1]
-            prior_signal = s[i-1]
-            now_mac = macdvalue
-            now_signal = s[i]
-            if now_mac > now_signal and prior_mac <= prior_signal:
-                cross_list.append('buy_cross')
-            elif now_mac < now_signal and prior_mac >= prior_signal:
-                cross_list.append('sell_cross')
+def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses 
+    
+    # running totals 
+    try:
+        m=df['macd'].to_list()
+        s=df['signal'].to_list()
+        prior_cross = None
+        cross_list=[]
+        c = 0  # count which side of trade you are on (c brings deveations from prior cross)
+        buy_c = 0
+        sell_c = 0
+        for i, macdvalue in enumerate(m):
+            if i != 0:
+                prior_mac = m[i-1]
+                prior_signal = s[i-1]
+                now_mac = macdvalue
+                now_signal = s[i]
+                if now_mac > now_signal and prior_mac <= prior_signal:
+                    cross_list.append(f'{"buy_cross"}{"-"}{0}')
+                    c = 0
+                    prior_cross = 'buy'
+                    buy_c += 1
+                elif now_mac < now_signal and prior_mac >= prior_signal:
+                    cross_list.append('sell_cross')
+                    c = 0
+                    prior_cross = 'sell'
+                    sell_c += 1
+                else:
+                    if prior_cross:
+                        if prior_cross == 'buy':
+                            c+=1
+                            cross_list.append(f'{"buy_hold"}{"-"}{c}')
+                        else:
+                            c+=1
+                            cross_list.append(f'{"sell_hold"}{"-"}{c}')
+                    else:
+                        cross_list.append(f'{"hold"}{"-"}{0}')
             else:
-                cross_list.append('hold')
-        else:
-            cross_list.append('hold')
-    df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
-    df_new = pd.concat([df, df2], axis=1)
-    return df_new
+                cross_list.append(f'{"hold"}{"-"}{0}')
+        df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
+        df_new = pd.concat([df, df2], axis=1)
+        return df_new
+    except Exception as e:
+        msg=(e,"--", print_line_of_error(), "--", 'macd_cross')
+        logging.critical(msg)     
 
 
 def return_degree_angle(x, y):
@@ -799,13 +845,12 @@ def get_ticker_statatistics(symbol):
     return dataframes
 
 
-def timestamp_string():
-    return datetime.datetime.now().strftime("%m-%d-%Y %I.%M%p")
+def timestamp_string(format="%m-%d-%Y %I.%M%p"):
+    return datetime.datetime.now().strftime(format)
 
 
-def return_timestamp_string():
-    return datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S %p')
-
+def return_timestamp_string(format='%Y-%m-%d %H-%M-%S %p'):
+    return datetime.datetime.now().strftime(format)
 
 
 def print_line_of_error():

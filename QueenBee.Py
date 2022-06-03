@@ -37,6 +37,16 @@ import hashlib
 
 # script arguments
 queens_chess_piece = sys.argv[1] # 'castle', 'knight'
+QUEEN = { # The Queens Mind
+    queens_chess_piece: {
+    'bee_triggers': {},
+    'pollenstory': {}, # latest story
+    'pollencharts': {}, # latest rebuild
+    'pollencharts_nectar': {}, # latest charts with indicators
+    'pollenstory_info': {}, # Misc Info,
+    'last_modified' : datetime.datetime.now(),
+    }
+}
 
 prod = True
 pd.options.mode.chained_assignment = None
@@ -66,8 +76,8 @@ else:
     # copy log file to log dir & del current log file
     datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
     dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-    shutil.copy(log_file, dst_path)
-    os.remove(log_file)
+    # shutil.copy(log_file, dst_path) # only when you want to log your log files
+    # os.remove(log_file)
     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
                         filemode='a',
                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
@@ -174,7 +184,6 @@ if prod: # Return Ticker and Acct Info
     alpaca_symbols_dict = {}
     for n, v in enumerate(all_alpaca_tickers):
         if all_alpaca_tickers[n].status == 'active':
-            
             alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
 
     symbol_shortable_list = []
@@ -249,6 +258,14 @@ def return_VWAP(df):
     return df
 
 
+def vwap(df):
+    q = df.volume.values
+    p = df.close.values
+    df.assign(vwap=(p * q).cumsum() / q.cumsum())
+    df = df.groupby(df['timestamp_est'], group_keys=False).apply(vwap).fillna(0)
+    return df
+
+
 def return_RSI(df, length):
     # Define function to calculate the RSI
     # length = 14 # test
@@ -294,29 +311,6 @@ def return_RSI(df, length):
 
     return df
 
-QUEEN['bee'] = {}
-def mark_macd_signal_cross(df): # Mark the signal macd crosses 
-    m=df['macd'].to_list()
-    s=df['signal'].to_list()
-    cross_list=[]
-    for i, macdvalue in enumerate(m):
-        if i != 0:
-            prior_mac = m[i-1]
-            prior_signal = s[i-1]
-            now_mac = macdvalue
-            now_signal = s[i]
-            if now_mac > now_signal and prior_mac <= prior_signal:
-                cross_list.append('buy_cross')
-            elif now_mac < now_signal and prior_mac >= prior_signal:
-                cross_list.append('sell_cross')
-            else:
-                cross_list.append('hold')
-        else:
-            cross_list.append('hold')
-    df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
-    df_new = pd.concat([df, df2], axis=1)
-    return df_new
-
 
 def return_sma_slope(df, y_list, time_measure_list):
         # df=pollenstory['SPY_1Minute_1Day'].copy()
@@ -344,6 +338,8 @@ def return_getbars_WithIndicators(bars_data, MACD):
         bars_data['vwap_original'] = bars_data['vwap']
         # del mk_hrs_data['vwap']
         df_vwap = return_VWAP(bars_data)
+        # df_vwap = vwap(bars_data)
+
         df_vwap_rsi = return_RSI(df=df_vwap, length=14)
         # append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
         df_vwap_rsi_macd = return_macd(df_main=df_vwap_rsi, fast=MACD['fast'], slow=MACD['slow'], smooth=MACD['smooth'])
@@ -663,6 +659,14 @@ def pollen_hunt(df_tickers_data, MACD):
     return {'pollencharts_nectar': main_rebuild_dict, 'pollencharts': chart_rebuild_dict}
 # PollenBee_Charts = pollen_hunt(ticker_list=main_index_tickers)
 
+
+def pollenstory():
+    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+    return pollenstory
+
+
 print(
 """
 We all shall prosper through the depths of our connected hearts,
@@ -680,14 +684,6 @@ logging.info("Buzz Buzz Where My Honey")
 # All Symbols and Tickers
 # Intiaite Main tickers
 # Order Manage Loop
-QUEEN = { # The Queens Mind
-    'bee': {},
-    'pollenstory': {}, # latest story
-    'pollencharts': {}, # latest rebuild
-    'pollencharts_nectar': {}, # latest charts with indicators
-    'pollenstory_info': {}, # Misc Info,
-    'self_last_modified' : datetime.datetime.now(),
-    }
 
 # init files needed
 PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
@@ -711,8 +707,6 @@ if queens_chess_piece == 'workerbee':
         os.remove(PB_Story_Pickle)
 
 s_mainbeetime = datetime.datetime.now()
-#LongTerm_symbols = ?Weight Each Symbol? or just you assests and filter on Market Cap & VOL SECTOR, EBITDA, Free Cash Flow
-
 
 
 """ Initiate your Charts with Indicators """
@@ -730,8 +724,8 @@ if queens_chess_piece.lower() in ['castle', 'bishop']:
     df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
     # give it all to the QUEEN put directkly in function
     pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
-    QUEEN['pollencharts'] = pollen['pollencharts']
-    QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
+    QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
+    QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
  
     """# mark final times and return values"""
     e_mainbeetime = datetime.datetime.now()
@@ -747,11 +741,11 @@ while True:
             logging.info("Happy Bee Day End")
             print("Great Job! See you Tomorrow")
             break
-        pollen = pollen_hunt(df_tickers_data=QUEEN['pollencharts'], MACD=MACD_12_26_9)
-        QUEEN['pollencharts'] = pollen['pollencharts']
-        QUEEN['pollencharts_nectar'] = pollen['pollencharts_nectar']
-        pollens_honey = pollen_story(pollen_nectar=QUEEN['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
-        QUEEN['pollenstory'] = pollens_honey['pollen_story']
+        pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
+        QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
+        QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
+        pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
+        QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
         if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
             msg=("Pickle Data Failed")
             print(msg)
@@ -759,84 +753,7 @@ while True:
             continue
         e = datetime.datetime.now()
         print(queens_chess_piece, str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-
-    if queens_chess_piece.lower() == 'knight': # Read Bees Story
-        s = datetime.datetime.now()
-        if s > datetime.datetime(s.year, s.month, s.day, 16):
-            logging.info("Happy Bee Day End")
-            print("Great Job! See you Tomorrow")
-            break
-
-        # Read chart story data
-        castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-        bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))  
-        if castle == False or bishop == False:
-            msg = ("Failed in Reading of Castle of Bishop Pickle File")
-            print(msg)
-            logging.warning(msg)
-            continue
-        else:
-            pollenstory = {**bishop['pollenstory'], **castle['pollenstory']} # combine daytrade and longterm info
-            # make recording of last modified
-            lastmod = bishop["last_modified"]["last_modified"]
-            if lastmod > QUEEN["self_last_modified"]:
-                QUEEN["self_last_modified"] = lastmod
-                spy = pollenstory['SPY_1Minute_1Day']
-                print(spy[['macd_cross', 'macd_slope-3', 'close_slope-3', 'macd', 'nowdate']].tail(5))
-                
-                # def bid_ask_devation(symbol):
-                #     devation = .01  #(bid - ask) / ask
-                #     return devation
-
-                # def generate_order_id():
-                #     var_1 = 'buy'
-                #     var_2 = 'type'  # create category types based on framework of scenarios
-                #     now = return_timestamp_string()
-                #     x = now
-                #     # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
-                #     id = now + "_" + str(var_1) + "_" + str(var_2)
-                #     return id # OR just return the string iteslf? that is better no?
-                # def queens_order_managment(prod, spy, symbols):
-                #     prod = 'sandbox'
-                #     symbols = {'sting': ['spy']}  # sting: fast day trade
-                #     symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
-                #     symbol = spy
-                #     qty = 1
-                #     side = 'buy'
-                #     type = 'market'  #'limit', 'market'
-                #     time_in_force = 'gtc'
-                #     client_order_id = generate_order_id()
-
-                #     # Buy in Prod or Sandbox
-                #     if prod:
-                #         api =api
-                #     else:
-                #         api = api_paper
-
-
-                # prod = 'sandbox'
-                # # >>> >>>> macd_buy_cross <<< <<<
-                #     # cross = buy
-                #     # hist slope 3 is positive, > .033%
-                #     # close slope 3 is positive > .033%
-                #     # macd slope is positive > .033%
-                # # macd is low, sum past 2 macds lower then -1 and current 2 > then -1 (past Num(3,6,10) degree angle: V )
-                # # macd peaked or macd peaked in past 3 (take sum of past 3 and measure middle dveation from -2 vs 0)
-                # macd_buy_cross = np.where(
-                #     (symbol['macd_cross'] == 'buy_cross')
-                #     & 
-                #     (symbol['hist_slope-3'] > .033)
-                #     &
-                #     (symbol['close_slope-3'] > .033)
-                #     &
-                #     (symbol['macd_slope-3'] > .033)
-                #     , 
-                #     't', # queens_order_managment(prod), # execute order managment to be considered to place order
-                #     'nothing') # do nothing
-
-                e = datetime.datetime.now()
-                print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-        
+       
     if queens_chess_piece.lower() == 'workerbee': # return tics
         s = datetime.datetime.now()
         if s > datetime.datetime(s.year, s.month, s.day, 16):
@@ -867,6 +784,175 @@ while True:
         e = datetime.datetime.now()
         print(queens_chess_piece, str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
+
+    if queens_chess_piece.lower() == 'knight': # Read Bees Story
+        s = datetime.datetime.now()
+        if s > datetime.datetime(s.year, s.month, s.day, 16):
+            logging.info("Happy Bee Day End")
+            print("Great Job! See you Tomorrow")
+            break
+
+        # Read chart story data
+        castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+        bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+        if castle == False or bishop == False:
+            msg = ("Failed in Reading of Castle of Bishop Pickle File")
+            print(msg)
+            logging.warning(msg)
+            continue
+        else:
+            pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+            # make recording of last modified
+            lastmod = bishop["last_modified"]["last_modified"]
+            
+            if lastmod > QUEEN[queens_chess_piece]["last_modified"]:
+                QUEEN[queens_chess_piece]["last_modified"] = lastmod
+                
+                spy = pollenstory['SPY_1Minute_1Day']
+                print(spy[['macd_cross', 'macd_slope-3', 'close_slope-3', 'macd', 'nowdate']].tail(5))
+                
+                if prod:
+                    def bid_ask_devation(symbol):
+                        devation = .01  #(bid - ask) / ask
+                        return devation
+
+
+                    def generate_order_id():
+                        var_1 = 'buy'
+                        var_2 = 'type'  # create category types based on framework of scenarios
+                        now = return_timestamp_string()
+                        x = now
+                        # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
+                        id = now + "_" + str(var_1) + "_" + str(var_2)
+                        return id # OR just return the string iteslf? that is better no?
+                    
+
+                    def queens_order_managment(prod, spy, symbols):
+                        prod = 'sandbox'
+                        symbols = {'sting': ['spy']}  # sting: fast day trade
+                        symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
+                        symbol = spy
+                        qty = 1
+                        side = 'buy'
+                        type = 'market'  #'limit', 'market'
+                        time_in_force = 'gtc'
+                        client_order_id = generate_order_id()
+
+                        # Buy in Prod or Sandbox
+                        if prod:
+                            api =api
+                        else:
+                            api = api_paper
+
+
+                    def knight_sight(df): # adds all triggers to dataframe
+                        trigger_dict = {}
+                        # df = spy  ### test
+                        # Mac is very LOW and we are in buy cross
+                        trigger = 'buy_RED_tier-1_macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            ((df['macd'] < 0) & (df['macd'] > -.3))
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        trigger = 'buy_RED_tier-2_macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            ((df['macd'] < -.3) & (df['macd'] > -.5))
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        trigger = 'buy_RED_tier-3_macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            ((df['macd'] < -.5) & (df['macd'] > -.1))
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        trigger = 'buy_RED_tier-4_macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            ((df['macd'] < -.1) & (df['macd'] > -.15))
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        trigger = 'buy_RED_tier-5_macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            (df['macd'] < -.15)
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        # Mac is very LOW and we are in buy cross
+                        trigger = 'buy_high-macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            (df['macd'] < -.1)
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        # Mac is very LOW and we are in buy cross
+                        trigger = 'buy_high-macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+                            (df['macd'] < -.1)
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+                        
+                        # Mac is very High and we are in a Sell Cross
+                        trigger = 'sell_high-macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("sell")==True) &
+                            (df['macd'] > 1)
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                        # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
+                        trigger = 'sell_high-macdcross'
+                        df[trigger] = np.where(
+                            (df['macd_cross'].str.contains("sell_hold")==False) & # is not in Sell cycle
+                            (df['macd'] > 1.5) &
+                            (df['macd_slope-3'] < .1) &
+                            ((df['hist_slope-3'] < .33) |(df['hist_slope-6'] < .10))
+                            ,"bee", 'nothing')
+                        if len(df[df[trigger] == 'bee']) > 0:
+                            trigger_dict[trigger] = 'bee'
+
+                    
+                        return {"df": df, "bee_triggers": trigger_dict}
+
+                    
+                    knight_sight_word = {}
+                    knight_sight_df = {}
+                    for symbol_time_frame, df in pollenstory.items():
+                        resp = knight_sight(df=df)
+                        df_knight = resp['df']
+                        knights_word = resp['bee_triggers']
+                        knight_sight_word[symbol_time_frame] = knights_word
+                        knight_sight_df[symbol_time_frame] = df_knight
+                    
+                    QUEEN[queens_chess_piece]['bee_triggers']['knights_sight_word'] = knight_sight_word
+                    QUEEN[queens_chess_piece]['bee_triggers']['knights_sight_df'] = knight_sight_df
+
+
+                    if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+                        msg=("Pickle Data Failed")
+                        print(msg)
+                        logging.critical(msg)
+                        continue
+                
+                e = datetime.datetime.now()
+                print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
+ 
 # >>> Buy Sell Weights 
 
 # >>> NEED TO FIX the return for each time interval, rebuild 5 Min, 1 hr...etc....Put rebuild charts into new dict where they get maintained...add logic for each interval...i.e. on 5Min Mark rebuild with Initiate OR replace last 5 Minutes....?

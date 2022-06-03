@@ -1,5 +1,5 @@
 aiohttp==3.7.4
-alpaca-trade-api==1.4.3
+alpaca-trade-api
 appdirs==1.4.4
 appnope==0.1.2
 asttokens==2.0.5
