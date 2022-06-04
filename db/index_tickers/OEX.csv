@@ -1,0 +1,102 @@
+symbol,shortName,longName,exchange,market,quoteType
+AAPL,apple,Apple Inc.,NASDAQ,us_market,EQUITY
+MSFT,microsoft,Microsoft Corporation,NASDAQ,us_market,EQUITY
+GOOGL,alphabet,Alphabet Inc.,NASDAQ,us_market,EQUITY
+GOOG,alphabet,Alphabet Inc.,NASDAQ,us_market,EQUITY
+AMZN,amazon,"Amazon.com, Inc.",NASDAQ,us_market,EQUITY
+TSLA,tesla,"Tesla, Inc.",NASDAQ,us_market,EQUITY
+FB,meta-platforms,"Meta Platforms, Inc.",NASDAQ,us_market,EQUITY
+BRK.B,berkshire-hathaway,Berkshire Hathaway Inc. New,NYSE,us_market,EQUITY
+NVDA,nvidia,NVIDIA Corporation,NASDAQ,us_market,EQUITY
+JPM,jpmorgan-chase,JP Morgan Chase & Co.,NYSE,us_market,EQUITY
+V,visa,Visa Inc.,NYSE,us_market,EQUITY
+UNH,unitedhealth,UnitedHealth Group Incorporated,NYSE,us_market,EQUITY
+JNJ,johnson-and-johnson,Johnson & Johnson,NYSE,us_market,EQUITY
+WMT,walmart,Walmart Inc.,NYSE,us_market,EQUITY
+HD,home-depot,"Home Depot, Inc. (The)",NYSE,us_market,EQUITY
+BAC,bank-of-america,Bank of America Corporation,NYSE,us_market,EQUITY
+PG,procter-and-gamble,Procter & Gamble Company (The),NYSE,us_market,EQUITY
+MA,mastercard,Mastercard Incorporated,NYSE,us_market,EQUITY
+PFE,pfizer,"Pfizer, Inc.",NYSE,us_market,EQUITY
+XOM,exxon,Exxon Mobil Corporation,NYSE,us_market,EQUITY
+DIS,walt-disney,Walt Disney Company (The),NYSE,us_market,EQUITY
+KO,coca-cola,Coca-Cola Company (The),NYSE,us_market,EQUITY
+CSCO,cisco,"Cisco Systems, Inc.",NASDAQ,us_market,EQUITY
+CVX,chevron,Chevron Corporation,NYSE,us_market,EQUITY
+AVGO,broadcom,Broadcom Inc.,NASDAQ,us_market,EQUITY
+ADBE,adobe,Adobe Inc.,NASDAQ,us_market,EQUITY
+PEP,pepsico,"PepsiCo, Inc.",NASDAQ,us_market,EQUITY
+TMO,thermo-fisher-scientific,Thermo Fisher Scientific Inc,NYSE,us_market,EQUITY
+LLY,eli-lilly,Eli Lilly and Company,NYSE,us_market,EQUITY
+ABBV,abbvie,AbbVie Inc.,NYSE,us_market,EQUITY
+ACN,accenture,Accenture plc,NYSE,us_market,EQUITY
+CMCSA,comcast,Comcast Corporation,NASDAQ,us_market,EQUITY
+NKE,nike,"Nike, Inc.",NYSE,us_market,EQUITY
+ORCL,oracle,Oracle Corporation,NYSE,us_market,EQUITY
+NFLX,netflix,"Netflix, Inc.",NASDAQ,us_market,EQUITY
+WFC,wells-fargo,Wells Fargo & Company,NYSE,us_market,EQUITY
+CRM,salesforce-com,Salesforce.com Inc,NYSE,us_market,EQUITY
+ABT,abbott,Abbott Laboratories,NYSE,us_market,EQUITY
+COST,costco-wholesale,Costco Wholesale Corporation,NASDAQ,us_market,EQUITY
+INTC,intel,Intel Corporation,NASDAQ,us_market,EQUITY
+VZ,verizon,Verizon Communications Inc.,NYSE,us_market,EQUITY
+QCOM,qualcomm,QUALCOMM Incorporated,NASDAQ,us_market,EQUITY
+PYPL,paypal,"PayPal Holdings, Inc.",NASDAQ,us_market,EQUITY
+DHR,danaher,Danaher Corporation,NYSE,us_market,EQUITY
+MRK,merck-and-co,"Merck & Company, Inc.",NYSE,us_market,EQUITY
+MCD,mcdonalds,McDonald's Corporation,NYSE,us_market,EQUITY
+T,at-and-t,AT&T Inc.,NYSE,us_market,EQUITY
+UPS,united-parcel,"United Parcel Service, Inc.",NYSE,us_market,EQUITY
+MS,morgan-stanley,Morgan Stanley,NYSE,us_market,EQUITY
+TXN,texas-instruments,Texas Instruments Incorporated,NASDAQ,us_market,EQUITY
+LIN,linde,Linde plc,NYSE,us_market,EQUITY
+LOW,lowe-s,"Lowe's Companies, Inc.",NYSE,us_market,EQUITY
+NEE,nextera-energy,"NextEra Energy, Inc.",NYSE,us_market,EQUITY
+UNP,union-pacific,Union Pacific Corporation,NYSE,us_market,EQUITY
+PM,philip-morris,Philip Morris International Inc,NYSE,us_market,EQUITY
+HON,honeywell,Honeywell International Inc.,NASDAQ,us_market,EQUITY
+MDT,medtronic,Medtronic plc.,NYSE,us_market,EQUITY
+BMY,bristol-myers-squibb,Bristol-Myers Squibb Company,NYSE,us_market,EQUITY
+CVS,cvs-health,CVS Health Corporation,NYSE,us_market,EQUITY
+RTX,raytheon,Raytheon Technologies Corporation,NYSE,us_market,EQUITY
+TMUS,t-mobile,"T-Mobile US, Inc.",NASDAQ,us_market,EQUITY
+BA,boeing,Boeing Company (The),NYSE,us_market,EQUITY
+C,citigroup,"Citigroup, Inc.",NYSE,us_market,EQUITY
+AMGN,amgen,Amgen Inc.,NASDAQ,us_market,EQUITY
+BLK,blackrock,"BlackRock, Inc.",NYSE,us_market,EQUITY
+AXP,american-express,American Express Company,NYSE,us_market,EQUITY
+GS,goldman-sachs,"Goldman Sachs Group, Inc. (The)",NYSE,us_market,EQUITY
+CAT,caterpillar,"Caterpillar, Inc.",NYSE,us_market,EQUITY
+IBM,international-bus-mach,International Business Machines Corporation,NYSE,us_market,EQUITY
+SBUX,starbucks,Starbucks Corporation,NASDAQ,us_market,EQUITY
+AMT,american-tower,American Tower Corporation (REIT),NYSE,us_market,EQUITY
+COP,conocophillips,ConocoPhillips,NYSE,us_market,EQUITY
+GE,general-electric,General Electric Company,NYSE,us_market,EQUITY
+CHTR,charter,"Charter Communications, Inc.",NASDAQ,us_market,EQUITY
+TGT,target,Target Corporation,NYSE,us_market,EQUITY
+MMM,3m,3M Company,NYSE,us_market,EQUITY
+LMT,lockheed-martin,Lockheed Martin Corporation,NYSE,us_market,EQUITY
+BKNG,booking,Booking Holdings Inc. Common Stock,NASDAQ,us_market,EQUITY
+F,ford,Ford Motor Company,NYSE,us_market,EQUITY
+MDLZ,mondelez,"Mondelez International, Inc.",NASDAQ,us_market,EQUITY
+USB,us-bancorp,U.S. Bancorp,NYSE,us_market,EQUITY
+MO,altria,"Altria Group, Inc.",NYSE,us_market,EQUITY
+GILD,gilead,"Gilead Sciences, Inc.",NASDAQ,us_market,EQUITY
+GM,general-motors,General Motors Company,NYSE,us_market,EQUITY
+DUK,duke-energy,Duke Energy Corporation (Holding Company),NYSE,us_market,EQUITY
+SO,southern,Southern Company (The),NYSE,us_market,EQUITY
+CL,colgate-palmolive,Colgate-Palmolive Company,NYSE,us_market,EQUITY
+FDX,fedex,FedEx Corporation,NYSE,us_market,EQUITY
+COF,capital-one,Capital One Financial Corporation,NYSE,us_market,EQUITY
+GD,general-dynamics,General Dynamics Corporation,NYSE,us_market,EQUITY
+EMR,emerson,Emerson Electric Company,NYSE,us_market,EQUITY
+MET,metlife,"MetLife, Inc.",NYSE,us_market,EQUITY
+EXC,exelon,Exelon Corporation,NASDAQ,us_market,EQUITY
+SPG,,"Simon Property Group, Inc.",NYSE,us_market,EQUITY
+BK,bank-of-new-york-mellon,The Bank of New York Mellon Corporation,NYSE,us_market,EQUITY
+AIG,american-international-group,"American International Group, Inc. New",NYSE,us_market,EQUITY
+WBA,walgreens-boots-alliance,"Walgreens Boots Alliance, Inc.",NASDAQ,us_market,EQUITY
+KHC,kraft-heinz,The Kraft Heinz Company,NASDAQ,us_market,EQUITY
+DOW,dow,Dow Inc.,NYSE,us_market,EQUITY
+DD,dupont-de-nemours,"DuPont de Nemours, Inc.",NYSE,us_market,EQUITY
+BIIB,biogen,Biogen Inc.,NASDAQ,us_market,EQUITY

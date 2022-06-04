@@ -1,0 +1,88 @@
+symbol,shortName,longName,exchange,market,quoteType
+CSCO,cisco,"Cisco Systems, Inc.",NASDAQ,us_market,EQUITY
+CMCSA,comcast,Comcast Corporation,NASDAQ,us_market,EQUITY
+TMUS,t-mobile,"T-Mobile US, Inc.",NASDAQ,us_market,EQUITY
+CHTR,charter,"Charter Communications, Inc.",NASDAQ,us_market,EQUITY
+VOD,vodafone,Vodafone Group Plc,NASDAQ,us_market,EQUITY
+ERIC,ericsson,Ericsson,NASDAQ,us_market,EQUITY
+LBRDA,liberty-broadband,Liberty Broadband Corporation,NASDAQ,us_market,EQUITY
+LBRDK,liberty-broadband,Liberty Broadband Corporation,NASDAQ,us_market,EQUITY
+ROKU,roku,"Roku, Inc.",NASDAQ,us_market,EQUITY
+DISH,dish-network,DISH Network Corporation,NASDAQ,us_market,EQUITY
+NICE,nice,NICE Ltd,NASDAQ,us_market,EQUITY
+LBTYK,liberty-global,Liberty Global plc,NASDAQ,us_market,EQUITY
+LBTYA,liberty-global,Liberty Global plc,NASDAQ,us_market,EQUITY
+LBTYB,liberty-global,Liberty Global plc,NASDAQ,us_market,EQUITY
+LITE,lumentum-hldgs,Lumentum Holdings Inc.,NASDAQ,us_market,EQUITY
+FYBR,,"Frontier Communications Parent, Inc.",NASDAQ,us_market,EQUITY
+VG,vonage-hldgs-corporation,Vonage Holdings Corp.,NASDAQ,us_market,EQUITY
+IRDM,iridium-communications,Iridium Communications Inc,NASDAQ,us_market,EQUITY
+VIAV,viavi-solutions,Viavi Solutions Inc.,NASDAQ,us_market,EQUITY
+VSAT,viasat,"ViaSat, Inc.",NASDAQ,us_market,EQUITY
+CCOI,cogent-communications-holdings,"Cogent Communications Holdings, Inc.",NASDAQ,us_market,EQUITY
+VEON,veon,VEON Ltd.,NASDAQ,us_market,EQUITY
+TIGO,millicom,Millicom International Cellular S.A.,NASDAQ,us_market,EQUITY
+LILA,liberty-latin-america,Liberty Latin America Ltd.,NASDAQ,us_market,EQUITY
+LILAK,liberty-latin-america,Liberty Latin America Ltd.,NASDAQ,us_market,EQUITY
+SATS,echostar,EchoStar Corporation,NASDAQ,us_market,EQUITY
+IDCC,interdigital,"InterDigital, Inc.",NASDAQ,us_market,EQUITY
+COMM,commscope,"CommScope Holding Company, Inc.",NASDAQ,us_market,EQUITY
+INFN,,Infinera Corporation,NASDAQ,us_market,EQUITY
+EXTR,extreme-networks,"Extreme Networks, Inc.",NASDAQ,us_market,EQUITY
+PTNR,,Partner Communications Company Ltd.,NASDAQ,us_market,EQUITY
+GOGO,gogo,Gogo Inc.,NASDAQ,us_market,EQUITY
+SHEN,shenandoah-telecomunications,Shenandoah Telecommunications Co,NASDAQ,us_market,EQUITY
+ASTS,ast-spacemobile,"AST SpaceMobile, Inc.",NASDAQ,us_market,EQUITY
+HLIT,,Harmonic Inc.,NASDAQ,us_market,EQUITY
+AUDC,audiocodes,AudioCodes Ltd.,NASDAQ,us_market,EQUITY
+ATEX,,Anterix Inc.,NASDAQ,us_market,EQUITY
+CLFD,,"Clearfield, Inc.",NASDAQ,us_market,EQUITY
+ADTN,,"ADTRAN, Inc.",NASDAQ,us_market,EQUITY
+RBBN,,Ribbon Communications Inc.,NASDAQ,us_market,EQUITY
+NTGR,,"NETGEAR, Inc.",NASDAQ,us_market,EQUITY
+DGII,,Digi International Inc.,NASDAQ,us_market,EQUITY
+CNSL,,"Consolidated Communications Holdings, Inc.",NASDAQ,us_market,EQUITY
+ATNI,,"ATN International, Inc.",NASDAQ,us_market,EQUITY
+CMBM,cambium-networks,Cambium Networks Corporation,NASDAQ,us_market,EQUITY
+SWIR,,"Sierra Wireless, Inc.",NASDAQ,us_market,EQUITY
+CMTL,,Comtech Telecommunications Corp.,NASDAQ,us_market,EQUITY
+INSG,inseego,Inseego Corp.,NASDAQ,us_market,EQUITY
+GILT,gilat-satellite-networks,Gilat Satellite Networks Ltd.,NASDAQ,us_market,EQUITY
+CASA,,"Casa Systems, Inc.",NASDAQ,us_market,EQUITY
+DZSI,,DZS Inc.,NASDAQ,us_market,EQUITY
+KLTR,,"Kaltura, Inc.",NASDAQ,us_market,EQUITY
+AVNW,,"Aviat Networks, Inc.",NASDAQ,us_market,EQUITY
+AKTS,,"Akoustis Technologies, Inc.",NASDAQ,us_market,EQUITY
+SANG,,Sangoma Technologies Corporation,NASDAQ,us_market,EQUITY
+TSAT,,Telesat Corporation,NASDAQ,us_market,EQUITY
+HMTV,,"Hemisphere Media Group, Inc.",NASDAQ,us_market,EQUITY
+LTRX,,"Lantronix, Inc.",NASDAQ,us_market,EQUITY
+CAMP,,CalAmp Corp.,NASDAQ,us_market,EQUITY
+CRNT,,Ceragon Networks Ltd.,NASDAQ,us_market,EQUITY
+SPOK,,"Spok Holdings, Inc.",NASDAQ,us_market,EQUITY
+RDCM,,Radcom Ltd.,NASDAQ,us_market,EQUITY
+KVHI,,"KVH Industries, Inc.",NASDAQ,us_market,EQUITY
+BELFA,,Bel Fuse Inc.,NASDAQ,us_market,EQUITY
+BELFB,,Bel Fuse Inc.,NASDAQ,us_market,EQUITY
+SIDU,,"Sidus Space, Inc.",NASDAQ,us_market,EQUITY
+PWFL,,"PowerFleet, Inc.",NASDAQ,us_market,EQUITY
+GNSS,,Genasys Inc.,NASDAQ,us_market,EQUITY
+AAOI,applied-optoelectronics,"Applied Optoelectronics, Inc.",NASDAQ,us_market,EQUITY
+AIRG,,"Airgain, Inc.",NASDAQ,us_market,EQUITY
+RESN,,Resonant Inc.,NASDAQ,us_market,EQUITY
+PCTI,,"PCTEL, Inc.",NASDAQ,us_market,EQUITY
+CXDO,,"Crexendo, Inc.",NASDAQ,us_market,EQUITY
+MINM,,"Minim, Inc.",NASDAQ,us_market,EQUITY
+UCL,,uCloudlink Group Inc.,NASDAQ,us_market,EQUITY
+TESS,,TESSCO Technologies Incorporated,NASDAQ,us_market,EQUITY
+FKWL,,Franklin Wireless Corp.,NASDAQ,us_market,EQUITY
+COMS,,ComSovereign Holding Corp.,NASDAQ,us_market,EQUITY
+VISL,vislink,"Vislink Technologies, Inc.",NASDAQ,us_market,EQUITY
+OCC,,Optical Cable Corporation,NASDAQ,us_market,EQUITY
+UTSI,utstarcom-holdings,UTStarcom Holdings Corp,NASDAQ,us_market,EQUITY
+CLRO,clearone,"ClearOne, Inc.",NASDAQ,us_market,EQUITY
+JCS,,"Communications Systems, Inc.",NASDAQ,us_market,EQUITY
+SYTA,siyata-mobile,"Siyata Mobile, Inc.",NASDAQ,us_market,EQUITY
+UTME,,UTime Limited,NASDAQ,us_market,EQUITY
+AEY,,"ADDvantage Technologies Group, Inc.",NASDAQ,us_market,EQUITY
+SONM,sonim-technologies,"Sonim Technologies, Inc.",NASDAQ,us_market,EQUITY

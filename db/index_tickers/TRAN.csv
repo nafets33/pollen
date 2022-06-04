@@ -1,0 +1,80 @@
+symbol,shortName,longName,exchange,market,quoteType
+CSX,csx,CSX Corporation,NASDAQ,us_market,EQUITY
+ODFL,old-dominion,"Old Dominion Freight Line, Inc.",NASDAQ,us_market,EQUITY
+PCAR,paccar,PACCAR Inc.,NASDAQ,us_market,EQUITY
+RYAAY,ryanair,Ryanair Holdings plc,NASDAQ,us_market,EQUITY
+JBHT,j-b-hunt,"J.B. Hunt Transport Services, Inc.",NASDAQ,us_market,EQUITY
+EXPD,expeditors,"Expeditors International of Washington, Inc.",NASDAQ,us_market,EQUITY
+UAL,united-airlines,"United Airlines Holdings, Inc.",NASDAQ,us_market,EQUITY
+CHRW,ch-robinson,"C.H. Robinson Worldwide, Inc.",NASDAQ,us_market,EQUITY
+AAL,american-airlines-group,"American Airlines Group, Inc.",NASDAQ,us_market,EQUITY
+WSC,,WillScot Mobile Mini Holdings Corp.,NASDAQ,us_market,EQUITY
+SAIA,saia,"Saia, Inc.",NASDAQ,us_market,EQUITY
+LSTR,landstar-systems,"Landstar System, Inc.",NASDAQ,us_market,EQUITY
+TSP,tusimple,TuSimple Holdings Inc.,NASDAQ,us_market,EQUITY
+JBLU,jetblue,JetBlue Airways Corporation,NASDAQ,us_market,EQUITY
+ARVL,arrival,Arrival,NASDAQ,us_market,EQUITY
+NKLA,nikolamotor,Nikola Corporation,NASDAQ,us_market,EQUITY
+ALGT,allegiant-travel-company,Allegiant Travel Company,NASDAQ,us_market,EQUITY
+ULCC,frontier,"Frontier Group Holdings, Inc.",NASDAQ,us_market,EQUITY
+WERN,werner-enterprises,"Werner Enterprises, Inc.",NASDAQ,us_market,EQUITY
+FWRD,forward-air,Forward Air Corporation,NASDAQ,us_market,EQUITY
+HUBG,hub-group,"Hub Group, Inc.",NASDAQ,us_market,EQUITY
+OMAB,grupo-aeroportuario-del-centro-nort,Grupo Aeroportuario del Centro Norte S.A.B. de C.V.,NASDAQ,us_market,EQUITY
+AAWW,atlas-air-worldwide,Atlas Air Worldwide Holdings,NASDAQ,us_market,EQUITY
+ARCB,arcbest-corporation,ArcBest Corporation,NASDAQ,us_market,EQUITY
+SBLK,star-bulk-carriers,Star Bulk Carriers Corp.,NASDAQ,us_market,EQUITY
+PTRA,proterra,Proterra Inc,NASDAQ,us_market,EQUITY
+SKYW,skywest,"SkyWest, Inc.",NASDAQ,us_market,EQUITY
+ATSG,air-transport-services,"Air Transport Services Group, Inc",NASDAQ,us_market,EQUITY
+MGRC,mcgrath-rentcorp,McGrath RentCorp,NASDAQ,us_market,EQUITY
+GOGL,golden-ocean-group,Golden Ocean Group Limited,NASDAQ,us_market,EQUITY
+SHYF,,"The Shyft Group, Inc.",NASDAQ,us_market,EQUITY
+HEES,,"H&E Equipment Services, Inc.",NASDAQ,us_market,EQUITY
+SNCY,sun-country-airlines,"Sun Country Airlines Holdings, Inc.",NASDAQ,us_market,EQUITY
+MRTN,marten-transport,"Marten Transport, Ltd.",NASDAQ,us_market,EQUITY
+HYZN,hyzon-motors,Hyzon Motors Inc.,NASDAQ,us_market,EQUITY
+HTLD,heartland-express,"Heartland Express, Inc.",NASDAQ,us_market,EQUITY
+HA,hawaiian,"Hawaiian Holdings, Inc.",NASDAQ,us_market,EQUITY
+ELMS,,"Electric Last Mile Solutions, Inc.",NASDAQ,us_market,EQUITY
+PTSI,p-a-resources-berhad,"P.A.M. Transportation Services, Inc.",NASDAQ,us_market,EQUITY
+SP,,SP Plus Corporation,NASDAQ,us_market,EQUITY
+TRMD,,TORM plc,NASDAQ,us_market,EQUITY
+WKHS,workhorse,"Workhorse Group, Inc.",NASDAQ,us_market,EQUITY
+DSKE,daseke,"Daseke, Inc.",NASDAQ,us_market,EQUITY
+EGLE,,Eagle Bulk Shipping Inc.,NASDAQ,us_market,EQUITY
+YELL,yellow-corporation,Yellow Corporation,NASDAQ,us_market,EQUITY
+IDEX,ideanomics,"Ideanomics, Inc.",NASDAQ,us_market,EQUITY
+BLBD,,Blue Bird Corporation,NASDAQ,us_market,EQUITY
+ULH,universal-logistics,"Universal Logistics Holdings, Inc.",NASDAQ,us_market,EQUITY
+BLDE,blade-urban-air-mobility,"Blade Air Mobility, Inc.",NASDAQ,us_market,EQUITY
+XOS,,"Xos, Inc.",NASDAQ,us_market,EQUITY
+CVLG,covenant-logistics,"Covenant Logistics Group, Inc.",NASDAQ,us_market,EQUITY
+WPRT,westport-fuel-systems,Westport Fuel Systems Inc,NASDAQ,us_market,EQUITY
+GRIN,,Grindrod Shipping Holdings Ltd.,NASDAQ,us_market,EQUITY
+CPLP,,Capital Product Partners L.P.,NASDAQ,us_market,EQUITY
+CVGI,,"Commercial Vehicle Group, Inc.",NASDAQ,us_market,EQUITY
+WLFC,,Willis Lease Finance Corporation,NASDAQ,us_market,EQUITY
+MESA,mesa-air-group,"Mesa Air Group, Inc.",NASDAQ,us_market,EQUITY
+ESEA,euroseas,Euroseas Ltd.,NASDAQ,us_market,EQUITY
+USAK,usa-truck,"USA Truck, Inc.",NASDAQ,us_market,EQUITY
+PANL,,Pangaea Logistics Solutions Ltd.,NASDAQ,us_market,EQUITY
+ITI,,"Iteris, Inc.",NASDAQ,us_market,EQUITY
+SHIP,seanergy-maritime,Seanergy Maritime Holdings Corp,NASDAQ,us_market,EQUITY
+GP,greenpower-motor-company,GreenPower Motor Company Inc.,NASDAQ,us_market,EQUITY
+CTRM,castor-maritime,Castor Maritime Inc.,NASDAQ,us_market,EQUITY
+MICT,mict,"MICT, Inc.",NASDAQ,us_market,EQUITY
+GASS,,"StealthGas, Inc.",NASDAQ,us_market,EQUITY
+OMEX,odyssey-marine-exploration,"Odyssey Marine Exploration, Inc.",NASDAQ,us_market,EQUITY
+SGLY,,Singularity Future Technology Ltd.,NASDAQ,us_market,EQUITY
+RAIL,freightcar-america,"Freightcar America, Inc.",NASDAQ,us_market,EQUITY
+EDRY,eurodry,EuroDry Ltd.,NASDAQ,us_market,EQUITY
+SYPR,,"Sypris Solutions, Inc.",NASDAQ,us_market,EQUITY
+TOPS,top-ships,TOP Ships Inc.,NASDAQ,us_market,EQUITY
+YGMZ,,MingZhu Logistics Holdings Limited,NASDAQ,us_market,EQUITY
+PATI,patriot-transportation,"Patriot Transportation Holding, Inc.",NASDAQ,us_market,EQUITY
+GLBS,globus-maritime-ltd,Globus Maritime Limited,NASDAQ,us_market,EQUITY
+PXS,,Pyxis Tankers Inc.,NASDAQ,us_market,EQUITY
+PSHG,,Performance Shipping Inc.,NASDAQ,us_market,EQUITY
+OP,oceanpal,OceanPal Inc.,NASDAQ,us_market,EQUITY
+IMPP,,Imperial Petroleum Inc.,NASDAQ,us_market,EQUITY

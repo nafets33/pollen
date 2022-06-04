@@ -1,0 +1,22 @@
+symbol,shortName,longName,exchange,market,quoteType
+XOM,exxon,Exxon Mobil Corporation,NYSE,us_market,EQUITY
+CVX,chevron,Chevron Corporation,NYSE,us_market,EQUITY
+COP,conocophillips,ConocoPhillips,NYSE,us_market,EQUITY
+EOG,eog,"EOG Resources, Inc.",NYSE,us_market,EQUITY
+SLB,schlumberger,Schlumberger N.V.,NYSE,us_market,EQUITY
+PXD,pioneer-natural-resources,Pioneer Natural Resources Company,NYSE,us_market,EQUITY
+MPC,marathon-petroleum,Marathon Petroleum Corporation,NYSE,us_market,EQUITY
+KMI,kinder-morgan,"Kinder Morgan, Inc.",NYSE,us_market,EQUITY
+PSX,phillips-66,Phillips 66,NYSE,us_market,EQUITY
+WMB,williams,"Williams Companies, Inc. (The)",NYSE,us_market,EQUITY
+DVN,devon-energy,Devon Energy Corporation,NYSE,us_market,EQUITY
+VLO,valero-energy,Valero Energy Corporation,NYSE,us_market,EQUITY
+OXY,occidental-petroleum,Occidental Petroleum Corporation,NYSE,us_market,EQUITY
+HES,hess,Hess Corporation,NYSE,us_market,EQUITY
+BKR,baker-hughes,Baker Hughes Company,NASDAQ,us_market,EQUITY
+OKE,oneok,"ONEOK, Inc.",NYSE,us_market,EQUITY
+HAL,halliburton,Halliburton Company,NYSE,us_market,EQUITY
+FANG,diamondback,"Diamondback Energy, Inc. - Commmon Stock",NASDAQ,us_market,EQUITY
+CTRA,alpha-metallurgical-resources,Coterra Energy Inc.,NYSE,us_market,EQUITY
+MRO,marathon-oil,Marathon Oil Corporation,NYSE,us_market,EQUITY
+APA,apa-corporation,APA Corporation,NASDAQ,us_market,EQUITY

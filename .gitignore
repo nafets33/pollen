@@ -2,3 +2,15 @@
 hive_utils.log
 __pycache__/Hive_Utils.cpython-39.pyc
 delme.csv
+QueenBee.Py
+log_bishop.log
+log_castle.log
+log_knight.log
+.gitignore
+db/castle.pkl
+db/knight.pkl
+db/bishop.pkl
+git rm -r --cashed db
+*.log
+*.pyc
+.DS_Store

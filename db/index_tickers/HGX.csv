@@ -1,0 +1,20 @@
+symbol,shortName,longName,exchange,market,quoteType
+DHI,dr-horton,"D.R. Horton, Inc.",NYSE,us_market,EQUITY
+LEN,lennar,Lennar Corporation,NYSE,us_market,EQUITY
+WY,,Weyerhaeuser Company,NYSE,us_market,EQUITY
+VMC,vulcan-materials,Vulcan Materials Company (Holding Company),NYSE,us_market,EQUITY
+MAS,masco,Masco Corporation,NYSE,us_market,EQUITY
+PHM,pulte-group,"PulteGroup, Inc.",NYSE,us_market,EQUITY
+LII,lennox-international,"Lennox International, Inc.",NYSE,us_market,EQUITY
+OC,owens-corning,Owens Corning Inc,NYSE,us_market,EQUITY
+TOL,toll-bros,"Toll Brothers, Inc.",NYSE,us_market,EQUITY
+AWI,armstrong-world-industries,Armstrong World Industries Inc,NYSE,us_market,EQUITY
+MTH,meritage-homes,Meritage Homes Corporation,NYSE,us_market,EQUITY
+KBH,kb-home,KB Home,NYSE,us_market,EQUITY
+RDN,radian,Radian Group Inc.,NYSE,us_market,EQUITY
+PFSI,pennymac-financial-services,"PennyMac Financial Services, Inc.",NYSE,us_market,EQUITY
+MDC,m-d-c-hldgs,"M.D.C. Holdings, Inc.",NYSE,us_market,EQUITY
+LGIH,lgi-homes,"LGI Homes, Inc.",NASDAQ,us_market,EQUITY
+MWA,mueller-water-products,MUELLER WATER PRODUCTS,NYSE,us_market,EQUITY
+MHO,,"M/I Homes, Inc.",NYSE,us_market,EQUITY
+OCN,,Ocwen Financial Corporation NEW,NYSE,us_market,EQUITY

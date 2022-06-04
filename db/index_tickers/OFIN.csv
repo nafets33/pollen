@@ -1,0 +1,598 @@
+symbol,shortName,longName,exchange,market,quoteType
+CME,cme,CME Group Inc.,NASDAQ,us_market,EQUITY
+EQIX,equinix,"Equinix, Inc.",NASDAQ,us_market,EQUITY
+COIN,coinbase,"Coinbase Global, Inc.",NASDAQ,us_market,EQUITY
+TROW,holdings,"T. Rowe Price Group, Inc.",NASDAQ,us_market,EQUITY
+SBAC,,SBA Communications Corporation,NASDAQ,us_market,EQUITY
+IBKR,interactive-brokers-group,"Interactive Brokers Group, Inc.",NASDAQ,us_market,EQUITY
+NDAQ,nasdaq,"Nasdaq, Inc.",NASDAQ,us_market,EQUITY
+CSGP,costar-group,"CoStar Group, Inc.",NASDAQ,us_market,EQUITY
+NTRS,northern-trust,Northern Trust Corporation,NASDAQ,us_market,EQUITY
+TW,,Tradeweb Markets Inc.,NASDAQ,us_market,EQUITY
+CG,the-carlyle-group,The Carlyle Group Inc.,NASDAQ,us_market,EQUITY
+XP,xp,XP Inc.,NASDAQ,us_market,EQUITY
+ZG,zillow-group,"Zillow Group, Inc.",NASDAQ,us_market,EQUITY
+Z,zillow-group,"Zillow Group, Inc.",NASDAQ,us_market,EQUITY
+LPLA,lpl-finl,LPL Financial Holdings Inc.,NASDAQ,us_market,EQUITY
+MKTX,marketaxess,"MarketAxess Holdings, Inc.",NASDAQ,us_market,EQUITY
+REG,regency-centers,Regency Centers Corporation,NASDAQ,us_market,EQUITY
+HOOD,robinhood,"Robinhood Markets, Inc.",NASDAQ,us_market,EQUITY
+HST,,Host Hotels,NASDAQ,us_market,EQUITY
+MORN,morningstar,"Morningstar, Inc.",NASDAQ,us_market,EQUITY
+LAMR,,Lamar Advertising Company,NASDAQ,us_market,EQUITY
+CONE,,CyrusOne Inc,NASDAQ,us_market,EQUITY
+GLPI,,"Gaming and Leisure Properties, Inc.",NASDAQ,us_market,EQUITY
+SOFI,sofi,"SoFi Technologies, Inc.",NASDAQ,us_market,EQUITY
+UPST,upstart,"Upstart Holdings, Inc.",NASDAQ,us_market,EQUITY
+SEIC,sei-investment,SEI Investments Company,NASDAQ,us_market,EQUITY
+CACC,credit-acceptance,Credit Acceptance Corporation,NASDAQ,us_market,EQUITY
+AGNC,agnc-investment,AGNC Investment Corp.,NASDAQ,us_market,EQUITY
+FSV,firstservice,FirstService Corporation,NASDAQ,us_market,EQUITY
+OPEN,opendoor,Opendoor Technologies Inc,NASDAQ,us_market,EQUITY
+FUTU,futu-holdings,Futu Holdings Limited,NASDAQ,us_market,EQUITY
+CIGI,colliers-intl-group,Colliers International Group Inc. - Subordinate Voting Shares,NASDAQ,us_market,EQUITY
+SLM,slm,SLM Corporation,NASDAQ,us_market,EQUITY
+VIRT,virtu-financial,"Virtu Financial, Inc.",NASDAQ,us_market,EQUITY
+HLNE,hamilton-lane,Hamilton Lane Incorporated,NASDAQ,us_market,EQUITY
+EXPI,exp-world,"eXp World Holdings, Inc.",NASDAQ,us_market,EQUITY
+STEP,,StepStone Group Inc.,NASDAQ,us_market,EQUITY
+FOCS,focus-financial-partners,Focus Financial Partners Inc.,NASDAQ,us_market,EQUITY
+FRHC,freedom-holding,Freedom Holding Corp.,NASDAQ,us_market,EQUITY
+PCH,,PotlatchDeltic Corporation - Common Stock,NASDAQ,us_market,EQUITY
+ACT,,"Enact Holdings, Inc.",NASDAQ,us_market,EQUITY
+NMRK,newmark-group,"Newmark Group, Inc.",NASDAQ,us_market,EQUITY
+NAVI,navient,Navient Corporation,NASDAQ,us_market,EQUITY
+RDFN,redfin,Redfin Corporation,NASDAQ,us_market,EQUITY
+COOP,mr-cooper-group,Mr. Cooper Group Inc.,NASDAQ,us_market,EQUITY
+SBRA,,"Sabra Health Care REIT, Inc.",NASDAQ,us_market,EQUITY
+QFIN,360-finance,"360 DigiTech, Inc.",NASDAQ,us_market,EQUITY
+UNIT,,Uniti Group Inc.,NASDAQ,us_market,EQUITY
+FCFS,firstcash,"FirstCash Holdings, Inc.",NASDAQ,us_market,EQUITY
+MARA,marathon-patent,"Marathon Digital Holdings, Inc.",NASDAQ,us_market,EQUITY
+PECO,phillips-edison-and-company,"Phillips Edison & Company, Inc.",NASDAQ,us_market,EQUITY
+DWAC,digital-world-acquisition-corp,Digital World Acquisition Corp.,NASDAQ,us_market,EQUITY
+LPRO,,Open Lending Corporation,NASDAQ,us_market,EQUITY
+ROIC,,Retail Opportunity Investments Corp.,NASDAQ,us_market,EQUITY
+RIOT,riot-blockchain,"Riot Blockchain, Inc",NASDAQ,us_market,EQUITY
+VCTR,,"Victory Capital Holdings, Inc. Class A Common Stock",NASDAQ,us_market,EQUITY
+RILY,,"B. Riley Financial, Inc.",NASDAQ,us_market,EQUITY
+PAX,,Patria Investments Limited,NASDAQ,us_market,EQUITY
+CTRE,,"CareTrust REIT, Inc.",NASDAQ,us_market,EQUITY
+PRAA,pra-group,"PRA Group, Inc.",NASDAQ,us_market,EQUITY
+VRTS,,"Virtus Investment Partners, Inc.",NASDAQ,us_market,EQUITY
+MKTW,,"MarketWise, Inc.",NASDAQ,us_market,EQUITY
+DAVE,,Dave Inc.,NASDAQ,us_market,EQUITY
+ECPG,,Encore Capital Group Inc,NASDAQ,us_market,EQUITY
+GCMG,,GCM Grosvenor Inc.,NASDAQ,us_market,EQUITY
+TREE,lendingtree,"LendingTree, Inc.",NASDAQ,us_market,EQUITY
+ILPT,,Industrial Logistics Properties Trust,NASDAQ,us_market,EQUITY
+BGCP,bgc-partners,"BGC Partners, Inc.",NASDAQ,us_market,EQUITY
+SVC,,Service Properties Trust - Shares of Beneficial Interest,NASDAQ,us_market,EQUITY
+WRLD,,World Acceptance Corporation,NASDAQ,us_market,EQUITY
+NYMT,,"New York Mortgage Trust, Inc.",NASDAQ,us_market,EQUITY
+OPI,,Office Properties Income Trust,NASDAQ,us_market,EQUITY
+NMFC,,New Mountain Finance Corporation,NASDAQ,us_market,EQUITY
+SNEX,,StoneX Group Inc.,NASDAQ,us_market,EQUITY
+LWLG,lightwave-logic,"Lightwave Logic, Inc.",NASDAQ,us_market,EQUITY
+LAND,,Gladstone Land Corporation,NASDAQ,us_market,EQUITY
+GGPI,gores-guggenheim,"Gores Guggenheim, Inc.",NASDAQ,us_market,EQUITY
+PWP,,Perella Weinberg Partners,NASDAQ,us_market,EQUITY
+RADI,,"Radius Global Infrastructure, Inc.",NASDAQ,us_market,EQUITY
+RMR,the-rmr-group,The RMR Group Inc.,NASDAQ,us_market,EQUITY
+HERA,,FTAC Hera Acquisition Corp.,NASDAQ,us_market,EQUITY
+AFIN,,"American Finance Trust, Inc.",NASDAQ,us_market,EQUITY
+COWN,cowen,Cowen Inc.,NASDAQ,us_market,EQUITY
+GOOD,,Gladstone Commercial Corporation - Real Estate Investment Trust,NASDAQ,us_market,EQUITY
+SGML,,Sigma Lithium Corporation,NASDAQ,us_market,EQUITY
+WETF,,"WisdomTree Investments, Inc.",NASDAQ,us_market,EQUITY
+HIVE,hive-blockchain-technologies,Hive Blockchain Technologies Ltd.,NASDAQ,us_market,EQUITY
+CONX,,CONX Corp.,NASDAQ,us_market,EQUITY
+BCOR,blucora,"Blucora, Inc.",NASDAQ,us_market,EQUITY
+INDT,,"INDUS Realty Trust, Inc.",NASDAQ,us_market,EQUITY
+DHC,,Diversified Healthcare Trust,NASDAQ,us_market,EQUITY
+ETAC,,E.Merge Technology Acquisition Corp.,NASDAQ,us_market,EQUITY
+SVFA,,SVF Investment Corp.,NASDAQ,us_market,EQUITY
+LMACA,,Liberty Media Acquisition Corporation - Series A,NASDAQ,us_market,EQUITY
+BTWN,,Bridgetown Holdings Limited,NASDAQ,us_market,EQUITY
+MGI,moneygram-international,"Moneygram International, Inc.",NASDAQ,us_market,EQUITY
+TIGR,,UP Fintech Holding Limited,NASDAQ,us_market,EQUITY
+MSDA,,MSD Acquisition Corp.,NASDAQ,us_market,EQUITY
+SCOA,,ScION Tech Growth I,NASDAQ,us_market,EQUITY
+LGAC,,Lazard Growth Acquisition Corp. I,NASDAQ,us_market,EQUITY
+SLAM,,Slam Corp.,NASDAQ,us_market,EQUITY
+HMPT,,Home Point Capital Inc.,NASDAQ,us_market,EQUITY
+VINP,,Vinci Partners Investments Ltd.,NASDAQ,us_market,EQUITY
+GSEV,,"Gores Holdings VII, Inc.",NASDAQ,us_market,EQUITY
+NEWT,,Newtek Business Services Corp.,NASDAQ,us_market,EQUITY
+LX,lexinfintech,LexinFintech Holdings Ltd.,NASDAQ,us_market,EQUITY
+KVSC,,Khosla Ventures Acquisition Co. III,NASDAQ,us_market,EQUITY
+HIII,,Hudson Executive Investment Corp. III,NASDAQ,us_market,EQUITY
+CFIV,,CF Acquisition Corp. IV,NASDAQ,us_market,EQUITY
+LCA,landcadia-holdings-ii-inc,"Landcadia Holdings IV, Inc.",NASDAQ,us_market,EQUITY
+IRCP,,IRSA Propiedades Comerciales S.A. - American Depository Shares,NASDAQ,us_market,EQUITY
+DHIL,,"Diamond Hill Investment Group, Inc.",NASDAQ,us_market,EQUITY
+RMGC,,RMG Acquisition Corp. III,NASDAQ,us_market,EQUITY
+CSWC,,Capital Southwest Corporation,NASDAQ,us_market,EQUITY
+GTPB,,"Gores Technology Partners II, Inc.",NASDAQ,us_market,EQUITY
+CRESY,cresud-sacifya,Cresud S.A.C.I.F. y A.,NASDAQ,us_market,EQUITY
+OPRT,,Oportun Financial Corporation,NASDAQ,us_market,EQUITY
+VAQC,,Vector Acquisition Corporation II,NASDAQ,us_market,EQUITY
+REAX,,"The Real Brokerage, Inc.",NASDAQ,us_market,EQUITY
+HAAC,,Health Assurance Acquisition Corp.,NASDAQ,us_market,EQUITY
+FRPH,,"FRP Holdings, Inc.",NASDAQ,us_market,EQUITY
+DGNU,,Dragoneer Growth Opportunities Corp. III,NASDAQ,us_market,EQUITY
+ANZU,,Anzu Special Acquisition Corp I,NASDAQ,us_market,EQUITY
+CCAP,,"Crescent Capital BDC, Inc.",NASDAQ,us_market,EQUITY
+TBCP,,Thunder Bridge Capital Partners III Inc.,NASDAQ,us_market,EQUITY
+ALRS,,Alerus Financial Corporation,NASDAQ,us_market,EQUITY
+MEKA,,MELI Kaszek Pioneer Corp,NASDAQ,us_market,EQUITY
+SNRH,,Senior Connect Acquisition Corp. I,NASDAQ,us_market,EQUITY
+JOFF,,JOFF Fintech Acquisition Corp.,NASDAQ,us_market,EQUITY
+FINM,,Marlin Technology Corporation,NASDAQ,us_market,EQUITY
+OHPA,,Orion Acquisition Corp.,NASDAQ,us_market,EQUITY
+CTAQ,,Carney Technology Acquisition Corp. II,NASDAQ,us_market,EQUITY
+TCVA,,TCV Acquisition Corp.,NASDAQ,us_market,EQUITY
+EPHY,,Epiphany Technology Acquisition Corp.,NASDAQ,us_market,EQUITY
+PACX,,Pioneer Merger Corp.,NASDAQ,us_market,EQUITY
+TRIN,,Trinity Capital Inc.,NASDAQ,us_market,EQUITY
+GMII,,"Gores Metropoulos II, Inc.",NASDAQ,us_market,EQUITY
+COOL,,Corner Growth Acquisition Corp.,NASDAQ,us_market,EQUITY
+VALU,,"Value Line, Inc.",NASDAQ,us_market,EQUITY
+CFVI,cf-acquisition,CF Acquisition Corp. VI,NASDAQ,us_market,EQUITY
+TETC,,Tech and Energy Transition Corporation,NASDAQ,us_market,EQUITY
+NAAC,,North Atlantic Acquisition Corporation,NASDAQ,us_market,EQUITY
+LGST,,Semper Paratus Acquisition Corporation,NASDAQ,us_market,EQUITY
+ATAX,,"America First Multifamily Investors, L.P. - Beneficial",NASDAQ,us_market,EQUITY
+BTAQ,,Burgundy Technology Acquisition Corporation,NASDAQ,us_market,EQUITY
+KVSA,,Khosla Ventures Acquisition Co.,NASDAQ,us_market,EQUITY
+ARTA,,Artisan Acquisition Corp.,NASDAQ,us_market,EQUITY
+CPAR,,Catalyst Partners Acquisition Corp.,NASDAQ,us_market,EQUITY
+CPAA,conyers-park,Conyers Park III Acquisition Corp.,NASDAQ,us_market,EQUITY
+GIIX,,"Gores Holdings VIII, Inc.",NASDAQ,us_market,EQUITY
+ACQR,,Independence Holdings Corp.,NASDAQ,us_market,EQUITY
+SBEA,,SilverBox Engaged Merger Corp I,NASDAQ,us_market,EQUITY
+WALD,,Waldencast Acquisition Corp.,NASDAQ,us_market,EQUITY
+TWLV,,Twelve Seas Investment Company II,NASDAQ,us_market,EQUITY
+VTIQ,,VectoIQ Acquisition Corp. II,NASDAQ,us_market,EQUITY
+NDAC,,NightDragon Acquisition Corp.,NASDAQ,us_market,EQUITY
+ENNV,,ECP Environmental Growth Opportunities Corp.,NASDAQ,us_market,EQUITY
+GLBL,,Cartesian Growth Corporation,NASDAQ,us_market,EQUITY
+PPGH,,Poema Global Holdings Corp.,NASDAQ,us_market,EQUITY
+GMBT,,Queen's Gambit Growth Capital,NASDAQ,us_market,EQUITY
+PTOC,,Pine Technology Acquisition Corp.,NASDAQ,us_market,EQUITY
+ERES,,East Resources Acquisition Company,NASDAQ,us_market,EQUITY
+XPDI,,Power & Digital Infrastructure Acquisition Corp.,NASDAQ,us_market,EQUITY
+SCLE,,Broadscale Acquisition Corp.,NASDAQ,us_market,EQUITY
+ACAH,,Atlantic Coastal Acquisition Corp.,NASDAQ,us_market,EQUITY
+SLCR,,Silver Crest Acquisition Corporation,NASDAQ,us_market,EQUITY
+LUXA,,Lux Health Tech Acquisition Corp.,NASDAQ,us_market,EQUITY
+DHHC,,DiamondHead Holdings Corp.,NASDAQ,us_market,EQUITY
+HYPR,,"Hyperfine, Inc.",NASDAQ,us_market,EQUITY
+JCIC,,Jack Creek Investment Corp.,NASDAQ,us_market,EQUITY
+SCOB,,ScION Tech Growth II,NASDAQ,us_market,EQUITY
+HCIC,,Hennessy Capital Investment Corp. V,NASDAQ,us_market,EQUITY
+COLI,,Colicity Inc.,NASDAQ,us_market,EQUITY
+TIOA,,Tio Tech A,NASDAQ,us_market,EQUITY
+OEPW,,One Equity Partners Open Water I Corp.,NASDAQ,us_market,EQUITY
+RXRA,,RXR Acquisition Corp.,NASDAQ,us_market,EQUITY
+FMIV,,Forum Merger IV Corporation,NASDAQ,us_market,EQUITY
+ZT,,Zimmer Energy Transition Acquisition Corp.,NASDAQ,us_market,EQUITY
+GATE,marblegate,Marblegate Acquisition Corp.,NASDAQ,us_market,EQUITY
+LITT,,Logistics Innovation Technologies Corp.,NASDAQ,us_market,EQUITY
+HCVI,,Hennessy Capital Investment Corp. VI,NASDAQ,us_market,EQUITY
+REVH,,Revolution Healthcare Acquisition Corp.,NASDAQ,us_market,EQUITY
+SVFC,,SVF Investment Corp. 3,NASDAQ,us_market,EQUITY
+DTOC,,Digital Transformation Opportunities Corp.,NASDAQ,us_market,EQUITY
+HCAR,,Healthcare Services Acquisition Corporation,NASDAQ,us_market,EQUITY
+BYTS,,BYTE Acquisition Corp.,NASDAQ,us_market,EQUITY
+BCSA,,Blockchain Coinvestors Acquisition Corp. I,NASDAQ,us_market,EQUITY
+IPAX,,Inflection Point Acquisition Corp.,NASDAQ,us_market,EQUITY
+PRSR,,Prospector Capital Corp.,NASDAQ,us_market,EQUITY
+PFDR,,Pathfinder Acquisition Corporation,NASDAQ,us_market,EQUITY
+FOUN,,Founder SPAC,NASDAQ,us_market,EQUITY
+MUDS,,Mudrick Capital Acquisition Corporation II,NASDAQ,us_market,EQUITY
+DCRD,decarbonization-plus-acquisition,Decarbonization Plus Acquisition Corporation IV,NASDAQ,us_market,EQUITY
+HYAC,,Haymaker Acquisition Corp. III,NASDAQ,us_market,EQUITY
+PLMI,,Plum Acquisition Corp. I,NASDAQ,us_market,EQUITY
+PUYI,,Puyi Inc. - American Depository Shares,NASDAQ,us_market,EQUITY
+HCNE,,Jaws Hurricane Acquisition Corp.,NASDAQ,us_market,EQUITY
+SDAC,,Sustainable Development Acquisition I Corp.,NASDAQ,us_market,EQUITY
+ACTD,,ArcLight Clean Transition Corp. II,NASDAQ,us_market,EQUITY
+CHPM,,CHP Merger Corp.,NASDAQ,us_market,EQUITY
+SIER,,Sierra Lake Acquisition Corp.,NASDAQ,us_market,EQUITY
+SSAA,,Science Strategic Acquisition Corp. Alpha,NASDAQ,us_market,EQUITY
+DHCA,,DHC Acquisition Corp.,NASDAQ,us_market,EQUITY
+ARGU,,Argus Capital Corp.,NASDAQ,us_market,EQUITY
+AGGR,,Agile Growth Corp.,NASDAQ,us_market,EQUITY
+HMCO,,HumanCo Acquisition Corp.,NASDAQ,us_market,EQUITY
+ENTF,,Enterprise 4.0 Technology Acquisition Corp.,NASDAQ,us_market,EQUITY
+FSRX,,FinServ Acquisition Corp. II,NASDAQ,us_market,EQUITY
+ALTU,,Altitude Acquisition Corp.,NASDAQ,us_market,EQUITY
+KRNL,,"Kernel Group Holdings, Inc.",NASDAQ,us_market,EQUITY
+BTNB,,Bridgetown 2 Holdings Limited,NASDAQ,us_market,EQUITY
+IGAC,,IG Acquisition Corp.,NASDAQ,us_market,EQUITY
+TSIB,,Tishman Speyer Innovation Corp. II,NASDAQ,us_market,EQUITY
+GPAC,,Global Partner Acquisition Corp II,NASDAQ,us_market,EQUITY
+COVA,,COVA Acquisition Corp.,NASDAQ,us_market,EQUITY
+GXII,,GX Acquisition Corp. II,NASDAQ,us_market,EQUITY
+EJFA,,EJF Acquisition Corp.,NASDAQ,us_market,EQUITY
+EZPW,,"EZCORP, Inc.",NASDAQ,us_market,EQUITY
+CIIG,,"CIIG Capital Partners II, Inc.",NASDAQ,us_market,EQUITY
+DRAY,,Macondray Capital Acquisition Corp. I,NASDAQ,us_market,EQUITY
+KIII,,Kismet Acquisition Three Corp.,NASDAQ,us_market,EQUITY
+LGTO,,Legato Merger Corp. II,NASDAQ,us_market,EQUITY
+KLAQ,,KL Acquisition Corp,NASDAQ,us_market,EQUITY
+TZPS,,TZP Strategies Acquisition Corp.,NASDAQ,us_market,EQUITY
+APTM,,Alpha Partners Technology Merger Corp.,NASDAQ,us_market,EQUITY
+GAMC,,Golden Arrow Merger Corp.,NASDAQ,us_market,EQUITY
+CLRM,,Clarim Acquisition Corp.,NASDAQ,us_market,EQUITY
+SPKB,silver-spike-acquisition-corp-ii,Silver Spike Acquisition Corp II,NASDAQ,us_market,EQUITY
+ARRW,,Arrowroot Acquisition Corp.,NASDAQ,us_market,EQUITY
+DHBC,,DHB Capital Corp.,NASDAQ,us_market,EQUITY
+IPVI,,InterPrivate IV InfraTech Partners Inc.,NASDAQ,us_market,EQUITY
+LCAA,,L Catterton Asia Acquisition Corp,NASDAQ,us_market,EQUITY
+FWAC,,Fifth Wall Acquisition Corp. III,NASDAQ,us_market,EQUITY
+KINZ,,KINS Technology Group Inc.,NASDAQ,us_market,EQUITY
+AURC,,Aurora Acquisition Corp.,NASDAQ,us_market,EQUITY
+LGVC,,LAMF Global Ventures Corp. I,NASDAQ,us_market,EQUITY
+HCCC,,Healthcare Capital Corp.,NASDAQ,us_market,EQUITY
+FTAA,,FTAC Athena Acquisition Corp.,NASDAQ,us_market,EQUITY
+ADER,,26 Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+FTCV,fintech-acquisition-corp-v,FinTech Acquisition Corp. V,NASDAQ,us_market,EQUITY
+TMKR,,Tastemaker Acquisition Corp.,NASDAQ,us_market,EQUITY
+GGMC,,Glenfarne Merger Corp.,NASDAQ,us_market,EQUITY
+GTPA,,"Gores Technology Partners, Inc.",NASDAQ,us_market,EQUITY
+POW,,Powered Brands,NASDAQ,us_market,EQUITY
+JUGG,,Jaws Juggernaut Acquisition Corporation,NASDAQ,us_market,EQUITY
+ATVC,,Tribe Capital Growth Corp I,NASDAQ,us_market,EQUITY
+KAIR,,Kairos Acquisition Corp.,NASDAQ,us_market,EQUITY
+NVSA,,New Vista Acquisition Corp,NASDAQ,us_market,EQUITY
+SWET,,Athlon Acquisition Corp.,NASDAQ,us_market,EQUITY
+PMGM,,Priveterra Acquisition Corp.,NASDAQ,us_market,EQUITY
+EAC,,Edify Acquisition Corp.,NASDAQ,us_market,EQUITY
+FTPA,,FTAC Parnassus Acquisition Corp.,NASDAQ,us_market,EQUITY
+HRZN,,Horizon Technology Finance Corporation,NASDAQ,us_market,EQUITY
+DISA,,Disruptive Acquisition Corporation I,NASDAQ,us_market,EQUITY
+FTVI,,FinTech Acquisition Corp. VI,NASDAQ,us_market,EQUITY
+IIII,,INSU Acquisition Corp. III,NASDAQ,us_market,EQUITY
+AFCG,,"AFC Gamma, Inc.",NASDAQ,us_market,EQUITY
+LVRA,,Levere Holdings Corp.,NASDAQ,us_market,EQUITY
+ONYX,onyx-acquisition-co,Onyx Acquisition Co. I,NASDAQ,us_market,EQUITY
+LEGA,,"Lead Edge Growth Opportunities, Ltd",NASDAQ,us_market,EQUITY
+PEGR,,Project Energy Reimagined Acquisition Corp.,NASDAQ,us_market,EQUITY
+NCAC,,Newcourt Acquisition Corp,NASDAQ,us_market,EQUITY
+PUCK,,Goal Acquisitions Corp.,NASDAQ,us_market,EQUITY
+IOAC,,Innovative International Acquisition Corp.,NASDAQ,us_market,EQUITY
+GSAQ,,Global Synergy Acquisition Corp.,NASDAQ,us_market,EQUITY
+HLAH,,"Hamilton Lane Alliance Holdings I, Inc.",NASDAQ,us_market,EQUITY
+CFFE,,CF Acquisition Corp. VIII,NASDAQ,us_market,EQUITY
+GOBI,,Gobi Acquisition Corp.,NASDAQ,us_market,EQUITY
+VPCB,,VPC Impact Acquisition Holdings II,NASDAQ,us_market,EQUITY
+FSSI,,Fortistar Sustainable Solutions Corp.,NASDAQ,us_market,EQUITY
+PFTA,,Portage Fintech Acquisition Corporation,NASDAQ,us_market,EQUITY
+REFI,chicago-atlantic-real-estate,"Chicago Atlantic Real Estate Finance, Inc.",NASDAQ,us_market,EQUITY
+DNAA,,Social Capital Suvretta Holdings Corp. I,NASDAQ,us_market,EQUITY
+DNAD,,Social Capital Suvretta Holdings Corp. IV,NASDAQ,us_market,EQUITY
+DNAB,,Social Capital Suvretta Holdings Corp. II,NASDAQ,us_market,EQUITY
+SLVR,,SilverSPAC Inc.,NASDAQ,us_market,EQUITY
+DNAC,,Social Capital Suvretta Holdings Corp. III,NASDAQ,us_market,EQUITY
+RCLF,,Rosecliff Acquisition Corp I,NASDAQ,us_market,EQUITY
+MTAC,,MedTech Acquisition Corporation,NASDAQ,us_market,EQUITY
+CFV,,CF Acquisition Corp. V,NASDAQ,us_market,EQUITY
+TEKK,,Tekkorp Digital Acquisition Corp.,NASDAQ,us_market,EQUITY
+PSAG,,Property Solutions Acquisition Corporation II,NASDAQ,us_market,EQUITY
+MON,,Monument Circle Acquisition Corp.,NASDAQ,us_market,EQUITY
+RVAC,riverview-acquisition,Riverview Acquisition Corp.,NASDAQ,us_market,EQUITY
+HCII,,Hudson Executive Investment Corp. II,NASDAQ,us_market,EQUITY
+SCAQ,,Stratim Cloud Acquisition Corp.,NASDAQ,us_market,EQUITY
+ITHX,,ITHAX Acquisition Corp.,NASDAQ,us_market,EQUITY
+NPAB,,New Providence Acquisition Corp. II,NASDAQ,us_market,EQUITY
+HWEL,healthwell,Healthwell Acquisition Corp. I,NASDAQ,us_market,EQUITY
+ADAL,,Anthemis Digital Acquisitions I Corp,NASDAQ,us_market,EQUITY
+BWC,blue-whale,Blue Whale Acquisition Corp I,NASDAQ,us_market,EQUITY
+ESAC,,ESGEN Acquisition Corporation,NASDAQ,us_market,EQUITY
+FTHM,,Fathom Holdings Inc.,NASDAQ,us_market,EQUITY
+LCAP,,Lionheart Acquisition Corp. II,NASDAQ,us_market,EQUITY
+NRAC,,Noble Rock Acquisition Corporation,NASDAQ,us_market,EQUITY
+AEAC,,Authentic Equity Acquisition Corp.,NASDAQ,us_market,EQUITY
+THCP,,"Thunder Bridge Capital Partners IV, Inc.",NASDAQ,us_market,EQUITY
+ZNTE,,Zanite Acquisition Corp.,NASDAQ,us_market,EQUITY
+SVFB,,SVF Investment Corp. 2,NASDAQ,us_market,EQUITY
+DYNS,,Dynamics Special Purpose Corp.,NASDAQ,us_market,EQUITY
+SV,,Spring Valley Acquisition Corp.,NASDAQ,us_market,EQUITY
+AKIC,,Sports Ventures Acquisition Corp.,NASDAQ,us_market,EQUITY
+AHPA,avista-acquisition,Avista Public Acquisition Corp. II,NASDAQ,us_market,EQUITY
+GWII,,Good Works II Acquisition Corp.,NASDAQ,us_market,EQUITY
+ACEV,,ACE Convergence Acquisition Corp.,NASDAQ,us_market,EQUITY
+FRON,,Frontier Acquisition Corp.,NASDAQ,us_market,EQUITY
+DTRT,,DTRT Health Acquisition Corp.,NASDAQ,us_market,EQUITY
+SVNA,,7 Acquisition Corporation,NASDAQ,us_market,EQUITY
+PCCT,,Perception Capital Corp. II,NASDAQ,us_market,EQUITY
+VMGA,,VMG Consumer Acquisition Corp.,NASDAQ,us_market,EQUITY
+SHCA,,Spindletop Health Acquisition Corp.,NASDAQ,us_market,EQUITY
+AEAE,,AltEnergy Acquisition Corp.,NASDAQ,us_market,EQUITY
+XFIN,,ExcelFin Acquisition Corp,NASDAQ,us_market,EQUITY
+KAII,,Kismet Acquisition Two Corp.,NASDAQ,us_market,EQUITY
+ASPC,,Alpha Capital Acquisition Company - One,NASDAQ,us_market,EQUITY
+BIOT,,Biotech Acquisition Company,NASDAQ,us_market,EQUITY
+BLTS,,Bright Lights Acquisition Corp.,NASDAQ,us_market,EQUITY
+CBRG,,Chain Bridge I,NASDAQ,us_market,EQUITY
+DPCS,,DP Cap Acquisition Corp I,NASDAQ,us_market,EQUITY
+MRLN,,Marlin Business Services Corp.,NASDAQ,us_market,EQUITY
+BHAC,,Crixus BH3 Acquisition Company,NASDAQ,us_market,EQUITY
+NOAC,,Natural Order Acquisition Corp.,NASDAQ,us_market,EQUITY
+SWAG,,Software Acquisition Group Inc. III,NASDAQ,us_market,EQUITY
+ARBG,,Aequi Acquisition Corp.,NASDAQ,us_market,EQUITY
+VII,,7GC & Co. Holdings Inc.,NASDAQ,us_market,EQUITY
+SHAC,,SCP & CO Healthcare Acquisition Company,NASDAQ,us_market,EQUITY
+PTIC,,PropTech Investment Corporation II,NASDAQ,us_market,EQUITY
+WWAC,,Worldwide Webb Acquisition Corp.,NASDAQ,us_market,EQUITY
+GNAC,,Group Nine Acquisition Corp.,NASDAQ,us_market,EQUITY
+ZWRK,,Z-Work Acquisition Corp.,NASDAQ,us_market,EQUITY
+LDHA,,LDH Growth Corp I,NASDAQ,us_market,EQUITY
+ITQ,,Itiquira Acquisition Corp.,NASDAQ,us_market,EQUITY
+OSTR,,Oyster Enterprises Acquisition Corp.,NASDAQ,us_market,EQUITY
+PAQC,,Provident Acquisition Corp.,NASDAQ,us_market,EQUITY
+VELO,,Velocity Acquisition Corp.,NASDAQ,us_market,EQUITY
+IXAQ,,IX Acquisition Corp.,NASDAQ,us_market,EQUITY
+GACQ,,Global Consumer Acquisition Corp.,NASDAQ,us_market,EQUITY
+LHAA,,Lerer Hippeau Acquisition Corp.,NASDAQ,us_market,EQUITY
+VCXA,10x-capital,10X Capital Venture Acquisition Corp. II,NASDAQ,us_market,EQUITY
+USCT,,TKB Critical Technologies 1,NASDAQ,us_market,EQUITY
+STRS,,Stratus Properties Inc.,NASDAQ,us_market,EQUITY
+FRSG,,First Reserve Sustainable Growth Corp.,NASDAQ,us_market,EQUITY
+SKYA,,Skydeck Acquisition Corp.,NASDAQ,us_market,EQUITY
+AFAQ,,AF Acquisition Corp.,NASDAQ,us_market,EQUITY
+SHQA,,Shelter Acquisition Corporation I,NASDAQ,us_market,EQUITY
+GIW,,"GigInternational1, Inc.",NASDAQ,us_market,EQUITY
+GLHA,,Glass Houses Acquisition Corp.,NASDAQ,us_market,EQUITY
+XPAX,,XPAC Acquisition Corp.,NASDAQ,us_market,EQUITY
+BSKY,,"Big Sky Growth Partners, Inc.",NASDAQ,us_market,EQUITY
+ROC,,ROC Energy Acquisition Corp.,NASDAQ,us_market,EQUITY
+FRW,,PWP Forward Acquisition Corp. I,NASDAQ,us_market,EQUITY
+ENVI,,Environmental Impact Acquisition Corp.,NASDAQ,us_market,EQUITY
+ISLE,,Isleworth Healthcare Acquisition Corporation,NASDAQ,us_market,EQUITY
+MCAA,,Mountain & Co. I Acquisition Corp.,NASDAQ,us_market,EQUITY
+DALS,,DA32 Life Science Tech Acquisition Corp.,NASDAQ,us_market,EQUITY
+SMIH,,Summit Healthcare Acquisition Corp.,NASDAQ,us_market,EQUITY
+AVAC,,Avalon Acquisition Inc.,NASDAQ,us_market,EQUITY
+LFTR,,Lefteris Acquisition Corp.,NASDAQ,us_market,EQUITY
+ENER,,Accretion Acquisition Corp.,NASDAQ,us_market,EQUITY
+DLCA,,Deep Lake Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+MYNA,mynaric,Mynaric AG - American Depository Shares,NASDAQ,us_market,EQUITY
+EDNC,,Endurance Acquisition Corp.,NASDAQ,us_market,EQUITY
+GHAC,,Gaming & Hospitality Acquisition Corp.,NASDAQ,us_market,EQUITY
+HPLT,,Home Plate Acquisition Corporation,NASDAQ,us_market,EQUITY
+CDAQ,,Compass Digital Acquisition Corp.,NASDAQ,us_market,EQUITY
+MLAI,,McLaren Technology Acquisition Corp.,NASDAQ,us_market,EQUITY
+ARTE,,Artemis Strategic Investment Corporation,NASDAQ,us_market,EQUITY
+RCHG,,Recharge Acquisition Corp.,NASDAQ,us_market,EQUITY
+CRZN,,Corazon Capital V838 Monoceros Corp,NASDAQ,us_market,EQUITY
+TCAC,,Tuatara Capital Acquisition Corporation,NASDAQ,us_market,EQUITY
+GTAC,,Global Technology Acquisition Corp. I,NASDAQ,us_market,EQUITY
+APAC,,StoneBridge Acquisition Corporation,NASDAQ,us_market,EQUITY
+SWKH,,SWK Holdings Corporation,NASDAQ,us_market,EQUITY
+SAMG,,Silvercrest Asset Management Group Inc.,NASDAQ,us_market,EQUITY
+SRSA,,Sarissa Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+FHLT,,Future Health ESG Corp.,NASDAQ,us_market,EQUITY
+TBSA,,TB SA Acquisition Corp,NASDAQ,us_market,EQUITY
+ORIA,,Orion Biotech Opportunities Corp.,NASDAQ,us_market,EQUITY
+FICV,,Frontier Investment Corp,NASDAQ,us_market,EQUITY
+NHIC,,NewHold Investment Corp. II,NASDAQ,us_market,EQUITY
+GVCI,,Green Visor Financial Technology Acquisition Corp. I,NASDAQ,us_market,EQUITY
+IMAQ,,International Media Acquisition Corp.,NASDAQ,us_market,EQUITY
+PANA,,Panacea Acquisition Corp. II,NASDAQ,us_market,EQUITY
+CPSS,,"Consumer Portfolio Services, Inc.",NASDAQ,us_market,EQUITY
+PBAX,,Phoenix Biotech Acquisition Corp.,NASDAQ,us_market,EQUITY
+TOAC,,Talon 1 Acquisition Corp.,NASDAQ,us_market,EQUITY
+TRON,,Corner Growth Acquisition Corp. 2,NASDAQ,us_market,EQUITY
+AFAC,,Arena Fortify Acquisition Corp.,NASDAQ,us_market,EQUITY
+MPRA,,Mercato Partners Acquisition Corporation,NASDAQ,us_market,EQUITY
+MAQC,,Maquia Capital Acquisition Corporation,NASDAQ,us_market,EQUITY
+JFU,,9F Inc.,NASDAQ,us_market,EQUITY
+SANB,,Sanaby Health Acquisition Corp. I,NASDAQ,us_market,EQUITY
+BRPM,b-riley-principal,B. Riley Principal 150 Merger Corp.,NASDAQ,us_market,EQUITY
+MEAC,,Mercury Ecommerce Acquisition Corp,NASDAQ,us_market,EQUITY
+TPBA,,TPB Acquisition Corporation I,NASDAQ,us_market,EQUITY
+RNER,,Mount Rainier Acquisition Corp.,NASDAQ,us_market,EQUITY
+ISAA,,Iron Spark I Inc.,NASDAQ,us_market,EQUITY
+TWCB,,Bilander Acquisition Corp.,NASDAQ,us_market,EQUITY
+RICO,,Agrico Acquisition Corp.,NASDAQ,us_market,EQUITY
+TVAC,,Thayer Ventures Acquisition Corporation,NASDAQ,us_market,EQUITY
+ASAX,,Astrea Acquisition Corp.,NASDAQ,us_market,EQUITY
+DSAC,,Duddell Street Acquisition Corp.,NASDAQ,us_market,EQUITY
+VTAQ,,Ventoux CCM Acquisition Corp.,NASDAQ,us_market,EQUITY
+CENQ,cenaq-energy,CENAQ Energy Corp.,NASDAQ,us_market,EQUITY
+OXUS,,Oxus Acquisition Corp.,NASDAQ,us_market,EQUITY
+BRIV,,B. Riley Principal 250 Merger Corp.,NASDAQ,us_market,EQUITY
+GCAC,,Growth Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+FNVT,finnovate-acquisition,Finnovate Acquisition Corp.,NASDAQ,us_market,EQUITY
+CLAQ,,CleanTech Acquisition Corp.,NASDAQ,us_market,EQUITY
+THAC,,Thrive Acquisition Corporation,NASDAQ,us_market,EQUITY
+DUNE,,Dune Acquisition Corporation,NASDAQ,us_market,EQUITY
+KSI,,Kadem Sustainable Impact Corporation,NASDAQ,us_market,EQUITY
+INKA,,KludeIn I Acquisition Corp.,NASDAQ,us_market,EQUITY
+VWTR,,"Vidler Water Resources, Inc.",NASDAQ,us_market,EQUITY
+PGRW,,Progress Acquisition Corp.,NASDAQ,us_market,EQUITY
+PHIC,,"Population Health Investment Co., Inc.",NASDAQ,us_market,EQUITY
+FNGR,,"FingerMotion, Inc.",NASDAQ,us_market,EQUITY
+SPTK,,SportsTek Acquisition Corp.,NASDAQ,us_market,EQUITY
+PEPL,,PepperLime Health Acquisition Corporation,NASDAQ,us_market,EQUITY
+MOGO,mogo,Mogo Inc.,NASDAQ,us_market,EQUITY
+HSAQ,,Health Sciences Acquisitions Corporation 2,NASDAQ,us_market,EQUITY
+SAMA,,Schultze Special Purpose Acquisition Corp. II,NASDAQ,us_market,EQUITY
+BNNR,,Banner Acquisition Corp.,NASDAQ,us_market,EQUITY
+ALPA,,Alpha Healthcare Acquisition Corp. III,NASDAQ,us_market,EQUITY
+BLNG,,Belong Acquisition Corp.,NASDAQ,us_market,EQUITY
+ARYD,,ARYA Sciences Acquisition Corp IV,NASDAQ,us_market,EQUITY
+ABGI,,ABG Acquisition Corp. I,NASDAQ,us_market,EQUITY
+RACB,,Research Alliance Corp. II,NASDAQ,us_market,EQUITY
+ASPS,altisource,Altisource Portfolio Solutions S.A.,NASDAQ,us_market,EQUITY
+SNFCA,,Security National Financial Corporation,NASDAQ,us_market,EQUITY
+ARYE,,ARYA Sciences Acquisition Corp V,NASDAQ,us_market,EQUITY
+OCAX,,OCA Acquisition Corp.,NASDAQ,us_market,EQUITY
+APMI,,AxonPrime Infrastructure Acquisition Corporation,NASDAQ,us_market,EQUITY
+AMCI,,AMCI Acquisition Corp. II,NASDAQ,us_market,EQUITY
+MITA,,Coliseum Acquisition Corp.,NASDAQ,us_market,EQUITY
+BLSA,,BCLS Acquisition Corp.,NASDAQ,us_market,EQUITY
+CLOE,,Clover Leaf Capital Corp.,NASDAQ,us_market,EQUITY
+MLAC,,Malacca Straits Acquisition Company Limited,NASDAQ,us_market,EQUITY
+RAM,,Aries I Acquisition Corporation,NASDAQ,us_market,EQUITY
+THCA,,Tuscan Holdings Corp. II,NASDAQ,us_market,EQUITY
+FLAC,,Frazier Lifesciences Acquisition Corporation,NASDAQ,us_market,EQUITY
+VCKA,,Vickers Vantage Corp. I,NASDAQ,us_market,EQUITY
+CMCT,,CIM Commercial Trust Corporation,NASDAQ,us_market,EQUITY
+OMEG,,Omega Alpha SPAC,NASDAQ,us_market,EQUITY
+LJAQ,,LightJump Acquisition Corporation,NASDAQ,us_market,EQUITY
+SWSS,,Springwater Special Situations Corp.,NASDAQ,us_market,EQUITY
+SCMA,,Seaport Calibre Materials Acquisition Corp.,NASDAQ,us_market,EQUITY
+AMAO,,American Acquisition Opportunity Inc.,NASDAQ,us_market,EQUITY
+BWAC,,Better World Acquisition Corp.,NASDAQ,us_market,EQUITY
+MFIN,,Medallion Financial Corp.,NASDAQ,us_market,EQUITY
+NMMC,,North Mountain Merger Corp.,NASDAQ,us_market,EQUITY
+NBST,,Newbury Street Acquisition Corporation,NASDAQ,us_market,EQUITY
+DMAQ,,Deep Medicine Acquisition Corp.,NASDAQ,us_market,EQUITY
+MEOA,,Minority Equality Opportunities Acquisition Inc.,NASDAQ,us_market,EQUITY
+EBAC,,European Biotech Acquisition Corp.,NASDAQ,us_market,EQUITY
+CCTS,,Cactus Acquisition Corp. 1 Limited,NASDAQ,us_market,EQUITY
+CNTQ,,Chardan NexTech Acquisition 2 Corp.,NASDAQ,us_market,EQUITY
+LION,lionheart,Lionheart III Corp,NASDAQ,us_market,EQUITY
+HYW,,Hywin Holdings Ltd.,NASDAQ,us_market,EQUITY
+CHWA,,CHW Acquisition Corporation,NASDAQ,us_market,EQUITY
+GLAQ,,Globis Acquisition Corp.,NASDAQ,us_market,EQUITY
+EVOJ,,Evo Acquisition Corp.,NASDAQ,us_market,EQUITY
+BENE,benessere-capital-acquisition,Benessere Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+DKDCA,,Data Knights Acquisition Corp.,NASDAQ,us_market,EQUITY
+NLIT,,Northern Lights Acquisition Corp.,NASDAQ,us_market,EQUITY
+MCMJ,,Merida Merger Corp. I,NASDAQ,us_market,EQUITY
+BREZ,,Breeze Holdings Acquisition Corp.,NASDAQ,us_market,EQUITY
+MBTC,,Nocturne Acquisition Corporation,NASDAQ,us_market,EQUITY
+PONO,,Pono Capital Corp,NASDAQ,us_market,EQUITY
+SMAP,,SportsMap Tech Acquisition Corp.,NASDAQ,us_market,EQUITY
+LIBY,,Liberty Resources Acquisition Corp.,NASDAQ,us_market,EQUITY
+DHAC,,Digital Health Acquisition Corp.,NASDAQ,us_market,EQUITY
+ROCR,,Roth CH Acquisition III Co.,NASDAQ,us_market,EQUITY
+ROCL,,Roth CH Acquisition V Co.,NASDAQ,us_market,EQUITY
+HLXA,,Helix Acquisition Corp.,NASDAQ,us_market,EQUITY
+BSBK,,Bogota Financial Corp.,NASDAQ,us_market,EQUITY
+ROCG,,Roth CH Acquisition IV Co.,NASDAQ,us_market,EQUITY
+EDTX,,EdtechX Holdings Acquisition Corp. II,NASDAQ,us_market,EQUITY
+BMAQ,,Blockchain Moon Acquisition Corp.,NASDAQ,us_market,EQUITY
+MACA,,Moringa Acquisition Corp,NASDAQ,us_market,EQUITY
+OXAC,,Oxbridge Acquisition Corp.,NASDAQ,us_market,EQUITY
+GIAC,,Gesher I Acquisition Corp.,NASDAQ,us_market,EQUITY
+LVAC,,LAVA Medtech Acquisition Corp.,NASDAQ,us_market,EQUITY
+TGVC,tg-venture-acquisition,TG Venture Acquisition Corp.,NASDAQ,us_market,EQUITY
+MTRY,,Monterey Bio Acquisition Corporation,NASDAQ,us_market,EQUITY
+INTE,,Integral Acquisition Corporation 1,NASDAQ,us_market,EQUITY
+GGGV,,G3 VRM Acquisition Corp.,NASDAQ,us_market,EQUITY
+MACU,,Mallard Acquisition Corp.,NASDAQ,us_market,EQUITY
+REVE,,Alpine Acquisition Corporation,NASDAQ,us_market,EQUITY
+AEHA,,Aesther Healthcare Acquisition Corp,NASDAQ,us_market,EQUITY
+OTRA,,OTR Acquisition Corp.,NASDAQ,us_market,EQUITY
+JMAC,,Maxpro Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+GLEE,,Gladstone Acquisition Corp.,NASDAQ,us_market,EQUITY
+JYAC,,Jiya Acquisition Corp.,NASDAQ,us_market,EQUITY
+EUCR,,Eucrates Biomedical Acquisition Corp.,NASDAQ,us_market,EQUITY
+LMAO,,LMF Acquisition Opportunities Inc.,NASDAQ,us_market,EQUITY
+OTEC,,OceanTech Acquisitions I Corp.,NASDAQ,us_market,EQUITY
+VSAC,,Vision Sensing Acquisition Corp.,NASDAQ,us_market,EQUITY
+BCTX,briacell,BriaCell Therapeutics Corp.,NASDAQ,us_market,EQUITY
+FRLA,,Fortune Rise Acquisition Corporation,NASDAQ,us_market,EQUITY
+TMPM,,Turmeric Acquisition Corp.,NASDAQ,us_market,EQUITY
+AVHI,,Achari Ventures Holdings Corp. I,NASDAQ,us_market,EQUITY
+JFIN,,Jiayin Group Inc.,NASDAQ,us_market,EQUITY
+ADOC,,Edoc Acquisition Corp.,NASDAQ,us_market,EQUITY
+VMAC,,Vistas Media Acquisition Company Inc.,NASDAQ,us_market,EQUITY
+VEV,,Vicinity Motor Corp.,NASDAQ,us_market,EQUITY
+FATP,,Fat Projects Acquisition Corp,NASDAQ,us_market,EQUITY
+FIAC,,Focus Impact Acquisition Corp.,NASDAQ,us_market,EQUITY
+GLLI,,Globalink Investment Inc.,NASDAQ,us_market,EQUITY
+WINV,,WinVest Acquisition Corp.,NASDAQ,us_market,EQUITY
+MSAC,,Medicus Sciences Acquisition Corp.,NASDAQ,us_market,EQUITY
+FRSX,foresight-autonomous,Foresight Autonomous Holdings Ltd.,NASDAQ,us_market,EQUITY
+LAX,8i-acquisition,8i Acquisition 2 Corp.,NASDAQ,us_market,EQUITY
+PCX,,Parsec Capital Acquisitions Corp,NASDAQ,us_market,EQUITY
+ESSC,,East Stone Acquisition Corporation,NASDAQ,us_market,EQUITY
+FVAM,,5:01 Acquisition Corp.,NASDAQ,us_market,EQUITY
+PFX,,PhenixFIN Corporation,NASDAQ,us_market,EQUITY
+CLAY,,Chavant Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+BHSE,,Bull Horn Holdings Corp.,NASDAQ,us_market,EQUITY
+BNIX,,Bannix Acquisition Corp.,NASDAQ,us_market,EQUITY
+CIH,,China Index Holdings Limited - American Depository Shares,NASDAQ,us_market,EQUITY
+NICK,,"Nicholas Financial, Inc.",NASDAQ,us_market,EQUITY
+MCAG,mountain-crest-acquisition,Mountain Crest Acquisition Corp. V,NASDAQ,us_market,EQUITY
+BAFN,,BayFirst Financial Corp.,NASDAQ,us_market,EQUITY
+GROW,u-s-global-investors,"U.S. Global Investors, Inc.",NASDAQ,us_market,EQUITY
+HNNA,,"Hennessy Advisors, Inc.",NASDAQ,us_market,EQUITY
+MAYS,,"J. W. Mays, Inc.",NASDAQ,us_market,EQUITY
+BSGA,,Blue Safari Group Acquisition Corp.,NASDAQ,us_market,EQUITY
+MPAC,,Model Performance Acquisition Corp.,NASDAQ,us_market,EQUITY
+ICMB,,"Investcorp Credit Management BDC, Inc.",NASDAQ,us_market,EQUITY
+EQOS,diginex,EQONEX LIMITED,NASDAQ,us_market,EQUITY
+GBRG,,Goldenbridge Acquisition Limited,NASDAQ,us_market,EQUITY
+NOVV,,Nova Vision Acquisition Corp.,NASDAQ,us_market,EQUITY
+GPCO,,Golden Path Acquisition Corporation,NASDAQ,us_market,EQUITY
+PAFO,,Pacifico Acquisition Corp.,NASDAQ,us_market,EQUITY
+MCAF,,Mountain Crest Acquisition Corp. IV,NASDAQ,us_market,EQUITY
+BCAC,,Brookline Capital Acquisition Corp.,NASDAQ,us_market,EQUITY
+HHGC,,HHG Capital Corporation,NASDAQ,us_market,EQUITY
+ASPA,,"Abri SPAC I, Inc.",NASDAQ,us_market,EQUITY
+FOXW,,FoxWayne Enterprises Acquisition Corp.,NASDAQ,us_market,EQUITY
+PPHP,,PHP Ventures Acquisition Corp.,NASDAQ,us_market,EQUITY
+IGNY,,Ignyte Acquisition Corp.,NASDAQ,us_market,EQUITY
+LAAA,,Lakeshore Acquisition I Corp.,NASDAQ,us_market,EQUITY
+MCAE,,Mountain Crest Acquisition Corp. III,NASDAQ,us_market,EQUITY
+ARIZ,arisz-acquisition,Arisz Acquisition Corp.,NASDAQ,us_market,EQUITY
+UK,,Ucommune International Ltd,NASDAQ,us_market,EQUITY
+SELF,,"Global Self Storage, Inc.",NASDAQ,us_market,EQUITY
+LRFC,,Logan Ridge Finance Corporation,NASDAQ,us_market,EQUITY
+SPK,,SPK Acquisition Corp,NASDAQ,us_market,EQUITY
+SIEB,,Siebert Financial Corp.,NASDAQ,us_market,EQUITY
+HGBL,,Heritage Global Inc.,NASDAQ,us_market,EQUITY
+LOAN,,"Manhattan Bridge Capital, Inc",NASDAQ,us_market,EQUITY
+OBAS,,Optibase Ltd.,NASDAQ,us_market,EQUITY
+AVCO,,Avalon GloboCare Corp.,NASDAQ,us_market,EQUITY
+BRLI,,Brilliant Acquisition Corporation,NASDAQ,us_market,EQUITY
+VENA,,Venus Acquisition Corporation,NASDAQ,us_market,EQUITY
+GEG,,"Great Elm Group, Inc.",NASDAQ,us_market,EQUITY
+TUGC,,TradeUP Global Corporation,NASDAQ,us_market,EQUITY
+HGSH,china-hgs-real-estate,"China HGS Real Estate, Inc.",NASDAQ,us_market,EQUITY
+AGBA,,AGBA Acquisition Limited,NASDAQ,us_market,EQUITY
+LMFA,lm-funding,"LM Funding America, Inc.",NASDAQ,us_market,EQUITY
+GRCY,,Greencity Acquisition Corporation,NASDAQ,us_market,EQUITY
+ALAC,,Alberton Acquisition Corporation,NASDAQ,us_market,EQUITY
+LGHL,,Lion Group Holding Ltd.,NASDAQ,us_market,EQUITY
+GAME,engine-gaming-and-media,"Engine Gaming and Media, Inc.",NASDAQ,us_market,EQUITY
+UPTD,,TradeUP Acquisition Corp.,NASDAQ,us_market,EQUITY
+SQFT,,"Presidio Property Trust, Inc.",NASDAQ,us_market,EQUITY
+DPRO,,Draganfly Inc.,NASDAQ,us_market,EQUITY
+JWAC,,Jupiter Wellness Acquisition Corp.,NASDAQ,us_market,EQUITY
+WKSP,,"Worksport, Ltd.",NASDAQ,us_market,EQUITY
+CHCI,comstock-holding-companies,"Comstock Holding Companies, Inc.",NASDAQ,us_market,EQUITY
+SOHO,,Sotherly Hotels Inc.,NASDAQ,us_market,EQUITY
+AHG,,Akso Health Group,NASDAQ,us_market,EQUITY
+SURG,,"SurgePays, Inc.",NASDAQ,us_market,EQUITY
+HCDI,,"Harbor Custom Development, Inc.",NASDAQ,us_market,EQUITY
+BLBX,,Blackboxstocks Inc.,NASDAQ,us_market,EQUITY
+NMTC,,NeuroOne Medical Technologies Corporation,NASDAQ,us_market,EQUITY
+APCX,,AppTech Payments Corp.,NASDAQ,us_market,EQUITY
+WAVE,,Eco Wave Power Global AB (publ),NASDAQ,us_market,EQUITY
+AEI,alset-ehome-international,Alset EHome International Inc.,NASDAQ,us_market,EQUITY
+GFAI,,"Guardforce AI Co., Limited",NASDAQ,us_market,EQUITY
+QK,,Q&K International Group Limited,NASDAQ,us_market,EQUITY
+AIHS,,Senmiao Technology Limited,NASDAQ,us_market,EQUITY
+FGF,,"FG Financial Group, Inc.",NASDAQ,us_market,EQUITY
+LYL,,Dragon Victory International Limited,NASDAQ,us_market,EQUITY
+MDJH,,MDJM LTD,NASDAQ,us_market,EQUITY
+VINO,gaucho,"Gaucho Group Holdings, Inc.",NASDAQ,us_market,EQUITY
+HUSN,,Hudson Capital Inc.,NASDAQ,us_market,EQUITY
+GYRO,,"Gyrodyne , LLC",NASDAQ,us_market,EQUITY
+MDRR,,"Medalist Diversified REIT, Inc.",NASDAQ,us_market,EQUITY
+WHLR,,"Wheeler Real Estate Investment Trust, Inc.",NASDAQ,us_market,EQUITY
+PHCF,,"Puhui Wealth Investment Management Co., Ltd.",NASDAQ,us_market,EQUITY
+MTC,,"MMTec, Inc.",NASDAQ,us_market,EQUITY
+JRJC,,China Finance Online Co. Limited,NASDAQ,us_market,EQUITY
+GIPR,,Generation Income Properties Inc.,NASDAQ,us_market,EQUITY
+BRTX,,"BioRestorative Therapies, Inc.",NASDAQ,us_market,EQUITY
+SNTG,sentage,Sentage Holdings Inc.,NASDAQ,us_market,EQUITY

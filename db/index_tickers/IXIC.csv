@@ -1,0 +1,1501 @@
+symbol,shortName,longName,exchange,market,quoteType
+AAPL,apple,Apple Inc.,NASDAQ,us_market,EQUITY
+MSFT,microsoft,Microsoft Corporation,NASDAQ,us_market,EQUITY
+GOOGL,alphabet,Alphabet Inc.,NASDAQ,us_market,EQUITY
+GOOG,alphabet,Alphabet Inc.,NASDAQ,us_market,EQUITY
+AMZN,amazon,"Amazon.com, Inc.",NASDAQ,us_market,EQUITY
+TSLA,tesla,"Tesla, Inc.",NASDAQ,us_market,EQUITY
+FB,meta-platforms,"Meta Platforms, Inc.",NASDAQ,us_market,EQUITY
+NVDA,nvidia,NVIDIA Corporation,NASDAQ,us_market,EQUITY
+ASML,asml,ASML Holding N.V. - New York Registry Shares,NASDAQ,us_market,EQUITY
+CSCO,cisco,"Cisco Systems, Inc.",NASDAQ,us_market,EQUITY
+AVGO,broadcom,Broadcom Inc.,NASDAQ,us_market,EQUITY
+ADBE,adobe,Adobe Inc.,NASDAQ,us_market,EQUITY
+PEP,pepsico,"PepsiCo, Inc.",NASDAQ,us_market,EQUITY
+CMCSA,comcast,Comcast Corporation,NASDAQ,us_market,EQUITY
+NFLX,netflix,"Netflix, Inc.",NASDAQ,us_market,EQUITY
+COST,costco-wholesale,Costco Wholesale Corporation,NASDAQ,us_market,EQUITY
+INTC,intel,Intel Corporation,NASDAQ,us_market,EQUITY
+QCOM,qualcomm,QUALCOMM Incorporated,NASDAQ,us_market,EQUITY
+PYPL,paypal,"PayPal Holdings, Inc.",NASDAQ,us_market,EQUITY
+AZN,astrazeneca,AstraZeneca PLC,NASDAQ,us_market,EQUITY
+TXN,texas-instruments,Texas Instruments Incorporated,NASDAQ,us_market,EQUITY
+AMD,advanced-micro-devices,"Advanced Micro Devices, Inc.",NASDAQ,us_market,EQUITY
+INTU,intuit,Intuit Inc.,NASDAQ,us_market,EQUITY
+HON,honeywell,Honeywell International Inc.,NASDAQ,us_market,EQUITY
+AMAT,applied-materials,"Applied Materials, Inc.",NASDAQ,us_market,EQUITY
+TMUS,t-mobile,"T-Mobile US, Inc.",NASDAQ,us_market,EQUITY
+AMGN,amgen,Amgen Inc.,NASDAQ,us_market,EQUITY
+SNY,sanofi,Sanofi,NASDAQ,us_market,EQUITY
+SBUX,starbucks,Starbucks Corporation,NASDAQ,us_market,EQUITY
+JD,jd-com,"JD.com, Inc.",NASDAQ,us_market,EQUITY
+CHTR,charter,"Charter Communications, Inc.",NASDAQ,us_market,EQUITY
+ISRG,intuitive-surgical,"Intuitive Surgical, Inc.",NASDAQ,us_market,EQUITY
+MU,micron-technology,"Micron Technology, Inc.",NASDAQ,us_market,EQUITY
+ABNB,airbnb,"Airbnb, Inc.",NASDAQ,us_market,EQUITY
+BKNG,booking,Booking Holdings Inc. Common Stock,NASDAQ,us_market,EQUITY
+LRCX,lam-research,Lam Research Corporation,NASDAQ,us_market,EQUITY
+ADP,automatic-data-processing,"Automatic Data Processing, Inc.",NASDAQ,us_market,EQUITY
+MDLZ,mondelez,"Mondelez International, Inc.",NASDAQ,us_market,EQUITY
+GILD,gilead,"Gilead Sciences, Inc.",NASDAQ,us_market,EQUITY
+ADI,analog-devices,"Analog Devices, Inc.",NASDAQ,us_market,EQUITY
+MRNA,moderna,"Moderna, Inc.",NASDAQ,us_market,EQUITY
+CSX,csx,CSX Corporation,NASDAQ,us_market,EQUITY
+CME,cme,CME Group Inc.,NASDAQ,us_market,EQUITY
+TEAM,atlassian,Atlassian Corporation Plc,NASDAQ,us_market,EQUITY
+RIVN,rivian,"Rivian Automotive, Inc.",NASDAQ,us_market,EQUITY
+PDD,pinduoduo,Pinduoduo Inc.,NASDAQ,us_market,EQUITY
+FISV,fiserv,"Fiserv, Inc.",NASDAQ,us_market,EQUITY
+LCID,lucid-group,"Lucid Group, Inc.",NASDAQ,us_market,EQUITY
+MRVL,marvell-tech,"Marvell Technology, Inc.",NASDAQ,us_market,EQUITY
+EQIX,equinix,"Equinix, Inc.",NASDAQ,us_market,EQUITY
+REGN,regeneron-pharmaceuticals,"Regeneron Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+KLAC,kla-tencor,KLA Corporation,NASDAQ,us_market,EQUITY
+NTES,netease,"NetEase, Inc.",NASDAQ,us_market,EQUITY
+WDAY,workday,"Workday, Inc.",NASDAQ,us_market,EQUITY
+ILMN,illumina,"Illumina, Inc.",NASDAQ,us_market,EQUITY
+NXPI,nxp-semiconductors,NXP Semiconductors N.V.,NASDAQ,us_market,EQUITY
+VRTX,vertex-pharmaceutical,Vertex Pharmaceuticals Incorporated,NASDAQ,us_market,EQUITY
+ADSK,autodesk,"Autodesk, Inc.",NASDAQ,us_market,EQUITY
+MELI,mercadolibre,"MercadoLibre, Inc.",NASDAQ,us_market,EQUITY
+BIDU,baidu,"Baidu, Inc.",NASDAQ,us_market,EQUITY
+EXC,exelon,Exelon Corporation,NASDAQ,us_market,EQUITY
+KDP,keurig-dr-pepper,Keurig Dr Pepper Inc.,NASDAQ,us_market,EQUITY
+MAR,marriott,Marriott International,NASDAQ,us_market,EQUITY
+FTNT,fortinet,"Fortinet, Inc.",NASDAQ,us_market,EQUITY
+SNPS,synopsys,"Synopsys, Inc.",NASDAQ,us_market,EQUITY
+COIN,coinbase,"Coinbase Global, Inc.",NASDAQ,us_market,EQUITY
+ATVI,activision-blizzard,"Activision Blizzard, Inc",NASDAQ,us_market,EQUITY
+BNTX,biontech,BioNTech SE,NASDAQ,us_market,EQUITY
+PANW,palo-alto-networks,"Palo Alto Networks, Inc.",NASDAQ,us_market,EQUITY
+MNST,monster-beverage,Monster Beverage Corporation,NASDAQ,us_market,EQUITY
+XLNX,xilinx,"Xilinx, Inc.",NASDAQ,us_market,EQUITY
+ZM,zoom-video-communications,"Zoom Video Communications, Inc.",NASDAQ,us_market,EQUITY
+ORLY,o-reilly-auto,"O'Reilly Automotive, Inc.",NASDAQ,us_market,EQUITY
+WBA,walgreens-boots-alliance,"Walgreens Boots Alliance, Inc.",NASDAQ,us_market,EQUITY
+MCHP,microchip-technology,Microchip Technology Incorporated,NASDAQ,us_market,EQUITY
+KHC,kraft-heinz,The Kraft Heinz Company,NASDAQ,us_market,EQUITY
+AEP,american-electric-power,"American Electric Power Company, Inc.",NASDAQ,us_market,EQUITY
+CTSH,cognizant,Cognizant Technology Solutions Corporation,NASDAQ,us_market,EQUITY
+PAYX,paychex,"Paychex, Inc.",NASDAQ,us_market,EQUITY
+CDNS,cadence-design-systems,"Cadence Design Systems, Inc.",NASDAQ,us_market,EQUITY
+IDXX,idexx-laboratories,"IDEXX Laboratories, Inc.",NASDAQ,us_market,EQUITY
+DXCM,dexcom,"DexCom, Inc.",NASDAQ,us_market,EQUITY
+VOD,vodafone,Vodafone Group Plc,NASDAQ,us_market,EQUITY
+LULU,lululemon-athletica,lululemon athletica inc.,NASDAQ,us_market,EQUITY
+DDOG,datadog,"Datadog, Inc.",NASDAQ,us_market,EQUITY
+CTAS,cintas,Cintas Corporation,NASDAQ,us_market,EQUITY
+ALGN,align-technology,"Align Technology, Inc.",NASDAQ,us_market,EQUITY
+CRWD,crowdstrike,"CrowdStrike Holdings, Inc.",NASDAQ,us_market,EQUITY
+SIVB,svb-financial,SVB Financial Group,NASDAQ,us_market,EQUITY
+EBAY,ebay,eBay Inc.,NASDAQ,us_market,EQUITY
+TROW,holdings,"T. Rowe Price Group, Inc.",NASDAQ,us_market,EQUITY
+ERIC,ericsson,Ericsson,NASDAQ,us_market,EQUITY
+XEL,xcel-energy,Xcel Energy Inc.,NASDAQ,us_market,EQUITY
+ODFL,old-dominion,"Old Dominion Freight Line, Inc.",NASDAQ,us_market,EQUITY
+EA,electronic-arts,Electronic Arts Inc.,NASDAQ,us_market,EQUITY
+ROST,ross-stores,"Ross Stores, Inc.",NASDAQ,us_market,EQUITY
+SBAC,,SBA Communications Corporation,NASDAQ,us_market,EQUITY
+TTD,the-trade-desk,"The Trade Desk, Inc.",NASDAQ,us_market,EQUITY
+ZS,zscaler,"Zscaler, Inc.",NASDAQ,us_market,EQUITY
+FAST,fastenal,Fastenal Company,NASDAQ,us_market,EQUITY
+MTCH,match-group-inc,"Match Group, Inc.",NASDAQ,us_market,EQUITY
+BIIB,biogen,Biogen Inc.,NASDAQ,us_market,EQUITY
+FITB,fifth-third-bancorp,Fifth Third Bancorp,NASDAQ,us_market,EQUITY
+PCAR,paccar,PACCAR Inc.,NASDAQ,us_market,EQUITY
+CPRT,copart,"Copart, Inc.",NASDAQ,us_market,EQUITY
+VRSK,verisk-analytics,"Verisk Analytics, Inc.",NASDAQ,us_market,EQUITY
+FWONA,liberty-media,Liberty Media Corporation - Series A Liberty Formula One,NASDAQ,us_market,EQUITY
+FWONK,liberty-media,Liberty Media Corporation - Series C Liberty Formula One,NASDAQ,us_market,EQUITY
+GFS,globalfoundries,GlobalFoundries Inc.,NASDAQ,us_market,EQUITY
+LI,li,Li Auto Inc.,NASDAQ,us_market,EQUITY
+OKTA,okta,"Okta, Inc.",NASDAQ,us_market,EQUITY
+IBKR,interactive-brokers-group,"Interactive Brokers Group, Inc.",NASDAQ,us_market,EQUITY
+NDAQ,nasdaq,"Nasdaq, Inc.",NASDAQ,us_market,EQUITY
+ANSS,ansys,"ANSYS, Inc.",NASDAQ,us_market,EQUITY
+DLTR,dollar-tree,"Dollar Tree, Inc.",NASDAQ,us_market,EQUITY
+CSGP,costar-group,"CoStar Group, Inc.",NASDAQ,us_market,EQUITY
+ON,on-semiconductor,ON Semiconductor Corporation,NASDAQ,us_market,EQUITY
+ZBRA,zebra,Zebra Technologies Corporation,NASDAQ,us_market,EQUITY
+BKR,baker-hughes,Baker Hughes Company,NASDAQ,us_market,EQUITY
+BGNE,beigene-ltd-spon-ads-each-repr,"BeiGene, Ltd.",NASDAQ,us_market,EQUITY
+EXPE,expedia,"Expedia Group, Inc.",NASDAQ,us_market,EQUITY
+NTRS,northern-trust,Northern Trust Corporation,NASDAQ,us_market,EQUITY
+CERN,cerner,Cerner Corporation,NASDAQ,us_market,EQUITY
+CCEP,coca-cola,Coca-Cola Europacific Partners plc,NASDAQ,us_market,EQUITY
+LBRDA,liberty-broadband,Liberty Broadband Corporation,NASDAQ,us_market,EQUITY
+LBRDK,liberty-broadband,Liberty Broadband Corporation,NASDAQ,us_market,EQUITY
+TER,teradyne,"Teradyne, Inc.",NASDAQ,us_market,EQUITY
+CDW,cdw,CDW Corporation,NASDAQ,us_market,EQUITY
+TSCO,tractor-supply,Tractor Supply Company,NASDAQ,us_market,EQUITY
+MDB,mongodb,"MongoDB, Inc.",NASDAQ,us_market,EQUITY
+DOCU,docusign,"DocuSign, Inc.",NASDAQ,us_market,EQUITY
+SWKS,skyworks-solutions,"Skyworks Solutions, Inc.",NASDAQ,us_market,EQUITY
+VRSN,verisign,"VeriSign, Inc.",NASDAQ,us_market,EQUITY
+HBAN,huntington-bancshares,Huntington Bancshares Incorporated,NASDAQ,us_market,EQUITY
+STX,seagate,Seagate Technology Holdings PLC,NASDAQ,us_market,EQUITY
+SGEN,seattle-genetics,Seagen Inc.,NASDAQ,us_market,EQUITY
+SIRI,sirius-xm,Sirius XM Holdings Inc.,NASDAQ,us_market,EQUITY
+RPRX,royalty-pharma,Royalty Pharma plc,NASDAQ,us_market,EQUITY
+VIACA,viacomcbs,ViacomCBS Inc.,NASDAQ,us_market,EQUITY
+VIAC,viacomcbs,ViacomCBS Inc.,NASDAQ,us_market,EQUITY
+APP,applovin,Applovin Corporation,NASDAQ,us_market,EQUITY
+FANG,diamondback,"Diamondback Energy, Inc. - Commmon Stock",NASDAQ,us_market,EQUITY
+GMAB,,Genmab A/S,NASDAQ,us_market,EQUITY
+ROKU,roku,"Roku, Inc.",NASDAQ,us_market,EQUITY
+GRAB,grab,Grab Holdings Limited,NASDAQ,us_market,EQUITY
+ICLR,icon,ICON plc,NASDAQ,us_market,EQUITY
+FOX,fox,Fox Corporation,NASDAQ,us_market,EQUITY
+FOXA,fox,Fox Corporation,NASDAQ,us_market,EQUITY
+RYAAY,ryanair,Ryanair Holdings plc,NASDAQ,us_market,EQUITY
+NTAP,netapp,"NetApp, Inc.",NASDAQ,us_market,EQUITY
+TW,,Tradeweb Markets Inc.,NASDAQ,us_market,EQUITY
+ZI,zoominfo,ZoomInfo Technologies Inc.,NASDAQ,us_market,EQUITY
+WMG,,Warner Music Group Corp.,NASDAQ,us_market,EQUITY
+SSNC,ss-and-c,"SS&C Technologies Holdings, Inc.",NASDAQ,us_market,EQUITY
+JBHT,j-b-hunt,"J.B. Hunt Transport Services, Inc.",NASDAQ,us_market,EQUITY
+ETSY,etsy,"Etsy, Inc.",NASDAQ,us_market,EQUITY
+WDC,western-digital,Western Digital Corporation,NASDAQ,us_market,EQUITY
+SBNY,signature-bank,Signature Bank,NASDAQ,us_market,EQUITY
+AFRM,affirm,"Affirm Holdings, Inc.",NASDAQ,us_market,EQUITY
+EXPD,expeditors,"Expeditors International of Washington, Inc.",NASDAQ,us_market,EQUITY
+ULTA,ulta-beauty,"Ulta Beauty, Inc.",NASDAQ,us_market,EQUITY
+HZNP,horizon-pharma,Horizon Therapeutics Public Limited Company,NASDAQ,us_market,EQUITY
+PFG,principal,Principal Financial Group Inc,NASDAQ,us_market,EQUITY
+POOL,pool,Pool Corporation,NASDAQ,us_market,EQUITY
+MPWR,monolithic-power-system,"Monolithic Power Systems, Inc.",NASDAQ,us_market,EQUITY
+ENPH,enphase-energy,"Enphase Energy, Inc.",NASDAQ,us_market,EQUITY
+SPLK,splunk,Splunk Inc.,NASDAQ,us_market,EQUITY
+TRMB,trimble,Trimble Inc.,NASDAQ,us_market,EQUITY
+CINF,cincinnati-financial,Cincinnati Financial Corporation,NASDAQ,us_market,EQUITY
+DISH,dish-network,DISH Network Corporation,NASDAQ,us_market,EQUITY
+YNDX,yandex,Yandex N.V.,NASDAQ,us_market,EQUITY
+CG,the-carlyle-group,The Carlyle Group Inc.,NASDAQ,us_market,EQUITY
+AKAM,akamai,"Akamai Technologies, Inc.",NASDAQ,us_market,EQUITY
+VTRS,viatris,Viatris Inc.,NASDAQ,us_market,EQUITY
+ACGL,arch-capital,Arch Capital Group Ltd.,NASDAQ,us_market,EQUITY
+CZR,caesars,"Caesars Entertainment, Inc.",NASDAQ,us_market,EQUITY
+ENTG,entegris,"Entegris, Inc.",NASDAQ,us_market,EQUITY
+NUAN,nuance-communications,"Nuance Communications, Inc.",NASDAQ,us_market,EQUITY
+HOLX,hologic,"Hologic, Inc.",NASDAQ,us_market,EQUITY
+ALNY,alnylam-pharmaceuticals,"Alnylam Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+TTWO,take-two-interactive-software,"Take-Two Interactive Software, Inc.",NASDAQ,us_market,EQUITY
+NICE,nice,NICE Ltd,NASDAQ,us_market,EQUITY
+CFLT,confluent,"Confluent, Inc.",NASDAQ,us_market,EQUITY
+CHKP,check-point-software-technologies,Check Point Software Technologies Ltd.,NASDAQ,us_market,EQUITY
+LSXMB,liberty-media,Liberty Media Corporation - Series B Liberty SiriusXM,NASDAQ,us_market,EQUITY
+LKQ,lkq,LKQ Corporation,NASDAQ,us_market,EQUITY
+PODD,insulet,Insulet Corporation,NASDAQ,us_market,EQUITY
+BMRN,biomarin-pharmaceutical,BioMarin Pharmaceutical Inc.,NASDAQ,us_market,EQUITY
+QRVO,qorvo,"Qorvo, Inc.",NASDAQ,us_market,EQUITY
+INCY,incyte,Incyte Corporation,NASDAQ,us_market,EQUITY
+LSXMK,liberty-media,Liberty Media Corporation - Series C Liberty SiriusXM,NASDAQ,us_market,EQUITY
+LSXMA,liberty-media,Liberty Media Corporation - Series A Liberty SiriusXM,NASDAQ,us_market,EQUITY
+XP,xp,XP Inc.,NASDAQ,us_market,EQUITY
+XM,qualtrics,Qualtrics International Inc.,NASDAQ,us_market,EQUITY
+TCOM,trip-com-group,Trip.com Group Limited,NASDAQ,us_market,EQUITY
+TECH,bio-techne,Bio-Techne Corp,NASDAQ,us_market,EQUITY
+NLOK,nortonlifelock,NortonLifeLock Inc.,NASDAQ,us_market,EQUITY
+BILI,bilibili,Bilibili Inc.,NASDAQ,us_market,EQUITY
+UAL,united-airlines,"United Airlines Holdings, Inc.",NASDAQ,us_market,EQUITY
+LBTYK,liberty-global,Liberty Global plc,NASDAQ,us_market,EQUITY
+IEP,icahn-enterprises,Icahn Enterprises L.P. - Depositary,NASDAQ,us_market,EQUITY
+LBTYA,liberty-global,Liberty Global plc,NASDAQ,us_market,EQUITY
+LNT,alliant-energy,Alliant Energy Corporation,NASDAQ,us_market,EQUITY
+OLPX,olaplex,"Olaplex Holdings, Inc.",NASDAQ,us_market,EQUITY
+LBTYB,liberty-global,Liberty Global plc,NASDAQ,us_market,EQUITY
+ARGX,argenx,argenx SE,NASDAQ,us_market,EQUITY
+DISCA,discovery,"Discovery, Inc. - Series A",NASDAQ,us_market,EQUITY
+DISCK,discovery,"Discovery, Inc. - Series C",NASDAQ,us_market,EQUITY
+FFIV,f5-network,"F5, Inc.",NASDAQ,us_market,EQUITY
+LYFT,lyft,"Lyft, Inc.",NASDAQ,us_market,EQUITY
+LOGI,logitech-international,Logitech International S.A. - Registered Shares,NASDAQ,us_market,EQUITY
+ZG,zillow-group,"Zillow Group, Inc.",NASDAQ,us_market,EQUITY
+Z,zillow-group,"Zillow Group, Inc.",NASDAQ,us_market,EQUITY
+CHRW,ch-robinson,"C.H. Robinson Worldwide, Inc.",NASDAQ,us_market,EQUITY
+HAS,hasbro,"Hasbro, Inc.",NASDAQ,us_market,EQUITY
+FCNCA,first-citizens-bancshares,"First Citizens BancShares, Inc.",NASDAQ,us_market,EQUITY
+LPLA,lpl-finl,LPL Financial Holdings Inc.,NASDAQ,us_market,EQUITY
+NDSN,nordson,Nordson Corporation,NASDAQ,us_market,EQUITY
+MKTX,marketaxess,"MarketAxess Holdings, Inc.",NASDAQ,us_market,EQUITY
+ABMD,abiomed,"ABIOMED, Inc.",NASDAQ,us_market,EQUITY
+SEDG,solaredge-technologies,"SolarEdge Technologies, Inc.",NASDAQ,us_market,EQUITY
+PTC,ptc,PTC Inc.,NASDAQ,us_market,EQUITY
+PLUG,plug-power,"Plug Power, Inc.",NASDAQ,us_market,EQUITY
+UHAL,amerco,Amerco,NASDAQ,us_market,EQUITY
+NWS,news-new,News Corporation,NASDAQ,us_market,EQUITY
+EXAS,exact-sciences,Exact Sciences Corporation,NASDAQ,us_market,EQUITY
+NWSA,news-corporation,News Corporation,NASDAQ,us_market,EQUITY
+REG,regency-centers,Regency Centers Corporation,NASDAQ,us_market,EQUITY
+HOOD,robinhood,"Robinhood Markets, Inc.",NASDAQ,us_market,EQUITY
+DISCB,discovery,"Discovery, Inc. - Series B",NASDAQ,us_market,EQUITY
+MASI,masimo,Masimo Corporation,NASDAQ,us_market,EQUITY
+HST,,Host Hotels,NASDAQ,us_market,EQUITY
+MORN,morningstar,"Morningstar, Inc.",NASDAQ,us_market,EQUITY
+OTEX,open-text,Open Text Corporation,NASDAQ,us_market,EQUITY
+EWBC,east-west-bancorp,"East West Bancorp, Inc.",NASDAQ,us_market,EQUITY
+CGNX,cognex,Cognex Corporation,NASDAQ,us_market,EQUITY
+STLD,steel-dynamics,"Steel Dynamics, Inc.",NASDAQ,us_market,EQUITY
+BZ,,KANZHUN LIMITED - American Depository Shares,NASDAQ,us_market,EQUITY
+JKHY,henry-jack-and-associates,"Jack Henry & Associates, Inc.",NASDAQ,us_market,EQUITY
+AAL,american-airlines-group,"American Airlines Group, Inc.",NASDAQ,us_market,EQUITY
+APA,apa-corporation,APA Corporation,NASDAQ,us_market,EQUITY
+CTXS,citrix-systems,"Citrix Systems, Inc.",NASDAQ,us_market,EQUITY
+GRUB,just-eat-takeaway,Just Eat Takeaway.com N.V.,NASDAQ,us_market,EQUITY
+IAC,iac-interactivecorp,IAC/InterActiveCorp,NASDAQ,us_market,EQUITY
+HTHT,huazhu,Huazhu Group Limited,NASDAQ,us_market,EQUITY
+XRAY,dentsply-sirona,DENTSPLY SIRONA Inc.,NASDAQ,us_market,EQUITY
+LAMR,,Lamar Advertising Company,NASDAQ,us_market,EQUITY
+HCP,hashicorp,"HashiCorp, Inc.",NASDAQ,us_market,EQUITY
+CONE,,CyrusOne Inc,NASDAQ,us_market,EQUITY
+TXG,10x-genomics,"10x Genomics, Inc.",NASDAQ,us_market,EQUITY
+BSY,bentley-systems,"Bentley Systems, Incorporated",NASDAQ,us_market,EQUITY
+HTZ,hertz,"Hertz Global Holdings, Inc",NASDAQ,us_market,EQUITY
+MCFE,mcafee,McAfee Corp.,NASDAQ,us_market,EQUITY
+GRFS,grifols,"Grifols, S.A.",NASDAQ,us_market,EQUITY
+ZION,,Zions Bancorporation N.A.,NASDAQ,us_market,EQUITY
+GDRX,goodrx,"GoodRx Holdings, Inc.",NASDAQ,us_market,EQUITY
+PCTY,paylocity,Paylocity Holding Corporation,NASDAQ,us_market,EQUITY
+MIDD,middleby,The Middleby Corporation,NASDAQ,us_market,EQUITY
+CAR,avis-budget-group,"Avis Budget Group, Inc.",NASDAQ,us_market,EQUITY
+HSIC,henry-schein,"Henry Schein, Inc.",NASDAQ,us_market,EQUITY
+GLPI,,"Gaming and Leisure Properties, Inc.",NASDAQ,us_market,EQUITY
+WYNN,wynn-resorts,"Wynn Resorts, Limited",NASDAQ,us_market,EQUITY
+BRKR,bruker,Bruker Corporation,NASDAQ,us_market,EQUITY
+SOFI,sofi,"SoFi Technologies, Inc.",NASDAQ,us_market,EQUITY
+COUP,coupa,Coupa Software Incorporated,NASDAQ,us_market,EQUITY
+PTON,peloton-interactive-inc,"Peloton Interactive, Inc.",NASDAQ,us_market,EQUITY
+AZPN,aspen-technology,"Aspen Technology, Inc.",NASDAQ,us_market,EQUITY
+RGEN,repligen,Repligen Corporation,NASDAQ,us_market,EQUITY
+ZNGA,zynga,Zynga Inc.,NASDAQ,us_market,EQUITY
+NWL,newell-brands,Newell Brands Inc.,NASDAQ,us_market,EQUITY
+FIVE,five-below,"Five Below, Inc.",NASDAQ,us_market,EQUITY
+MKSI,mks-instruments,"MKS Instruments, Inc.",NASDAQ,us_market,EQUITY
+DKNG,draftkings,DraftKings Inc.,NASDAQ,us_market,EQUITY
+SYNA,synaptics,Synaptics Incorporated,NASDAQ,us_market,EQUITY
+AXON,axon-enterprise,"Axon Enterprise, Inc.",NASDAQ,us_market,EQUITY
+SYNH,syneos-health,"Syneos Health, Inc.",NASDAQ,us_market,EQUITY
+DBX,dropbox,"Dropbox, Inc.",NASDAQ,us_market,EQUITY
+UTHR,united-therapeutics,United Therapeutics Corporation,NASDAQ,us_market,EQUITY
+MNDY,monday-com,monday.com Ltd.,NASDAQ,us_market,EQUITY
+GTLB,gitlab,GitLab Inc.,NASDAQ,us_market,EQUITY
+DOX,amdocs,Amdocs Limited,NASDAQ,us_market,EQUITY
+NVEI,nuvei,Nuvei Corporation - Subordinate Voting Shares,NASDAQ,us_market,EQUITY
+UPST,upstart,"Upstart Holdings, Inc.",NASDAQ,us_market,EQUITY
+PBCT,people-s-united-financial,People's,NASDAQ,us_market,EQUITY
+CNXC,,Concentrix Corporation,NASDAQ,us_market,EQUITY
+DLO,dlocal,DLocal Limited,NASDAQ,us_market,EQUITY
+FSLR,first-solar,"First Solar, Inc.",NASDAQ,us_market,EQUITY
+JAZZ,jazz-pharmaceuticals,Jazz Pharmaceuticals plc,NASDAQ,us_market,EQUITY
+CBSH,commerce-bancshares,"Commerce Bancshares, Inc.",NASDAQ,us_market,EQUITY
+MANH,manhattan-associates,"Manhattan Associates, Inc.",NASDAQ,us_market,EQUITY
+LSCC,lattice-semiconductor,Lattice Semiconductor Corporation,NASDAQ,us_market,EQUITY
+SEIC,sei-investment,SEI Investments Company,NASDAQ,us_market,EQUITY
+FIVN,five9,"Five9, Inc.",NASDAQ,us_market,EQUITY
+WSC,,WillScot Mobile Mini Holdings Corp.,NASDAQ,us_market,EQUITY
+ERIE,erie-indemnity,Erie Indemnity Company,NASDAQ,us_market,EQUITY
+IPGP,ipg-photonics,IPG Photonics Corporation,NASDAQ,us_market,EQUITY
+CACC,credit-acceptance,Credit Acceptance Corporation,NASDAQ,us_market,EQUITY
+FLEX,flex,Flex Ltd.,NASDAQ,us_market,EQUITY
+GDS,gds-holdings,GDS Holdings Limited,NASDAQ,us_market,EQUITY
+WB,weibo,Weibo Corporation,NASDAQ,us_market,EQUITY
+AUR,aurora-innovation,"Aurora Innovation, Inc.",NASDAQ,us_market,EQUITY
+GNTX,gentex,Gentex Corporation,NASDAQ,us_market,EQUITY
+CHDN,churchill-downs,"Churchill Downs, Incorporated",NASDAQ,us_market,EQUITY
+PNFP,pinnacle-financial-partners,"Pinnacle Financial Partners, Inc.",NASDAQ,us_market,EQUITY
+CHK,,Chesapeake Energy Corporation,NASDAQ,us_market,EQUITY
+TTEK,tetra-tech,"Tetra Tech, Inc.",NASDAQ,us_market,EQUITY
+AGNC,agnc-investment,AGNC Investment Corp.,NASDAQ,us_market,EQUITY
+LECO,lincoln-electric,"Lincoln Electric Holdings, Inc.",NASDAQ,us_market,EQUITY
+NVAX,novavax,"Novavax, Inc.",NASDAQ,us_market,EQUITY
+PEGA,pegasystems,Pegasystems Inc.,NASDAQ,us_market,EQUITY
+MAT,mattel,"Mattel, Inc.",NASDAQ,us_market,EQUITY
+MRVI,maravai-lifesciences,"Maravai LifeSciences Holdings, Inc.",NASDAQ,us_market,EQUITY
+PENN,penn-national-gaming,"Penn National Gaming, Inc.",NASDAQ,us_market,EQUITY
+WIX,wix,Wix.com Ltd.,NASDAQ,us_market,EQUITY
+GH,guardant-health,"Guardant Health, Inc.",NASDAQ,us_market,EQUITY
+BOKF,bok-financial,BOK Financial Corporation,NASDAQ,us_market,EQUITY
+TNDM,tandem-diabetes-care,"Tandem Diabetes Care, Inc.",NASDAQ,us_market,EQUITY
+ESLT,elbit-systems,Elbit Systems Ltd.,NASDAQ,us_market,EQUITY
+MQ,marqeta,"Marqeta, Inc.",NASDAQ,us_market,EQUITY
+PAA,plains-all-american-pipeline-lp,"Plains All American Pipeline, L.P.",NASDAQ,us_market,EQUITY
+BPOP,popular,"Popular, Inc.",NASDAQ,us_market,EQUITY
+LITE,lumentum-hldgs,Lumentum Holdings Inc.,NASDAQ,us_market,EQUITY
+PLTK,playtika,Playtika Holding Corp.,NASDAQ,us_market,EQUITY
+SLAB,silicon-laboratories,"Silicon Laboratories, Inc.",NASDAQ,us_market,EQUITY
+NBIX,neurocrine-biosciences,"Neurocrine Biosciences, Inc.",NASDAQ,us_market,EQUITY
+OLED,universal-display,Universal Display Corporation,NASDAQ,us_market,EQUITY
+TWKS,thoughtworks,"Thoughtworks Holding, Inc.",NASDAQ,us_market,EQUITY
+FFIN,first-financial-bankshares,"First Financial Bankshares, Inc.",NASDAQ,us_market,EQUITY
+IIVI,ii-vi,II-VI Incorporated,NASDAQ,us_market,EQUITY
+LFUS,littelfuse,"Littelfuse, Inc.",NASDAQ,us_market,EQUITY
+EVO,evotec,Evotec SE,NASDAQ,us_market,EQUITY
+FYBR,,"Frontier Communications Parent, Inc.",NASDAQ,us_market,EQUITY
+FSV,firstservice,FirstService Corporation,NASDAQ,us_market,EQUITY
+CROX,crocs,"Crocs, Inc.",NASDAQ,us_market,EQUITY
+WWD,woodward,"Woodward, Inc.",NASDAQ,us_market,EQUITY
+CASY,casey-s-general-stores,"Caseys General Stores, Inc.",NASDAQ,us_market,EQUITY
+OMCL,omnicell,"Omnicell, Inc.",NASDAQ,us_market,EQUITY
+SAIA,saia,"Saia, Inc.",NASDAQ,us_market,EQUITY
+OPEN,opendoor,Opendoor Technologies Inc,NASDAQ,us_market,EQUITY
+NVCR,novocure,NovoCure Limited,NASDAQ,us_market,EQUITY
+NXST,nexstar-media,"Nexstar Media Group, Inc.",NASDAQ,us_market,EQUITY
+PPC,pilgrims,Pilgrim's Pride Corporation,NASDAQ,us_market,EQUITY
+ASND,ascendis-pharma,Ascendis Pharma A/S,NASDAQ,us_market,EQUITY
+DOOO,brp,BRP Inc.,NASDAQ,us_market,EQUITY
+RUN,sunrun,Sunrun Inc.,NASDAQ,us_market,EQUITY
+EEFT,euronet-worldwide,"Euronet Worldwide, Inc.",NASDAQ,us_market,EQUITY
+REYN,reynolds-consumer,Reynolds Consumer Products Inc.,NASDAQ,us_market,EQUITY
+RGLD,royal-gold,"Royal Gold, Inc.",NASDAQ,us_market,EQUITY
+LEGN,legend-biotech,Legend Biotech Corporation,NASDAQ,us_market,EQUITY
+NTLA,intellia-therapeutics,"Intellia Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+AZTA,brooks-automation,"Azenta, Inc.",NASDAQ,us_market,EQUITY
+GT,goodyear-tire-and-rubber,The Goodyear Tire & Rubber Company,NASDAQ,us_market,EQUITY
+COHR,coherent,"Coherent, Inc.",NASDAQ,us_market,EQUITY
+FUTU,futu-holdings,Futu Holdings Limited,NASDAQ,us_market,EQUITY
+OZK,bank-ozk,Bank OZK,NASDAQ,us_market,EQUITY
+CHNG,,Change Healthcare Inc.,NASDAQ,us_market,EQUITY
+SSB,south-state-corp,SouthState Corporation,NASDAQ,us_market,EQUITY
+MEDP,medpace-holdings,"Medpace Holdings, Inc.",NASDAQ,us_market,EQUITY
+SWAV,shockwave-medical,"ShockWave Medical, Inc.",NASDAQ,us_market,EQUITY
+NTNX,nutanix,"Nutanix, Inc.",NASDAQ,us_market,EQUITY
+FOXF,fox-factory-holding,Fox Factory Holding Corp.,NASDAQ,us_market,EQUITY
+LSTR,landstar-systems,"Landstar System, Inc.",NASDAQ,us_market,EQUITY
+NTRA,natera,"Natera, Inc.",NASDAQ,us_market,EQUITY
+GLBE,global-e-online,Global-E Online Ltd.,NASDAQ,us_market,EQUITY
+SRPT,sarepta-therapeutics,"Sarepta Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+BMBL,bumble,Bumble Inc.,NASDAQ,us_market,EQUITY
+CIGI,colliers-intl-group,Colliers International Group Inc. - Subordinate Voting Shares,NASDAQ,us_market,EQUITY
+SGMS,scientific-games,Scientific Games Corp,NASDAQ,us_market,EQUITY
+TXRH,texas-roadhouse,"Texas Roadhouse, Inc.",NASDAQ,us_market,EQUITY
+MRTX,mirati-therapeutics,"Mirati Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+SHC,,Sotera Health Company,NASDAQ,us_market,EQUITY
+COLM,columbia-sportswear,Columbia Sportswear Company,NASDAQ,us_market,EQUITY
+VLY,valley-national-bancorp,Valley National Bancorp,NASDAQ,us_market,EQUITY
+SLM,slm,SLM Corporation,NASDAQ,us_market,EQUITY
+PACW,pacwest-bancorp,PacWest Bancorp,NASDAQ,us_market,EQUITY
+FRSH,freshworks,Freshworks Inc.,NASDAQ,us_market,EQUITY
+ARWR,arrowhead-pharmaceuticals,"Arrowhead Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+ALGM,,"Allegro MicroSystems, Inc.",NASDAQ,us_market,EQUITY
+DSGX,descartes-systems-group,The Descartes Systems Group Inc.,NASDAQ,us_market,EQUITY
+AMKR,amkor-technology,"Amkor Technology, Inc.",NASDAQ,us_market,EQUITY
+IART,integra-lifesciences,Integra LifeSciences Holdings Corporation,NASDAQ,us_market,EQUITY
+ROLL,rbc-bearings,RBC Bearings Incorporated,NASDAQ,us_market,EQUITY
+HCM,hutchison-china-meditech,HUTCHMED (China) Limited,NASDAQ,us_market,EQUITY
+WTFC,wintrust-financial,Wintrust Financial Corporation,NASDAQ,us_market,EQUITY
+AMBA,ambarella,"Ambarella, Inc.",NASDAQ,us_market,EQUITY
+RCM,r1-rcm,R1 RCM Inc.,NASDAQ,us_market,EQUITY
+BRZE,braze,"Braze, Inc.",NASDAQ,us_market,EQUITY
+CYBR,cyber-ark-software,CyberArk Software Ltd.,NASDAQ,us_market,EQUITY
+ARNA,arena-pharmaceuticals,"Arena Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+COKE,coca-cola,"Coca-Cola Consolidated, Inc.",NASDAQ,us_market,EQUITY
+EXEL,exelixis,"Exelixis, Inc.",NASDAQ,us_market,EQUITY
+NOVT,novanta,Novanta Inc.,NASDAQ,us_market,EQUITY
+LAZR,luminar,"Luminar Technologies, Inc.",NASDAQ,us_market,EQUITY
+NATI,national-instruments,National Instruments Corporation,NASDAQ,us_market,EQUITY
+UFPI,universal-forest-products,"UFP Industries, Inc.",NASDAQ,us_market,EQUITY
+PDCE,pdc-energy,"PDC Energy, Inc.",NASDAQ,us_market,EQUITY
+RPD,rapid7,"Rapid7, Inc.",NASDAQ,us_market,EQUITY
+HELE,helen-of-troy,Helen of Troy Limited,NASDAQ,us_market,EQUITY
+SRCL,stericycle,"Stericycle, Inc.",NASDAQ,us_market,EQUITY
+MIME,mimecast-limited,Mimecast Limited,NASDAQ,us_market,EQUITY
+UMBF,umb-financial,UMB Financial Corporation,NASDAQ,us_market,EQUITY
+VIRT,virtu-financial,"Virtu Financial, Inc.",NASDAQ,us_market,EQUITY
+CCMP,cabot-microelectronics,"CMC Materials, Inc.",NASDAQ,us_market,EQUITY
+ROIV,,Roivant Sciences Ltd.,NASDAQ,us_market,EQUITY
+UBSI,united-bankshares,"United Bankshares, Inc.",NASDAQ,us_market,EQUITY
+RRR,red-rock-resorts,"Red Rock Resorts, Inc.",NASDAQ,us_market,EQUITY
+KRNT,,Kornit Digital Ltd.,NASDAQ,us_market,EQUITY
+TSP,tusimple,TuSimple Holdings Inc.,NASDAQ,us_market,EQUITY
+DRVN,driven-brands,Driven Brands Holdings Inc.,NASDAQ,us_market,EQUITY
+TENB,tenable-holdings,"Tenable Holdings, Inc.",NASDAQ,us_market,EQUITY
+CRUS,cirrus-logic,"Cirrus Logic, Inc.",NASDAQ,us_market,EQUITY
+VG,vonage-hldgs-corporation,Vonage Holdings Corp.,NASDAQ,us_market,EQUITY
+BL,blackline,"BlackLine, Inc.",NASDAQ,us_market,EQUITY
+EXPO,exponent,"Exponent, Inc.",NASDAQ,us_market,EQUITY
+ZLAB,zai-lab,Zai Lab Limited,NASDAQ,us_market,EQUITY
+HLNE,hamilton-lane,Hamilton Lane Incorporated,NASDAQ,us_market,EQUITY
+WEN,wendys-company,Wendy's Company (The),NASDAQ,us_market,EQUITY
+ZD,j2-global,"Ziff Davis, Inc.",NASDAQ,us_market,EQUITY
+MSTR,microstrategy,MicroStrategy Incorporated,NASDAQ,us_market,EQUITY
+CRSP,crispr-therapeutics-ag,CRISPR Therapeutics AG,NASDAQ,us_market,EQUITY
+SMTC,semtech,Semtech Corporation,NASDAQ,us_market,EQUITY
+CDK,cdk-global,"CDK Global, Inc.",NASDAQ,us_market,EQUITY
+STNE,stoneco,StoneCo Ltd.,NASDAQ,us_market,EQUITY
+ALTR,altair-engineering,Altair Engineering Inc.,NASDAQ,us_market,EQUITY
+ACHC,acadia-healthcare,"Acadia Healthcare Company, Inc.",NASDAQ,us_market,EQUITY
+TFSL,tfs-financial-corporation,TFS Financial Corporation,NASDAQ,us_market,EQUITY
+ANAT,american-national-insurance,"American National Group, Inc.",NASDAQ,us_market,EQUITY
+POWI,power-integrations,"Power Integrations, Inc.",NASDAQ,us_market,EQUITY
+BCPC,balchem,Balchem Corporation,NASDAQ,us_market,EQUITY
+MXL,maxlinear,"MaxLinear, Inc",NASDAQ,us_market,EQUITY
+MTSI,macom-technology-solutions,"MACOM Technology Solutions Holdings, Inc.",NASDAQ,us_market,EQUITY
+NFE,new-fortress-energy-llc,New Fortress Energy Inc.,NASDAQ,us_market,EQUITY
+HALO,halozyme-therapeutics,"Halozyme Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+OZON,ozon,Ozon Holdings PLC,NASDAQ,us_market,EQUITY
+WOOF,petco-health-and-wellness,"Petco Health and Wellness Company, Inc.",NASDAQ,us_market,EQUITY
+IRDM,iridium-communications,Iridium Communications Inc,NASDAQ,us_market,EQUITY
+PAAS,pan-american-silver,Pan American Silver Corp.,NASDAQ,us_market,EQUITY
+CRCT,,"Cricut, Inc.",NASDAQ,us_market,EQUITY
+QDEL,quidel,Quidel Corporation,NASDAQ,us_market,EQUITY
+QLYS,qualys,"Qualys, Inc.",NASDAQ,us_market,EQUITY
+AMPL,amplitude,"Amplitude, Inc.",NASDAQ,us_market,EQUITY
+CHX,championx,ChampionX Corporation,NASDAQ,us_market,EQUITY
+VIR,vir-biotechnology,"Vir Biotechnology, Inc.",NASDAQ,us_market,EQUITY
+PINC,premier,"Premier, Inc.",NASDAQ,us_market,EQUITY
+APPS,digital-turbine,"Digital Turbine, Inc.",NASDAQ,us_market,EQUITY
+SIGI,selective-insurance,"Selective Insurance Group, Inc.",NASDAQ,us_market,EQUITY
+AMED,amedisys,Amedisys Inc,NASDAQ,us_market,EQUITY
+ESGR,enstar-group,Enstar Group Limited,NASDAQ,us_market,EQUITY
+JBLU,jetblue,JetBlue Airways Corporation,NASDAQ,us_market,EQUITY
+SITM,sitime,SiTime Corporation,NASDAQ,us_market,EQUITY
+RARE,ultragenyx-pharmaceutical,Ultragenyx Pharmaceutical Inc.,NASDAQ,us_market,EQUITY
+SLGN,silgan-holdings,Silgan Holdings Inc.,NASDAQ,us_market,EQUITY
+VICR,vicor,Vicor Corporation,NASDAQ,us_market,EQUITY
+HWC,hancock-whitney,Hancock Whitney Corporation,NASDAQ,us_market,EQUITY
+NCNO,,"nCino, Inc.",NASDAQ,us_market,EQUITY
+ICUI,icu-medical,"ICU Medical, Inc.",NASDAQ,us_market,EQUITY
+RKLB,rocket-lab,"Rocket Lab USA, Inc.",NASDAQ,us_market,EQUITY
+SRAD,sportradar,Sportradar Group AG,NASDAQ,us_market,EQUITY
+BEAM,beam-therapeutics,Beam Therapeutics Inc.,NASDAQ,us_market,EQUITY
+WING,wingstop,Wingstop Inc.,NASDAQ,us_market,EQUITY
+UMPQ,umpqua,Umpqua Holdings Corporation,NASDAQ,us_market,EQUITY
+OTLY,,Oatly Group AB,NASDAQ,us_market,EQUITY
+LANC,lancaster-colony,Lancaster Colony Corporation,NASDAQ,us_market,EQUITY
+BHF,brighthouse-finl,"Brighthouse Financial, Inc.",NASDAQ,us_market,EQUITY
+MLCO,melco,Melco Resorts & Entertainment Limited,NASDAQ,us_market,EQUITY
+OCDX,,Ortho Clinical Diagnostics Holdings plc,NASDAQ,us_market,EQUITY
+IONS,ionis-pharmaceuticals,"Ionis Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+VNOM,viper-energy-partners,Viper Energy Partners LP,NASDAQ,us_market,EQUITY
+LIVN,livanova,LivaNova PLC,NASDAQ,us_market,EQUITY
+BPMC,blueprint-medicines,Blueprint Medicines Corporation,NASDAQ,us_market,EQUITY
+ARVL,arrival,Arrival,NASDAQ,us_market,EQUITY
+CVAC,curevac,CureVac N.V.,NASDAQ,us_market,EQUITY
+PYCR,paycor,"Paycor HCM, Inc.",NASDAQ,us_market,EQUITY
+CERT,,"Certara, Inc.",NASDAQ,us_market,EQUITY
+DIOD,diodes-inc,Diodes Incorporated,NASDAQ,us_market,EQUITY
+OPCH,,"Option Care Health, Inc.",NASDAQ,us_market,EQUITY
+ABCM,abcam,Abcam plc,NASDAQ,us_market,EQUITY
+ENSG,ensign-group,"The Ensign Group, Inc.",NASDAQ,us_market,EQUITY
+SPSC,sps-commerce,"SPS Commerce, Inc.",NASDAQ,us_market,EQUITY
+EXLS,exlservice,"ExlService Holdings, Inc.",NASDAQ,us_market,EQUITY
+PZZA,papa-johns-international,"Papa John's International, Inc.",NASDAQ,us_market,EQUITY
+BYND,beyond-meat,"Beyond Meat, Inc.",NASDAQ,us_market,EQUITY
+EXPI,exp-world,"eXp World Holdings, Inc.",NASDAQ,us_market,EQUITY
+ISBC,investors-bancorp,"Investors Bancorp, Inc.",NASDAQ,us_market,EQUITY
+APPF,appfolio,"AppFolio, Inc.",NASDAQ,us_market,EQUITY
+TSEM,tower-semiconductor,Tower Semiconductor Ltd.,NASDAQ,us_market,EQUITY
+XRX,xerox,Xerox Holdings Corporation,NASDAQ,us_market,EQUITY
+STEP,,StepStone Group Inc.,NASDAQ,us_market,EQUITY
+SAFM,sanderson-farm,"Sanderson Farms, Inc.",NASDAQ,us_market,EQUITY
+VRNS,varonis-systems,"Varonis Systems, Inc.",NASDAQ,us_market,EQUITY
+SGRY,,"Surgery Partners, Inc.",NASDAQ,us_market,EQUITY
+IRTC,irhythm-technologies,"iRhythm Technologies, Inc.",NASDAQ,us_market,EQUITY
+LESL,leslie-s,"Leslie's, Inc.",NASDAQ,us_market,EQUITY
+NEOG,neogen,Neogen Corporation,NASDAQ,us_market,EQUITY
+HQY,healthequity,"HealthEquity, Inc.",NASDAQ,us_market,EQUITY
+FRPT,freshpet,"Freshpet, Inc.",NASDAQ,us_market,EQUITY
+FELE,franklin-electric,"Franklin Electric Co., Inc.",NASDAQ,us_market,EQUITY
+TASK,taskus,"TaskUs, Inc.",NASDAQ,us_market,EQUITY
+AVT,avnet,"Avnet, Inc.",NASDAQ,us_market,EQUITY
+FOCS,focus-financial-partners,Focus Financial Partners Inc.,NASDAQ,us_market,EQUITY
+FIZZ,national-beverage,National Beverage Corp.,NASDAQ,us_market,EQUITY
+JAMF,jamf-holding,Jamf Holding Corp.,NASDAQ,us_market,EQUITY
+EBC,,"Eastern Bankshares, Inc.",NASDAQ,us_market,EQUITY
+DSEY,,"Diversey Holdings, Ltd.",NASDAQ,us_market,EQUITY
+PPBI,pacific-premier-bancorp,Pacific Premier Bancorp Inc,NASDAQ,us_market,EQUITY
+FLNC,fluence-energy,"Fluence Energy, Inc.",NASDAQ,us_market,EQUITY
+NARI,inari-medical,"Inari Medical, Inc.",NASDAQ,us_market,EQUITY
+NKLA,nikolamotor,Nikola Corporation,NASDAQ,us_market,EQUITY
+UCBI,united-community-banks-georgia,"United Community Banks, Inc.",NASDAQ,us_market,EQUITY
+INDB,independent-bank-mass,Independent Bank Corp.,NASDAQ,us_market,EQUITY
+ANGI,angi-homeservices,Angi Inc.,NASDAQ,us_market,EQUITY
+LHCG,lhc-group,LHC Group,NASDAQ,us_market,EQUITY
+FATE,fate-therapeutics,"Fate Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+ACIW,aci-worldwide,"ACI Worldwide, Inc.",NASDAQ,us_market,EQUITY
+VIAV,viavi-solutions,Viavi Solutions Inc.,NASDAQ,us_market,EQUITY
+TRUP,trupanion,"Trupanion, Inc.",NASDAQ,us_market,EQUITY
+TTEC,ttec,"TTEC Holdings, Inc.",NASDAQ,us_market,EQUITY
+CWST,casella-waste-systems,"Casella Waste Systems, Inc.",NASDAQ,us_market,EQUITY
+TRIP,tripadvisor,"TripAdvisor, Inc.",NASDAQ,us_market,EQUITY
+DNLI,denali-therapeutics-inc,Denali Therapeutics Inc.,NASDAQ,us_market,EQUITY
+FRHC,freedom-holding,Freedom Holding Corp.,NASDAQ,us_market,EQUITY
+FHB,first-hawaiian,"First Hawaiian, Inc.",NASDAQ,us_market,EQUITY
+PCH,,PotlatchDeltic Corporation - Common Stock,NASDAQ,us_market,EQUITY
+INMD,inmode,InMode Ltd.,NASDAQ,us_market,EQUITY
+ALKS,alkermes,Alkermes plc,NASDAQ,us_market,EQUITY
+CERE,,"Cerevel Therapeutics Holdings, Inc.",NASDAQ,us_market,EQUITY
+YY,yy-inc,JOYY Inc.,NASDAQ,us_market,EQUITY
+PGNY,progyny,"Progyny, Inc.",NASDAQ,us_market,EQUITY
+APPN,appian-corporation,Appian Corporation,NASDAQ,us_market,EQUITY
+NVMI,,Nova Ltd.,NASDAQ,us_market,EQUITY
+ALRM,alarm-com-holdings,"Alarm.com Holdings, Inc.",NASDAQ,us_market,EQUITY
+MNDT,,"Mandiant, Inc.",NASDAQ,us_market,EQUITY
+BECN,beacon-roofing-supply,"Beacon Roofing Supply, Inc.",NASDAQ,us_market,EQUITY
+APLS,apellis-pharmaceuticals,"Apellis Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+HAIN,hain-celestial,"The Hain Celestial Group, Inc.",NASDAQ,us_market,EQUITY
+ABCB,ameris-bancorp,Ameris Bancorp,NASDAQ,us_market,EQUITY
+AAON,aaon-inc,"AAON, Inc.",NASDAQ,us_market,EQUITY
+CARG,cargurus,"CarGurus, Inc.",NASDAQ,us_market,EQUITY
+CELH,celsius-holdings,"Celsius Holdings, Inc.",NASDAQ,us_market,EQUITY
+DCT,,"Duck Creek Technologies, Inc.",NASDAQ,us_market,EQUITY
+GSHD,,"Goosehead Insurance, Inc.",NASDAQ,us_market,EQUITY
+SPT,sprout-social,"Sprout Social, Inc",NASDAQ,us_market,EQUITY
+SMPL,simply-good-foods-company,The Simply Good Foods Company,NASDAQ,us_market,EQUITY
+AY,atlantica-yield,Atlantica Sustainable Infrastructure plc,NASDAQ,us_market,EQUITY
+IQ,iqiyi,"iQIYI, Inc.",NASDAQ,us_market,EQUITY
+KLIC,kulicke-and-soffa-industries,"Kulicke and Soffa Industries, Inc.",NASDAQ,us_market,EQUITY
+UPWK,upwork,Upwork Inc.,NASDAQ,us_market,EQUITY
+LOB,,"Live Oak Bancshares, Inc.",NASDAQ,us_market,EQUITY
+ACT,,"Enact Holdings, Inc.",NASDAQ,us_market,EQUITY
+VCSA,,"Vacasa, Inc.",NASDAQ,us_market,EQUITY
+SONO,sonos,"Sonos, Inc.",NASDAQ,us_market,EQUITY
+WSFS,wsfs-financial,WSFS Financial Corporation,NASDAQ,us_market,EQUITY
+STAA,staar-surgical,STAAR Surgical Company,NASDAQ,us_market,EQUITY
+SHLS,shoals-technologies-group,"Shoals Technologies Group, Inc.",NASDAQ,us_market,EQUITY
+DH,definitive-healthcare,Definitive Healthcare Corp.,NASDAQ,us_market,EQUITY
+CATY,cathay-general-bancorp,Cathay General Bancorp,NASDAQ,us_market,EQUITY
+KRTX,,"Karuna Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+NSIT,insight-enterprise,"Insight Enterprises, Inc.",NASDAQ,us_market,EQUITY
+SSRM,ssr-mining,SSR Mining Inc.,NASDAQ,us_market,EQUITY
+KNBE,,"KnowBe4, Inc.",NASDAQ,us_market,EQUITY
+VRNT,verint-systems,Verint Systems Inc.,NASDAQ,us_market,EQUITY
+CRVL,,CorVel Corp.,NASDAQ,us_market,EQUITY
+ACAD,acadia-pharmaceuticals,ACADIA Pharmaceuticals Inc.,NASDAQ,us_market,EQUITY
+NMRK,newmark-group,"Newmark Group, Inc.",NASDAQ,us_market,EQUITY
+SPWR,sunpower,SunPower Corporation,NASDAQ,us_market,EQUITY
+ASO,academy-sports-and-outdoors,"Academy Sports and Outdoors, Inc.",NASDAQ,us_market,EQUITY
+AEIS,advanced-energy-industries,"Advanced Energy Industries, Inc.",NASDAQ,us_market,EQUITY
+BRP,brp-group,"BRP Group, Inc.",NASDAQ,us_market,EQUITY
+BLKB,blackbaud,"Blackbaud, Inc.",NASDAQ,us_market,EQUITY
+LOPE,grand-canyon-education,"Grand Canyon Education, Inc.",NASDAQ,us_market,EQUITY
+GLPG,galapagos,Galapagos NV,NASDAQ,us_market,EQUITY
+PRFT,perficient,"Perficient, Inc.",NASDAQ,us_market,EQUITY
+SHOO,madden-steven,"Steven Madden, Ltd.",NASDAQ,us_market,EQUITY
+LGIH,lgi-homes,"LGI Homes, Inc.",NASDAQ,us_market,EQUITY
+NAVI,navient,Navient Corporation,NASDAQ,us_market,EQUITY
+DUOL,duolingo,"Duolingo, Inc.",NASDAQ,us_market,EQUITY
+EQRX,,"EQRx, Inc.",NASDAQ,us_market,EQUITY
+ARVN,,"Arvinas, Inc.",NASDAQ,us_market,EQUITY
+VC,visteon-corporation,Visteon Corporation,NASDAQ,us_market,EQUITY
+RDFN,redfin,Redfin Corporation,NASDAQ,us_market,EQUITY
+CVT,,Cvent Holding Corp.,NASDAQ,us_market,EQUITY
+MEOH,methanex,Methanex Corporation,NASDAQ,us_market,EQUITY
+SFNC,simmons-first-national,Simmons First National Corporation,NASDAQ,us_market,EQUITY
+FORM,formfactor,"FormFactor, Inc.",NASDAQ,us_market,EQUITY
+WDFC,wd-40,WD-40 Company,NASDAQ,us_market,EQUITY
+IBTX,independent-bank-group,"Independent Bank Group, Inc",NASDAQ,us_market,EQUITY
+ALGT,allegiant-travel-company,Allegiant Travel Company,NASDAQ,us_market,EQUITY
+MTTR,matterport,"Matterport, Inc.",NASDAQ,us_market,EQUITY
+VSAT,viasat,"ViaSat, Inc.",NASDAQ,us_market,EQUITY
+EYE,national-vision-holdings,"National Vision Holdings, Inc.",NASDAQ,us_market,EQUITY
+FLYW,,Flywire Corporation - Voting,NASDAQ,us_market,EQUITY
+DORM,dorman-products,"Dorman Products, Inc.",NASDAQ,us_market,EQUITY
+CVBF,cvb-financial,CVB Financial Corporation,NASDAQ,us_market,EQUITY
+TCBI,texas-capital-bancshares,"Texas Capital Bancshares, Inc.",NASDAQ,us_market,EQUITY
+ITCI,intra-celluar-therapies,Intra-Cellular Therapies Inc.,NASDAQ,us_market,EQUITY
+JOBS,51job,"51job, Inc.",NASDAQ,us_market,EQUITY
+COOP,mr-cooper-group,Mr. Cooper Group Inc.,NASDAQ,us_market,EQUITY
+ONB,old-national-bancorp-indiana,Old National Bancorp,NASDAQ,us_market,EQUITY
+MRCY,mercury-systems,Mercury Systems Inc,NASDAQ,us_market,EQUITY
+SFM,sprouts-farmers-markets,"Sprouts Farmers Market, Inc.",NASDAQ,us_market,EQUITY
+MMSI,merit-medical-systems,"Merit Medical Systems, Inc.",NASDAQ,us_market,EQUITY
+CGC,canopy-growth,Canopy Growth Corporation,NASDAQ,us_market,EQUITY
+BLDP,ballard-power-systems,"Ballard Power Systems, Inc.",NASDAQ,us_market,EQUITY
+SBRA,,"Sabra Health Care REIT, Inc.",NASDAQ,us_market,EQUITY
+AIMC,altra-industrial-motion,Altra Industrial Motion Corp.,NASDAQ,us_market,EQUITY
+THRM,gentherm,Gentherm Inc,NASDAQ,us_market,EQUITY
+NEGG,newegg-commerce,"Newegg Commerce, Inc.",NASDAQ,us_market,EQUITY
+FTDR,frontdoor,"Frontdoor, Inc.",NASDAQ,us_market,EQUITY
+KOD,kodiak-sciences,Kodiak Sciences Inc,NASDAQ,us_market,EQUITY
+TLRY,tilray,"Tilray Brands, Inc. - Class 2",NASDAQ,us_market,EQUITY
+QRTEA,qurate-retail,Liberty Interactive Corporation - Series A QVC Group Common Stock,NASDAQ,us_market,EQUITY
+AUB,,Atlantic Union Bankshares Corporation,NASDAQ,us_market,EQUITY
+LFST,,"LifeStance Health Group, Inc.",NASDAQ,us_market,EQUITY
+CVLT,commvault-systems,"Commvault Systems, Inc.",NASDAQ,us_market,EQUITY
+SIMO,silicon-motion-technology,Silicon Motion Technology Corporation,NASDAQ,us_market,EQUITY
+NWE,northwestern,NorthWestern Corporation,NASDAQ,us_market,EQUITY
+RUSHA,rush-enterprises,"Rush Enterprises, Inc.",NASDAQ,us_market,EQUITY
+RUSHB,rush-enterprises,"Rush Enterprises, Inc.",NASDAQ,us_market,EQUITY
+QRTEB,qurate-retail,Liberty Interactive Corporation - Series B QVC Group Common Stock,NASDAQ,us_market,EQUITY
+IPAR,inter-parfums,"Inter Parfums, Inc.",NASDAQ,us_market,EQUITY
+ULCC,frontier,"Frontier Group Holdings, Inc.",NASDAQ,us_market,EQUITY
+CCOI,cogent-communications-holdings,"Cogent Communications Holdings, Inc.",NASDAQ,us_market,EQUITY
+KC,,Kingsoft Cloud Holdings Limited,NASDAQ,us_market,EQUITY
+RMBS,,"Rambus, Inc.",NASDAQ,us_market,EQUITY
+SABR,sabre,Sabre Corporation,NASDAQ,us_market,EQUITY
+WERN,werner-enterprises,"Werner Enterprises, Inc.",NASDAQ,us_market,EQUITY
+TWST,twist-bioscience,Twist Bioscience Corporation,NASDAQ,us_market,EQUITY
+LZ,,"LegalZoom.com, Inc.",NASDAQ,us_market,EQUITY
+FWRD,forward-air,Forward Air Corporation,NASDAQ,us_market,EQUITY
+CBRL,cracker-barrel-old-country-store,"Cracker Barrel Old Country Store, Inc.",NASDAQ,us_market,EQUITY
+NEO,neogenomics,"NeoGenomics, Inc.",NASDAQ,us_market,EQUITY
+SWTX,,"SpringWorks Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+ATRC,atricure,"AtriCure, Inc.",NASDAQ,us_market,EQUITY
+RCII,,Rent-A-Center Inc.,NASDAQ,us_market,EQUITY
+PTCT,ptc-therapeutics,"PTC Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+MANT,mantech-international,ManTech International Corporation,NASDAQ,us_market,EQUITY
+QFIN,360-finance,"360 DigiTech, Inc.",NASDAQ,us_market,EQUITY
+FULT,fulton-financial-corp,Fulton Financial Corporation,NASDAQ,us_market,EQUITY
+UNIT,,Uniti Group Inc.,NASDAQ,us_market,EQUITY
+ABCL,abcellera-biologics,AbCellera Biologics Inc.,NASDAQ,us_market,EQUITY
+FCFS,firstcash,"FirstCash Holdings, Inc.",NASDAQ,us_market,EQUITY
+VEON,veon,VEON Ltd.,NASDAQ,us_market,EQUITY
+JJSF,j-and-j-snack-foods,J & J Snack Foods Corp.,NASDAQ,us_market,EQUITY
+LAUR,laureate-education,"Laureate Education, Inc.",NASDAQ,us_market,EQUITY
+ZNTL,,"Zentalis Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+MARA,marathon-patent,"Marathon Digital Holdings, Inc.",NASDAQ,us_market,EQUITY
+OLLI,ollies-bargain-outlet,"Ollie's Bargain Outlet Holdings, Inc.",NASDAQ,us_market,EQUITY
+TBK,,"Triumph Bancorp, Inc.",NASDAQ,us_market,EQUITY
+OPK,opko-health,"Opko Health, Inc.",NASDAQ,us_market,EQUITY
+VORB,,"Virgin Orbit Holdings, Inc.",NASDAQ,us_market,EQUITY
+TIGO,millicom,Millicom International Cellular S.A.,NASDAQ,us_market,EQUITY
+IHRT,iheartmedia,"iHeartMedia, Inc.",NASDAQ,us_market,EQUITY
+NUVA,nuvasive,"NuVasive, Inc.",NASDAQ,us_market,EQUITY
+COLB,columbia-banking-systems,"Columbia Banking System, Inc.",NASDAQ,us_market,EQUITY
+ITRI,itron,"Itron, Inc.",NASDAQ,us_market,EQUITY
+IBOC,international-bancshares-corp,International Bancshares Corporation,NASDAQ,us_market,EQUITY
+MMYT,makemytrip,MakeMyTrip Limited,NASDAQ,us_market,EQUITY
+PACB,pacific-biosciences,"Pacific Biosciences of California, Inc.",NASDAQ,us_market,EQUITY
+FOLD,amicus-therapeutics,"Amicus Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+MGEE,mge-energy,MGE Energy Inc.,NASDAQ,us_market,EQUITY
+HUBG,hub-group,"Hub Group, Inc.",NASDAQ,us_market,EQUITY
+MLKN,herman-miller,"MillerKnoll, Inc.",NASDAQ,us_market,EQUITY
+AHCO,,AdaptHealth Corp.,NASDAQ,us_market,EQUITY
+DNUT,krispy-kreme,"Krispy Kreme, Inc.",NASDAQ,us_market,EQUITY
+ADPT,,Adaptive Biotechnologies Corporation,NASDAQ,us_market,EQUITY
+INSM,insmed,"Insmed, Inc.",NASDAQ,us_market,EQUITY
+BCRX,biocryst,"BioCryst Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+RLAY,,"Relay Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+CRNC,cerence,Cerence Inc.,NASDAQ,us_market,EQUITY
+OMAB,grupo-aeroportuario-del-centro-nort,Grupo Aeroportuario del Centro Norte S.A.B. de C.V.,NASDAQ,us_market,EQUITY
+URBN,urban-outfitters,"Urban Outfitters, Inc.",NASDAQ,us_market,EQUITY
+PDCO,patterson-companies-inc,"Patterson Companies, Inc.",NASDAQ,us_market,EQUITY
+OAS,oasis-petroleum,Oasis Petroleum Inc.,NASDAQ,us_market,EQUITY
+PCRX,pacira-pharmaceuticals,"Pacira BioSciences, Inc.",NASDAQ,us_market,EQUITY
+FIBK,first-interstate-bancsystem,"First Interstate BancSystem, Inc.",NASDAQ,us_market,EQUITY
+MNTV,,Momentive Global Inc.,NASDAQ,us_market,EQUITY
+TWNK,,"Hostess Brands, Inc.",NASDAQ,us_market,EQUITY
+IMAB,,I-MAB,NASDAQ,us_market,EQUITY
+ENVX,enovix,Enovix Corporation,NASDAQ,us_market,EQUITY
+FA,,First Advantage Corporation,NASDAQ,us_market,EQUITY
+RXT,,"Rackspace Technology, Inc.",NASDAQ,us_market,EQUITY
+GGAL,gpo-fin-galicia,Grupo Financiero Galicia S.A.,NASDAQ,us_market,EQUITY
+PECO,phillips-edison-and-company,"Phillips Edison & Company, Inc.",NASDAQ,us_market,EQUITY
+RNW,,ReNew Energy Global plc,NASDAQ,us_market,EQUITY
+DADA,dada-nexus,Dada Nexus Limited,NASDAQ,us_market,EQUITY
+CYTK,,"Cytokinetics, Incorporated",NASDAQ,us_market,EQUITY
+IAS,,Integral Ad Science Holding Corp.,NASDAQ,us_market,EQUITY
+AMEH,apollo-medical,"Apollo Medical Holdings, Inc.",NASDAQ,us_market,EQUITY
+OTTR,otter-tail,Otter Tail Corporation,NASDAQ,us_market,EQUITY
+WIRE,,Encore Wire Corporation,NASDAQ,us_market,EQUITY
+SANM,sanmina,Sanmina Corporation,NASDAQ,us_market,EQUITY
+DWAC,digital-world-acquisition-corp,Digital World Acquisition Corp.,NASDAQ,us_market,EQUITY
+ACVA,,ACV Auctions Inc.,NASDAQ,us_market,EQUITY
+PLXS,plexus,Plexus Corp.,NASDAQ,us_market,EQUITY
+UCTT,ultra-clean,"Ultra Clean Holdings, Inc.",NASDAQ,us_market,EQUITY
+CVCO,cavco-industries,"Cavco Industries, Inc.",NASDAQ,us_market,EQUITY
+GO,,Grocery Outlet Holding Corp.,NASDAQ,us_market,EQUITY
+LILA,liberty-latin-america,Liberty Latin America Ltd.,NASDAQ,us_market,EQUITY
+LILAK,liberty-latin-america,Liberty Latin America Ltd.,NASDAQ,us_market,EQUITY
+EVCM,,EverCommerce Inc.,NASDAQ,us_market,EQUITY
+FMBI,first-midwest-bancorp,"First Midwest Bancorp, Inc.",NASDAQ,us_market,EQUITY
+LPRO,,Open Lending Corporation,NASDAQ,us_market,EQUITY
+EPAY,bottomline-technologies,"Bottomline Technologies, Inc.",NASDAQ,us_market,EQUITY
+PRVA,,"Privia Health Group, Inc.",NASDAQ,us_market,EQUITY
+CENT,,Central Garden & Pet Company,NASDAQ,us_market,EQUITY
+AXNX,axonics,"Axonics, Inc.",NASDAQ,us_market,EQUITY
+EXFY,expensify,"Expensify, Inc.",NASDAQ,us_market,EQUITY
+FROG,jfrog,JFrog Ltd.,NASDAQ,us_market,EQUITY
+CENTA,central-garden-and-pet,Central Garden & Pet Company,NASDAQ,us_market,EQUITY
+FFBC,first-financial-bancorp,First Financial Bancorp.,NASDAQ,us_market,EQUITY
+ONEM,,"1Life Healthcare, Inc.",NASDAQ,us_market,EQUITY
+AUPH,aurinia,Aurinia Pharmaceuticals Inc,NASDAQ,us_market,EQUITY
+TOWN,townebank,Towne Bank,NASDAQ,us_market,EQUITY
+VMEO,vimeo,"Vimeo, Inc.",NASDAQ,us_market,EQUITY
+BANF,bancfirst,BancFirst Corporation,NASDAQ,us_market,EQUITY
+SKIN,the-beauty-health,The Beauty Health Company,NASDAQ,us_market,EQUITY
+IBRX,immunitybio,"ImmunityBio, Inc.",NASDAQ,us_market,EQUITY
+FRME,first-merchants,First Merchants Corporation,NASDAQ,us_market,EQUITY
+SAGE,sage-therapeutics,"Sage Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+RELY,,"Remitly Global, Inc.",NASDAQ,us_market,EQUITY
+TTGT,,"TechTarget, Inc.",NASDAQ,us_market,EQUITY
+AAWW,atlas-air-worldwide,Atlas Air Worldwide Holdings,NASDAQ,us_market,EQUITY
+FLGT,fulgent-genetics,"Fulgent Genetics, Inc.",NASDAQ,us_market,EQUITY
+IOVA,iovance-biotherapeutics,"Iovance Biotherapeutics, Inc.",NASDAQ,us_market,EQUITY
+WAFD,washington-federal,"Washington Federal, Inc.",NASDAQ,us_market,EQUITY
+IOSP,innospec,Innospec Inc.,NASDAQ,us_market,EQUITY
+WSBC,wesbanco,"WesBanco, Inc.",NASDAQ,us_market,EQUITY
+ROIC,,Retail Opportunity Investments Corp.,NASDAQ,us_market,EQUITY
+SWIM,,"Latham Group, Inc.",NASDAQ,us_market,EQUITY
+RIOT,riot-blockchain,"Riot Blockchain, Inc",NASDAQ,us_market,EQUITY
+LPSN,liveperson,"LivePerson, Inc.",NASDAQ,us_market,EQUITY
+XMTR,,"Xometry, Inc.",NASDAQ,us_market,EQUITY
+HHR,headhunter,HeadHunter Group PLC,NASDAQ,us_market,EQUITY
+VRRM,verra-mobility,Verra Mobility Corporation,NASDAQ,us_market,EQUITY
+SMCI,,"Super Micro Computer, Inc.",NASDAQ,us_market,EQUITY
+VCTR,,"Victory Capital Holdings, Inc. Class A Common Stock",NASDAQ,us_market,EQUITY
+SASR,,"Sandy Spring Bancorp, Inc.",NASDAQ,us_market,EQUITY
+NTCT,netscout-systems,"NetScout Systems, Inc.",NASDAQ,us_market,EQUITY
+RILY,,"B. Riley Financial, Inc.",NASDAQ,us_market,EQUITY
+SBGI,sinclair-broadcast-group,"Sinclair Broadcast Group, Inc.",NASDAQ,us_market,EQUITY
+ARCB,arcbest-corporation,ArcBest Corporation,NASDAQ,us_market,EQUITY
+STFC,state-auto-financial,State Auto Financial Corporation,NASDAQ,us_market,EQUITY
+EVGO,evgo,EVgo Inc.,NASDAQ,us_market,EQUITY
+RXRX,,"Recursion Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+ACLS,,"Axcelis Technologies, Inc.",NASDAQ,us_market,EQUITY
+CCXI,chemocentryx,"ChemoCentryx, Inc.",NASDAQ,us_market,EQUITY
+AVDX,avidxchange-holdings,"AvidXchange Holdings, Inc.",NASDAQ,us_market,EQUITY
+ME,23andme-holding,23andMe Holding Co.,NASDAQ,us_market,EQUITY
+PAX,,Patria Investments Limited,NASDAQ,us_market,EQUITY
+ADV,,Advantage Solutions Inc.,NASDAQ,us_market,EQUITY
+ODP,office-depot,The ODP Corporation,NASDAQ,us_market,EQUITY
+CYRX,cryoport,"CryoPort, Inc.",NASDAQ,us_market,EQUITY
+BANR,banner,Banner Corporation,NASDAQ,us_market,EQUITY
+HTLF,heartland-financial-usa,"Heartland Financial USA, Inc.",NASDAQ,us_market,EQUITY
+REGI,renewable-energy-group,"Renewable Energy Group, Inc.",NASDAQ,us_market,EQUITY
+PAGP,plains-gp,"Plains GP Holdings, L.P.",NASDAQ,us_market,EQUITY
+PSMT,pricesmart,"PriceSmart, Inc.",NASDAQ,us_market,EQUITY
+BIGC,bigcommerce,"BigCommerce Holdings, Inc. - Series 1",NASDAQ,us_market,EQUITY
+CLBK,columbia-financial,"Columbia Financial, Inc.",NASDAQ,us_market,EQUITY
+CVET,covetrus,"Covetrus, Inc.",NASDAQ,us_market,EQUITY
+TGTX,tg-therapeutics,"TG Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+SBCF,seacoast-banking-of-florida,Seacoast Banking Corporation of Florida,NASDAQ,us_market,EQUITY
+RNST,renasant-corporation,Renasant Corporation,NASDAQ,us_market,EQUITY
+SBLK,star-bulk-carriers,Star Bulk Carriers Corp.,NASDAQ,us_market,EQUITY
+HIMX,,"Himax Technologies, Inc.",NASDAQ,us_market,EQUITY
+CRTO,criteo,Criteo S.A.,NASDAQ,us_market,EQUITY
+PTVE,,Pactiv Evergreen Inc.,NASDAQ,us_market,EQUITY
+CTRE,,"CareTrust REIT, Inc.",NASDAQ,us_market,EQUITY
+PTRA,proterra,Proterra Inc,NASDAQ,us_market,EQUITY
+PTEN,patterson-uti-energy,"Patterson-UTI Energy, Inc.",NASDAQ,us_market,EQUITY
+OSTK,overstock,"Overstock.com, Inc.",NASDAQ,us_market,EQUITY
+PRAA,pra-group,"PRA Group, Inc.",NASDAQ,us_market,EQUITY
+WFRD,,Weatherford International plc,NASDAQ,us_market,EQUITY
+PI,,"Impinj, Inc.",NASDAQ,us_market,EQUITY
+TRMK,trustmark,Trustmark Corporation,NASDAQ,us_market,EQUITY
+SATS,echostar,EchoStar Corporation,NASDAQ,us_market,EQUITY
+PAYO,,Payoneer Global Inc.,NASDAQ,us_market,EQUITY
+NKTR,nektar-therapeutics,Nektar Therapeutics,NASDAQ,us_market,EQUITY
+EXAI,exscientia,Exscientia Plc,NASDAQ,us_market,EQUITY
+MDRX,allscripts-healthcare-solutions,"Allscripts Healthcare Solutions, Inc.",NASDAQ,us_market,EQUITY
+MYGN,myriad-genetics,"Myriad Genetics, Inc.",NASDAQ,us_market,EQUITY
+PTLO,portillo-s,Portillo's Inc.,NASDAQ,us_market,EQUITY
+CDLX,cardlytics,"Cardlytics, Inc. Common Stock",NASDAQ,us_market,EQUITY
+NMIH,nmi-holdings,NMI Holdings Inc,NASDAQ,us_market,EQUITY
+LKFN,,Lakeland Financial Corporation,NASDAQ,us_market,EQUITY
+VRTS,,"Virtus Investment Partners, Inc.",NASDAQ,us_market,EQUITY
+KYMR,,"Kymera Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+CDEV,centennial-resource-development,"Centennial Resource Development, Inc.",NASDAQ,us_market,EQUITY
+CDNA,caredx,"CareDx, Inc.",NASDAQ,us_market,EQUITY
+EVBG,everbridge,"Everbridge, Inc.",NASDAQ,us_market,EQUITY
+STGW,,Stagwell Inc.,NASDAQ,us_market,EQUITY
+IDCC,interdigital,"InterDigital, Inc.",NASDAQ,us_market,EQUITY
+VCYT,,"Veracyte, Inc.",NASDAQ,us_market,EQUITY
+SANA,,"Sana Biotechnology, Inc.",NASDAQ,us_market,EQUITY
+KTOS,kratos-defense-and-security-solutions,"Kratos Defense & Security Solutions, Inc.",NASDAQ,us_market,EQUITY
+SEAT,,Vivid Seats Inc.,NASDAQ,us_market,EQUITY
+COMM,commscope,"CommScope Holding Company, Inc.",NASDAQ,us_market,EQUITY
+HRMY,,"Harmony Biosciences Holdings, Inc.",NASDAQ,us_market,EQUITY
+GSKY,greensky,"GreenSky, Inc.",NASDAQ,us_market,EQUITY
+CORT,corcept-therapeutics,Corcept Therapeutics Incorporated,NASDAQ,us_market,EQUITY
+VBTX,,"Veritex Holdings, Inc.",NASDAQ,us_market,EQUITY
+UDMY,udemy,"Udemy, Inc.",NASDAQ,us_market,EQUITY
+SKYW,skywest,"SkyWest, Inc.",NASDAQ,us_market,EQUITY
+BIRD,allbirds,"Allbirds, Inc.",NASDAQ,us_market,EQUITY
+XNCR,xencor,"Xencor, Inc.",NASDAQ,us_market,EQUITY
+VERX,,"Vertex, Inc.",NASDAQ,us_market,EQUITY
+SDGR,schrodinger,"Schrodinger, Inc.",NASDAQ,us_market,EQUITY
+FRG,,"Franchise Group, Inc.",NASDAQ,us_market,EQUITY
+LGND,ligand-pharmaceutical,Ligand Pharmaceuticals Incorporated,NASDAQ,us_market,EQUITY
+ARQQ,arqit-quantum,Arqit Quantum Inc.,NASDAQ,us_market,EQUITY
+GDYN,grid-dynamics,"Grid Dynamics Holdings, Inc.",NASDAQ,us_market,EQUITY
+ATSG,air-transport-services,"Air Transport Services Group, Inc",NASDAQ,us_market,EQUITY
+PRGS,progress-software,Progress Software Corporation,NASDAQ,us_market,EQUITY
+ROCK,gibraltar-industries,"Gibraltar Industries, Inc.",NASDAQ,us_market,EQUITY
+MGNI,magnite,"Magnite, Inc.",NASDAQ,us_market,EQUITY
+VALN,valneva-se,Valneva SE,NASDAQ,us_market,EQUITY
+CD,,Chindata Group Holdings Limited,NASDAQ,us_market,EQUITY
+EGBN,eagle-bancorp,"Eagle Bancorp, Inc.",NASDAQ,us_market,EQUITY
+HOPE,hope-bancorp,"Hope Bancorp, Inc.",NASDAQ,us_market,EQUITY
+CALM,cal-maine-foods,"Cal-Maine Foods, Inc.",NASDAQ,us_market,EQUITY
+EMBK,,"Embark Technology, Inc.",NASDAQ,us_market,EQUITY
+HMHC,houghton-mifflin,Houghton Mifflin Harcourt Company,NASDAQ,us_market,EQUITY
+CAKE,cheesecake-factory,The Cheesecake Factory Incorporated,NASDAQ,us_market,EQUITY
+ICFI,icf-international,"ICF International, Inc.",NASDAQ,us_market,EQUITY
+CRSR,corsair,"Corsair Gaming, Inc.",NASDAQ,us_market,EQUITY
+MKTW,,"MarketWise, Inc.",NASDAQ,us_market,EQUITY
+STER,,Sterling Check Corp.,NASDAQ,us_market,EQUITY
+MNRO,monro,"Monro, Inc.",NASDAQ,us_market,EQUITY
+INFN,,Infinera Corporation,NASDAQ,us_market,EQUITY
+CSWI,,"CSW Industrials, Inc.",NASDAQ,us_market,EQUITY
+DAVE,,Dave Inc.,NASDAQ,us_market,EQUITY
+XPER,,Xperi Holding Corporation,NASDAQ,us_market,EQUITY
+BLMN,bloomin-brands,"Bloomin' Brands, Inc.",NASDAQ,us_market,EQUITY
+CSGS,csg-systems-intl,"CSG Systems International, Inc.",NASDAQ,us_market,EQUITY
+EFSC,,Enterprise Financial Services Corporation,NASDAQ,us_market,EQUITY
+ECPG,,Encore Capital Group Inc,NASDAQ,us_market,EQUITY
+MGRC,mcgrath-rentcorp,McGrath RentCorp,NASDAQ,us_market,EQUITY
+CMPR,cimpress-n-v,Cimpress plc,NASDAQ,us_market,EQUITY
+NWBI,northwest-bancshares,"Northwest Bancshares, Inc.",NASDAQ,us_market,EQUITY
+PLAY,dave-and-buster-s-entertainment,"Dave & Buster's Entertainment, Inc.",NASDAQ,us_market,EQUITY
+GCMG,,GCM Grosvenor Inc.,NASDAQ,us_market,EQUITY
+CASH,,"Meta Financial Group, Inc.",NASDAQ,us_market,EQUITY
+ARLP,alliance-resource-partners-lp,"Alliance Resource Partners, L.P.",NASDAQ,us_market,EQUITY
+NVEE,,"NV5 Global, Inc.",NASDAQ,us_market,EQUITY
+EXTR,extreme-networks,"Extreme Networks, Inc.",NASDAQ,us_market,EQUITY
+IRWD,ironwood-pharmaceuticals,"Ironwood Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+GOGL,golden-ocean-group,Golden Ocean Group Limited,NASDAQ,us_market,EQUITY
+CYXT,,"Cyxtera Technologies, Inc.",NASDAQ,us_market,EQUITY
+JACK,jack-in-the-box,Jack In The Box Inc.,NASDAQ,us_market,EQUITY
+BBIO,,"BridgeBio Pharma, Inc.",NASDAQ,us_market,EQUITY
+MGPI,mgp-ingredients-new,"MGP Ingredients, Inc.",NASDAQ,us_market,EQUITY
+SFIX,stitch-fix,"Stitch Fix, Inc.",NASDAQ,us_market,EQUITY
+IRBT,irobot,iRobot Corporation,NASDAQ,us_market,EQUITY
+CAMT,camtek,Camtek Ltd.,NASDAQ,us_market,EQUITY
+DCBO,,Docebo Inc.,NASDAQ,us_market,EQUITY
+MODV,,ModivCare Inc.,NASDAQ,us_market,EQUITY
+PATK,,"Patrick Industries, Inc.",NASDAQ,us_market,EQUITY
+CTKB,cytek-biosciences,"Cytek Biosciences, Inc.",NASDAQ,us_market,EQUITY
+MOMO,momo,Hello Group Inc.,NASDAQ,us_market,EQUITY
+MSEX,,Middlesex Water Company,NASDAQ,us_market,EQUITY
+OM,,"Outset Medical, Inc.",NASDAQ,us_market,EQUITY
+RVMD,,"Revolution Medicines, Inc.",NASDAQ,us_market,EQUITY
+HLMN,,Hillman Solutions Corp.,NASDAQ,us_market,EQUITY
+ARRY,array-technologies,"Array Technologies, Inc.",NASDAQ,us_market,EQUITY
+RTLR,,Rattler Midstream LP,NASDAQ,us_market,EQUITY
+FORTY,,Formula Systems (1985) Ltd.,NASDAQ,us_market,EQUITY
+DFH,,"Dream Finders Homes, Inc.",NASDAQ,us_market,EQUITY
+NBTB,nbt-bancorp,NBT Bancorp Inc.,NASDAQ,us_market,EQUITY
+LNTH,,"Lantheus Holdings, Inc.",NASDAQ,us_market,EQUITY
+FFIE,,Faraday Future Intelligent Electric Inc.,NASDAQ,us_market,EQUITY
+LILM,,Lilium N.V.,NASDAQ,us_market,EQUITY
+XPEL,xpel,"XPEL, Inc.",NASDAQ,us_market,EQUITY
+SSP,scripps-ew-company,E.W. Scripps Company (The),NASDAQ,us_market,EQUITY
+GBT,global-blood-therapeutics,"Global Blood Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+TREE,lendingtree,"LendingTree, Inc.",NASDAQ,us_market,EQUITY
+TBBK,,"The Bancorp, Inc.",NASDAQ,us_market,EQUITY
+FCEL,fuelcell-energy,"FuelCell Energy, Inc.",NASDAQ,us_market,EQUITY
+SAVA,cassava-sciences,"Cassava Sciences, Inc.",NASDAQ,us_market,EQUITY
+HPK,,"HighPeak Energy, Inc.",NASDAQ,us_market,EQUITY
+AMCX,amc-networks,AMC Networks Inc.,NASDAQ,us_market,EQUITY
+TIL,,"Instil Bio, Inc.",NASDAQ,us_market,EQUITY
+GPRE,,"Green Plains, Inc.",NASDAQ,us_market,EQUITY
+SPNS,,Sapiens International Corporation N.V.,NASDAQ,us_market,EQUITY
+TPTX,,"Turning Point Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+AGIO,agios-pharmaceuticals,"Agios Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+COHU,,"Cohu, Inc.",NASDAQ,us_market,EQUITY
+PRTA,,Prothena Corporation plc,NASDAQ,us_market,EQUITY
+FBNC,,First Bancorp,NASDAQ,us_market,EQUITY
+RPAY,,Repay Holdings Corporation,NASDAQ,us_market,EQUITY
+BAND,bandwidth,Bandwidth Inc.,NASDAQ,us_market,EQUITY
+ALLO,allogene-therapeutics,"Allogene Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+SNBR,sleep-number,Sleep Number Corporation,NASDAQ,us_market,EQUITY
+HCAT,,"Health Catalyst, Inc",NASDAQ,us_market,EQUITY
+CSIQ,canadian-solar,Canadian Solar Inc.,NASDAQ,us_market,EQUITY
+SYBT,,"Stock Yards Bancorp, Inc.",NASDAQ,us_market,EQUITY
+SLGC,,"SomaLogic, Inc.",NASDAQ,us_market,EQUITY
+ACMR,acm-research,"ACM Research, Inc.",NASDAQ,us_market,EQUITY
+SHYF,,"The Shyft Group, Inc.",NASDAQ,us_market,EQUITY
+PTGX,protagonist-therapeutics,"Protagonist Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+HEES,,"H&E Equipment Services, Inc.",NASDAQ,us_market,EQUITY
+MYRG,,"MYR Group, Inc.",NASDAQ,us_market,EQUITY
+GPRO,gopro,"GoPro, Inc.",NASDAQ,us_market,EQUITY
+WISH,contextlogic,ContextLogic Inc.,NASDAQ,us_market,EQUITY
+KALU,kaiser-aluminum,Kaiser Aluminum Corporation,NASDAQ,us_market,EQUITY
+BUSE,first-busey,First Busey Corporation,NASDAQ,us_market,EQUITY
+GOEV,canoo,Canoo Inc.,NASDAQ,us_market,EQUITY
+FLWS,1-800-flowers-com,"1-800-FLOWERS.COM, Inc.",NASDAQ,us_market,EQUITY
+VCEL,,Vericel Corporation,NASDAQ,us_market,EQUITY
+ILPT,,Industrial Logistics Properties Trust,NASDAQ,us_market,EQUITY
+EWCZ,european-wax-center,"European Wax Center, Inc.",NASDAQ,us_market,EQUITY
+ALHC,,"Alignment Healthcare, Inc.",NASDAQ,us_market,EQUITY
+BGCP,bgc-partners,"BGC Partners, Inc.",NASDAQ,us_market,EQUITY
+SNCY,sun-country-airlines,"Sun Country Airlines Holdings, Inc.",NASDAQ,us_market,EQUITY
+NSTG,,"NanoString Technologies, Inc.",NASDAQ,us_market,EQUITY
+CFFN,capitol-federal-financial-new,"Capitol Federal Financial, Inc.",NASDAQ,us_market,EQUITY
+OSIS,osi-systems,"OSI Systems, Inc.",NASDAQ,us_market,EQUITY
+FRTA,forterra,"Forterra, Inc.",NASDAQ,us_market,EQUITY
+ASTE,,"Astec Industries, Inc.",NASDAQ,us_market,EQUITY
+WABC,westamerica-bancorp,Westamerica Bancorporation,NASDAQ,us_market,EQUITY
+RDWR,,Radware Ltd.,NASDAQ,us_market,EQUITY
+GDEV,,Nexters Inc.,NASDAQ,us_market,EQUITY
+API,,"Agora, Inc.",NASDAQ,us_market,EQUITY
+SCPL,sciplay,SciPlay Corporation,NASDAQ,us_market,EQUITY
+TVTX,,"Travere Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+OMP,,Oasis Midstream Partners LP,NASDAQ,us_market,EQUITY
+ERAS,,"Erasca, Inc.",NASDAQ,us_market,EQUITY
+VECO,,Veeco Instruments Inc.,NASDAQ,us_market,EQUITY
+TTMI,ttm-technologies,"TTM Technologies, Inc.",NASDAQ,us_market,EQUITY
+SUPN,supernus-pharmaceuticals,"Supernus Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+SSYS,stratasys,"Stratasys, Ltd.",NASDAQ,us_market,EQUITY
+PTNR,,Partner Communications Company Ltd.,NASDAQ,us_market,EQUITY
+MORF,,"Morphic Holding, Inc.",NASDAQ,us_market,EQUITY
+FFWM,,First Foundation Inc.,NASDAQ,us_market,EQUITY
+KFRC,,"Kforce, Inc.",NASDAQ,us_market,EQUITY
+DVAX,dynavax,Dynavax Technologies Corporation,NASDAQ,us_market,EQUITY
+CDXS,,"Codexis, Inc.",NASDAQ,us_market,EQUITY
+SVC,,Service Properties Trust - Shares of Beneficial Interest,NASDAQ,us_market,EQUITY
+AMRS,amyris,"Amyris, Inc.",NASDAQ,us_market,EQUITY
+HSKA,,Heska Corporation,NASDAQ,us_market,EQUITY
+GLNG,golar-lng-limited,Golar LNG Limited,NASDAQ,us_market,EQUITY
+REE,,REE Automotive Ltd.,NASDAQ,us_market,EQUITY
+DCOM,,"Dime Community Bancshares, Inc.",NASDAQ,us_market,EQUITY
+MLAB,,"Mesa Laboratories, Inc.",NASDAQ,us_market,EQUITY
+CENX,century-aluminum,Century Aluminum Company,NASDAQ,us_market,EQUITY
+IMKTA,,"Ingles Markets, Incorporated",NASDAQ,us_market,EQUITY
+SGH,smart-global,"SMART Global Holdings, Inc.",NASDAQ,us_market,EQUITY
+TRS,trimas,TriMas Corporation,NASDAQ,us_market,EQUITY
+KRYS,krystal-biotech,"Krystal Biotech, Inc.",NASDAQ,us_market,EQUITY
+OLK,,Olink Holding AB (publ),NASDAQ,us_market,EQUITY
+XENE,xenon-pharmaceuticals,Xenon Pharmaceuticals Inc.,NASDAQ,us_market,EQUITY
+VERV,,"Verve Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+DOMO,domo,"Domo, Inc.",NASDAQ,us_market,EQUITY
+WULF,,TeraWulf Inc.,NASDAQ,us_market,EQUITY
+MVST,microvast,"Microvast Holdings, Inc.",NASDAQ,us_market,EQUITY
+TBLA,,Taboola.com Ltd.,NASDAQ,us_market,EQUITY
+AVAV,aerovironment,"AeroVironment, Inc.",NASDAQ,us_market,EQUITY
+ISEE,iveric-bio,"IVERIC bio, Inc.",NASDAQ,us_market,EQUITY
+BBBY,bed-bath-and-beyond,Bed Bath & Beyond Inc.,NASDAQ,us_market,EQUITY
+SCHL,scholastic,Scholastic Corporation,NASDAQ,us_market,EQUITY
+EDIT,editas-medicine,"Editas Medicine, Inc.",NASDAQ,us_market,EQUITY
+RDNT,,"RadNet, Inc.",NASDAQ,us_market,EQUITY
+WRLD,,World Acceptance Corporation,NASDAQ,us_market,EQUITY
+ESTA,,Establishment Labs Holdings Inc.,NASDAQ,us_market,EQUITY
+WKME,,WalkMe Ltd.,NASDAQ,us_market,EQUITY
+NYMT,,"New York Mortgage Trust, Inc.",NASDAQ,us_market,EQUITY
+ALKT,,"Alkami Technology, Inc.",NASDAQ,us_market,EQUITY
+ARHS,arhaus,"Arhaus, Inc.",NASDAQ,us_market,EQUITY
+CNOB,,"ConnectOne Bancorp, Inc.",NASDAQ,us_market,EQUITY
+AVID,avid-technology,"Avid Technology, Inc.",NASDAQ,us_market,EQUITY
+PRIM,,Primoris Services Corporation,NASDAQ,us_market,EQUITY
+CLOV,clover-health,"Clover Health Investments, Corp.",NASDAQ,us_market,EQUITY
+CRON,cronos-group,Cronos Group Inc. Common Share,NASDAQ,us_market,EQUITY
+BCYC,,Bicycle Therapeutics plc,NASDAQ,us_market,EQUITY
+GOGO,gogo,Gogo Inc.,NASDAQ,us_market,EQUITY
+HLTH,,Cue Health Inc.,NASDAQ,us_market,EQUITY
+SBSI,,"Southside Bancshares, Inc.",NASDAQ,us_market,EQUITY
+STRA,strategic-education,"Strategic Education, Inc.",NASDAQ,us_market,EQUITY
+LYEL,,"Lyell Immunopharma, Inc.",NASDAQ,us_market,EQUITY
+OCFC,,OceanFirst Financial Corp.,NASDAQ,us_market,EQUITY
+BATRA,liberty-media,Liberty Media Corporation - Series A Liberty Braves,NASDAQ,us_market,EQUITY
+IMGN,immunogen,"ImmunoGen, Inc.",NASDAQ,us_market,EQUITY
+ITOS,,"iTeos Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+ROCC,penn-virginia,Ranger Oil Corporation,NASDAQ,us_market,EQUITY
+MNTK,,"Montauk Renewables, Inc.",NASDAQ,us_market,EQUITY
+MBIN,,Merchants Bancorp,NASDAQ,us_market,EQUITY
+CLDX,celldex-therapeutics,"Celldex Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+CMCO,columbus-mckinnon,Columbus McKinnon Corporation,NASDAQ,us_market,EQUITY
+ROAD,,"Construction Partners, Inc.",NASDAQ,us_market,EQUITY
+ALEC,alector,"Alector, Inc.",NASDAQ,us_market,EQUITY
+BATRK,liberty-media,Liberty Media Corporation - Series C Liberty Braves,NASDAQ,us_market,EQUITY
+ASTR,astra,"Astra Space, Inc.",NASDAQ,us_market,EQUITY
+HCSG,healthcare-services-group,"Healthcare Services Group, Inc.",NASDAQ,us_market,EQUITY
+SNPO,snap-one,Snap One Holdings Corp.,NASDAQ,us_market,EQUITY
+OFLX,,"Omega Flex, Inc.",NASDAQ,us_market,EQUITY
+MRTN,marten-transport,"Marten Transport, Ltd.",NASDAQ,us_market,EQUITY
+SOVO,,"Sovos Brands, Inc.",NASDAQ,us_market,EQUITY
+AMRN,amarin,Amarin Corporation plc,NASDAQ,us_market,EQUITY
+PLUS,,ePlus inc.,NASDAQ,us_market,EQUITY
+SLDP,,"Solid Power, Inc.",NASDAQ,us_market,EQUITY
+MBUU,,"Malibu Boats, Inc.",NASDAQ,us_market,EQUITY
+ACCD,,"Accolade, Inc.",NASDAQ,us_market,EQUITY
+INTA,,"Intapp, Inc.",NASDAQ,us_market,EQUITY
+BRKL,brookline-bancorp,"Brookline Bancorp, Inc.",NASDAQ,us_market,EQUITY
+CLNE,clean-energy-fuels,Clean Energy Fuels Corp.,NASDAQ,us_market,EQUITY
+PUBM,pubmatic,"PubMatic, Inc.",NASDAQ,us_market,EQUITY
+IMOS,,ChipMOS TECHNOLOGIES INC.,NASDAQ,us_market,EQUITY
+NVTS,navitas-semiconductor,Navitas Semiconductor Corporation,NASDAQ,us_market,EQUITY
+PLMR,palomar-holdings,"Palomar Holdings, Inc.",NASDAQ,us_market,EQUITY
+ICHR,,Ichor Holdings,NASDAQ,us_market,EQUITY
+GDEN,golden-entertainment,"Golden Entertainment, Inc.",NASDAQ,us_market,EQUITY
+ADUS,,Addus HomeCare Corporation,NASDAQ,us_market,EQUITY
+OPI,,Office Properties Income Trust,NASDAQ,us_market,EQUITY
+TCBK,,TriCo Bancshares,NASDAQ,us_market,EQUITY
+AOSL,alpha-and-omega-semiconductor,Alpha and Omega Semiconductor Limited,NASDAQ,us_market,EQUITY
+SRNE,sorrento-therapeutics,"Sorrento Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+APR,,"Apria, Inc.",NASDAQ,us_market,EQUITY
+GIII,g-iii-apparel,"G-III Apparel Group, LTD.",NASDAQ,us_market,EQUITY
+SUMO,sumo-logic,"Sumo Logic, Inc.",NASDAQ,us_market,EQUITY
+LBAI,,"Lakeland Bancorp, Inc.",NASDAQ,us_market,EQUITY
+PRCH,,"Porch Group, Inc.",NASDAQ,us_market,EQUITY
+MDGL,madrigal-pharmaceuticals-inc,"Madrigal Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+AFYA,,Afya Limited,NASDAQ,us_market,EQUITY
+STBA,s-and-t-bancorp,"S&T Bancorp, Inc.",NASDAQ,us_market,EQUITY
+SCWX,secureworks,SecureWorks Corp.,NASDAQ,us_market,EQUITY
+CLMT,,"Calumet Specialty Products Partners, L.P.",NASDAQ,us_market,EQUITY
+NMFC,,New Mountain Finance Corporation,NASDAQ,us_market,EQUITY
+ANDE,,"The Andersons, Inc.",NASDAQ,us_market,EQUITY
+MCRI,monarch-casino-and-resort,"Monarch Casino & Resort, Inc.",NASDAQ,us_market,EQUITY
+SRCE,,1st Source Corporation,NASDAQ,us_market,EQUITY
+VNET,21vianet,"VNET Group, Inc.",NASDAQ,us_market,EQUITY
+ATRA,atara-biotherapeutics,"Atara Biotherapeutics, Inc.",NASDAQ,us_market,EQUITY
+FGEN,fibrogen,"FibroGen, Inc",NASDAQ,us_market,EQUITY
+CCCC,,"C4 Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+HYZN,hyzon-motors,Hyzon Motors Inc.,NASDAQ,us_market,EQUITY
+CHCO,,City Holding Company,NASDAQ,us_market,EQUITY
+POSH,poshmark,"Poshmark, Inc.",NASDAQ,us_market,EQUITY
+AMTB,,Amerant Bancorp Inc.,NASDAQ,us_market,EQUITY
+NXGN,,"NextGen Healthcare, Inc.",NASDAQ,us_market,EQUITY
+HTLD,heartland-express,"Heartland Express, Inc.",NASDAQ,us_market,EQUITY
+SILK,,"Silk Road Medical, Inc.",NASDAQ,us_market,EQUITY
+INDI,indie-semiconductor,"indie Semiconductor, Inc.",NASDAQ,us_market,EQUITY
+BLFS,,"BioLife Solutions, Inc.",NASDAQ,us_market,EQUITY
+CDMO,avid-bioservices,"Avid Bioservices, Inc.",NASDAQ,us_market,EQUITY
+ENTA,enanta-pharmaceuticals,"Enanta Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+TWOU,2u,"2U, Inc.",NASDAQ,us_market,EQUITY
+PLYA,,Playa Hotels & Resorts N.V.,NASDAQ,us_market,EQUITY
+SAFT,safety-insurance,"Safety Insurance Group, Inc.",NASDAQ,us_market,EQUITY
+SNEX,,StoneX Group Inc.,NASDAQ,us_market,EQUITY
+NCBS,,Nicolet Bankshares Inc.,NASDAQ,us_market,EQUITY
+SHCR,,"Sharecare, Inc.",NASDAQ,us_market,EQUITY
+EVOP,evo-payments-inc,"EVO Payments, Inc.",NASDAQ,us_market,EQUITY
+BRLT,,"Brilliant Earth Group, Inc.",NASDAQ,us_market,EQUITY
+APOG,,"Apogee Enterprises, Inc.",NASDAQ,us_market,EQUITY
+CHEF,chefs-warehouse,"The Chefs' Warehouse, Inc.",NASDAQ,us_market,EQUITY
+MOR,morphosys,MorphoSys AG,NASDAQ,us_market,EQUITY
+TVTY,,"Tivity Health, Inc.",NASDAQ,us_market,EQUITY
+SHEN,shenandoah-telecomunications,Shenandoah Telecommunications Co,NASDAQ,us_market,EQUITY
+SCHN,schnitzer-steel,"Schnitzer Steel Industries, Inc.",NASDAQ,us_market,EQUITY
+NGM,,"NGM Biopharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+CNDT,conduent,Conduent Incorporated,NASDAQ,us_market,EQUITY
+MTLS,materialise,Materialise NV,NASDAQ,us_market,EQUITY
+ROVR,,"Rover Group, Inc.",NASDAQ,us_market,EQUITY
+ATRI,atrion,Atrion Corporation,NASDAQ,us_market,EQUITY
+CLBT,,Cellebrite DI Ltd.,NASDAQ,us_market,EQUITY
+INBX,,"Inhibrx, Inc.",NASDAQ,us_market,EQUITY
+ATEC,,"Alphatec Holdings, Inc.",NASDAQ,us_market,EQUITY
+PFBC,,Preferred Bank,NASDAQ,us_market,EQUITY
+AMLX,,"Amylyx Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+SEER,,"Seer, Inc.",NASDAQ,us_market,EQUITY
+AMPH,,"Amphastar Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+AVAH,,Aveanna Healthcare Holdings Inc.,NASDAQ,us_market,EQUITY
+ASTS,ast-spacemobile,"AST SpaceMobile, Inc.",NASDAQ,us_market,EQUITY
+QTRX,,Quanterix Corporation,NASDAQ,us_market,EQUITY
+LWLG,lightwave-logic,"Lightwave Logic, Inc.",NASDAQ,us_market,EQUITY
+CCSI,,"Consensus Cloud Solutions, Inc.",NASDAQ,us_market,EQUITY
+RCKT,,"Rocket Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+SNDL,sundial-growers,Sundial Growers Inc.,NASDAQ,us_market,EQUITY
+INVA,innoviva,"Innoviva, Inc.",NASDAQ,us_market,EQUITY
+PLAB,,"Photronics, Inc.",NASDAQ,us_market,EQUITY
+RXDX,,"Prometheus Biosciences, Inc.",NASDAQ,us_market,EQUITY
+HLIT,,Harmonic Inc.,NASDAQ,us_market,EQUITY
+MATW,matthews,Matthews International Corporation,NASDAQ,us_market,EQUITY
+MRUS,,Merus N.V.,NASDAQ,us_market,EQUITY
+VREX,,Varex Imaging Corporation,NASDAQ,us_market,EQUITY
+VRM,vroom,"Vroom, Inc.",NASDAQ,us_market,EQUITY
+KROS,,"Keros Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+LAND,,Gladstone Land Corporation,NASDAQ,us_market,EQUITY
+ARCE,arco-platform,Arco Platform Limited,NASDAQ,us_market,EQUITY
+THRY,,"Thryv Holdings, Inc.",NASDAQ,us_market,EQUITY
+GGPI,gores-guggenheim,"Gores Guggenheim, Inc.",NASDAQ,us_market,EQUITY
+PFC,,Premier Financial Corp.,NASDAQ,us_market,EQUITY
+FARO,,"FARO Technologies, Inc.",NASDAQ,us_market,EQUITY
+RGNX,regenxbio,REGENXBIO Inc.,NASDAQ,us_market,EQUITY
+HMST,,"HomeStreet, Inc.",NASDAQ,us_market,EQUITY
+BZUN,baozun,Baozun Inc.,NASDAQ,us_market,EQUITY
+AVPT,,"AvePoint, Inc.",NASDAQ,us_market,EQUITY
+TTCF,tattooed-chef,"Tattooed Chef, Inc.",NASDAQ,us_market,EQUITY
+STRC,,Sarcos Technology and Robotics Corporation,NASDAQ,us_market,EQUITY
+NIU,niu,Niu Technologies,NASDAQ,us_market,EQUITY
+PRTC,puretech-health,PureTech Health plc,NASDAQ,us_market,EQUITY
+ERII,,"Energy Recovery, Inc.",NASDAQ,us_market,EQUITY
+BVS,,Bioventus Inc.,NASDAQ,us_market,EQUITY
+CRNX,,"Crinetics Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+HUT,hut-8-mining,Hut 8 Mining Corp.,NASDAQ,us_market,EQUITY
+PWP,,Perella Weinberg Partners,NASDAQ,us_market,EQUITY
+ASTL,,Algoma Steel Group Inc.,NASDAQ,us_market,EQUITY
+TRMR,,Tremor International Ltd. - American Depository Shares,NASDAQ,us_market,EQUITY
+GABC,,"German American Bancorp, Inc.",NASDAQ,us_market,EQUITY
+AXSM,axsome-therapeutics,"Axsome Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+FORR,,"Forrester Research, Inc.",NASDAQ,us_market,EQUITY
+ACB,aurora-cannabis,Aurora Cannabis Inc.,NASDAQ,us_market,EQUITY
+ARKO,,ARKO Corp.,NASDAQ,us_market,EQUITY
+RADI,,"Radius Global Infrastructure, Inc.",NASDAQ,us_market,EQUITY
+RVNC,revance-therapeutics,"Revance Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+JRVR,james-river-group-holdings,"James River Group Holdings, Ltd.",NASDAQ,us_market,EQUITY
+PROC,,"Procaps Group, S.A.",NASDAQ,us_market,EQUITY
+TMCI,,"Treace Medical Concepts, Inc.",NASDAQ,us_market,EQUITY
+REPL,,"Replimune Group, Inc.",NASDAQ,us_market,EQUITY
+AMSF,,"AMERISAFE, Inc.",NASDAQ,us_market,EQUITY
+RMR,the-rmr-group,The RMR Group Inc.,NASDAQ,us_market,EQUITY
+AMWD,american-woodmark,American Woodmark Corporation,NASDAQ,us_market,EQUITY
+AUDC,audiocodes,AudioCodes Ltd.,NASDAQ,us_market,EQUITY
+ORGO,organogenesis,Organogenesis Holdings Inc.,NASDAQ,us_market,EQUITY
+LUNG,,Pulmonx Corporation,NASDAQ,us_market,EQUITY
+TSC,,"TriState Capital Holdings, Inc.",NASDAQ,us_market,EQUITY
+TGLS,,Tecnoglass Inc.,NASDAQ,us_market,EQUITY
+HERA,,FTAC Hera Acquisition Corp.,NASDAQ,us_market,EQUITY
+BTRS,,BTRS Holdings Inc. - Class 1,NASDAQ,us_market,EQUITY
+CNXN,,"PC Connection, Inc.",NASDAQ,us_market,EQUITY
+AVXL,,Anavex Life Sciences Corp.,NASDAQ,us_market,EQUITY
+ATLC,,Atlanticus Holdings Corporation,NASDAQ,us_market,EQUITY
+MF,,Missfresh Limited,NASDAQ,us_market,EQUITY
+IESC,,"IES Holdings, Inc.",NASDAQ,us_market,EQUITY
+CHRS,,"Coherus BioSciences, Inc.",NASDAQ,us_market,EQUITY
+IMCR,,Immunocore Holdings plc,NASDAQ,us_market,EQUITY
+PLCE,children-s-place,"Children's Place, Inc. (The)",NASDAQ,us_market,EQUITY
+AFIN,,"American Finance Trust, Inc.",NASDAQ,us_market,EQUITY
+HA,hawaiian,"Hawaiian Holdings, Inc.",NASDAQ,us_market,EQUITY
+SCVL,,"Shoe Carnival, Inc.",NASDAQ,us_market,EQUITY
+ALTM,altus-midstream,Altus Midstream Company,NASDAQ,us_market,EQUITY
+TDUP,,ThredUp Inc.,NASDAQ,us_market,EQUITY
+HURN,,Huron Consulting Group Inc.,NASDAQ,us_market,EQUITY
+KIDS,,OrthoPediatrics Corp.,NASDAQ,us_market,EQUITY
+GSM,ferroglobe,Ferroglobe PLC,NASDAQ,us_market,EQUITY
+OBNK,,"Origin Bancorp, Inc.",NASDAQ,us_market,EQUITY
+SNCE,,"Science 37 Holdings, Inc.",NASDAQ,us_market,EQUITY
+KRNY,kearny-financial-md,Kearny Financial,NASDAQ,us_market,EQUITY
+WASH,,"Washington Trust Bancorp, Inc.",NASDAQ,us_market,EQUITY
+HYFM,,"Hydrofarm Holdings Group, Inc.",NASDAQ,us_market,EQUITY
+KARO,,Karooooo Ltd.,NASDAQ,us_market,EQUITY
+AGYS,,"Agilysys, Inc.",NASDAQ,us_market,EQUITY
+REAL,the-realreal,"The RealReal, Inc.",NASDAQ,us_market,EQUITY
+JBSS,,"John B. Sanfilippo & Son, Inc.",NASDAQ,us_market,EQUITY
+CERS,,Cerus Corporation,NASDAQ,us_market,EQUITY
+PDFS,,"PDF Solutions, Inc.",NASDAQ,us_market,EQUITY
+DENN,denny-s,Denny's Corporation,NASDAQ,us_market,EQUITY
+PCT,purecycle-technologies,"PureCycle Technologies, Inc.",NASDAQ,us_market,EQUITY
+ZUMZ,zumiez,Zumiez Inc.,NASDAQ,us_market,EQUITY
+LMAT,,"LeMaitre Vascular, Inc.",NASDAQ,us_market,EQUITY
+RETA,reata-pharmaceuticals,"Reata Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+LASR,,"nLIGHT, Inc.",NASDAQ,us_market,EQUITY
+WW,weightwatchers-international,"WW International, Inc.",NASDAQ,us_market,EQUITY
+NRIX,,"Nurix Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+GHRS,,GH Research PLC,NASDAQ,us_market,EQUITY
+ECOL,us-ecology,"US Ecology, Inc.",NASDAQ,us_market,EQUITY
+AVO,,"Mission Produce, Inc.",NASDAQ,us_market,EQUITY
+PCVX,,"Vaxcyte, Inc.",NASDAQ,us_market,EQUITY
+GLDD,,Great Lakes Dredge & Dock Corporation,NASDAQ,us_market,EQUITY
+ATEX,,Anterix Inc.,NASDAQ,us_market,EQUITY
+HBNC,,"Horizon Bancorp, Inc.",NASDAQ,us_market,EQUITY
+RANI,,"Rani Therapeutics Holdings, Inc.",NASDAQ,us_market,EQUITY
+ZEAL,,Zealand Pharma A/S,NASDAQ,us_market,EQUITY
+NRC,,National Research Corporation,NASDAQ,us_market,EQUITY
+CLFD,,"Clearfield, Inc.",NASDAQ,us_market,EQUITY
+MGIC,,Magic Software Enterprises Ltd.,NASDAQ,us_market,EQUITY
+BNR,,Burning Rock Biotech Limited,NASDAQ,us_market,EQUITY
+INO,inovio,"Inovio Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+ATAI,,ATAI Life Sciences N.V.,NASDAQ,us_market,EQUITY
+BLNK,blink-charging,Blink Charging Co.,NASDAQ,us_market,EQUITY
+SMFR,,Sema4 Holdings Corp.,NASDAQ,us_market,EQUITY
+SOPH,,SOPHiA GENETICS SA,NASDAQ,us_market,EQUITY
+COWN,cowen,Cowen Inc.,NASDAQ,us_market,EQUITY
+EBIX,ebix,"Ebix, Inc.",NASDAQ,us_market,EQUITY
+ADTN,,"ADTRAN, Inc.",NASDAQ,us_market,EQUITY
+MNKD,mannkind,MannKind Corporation,NASDAQ,us_market,EQUITY
+HFWA,,Heritage Financial Corporation,NASDAQ,us_market,EQUITY
+QCRH,,"QCR Holdings, Inc.",NASDAQ,us_market,EQUITY
+GOOD,,Gladstone Commercial Corporation - Real Estate Investment Trust,NASDAQ,us_market,EQUITY
+BGRY,,"Berkshire Grey, Inc.",NASDAQ,us_market,EQUITY
+PEBO,,Peoples Bancorp Inc.,NASDAQ,us_market,EQUITY
+OSW,onespaworld,OneSpaWorld Holdings Limited,NASDAQ,us_market,EQUITY
+RBCAA,,"Republic Bancorp, Inc.",NASDAQ,us_market,EQUITY
+SGML,,Sigma Lithium Corporation,NASDAQ,us_market,EQUITY
+TLS,telos,Telos Corporation,NASDAQ,us_market,EQUITY
+SLP,simulations-plus,"Simulations Plus, Inc.",NASDAQ,us_market,EQUITY
+PLBY,plby-group,"PLBY Group, Inc.",NASDAQ,us_market,EQUITY
+PAE,,PAE Incorporated,NASDAQ,us_market,EQUITY
+MOLN,,Molecular Partners AG,NASDAQ,us_market,EQUITY
+NNDM,nano-dimension,Nano Dimension Ltd.,NASDAQ,us_market,EQUITY
+WETF,,"WisdomTree Investments, Inc.",NASDAQ,us_market,EQUITY
+SNDX,,"Syndax Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+EH,,EHang Holdings Limited,NASDAQ,us_market,EQUITY
+HIVE,hive-blockchain-technologies,Hive Blockchain Technologies Ltd.,NASDAQ,us_market,EQUITY
+JOUT,,Johnson Outdoors Inc.,NASDAQ,us_market,EQUITY
+BROG,,Brooge Energy Limited,NASDAQ,us_market,EQUITY
+CONX,,CONX Corp.,NASDAQ,us_market,EQUITY
+CEVA,,"CEVA, Inc.",NASDAQ,us_market,EQUITY
+GOCO,,"GoHealth, Inc.",NASDAQ,us_market,EQUITY
+FNKO,funko,"Funko, Inc.",NASDAQ,us_market,EQUITY
+UVSP,,Univest Financial Corporation,NASDAQ,us_market,EQUITY
+CSTL,castle-biosciences,"Castle Biosciences, Inc.",NASDAQ,us_market,EQUITY
+SPTN,,SpartanNash Company,NASDAQ,us_market,EQUITY
+SDC,smiledirectclub-inc,"SmileDirectClub, Inc.",NASDAQ,us_market,EQUITY
+XENT,intersect-ent,"Intersect ENT, Inc.",NASDAQ,us_market,EQUITY
+ABTX,,"Allegiance Bancshares, Inc.",NASDAQ,us_market,EQUITY
+OPRX,,OptimizeRx Corporation,NASDAQ,us_market,EQUITY
+RBBN,,Ribbon Communications Inc.,NASDAQ,us_market,EQUITY
+BASE,,"Couchbase, Inc.",NASDAQ,us_market,EQUITY
+LIND,lindblad-expeditions,Lindblad Expeditions Holdings Inc.,NASDAQ,us_market,EQUITY
+CGNT,,Cognyte Software Ltd.,NASDAQ,us_market,EQUITY
+PERI,perion-network,Perion Network Ltd,NASDAQ,us_market,EQUITY
+ANAB,anaptysbio,"AnaptysBio, Inc.",NASDAQ,us_market,EQUITY
+SGMO,sangamo-therapeutics,"Sangamo Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+NESR,,National Energy Services Reunited Corp.,NASDAQ,us_market,EQUITY
+QURE,uniqure-n-v,uniQure N.V.,NASDAQ,us_market,EQUITY
+LTCH,,"Latch, Inc.",NASDAQ,us_market,EQUITY
+FWRG,,"First Watch Restaurant Group, Inc.",NASDAQ,us_market,EQUITY
+QNST,,"QuinStreet, Inc.",NASDAQ,us_market,EQUITY
+VIVO,meridian-bioscience,Meridian Bioscience Inc.,NASDAQ,us_market,EQUITY
+GOSS,gossamer-bio,"Gossamer Bio, Inc.",NASDAQ,us_market,EQUITY
+SCSC,,"ScanSource, Inc.",NASDAQ,us_market,EQUITY
+CCRN,,"Cross Country Healthcare, Inc.",NASDAQ,us_market,EQUITY
+CLAR,,Clarus Corporation,NASDAQ,us_market,EQUITY
+TILE,,"Interface, Inc.",NASDAQ,us_market,EQUITY
+PRCT,,PROCEPT BioRobotics Corporation,NASDAQ,us_market,EQUITY
+HIBB,hibbett-sports,"Hibbett, Inc.",NASDAQ,us_market,EQUITY
+HSII,,"Heidrick & Struggles International, Inc.",NASDAQ,us_market,EQUITY
+NRDS,nerdwallet,"NerdWallet, Inc.",NASDAQ,us_market,EQUITY
+HOLI,hollysys-automation-technologies,"Hollysys Automation Technologies, Ltd.",NASDAQ,us_market,EQUITY
+CAN,canaan-inc,Canaan Inc.,NASDAQ,us_market,EQUITY
+ANGO,,"AngioDynamics, Inc.",NASDAQ,us_market,EQUITY
+PRDS,,"Pardes Biosciences, Inc.",NASDAQ,us_market,EQUITY
+HIFS,,Hingham Institution for Savings,NASDAQ,us_market,EQUITY
+ZGNX,zogenix,"Zogenix, Inc.",NASDAQ,us_market,EQUITY
+NTGR,,"NETGEAR, Inc.",NASDAQ,us_market,EQUITY
+VRAY,,"ViewRay, Inc.",NASDAQ,us_market,EQUITY
+PAHC,phibro-animal-health-corporation,Phibro Animal Health Corporation,NASDAQ,us_market,EQUITY
+VAXX,vaxxinity,"Vaxxinity, Inc.",NASDAQ,us_market,EQUITY
+ORGN,,"Origin Materials, Inc.",NASDAQ,us_market,EQUITY
+ONEW,,OneWater Marine Inc.,NASDAQ,us_market,EQUITY
+TCX,,Tucows Inc.,NASDAQ,us_market,EQUITY
+BITF,bitfarms,Bitfarms Ltd.,NASDAQ,us_market,EQUITY
+AIRS,,"AirSculpt Technologies, Inc.",NASDAQ,us_market,EQUITY
+DAWN,,"Day One Biopharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+NFBK,,"Northfield Bancorp, Inc.",NASDAQ,us_market,EQUITY
+RAPT,rapt-therapeutics,"RAPT Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+KURA,kura-oncology,"Kura Oncology, Inc.",NASDAQ,us_market,EQUITY
+MGNX,macrogenics,"MacroGenics, Inc.",NASDAQ,us_market,EQUITY
+HRTX,heron-therapeutics,"Heron Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+PRDO,,Perdoceo Education Corporation,NASDAQ,us_market,EQUITY
+DGII,,Digi International Inc.,NASDAQ,us_market,EQUITY
+SWBI,smith-and-wesson,"Smith & Wesson Brands, Inc.",NASDAQ,us_market,EQUITY
+NN,,NextNav Inc.,NASDAQ,us_market,EQUITY
+LOVE,lovesac,The Lovesac Company,NASDAQ,us_market,EQUITY
+CSII,,"Cardiovascular Systems, Inc.",NASDAQ,us_market,EQUITY
+PLL,,Piedmont Lithium Inc.,NASDAQ,us_market,EQUITY
+IMVT,immunovant,"Immunovant, Inc.",NASDAQ,us_market,EQUITY
+PAYA,,Paya Holdings Inc.,NASDAQ,us_market,EQUITY
+TRVG,trivago,trivago N.V.,NASDAQ,us_market,EQUITY
+EWTX,,"Edgewise Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+GEVO,gevo,"Gevo, Inc.",NASDAQ,us_market,EQUITY
+ARQT,,"Arcutis Biotherapeutics, Inc.",NASDAQ,us_market,EQUITY
+BCOR,blucora,"Blucora, Inc.",NASDAQ,us_market,EQUITY
+HWKN,,"Hawkins, Inc.",NASDAQ,us_market,EQUITY
+CIFR,cipher-mining,Cipher Mining Inc.,NASDAQ,us_market,EQUITY
+JYNT,the-joint-chiropractic,The Joint Corp.,NASDAQ,us_market,EQUITY
+MERC,,Mercer International Inc.,NASDAQ,us_market,EQUITY
+AMSWA,,"American Software, Inc.",NASDAQ,us_market,EQUITY
+FBMS,,"The First Bancshares, Inc.",NASDAQ,us_market,EQUITY
+VLDR,velodyne-lidar,"Velodyne Lidar, Inc.",NASDAQ,us_market,EQUITY
+ARCT,arcturus-therapeutics,Arcturus Therapeutics Holdings Inc.,NASDAQ,us_market,EQUITY
+NTUS,,Natus Medical Incorporated,NASDAQ,us_market,EQUITY
+INDT,,"INDUS Realty Trust, Inc.",NASDAQ,us_market,EQUITY
+BOOM,dmc-global,DMC Global Inc.,NASDAQ,us_market,EQUITY
+DSGN,,"Design Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+RICK,rci-hospitality-holdings,"RCI Hospitality Holdings, Inc.",NASDAQ,us_market,EQUITY
+CTBI,,"Community Trust Bancorp, Inc.",NASDAQ,us_market,EQUITY
+MGTX,,MeiraGTx Holdings plc,NASDAQ,us_market,EQUITY
+OPRA,,Opera Limited,NASDAQ,us_market,EQUITY
+ELMS,,"Electric Last Mile Solutions, Inc.",NASDAQ,us_market,EQUITY
+PTSI,p-a-resources-berhad,"P.A.M. Transportation Services, Inc.",NASDAQ,us_market,EQUITY
+NSSC,,"NAPCO Security Technologies, Inc.",NASDAQ,us_market,EQUITY
+CNTA,,Centessa Pharmaceuticals plc,NASDAQ,us_market,EQUITY
+CFB,,"CrossFirst Bankshares, Inc.",NASDAQ,us_market,EQUITY
+WINA,,Winmark Corporation,NASDAQ,us_market,EQUITY
+HAFC,,Hanmi Financial Corporation,NASDAQ,us_market,EQUITY
+GSBC,,"Great Southern Bancorp, Inc.",NASDAQ,us_market,EQUITY
+FMBH,,"First Mid Bancshares, Inc.",NASDAQ,us_market,EQUITY
+QSI,,Quantum-Si Incorporated,NASDAQ,us_market,EQUITY
+IPSC,,"Century Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+HONE,,"HarborOne Bancorp, Inc.",NASDAQ,us_market,EQUITY
+STRL,,Sterling Construction Company Inc,NASDAQ,us_market,EQUITY
+VNDA,,Vanda Pharmaceuticals Inc.,NASDAQ,us_market,EQUITY
+DOYU,douyu-international,DouYu International Holdings Limited,NASDAQ,us_market,EQUITY
+HSTM,,"HealthStream, Inc.",NASDAQ,us_market,EQUITY
+OB,,Outbrain Inc.,NASDAQ,us_market,EQUITY
+OCGN,ocugen,"Ocugen, Inc.",NASDAQ,us_market,EQUITY
+DMLP,,"Dorchester Minerals, L.P.",NASDAQ,us_market,EQUITY
+LYLT,,Loyalty Ventures Inc.,NASDAQ,us_market,EQUITY
+FFIC,,Flushing Financial Corporation,NASDAQ,us_market,EQUITY
+DHC,,Diversified Healthcare Trust,NASDAQ,us_market,EQUITY
+RNA,,"Avidity Biosciences, Inc.",NASDAQ,us_market,EQUITY
+CBTX,,"CBTX, Inc.",NASDAQ,us_market,EQUITY
+MXCT,,"MaxCyte, Inc.",NASDAQ,us_market,EQUITY
+ENDP,endo-international-plc,Endo International plc,NASDAQ,us_market,EQUITY
+NOTV,,"Inotiv, Inc.",NASDAQ,us_market,EQUITY
+CVGW,calavo-growers,"Calavo Growers, Inc.",NASDAQ,us_market,EQUITY
+NWLI,,"National Western Life Group, Inc.",NASDAQ,us_market,EQUITY
+RUBY,rubius-therapeutics,"Rubius Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+BRY,,Berry Corporation (bry),NASDAQ,us_market,EQUITY
+HCCI,,"Heritage-Crystal Clean, Inc.",NASDAQ,us_market,EQUITY
+SGHT,,"Sight Sciences, Inc.",NASDAQ,us_market,EQUITY
+TITN,,Titan Machinery Inc.,NASDAQ,us_market,EQUITY
+HTBK,,Heritage Commerce Corp,NASDAQ,us_market,EQUITY
+VTYX,,"Ventyx Biosciences, Inc.",NASDAQ,us_market,EQUITY
+LQDT,liquidity-services,"Liquidity Services, Inc.",NASDAQ,us_market,EQUITY
+PMVP,,"PMV Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+ETAC,,E.Merge Technology Acquisition Corp.,NASDAQ,us_market,EQUITY
+AGEN,agenus,Agenus Inc.,NASDAQ,us_market,EQUITY
+AKRO,,"Akero Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+BJRI,,"BJ's Restaurants, Inc.",NASDAQ,us_market,EQUITY
+SVFA,,SVF Investment Corp.,NASDAQ,us_market,EQUITY
+KNSA,,"Kiniksa Pharmaceuticals, Ltd.",NASDAQ,us_market,EQUITY
+PRAX,,"Praxis Precision Medicines, Inc.",NASDAQ,us_market,EQUITY
+CMPS,,COMPASS Pathways Plc - American Depository Shares,NASDAQ,us_market,EQUITY
+VITL,,"Vital Farms, Inc.",NASDAQ,us_market,EQUITY
+SIBN,,"SI-BONE, Inc.",NASDAQ,us_market,EQUITY
+CAC,,Camden National Corporation,NASDAQ,us_market,EQUITY
+IIIV,,"i3 Verticals, Inc.",NASDAQ,us_market,EQUITY
+KZR,kezar-life-sciences,"Kezar Life Sciences, Inc.",NASDAQ,us_market,EQUITY
+IMTX,,Immatics N.V.,NASDAQ,us_market,EQUITY
+VSEC,,VSE Corporation,NASDAQ,us_market,EQUITY
+BNGO,bionano-genomics,"Bionano Genomics, Inc.",NASDAQ,us_market,EQUITY
+LBC,,Luther Burbank Corporation,NASDAQ,us_market,EQUITY
+LMACA,,Liberty Media Acquisition Corporation - Series A,NASDAQ,us_market,EQUITY
+MITK,,"Mitek Systems, Inc.",NASDAQ,us_market,EQUITY
+BTWN,,Bridgetown Holdings Limited,NASDAQ,us_market,EQUITY
+MGI,moneygram-international,"Moneygram International, Inc.",NASDAQ,us_market,EQUITY
+DCGO,,DocGo Inc.,NASDAQ,us_market,EQUITY
+ALXO,,ALX Oncology Holdings Inc.,NASDAQ,us_market,EQUITY
+KDNY,,"Chinook Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+DDI,,"DoubleDown Interactive Co., Ltd. - American Depository Shares",NASDAQ,us_market,EQUITY
+USLM,,"United States Lime & Minerals, Inc.",NASDAQ,us_market,EQUITY
+MCRB,seres-therapeutics,"Seres Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+IREN,iris-energy,Iris Energy Limited,NASDAQ,us_market,EQUITY
+KELYB,kelly-services,"Kelly Services, Inc.",NASDAQ,us_market,EQUITY
+KELYA,kelly-services,"Kelly Services, Inc.",NASDAQ,us_market,EQUITY
+TIGR,,UP Fintech Holding Limited,NASDAQ,us_market,EQUITY
+PRPL,purple-innovation,"Purple Innovation, Inc.",NASDAQ,us_market,EQUITY
+CONN,conns,"Conn's, Inc.",NASDAQ,us_market,EQUITY
+CNSL,,"Consolidated Communications Holdings, Inc.",NASDAQ,us_market,EQUITY
+BWMX,,"Betterware de Mexico, S.A.B de C.V.",NASDAQ,us_market,EQUITY
+MCBS,,"MetroCity Bankshares, Inc.",NASDAQ,us_market,EQUITY
+TBPH,theravance-biopharma,"Theravance Biopharma, Inc.",NASDAQ,us_market,EQUITY
+GLUE,,"Monte Rosa Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+TNGX,,"Tango Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+ANIP,,"ANI Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+INGN,inogen,"Inogen, Inc",NASDAQ,us_market,EQUITY
+MSDA,,MSD Acquisition Corp.,NASDAQ,us_market,EQUITY
+SCOA,,ScION Tech Growth I,NASDAQ,us_market,EQUITY
+LGAC,,Lazard Growth Acquisition Corp. I,NASDAQ,us_market,EQUITY
+ASLE,,AerSale Corporation,NASDAQ,us_market,EQUITY
+SLAM,,Slam Corp.,NASDAQ,us_market,EQUITY
+MAPS,,"WM Technology, Inc.",NASDAQ,us_market,EQUITY
+TRNS,,"Transcat, Inc.",NASDAQ,us_market,EQUITY
+VXRT,vaxart,"Vaxart, Inc. - Common Stock",NASDAQ,us_market,EQUITY
+RUTH,ruths-hospitality-group,"Ruth's Hospitality Group, Inc.",NASDAQ,us_market,EQUITY
+PGC,,Peapack-Gladstone Financial Corporation,NASDAQ,us_market,EQUITY
+CRBU,,"Caribou Biosciences, Inc.",NASDAQ,us_market,EQUITY
+SP,,SP Plus Corporation,NASDAQ,us_market,EQUITY
+TRMD,,TORM plc,NASDAQ,us_market,EQUITY
+STOK,,"Stoke Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+GNOG,golden-nugget-online-gaming,"Golden Nugget Online Gaming, Inc.",NASDAQ,us_market,EQUITY
+HMPT,,Home Point Capital Inc.,NASDAQ,us_market,EQUITY
+TRST,,TrustCo Bank Corp NY,NASDAQ,us_market,EQUITY
+VINP,,Vinci Partners Investments Ltd.,NASDAQ,us_market,EQUITY
+EHTH,ehealth,"eHealth, Inc.",NASDAQ,us_market,EQUITY
+TA,travelcenters-of-america,TravelCenters of America Inc.,NASDAQ,us_market,EQUITY
+IGMS,,"IGM Biosciences, Inc.",NASDAQ,us_market,EQUITY
+GSEV,,"Gores Holdings VII, Inc.",NASDAQ,us_market,EQUITY
+OSPN,,OneSpan Inc.,NASDAQ,us_market,EQUITY
+SLN,,Silence Therapeutics Plc - American Depository Share,NASDAQ,us_market,EQUITY
+SRRK,,Scholar Rock Holding Corporation,NASDAQ,us_market,EQUITY
+ACBI,,"Atlantic Capital Bancshares, Inc.",NASDAQ,us_market,EQUITY
+NEWT,,Newtek Business Services Corp.,NASDAQ,us_market,EQUITY
+SOHU,sohu-com,Sohu.com Limited,NASDAQ,us_market,EQUITY
+JANX,,"Janux Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+AMRK,a-mark-precious-metals,"A-Mark Precious Metals, Inc.",NASDAQ,us_market,EQUITY
+CCB,,Coastal Financial Corporation,NASDAQ,us_market,EQUITY
+LGO,,Largo Inc.,NASDAQ,us_market,EQUITY
+ACRS,aclaris-therapeutics,"Aclaris Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+LX,lexinfintech,LexinFintech Holdings Ltd.,NASDAQ,us_market,EQUITY
+KVSC,,Khosla Ventures Acquisition Co. III,NASDAQ,us_market,EQUITY
+CUTR,,"Cutera, Inc.",NASDAQ,us_market,EQUITY
+GRPN,groupon,"Groupon, Inc.",NASDAQ,us_market,EQUITY
+VIEW,view,"View, Inc.",NASDAQ,us_market,EQUITY
+IDYA,,"IDEAYA Biosciences, Inc.",NASDAQ,us_market,EQUITY
+DMRC,,Digimarc Corporation,NASDAQ,us_market,EQUITY
+BLI,berkeley-lights,"Berkeley Lights, Inc.",NASDAQ,us_market,EQUITY
+CRAI,,"CRA International,Inc.",NASDAQ,us_market,EQUITY
+OFIX,orthofix-medical,Orthofix Medical Inc.,NASDAQ,us_market,EQUITY
+DICE,,"DICE Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+ALVR,,"AlloVir, Inc.",NASDAQ,us_market,EQUITY
+ATNI,,"ATN International, Inc.",NASDAQ,us_market,EQUITY
+CATC,,Cambridge Bancorp,NASDAQ,us_market,EQUITY
+CRMT,,"America's Car-Mart, Inc.",NASDAQ,us_market,EQUITY
+HIII,,Hudson Executive Investment Corp. III,NASDAQ,us_market,EQUITY
+ROOT,root,"Root, Inc.",NASDAQ,us_market,EQUITY
+MVIS,microvision,"MicroVision, Inc.",NASDAQ,us_market,EQUITY
+VERI,veritone,"Veritone, Inc.",NASDAQ,us_market,EQUITY
+PGEN,precigen,"Precigen, Inc.",NASDAQ,us_market,EQUITY
+LE,,"Lands' End, Inc.",NASDAQ,us_market,EQUITY
+IMXI,,"International Money Express, Inc.",NASDAQ,us_market,EQUITY
+CPRX,catalyst-pharmaceuticals,"Catalyst Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+IMGO,,"Imago BioSciences, Inc.",NASDAQ,us_market,EQUITY
+TOI,,"The Oncology Institute, Inc.",NASDAQ,us_market,EQUITY
+CALT,,Calliditas Therapeutics AB,NASDAQ,us_market,EQUITY
+STKL,,"SunOpta, Inc.",NASDAQ,us_market,EQUITY
+SRDX,,"Surmodics, Inc.",NASDAQ,us_market,EQUITY
+KNTE,kinnate-biopharma,Kinnate Biopharma Inc.,NASDAQ,us_market,EQUITY
+CMAX,,"CareMax, Inc.",NASDAQ,us_market,EQUITY
+BLU,bellus-health,BELLUS Health Inc.,NASDAQ,us_market,EQUITY
+BMRC,,Bank of Marin Bancorp,NASDAQ,us_market,EQUITY
+INNV,,InnovAge Holding Corp.,NASDAQ,us_market,EQUITY
+CMBM,cambium-networks,Cambium Networks Corporation,NASDAQ,us_market,EQUITY
+COLL,,"Collegium Pharmaceutical, Inc.",NASDAQ,us_market,EQUITY
+MESO,mesoblast,Mesoblast Limited,NASDAQ,us_market,EQUITY
+UPLD,upland-software,"Upland Software, Inc.",NASDAQ,us_market,EQUITY
+CARA,cara-therapeutics,"Cara Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+SWIR,,"Sierra Wireless, Inc.",NASDAQ,us_market,EQUITY
+LEGH,,Legacy Housing Corporation,NASDAQ,us_market,EQUITY
+OSBC,,"Old Second Bancorp, Inc.",NASDAQ,us_market,EQUITY
+UFCS,,"United Fire Group, Inc",NASDAQ,us_market,EQUITY
+CFIV,,CF Acquisition Corp. IV,NASDAQ,us_market,EQUITY
+GET,,Getnet Adquirencia e Servicos para Meios de Pagamento S.A.,NASDAQ,us_market,EQUITY
+AMYT,,Amryt Pharma plc,NASDAQ,us_market,EQUITY
+ICVX,,"Icosavax, Inc.",NASDAQ,us_market,EQUITY
+FHTX,,Foghorn Therapeutics Inc.,NASDAQ,us_market,EQUITY
+HNST,the-honest-company,"The Honest Company, Inc.",NASDAQ,us_market,EQUITY
+NGMS,neogames,NeoGames S.A.,NASDAQ,us_market,EQUITY
+METC,ramaco-resources,"Ramaco Resources, Inc.",NASDAQ,us_market,EQUITY
+ABSI,,Absci Corporation,NASDAQ,us_market,EQUITY
+PEAR,,"Pear Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+LCA,landcadia-holdings-ii-inc,"Landcadia Holdings IV, Inc.",NASDAQ,us_market,EQUITY
+WKHS,workhorse,"Workhorse Group, Inc.",NASDAQ,us_market,EQUITY
+BZFD,,"BuzzFeed, Inc.",NASDAQ,us_market,EQUITY
+VWE,,"Vintage Wine Estates, Inc.",NASDAQ,us_market,EQUITY
+EGRX,,"Eagle Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+GREE,greenidge-generation,Greenidge Generation Holdings Inc.,NASDAQ,us_market,EQUITY
+YORW,,The York Water Company,NASDAQ,us_market,EQUITY
+CMTL,,Comtech Telecommunications Corp.,NASDAQ,us_market,EQUITY
+RPTX,,Repare Therapeutics Inc.,NASDAQ,us_market,EQUITY
+ATRS,,"Antares Pharma, Inc.",NASDAQ,us_market,EQUITY
+IRCP,,IRSA Propiedades Comerciales S.A. - American Depository Shares,NASDAQ,us_market,EQUITY
+KPTI,karyopharm-therapeutics,Karyopharm Therapeutics Inc.,NASDAQ,us_market,EQUITY
+RGP,,"Resources Connection, Inc.",NASDAQ,us_market,EQUITY
+HCKT,,"The Hackett Group, Inc.",NASDAQ,us_market,EQUITY
+PETQ,,"PetIQ, Inc.",NASDAQ,us_market,EQUITY
+MSBI,,"Midland States Bancorp, Inc.",NASDAQ,us_market,EQUITY
+BLUE,bluebird-bio,"bluebird bio, Inc.",NASDAQ,us_market,EQUITY
+AVIR,atea-pharmaceuticals,"Atea Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+MMAT,meta,Meta Materials Inc.,NASDAQ,us_market,EQUITY
+DSKE,daseke,"Daseke, Inc.",NASDAQ,us_market,EQUITY
+ADGI,adagio,"Adagio Therapeutics, Inc.",NASDAQ,us_market,EQUITY
+CTLP,,"Cantaloupe, Inc.",NASDAQ,us_market,EQUITY
+EGLE,,Eagle Bulk Shipping Inc.,NASDAQ,us_market,EQUITY
+PHAR,,Pharming Group N.V.,NASDAQ,us_market,EQUITY
+DHIL,,"Diamond Hill Investment Group, Inc.",NASDAQ,us_market,EQUITY
+OSUR,orasure-technologies,"OraSure Technologies, Inc.",NASDAQ,us_market,EQUITY
+CINC,,"CinCor Pharma, Inc.",NASDAQ,us_market,EQUITY
+RIDE,lordstown-motors,Lordstown Motors Corp.,NASDAQ,us_market,EQUITY
+RMGC,,RMG Acquisition Corp. III,NASDAQ,us_market,EQUITY
+THFF,,First Financial Corporation Indiana,NASDAQ,us_market,EQUITY
+NYXH,,Nyxoah SA,NASDAQ,us_market,EQUITY
+MBWM,,Mercantile Bank Corporation,NASDAQ,us_market,EQUITY
+FCBC,,"First Community Bankshares, Inc.",NASDAQ,us_market,EQUITY
+NUVL,,"Nuvalent, Inc.",NASDAQ,us_market,EQUITY
+BFST,,"Business First Bancshares, Inc.",NASDAQ,us_market,EQUITY
+CSWC,,Capital Southwest Corporation,NASDAQ,us_market,EQUITY
+HUMA,,"Humacyte, Inc.",NASDAQ,us_market,EQUITY
+EQBK,,"Equity Bancshares, Inc.",NASDAQ,us_market,EQUITY
+GRPH,,"Graphite Bio, Inc.",NASDAQ,us_market,EQUITY
+HEPS,d-market-electronic,D-Market Electronic Services & Trading,NASDAQ,us_market,EQUITY
+NNOX,nano-x,NANO-X IMAGING LTD,NASDAQ,us_market,EQUITY
+ZY,zymergen,Zymergen Inc.,NASDAQ,us_market,EQUITY
+CGEM,,"Cullinan Oncology, Inc.",NASDAQ,us_market,EQUITY
+BIOX,bioceres-crop-solutions,Bioceres Crop Solutions Corp.,NASDAQ,us_market,EQUITY
+YELL,yellow-corporation,Yellow Corporation,NASDAQ,us_market,EQUITY
+AMOT,,"Allied Motion Technologies, Inc.",NASDAQ,us_market,EQUITY
+AROW,,Arrow Financial Corporation,NASDAQ,us_market,EQUITY

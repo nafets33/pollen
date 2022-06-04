@@ -1,0 +1,16 @@
+symbol,shortName,longName,exchange,market,quoteType
+SLB,schlumberger,Schlumberger N.V.,NYSE,us_market,EQUITY
+HAL,halliburton,Halliburton Company,NYSE,us_market,EQUITY
+NOV,national-oilwell-varco,NOV Inc.,NYSE,us_market,EQUITY
+CHX,championx,ChampionX Corporation,NASDAQ,us_market,EQUITY
+WHD,cactus-inc,"Cactus, Inc. Class A Common Stock",NYSE,us_market,EQUITY
+HP,helmerich-payne,"Helmerich & Payne, Inc.",NYSE,us_market,EQUITY
+RIG,transocean-limited,Transocean Ltd (Switzerland),NYSE,us_market,EQUITY
+LBRT,liberty-oilfield-services,Liberty Oilfield Services Inc.,NYSE,us_market,EQUITY
+USAC,usa-compression-partners,"USA Compression Partners, LP",NYSE,us_market,EQUITY
+GLNG,golar-lng-limited,Golar LNG Limited,NASDAQ,us_market,EQUITY
+OII,oceaneering-international,"Oceaneering International, Inc.",NYSE,us_market,EQUITY
+CLB,core-laboratories,Core Laboratories N.V.,NYSE,us_market,EQUITY
+NBR,nabors-industries,Nabors Industries Ltd.,NYSE,us_market,EQUITY
+DRQ,dril-quip,"Dril-Quip, Inc.",NYSE,us_market,EQUITY
+OIS,oil-states-international,"Oil States International, Inc.",NYSE,us_market,EQUITY

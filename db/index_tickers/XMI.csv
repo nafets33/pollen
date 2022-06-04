@@ -1,0 +1,21 @@
+symbol,shortName,longName,exchange,market,quoteType
+MSFT,microsoft,Microsoft Corporation,NASDAQ,us_market,EQUITY
+JPM,jpmorgan-chase,JP Morgan Chase & Co.,NYSE,us_market,EQUITY
+JNJ,johnson-and-johnson,Johnson & Johnson,NYSE,us_market,EQUITY
+WMT,walmart,Walmart Inc.,NYSE,us_market,EQUITY
+PG,procter-and-gamble,Procter & Gamble Company (The),NYSE,us_market,EQUITY
+XOM,exxon,Exxon Mobil Corporation,NYSE,us_market,EQUITY
+DIS,walt-disney,Walt Disney Company (The),NYSE,us_market,EQUITY
+KO,coca-cola,Coca-Cola Company (The),NYSE,us_market,EQUITY
+CVX,chevron,Chevron Corporation,NYSE,us_market,EQUITY
+WFC,wells-fargo,Wells Fargo & Company,NYSE,us_market,EQUITY
+MRK,merck-and-co,"Merck & Company, Inc.",NYSE,us_market,EQUITY
+MCD,mcdonalds,McDonald's Corporation,NYSE,us_market,EQUITY
+BA,boeing,Boeing Company (The),NYSE,us_market,EQUITY
+AXP,american-express,American Express Company,NYSE,us_market,EQUITY
+IBM,international-bus-mach,International Business Machines Corporation,NYSE,us_market,EQUITY
+GE,general-electric,General Electric Company,NYSE,us_market,EQUITY
+MMM,3m,3M Company,NYSE,us_market,EQUITY
+DOW,dow,Dow Inc.,NYSE,us_market,EQUITY
+DD,dupont-de-nemours,"DuPont de Nemours, Inc.",NYSE,us_market,EQUITY
+HPQ,hp,HP Inc.,NYSE,us_market,EQUITY

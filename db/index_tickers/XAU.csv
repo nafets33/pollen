@@ -1,0 +1,31 @@
+symbol,shortName,longName,exchange,market,quoteType
+FCX,freeport-mcmoran,"Freeport-McMoRan, Inc.",NYSE,us_market,EQUITY
+NEM,newmont,Newmont Corporation,NYSE,us_market,EQUITY
+GOLD,barrick-gold,Barrick Gold Corporation,NYSE,us_market,EQUITY
+FNV,franco-nevada,Franco-Nevada Corporation,NYSE,us_market,EQUITY
+WPM,wheaton-precious-metals,Wheaton Precious Metals Corp,NYSE,us_market,EQUITY
+AEM,agnico-eagle-mines,Agnico Eagle Mines Limited,NYSE,us_market,EQUITY
+SBSW,sibanye-stillwater,D/B/A Sibanye-Stillwater Limited,NYSE,us_market,EQUITY
+GFI,gold-fields,Gold Fields Limited,NYSE,us_market,EQUITY
+AU,anglogold-ashanti,AngloGold Ashanti Limited,NYSE,us_market,EQUITY
+KGC,kinross-gold,Kinross Gold Corporation,NYSE,us_market,EQUITY
+RGLD,royal-gold,"Royal Gold, Inc.",NASDAQ,us_market,EQUITY
+PAAS,pan-american-silver,Pan American Silver Corp.,NASDAQ,us_market,EQUITY
+AUY,yamana-gold,Yamana Gold Inc.,NYSE,us_market,EQUITY
+BTG,b2gold,B2Gold Corp,AMEX,us_market,EQUITY
+SSRM,ssr-mining,SSR Mining Inc.,NASDAQ,us_market,EQUITY
+AGI,alamos-gold,Alamos Gold Inc.,NYSE,us_market,EQUITY
+HL,hecla-mining,Hecla Mining Company,NYSE,us_market,EQUITY
+AG,first-majestic-silver,First Majestic Silver Corp.,NYSE,us_market,EQUITY
+HMY,harmony-gold,Harmony Gold Mining Company Limited,NYSE,us_market,EQUITY
+NG,novagold-resources,Novagold Resources Inc.,AMEX,us_market,EQUITY
+BVN,compania-de-minas-buenaventura-sa,Buenaventura Mining Company Inc.,NYSE,us_market,EQUITY
+EGO,eldorado-gold,Eldorado Gold Corporation,NYSE,us_market,EQUITY
+MAG,mag-silver,MAG Silver Corporation,AMEX,us_market,EQUITY
+CDE,coeur-mining,"Coeur Mining, Inc.",NYSE,us_market,EQUITY
+IAG,iamgold,Iamgold Corporation,NYSE,us_market,EQUITY
+SA,,"Seabridge Gold, Inc.",NYSE,us_market,EQUITY
+SAND,sandstorm-gold,Sandstorm Gold Ltd.,NYSE,us_market,EQUITY
+NGD,new-gold,New Gold Inc.,AMEX,us_market,EQUITY
+MUX,mcewen-mining,McEwen Mining Inc.,NYSE,us_market,EQUITY
+GORO,,Gold Resource Corporation,AMEX,us_market,EQUITY

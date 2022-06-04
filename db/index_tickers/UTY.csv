@@ -1,0 +1,21 @@
+symbol,shortName,longName,exchange,market,quoteType
+NEE,nextera-energy,"NextEra Energy, Inc.",NYSE,us_market,EQUITY
+DUK,duke-energy,Duke Energy Corporation (Holding Company),NYSE,us_market,EQUITY
+SO,southern,Southern Company (The),NYSE,us_market,EQUITY
+D,dominion-energy,"Dominion Energy, Inc.",NYSE,us_market,EQUITY
+EXC,exelon,Exelon Corporation,NASDAQ,us_market,EQUITY
+AEP,american-electric-power,"American Electric Power Company, Inc.",NASDAQ,us_market,EQUITY
+XEL,xcel-energy,Xcel Energy Inc.,NASDAQ,us_market,EQUITY
+PEG,public-service-enterprise,Public Service Enterprise Group Incorporated,NYSE,us_market,EQUITY
+WEC,wec-energy,"WEC Energy Group, Inc.",NYSE,us_market,EQUITY
+ES,eversource-energy,Eversource Energy (D/B/A),NYSE,us_market,EQUITY
+AWK,american-water-works,"American Water Works Company, Inc.",NYSE,us_market,EQUITY
+ED,consolidated-edison,"Consolidated Edison, Inc.",NYSE,us_market,EQUITY
+EIX,edison-international,Edison International,NYSE,us_market,EQUITY
+FE,firstenergy,FirstEnergy Corp.,NYSE,us_market,EQUITY
+DTE,dte-energy,DTE Energy Company,NYSE,us_market,EQUITY
+AEE,ameren,Ameren Corporation,NYSE,us_market,EQUITY
+ETR,entergy,Entergy Corporation,NYSE,us_market,EQUITY
+CNP,centerpoint-energy,"CenterPoint Energy, Inc (Holding Co)",NYSE,us_market,EQUITY
+AES,aes,The AES Corporation,NYSE,us_market,EQUITY
+PNW,pinnacle-west-capital,Pinnacle West Capital Corporation,NYSE,us_market,EQUITY

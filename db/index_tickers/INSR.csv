@@ -1,0 +1,51 @@
+symbol,shortName,longName,exchange,market,quoteType
+PFG,principal,Principal Financial Group Inc,NASDAQ,us_market,EQUITY
+CINF,cincinnati-financial,Cincinnati Financial Corporation,NASDAQ,us_market,EQUITY
+ACGL,arch-capital,Arch Capital Group Ltd.,NASDAQ,us_market,EQUITY
+ERIE,erie-indemnity,Erie Indemnity Company,NASDAQ,us_market,EQUITY
+ANAT,american-national-insurance,"American National Group, Inc.",NASDAQ,us_market,EQUITY
+SIGI,selective-insurance,"Selective Insurance Group, Inc.",NASDAQ,us_market,EQUITY
+ESGR,enstar-group,Enstar Group Limited,NASDAQ,us_market,EQUITY
+BHF,brighthouse-finl,"Brighthouse Financial, Inc.",NASDAQ,us_market,EQUITY
+EBC,,"Eastern Bankshares, Inc.",NASDAQ,us_market,EQUITY
+TRUP,trupanion,"Trupanion, Inc.",NASDAQ,us_market,EQUITY
+GSHD,,"Goosehead Insurance, Inc.",NASDAQ,us_market,EQUITY
+BRP,brp-group,"BRP Group, Inc.",NASDAQ,us_market,EQUITY
+STFC,state-auto-financial,State Auto Financial Corporation,NASDAQ,us_market,EQUITY
+NMIH,nmi-holdings,NMI Holdings Inc,NASDAQ,us_market,EQUITY
+PLMR,palomar-holdings,"Palomar Holdings, Inc.",NASDAQ,us_market,EQUITY
+SAFT,safety-insurance,"Safety Insurance Group, Inc.",NASDAQ,us_market,EQUITY
+JRVR,james-river-group-holdings,"James River Group Holdings, Ltd.",NASDAQ,us_market,EQUITY
+AMSF,,"AMERISAFE, Inc.",NASDAQ,us_market,EQUITY
+GOCO,,"GoHealth, Inc.",NASDAQ,us_market,EQUITY
+NWLI,,"National Western Life Group, Inc.",NASDAQ,us_market,EQUITY
+EHTH,ehealth,"eHealth, Inc.",NASDAQ,us_market,EQUITY
+ROOT,root,"Root, Inc.",NASDAQ,us_market,EQUITY
+UFCS,,"United Fire Group, Inc",NASDAQ,us_market,EQUITY
+TIPT,,Tiptree Inc.,NASDAQ,us_market,EQUITY
+DGICB,,"Donegal Group, Inc.",NASDAQ,us_market,EQUITY
+DGICA,,"Donegal Group, Inc.",NASDAQ,us_market,EQUITY
+TIG,,"Trean Insurance Group, Inc.",NASDAQ,us_market,EQUITY
+ITIC,,Investors Title Company,NASDAQ,us_market,EQUITY
+NODK,,"NI Holdings, Inc.",NASDAQ,us_market,EQUITY
+IGIC,international-general-insurance,International General Insurance Holdings Ltd.,NASDAQ,us_market,EQUITY
+FANH,fanhua,Fanhua Inc.,NASDAQ,us_market,EQUITY
+GWGH,gwg-holdings,"GWG Holdings, Inc",NASDAQ,us_market,EQUITY
+MHLD,,"Maiden Holdings, Ltd.",NASDAQ,us_market,EQUITY
+GLRE,,"Greenlight Reinsurance, Ltd.",NASDAQ,us_market,EQUITY
+MILE,metromile,"Metromile, Inc.",NASDAQ,us_market,EQUITY
+UIHC,,United Insurance Holdings Corp.,NASDAQ,us_market,EQUITY
+VERY,,"Vericity, Inc.",NASDAQ,us_market,EQUITY
+RELI,,"Reliance Global Group, Inc.",NASDAQ,us_market,EQUITY
+HALL,,"Hallmark Financial Services, Inc.",NASDAQ,us_market,EQUITY
+MDWT,,Midwest Holding Inc.,NASDAQ,us_market,EQUITY
+HUIZ,,Huize Holding Limited,NASDAQ,us_market,EQUITY
+KINS,,"Kingstone Companies, Inc",NASDAQ,us_market,EQUITY
+AAME,,Atlantic American Corporation,NASDAQ,us_market,EQUITY
+ICCH,,"ICC Holdings, Inc.",NASDAQ,us_market,EQUITY
+OXBR,oxbridge-re,Oxbridge Re Holdings Limited,NASDAQ,us_market,EQUITY
+FNHC,,FedNat Holding Company,NASDAQ,us_market,EQUITY
+CNFR,,"Conifer Holdings, Inc.",NASDAQ,us_market,EQUITY
+NSEC,,"National Security Group, Inc.",NASDAQ,us_market,EQUITY
+UNAM,,Unico American Corporation,NASDAQ,us_market,EQUITY
+TIRX,tian-ruixiang,TIAN RUIXIANG Holdings Ltd,NASDAQ,us_market,EQUITY

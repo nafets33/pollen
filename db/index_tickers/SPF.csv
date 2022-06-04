@@ -1,0 +1,67 @@
+symbol,shortName,longName,exchange,market,quoteType
+BRK.B,berkshire-hathaway,Berkshire Hathaway Inc. New,NYSE,us_market,EQUITY
+JPM,jpmorgan-chase,JP Morgan Chase & Co.,NYSE,us_market,EQUITY
+BAC,bank-of-america,Bank of America Corporation,NYSE,us_market,EQUITY
+WFC,wells-fargo,Wells Fargo & Company,NYSE,us_market,EQUITY
+MS,morgan-stanley,Morgan Stanley,NYSE,us_market,EQUITY
+SCHW,schwab,Charles Schwab Corporation (The),NYSE,us_market,EQUITY
+C,citigroup,"Citigroup, Inc.",NYSE,us_market,EQUITY
+BLK,blackrock,"BlackRock, Inc.",NYSE,us_market,EQUITY
+AXP,american-express,American Express Company,NYSE,us_market,EQUITY
+GS,goldman-sachs,"Goldman Sachs Group, Inc. (The)",NYSE,us_market,EQUITY
+SPGI,s-and-p-global,S&P Global Inc.,NYSE,us_market,EQUITY
+PNC,pnc-financial,"PNC Financial Services Group, Inc. (The)",NYSE,us_market,EQUITY
+USB,us-bancorp,U.S. Bancorp,NYSE,us_market,EQUITY
+TFC,truist-financial,Truist Financial Corporation,NYSE,us_market,EQUITY
+CB,chubb,Chubb Limited,NYSE,us_market,EQUITY
+MMC,marsh-and-mclennan,"Marsh & McLennan Companies, Inc.",NYSE,us_market,EQUITY
+CME,cme,CME Group Inc.,NASDAQ,us_market,EQUITY
+ICE,intercontinental-exchange,Intercontinental Exchange Inc.,NYSE,us_market,EQUITY
+COF,capital-one,Capital One Financial Corporation,NYSE,us_market,EQUITY
+MCO,moodys,Moody's Corporation,NYSE,us_market,EQUITY
+PGR,progressive-ohio,Progressive Corporation (The),NYSE,us_market,EQUITY
+AON,aon,Aon plc,NYSE,us_market,EQUITY
+MET,metlife,"MetLife, Inc.",NYSE,us_market,EQUITY
+BK,bank-of-new-york-mellon,The Bank of New York Mellon Corporation,NYSE,us_market,EQUITY
+AIG,american-international-group,"American International Group, Inc. New",NYSE,us_market,EQUITY
+PRU,prudential,"Prudential Financial, Inc.",NYSE,us_market,EQUITY
+MSCI,msci,MSCI Inc,NYSE,us_market,EQUITY
+AFL,aflac,AFLAC Incorporated,NYSE,us_market,EQUITY
+SIVB,svb-financial,SVB Financial Group,NASDAQ,us_market,EQUITY
+TRV,travelers,"The Travelers Companies, Inc.",NYSE,us_market,EQUITY
+TROW,holdings,"T. Rowe Price Group, Inc.",NASDAQ,us_market,EQUITY
+STT,state-street,State Street Corporation,NYSE,us_market,EQUITY
+DFS,discover-financial-services,Discover Financial Services,NYSE,us_market,EQUITY
+AMP,ameriprise-financial,"Ameriprise Financial, Inc.",NYSE,us_market,EQUITY
+ALL,allstate,Allstate Corporation (The),NYSE,us_market,EQUITY
+FRC,first-republic-bank-san-francisco,FIRST REPUBLIC BANK,NYSE,us_market,EQUITY
+FITB,fifth-third-bancorp,Fifth Third Bancorp,NASDAQ,us_market,EQUITY
+AJG,gallagher,Arthur J. Gallagher & Co.,NYSE,us_market,EQUITY
+NDAQ,nasdaq,"Nasdaq, Inc.",NASDAQ,us_market,EQUITY
+NTRS,northern-trust,Northern Trust Corporation,NASDAQ,us_market,EQUITY
+SYF,synchrony,Synchrony Financial,NYSE,us_market,EQUITY
+HBAN,huntington-bancshares,Huntington Bancshares Incorporated,NASDAQ,us_market,EQUITY
+KEY,keycorp,KeyCorp,NYSE,us_market,EQUITY
+HIG,hartford-financial-services-grp,"Hartford Financial Services Group, Inc. (The)",NYSE,us_market,EQUITY
+RF,regions-financial,Regions Financial Corporation,NYSE,us_market,EQUITY
+CFG,citizens-financial-group,"Citizens Financial Group, Inc.",NYSE,us_market,EQUITY
+MTB,m-and-t-bank,M&T Bank Corporation,NYSE,us_market,EQUITY
+RJF,raymond-james,"Raymond James Financial, Inc.",NYSE,us_market,EQUITY
+SBNY,signature-bank,Signature Bank,NASDAQ,us_market,EQUITY
+PFG,principal,Principal Financial Group Inc,NASDAQ,us_market,EQUITY
+CINF,cincinnati-financial,Cincinnati Financial Corporation,NASDAQ,us_market,EQUITY
+BRO,brown-and-brown,"Brown & Brown, Inc.",NYSE,us_market,EQUITY
+BEN,franklin-resources,"Franklin Resources, Inc.",NYSE,us_market,EQUITY
+FDS,factset-research-systems,FactSet Research Systems Inc.,NYSE,us_market,EQUITY
+L,loews,Loews Corporation,NYSE,us_market,EQUITY
+WRB,berkley-w-r-corp,W.R. Berkley Corporation,NYSE,us_market,EQUITY
+MKTX,marketaxess,"MarketAxess Holdings, Inc.",NASDAQ,us_market,EQUITY
+LNC,lincoln-national,Lincoln National Corporation,NYSE,us_market,EQUITY
+CMA,comerica,Comerica Incorporated,NYSE,us_market,EQUITY
+CBOE,cboe-global-markets,"Cboe Global Markets, Inc.",AMEX,us_market,EQUITY
+IVZ,invesco,Invesco Ltd,NYSE,us_market,EQUITY
+RE,everest-re,"Everest Re Group, Ltd.",NYSE,us_market,EQUITY
+ZION,,Zions Bancorporation N.A.,NASDAQ,us_market,EQUITY
+GL,,Globe Life Inc.,NYSE,us_market,EQUITY
+PBCT,people-s-united-financial,People's,NASDAQ,us_market,EQUITY
+AIZ,assurant,"Assurant, Inc.",NYSE,us_market,EQUITY

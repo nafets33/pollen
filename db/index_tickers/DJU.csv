@@ -1,0 +1,16 @@
+symbol,shortName,longName,exchange,market,quoteType
+NEE,nextera-energy,"NextEra Energy, Inc.",NYSE,us_market,EQUITY
+DUK,duke-energy,Duke Energy Corporation (Holding Company),NYSE,us_market,EQUITY
+SO,southern,Southern Company (The),NYSE,us_market,EQUITY
+D,dominion-energy,"Dominion Energy, Inc.",NYSE,us_market,EQUITY
+EXC,exelon,Exelon Corporation,NASDAQ,us_market,EQUITY
+AEP,american-electric-power,"American Electric Power Company, Inc.",NASDAQ,us_market,EQUITY
+SRE,sempra-energy,DBA Sempra,NYSE,us_market,EQUITY
+XEL,xcel-energy,Xcel Energy Inc.,NASDAQ,us_market,EQUITY
+PEG,public-service-enterprise,Public Service Enterprise Group Incorporated,NYSE,us_market,EQUITY
+AWK,american-water-works,"American Water Works Company, Inc.",NYSE,us_market,EQUITY
+ED,consolidated-edison,"Consolidated Edison, Inc.",NYSE,us_market,EQUITY
+EIX,edison-international,Edison International,NYSE,us_market,EQUITY
+FE,firstenergy,FirstEnergy Corp.,NYSE,us_market,EQUITY
+AES,aes,The AES Corporation,NYSE,us_market,EQUITY
+ATO,atmos-energy,Atmos Energy Corporation,NYSE,us_market,EQUITY

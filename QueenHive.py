@@ -311,6 +311,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         # df['timeblock'] = 
         
         # add to story
+        df['chartdate'] = df['timestamp_est'] # add as new col
         df['name'] = ticker_time
         story[ticker_time] = df
         
@@ -346,7 +347,7 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                     prior_cross = 'buy'
                     buy_c += 1
                 elif now_mac < now_signal and prior_mac >= prior_signal:
-                    cross_list.append('sell_cross')
+                    cross_list.append(f'{"sell_cross"}{"-"}{0}')
                     c = 0
                     prior_cross = 'sell'
                     sell_c += 1

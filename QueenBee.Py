@@ -660,7 +660,7 @@ def pollen_hunt(df_tickers_data, MACD):
 # PollenBee_Charts = pollen_hunt(ticker_list=main_index_tickers)
 
 
-def pollenstory():
+def read_pollenstory():
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
     pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
@@ -754,6 +754,7 @@ while True:
         e = datetime.datetime.now()
         print(queens_chess_piece, str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
        
+
     if queens_chess_piece.lower() == 'workerbee': # return tics
         s = datetime.datetime.now()
         if s > datetime.datetime(s.year, s.month, s.day, 16):
@@ -808,9 +809,6 @@ while True:
             if lastmod > QUEEN[queens_chess_piece]["last_modified"]:
                 QUEEN[queens_chess_piece]["last_modified"] = lastmod
                 
-                spy = pollenstory['SPY_1Minute_1Day']
-                print(spy[['macd_cross', 'macd_slope-3', 'close_slope-3', 'macd', 'nowdate']].tail(5))
-                
                 if prod:
                     def bid_ask_devation(symbol):
                         devation = .01  #(bid - ask) / ask
@@ -846,6 +844,8 @@ while True:
 
 
                     def knight_sight(df): # adds all triggers to dataframe
+                        # ticker_time_frame = df['name'].iloc[-1]
+                        # trigger_dict = {ticker_time_frame: {}}
                         trigger_dict = {}
                         # df = spy  ### test
                         # Mac is very LOW and we are in buy cross
@@ -854,40 +854,50 @@ while True:
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             ((df['macd'] < 0) & (df['macd'] > -.3))
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         trigger = 'buy_RED_tier-2_macdcross'
                         df[trigger] = np.where(
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             ((df['macd'] < -.3) & (df['macd'] > -.5))
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         trigger = 'buy_RED_tier-3_macdcross'
                         df[trigger] = np.where(
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             ((df['macd'] < -.5) & (df['macd'] > -.1))
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         trigger = 'buy_RED_tier-4_macdcross'
                         df[trigger] = np.where(
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             ((df['macd'] < -.1) & (df['macd'] > -.15))
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         trigger = 'buy_RED_tier-5_macdcross'
                         df[trigger] = np.where(
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             (df['macd'] < -.15)
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         # Mac is very LOW and we are in buy cross
                         trigger = 'buy_high-macdcross'
@@ -895,8 +905,10 @@ while True:
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             (df['macd'] < -.1)
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         # Mac is very LOW and we are in buy cross
                         trigger = 'buy_high-macdcross'
@@ -904,8 +916,10 @@ while True:
                             (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
                             (df['macd'] < -.1)
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
                         
                         # Mac is very High and we are in a Sell Cross
                         trigger = 'sell_high-macdcross'
@@ -913,8 +927,10 @@ while True:
                             (df['macd_cross'].str.contains("sell")==True) &
                             (df['macd'] > 1)
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                         # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
                         trigger = 'sell_high-macdcross'
@@ -924,24 +940,26 @@ while True:
                             (df['macd_slope-3'] < .1) &
                             ((df['hist_slope-3'] < .33) |(df['hist_slope-6'] < .10))
                             ,"bee", 'nothing')
-                        if len(df[df[trigger] == 'bee']) > 0:
-                            trigger_dict[trigger] = 'bee'
+                        bee_df = df[df[trigger] == 'bee'].copy()
+                        if len(bee_df) > 0:
+                            trigger_dict[trigger] = {}
+                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
                     
                         return {"df": df, "bee_triggers": trigger_dict}
 
                     
-                    knight_sight_word = {}
+                    knights_sight_word = {}
                     knight_sight_df = {}
                     for symbol_time_frame, df in pollenstory.items():
                         resp = knight_sight(df=df)
                         df_knight = resp['df']
                         knights_word = resp['bee_triggers']
-                        knight_sight_word[symbol_time_frame] = knights_word
+                        knights_sight_word[symbol_time_frame] = knights_word
                         knight_sight_df[symbol_time_frame] = df_knight
                     
-                    QUEEN[queens_chess_piece]['bee_triggers']['knights_sight_word'] = knight_sight_word
-                    QUEEN[queens_chess_piece]['bee_triggers']['knights_sight_df'] = knight_sight_df
+                    QUEEN[queens_chess_piece]['bee_triggers']['knights_word'] = knights_sight_word
+                    QUEEN[queens_chess_piece]['bee_triggers']['knights_df'] = knight_sight_df
 
 
                     if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
@@ -949,6 +967,10 @@ while True:
                         print(msg)
                         logging.critical(msg)
                         continue
+                
+                    spy = pollenstory['SPY_1Minute_1Day']
+                    print(spy[['macd_cross', 'close_mom_3', 'tier_macd', 'nowdate']].tail(5))
+
                 
                 e = datetime.datetime.now()
                 print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))

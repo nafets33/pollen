@@ -1,0 +1,31 @@
+symbol,shortName,longName,exchange,market,quoteType
+NVDA,nvidia,NVIDIA Corporation,NASDAQ,us_market,EQUITY
+TSM,taiwan-semiconductor,Taiwan Semiconductor Manufacturing Company Ltd.,NYSE,us_market,EQUITY
+ASML,asml,ASML Holding N.V. - New York Registry Shares,NASDAQ,us_market,EQUITY
+AVGO,broadcom,Broadcom Inc.,NASDAQ,us_market,EQUITY
+INTC,intel,Intel Corporation,NASDAQ,us_market,EQUITY
+QCOM,qualcomm,QUALCOMM Incorporated,NASDAQ,us_market,EQUITY
+TXN,texas-instruments,Texas Instruments Incorporated,NASDAQ,us_market,EQUITY
+AMD,advanced-micro-devices,"Advanced Micro Devices, Inc.",NASDAQ,us_market,EQUITY
+AMAT,applied-materials,"Applied Materials, Inc.",NASDAQ,us_market,EQUITY
+MU,micron-technology,"Micron Technology, Inc.",NASDAQ,us_market,EQUITY
+LRCX,lam-research,Lam Research Corporation,NASDAQ,us_market,EQUITY
+ADI,analog-devices,"Analog Devices, Inc.",NASDAQ,us_market,EQUITY
+MRVL,marvell-tech,"Marvell Technology, Inc.",NASDAQ,us_market,EQUITY
+KLAC,kla-tencor,KLA Corporation,NASDAQ,us_market,EQUITY
+NXPI,nxp-semiconductors,NXP Semiconductors N.V.,NASDAQ,us_market,EQUITY
+MCHP,microchip-technology,Microchip Technology Incorporated,NASDAQ,us_market,EQUITY
+ON,on-semiconductor,ON Semiconductor Corporation,NASDAQ,us_market,EQUITY
+TER,teradyne,"Teradyne, Inc.",NASDAQ,us_market,EQUITY
+SWKS,skyworks-solutions,"Skyworks Solutions, Inc.",NASDAQ,us_market,EQUITY
+MPWR,monolithic-power-system,"Monolithic Power Systems, Inc.",NASDAQ,us_market,EQUITY
+ENTG,entegris,"Entegris, Inc.",NASDAQ,us_market,EQUITY
+QRVO,qorvo,"Qorvo, Inc.",NASDAQ,us_market,EQUITY
+WOLF,wolfspeed,"Wolfspeed, Inc.",NYSE,us_market,EQUITY
+LSCC,lattice-semiconductor,Lattice Semiconductor Corporation,NASDAQ,us_market,EQUITY
+IPGP,ipg-photonics,IPG Photonics Corporation,NASDAQ,us_market,EQUITY
+SLAB,silicon-laboratories,"Silicon Laboratories, Inc.",NASDAQ,us_market,EQUITY
+IIVI,ii-vi,II-VI Incorporated,NASDAQ,us_market,EQUITY
+AZTA,brooks-automation,"Azenta, Inc.",NASDAQ,us_market,EQUITY
+AMKR,amkor-technology,"Amkor Technology, Inc.",NASDAQ,us_market,EQUITY
+POWI,power-integrations,"Power Integrations, Inc.",NASDAQ,us_market,EQUITY

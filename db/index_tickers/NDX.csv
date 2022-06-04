@@ -1,0 +1,102 @@
+symbol,shortName,longName,exchange,market,quoteType
+AAPL,apple,Apple Inc.,NASDAQ,us_market,EQUITY
+MSFT,microsoft,Microsoft Corporation,NASDAQ,us_market,EQUITY
+GOOGL,alphabet,Alphabet Inc.,NASDAQ,us_market,EQUITY
+GOOG,alphabet,Alphabet Inc.,NASDAQ,us_market,EQUITY
+AMZN,amazon,"Amazon.com, Inc.",NASDAQ,us_market,EQUITY
+TSLA,tesla,"Tesla, Inc.",NASDAQ,us_market,EQUITY
+FB,meta-platforms,"Meta Platforms, Inc.",NASDAQ,us_market,EQUITY
+NVDA,nvidia,NVIDIA Corporation,NASDAQ,us_market,EQUITY
+ASML,asml,ASML Holding N.V. - New York Registry Shares,NASDAQ,us_market,EQUITY
+CSCO,cisco,"Cisco Systems, Inc.",NASDAQ,us_market,EQUITY
+AVGO,broadcom,Broadcom Inc.,NASDAQ,us_market,EQUITY
+ADBE,adobe,Adobe Inc.,NASDAQ,us_market,EQUITY
+PEP,pepsico,"PepsiCo, Inc.",NASDAQ,us_market,EQUITY
+CMCSA,comcast,Comcast Corporation,NASDAQ,us_market,EQUITY
+NFLX,netflix,"Netflix, Inc.",NASDAQ,us_market,EQUITY
+COST,costco-wholesale,Costco Wholesale Corporation,NASDAQ,us_market,EQUITY
+INTC,intel,Intel Corporation,NASDAQ,us_market,EQUITY
+QCOM,qualcomm,QUALCOMM Incorporated,NASDAQ,us_market,EQUITY
+PYPL,paypal,"PayPal Holdings, Inc.",NASDAQ,us_market,EQUITY
+TXN,texas-instruments,Texas Instruments Incorporated,NASDAQ,us_market,EQUITY
+AMD,advanced-micro-devices,"Advanced Micro Devices, Inc.",NASDAQ,us_market,EQUITY
+INTU,intuit,Intuit Inc.,NASDAQ,us_market,EQUITY
+HON,honeywell,Honeywell International Inc.,NASDAQ,us_market,EQUITY
+AMAT,applied-materials,"Applied Materials, Inc.",NASDAQ,us_market,EQUITY
+TMUS,t-mobile,"T-Mobile US, Inc.",NASDAQ,us_market,EQUITY
+AMGN,amgen,Amgen Inc.,NASDAQ,us_market,EQUITY
+SBUX,starbucks,Starbucks Corporation,NASDAQ,us_market,EQUITY
+JD,jd-com,"JD.com, Inc.",NASDAQ,us_market,EQUITY
+CHTR,charter,"Charter Communications, Inc.",NASDAQ,us_market,EQUITY
+ISRG,intuitive-surgical,"Intuitive Surgical, Inc.",NASDAQ,us_market,EQUITY
+MU,micron-technology,"Micron Technology, Inc.",NASDAQ,us_market,EQUITY
+ABNB,airbnb,"Airbnb, Inc.",NASDAQ,us_market,EQUITY
+BKNG,booking,Booking Holdings Inc. Common Stock,NASDAQ,us_market,EQUITY
+LRCX,lam-research,Lam Research Corporation,NASDAQ,us_market,EQUITY
+ADP,automatic-data-processing,"Automatic Data Processing, Inc.",NASDAQ,us_market,EQUITY
+MDLZ,mondelez,"Mondelez International, Inc.",NASDAQ,us_market,EQUITY
+GILD,gilead,"Gilead Sciences, Inc.",NASDAQ,us_market,EQUITY
+ADI,analog-devices,"Analog Devices, Inc.",NASDAQ,us_market,EQUITY
+MRNA,moderna,"Moderna, Inc.",NASDAQ,us_market,EQUITY
+CSX,csx,CSX Corporation,NASDAQ,us_market,EQUITY
+TEAM,atlassian,Atlassian Corporation Plc,NASDAQ,us_market,EQUITY
+PDD,pinduoduo,Pinduoduo Inc.,NASDAQ,us_market,EQUITY
+FISV,fiserv,"Fiserv, Inc.",NASDAQ,us_market,EQUITY
+LCID,lucid-group,"Lucid Group, Inc.",NASDAQ,us_market,EQUITY
+MRVL,marvell-tech,"Marvell Technology, Inc.",NASDAQ,us_market,EQUITY
+REGN,regeneron-pharmaceuticals,"Regeneron Pharmaceuticals, Inc.",NASDAQ,us_market,EQUITY
+KLAC,kla-tencor,KLA Corporation,NASDAQ,us_market,EQUITY
+NTES,netease,"NetEase, Inc.",NASDAQ,us_market,EQUITY
+WDAY,workday,"Workday, Inc.",NASDAQ,us_market,EQUITY
+ILMN,illumina,"Illumina, Inc.",NASDAQ,us_market,EQUITY
+NXPI,nxp-semiconductors,NXP Semiconductors N.V.,NASDAQ,us_market,EQUITY
+VRTX,vertex-pharmaceutical,Vertex Pharmaceuticals Incorporated,NASDAQ,us_market,EQUITY
+ADSK,autodesk,"Autodesk, Inc.",NASDAQ,us_market,EQUITY
+MELI,mercadolibre,"MercadoLibre, Inc.",NASDAQ,us_market,EQUITY
+BIDU,baidu,"Baidu, Inc.",NASDAQ,us_market,EQUITY
+EXC,exelon,Exelon Corporation,NASDAQ,us_market,EQUITY
+KDP,keurig-dr-pepper,Keurig Dr Pepper Inc.,NASDAQ,us_market,EQUITY
+MAR,marriott,Marriott International,NASDAQ,us_market,EQUITY
+FTNT,fortinet,"Fortinet, Inc.",NASDAQ,us_market,EQUITY
+SNPS,synopsys,"Synopsys, Inc.",NASDAQ,us_market,EQUITY
+ATVI,activision-blizzard,"Activision Blizzard, Inc",NASDAQ,us_market,EQUITY
+PANW,palo-alto-networks,"Palo Alto Networks, Inc.",NASDAQ,us_market,EQUITY
+MNST,monster-beverage,Monster Beverage Corporation,NASDAQ,us_market,EQUITY
+XLNX,xilinx,"Xilinx, Inc.",NASDAQ,us_market,EQUITY
+ZM,zoom-video-communications,"Zoom Video Communications, Inc.",NASDAQ,us_market,EQUITY
+ORLY,o-reilly-auto,"O'Reilly Automotive, Inc.",NASDAQ,us_market,EQUITY
+WBA,walgreens-boots-alliance,"Walgreens Boots Alliance, Inc.",NASDAQ,us_market,EQUITY
+MCHP,microchip-technology,Microchip Technology Incorporated,NASDAQ,us_market,EQUITY
+KHC,kraft-heinz,The Kraft Heinz Company,NASDAQ,us_market,EQUITY
+AEP,american-electric-power,"American Electric Power Company, Inc.",NASDAQ,us_market,EQUITY
+CTSH,cognizant,Cognizant Technology Solutions Corporation,NASDAQ,us_market,EQUITY
+PAYX,paychex,"Paychex, Inc.",NASDAQ,us_market,EQUITY
+CDNS,cadence-design-systems,"Cadence Design Systems, Inc.",NASDAQ,us_market,EQUITY
+IDXX,idexx-laboratories,"IDEXX Laboratories, Inc.",NASDAQ,us_market,EQUITY
+DXCM,dexcom,"DexCom, Inc.",NASDAQ,us_market,EQUITY
+LULU,lululemon-athletica,lululemon athletica inc.,NASDAQ,us_market,EQUITY
+DDOG,datadog,"Datadog, Inc.",NASDAQ,us_market,EQUITY
+CTAS,cintas,Cintas Corporation,NASDAQ,us_market,EQUITY
+ALGN,align-technology,"Align Technology, Inc.",NASDAQ,us_market,EQUITY
+CRWD,crowdstrike,"CrowdStrike Holdings, Inc.",NASDAQ,us_market,EQUITY
+EBAY,ebay,eBay Inc.,NASDAQ,us_market,EQUITY
+XEL,xcel-energy,Xcel Energy Inc.,NASDAQ,us_market,EQUITY
+EA,electronic-arts,Electronic Arts Inc.,NASDAQ,us_market,EQUITY
+ROST,ross-stores,"Ross Stores, Inc.",NASDAQ,us_market,EQUITY
+ZS,zscaler,"Zscaler, Inc.",NASDAQ,us_market,EQUITY
+FAST,fastenal,Fastenal Company,NASDAQ,us_market,EQUITY
+MTCH,match-group-inc,"Match Group, Inc.",NASDAQ,us_market,EQUITY
+BIIB,biogen,Biogen Inc.,NASDAQ,us_market,EQUITY
+PCAR,paccar,PACCAR Inc.,NASDAQ,us_market,EQUITY
+CPRT,copart,"Copart, Inc.",NASDAQ,us_market,EQUITY
+VRSK,verisk-analytics,"Verisk Analytics, Inc.",NASDAQ,us_market,EQUITY
+OKTA,okta,"Okta, Inc.",NASDAQ,us_market,EQUITY
+ANSS,ansys,"ANSYS, Inc.",NASDAQ,us_market,EQUITY
+DLTR,dollar-tree,"Dollar Tree, Inc.",NASDAQ,us_market,EQUITY
+DOCU,docusign,"DocuSign, Inc.",NASDAQ,us_market,EQUITY
+SWKS,skyworks-solutions,"Skyworks Solutions, Inc.",NASDAQ,us_market,EQUITY
+VRSN,verisign,"VeriSign, Inc.",NASDAQ,us_market,EQUITY
+SGEN,seattle-genetics,Seagen Inc.,NASDAQ,us_market,EQUITY
+SIRI,sirius-xm,Sirius XM Holdings Inc.,NASDAQ,us_market,EQUITY
+SPLK,splunk,Splunk Inc.,NASDAQ,us_market,EQUITY
+PTON,peloton-interactive-inc,"Peloton Interactive, Inc.",NASDAQ,us_market,EQUITY

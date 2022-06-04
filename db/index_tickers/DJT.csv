@@ -1,0 +1,21 @@
+symbol,shortName,longName,exchange,market,quoteType
+UPS,united-parcel,"United Parcel Service, Inc.",NYSE,us_market,EQUITY
+UNP,union-pacific,Union Pacific Corporation,NYSE,us_market,EQUITY
+CSX,csx,CSX Corporation,NASDAQ,us_market,EQUITY
+NSC,norfolk-southern,Norfolk Southern Corporation,NYSE,us_market,EQUITY
+FDX,fedex,FedEx Corporation,NYSE,us_market,EQUITY
+ODFL,old-dominion,"Old Dominion Freight Line, Inc.",NASDAQ,us_market,EQUITY
+LUV,southwest,Southwest Airlines Company,NYSE,us_market,EQUITY
+DAL,delta-air-lines,"Delta Air Lines, Inc.",NYSE,us_market,EQUITY
+JBHT,j-b-hunt,"J.B. Hunt Transport Services, Inc.",NASDAQ,us_market,EQUITY
+EXPD,expeditors,"Expeditors International of Washington, Inc.",NASDAQ,us_market,EQUITY
+UAL,united-airlines,"United Airlines Holdings, Inc.",NASDAQ,us_market,EQUITY
+CHRW,ch-robinson,"C.H. Robinson Worldwide, Inc.",NASDAQ,us_market,EQUITY
+AAL,american-airlines-group,"American Airlines Group, Inc.",NASDAQ,us_market,EQUITY
+CAR,avis-budget-group,"Avis Budget Group, Inc.",NASDAQ,us_market,EQUITY
+ALK,alaska-air,"Alaska Air Group, Inc.",NYSE,us_market,EQUITY
+LSTR,landstar-systems,"Landstar System, Inc.",NASDAQ,us_market,EQUITY
+JBLU,jetblue,JetBlue Airways Corporation,NASDAQ,us_market,EQUITY
+R,ryder-system,"Ryder System, Inc.",NYSE,us_market,EQUITY
+KEX,kirby,Kirby Corporation,NYSE,us_market,EQUITY
+MATX,matson,"Matson, Inc.",NYSE,us_market,EQUITY
