@@ -26,6 +26,32 @@ import requests
 from collections import defaultdict
 import talib
 
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
+
+queens_chess_piece = os.path.basename(__file__)
+log_dir = dst = os.path.join(db_root, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if os.path.exists(log_file) == False:
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
+else:
+    # copy log file to log dir & del current log file
+    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+    dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
+    # shutil.copy(log_file, dst_path) # only when you want to log your log files
+    # os.remove(log_file)
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
 
 est = pytz.timezone("America/New_York")
 

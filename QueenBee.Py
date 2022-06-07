@@ -35,6 +35,9 @@ from scipy.stats import linregress
 from scipy import stats
 import hashlib
 
+# Macd Settings
+MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
+
 # script arguments
 queens_chess_piece = sys.argv[1] # 'castle', 'knight'
 QUEEN = { # The Queens Mind
@@ -217,12 +220,10 @@ if prod: # Return Ticker and Acct Info
         'ShortX3': {'SQQQ':'SQQQ', 'SPXU': 'SPXU'},
         'Long':  {'SPY': 'SPY', 'QQQQ': 'QQQQ'}
     }
-    main_index_tickers = ['SPY', 'QQQ']
+    # main_index_tickers = ['SPY', 'QQQ']
     """ Return Index Charts & Data for All Tickers Wanted"""
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
 
-    # Macd Settings
-    MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 
 
 
@@ -320,7 +321,7 @@ def return_sma_slope(df, y_list, time_measure_list):
             for el in y_list:
                 sma_name = f'{el}{"_sma-"}{mtime}'
                 slope_name = f'{el}{"_slope-"}{mtime}'
-                df[sma_name] = df[el].rolling(mtime).mean().fillna(0)
+                df[sma_name] = df[el].rolling(mtime).mean().fillna(1)
                 df[slope_name] = np.degrees(np.arctan(df[sma_name].diff()/mtime))
         return df
 
@@ -847,7 +848,12 @@ while True:
                         # ticker_time_frame = df['name'].iloc[-1]
                         # trigger_dict = {ticker_time_frame: {}}
                         trigger_dict = {}
-                        # df = spy  ### test
+                        
+                        # >>> ready for cross trigger: 
+                        # current macd = sell, & 
+                        # macd signal deviation "very close" &
+                        # hist slope is up
+                        
                         # Mac is very LOW and we are in buy cross
                         trigger = 'buy_RED_tier-1_macdcross'
                         df[trigger] = np.where(

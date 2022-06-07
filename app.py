@@ -41,7 +41,33 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
+# from QueenHive import return_api_keys
 
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
+queens_chess_piece = os.path.basename(__file__)
+log_dir = dst = os.path.join(db_root, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if os.path.exists(log_file) == False:
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
+else:
+    # copy log file to log dir & del current log file
+    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+    dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
+    # shutil.copy(log_file, dst_path) # only when you want to log your log files
+    # os.remove(log_file)
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
 
 def ReadPickleData(pickle_file): 
     # for reading also binary mode is important try 3 times
@@ -79,6 +105,14 @@ system = 'windows' #mac, windows
 #     db_root = os.environ.get('db_root_mac')
 # else:
 #     db_root = os.environ.get('db_root_winodws')
+
+# """ Keys """
+# api_key_id = os.environ.get('APCA_API_KEY_ID')
+# api_secret = os.environ.get('APCA_API_SECRET_KEY')
+# base_url = "https://api.alpaca.markets"
+# keys = return_api_keys(base_url, api_key_id, api_secret)
+# rest = keys[0]['rest']
+# api = keys[0]['api']
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -130,10 +164,13 @@ def pollenstory():
 
 
 
-def df_plotchart(title, df, y, figsize=(14,7)):
+def df_plotchart(title, df, y, x=False, figsize=(14,7)):
     st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-    df['date'] = df['date'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-    return df.plot(x='date', y=y,figsize=figsize)
+    if x == False:
+        return df.plot(y=y,figsize=figsize)
+    else:
+        df['date'] = df['date'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+        return df.plot(x='date', y=y,figsize=figsize)
 
 
 # if queens_chess_piece.lower() == 'knight': # Read Bees Story
@@ -153,7 +190,7 @@ image = Image.open(bee_image)
 st.image(image, caption='Jq', width=33)
 
 # option1 = st.selectbox("Dashboards", ('knight', 'Bishop', 'Castle'))
-option = st.sidebar.selectbox("Dashboards", ('test', 'knight', 'bishop', 'castle'))
+option = st.sidebar.selectbox("Dashboards", ('test', 'knight', 'bishop', 'castle', 'slopes'))
 st.header(option)
 
 option2 = st.sidebar.selectbox("Tic", ('SPY', 'QQQ'))
@@ -161,6 +198,26 @@ st.markdown('<div style="text-align: center;">{}</div>'.format(option2), unsafe_
 
 option3 = st.sidebar.selectbox("Always RUN", ('Yes', 'No'))
 
+if option == 'slopes':
+    pollenstory_resp = pollenstory()
+    ttframe_list = ['SPY_1Minute_1Day', 'QQQ_1Minute_1Day', 'SPY_5Minute_5Day', 'QQQ_5Minute_5Day', 'SPY_30Minute_1Month', 'QQQ_30Minute_1Month', 'SPY_1Hour_3Month', 'QQQ_1Hour_3Month', 'SPY_2Hour_6Month', 'QQQ_2Hour_6Month', 'SPY_1Day_1Year', 'QQQ_1Day_1Year']
+    # st.write(ttframe_list)
+    df_ = pollenstory_resp['SPY_1Minute_1Day']
+    df_['date'] = df_['timestamp_est'] # add as new col
+    df_ = df_.set_index('timestamp_est')
+    df_ = df_[df_.index.day == today_day].copy() # remove yesterday
+    chart = df_plotchart(title='1day', df=df_, y=['close'])
+    st.write('SPY_1Minute_1Day')
+    st.pyplot(chart.figure)
+    for ttframe in ttframe_list:
+        df_ = pollenstory_resp[ttframe]
+        df_['date'] = df_['timestamp_est'] # add as new col
+        df_ = df_.set_index('timestamp_est')
+        # df_ = df_[df_.index.day == today_day].copy() # remove yesterday
+        chart = df_plotchart(title='1day', df=df_, y=['close_slope-3', 'close_slope-6', 'close_slope-23'])
+        st.write(ttframe)
+        st.dataframe(df_.head(5))
+        st.pyplot(chart.figure)
 
 if option == 'knight':
     # symbol = st.sidebar.text_input("Jq_Name", value='SPY_1Minute_1Day', max_chars=33)
@@ -234,8 +291,6 @@ if option == 'knight':
         time.sleep(3)
         st.experimental_rerun()  ## rerun entire page
 
-
-
 if option == 'test':
     pollenstory_resp = pollenstory()
     today_day = datetime.datetime.now().day
@@ -247,14 +302,19 @@ if option == 'test':
     # between certian times
     df_t = df.between_time('9:30', '12:00')
     df_t = df_t[df_t.index.day == today_day].copy() # remove yesterday
-    chart = df_plotchart(title='mom_3', df=df_t, y='close_mom_3')
+    chart = df_plotchart(title='close', df=df_t, y='close')
+    chart2 = df_plotchart(title='mom_3', df=df_t, y='close_mom_3')
     st.pyplot(chart.figure)
+    st.pyplot(chart2.figure)
+
+
+    st.dataframe(df_t[['close_slope-3', 'close_slope-6']])
     
     kn = pollenstory_resp['knight']
     bee_triggers = kn['bee_triggers']
     knights_word = bee_triggers['knights_word']
     knights_df = bee_triggers['knights_df']
-    st.dataframe(knights_word)
+    # st.dataframe(knights_word)
     # queens conscience
         # {tickers: {},
         # orders: {},
@@ -263,38 +323,102 @@ if option == 'test':
         >list all other current triggers
         >determine trade consideration logic
      """
-    token = [i for i in knights_word.keys() if "1Minute" in i]  # get all 1 day current trigger state
+    OneMinute_list = [i for i in knights_word.keys() if "1Minute" in i]  # get all 1 day current trigger state
+    FiveMinute_list = [i for i in knights_word.keys() if "5Minute" in i]  # get all 1 day current trigger state
+
     QUEENS_CONSCIENCE = {
-        'daytrader': {}
+        'conscience': {},
+        'command_conscience': {'order_triggers': []},
+        'cache': {} # keep in mind - aka logs
     }
-    for ticker_time_frame in token:
+    
+    # Write all info into QUEENs conscience
+    for ticker_time_frame in knights_word.keys():
+
         # ticker, _time, _frame = ticker_time_frame.split("_")
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame] = {}
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame] = {}
         k_word = knights_word[ticker_time_frame]
         k_df = knights_df[ticker_time_frame]
         # get all current knowledge to consider trade
         
         time_state = k_df['timestamp_est'].iloc[-1] # current time
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['time_state'] = time_state
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['time_state'] = time_state
         
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['macd_state'] = k_df['macd_cross'].iloc[-1]
+        macd_state = k_df['macd_cross'].iloc[-1]
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_state'] = macd_state
         
-        macd_state_side = QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['macd_state'].split("_")[0] # buy/sell
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['macd_state_side'] = macd_state_side
+        macd_state_side = QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_state'].split("_")[0] # buy/sell
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_state_side'] = macd_state_side
         
         prior_macd_df = k_df[~k_df['macd_cross'].str.contains(macd_state_side)].copy()
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['prior_macd_state_time'] = prior_macd_df['timestamp_est'].iloc[-1] # filter not current state
+        prior_macd_state_time = prior_macd_df['timestamp_est'].iloc[-1] # filter not current state
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['prior_macd_state_time'] = prior_macd_state_time
 
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['time_since_macd_change'] = k_df['story_index'].iloc[-1] - prior_macd_df['story_index'].iloc[-1]
+        time_since_macd_change = (k_df['story_index'].iloc[-1] - prior_macd_df['story_index'].iloc[-1]) -1
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['time_since_macd_change'] = time_since_macd_change
         
-        QUEENS_CONSCIENCE['daytrader'][ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in k_word.items() if v['lastmodified'].day == time_state.day and v['lastmodified'].hour == time_state.hour and v['lastmodified'].minute == time_state.minute]
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in k_word.items() if v['lastmodified'].day == time_state.day and v['lastmodified'].hour == time_state.hour and v['lastmodified'].minute == time_state.minute]
 
-        """ do you want to buy anything my friend """
+        # count number of Macd Crosses
+        # k_df['macd_cross_running_count'] = np.where((k_df['macd_cross'] == 'buy_cross-0') | (k_df['macd_cross'] == 'sell_cross-0'), 1, 0)
+        today_df = k_df[k_df['timestamp_est'] > (datetime.datetime.now() - datetime.timedelta(1)).isoformat()].copy()   
+        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_cross_count'] = {
+            'buy_cross_total_running_count': sum(np.where(k_df['macd_cross'] == 'buy_cross-0',1,0)),
+            'sell_cross_totalrunning_count' : sum(np.where(k_df['macd_cross'] == 'sell_cross-0',1,0)),
+            'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
+            'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
+        }
+            
+    # """ do you want to buy anything my friend """
+    def command_conscience(QUEENS_CONSCIENCE):
+        # answer the questions and pass to order management for every ticker_time_frame 
+        # > are we in a cross and if so how long has it been 
+        # > are 
+        # command_conscience = QUEENS_CONSCIENCE['command_conscience']
+        
+        # ticker_time_frame_list = [i for i in QUEENS_CONSCIENCE["conscience"].keys() if "1Minute_1Day" in i ] 
+
+        for ttframe in OneMinute_list:
+            mind = QUEENS_CONSCIENCE['conscience'][ttframe]
+            alltriggers = mind['alltrriggers_current_state']
+            macdcross_buz = mind['time_since_macd_change'] # are we in a macd cross?
+            # conscience['order_triggers'] takes in arguements (ttframe, ticker)
+            # if macd_state == 'buy_cross-0': # your first trade
+            if 'buy_cross-0' in mind['alltrriggers_current_state']:
+                # how much do you want buy?
+                    #>client_weight
+                trigger_name = f'{"buy_cross-0"}{"_89"}'
+                QUEENS_CONSCIENCE['command_conscience']['order_triggers'].append({ttframe: trigger_name, 'ticker': ttframe.split("_")[0]})
+
+        
+        # each ticker and run through questions to place trade
+        order_trigs = QUEENS_CONSCIENCE['command_conscience']['order_triggers'] # LIST
+        tickers = [j[k] for j in order_trigs for (k, i) in j.items() if k=='ticker']
+        
+        closed_orders_list = api.list_orders(status='closed')
+        open_orders_list = api.list_orders(status='open')
+        
+        for bee in tickers:
+            bee = 'SPY'
+            bee_triggers = [j[k] for j in order_trigs for (k, i) in j.items() if bee in k] # list triggers
+            position = api.get_position(bee) # return current position
+
+            # > how many times have you done this trade?
+            # > 
+
+            # log trigger if event action is taken or Not
+            QUEENS_CONSCIENCE['cache']['trigger_event'].append({'trigger_name': mind['time_state']})
+        
+        # list out the tickers that are getting an order buy
+        # for every ticker look at each order trigger
+        # run buy logic 
 
 
-
-
+        return True
     
+
+    st.write("QUEENS_CONSCIENCE")
+    st.write(QUEENS_CONSCIENCE['conscience'])
 
     df_ = pollenstory_resp['SPY_1Minute_1Day']
     df_['date'] = df_['timestamp_est'] # add as new col
