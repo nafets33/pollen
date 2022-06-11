@@ -25,41 +25,73 @@ from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
 import talib
+from scipy import stats
+import shutil
+
+queens_chess_piece = os.path.basename(__file__)
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
-queens_chess_piece = os.path.basename(__file__)
-log_dir = dst = os.path.join(db_root, 'logs')
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(os.getcwd(), log_name)
-if os.path.exists(log_file) == False:
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
-else:
-    # copy log file to log dir & del current log file
-    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-    dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-    # shutil.copy(log_file, dst_path) # only when you want to log your log files
-    # os.remove(log_file)
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
+
+def init_logging(queens_chess_piece, db_root, loglog_newfile=False):
+    log_dir = dst = os.path.join(db_root, 'logs')
+    if os.path.exists(dst) == False:
+        os.mkdir(dst)
+    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+    log_file = os.path.join(os.getcwd(), log_name)
+    if os.path.exists(log_file) == False:
+        logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                            filemode='a',
+                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p',
+                            level=logging.INFO)
+    else:
+        if loglog_newfile:
+            # copy log file to log dir & del current log file
+            datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+            dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
+            shutil.copy(log_file, dst_path) # only when you want to log your log files
+            os.remove(log_file)
+        else:
+            logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                                filemode='a',
+                                format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                                datefmt='%m/%d/%Y %I:%M:%S %p',
+                                level=logging.INFO)
+        return True
+
+init_logging(queens_chess_piece, db_root)
+
+
+# log_dir = dst = os.path.join(db_root, 'logs')
+# if os.path.exists(dst) == False:
+#     os.mkdir(dst)
+# log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+# log_file = os.path.join(os.getcwd(), log_name)
+# if os.path.exists(log_file) == False:
+#     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+#                         filemode='a',
+#                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+#                         datefmt='%m/%d/%Y %I:%M:%S %p',
+#                         level=logging.INFO)
+# else:
+#     # copy log file to log dir & del current log file
+#     datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+#     dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
+#     # shutil.copy(log_file, dst_path) # only when you want to log your log files
+#     # os.remove(log_file)
+#     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+#                         filemode='a',
+#                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+#                         datefmt='%m/%d/%Y %I:%M:%S %p',
+#                         level=logging.INFO)
 
 est = pytz.timezone("America/New_York")
 
 system = 'windows' #mac, windows
 load_dotenv()
 
-main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
 
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
@@ -101,6 +133,17 @@ keys = return_api_keys(base_url, api_key_id, api_secret)
 rest = keys[0]['rest']
 api = keys[0]['api']
 
+# Paper
+api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+base_url_paper = "https://paper-api.alpaca.markets"
+keys_paper = return_api_keys(base_url=base_url_paper, 
+    api_key_id=api_key_id_paper, 
+    api_secret=api_secret_paper,
+    prod=False)
+rest_paper = keys_paper[0]['rest']
+api_paper = keys_paper[0]['api']
+
 """# Dates """
 current_day = api.get_clock().timestamp.date().isoformat()
 trading_days = api.get_calendar()
@@ -110,9 +153,25 @@ start_date = datetime.datetime.now().strftime('%Y-%m-%d')
 end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
+def read_pollenstory(): # return combined dataframes
+    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+    return pollenstory
+
+
+def read_queensmind(): # return active story workers
+    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
+    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
+    # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
+    collective_pollenstory = {**bishop['conscience']['pollenstory'], **castle['conscience']['pollenstory']}
+    knightsword = {**bishop['conscience']['knightsword'], **castle['conscience']['knightsword']}
+    
+    return {'bishop': bishop, 'castle': castle, 'collective_pollenstory': collective_pollenstory, 'knightsword': knightsword}
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
+# trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     # where is max and depending on which time consider different weights of buy...
     # define weights in global and do multiple weights for different scenarios..
@@ -127,14 +186,18 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     # >/ what current macd tier values in comparison to max/min
     s = datetime.datetime.now()
     story = {}
-    ANGEl_bee = {}  
-    CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
+    ANGEl_bee = {} # add to QUEENS mind
+    STORY_bee = {} 
+    # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
     betty_bee = {}  
     macd_tier_range = 33
+    knights_sight_word = {}
+    # knight_sight_df = {}
 
-    for ticker_time, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
-        CHARLIE_bee[ticker_time] = {}
-        ANGEl_bee[ticker_time] = {}
+    for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+        # CHARLIE_bee[ticker_time_frame] = {}
+        ANGEl_bee[ticker_time_frame] = {}
+        STORY_bee[ticker_time_frame] = {}
         
         df = df_i.fillna(0).copy()
         df = df.reset_index(drop=True)
@@ -153,180 +216,71 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         # mac cross
         df = mark_macd_signal_cross(df=df)
 
-        # Create Tiers
-        for tier in range(1, macd_tier_range + 1): # Tiers of MinMax
-            for mac_name in ['macd', 'signal', 'hist']:
-                divder_max = mac_world['{}_high'.format(mac_name)] / macd_tier_range
-                minvalue = mac_world['{}_low'.format(mac_name)]
-                divder_min = minvalue / macd_tier_range
-                
-                if tier == 1:
-                    maxvalue = mac_world['{}_high'.format(mac_name)]
-                    macd_t1 = (maxvalue, (maxvalue - divder_max))
-                    CHARLIE_bee[ticker_time]["tier"+str(tier)+"_"+mac_name+"-GREEN"] = macd_t1
-
-                    macd_t1_min = (minvalue, (minvalue - divder_min))
-                    CHARLIE_bee[ticker_time]["tier"+str(tier)+"_"+mac_name+"-RED"] = macd_t1_min
-                else:
-                    prior_tier = tier - 1
-                    prior_second_value = CHARLIE_bee[ticker_time]["tier"+str(prior_tier)+"_"+mac_name+"-GREEN"][1]
-                    
-                    macd_t2 = (prior_second_value,  (prior_second_value - divder_max))
-                    CHARLIE_bee[ticker_time]["tier"+str(tier)+"_"+mac_name+"-GREEN"] = macd_t2
-
-                    prior_second_value_red = CHARLIE_bee[ticker_time]["tier"+str(prior_tier)+"_"+mac_name+"-RED"][1]
-                    macd_t1_min2 = (prior_second_value_red, (prior_second_value_red - divder_min))
-                    CHARLIE_bee[ticker_time]["tier"+str(tier)+"_"+mac_name+"-RED"] = macd_t1_min2
-        # df = pd.DataFrame(CHARLIE_bee.items(), columns=['name', 'values'])
-        # df[(df["name"].str.contains("macd")) & (df["name"].str.contains("-GREEN"))]
-
-        # BETTY_bee = {}  # 'SPY_1Minute': {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}    
+        resp = knight_sight(df=df)
+        df = resp['df']
+        knights_word = resp['bee_triggers']
+        knights_sight_word[ticker_time_frame] = knights_word
+        # knight_sight_df[ticker_time_frame] = df_knight
         
-        # Map in CHARLIE_bee tier
-        def map_tiers(): # map in into main df
-            def map_values_tier(mac_name, value, ticker_time_tiers, tier_range_set_value=False): # map in tier name or tier range high low
-                # ticker_time_tiers = CHARLIE_bee[ticker_time]
-                if value < 0:
-                    chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "RED" in k}
-                else:
-                    chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "GREEN" in k}
-                
-                for tier_macname_sector, tier_range in chart_range.items():
-                    if abs(value) <= abs(tier_range[0]) and abs(value) >= abs(tier_range[1]):
-                        if tier_range_set_value == 'high':
-                            return tier_range[0]
-                        elif tier_range_set_value == 'low':
-                            return tier_range[1]
-                        else:
-                            return tier_macname_sector
-            
-            ticker_time_tiers = CHARLIE_bee[ticker_time]
-            df['tier_macd'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers))
-            df['tier_macd_range-high'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='high'))
-            df['tier_macd_range-low'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='low'))
-
-            df['tier_signal'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers))
-            df['tier_signal_range-high'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='high'))
-            df['tier_signal_range-low'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='low'))
-
-            df['tier_hist'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers))
-            df['tier_hist_range-high'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='high'))
-            df['tier_hist_range-low'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='low'))
-            
-            return True
-        map_tiers()
-
-        # Add Seq columns of tiers, return [0,1,2,0,1,0,0,1,2,3,0] (how Long in Tier)
-            # how long since prv High/Low?
-            # when was the last time you were in higest tier
-        #>/ how many times have you reached tiers
-        #>/ how long have you stayed in your tier?
-            # side of tier, are you closer to exit or enter of next tier?
-            # how far away from MACD CROSS?
-            # ARE you a startcase Hist? # linear regression 
-        def count_sequential_n_inList(df, item_list, mac_name): # df['tier_macd'].to_list()
-            # how long you been in tier AND 
-            # item_list = df['tier_macd'].to_list()
-            d = defaultdict(int) # you have totals here to return!!!
-            d_total_tier_counts = defaultdict(int)
-            res_list = []
-            res_dist_list = []
-            set_index = {'start': 0}
-            for i, el in enumerate(item_list):
-                if i == 0:
-                    d[el]+=1
-                    d_total_tier_counts[el] += 1
-                    res_list.append(d[el])
-                    res_dist_list.append(0)
-                else:
-                    seq_el = item_list[i-1]
-                    if el == seq_el:
-                        d[el]+=1
-                        d_total_tier_counts[el] += 1
-                        res_list.append(d[el])
-                        # count new total distance
-                        total = sum(res_list[set_index['start']:i])
-                        res_dist_list.append(total)
-                    else:
-                        d[el]=0
-                        res_list.append(d[el])
-                        set_index['start'] = i - 1
-                        res_dist_list.append(0)
-            
-            # Join in Data and send info to the QUEEN
-            # QUEEN[queens_chess_piece]['pollenstory_info'][ticker_time][''] = d_total_tier_counts
-            bee_tier_totals = d_total_tier_counts
-            dfseq = pd.DataFrame(res_list, columns=['seq_'+mac_name])
-            dfrunning = pd.DataFrame(res_dist_list, columns=['running_'+mac_name])
-            df_new = pd.concat([df, dfseq, dfrunning], axis=1)
-            return df_new
-
-        
-        
-        def tier_time_patterns(df, names):
-            # {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}
-            names = ['macd', 'signal', 'hist']
-            for name in names:
-                tier_name = f'tier_{name}' # tier_macd
-                item_list = df[tier_name].to_list()
-                res = count_sequential_n_inList(item_list)
-
-                tier_list = list(set(df[tier_name].to_list()))
-
-                
-                for tier in tier_list:
-                    if tier.lower().startswith('t'): # ensure tier
-                        df_tier = df[df[tier_name] == tier].copy()
-                        x = df_tier["timestamp_est"].to_list()
-
-        # macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
-        # macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
-        
-        try:  # count_sequential_n_inList
-            for mac_name in ['macd', 'signal', 'hist']:
-                df = count_sequential_n_inList(df=df, item_list=df['tier_'+mac_name].to_list(), mac_name=mac_name)
-
-                # distance from prior HIGH LOW
-                toptier = f'{"tier1"}{"_"}{mac_name}{"-GREEN"}'
-                bottomtier = f'{"tier1"}{"_"}{mac_name}{"-RED"}'
-                # Current Distance from top and bottom
-                for tb in [toptier, bottomtier]:
-                    df_t = df[df['tier_'+mac_name]==tb].copy()
-                    last_time_tier_found = df_t.iloc[-1].story_index
-                    distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
-                    betty_bee[f'{ticker_time}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
-                QUEEN[queens_chess_piece]['pollenstory_info']['betty_bee'] = betty_bee
-
+        # # return degree angle 0, 45, 90
+        try:
+            var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
+            var_timeframes = [3, 6, 8, 10, 25, 33]
+            for var in var_list:
+                for t in var_timeframes:
+                    # apply rollowing angle
+                    if df_len >= t:
+                        x = df.iloc[df_len - t:df_len][var].to_list()
+                        y = [1, 2]
+                        name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
+                        ANGEl_bee[ticker_time_frame][name] = return_degree_angle(x, y)
         except Exception as e:
-            msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
+            msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
             logging.error(msg)
-        
-        # return degree angle 0, 45, 90
-        
-        var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
-        var_timeframes = [3, 6, 8, 10, 25, 33]
-        for var in var_list:
-            for t in var_timeframes:
-                # apply rollowing angle
-                if df_len >= t:
-                    x = df.iloc[df_len - t:df_len][var].to_list()
-                    y = [1, 2]
-                    name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
-                    ANGEl_bee[ticker_time][name] = return_degree_angle(x, y)
-        QUEEN[queens_chess_piece]['pollenstory_info']['ANGEl_bee'] = ANGEl_bee
-        
+
         # add close price momentum
         try:
             close = df['close']
             df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
             df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
         except Exception as e:
-            msg=(e,"--", print_line_of_error(), "--", ticker_time, "--", mac_name)
+            msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
             logging.error(msg)
         
         # devation from vwap
         df['vwap_deviation'] = df['close'] - df['vwap_original']
 
+        
+        # knights_word = knights_word[ticker_time_frame]
+        # get all current knowledge to consider trade
+        
+        time_state = df['timestamp_est'].iloc[-1] # current time
+        STORY_bee[ticker_time_frame]['time_state'] = time_state
+        
+        macd_state = df['macd_cross'].iloc[-1]
+        STORY_bee[ticker_time_frame]['macd_state'] = macd_state
+        
+        macd_state_side = STORY_bee[ticker_time_frame]['macd_state'].split("_")[0] # buy/sell
+        STORY_bee[ticker_time_frame]['macd_state_side'] = macd_state_side
+        
+        prior_macd_df = df[~df['macd_cross'].str.contains(macd_state_side)].copy()
+        prior_macd_state_time = prior_macd_df['timestamp_est'].iloc[-1] # filter not current state
+        STORY_bee[ticker_time_frame]['prior_macd_state_time'] = prior_macd_state_time
+
+        time_since_macd_change = (df['story_index'].iloc[-1] - prior_macd_df['story_index'].iloc[-1]) -1
+        STORY_bee[ticker_time_frame]['time_since_macd_change'] = time_since_macd_change
+        
+        STORY_bee[ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['lastmodified'].day == time_state.day and v['lastmodified'].hour == time_state.hour and v['lastmodified'].minute == time_state.minute]
+
+        # count number of Macd Crosses
+        # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
+        today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
+        STORY_bee[ticker_time_frame]['macd_cross_count'] = {
+            'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
+            'sell_cross_totalrunning_count' : sum(np.where(df['macd_cross'] == 'sell_cross-0',1,0)),
+            'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
+            'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
+        }
         # # add timeblocks [9:30 - 10, 10-12, 12-1, 1-3, 3-4]:: NOT SURE ABOUT TIMEBLOCK YET?
         # def add_timeblock(dt):
         #     if dt.hour > 9 and dt.hour < 10:
@@ -335,19 +289,156 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         #         return 2
         #     elif dt.hour == 12 and dt.hour < 1 
         # df['timeblock'] = 
-        
+
         # add to story
         df['chartdate'] = df['timestamp_est'] # add as new col
-        df['name'] = ticker_time
-        story[ticker_time] = df
+        df['name'] = ticker_time_frame
+        story[ticker_time_frame] = df
+        # ticker, _time, _frame = ticker_time_frame.split("_")
+
         
         # add momentem ( when macd < signal & past 3 macds are > X Value or %)
         
         # when did macd and signal share same tier?
-    # QUEEN['pollenstory'] = story
+    
+    # Give to the Queen
+    QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = ANGEl_bee
+    QUEEN[queens_chess_piece]['conscience']['knightsword'] = knights_sight_word
+    QUEEN[queens_chess_piece]['conscience']['pollenstory'] = STORY_bee
+
     e = datetime.datetime.now()
     print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
     return {'pollen_story': story}
+
+
+def knight_sight(df): # adds all triggers to dataframe
+    # ticker_time_frame = df['name'].iloc[-1]
+    # trigger_dict = {ticker_time_frame: {}}
+    trigger_dict_info = {}
+    trigger_dict = {}
+    
+    # >>> ready for cross trigger: 
+    # current macd = sell, & 
+    # macd signal deviation "very close" &
+    # hist slope is up
+
+    # Mac crosses
+    trigger = 'buy_cross-0'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy_cross-0")==True)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+    trigger = 'sell_cross-0'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("sell_cross-0")==True)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+    
+    # Mac is very LOW and we are in buy cross
+    trigger = 'buy_RED_tier-1_macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        ((df['macd'] < 0) & (df['macd'] > -.3))
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    trigger = 'buy_RED_tier-2_macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        ((df['macd'] < -.3) & (df['macd'] > -.5))
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    trigger = 'buy_RED_tier-3_macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        ((df['macd'] < -.5) & (df['macd'] > -.1))
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    trigger = 'buy_RED_tier-4_macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        ((df['macd'] < -.1) & (df['macd'] > -.15))
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    trigger = 'buy_RED_tier-5_macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        (df['macd'] < -.15)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    # Mac is very LOW and we are in buy cross
+    trigger = 'buy_high-macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        (df['macd'] < -.1)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    # Mac is very LOW and we are in buy cross
+    trigger = 'buy_high-macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+        (df['macd'] < -.1)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+    
+    # Mac is very High and we are in a Sell Cross
+    trigger = 'sell_high-macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("sell")==True) &
+        (df['macd'] > 1)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+    # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
+    trigger = 'sell_high-macdcross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("sell_hold")==False) & # is not in Sell cycle
+        (df['macd'] > 1.5) &
+        (df['macd_slope-3'] < .1) &
+        ((df['hist_slope-3'] < .33) |(df['hist_slope-6'] < .10))
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+
+
+    return {"df": df, "bee_triggers": trigger_dict}
 
 
 def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses 
@@ -611,11 +702,16 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
 # r = rebuild_timeframe_bars(ticker_list, sec_input=30)
 
 
-### Orders 
-def submit_best_limit_order(symbol, qty, side, client_order_id=False):
+### Orders ###
+def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
     # symbol = 'BABA'
+    if api == 'paper':
+        api = api_paper
+    else:
+        api = api
+
     snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
     conditions = snapshot.latest_quote.conditions
     c=0
@@ -669,29 +765,18 @@ def order_filled_completely(client_order_id):
     return True
 
 
-def submit_order(symbol, qty, side, type, limit_price, client_order_id, time_in_force, order_class=False, stop_loss=False, take_profit=False):
-    
-    order = api.submit_order(symbol='BABA', 
-            qty=1, 
-            side='buy', # buy, sell 
-            time_in_force='gtc', # 'day'
-            type='limit', # 'market'
-            limit_price=425.15, 
-            client_order_id='test1') # optional make sure it unique though to call later!
-    order = api.submit_order(symbol='BABA', 
-            qty=1, 
-            side='sell', # buy, sell 
-            time_in_force='gtc', # 'day'
-            type='market', # 'market'
-            # limit_price=425.15, 
-            client_order_id='test1') # optional make sure it unique though to call later!
+def submit_order(api, symbol, qty, side, type, limit_price=False, client_order_id=False, time_in_force='gtc', order_class=False, stop_loss=False, take_profit=False):
 
     if type == 'market':
-        order = api.submit_order(symbol=symbol,
-        qty=qty,
-        side=side,
-        type=type,
-        time_in_force=time_in_force)
+        order = api.submit_order(
+            symbol=symbol,
+            qty=qty,
+            side=side,
+            type=type,
+            time_in_force=time_in_force,
+            client_order_id=client_order_id
+            )
+    
     return order
 
     """stop loss order""" 
@@ -803,6 +888,37 @@ def init_index_ticker(index_list, db_root, init=True):
     # S&P 500 Real Estate (S5REAS)
     # S&P 500 Utilities (S5UTIL)"""
     return True
+
+
+def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
+    tic_tickers = ['AAPL', 'TSLA', 'GOOG', 'FB']
+
+    s = datetime.datetime.now()
+    r = rebuild_timeframe_bars(ticker_list=tic_tickers, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+    resp = r['resp'] # return slope of collective tics
+    speedybee_dict = {}
+    slope_dict = {}
+    for symbol in set(resp['symbol'].to_list()):
+        df = resp[resp['symbol']==symbol].copy()
+        df = df.reset_index()
+        df_len = len(df)
+        if df_len > 2:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
+            slope_dict[df.iloc[0].symbol] = slope
+    speedybee_dict['slope'] = slope_dict
+    QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
+
+    print(sum([v for k,v in slope_dict.items()]))
+
+
+def pickle_chesspiece(pickle_file, data_to_store):
+    if PickleData(pickle_file=pickle_file, data_to_store=data_to_store) == False:
+        msg=("Pickle Data Failed")
+        print(msg)
+        logging.critical(msg)
+        return False
+    else:
+        return True
 
 
 def PickleData(pickle_file, data_to_store): 

@@ -15,7 +15,6 @@ from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
-from QueenHive import return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import sys
 import datetime
 from datetime import date, timedelta
@@ -31,22 +30,30 @@ from collections import defaultdict
 import ipdb
 import tempfile
 import shutil
-from scipy.stats import linregress
+# from scipy.stats import linregress
 from scipy import stats
 import hashlib
+from QueenHive import init_logging, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+
+# script arguments
+queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
+
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
+
+init_logging(queens_chess_piece, db_root)
 
 # Macd Settings
 MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
-
-# script arguments
-queens_chess_piece = sys.argv[1] # 'castle', 'knight'
 QUEEN = { # The Queens Mind
     queens_chess_piece: {
-    'bee_triggers': {},
-    'pollenstory': {}, # latest story
-    'pollencharts': {}, # latest rebuild
-    'pollencharts_nectar': {}, # latest charts with indicators
+    'conscience': {'pollenstory': {},'knightsword': {}, 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+    'pollenstory': {}, # latest story of dataframes
+    'pollencharts': {}, # latest chart rebuild
+    'pollencharts_nectar': {}, # latest chart rebuild with indicators
     'pollenstory_info': {}, # Misc Info,
+    'client': {},
+    'heartbeat': {},
     'last_modified' : datetime.datetime.now(),
     }
 }
@@ -56,36 +63,10 @@ pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 load_dotenv()
 
-if queens_chess_piece.lower() not in ['castle', 'knight', 'bishop', 'workerbee']:
+if queens_chess_piece.lower() not in ['queen', 'castle', 'knight', 'bishop', 'workerbee']:
     print("wrong chess move")
     sys.exit()
 
-main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
-
-# scriptname = os.path.basename(__file__)
-log_dir = dst = os.path.join(db_root, 'logs')
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(os.getcwd(), log_name)
-if os.path.exists(log_file) == False:
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
-else:
-    # copy log file to log dir & del current log file
-    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-    dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-    # shutil.copy(log_file, dst_path) # only when you want to log your log files
-    # os.remove(log_file)
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
 
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
@@ -93,13 +74,14 @@ client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
 df_client = pd.read_csv(client_ticker_file, dtype=str)
 df_client_f = df_client[df_client['status']=='active'].copy()
 client_symbols = df_client_f.tickers.to_list()
+client_symbols_castle = ['SPY', 'QQQ']
+client_symbols_bishop = ['AAPL', 'GOOG']
+client_market_movers = ['AAPL', 'TSLA', 'GOOG', 'META']
 
-# client_num_LT = sys.argv[2]
-# client_num_ST = sys.argv[3]
-# client_days1yrmac_input = sys.argv[4]
-
-
-# trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
+QUEEN[queens_chess_piece]['heartbeat']['main_indexes'] = {
+    'SPY': {'long3X': 'SPXL', 'inverse': 'SH', 'inverse2X': 'SDS', 'inverse3X': 'SPXU'},
+    'QQQ': {'long3X': 'TQQQ', 'inverse': 'PSQ', 'inverse2X': 'QID', 'inverse3X': 'SQQQ'}
+    } 
 
 
 """ Keys """
@@ -143,8 +125,6 @@ client_num_ST = 3
 client_days1yrmac_input = 233 # Tier 1
 client_daysT2Mac_input = 5 # Tier 2
 client_daysT3Mac_input = 233 # Tier 3
-
-
 
 """# Customer Setup """
 Long_Term_Client_Input = num[client_num_LT]
@@ -215,23 +195,19 @@ if prod: # Return Ticker and Acct Info
 
     # client_symbols = ['SPY', 'SPDN', 'SPXU', 'SPXL', 'TQQQ', 'SQQQ', 'AAPL', 'GOOG', 'VIX'] # Should be from CSV file OR UI List from app
     LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
-    BeeHunter = {
-        'LongX3': {'TQQQ': 'TQQQ', 'SPXL': 'SPXL'},
-        'ShortX3': {'SQQQ':'SQQQ', 'SPXU': 'SPXU'},
-        'Long':  {'SPY': 'SPY', 'QQQQ': 'QQQQ'}
-    }
+    # BeeHunter = {
+    #     'LongX3': {'TQQQ': 'TQQQ', 'SPXL': 'SPXL'},
+    #     'ShortX3': {'SQQQ':'SQQQ', 'SPXU': 'SPXU'},
+    #     'Long':  {'SPY': 'SPY', 'QQQQ': 'QQQQ'}
+    # }
     # main_index_tickers = ['SPY', 'QQQ']
+
+    index_ticker_db = return_index_tickers(index_dir=os.path.join(db_root, 'index_tickers'), ext='.csv')
+
     """ Return Index Charts & Data for All Tickers Wanted"""
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
 
-
-
-
 ####<>///<>///<>///<>///<>/// ALL FUNCTIONS NECTOR ####<>///<>///<>///<>///<>///
-
-
-index_ticker_db = return_index_tickers(index_dir=os.path.join(db_root, 'index_tickers'), ext='.csv')
-
 
 
 """TICKER Calculation Functions"""
@@ -352,7 +328,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
     except Exception as e:
         print("log error", print_line_of_error())
         return [False, e, print_line_of_error()]
-# bee = return_getbars_WithIndicators(bars_data=)
+
 
 def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with Indicator Data
     # ticker_list = ['SPY', 'QQQ']
@@ -389,7 +365,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     print(msg)
     # dfs_index_tickers['SPY_5Minute']
     return {'init_charts': dfs_index_tickers, 'errors': error_dict}
-# r=Return_Init_ChartData(ticker_list, chart_times)
+
 
 def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
     # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
@@ -416,7 +392,6 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
     # print(msg)
     # dfs_index_tickers['SPY_5Minute']
     return [dfs_index_tickers, error_dict, msg]
-# Return_Bars_LatestDayRebuild(ticker_time)
 
 
 def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & consider using day.min.chart to rebuild other timeframes
@@ -473,19 +448,29 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
             
             return_dict[ticker + "_day"] = df_daily
             
-            if len(min_bars_dict[ticker]) != 0:
-                d = {'close': min_bars_dict[ticker].close.iloc[-1],
-                'high': min_bars_dict[ticker].high.iloc[-1],
-                'low': min_bars_dict[ticker].low.iloc[-1],
-                'timestamp_est': min_bars_dict[ticker].timestamp_est.iloc[-1],
-                'open': min_bars_dict[ticker].open.iloc[-1],
-                'volume': min_bars_dict[ticker].volume.iloc[-1],
-                'trade_count': min_bars_dict[ticker].trade_count.iloc[-1],
-                'vwap': 0, #snapshots[ticker].latest_trade.vwap
-                }
-            else:
-                # print("Min Bar Not returned (AFTERHRS)")
-                d = {
+            # if len(min_bars_dict[ticker]) != 0:
+            #     # "THIS IS NOT being used"
+            #     d = {'close': min_bars_dict[ticker].close.iloc[-1],
+            #     'high': min_bars_dict[ticker].high.iloc[-1],
+            #     'low': min_bars_dict[ticker].low.iloc[-1],
+            #     'timestamp_est': min_bars_dict[ticker].timestamp_est.iloc[-1],
+            #     'open': min_bars_dict[ticker].open.iloc[-1],
+            #     'volume': min_bars_dict[ticker].volume.iloc[-1],
+            #     'trade_count': min_bars_dict[ticker].trade_count.iloc[-1],
+            #     'vwap': min_bars_dict[ticker].vwap.iloc[-1]
+            #     }
+            # else:
+            #     d = {
+            #     'close': snapshots[ticker].latest_trade.price,
+            #     'high': 0, # snapshots[ticker].minute_bar.high,
+            #     'low': 0, # snapshots[ticker].minute_bar.low,
+            #     'timestamp_est': snapshots[ticker].latest_trade.timestamp,
+            #     'open': 0, # snapshots[ticker].minute_bar.open,
+            #     'volume': 0, # snapshots[ticker].minute_bar.volume,
+            #     'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
+            #     'vwap': snapshots[ticker].minute_bar.vwap
+            #     }
+            d = {
                 'close': snapshots[ticker].latest_trade.price,
                 'high': 0, # snapshots[ticker].minute_bar.high,
                 'low': 0, # snapshots[ticker].minute_bar.low,
@@ -493,7 +478,7 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
                 'open': 0, # snapshots[ticker].minute_bar.open,
                 'volume': 0, # snapshots[ticker].minute_bar.volume,
                 'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
-                'vwap': 0, # snapshots[ticker].minute_bar.vwap
+                'vwap': snapshots[ticker].minute_bar.vwap
                 }
             df_minute = pd.Series(d).to_frame().T
             for i in float_cols:
@@ -658,15 +643,23 @@ def pollen_hunt(df_tickers_data, MACD):
     # QUEEN['pollencharts'] = chart_rebuild_dict
     # QUEEN['pollencharts_nectar'] = main_rebuild_dict
     return {'pollencharts_nectar': main_rebuild_dict, 'pollencharts': chart_rebuild_dict}
-# PollenBee_Charts = pollen_hunt(ticker_list=main_index_tickers)
 
 
-def read_pollenstory():
+def read_pollenstory(): # return combined dataframes
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
     pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
     return pollenstory
 
+
+def read_queensmind(): # return active story workers
+    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
+    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
+    # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
+    collective_pollenstory = {**bishop['conscience']['pollenstory'], **castle['conscience']['pollenstory']}
+    knightsword = {**bishop['conscience']['knightsword'], **castle['conscience']['knightsword']}
+    
+    return {'bishop': bishop, 'castle': castle, 'collective_pollenstory': collective_pollenstory, 'knightsword': knightsword}
 
 print(
 """
@@ -679,7 +672,11 @@ Always Bee Better
 
 # if '_name_' == '_main_':
 # print("Buzz Buzz Where My Honey")
-logging.info("Buzz Buzz Where My Honey")
+if queens_chess_piece == 'queen':
+    logging.info("My Queen")
+else:
+    logging.info("Buzz Buzz Where My Honey")
+
 # Account Info
 # Check System
 # All Symbols and Tickers
@@ -691,8 +688,8 @@ PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
 if queens_chess_piece == 'castle':
     if os.path.exists(PB_Story_Pickle):
         os.remove(PB_Story_Pickle)
-    chart_times = {
-            #"1Minute_1Day": 0, "5Minute_5Day": 5,
+    chart_times_castle = {
+            "1Minute_1Day": 1, "5Minute_5Day": 5,
             "30Minute_1Month": 18, 
             "1Hour_3Month": 48, "2Hour_6Month": 72, 
             "1Day_1Year": 250}
@@ -700,290 +697,300 @@ if queens_chess_piece == 'castle':
 if queens_chess_piece == 'bishop':
     if os.path.exists(PB_Story_Pickle):
         os.remove(PB_Story_Pickle)
-    chart_times = {
-            "1Minute_1Day": 1, "5Minute_5Day": 5,}
+    chart_times_bishop = {
+            "1Minute_1Day": 1, "5Minute_5Day": 5,
+            "30Minute_1Month": 18, 
+            "1Hour_3Month": 48, "2Hour_6Month": 72, 
+            "1Day_1Year": 250}
 
 if queens_chess_piece == 'workerbee':
     if os.path.exists(PB_Story_Pickle):
         os.remove(PB_Story_Pickle)
 
+if queens_chess_piece == 'queen':
+    print("My Queen")
+
 s_mainbeetime = datetime.datetime.now()
 
 
 """ Initiate your Charts with Indicators """
-if queens_chess_piece.lower() in ['castle', 'bishop']:
-    # >>> Initiate your Charts
-    res = Return_Init_ChartData(ticker_list=client_symbols, chart_times=chart_times)
-    errors = res['errors']
-    if errors:
-        msg = ("Return_Init_ChartData Failed", "--", errors)
-        print(msg)
-        logging.critical(msg)
-        sys.exit()
-    df_tickers_data_init = res['init_charts']
-    # add snapshot to initial chartdata -1
-    df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
-    # give it all to the QUEEN put directkly in function
-    pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
-    QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
-    QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
- 
-    """# mark final times and return values"""
-    e_mainbeetime = datetime.datetime.now()
-    msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
-    logging.info(msg)
-    print(msg)
-
-# >>> Continue to Rebuild ChartData and Story
-while True:
-    if queens_chess_piece.lower() in ['castle', 'bishop']:
-        s = datetime.datetime.now()
-        if s > datetime.datetime(s.year, s.month, s.day, 16):
-            logging.info("Happy Bee Day End")
-            print("Great Job! See you Tomorrow")
-            break
-        pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
+def initiate_ttframe_charts(queens_chess_piece):
+    if queens_chess_piece.lower() == 'castle':    # >>> Initiate your Charts
+        res = Return_Init_ChartData(ticker_list=client_symbols_castle, chart_times=chart_times_castle)
+        errors = res['errors']
+        if errors:
+            msg = ("Return_Init_ChartData Failed", "--", errors)
+            print(msg)
+            logging.critical(msg)
+            sys.exit()
+        df_tickers_data_init = res['init_charts']
+        # add snapshot to initial chartdata -1
+        df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
+        # give it all to the QUEEN put directkly in function
+        pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
         QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
         QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
-        pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
-        QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
-        if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-            msg=("Pickle Data Failed")
+    
+        """# mark final times and return values"""
+        e_mainbeetime = datetime.datetime.now()
+        msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+        logging.info(msg)
+        print(msg)
+
+    if queens_chess_piece.lower() == 'bishop':
+        # >>> Initiate your Charts
+        res = Return_Init_ChartData(ticker_list=client_symbols_bishop, chart_times=chart_times_bishop)
+        errors = res['errors']
+        if errors:
+            msg = ("Return_Init_ChartData Failed", "--", errors)
             print(msg)
             logging.critical(msg)
-            continue
-        e = datetime.datetime.now()
-        print(queens_chess_piece, str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-       
-
-    if queens_chess_piece.lower() == 'workerbee': # return tics
-        s = datetime.datetime.now()
-        if s > datetime.datetime(s.year, s.month, s.day, 16):
-            logging.info("Happy Bee Day End")
-            print("Great Job! See you Tomorrow")
-            break
-        tic_tickers = ['AAPL', 'TSLA', 'GOOG', 'FB']
-        r = rebuild_timeframe_bars(ticker_list=tic_tickers, build_current_minute=False, min_input=0, sec_input=30) # return all tics
-        resp = r['resp'] # return slope of collective tics
-        slope_dict = {}
-        for symbol in set(resp['symbol'].to_list()):
-            df = resp[resp['symbol']==symbol].copy()
-            df = df.reset_index()
-            df_len = len(df)
-            if df_len > 2:
-                slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
-                slope_dict[df.iloc[0].symbol] = slope
-
-        print(sum([v for k,v in slope_dict.items()]))
-        # for k, i in slope_dict.items():
-        #     print(k, i)
-        
-        if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-            msg=("Pickle Data Failed")
-            print(msg)
-            logging.critical(msg)
-            continue
-        e = datetime.datetime.now()
-        print(queens_chess_piece, str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
+            sys.exit()
+        df_tickers_data_init = res['init_charts']
+        # add snapshot to initial chartdata -1
+        df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
+        # give it all to the QUEEN put directkly in function
+        pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
+        QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
+        QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
+    
+        """# mark final times and return values"""
+        e_mainbeetime = datetime.datetime.now()
+        msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+        logging.info(msg)
+        print(msg)
 
 
-    if queens_chess_piece.lower() == 'knight': # Read Bees Story
-        s = datetime.datetime.now()
-        if s > datetime.datetime(s.year, s.month, s.day, 16):
-            logging.info("Happy Bee Day End")
-            print("Great Job! See you Tomorrow")
-            break
+# >>> Continue to Rebuild ChartData and Story
+try:
+    initiate_ttframe_charts(queens_chess_piece)
+    while True:
+        if queens_chess_piece.lower() in ['castle', 'bishop']:
+            s = datetime.datetime.now()
+            if s > datetime.datetime(s.year, s.month, s.day, 16):
+                logging.info("Happy Bee Day End")
+                print("Great Job! See you Tomorrow")
+                break
+            pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
+            QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
+            QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
+            pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
+            QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
+            if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+                msg=("Pickle Data Failed")
+                print(msg)
+                logging.critical(msg)
+                continue
+            if queens_chess_piece == 'castle':
+                speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
+            e = datetime.datetime.now()
+            print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
-        # Read chart story data
-        castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-        bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
-        if castle == False or bishop == False:
-            msg = ("Failed in Reading of Castle of Bishop Pickle File")
-            print(msg)
-            logging.warning(msg)
-            continue
-        else:
-            pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-            # make recording of last modified
-            lastmod = bishop["last_modified"]["last_modified"]
+        if queens_chess_piece.lower() == 'workerbee': # return tics
+            s = datetime.datetime.now()
+            if s > datetime.datetime(s.year, s.month, s.day, 16):
+                logging.info("Happy Bee Day End")
+                print("Great Job! See you Tomorrow")
+                break
+            tic_tickers = ['AAPL', 'TSLA', 'GOOG', 'FB']
+            r = rebuild_timeframe_bars(ticker_list=tic_tickers, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+            resp = r['resp'] # return slope of collective tics
+            slope_dict = {}
+            for symbol in set(resp['symbol'].to_list()):
+                df = resp[resp['symbol']==symbol].copy()
+                df = df.reset_index()
+                df_len = len(df)
+                if df_len > 2:
+                    slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
+                    slope_dict[df.iloc[0].symbol] = slope
+
+            print(sum([v for k,v in slope_dict.items()]))
+            # for k, i in slope_dict.items():
+            #     print(k, i)
             
-            if lastmod > QUEEN[queens_chess_piece]["last_modified"]:
-                QUEEN[queens_chess_piece]["last_modified"] = lastmod
+            if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+                msg=("Pickle Data Failed")
+                print(msg)
+                logging.critical(msg)
+                continue
+            e = datetime.datetime.now()
+            print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+
+        if queens_chess_piece.lower() == 'knight': # TBD
+            s = datetime.datetime.now()
+            if s > datetime.datetime(s.year, s.month, s.day, 16):
+                logging.info("Happy Bee Day End")
+                print("Great Job! See you Tomorrow")
+                break
+
+            # Read chart story data
+            castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+            bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+            if castle == False or bishop == False:
+                msg = ("Failed in Reading of Castle of Bishop Pickle File")
+                print(msg)
+                logging.warning(msg)
+                continue
+            else:
+                pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+                # make recording of last modified
+                lastmod = bishop["last_modified"]["last_modified"]
                 
-                if prod:
-                    def bid_ask_devation(symbol):
-                        devation = .01  #(bid - ask) / ask
-                        return devation
-
-
-                    def generate_order_id():
-                        var_1 = 'buy'
-                        var_2 = 'type'  # create category types based on framework of scenarios
-                        now = return_timestamp_string()
-                        x = now
-                        # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
-                        id = now + "_" + str(var_1) + "_" + str(var_2)
-                        return id # OR just return the string iteslf? that is better no?
+                if lastmod > QUEEN[queens_chess_piece]["last_modified"]:
+                    QUEEN[queens_chess_piece]["last_modified"] = lastmod
                     
-
-                    def queens_order_managment(prod, spy, symbols):
-                        prod = 'sandbox'
-                        symbols = {'sting': ['spy']}  # sting: fast day trade
-                        symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
-                        symbol = spy
-                        qty = 1
-                        side = 'buy'
-                        type = 'market'  #'limit', 'market'
-                        time_in_force = 'gtc'
-                        client_order_id = generate_order_id()
-
-                        # Buy in Prod or Sandbox
-                        if prod:
-                            api =api
-                        else:
-                            api = api_paper
+                    if prod:
+                        def bid_ask_devation(symbol):
+                            devation = .01  #(bid - ask) / ask
+                            return devation
 
 
-                    def knight_sight(df): # adds all triggers to dataframe
-                        # ticker_time_frame = df['name'].iloc[-1]
-                        # trigger_dict = {ticker_time_frame: {}}
-                        trigger_dict = {}
+                        def generate_order_id():
+                            var_1 = 'buy'
+                            var_2 = 'type'  # create category types based on framework of scenarios
+                            now = return_timestamp_string()
+                            x = now
+                            # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
+                            id = now + "_" + str(var_1) + "_" + str(var_2)
+                            return id # OR just return the string iteslf? that is better no?
                         
-                        # >>> ready for cross trigger: 
-                        # current macd = sell, & 
-                        # macd signal deviation "very close" &
-                        # hist slope is up
-                        
-                        # Mac is very LOW and we are in buy cross
-                        trigger = 'buy_RED_tier-1_macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            ((df['macd'] < 0) & (df['macd'] > -.3))
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
-                        trigger = 'buy_RED_tier-2_macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            ((df['macd'] < -.3) & (df['macd'] > -.5))
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+                        def queens_order_managment(prod, spy, symbols):
+                            prod = 'sandbox'
+                            symbols = {'sting': ['spy']}  # sting: fast day trade
+                            symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
+                            symbol = spy
+                            qty = 1
+                            side = 'buy'
+                            type = 'market'  #'limit', 'market'
+                            time_in_force = 'gtc'
+                            client_order_id = generate_order_id()
 
-                        trigger = 'buy_RED_tier-3_macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            ((df['macd'] < -.5) & (df['macd'] > -.1))
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+                            # Buy in Prod or Sandbox
+                            if prod:
+                                api =api
+                            else:
+                                api = api_paper
 
-                        trigger = 'buy_RED_tier-4_macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            ((df['macd'] < -.1) & (df['macd'] > -.15))
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
-                        trigger = 'buy_RED_tier-5_macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            (df['macd'] < -.15)
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
 
-                        # Mac is very LOW and we are in buy cross
-                        trigger = 'buy_high-macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            (df['macd'] < -.1)
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
-                        # Mac is very LOW and we are in buy cross
-                        trigger = 'buy_high-macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-                            (df['macd'] < -.1)
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-                        
-                        # Mac is very High and we are in a Sell Cross
-                        trigger = 'sell_high-macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("sell")==True) &
-                            (df['macd'] > 1)
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
-                        # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
-                        trigger = 'sell_high-macdcross'
-                        df[trigger] = np.where(
-                            (df['macd_cross'].str.contains("sell_hold")==False) & # is not in Sell cycle
-                            (df['macd'] > 1.5) &
-                            (df['macd_slope-3'] < .1) &
-                            ((df['hist_slope-3'] < .33) |(df['hist_slope-6'] < .10))
-                            ,"bee", 'nothing')
-                        bee_df = df[df[trigger] == 'bee'].copy()
-                        if len(bee_df) > 0:
-                            trigger_dict[trigger] = {}
-                            trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+                        if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+                            msg=("Pickle Data Failed")
+                            print(msg)
+                            logging.critical(msg)
+                            continue
+                    
+                        spy = pollenstory['SPY_1Minute_1Day']
+                        print(spy[['macd_cross', 'close_mom_3', 'nowdate']].tail(5))
 
                     
-                        return {"df": df, "bee_triggers": trigger_dict}
+                    e = datetime.datetime.now()
+                    print("knight", str((e - s).seconds) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
-                    
-                    knights_sight_word = {}
-                    knight_sight_df = {}
-                    for symbol_time_frame, df in pollenstory.items():
-                        resp = knight_sight(df=df)
-                        df_knight = resp['df']
-                        knights_word = resp['bee_triggers']
-                        knights_sight_word[symbol_time_frame] = knights_word
-                        knight_sight_df[symbol_time_frame] = df_knight
-                    
-                    QUEEN[queens_chess_piece]['bee_triggers']['knights_word'] = knights_sight_word
-                    QUEEN[queens_chess_piece]['bee_triggers']['knights_df'] = knight_sight_df
+        if queens_chess_piece.lower() == 'queen': # Read Bees Story 
+            pollenstory = read_pollenstory()
+            QUEEN[queens_chess_piece]['pollenstory'] = pollenstory
+            queensmind = read_queensmind()
+            mindseye = queensmind['collective_pollenstory'] # all ttframes with all immediate info needed
+            qm_knightsword = queensmind['knightsword'] # all ttframes with all triggers their lastmod times
+            
+            knight_bees = {}
+            day_theme = {} # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
+            current_positions = {}
 
+            
+            # working with SPY TO START ONLY
+            def command_conscience(api, ticker):
+                ticker = 'SPY'
 
-                    if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-                        msg=("Pickle Data Failed")
-                        print(msg)
-                        logging.critical(msg)
-                        continue
+                king = {k:v for (k, v) in mindseye.items() if k.split("_")[0] == ticker} # filter by ticker
+                all_current_triggers = {k:v['alltriggers_current_state'] for (k,v) in king.items() if len(v['alltriggers_current_state']) > 0}
+                memory = {k.split("_")[0]: [] for (k,v) in king.items()} # memory should be initialized
+                if all_current_triggers:
+                    if f'{ticker}{"_1Minute_1Day"}' in all_current_triggers.keys():
+                        # cycle through triggers and pass buy first logic for buy
+                        trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
+                        for trig in trigs:
+                            if trig == "buy_cross-0":
+                                print("trig", trig, return_timestamp_string())
+                                # check if you already placed order or if a workerbee in transit to place order
+                                all_position = api.list_positions() # return current position # check current position of order
+                                open_orders_list = api.list_orders(status='open') # check if open order exists
+                                if ticker in [i.symbol for i in all_position]:
+                                    memory_trig_stopped = memory[ticker]['trigger_stopped']
+                                    for trig_info in memory_trig_stopped:
+                                        if trig_info['trigname'] == trig:
+                                            print("trig already stopped moving on")
+                                    print("position already taken send info to Queen")
+                                    memory[ticker]['trigger_stopped'].append({'trigname': trig, 'datetime': datetime.datetime.now().isoformat()})
+                                else:
+                                    print("Always Bee Better > Each Buz in a gift")
+                                    # FUNCTION THAT CHECKS ORDER TO input Qty
+                                    order = submit_order(api=api, symbol=ticker, type='market', qty=1, side='buy', client_order_id=trig) # buy
+                                    QUEEN[queens_chess_piece]['conscience']['orders'].append({'ticker': ticker, 'order': order, 'datetime': datetime.datetime.now().isoformat()})
+                                    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_story=QUEEN)
+                            
+                            if ticker in QUEEN[queens_chess_piece]['heartbeat']['main_indexes']: # SPY, QQQ
+                                if trig == "sell_cross-0":
+                                    print("trig", trig, return_timestamp_string())
+                                    # check if you already placed order or if a workerbee in transit to place order
+                                    all_position = api.list_positions() # return current position # check current position of order
+                                    open_orders_list = api.list_orders(status='open') # check if open order exists
+                                    if ticker in [i.symbol for i in all_position]:
+                                        memory_trig_stopped = memory[ticker]['trigger_stopped']
+                                        for trig_info in memory_trig_stopped:
+                                            if trig_info['trigname'] == trig:
+                                                print("trig already stopped moving on")
+                                        print("position already taken send info to Queen")
+                                        memory[ticker]['trigger_stopped'].append({'trigname': trig, 'datetime': datetime.datetime.now().isoformat()})
+                                    else:
+                                        print("Always Bee Better > Each Buz in a gift")
+                                        # FUNCTION THAT CHECKS ORDER TO input Qty
+                                        order = submit_order(api=api, symbol=QUEEN[queens_chess_piece]['heartbeat']['main_indexes'][ticker]['inverse'], type='market', qty=1, side='buy', client_order_id=trig) # buy
+                                        QUEEN[queens_chess_piece]['conscience']['orders'].append({'ticker': ticker, 'order': order, 'datetime': datetime.datetime.now().isoformat()})
+                                        if pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN):
+                                            pass
+                                        else:
+                                            print("ERROR WITH PICKLE")
+                                            logging.critical("{'type': 'orders', 'errorname': 'ERROR WITH PICKLE'}")
+            
+            for ttframe, mind in mindseye.items():
+                ticker, time, frame = ttframe.split("_")
+                command_conscience(api=api_paper, ticker=ticker)
+            
+
+            # manager orders
+            def order_management():
+                # you need a better name for the function : )
+                closed_orders_list = api.list_orders(status='closed')
+                open_orders_list = api.list_orders(status='open')
+
+                # get all orders that have been submitted
+                beeorders = QUEEN[queens_chess_piece]['conscience']['orders']
                 
-                    spy = pollenstory['SPY_1Minute_1Day']
-                    print(spy[['macd_cross', 'close_mom_3', 'tier_macd', 'nowdate']].tail(5))
+                # get all orders that are open
 
-                
-                e = datetime.datetime.now()
-                print("knight", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
- 
-# >>> Buy Sell Weights 
 
-# >>> NEED TO FIX the return for each time interval, rebuild 5 Min, 1 hr...etc....Put rebuild charts into new dict where they get maintained...add logic for each interval...i.e. on 5Min Mark rebuild with Initiate OR replace last 5 Minutes....?
+                return True
 
+            # QUEEN[queens_chess_piece]['conscience']['pollenstory'] = mindseye
+            # QUEEN[queens_chess_piece]['conscience']['knightsword'] = qm_knightsword
+            
+            # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+
+
+            """
+                > lets do this!!!!
+                love: anchor on the 1 min macd crosses or better yet just return all triggers and base everything off the trigger
+            """
+
+    # >>> Buy Sell Weights 
+
+    # >>> NEED TO FIX the return for each time interval, rebuild 5 Min, 1 hr...etc....Put rebuild charts into new dict where they get maintained...add logic for each interval...i.e. on 5Min Mark rebuild with Initiate OR replace last 5 Minutes....?
+except Exception as errbuz:
+    print(errbuz)
+    log_msg = {'type': 'ProgramCrash'}
+    logging.critical(log_msg)
+    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

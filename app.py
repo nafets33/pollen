@@ -41,7 +41,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
-# from QueenHive import return_api_keys
+from QueenHive import return_api_keys, read_pollenstory, read_queensmind
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -101,18 +101,14 @@ est = pytz.timezone("US/Eastern")
 load_dotenv()
 # >>> initiate db directories
 system = 'windows' #mac, windows
-# if system != 'windows':
-#     db_root = os.environ.get('db_root_mac')
-# else:
-#     db_root = os.environ.get('db_root_winodws')
 
 # """ Keys """
-# api_key_id = os.environ.get('APCA_API_KEY_ID')
-# api_secret = os.environ.get('APCA_API_SECRET_KEY')
-# base_url = "https://api.alpaca.markets"
-# keys = return_api_keys(base_url, api_key_id, api_secret)
-# rest = keys[0]['rest']
-# api = keys[0]['api']
+api_key_id = os.environ.get('APCA_API_KEY_ID')
+api_secret = os.environ.get('APCA_API_SECRET_KEY')
+base_url = "https://api.alpaca.markets"
+keys = return_api_keys(base_url, api_key_id, api_secret)
+rest = keys[0]['rest']
+api = keys[0]['api']
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -159,9 +155,18 @@ def pollenstory():
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
     knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
     pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-    pollenstory = {**pollenstory, **knight}
+    # pollenstory = {**pollenstory, **knight}
     return pollenstory
 
+def queensmind():
+    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+    knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
+    b = bishop['bishop']
+    c = castle['castle']
+    conscience = {**bishop['bishop']['conscience']['pollenstory'], **castle['castle']['conscience']['pollenstory']}
+    knightsword = {**bishop['bishop']['conscience']['knightsword'], **castle['castle']['conscience']['knightsword']}
+    return {'bishop': b, 'castle': c, 'conscience_pollenstory': conscience, 'knightsword': knightsword}
 
 
 def df_plotchart(title, df, y, x=False, figsize=(14,7)):
@@ -175,28 +180,44 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7)):
 
 # if queens_chess_piece.lower() == 'knight': # Read Bees Story
 # Read chart story dat
-st.header('QueenBee')
-st.sidebar.write("WelcomeSide")
+# st.header('QueenBee')
+# st.sidebar.write("WelcomeSide")
 
-st.markdown('<div style="text-align: center;">{}</div>'.format("buzz"), unsafe_allow_html=True)
-st.markdown('<div style="text-align: left;">{}</div>'.format("buzzz"), unsafe_allow_html=True)
-st.markdown('<div style="text-align: right;">{}</div>'.format("buzzzz"), unsafe_allow_html=True)
+# st.markdown('<div style="text-align: center;">{}</div>'.format("buzz"), unsafe_allow_html=True)
+# st.markdown('<div style="text-align: left;">{}</div>'.format("buzzz"), unsafe_allow_html=True)
+# st.markdown('<div style="text-align: right;">{}</div>'.format("buzzzz"), unsafe_allow_html=True)
 # st.markdown('<div style="text-align: justify;">Hello World!</div>', unsafe_allow_html=True)
 
 st.button("ReRun")
-
+col1, col2, col3, col4 = st.columns(4)
 bee_image = os.path.join(db_root, 'bee.jpg')
 image = Image.open(bee_image)
-st.image(image, caption='Jq', width=33)
+with col3:
+    st.image(image, caption='Jq', width=33)
 
 # option1 = st.selectbox("Dashboards", ('knight', 'Bishop', 'Castle'))
-option = st.sidebar.selectbox("Dashboards", ('test', 'knight', 'bishop', 'castle', 'slopes'))
-st.header(option)
+pollenstory_resp = read_pollenstory()
+queens_mind = read_queensmind()
+mainstate = queens_mind['collective_pollenstory']
+knights_word = queens_mind['knightsword']
+today_day = datetime.datetime.now().day
+tickers_avail = [set(i.split("_")[0] for i in mainstate.keys())][0]
+tickers_avail.update({"all"})
 
-option2 = st.sidebar.selectbox("Tic", ('SPY', 'QQQ'))
-st.markdown('<div style="text-align: center;">{}</div>'.format(option2), unsafe_allow_html=True)
+# we gather the labels and create a list
+# labels = list(tickers_avail.c.unique())
 
-option3 = st.sidebar.selectbox("Always RUN", ('Yes', 'No'))
+# selected_values = st.multiselect("Select C values",tickers_avail)
+
+
+option = st.sidebar.selectbox("Dashboards", ('queen', 'test', 'knight', 'bishop', 'castle', 'slopes'))
+# st.header(option)
+
+ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
+st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
+
 
 if option == 'slopes':
     pollenstory_resp = pollenstory()
@@ -221,7 +242,7 @@ if option == 'slopes':
 
 if option == 'knight':
     # symbol = st.sidebar.text_input("Jq_Name", value='SPY_1Minute_1Day', max_chars=33)
-    symbol = option2
+    symbol = ticker_option
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))  
     pollenstory_resp = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
@@ -292,7 +313,10 @@ if option == 'knight':
         st.experimental_rerun()  ## rerun entire page
 
 if option == 'test':
-    pollenstory_resp = pollenstory()
+    pollenstory_resp = read_pollenstory()
+    queens_mind = read_queensmind()
+    mainstate = queens_mind['collective_pollenstory']
+    knights_word = queens_mind['knightsword']
     today_day = datetime.datetime.now().day
     
     df = pollenstory_resp['SPY_1Minute_1Day'] # test
@@ -308,117 +332,20 @@ if option == 'test':
     st.pyplot(chart2.figure)
 
 
-    st.dataframe(df_t[['close_slope-3', 'close_slope-6']])
+    st.dataframe(df_t[['close', 'close_slope-3', 'close_slope-6']])
     
-    kn = pollenstory_resp['knight']
-    bee_triggers = kn['bee_triggers']
-    knights_word = bee_triggers['knights_word']
-    knights_df = bee_triggers['knights_df']
-    # st.dataframe(knights_word)
-    # queens conscience
-        # {tickers: {},
-        # orders: {},
-        # conscience: {}}
-    """ >what is your current macd state?
-        >list all other current triggers
-        >determine trade consideration logic
-     """
-    OneMinute_list = [i for i in knights_word.keys() if "1Minute" in i]  # get all 1 day current trigger state
-    FiveMinute_list = [i for i in knights_word.keys() if "5Minute" in i]  # get all 1 day current trigger state
-
-    QUEENS_CONSCIENCE = {
-        'conscience': {},
-        'command_conscience': {'order_triggers': []},
-        'cache': {} # keep in mind - aka logs
-    }
-    
-    # Write all info into QUEENs conscience
-    for ticker_time_frame in knights_word.keys():
-
-        # ticker, _time, _frame = ticker_time_frame.split("_")
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame] = {}
-        k_word = knights_word[ticker_time_frame]
-        k_df = knights_df[ticker_time_frame]
-        # get all current knowledge to consider trade
-        
-        time_state = k_df['timestamp_est'].iloc[-1] # current time
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['time_state'] = time_state
-        
-        macd_state = k_df['macd_cross'].iloc[-1]
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_state'] = macd_state
-        
-        macd_state_side = QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_state'].split("_")[0] # buy/sell
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_state_side'] = macd_state_side
-        
-        prior_macd_df = k_df[~k_df['macd_cross'].str.contains(macd_state_side)].copy()
-        prior_macd_state_time = prior_macd_df['timestamp_est'].iloc[-1] # filter not current state
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['prior_macd_state_time'] = prior_macd_state_time
-
-        time_since_macd_change = (k_df['story_index'].iloc[-1] - prior_macd_df['story_index'].iloc[-1]) -1
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['time_since_macd_change'] = time_since_macd_change
-        
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in k_word.items() if v['lastmodified'].day == time_state.day and v['lastmodified'].hour == time_state.hour and v['lastmodified'].minute == time_state.minute]
-
-        # count number of Macd Crosses
-        # k_df['macd_cross_running_count'] = np.where((k_df['macd_cross'] == 'buy_cross-0') | (k_df['macd_cross'] == 'sell_cross-0'), 1, 0)
-        today_df = k_df[k_df['timestamp_est'] > (datetime.datetime.now() - datetime.timedelta(1)).isoformat()].copy()   
-        QUEENS_CONSCIENCE['conscience'][ticker_time_frame]['macd_cross_count'] = {
-            'buy_cross_total_running_count': sum(np.where(k_df['macd_cross'] == 'buy_cross-0',1,0)),
-            'sell_cross_totalrunning_count' : sum(np.where(k_df['macd_cross'] == 'sell_cross-0',1,0)),
-            'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
-            'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
-        }
-            
-    # """ do you want to buy anything my friend """
-    def command_conscience(QUEENS_CONSCIENCE):
-        # answer the questions and pass to order management for every ticker_time_frame 
-        # > are we in a cross and if so how long has it been 
-        # > are 
-        # command_conscience = QUEENS_CONSCIENCE['command_conscience']
-        
-        # ticker_time_frame_list = [i for i in QUEENS_CONSCIENCE["conscience"].keys() if "1Minute_1Day" in i ] 
-
-        for ttframe in OneMinute_list:
-            mind = QUEENS_CONSCIENCE['conscience'][ttframe]
-            alltriggers = mind['alltrriggers_current_state']
-            macdcross_buz = mind['time_since_macd_change'] # are we in a macd cross?
-            # conscience['order_triggers'] takes in arguements (ttframe, ticker)
-            # if macd_state == 'buy_cross-0': # your first trade
-            if 'buy_cross-0' in mind['alltrriggers_current_state']:
-                # how much do you want buy?
-                    #>client_weight
-                trigger_name = f'{"buy_cross-0"}{"_89"}'
-                QUEENS_CONSCIENCE['command_conscience']['order_triggers'].append({ttframe: trigger_name, 'ticker': ttframe.split("_")[0]})
-
-        
-        # each ticker and run through questions to place trade
-        order_trigs = QUEENS_CONSCIENCE['command_conscience']['order_triggers'] # LIST
-        tickers = [j[k] for j in order_trigs for (k, i) in j.items() if k=='ticker']
-        
-        closed_orders_list = api.list_orders(status='closed')
-        open_orders_list = api.list_orders(status='open')
-        
-        for bee in tickers:
-            bee = 'SPY'
-            bee_triggers = [j[k] for j in order_trigs for (k, i) in j.items() if bee in k] # list triggers
-            position = api.get_position(bee) # return current position
-
-            # > how many times have you done this trade?
-            # > 
-
-            # log trigger if event action is taken or Not
-            QUEENS_CONSCIENCE['cache']['trigger_event'].append({'trigger_name': mind['time_state']})
-        
-        # list out the tickers that are getting an order buy
-        # for every ticker look at each order trigger
-        # run buy logic 
-
-
-        return True
     
 
-    st.write("QUEENS_CONSCIENCE")
-    st.write(QUEENS_CONSCIENCE['conscience'])
+    st.write("QUEENS Collective CONSCIENCE")
+    tickers_avail = [set(i.split("_")[0] for i in mainstate.keys())][0]
+    tickers_avail.update({"all"})
+    conscience_option = st.selectbox("ttframes", tickers_avail)
+    if conscience_option.lower != 'all':
+        m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == conscience_option}
+        st.write(m)
+    else:
+        st.write(mainstate.items())
+
 
     df_ = pollenstory_resp['SPY_1Minute_1Day']
     df_['date'] = df_['timestamp_est'] # add as new col
@@ -466,13 +393,29 @@ if option == 'test':
         time.sleep(3)
         st.experimental_rerun()
 
-    # full = spy
-    # title = full.iloc[-1]['name']
-    # full = full.set_index('story_index')
-    # full=full[['close']].plot(figsize=(14,7))
-    # st.subheader(title)
-    # st.pyplot(full.figure)
+if option == 'queen':
+    pollenstory_resp = pollenstory()
+    queens_mind = queensmind()
+    mainstate = queens_mind['conscience_pollenstory']
+    knights_word = queens_mind['knightsword']
+    today_day = datetime.datetime.now().day
 
+    st.write("QUEENS Collective CONSCIENCE")
+    if ticker_option != 'all':
+        m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == ticker_option}
+        st.write(m)
+        # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
+        # df = df.tail(5)
+        # st.dataframe(df)
+    else:
+        st.write(mainstate)
+    # if ticker_option == 'all':
+    #     st.write(mainstate)
+    
+
+    if option3 == "Yes":
+        time.sleep(3)
+        st.experimental_rerun()
 
 
 

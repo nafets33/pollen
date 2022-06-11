@@ -1,5 +1,152 @@
 # archived_functions
+# pollenstory():
+        # # Create Tiers
+        # for tier in range(1, macd_tier_range + 1): # Tiers of MinMax
+        #     for mac_name in ['macd', 'signal', 'hist']:
+        #         divder_max = mac_world['{}_high'.format(mac_name)] / macd_tier_range
+        #         minvalue = mac_world['{}_low'.format(mac_name)]
+        #         divder_min = minvalue / macd_tier_range
+                
+        #         if tier == 1:
+        #             maxvalue = mac_world['{}_high'.format(mac_name)]
+        #             macd_t1 = (maxvalue, (maxvalue - divder_max))
+        #             CHARLIE_bee[ticker_time_frame]["tier"+str(tier)+"_"+mac_name+"-GREEN"] = macd_t1
 
+        #             macd_t1_min = (minvalue, (minvalue - divder_min))
+        #             CHARLIE_bee[ticker_time_frame]["tier"+str(tier)+"_"+mac_name+"-RED"] = macd_t1_min
+        #         else:
+        #             prior_tier = tier - 1
+        #             prior_second_value = CHARLIE_bee[ticker_time_frame]["tier"+str(prior_tier)+"_"+mac_name+"-GREEN"][1]
+                    
+        #             macd_t2 = (prior_second_value,  (prior_second_value - divder_max))
+        #             CHARLIE_bee[ticker_time_frame]["tier"+str(tier)+"_"+mac_name+"-GREEN"] = macd_t2
+
+        #             prior_second_value_red = CHARLIE_bee[ticker_time_frame]["tier"+str(prior_tier)+"_"+mac_name+"-RED"][1]
+        #             macd_t1_min2 = (prior_second_value_red, (prior_second_value_red - divder_min))
+        #             CHARLIE_bee[ticker_time_frame]["tier"+str(tier)+"_"+mac_name+"-RED"] = macd_t1_min2
+        # df = pd.DataFrame(CHARLIE_bee.items(), columns=['name', 'values'])
+        # df[(df["name"].str.contains("macd")) & (df["name"].str.contains("-GREEN"))]
+
+        # BETTY_bee = {}  # 'SPY_1Minute': {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}    
+        
+        # Map in CHARLIE_bee tier
+        # def map_tiers(): # map in into main df
+        #     def map_values_tier(mac_name, value, ticker_time_tiers, tier_range_set_value=False): # map in tier name or tier range high low
+        #         # ticker_time_tiers = CHARLIE_bee[ticker_time_frame]
+        #         if value < 0:
+        #             chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "RED" in k}
+        #         else:
+        #             chart_range = {k:v for (k,v) in ticker_time_tiers.items() if mac_name in k and "GREEN" in k}
+                
+        #         for tier_macname_sector, tier_range in chart_range.items():
+        #             if abs(value) <= abs(tier_range[0]) and abs(value) >= abs(tier_range[1]):
+        #                 if tier_range_set_value == 'high':
+        #                     return tier_range[0]
+        #                 elif tier_range_set_value == 'low':
+        #                     return tier_range[1]
+        #                 else:
+        #                     return tier_macname_sector
+            
+        #     ticker_time_tiers = CHARLIE_bee[ticker_time_frame]
+        #     df['tier_macd'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers))
+        #     df['tier_macd_range-high'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='high'))
+        #     df['tier_macd_range-low'] = df['macd'].apply(lambda x: map_values_tier('macd', x, ticker_time_tiers, tier_range_set_value='low'))
+
+        #     df['tier_signal'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers))
+        #     df['tier_signal_range-high'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='high'))
+        #     df['tier_signal_range-low'] = df['signal'].apply(lambda x: map_values_tier('signal', x, ticker_time_tiers, tier_range_set_value='low'))
+
+        #     df['tier_hist'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers))
+        #     df['tier_hist_range-high'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='high'))
+        #     df['tier_hist_range-low'] = df['hist'].apply(lambda x: map_values_tier('hist', x, ticker_time_tiers, tier_range_set_value='low'))
+            
+        #     return True
+        # map_tiers()
+
+        # # Add Seq columns of tiers, return [0,1,2,0,1,0,0,1,2,3,0] (how Long in Tier)
+        #     # how long since prv High/Low?
+        #     # when was the last time you were in higest tier
+        # #>/ how many times have you reached tiers
+        # #>/ how long have you stayed in your tier?
+        #     # side of tier, are you closer to exit or enter of next tier?
+        #     # how far away from MACD CROSS?
+        #     # ARE you a startcase Hist? # linear regression 
+        # def count_sequential_n_inList(df, item_list, mac_name): # df['tier_macd'].to_list()
+        #     # how long you been in tier AND 
+        #     # item_list = df['tier_macd'].to_list()
+        #     d = defaultdict(int) # you have totals here to return!!!
+        #     d_total_tier_counts = defaultdict(int)
+        #     res_list = []
+        #     res_dist_list = []
+        #     set_index = {'start': 0}
+        #     for i, el in enumerate(item_list):
+        #         if i == 0:
+        #             d[el]+=1
+        #             d_total_tier_counts[el] += 1
+        #             res_list.append(d[el])
+        #             res_dist_list.append(0)
+        #         else:
+        #             seq_el = item_list[i-1]
+        #             if el == seq_el:
+        #                 d[el]+=1
+        #                 d_total_tier_counts[el] += 1
+        #                 res_list.append(d[el])
+        #                 # count new total distance
+        #                 total = sum(res_list[set_index['start']:i])
+        #                 res_dist_list.append(total)
+        #             else:
+        #                 d[el]=0
+        #                 res_list.append(d[el])
+        #                 set_index['start'] = i - 1
+        #                 res_dist_list.append(0)
+            
+        #     # Join in Data and send info to the QUEEN
+        #     # QUEEN[queens_chess_piece]['pollenstory_info'][ticker_time_frame][''] = d_total_tier_counts
+        #     bee_tier_totals = d_total_tier_counts
+        #     dfseq = pd.DataFrame(res_list, columns=['seq_'+mac_name])
+        #     dfrunning = pd.DataFrame(res_dist_list, columns=['running_'+mac_name])
+        #     df_new = pd.concat([df, dfseq, dfrunning], axis=1)
+        #     return df_new
+
+        
+        
+        # def tier_time_patterns(df, names):
+        #     # {'macd': {'tier4_macd-RED': (-3.062420318268792, 0.0), 'current_value': -1.138314020642838}
+        #     names = ['macd', 'signal', 'hist']
+        #     for name in names:
+        #         tier_name = f'tier_{name}' # tier_macd
+        #         item_list = df[tier_name].to_list()
+        #         res = count_sequential_n_inList(item_list)
+
+        #         tier_list = list(set(df[tier_name].to_list()))
+
+                
+        #         for tier in tier_list:
+        #             if tier.lower().startswith('t'): # ensure tier
+        #                 df_tier = df[df[tier_name] == tier].copy()
+        #                 x = df_tier["timestamp_est"].to_list()
+
+        # # macd_high = df_i[df_i[mac_name] == mac_world['{}_high'.format(mac_name)]].timestamp_est # last time High
+        # # macd_min = df_i[df_i[mac_name] == mac_world['{}_low'.format(mac_name)]].timestamp_est # last time Low
+        
+        # try:  # count_sequential_n_inList
+        #     for mac_name in ['macd', 'signal', 'hist']:
+        #         df = count_sequential_n_inList(df=df, item_list=df['tier_'+mac_name].to_list(), mac_name=mac_name)
+
+        #         # distance from prior HIGH LOW
+        #         toptier = f'{"tier1"}{"_"}{mac_name}{"-GREEN"}'
+        #         bottomtier = f'{"tier1"}{"_"}{mac_name}{"-RED"}'
+        #         # Current Distance from top and bottom
+        #         for tb in [toptier, bottomtier]:
+        #             df_t = df[df['tier_'+mac_name]==tb].copy()
+        #             last_time_tier_found = df_t.iloc[-1].story_index
+        #             distance_from_last_tier = df.iloc[-1].story_index - df_t.iloc[-1].story_index
+        #             betty_bee[f'{ticker_time_frame}{"--"}{"tier_"}{mac_name}{"-"}{tb.split("-")[-1]}'] = distance_from_last_tier
+        #         QUEEN[queens_chess_piece]['pollenstory_info']['betty_bee'] = betty_bee
+
+        # except Exception as e:
+        #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--", mac_name)
+        #     logging.error(msg)
 
 
 def init_log(root, dirname, name, update_df=False, update_type=False, update_write=False, cols=False):
