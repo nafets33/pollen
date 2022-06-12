@@ -198,7 +198,7 @@ with col3:
 # option1 = st.selectbox("Dashboards", ('knight', 'Bishop', 'Castle'))
 pollenstory_resp = read_pollenstory()
 queens_mind = read_queensmind()
-mainstate = queens_mind['collective_pollenstory']
+mainstate = queens_mind['STORY_bee']
 knights_word = queens_mind['knightsword']
 today_day = datetime.datetime.now().day
 tickers_avail = [set(i.split("_")[0] for i in mainstate.keys())][0]

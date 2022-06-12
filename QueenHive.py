@@ -161,13 +161,14 @@ def read_pollenstory(): # return combined dataframes
 
 
 def read_queensmind(): # return active story workers
+    queen = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
     # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
-    collective_pollenstory = {**bishop['conscience']['pollenstory'], **castle['conscience']['pollenstory']}
+    STORY_bee = {**bishop['conscience']['STORY_bee'], **castle['conscience']['STORY_bee']}
     knightsword = {**bishop['conscience']['knightsword'], **castle['conscience']['knightsword']}
     
-    return {'bishop': bishop, 'castle': castle, 'collective_pollenstory': collective_pollenstory, 'knightsword': knightsword}
+    return {'queen': queen, 'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
@@ -302,13 +303,13 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         # when did macd and signal share same tier?
     
     # Give to the Queen
-    QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = ANGEl_bee
-    QUEEN[queens_chess_piece]['conscience']['knightsword'] = knights_sight_word
-    QUEEN[queens_chess_piece]['conscience']['pollenstory'] = STORY_bee
+    # QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = ANGEl_bee
+    # QUEEN[queens_chess_piece]['conscience']['knightsword'] = knights_sight_word
+    # QUEEN[queens_chess_piece]['conscience']['pollenstory'] = STORY_bee
 
     e = datetime.datetime.now()
     print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    return {'pollen_story': story}
+    return {'pollen_story': story, 'conscience': {'ANGEl_bee': ANGEl_bee, 'knightsword': knights_sight_word, 'STORY_bee': STORY_bee  } }
 
 
 def knight_sight(df): # adds all triggers to dataframe
@@ -488,7 +489,7 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
         logging.critical(msg)     
 
 
-def return_degree_angle(x, y):
+def return_degree_angle(x, y): #
     # 45 degree angle
     # x = [1, 2, 3]
     # y = [1,2]
@@ -891,10 +892,10 @@ def init_index_ticker(index_list, db_root, init=True):
 
 
 def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
-    tic_tickers = ['AAPL', 'TSLA', 'GOOG', 'FB']
+    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'FB']
 
     s = datetime.datetime.now()
-    r = rebuild_timeframe_bars(ticker_list=tic_tickers, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+    r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
     resp = r['resp'] # return slope of collective tics
     speedybee_dict = {}
     slope_dict = {}
@@ -906,9 +907,11 @@ def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.l
             slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
             slope_dict[df.iloc[0].symbol] = slope
     speedybee_dict['slope'] = slope_dict
-    QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
+    
+    # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
 
     print(sum([v for k,v in slope_dict.items()]))
+    return {'speedybee': speedybee_dict}
 
 
 def pickle_chesspiece(pickle_file, data_to_store):

@@ -33,7 +33,7 @@ import shutil
 # from scipy.stats import linregress
 from scipy import stats
 import hashlib
-from QueenHive import init_logging, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import read_queensmind, read_pollenstory, init_logging, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 
 # script arguments
 queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
@@ -46,9 +46,12 @@ init_logging(queens_chess_piece, db_root)
 # Macd Settings
 MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 QUEEN = { # The Queens Mind
+    'command_conscience': {'memory': {}, 'orders': []}, # ONLY for the Kings Eyes
+
+    # Worker Bees
     queens_chess_piece: {
-    'conscience': {'pollenstory': {},'knightsword': {}, 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
-    'pollenstory': {}, # latest story of dataframes
+    'conscience': {'STORY_bee': {},'knightsword': {}, 'ANGEl_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+    'pollenstory': {}, # latest story of dataframes castle and bishop
     'pollencharts': {}, # latest chart rebuild
     'pollencharts_nectar': {}, # latest chart rebuild with indicators
     'pollenstory_info': {}, # Misc Info,
@@ -639,27 +642,9 @@ def pollen_hunt(df_tickers_data, MACD):
             main_rebuild_dict[ticker_time] = df_data_new[1]
         else:
             print("error", ticker_time)
-    
-    # QUEEN['pollencharts'] = chart_rebuild_dict
-    # QUEEN['pollencharts_nectar'] = main_rebuild_dict
+
     return {'pollencharts_nectar': main_rebuild_dict, 'pollencharts': chart_rebuild_dict}
 
-
-def read_pollenstory(): # return combined dataframes
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
-    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-    return pollenstory
-
-
-def read_queensmind(): # return active story workers
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
-    # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
-    collective_pollenstory = {**bishop['conscience']['pollenstory'], **castle['conscience']['pollenstory']}
-    knightsword = {**bishop['conscience']['knightsword'], **castle['conscience']['knightsword']}
-    
-    return {'bishop': bishop, 'castle': castle, 'collective_pollenstory': collective_pollenstory, 'knightsword': knightsword}
 
 print(
 """
@@ -676,12 +661,6 @@ if queens_chess_piece == 'queen':
     logging.info("My Queen")
 else:
     logging.info("Buzz Buzz Where My Honey")
-
-# Account Info
-# Check System
-# All Symbols and Tickers
-# Intiaite Main tickers
-# Order Manage Loop
 
 # init files needed
 PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
@@ -764,25 +743,63 @@ def initiate_ttframe_charts(queens_chess_piece):
 # >>> Continue to Rebuild ChartData and Story
 try:
     initiate_ttframe_charts(queens_chess_piece)
+    if queens_chess_piece == 'queen':
+        # Initiate the Queens Mind with chartstories and conscienciness
+        pollenstory = read_pollenstory()
+        QUEEN[queens_chess_piece]['pollenstory'] = pollenstory # initiate story
+        
+        queensmind = read_queensmind() # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
+        queen = queensmind['queen']            
+        QUEEN['command_conscience']['memory'] = queen['command_conscience']['memory'] # initiate memory
+        QUEEN['command_conscience']['orders'] = queen['command_conscience']['orders'] # initiate memory
+        
+        QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = queensmind['STORY_bee'] # initiate memory
+        QUEEN[queens_chess_piece]['conscience']['knightsword'] = queensmind['knightsword'] # initiate memory
+        QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = queensmind['ANGEl_bee'] # initiate memory            
+        
+        mindseye = queensmind['STORY_bee'] # all ttframes with all immediate info needed
+        mind_knightsword = queensmind['knightsword'] # all ttframes with all triggers their lastmod times
+        ANGEl_bee = queensmind['ANGEl_bee']
+
     while True:
-        if queens_chess_piece.lower() in ['castle', 'bishop']:
+        if queens_chess_piece.lower() in ['castle', 'bishop']: # create the story
             s = datetime.datetime.now()
             if s > datetime.datetime(s.year, s.month, s.day, 16):
                 logging.info("Happy Bee Day End")
                 print("Great Job! See you Tomorrow")
                 break
+            
+            # main 
             pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
             QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
             QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
+            
             pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
+            ANGEl_bee = pollens_honey['conscience']['ANGEl_bee']
+            knights_sight_word = pollens_honey['conscience']['knights_sight_word']
+            STORY_bee = pollens_honey['conscience']['STORY_bee']
+
+            # add all charts
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
+
+            # populate conscience
+            QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = ANGEl_bee
+            QUEEN[queens_chess_piece]['conscience']['knightsword'] = knights_sight_word
+            QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
+
+            
+            # speedybee to get past 30 second tics from major stocks with highest weight for SPY / QQQ
+            if queens_chess_piece == 'castle':
+                speedybee_resp = speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
+                QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_resp['speedybee']
+            
+            # God Save The QUEEN
             if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
                 msg=("Pickle Data Failed")
                 print(msg)
                 logging.critical(msg)
                 continue
-            if queens_chess_piece == 'castle':
-                speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
+
             e = datetime.datetime.now()
             print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
@@ -887,25 +904,18 @@ try:
                     e = datetime.datetime.now()
                     print("knight", str((e - s).seconds) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
-        if queens_chess_piece.lower() == 'queen': # Read Bees Story 
-            pollenstory = read_pollenstory()
-            QUEEN[queens_chess_piece]['pollenstory'] = pollenstory
-            queensmind = read_queensmind()
-            mindseye = queensmind['collective_pollenstory'] # all ttframes with all immediate info needed
-            qm_knightsword = queensmind['knightsword'] # all ttframes with all triggers their lastmod times
-            
+        if queens_chess_piece.lower() == 'queen': # Rule On High         
             knight_bees = {}
             day_theme = {} # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
             current_positions = {}
 
-            
             # working with SPY TO START ONLY
-            def command_conscience(api, ticker):
+            def command_conscience(api, ticker, collective_story):
                 ticker = 'SPY'
 
-                king = {k:v for (k, v) in mindseye.items() if k.split("_")[0] == ticker} # filter by ticker
-                all_current_triggers = {k:v['alltriggers_current_state'] for (k,v) in king.items() if len(v['alltriggers_current_state']) > 0}
-                memory = {k.split("_")[0]: [] for (k,v) in king.items()} # memory should be initialized
+                ticker_storys = {k:v for (k, v) in collective_story.items() if k.split("_")[0] == ticker} # filter by ticker
+                all_current_triggers = {k:v['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['alltriggers_current_state']) > 0}
+                memory = {k.split("_")[0]: [] for (k,v) in ticker_storys.items()} # memory should be initialized
                 if all_current_triggers:
                     if f'{ticker}{"_1Minute_1Day"}' in all_current_triggers.keys():
                         # cycle through triggers and pass buy first logic for buy
@@ -930,8 +940,8 @@ try:
                                     QUEEN[queens_chess_piece]['conscience']['orders'].append({'ticker': ticker, 'order': order, 'datetime': datetime.datetime.now().isoformat()})
                                     pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_story=QUEEN)
                             
-                            if ticker in QUEEN[queens_chess_piece]['heartbeat']['main_indexes']: # SPY, QQQ
-                                if trig == "sell_cross-0":
+                            if trig == "sell_cross-0":
+                                if ticker in QUEEN[queens_chess_piece]['heartbeat']['main_indexes']: # SPY, QQQ
                                     print("trig", trig, return_timestamp_string())
                                     # check if you already placed order or if a workerbee in transit to place order
                                     all_position = api.list_positions() # return current position # check current position of order
@@ -956,7 +966,7 @@ try:
             
             for ttframe, mind in mindseye.items():
                 ticker, time, frame = ttframe.split("_")
-                command_conscience(api=api_paper, ticker=ticker)
+                command_conscience(api=api_paper, ticker=ticker, collective_story=mindseye)
             
 
             # manager orders
@@ -974,7 +984,7 @@ try:
                 return True
 
             # QUEEN[queens_chess_piece]['conscience']['pollenstory'] = mindseye
-            # QUEEN[queens_chess_piece]['conscience']['knightsword'] = qm_knightsword
+            # QUEEN[queens_chess_piece]['conscience']['knightsword'] = mind_knightsword
             
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
