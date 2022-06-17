@@ -41,7 +41,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
-from QueenHive import return_api_keys, read_pollenstory, read_queensmind
+from QueenHive import return_api_keys, read_pollenstory, read_queensmind, read_csv_db
+
+prod = False
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -95,7 +97,7 @@ def ReadPickleData(pickle_file):
                 return False
 
 
-prod = True
+# prod = True
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 load_dotenv()
@@ -150,24 +152,6 @@ def subPlot():
     st.pyplot(fig)
 
 
-def pollenstory():
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
-    knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
-    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-    # pollenstory = {**pollenstory, **knight}
-    return pollenstory
-
-def queensmind():
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
-    knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
-    b = bishop['bishop']
-    c = castle['castle']
-    conscience = {**bishop['bishop']['conscience']['pollenstory'], **castle['castle']['conscience']['pollenstory']}
-    knightsword = {**bishop['bishop']['conscience']['knightsword'], **castle['castle']['conscience']['knightsword']}
-    return {'bishop': b, 'castle': c, 'conscience_pollenstory': conscience, 'knightsword': knightsword}
-
 
 def df_plotchart(title, df, y, x=False, figsize=(14,7)):
     st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -199,7 +183,7 @@ with col3:
 pollenstory_resp = read_pollenstory()
 queens_mind = read_queensmind()
 mainstate = queens_mind['STORY_bee']
-knights_word = queens_mind['knightsword']
+knights_word = queens_mind['KNIGHTSWORD']
 today_day = datetime.datetime.now().day
 tickers_avail = [set(i.split("_")[0] for i in mainstate.keys())][0]
 tickers_avail.update({"all"})
@@ -220,7 +204,7 @@ option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
 
 
 if option == 'slopes':
-    pollenstory_resp = pollenstory()
+    pollenstory_resp = read_pollenstory()
     ttframe_list = ['SPY_1Minute_1Day', 'QQQ_1Minute_1Day', 'SPY_5Minute_5Day', 'QQQ_5Minute_5Day', 'SPY_30Minute_1Month', 'QQQ_30Minute_1Month', 'SPY_1Hour_3Month', 'QQQ_1Hour_3Month', 'SPY_2Hour_6Month', 'QQQ_2Hour_6Month', 'SPY_1Day_1Year', 'QQQ_1Day_1Year']
     # st.write(ttframe_list)
     df_ = pollenstory_resp['SPY_1Minute_1Day']
@@ -243,10 +227,7 @@ if option == 'slopes':
 if option == 'knight':
     # symbol = st.sidebar.text_input("Jq_Name", value='SPY_1Minute_1Day', max_chars=33)
     symbol = ticker_option
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))  
-    pollenstory_resp = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-    # spy = pollenstory['SPY_1Minute_1Day']
+    pollenstory_resp = read_pollenstory()
     spy = pollenstory_resp[f'{symbol}{"_"}{"1Minute_1Day"}']
 
 
@@ -315,8 +296,8 @@ if option == 'knight':
 if option == 'test':
     pollenstory_resp = read_pollenstory()
     queens_mind = read_queensmind()
-    mainstate = queens_mind['collective_pollenstory']
-    knights_word = queens_mind['knightsword']
+    mainstate = queens_mind['STORY_bee']
+    knights_word = queens_mind['KNIGHTSWORD']
     today_day = datetime.datetime.now().day
     
     df = pollenstory_resp['SPY_1Minute_1Day'] # test
@@ -394,12 +375,21 @@ if option == 'test':
         st.experimental_rerun()
 
 if option == 'queen':
-    pollenstory_resp = pollenstory()
-    queens_mind = queensmind()
-    mainstate = queens_mind['conscience_pollenstory']
-    knights_word = queens_mind['knightsword']
+    command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
+    orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
+    pollenstory_resp = read_pollenstory()
+    queens_mind = read_queensmind()
+    mainstate = queens_mind['STORY_bee']
+    knights_word = queens_mind['KNIGHTSWORD']
     today_day = datetime.datetime.now().day
+    
+    if command_conscience_option == 'Yes':
+        st.write(queens_mind['queen']['command_conscience'])
 
+    if orders_table == 'Yes':
+        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+        st.dataframe(main_orders_table)
+    
     st.write("QUEENS Collective CONSCIENCE")
     if ticker_option != 'all':
         m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == ticker_option}

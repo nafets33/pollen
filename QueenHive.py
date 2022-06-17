@@ -63,30 +63,6 @@ def init_logging(queens_chess_piece, db_root, loglog_newfile=False):
 
 init_logging(queens_chess_piece, db_root)
 
-
-# log_dir = dst = os.path.join(db_root, 'logs')
-# if os.path.exists(dst) == False:
-#     os.mkdir(dst)
-# log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-# log_file = os.path.join(os.getcwd(), log_name)
-# if os.path.exists(log_file) == False:
-#     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-#                         filemode='a',
-#                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-#                         datefmt='%m/%d/%Y %I:%M:%S %p',
-#                         level=logging.INFO)
-# else:
-#     # copy log file to log dir & del current log file
-#     datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-#     dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-#     # shutil.copy(log_file, dst_path) # only when you want to log your log files
-#     # os.remove(log_file)
-#     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-#                         filemode='a',
-#                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-#                         datefmt='%m/%d/%Y %I:%M:%S %p',
-#                         level=logging.INFO)
-
 est = pytz.timezone("America/New_York")
 
 system = 'windows' #mac, windows
@@ -166,9 +142,12 @@ def read_queensmind(): # return active story workers
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
     # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
     STORY_bee = {**bishop['conscience']['STORY_bee'], **castle['conscience']['STORY_bee']}
-    knightsword = {**bishop['conscience']['knightsword'], **castle['conscience']['knightsword']}
+    KNIGHTSWORD = {**bishop['conscience']['KNIGHTSWORD'], **castle['conscience']['KNIGHTSWORD']}
+    ANGEL_bee = {**bishop['conscience']['ANGEL_bee'], **castle['conscience']['ANGEL_bee']}
     
-    return {'queen': queen, 'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
+    return {'queen': queen, 
+    'bishop': bishop, 'castle': castle, 
+    'STORY_bee': STORY_bee, 'KNIGHTSWORD': KNIGHTSWORD, 'ANGEL_bee': ANGEL_bee}
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
@@ -282,6 +261,19 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
             'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
         }
+        
+        # latest_close_price
+        STORY_bee[ticker_time_frame]['last_close_price'] = df.iloc[-1]['close']
+
+        # macd signal divergence
+        df['macd_singal_deviation'] = df['macd'] - df['signal']
+        STORY_bee[ticker_time_frame]['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
+
+        # how long have you been stuck at vwap ?
+        
+        # Measure MACD WAVES
+        # change % shifts for each, close, macd, signal, hist....
+
         # # add timeblocks [9:30 - 10, 10-12, 12-1, 1-3, 3-4]:: NOT SURE ABOUT TIMEBLOCK YET?
         # def add_timeblock(dt):
         #     if dt.hour > 9 and dt.hour < 10:
@@ -301,15 +293,10 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         # add momentem ( when macd < signal & past 3 macds are > X Value or %)
         
         # when did macd and signal share same tier?
-    
-    # Give to the Queen
-    # QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = ANGEl_bee
-    # QUEEN[queens_chess_piece]['conscience']['knightsword'] = knights_sight_word
-    # QUEEN[queens_chess_piece]['conscience']['pollenstory'] = STORY_bee
 
     e = datetime.datetime.now()
     print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    return {'pollen_story': story, 'conscience': {'ANGEl_bee': ANGEl_bee, 'knightsword': knights_sight_word, 'STORY_bee': STORY_bee  } }
+    return {'pollen_story': story, 'conscience': {'ANGEl_bee': ANGEl_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } }
 
 
 def knight_sight(df): # adds all triggers to dataframe
@@ -453,6 +440,9 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
         c = 0  # count which side of trade you are on (c brings deveations from prior cross)
         buy_c = 0
         sell_c = 0
+        last_buycross_index = 0
+        last_sellcross_index = 0
+        wave_mark_list = []
         for i, macdvalue in enumerate(m):
             if i != 0:
                 prior_mac = m[i-1]
@@ -464,25 +454,35 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                     c = 0
                     prior_cross = 'buy'
                     buy_c += 1
+                    last_buycross_index = i
+                    wave_mark_list.append(last_buycross_index)
                 elif now_mac < now_signal and prior_mac >= prior_signal:
                     cross_list.append(f'{"sell_cross"}{"-"}{0}')
                     c = 0
                     prior_cross = 'sell'
                     sell_c += 1
+                    last_sellcross_index = i
+                    wave_mark_list.append(last_sellcross_index)
+
                 else:
                     if prior_cross:
                         if prior_cross == 'buy':
                             c+=1
                             cross_list.append(f'{"buy_hold"}{"-"}{c}')
+                            wave_mark_list.append(0)
                         else:
                             c+=1
                             cross_list.append(f'{"sell_hold"}{"-"}{c}')
+                            wave_mark_list.append(0)
                     else:
                         cross_list.append(f'{"hold"}{"-"}{0}')
+                        wave_mark_list.apend(0)
             else:
                 cross_list.append(f'{"hold"}{"-"}{0}')
+                wave_mark_list.append(0)
         df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
-        df_new = pd.concat([df, df2], axis=1)
+        df3 = pd.DataFrame(cross_list, columns=['macd_cross_wavedistance'])
+        df_new = pd.concat([df, df2, df3], axis=1)
         return df_new
     except Exception as e:
         msg=(e,"--", print_line_of_error(), "--", 'macd_cross')
@@ -892,7 +892,7 @@ def init_index_ticker(index_list, db_root, init=True):
 
 
 def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
-    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'FB']
+    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
 
     s = datetime.datetime.now()
     r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
@@ -910,7 +910,7 @@ def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.l
     
     # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
 
-    print(sum([v for k,v in slope_dict.items()]))
+    print("cum.slope", sum([v for k,v in slope_dict.items()]))
     return {'speedybee': speedybee_dict}
 
 
@@ -982,15 +982,6 @@ def ReadPickleData(pickle_file):
                 return False
 
 
-def get_ticker_statatistics(symbol):
-    try:
-        url = f"https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
-        dataframes = pd.read_html(requests.get(url, headers={'User-agent': 'Mozilla/5.0'}).text)
-    except Exception as e:
-        print(symbol, e)
-    return dataframes
-
-
 def timestamp_string(format="%m-%d-%Y %I.%M%p"):
     return datetime.datetime.now().strftime(format)
 
@@ -1030,6 +1021,17 @@ def return_index_tickers(index_dir, ext):
 ##################################################
 ################ NOT IN USE ######################
 ##################################################
+
+
+def get_ticker_statatistics(symbol):
+    try:
+        url = f"https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
+        dataframes = pd.read_html(requests.get(url, headers={'User-agent': 'Mozilla/5.0'}).text)
+    except Exception as e:
+        print(symbol, e)
+    return dataframes
+
+
 
 def return_snapshots(ticker_list):
     # ticker_list = ['SPY', 'AAPL'] # TEST
@@ -1086,54 +1088,65 @@ def log_script(log_file, loginfo_dict):
         df[k] = v.fillna(df[k])
 
 
-def read_csv_db(db_root, type, symbol=False):
-    # spy_stream
-    # spy_barset
-    stream = False
-    bars = False
+def read_csv_db(db_root, tablename, ext='.csv', prod=True, init=False):
     orders = False
+    main_orders_cols = ['trigname', 'client_order_id', 'origin_client_order_id', 'exit_order_link', 'date', 'lastmodified', 'selfnote']
 
-    tables = ['main_orders.csv', '_stream.csv', '_bars.csv']
-    for t in tables:
-        if os.path.exists(os.path.join(db_root, t)):
-            pass
+    if init:
+        def create_csv_table(cols, db_root, tablename, ext):
+            table_path = os.path.join(db_root, tablename)
+            if os.path.exists(table_path) == False:
+                with open(table_path, 'w') as f:
+                    df = pd.DataFrame()
+                    for i in cols:
+                        df[i] = ''
+                    df.to_csv(table_path, index=True, encoding='utf8')
+                    print(table_path, "created")
+                    return True
+            else:
+                return True
+
+        tables = ['main_orders.csv', 'main_orders_sandbox.csv']
+        for t in tables:
+            if os.path.exists(os.path.join(db_root, t)):
+                pass
+            else:
+                create_csv_table(cols=main_orders_cols, db_root=db_root, tablename=t, ext='.csv')
+
+    if tablename:
+        if prod:
+            return pd.read_csv(os.path.join(db_root, f'{tablename}{ext}'), dtype=str, encoding='utf8', engine='python')
         else:
-            with open(os.path.join(db_root, t), 'w') as f:
-                print(t, "created")
-                print(f)
+            return pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
 
-    if symbol:
-        if type == 'stream':
-            if os.path.exists(os.path.join(db_root, symbol + '_{}.csv'.format(type))) == False:
-                with open(os.path.join(db_root, symbol + '_{}.csv'.format(type)), 'w') as f:
-                    df = pd.DataFrame()
-                    cols = ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'trade_count']
-                    for i in cols:
-                        df[i] = ''
-                    df.to_csv(os.path.join(db_root, symbol + '_{}.csv'.format(type)), index=False, encoding='utf8')
-                    print(t, "created")
-                    now = datetime.datetime.now()
-                    stream = df
-            else:
-                stream = pd.read_csv(os.path.join(db_root, symbol + '_{}.csv'.format(type)), dtype=str, encoding='utf8', engine='python')
 
-        # bars = pd.read_csv(os.path.join(db_root, symbol + '_bars.csv'),  dtype=str, encoding='utf8', engine='python')
-        elif type == 'bars':
-            if os.path.exists(os.path.join(db_root, symbol + '_{}.csv'.format(type))) == False:
-                with open(os.path.join(db_root, symbol + '_{}.csv'.format(type)), 'w') as f:
-                    df = pd.DataFrame()
-                    cols = ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'trade_count']
-                    for i in cols:
-                        df[i] = ''
-                    df.to_csv(os.path.join(db_root, symbol + '_{}.csv'.format(type)), index=False, encoding='utf8')
-                    print(t, "created")
-                    bars = df
-            else:
-                bars = pd.read_csv(os.path.join(db_root, symbol + '_{}.csv'.format(type)), dtype=str, encoding='utf8', engine='python')
+def update_csv_db(df_to_add, tablename, append, update=False, replace=False, ext='.csv', prod=True):
+    df_to_add['lastmodified'] = datetime.datetime.now().isoformat()
+    if prod:
+        table_path = os.path.join(db_root, f'{tablename}{ext}')
+    else:
+        table_path = os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}')
 
-        # orders = pd.read_csv(os.path.join(db_root, 'main_orders.csv'),  dtype=str, encoding='utf8', engine='python')
-        orders = 'TBD'
-        return [stream, bars, orders]
+    if tablename:
+        if prod:
+            main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{ext}'), dtype=str, encoding='utf8', engine='python')
+        else:
+            main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
+
+        if append:
+            new_df = pd.concat([main_df, df_to_add], axis=0, ignore_index=True)
+            new_df.to_csv(table_path, index=True, encoding='utf8')
+        
+        if update:
+            indx = list(df_to_add.index)
+            main_df['index'] = main_df.index
+            main_df = main_df[~main_df['index'].isin(indx)]
+            new_df = pd.concat([main_df, df_to_add], axis=0)
+            new_df.to_csv(table_path, index=True, encoding='utf8')
+        
+        if replace:
+            new_df = df_to_add
+            new_df.to_csv(table_path, index=True, encoding='utf8')      
 
 
 def convert_todatetime_string(date_string):

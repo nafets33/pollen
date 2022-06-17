@@ -1,6 +1,7 @@
 # QueenBee
 import logging
 from enum import Enum
+from operator import sub
 from signal import signal
 from symtable import Symbol
 import time
@@ -33,10 +34,12 @@ import shutil
 # from scipy.stats import linregress
 from scipy import stats
 import hashlib
-from QueenHive import read_queensmind, read_pollenstory, init_logging, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+import json
+from QueenHive import read_csv_db, update_csv_db, read_queensmind, read_pollenstory, init_logging, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 
 # script arguments
 queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
+#client_order_id_format : ticker_side_trigname_date
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -46,20 +49,41 @@ init_logging(queens_chess_piece, db_root)
 # Macd Settings
 MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 QUEEN = { # The Queens Mind
-    'command_conscience': {'memory': {}, 'orders': []}, # ONLY for the Kings Eyes
-
+    'command_conscience': {'memory': {'trigger_stopped': [], 'trigger_sell_stopped': [], 'orders_completed': []}, 
+                            'orders': { 'requests': [],
+                                        'submitted': [],
+                                        'running': [],
+                                        'running_close': []}
+                                        }, # ONLY for the Kings Eyes
+        'heartbeat': {}, # ticker info ... change name
+        'kings_order_rules': {},
     # Worker Bees
     queens_chess_piece: {
-    'conscience': {'STORY_bee': {},'knightsword': {}, 'ANGEl_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+    'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEl_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
     'pollenstory': {}, # latest story of dataframes castle and bishop
     'pollencharts': {}, # latest chart rebuild
     'pollencharts_nectar': {}, # latest chart rebuild with indicators
     'pollenstory_info': {}, # Misc Info,
     'client': {},
-    'heartbeat': {},
+    # 'heartbeat': {},
     'last_modified' : datetime.datetime.now(),
     }
 }
+
+if queens_chess_piece == 'queen':
+    kings_order_rules = {'triggers': {'buy_cross-0': {'timeduration': 1, 
+                                                'take_profit': .005,
+                                                'sellout': .01,
+                                                'adjustable': True,
+                                                    },
+                                      'sell_cross-0': {'timeduration': 1, 
+                                                'take_profit': .005,
+                                                'sellout': .01,
+                                                'adjustable': True,
+                                                    },
+                                        }
+    }
+    QUEEN['kings_order_rules'] = kings_order_rules
 
 prod = True
 pd.options.mode.chained_assignment = None
@@ -81,7 +105,7 @@ client_symbols_castle = ['SPY', 'QQQ']
 client_symbols_bishop = ['AAPL', 'GOOG']
 client_market_movers = ['AAPL', 'TSLA', 'GOOG', 'META']
 
-QUEEN[queens_chess_piece]['heartbeat']['main_indexes'] = {
+QUEEN['heartbeat']['main_indexes'] = {
     'SPY': {'long3X': 'SPXL', 'inverse': 'SH', 'inverse2X': 'SDS', 'inverse3X': 'SPXU'},
     'QQQ': {'long3X': 'TQQQ', 'inverse': 'PSQ', 'inverse2X': 'QID', 'inverse3X': 'SQQQ'}
     } 
@@ -687,13 +711,13 @@ if queens_chess_piece == 'workerbee':
         os.remove(PB_Story_Pickle)
 
 if queens_chess_piece == 'queen':
+    PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{".json"}')
     print("My Queen")
-
-s_mainbeetime = datetime.datetime.now()
 
 
 """ Initiate your Charts with Indicators """
 def initiate_ttframe_charts(queens_chess_piece):
+    s_mainbeetime = datetime.datetime.now()
     if queens_chess_piece.lower() == 'castle':    # >>> Initiate your Charts
         res = Return_Init_ChartData(ticker_list=client_symbols_castle, chart_times=chart_times_castle)
         errors = res['errors']
@@ -712,7 +736,7 @@ def initiate_ttframe_charts(queens_chess_piece):
     
         """# mark final times and return values"""
         e_mainbeetime = datetime.datetime.now()
-        msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+        msg = {queens_chess_piece:'initiate_ttframe_charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
         logging.info(msg)
         print(msg)
 
@@ -735,32 +759,325 @@ def initiate_ttframe_charts(queens_chess_piece):
     
         """# mark final times and return values"""
         e_mainbeetime = datetime.datetime.now()
-        msg = {'Main':'Queen',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+        msg = {queens_chess_piece:'initiate_ttframe_charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
         logging.info(msg)
         print(msg)
 
 
-# >>> Continue to Rebuild ChartData and Story
-try:
-    initiate_ttframe_charts(queens_chess_piece)
-    if queens_chess_piece == 'queen':
-        # Initiate the Queens Mind with chartstories and conscienciness
-        pollenstory = read_pollenstory()
-        QUEEN[queens_chess_piece]['pollenstory'] = pollenstory # initiate story
+def initialize_orders(api, start_date, end_date, symbols=False):
+    if start_date==(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"):
+        after = start_date
+        until = end_date
+        if symbols:
+            closed_orders = api.list_orders(status='closed', symbols=symbols, after=after, until=until)
+            open_orders = api.list_orders(status='open', symbols=symbols, after=after, until=until)
+        else:
+            closed_orders = api.list_orders(status='closed', after=after, until=until)
+            open_orders = api.list_orders(status='open', after=after, until=until)
         
-        queensmind = read_queensmind() # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
-        queen = queensmind['queen']            
-        QUEEN['command_conscience']['memory'] = queen['command_conscience']['memory'] # initiate memory
-        QUEEN['command_conscience']['orders'] = queen['command_conscience']['orders'] # initiate memory
-        
-        QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = queensmind['STORY_bee'] # initiate memory
-        QUEEN[queens_chess_piece]['conscience']['knightsword'] = queensmind['knightsword'] # initiate memory
-        QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = queensmind['ANGEl_bee'] # initiate memory            
-        
-        mindseye = queensmind['STORY_bee'] # all ttframes with all immediate info needed
-        mind_knightsword = queensmind['knightsword'] # all ttframes with all triggers their lastmod times
-        ANGEl_bee = queensmind['ANGEl_bee']
+        return {'open': open_orders, 'closed': closed_orders}
+    
+    else:
+        print("TDB chunk the dates and return all orders per day for x days")
+        start_date = '2022-06-01'
+        # count num of says from start and end
+        # for every day return all closed orders
+        # end_date = (datetime.datetime.now() - datetime.timedelta(days=1)) 
+        # after = start_date
+        # until = end_date
+        # api_paper.list_orders(status='closed', symbols=symbols, after=after, until=until)
+        pass
 
+
+def process_order_submission(order, trig, prod, tablename, status_q=False, exit_order_link=False):
+    date_mark = datetime.datetime.now()
+    client_order_id = order['client_order_id']
+    alpaca_order_id = order['id']
+    df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 'exit_order_link':exit_order_link, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id} 
+    df = pd.DataFrame(df_details.items()).T
+    new_header = df.iloc[0] #grab the first row for the header
+    df = df[1:] #take the data less the header row
+    df.columns = new_header #set the header row as the df header
+    update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
+
+    sending_order = {'symbol': order['symbol'], 'order_rules': kings_order_rules['triggers'][trig], 'trigname': trig, 'datetime': date_mark, 'status_q': status_q, 'exit_order_links': exit_order_link, 'client_order_id': order['client_order_id']}                                    
+    logging.info(kings_order_rules['triggers'][trig])
+    trig_stop_info = {'trigname': trig, 'exit_order_link': exit_order_link, 'client_order_id': client_order_id, 'datetime': date_mark}
+    return {'sending_order': sending_order, 'trig_stop_info': trig_stop_info}
+
+
+def liquidate_position(api, ticker, side, type, client_order_id):
+    client_order_id = f'{ticker}{"_"}{side}{"_"}{datetime.datetime.now().isoformat()}'
+    p = api_paper.get_position(ticker)
+    p_qty = p.qty
+    p_side = p.side
+    if type ==  'market':
+        order = submit_order(api=api, side=side, symbol=ticker, qty=p_qty, type=type, client_order_id=client_order_id)
+    else:
+        print("make this a limit order")
+    return order
+
+
+def check_order_status(api, client_order_id):
+    order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+    order_ = vars(order)['_raw']
+    return order_
+
+
+def command_conscience(api, ticker, story_bee):
+    ticker = 'SPY'
+    api = api_paper
+
+    ticker_storys = {k:v for (k, v) in story_bee.items() if k.split("_")[0] == ticker} # filter by ticker
+    all_current_triggers = {k:v['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['alltriggers_current_state']) > 0}
+    # all_current_triggers.update({'SPY_1Minute_1Day': ['buy_cross-0']})
+    if all_current_triggers:
+        # print("num of current triggers", len(all_current_triggers))
+        if f'{ticker}{"_1Minute_1Day"}' in all_current_triggers.keys():
+            # cycle through triggers and pass buy first logic for buy
+            trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
+            for trig in trigs:
+                if trig == "buy_cross-0":
+                    print(trig)
+                    # check if you already placed order or if a workerbee in transit to place order
+                    trigname_stopped = [item['trigname'] for item in QUEEN['command_conscience']['memory']['trigger_stopped']]
+                    if trig in trigname_stopped:
+                        continue # break loop
+                    else:
+                        print("trig", trig, " time:", return_timestamp_string())
+                        print("Each Buz in a gift")
+                        # FUNCTION THAT CHECKS ORDER TO input Qty RETURN Story of other ttframes to influence order
+                        
+                        # return num of trig for client_order_id
+                        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+                        main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')]
+                        trig_num = len(main_trigs_df)
+                        temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
+                        order_id = f'{ticker}{"-"}{trig}{"--"}{trig_num}--{temp_date}'
+                        
+                        order_submit = submit_order(api=api, symbol=ticker, type='market', qty=1, side='buy', client_order_id=order_id) # buy
+                        order = vars(order_submit)['_raw']
+
+                        # ensure order went through
+                        if route_order_based_on_status(order_status=order['status']):
+                        # if order['status'] in ['accepted', 'pending_new', 'accepted_for_bidding', 'filled', 'partially_filled', 'new']:
+                            order_process = process_order_submission(trig=trig, order=order, prod=prod, tablename='main_orders')
+                            QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
+                            QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
+                            pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+                            # json.dump(QUEEN['command_conscience'], open(PB_json_queen,"w"))
+                        else:
+                            msg = ("error order not accepted", order)
+                            print(msg)
+                            logging.error(msg)
+                if trig == "sell_cross-0":
+                    print(trig)
+                    if ticker in QUEEN[queens_chess_piece]['heartbeat']['main_indexes']: # SPY, QQQ
+                        ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse']
+                        trigname_stopped = [item['trigname'] for item in QUEEN['command_conscience']['memory']['trigger_stopped']]
+                        # check if you already placed order or if a workerbee in transit to place order
+                        if trig in trigname_stopped:
+                            continue # break loop
+                        else:
+                            print("trig", trig, return_timestamp_string())
+                            print("Each Buz in a gift")
+                            # FUNCTION THAT CHECKS ORDER TO input Qty RETURN Story of other ttframes to influence order
+                            order_id = f'{ticker}{trig}{"_"}{"buy"}{"_"}{return_timestamp_string()}'
+                            order_submit = submit_order(api=api_paper, symbol=ticker, type='market', qty=1, side='buy', client_order_id=order_id) # buy
+                            order = vars(order_submit)['_raw']
+                            # ensure order went through
+                            if route_order_based_on_status(order_status=order['status']):
+                                order_process = process_order_submission(trig=trig, order=order, prod=prod, tablename='main_orders')
+                                QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
+                                QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
+                                pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+                                # json.dump(QUEEN['command_conscience'], open(PB_json_queen,"w"))
+                            else:
+                                msg = ("error order not accepted", order)
+                                print(msg)
+                                logging.error(msg)
+
+
+def order_management(api): # Handle ALL submitted orders and place them
+
+    def submitted_orders_main(api):
+        # put submit order in memory
+        # if orders: read memory and find orders with it info
+        # once order received and fulfilled discard from memory or place it in completed
+        # what happens when trigs submitted not in orders?
+        submitted_trigs = [i for i in QUEEN['command_conscience']['orders']['submitted']]
+        if submitted_trigs:
+            for idx, order_sent in enumerate(submitted_trigs):
+                ticker = order_sent['symbol']
+                order_id = order_sent['client_order_id']
+                # check if order fulfilled
+                order_status = check_order_status(api, client_order_id=order_id)
+                # if order has fulfilled place in working orders else tag as partial order fulfilled
+                if order_status['filled_qty']:
+                    if order_status['qty'] == order_status['filled_qty']:
+                        print("order filled, and move to memory")
+                        QUEEN['command_conscience']['orders']['submitted'].remove(order_sent)
+                        if order_status['side'] == 'sell':
+                            ## order is now completed and remove all traces and put orders in completed
+                            # remove origin order from running
+                            exit_order_link = order_sent['exit_order_links']
+                            origin_order = [i for i in QUEEN['command_conscience']['orders']['running'] if i['client_order_id'] == exit_order_link][0]
+                            QUEEN['command_conscience']['orders']['running'].remove(origin_order)
+
+                            # remove trigger stops
+                            stop = [i for i in QUEEN['command_conscience']['memory']['trigger_stopped'] if i['client_order_id'] == exit_order_link][0]
+                            QUEEN['command_conscience']['memory']['trigger_stopped'].remove(stop)
+                            stop = [i for i in QUEEN['command_conscience']['memory']['trigger_sell_stopped'] if i['client_order_id'] == order_id][0]
+                            QUEEN['command_conscience']['memory']['trigger_sell_stopped'].remove(stop)
+
+                            # remove from running close if it was there
+                            if order_sent['status_q'] == 'partial_fill':
+                                order_sent = [i for i in QUEEN['command_conscience']['orders']['running_close'] if i['client_order_id'] == order_id][0]
+                                QUEEN['command_conscience']['orders']['running_close'].remove(order_sent)
+
+                            # put orders together in completed
+                            orders_completed = [origin_order, order_sent]
+                            QUEEN['command_conscience']['memory']['orders_completed'].append(orders_completed)
+                        else:
+                            QUEEN['command_conscience']['orders']['running'].append(order_sent)
+
+                    elif int(order_status['filled_qty']) > 0:
+                        print("order partial fulfilled")
+                        QUEEN['command_conscience']['orders'][idx]['status_q']='partial_fill' # tag
+                        QUEEN['command_conscience']['orders']['submitted'].remove(order_sent)
+                        if order_status['side'] == 'sell':
+                            QUEEN['command_conscience']['orders']['running_close'].append(order_sent)
+                        else:
+                            QUEEN['command_conscience']['orders']['running'].append(order_sent)
+                else:
+                    print(order_status['client_order_id'], "order pending fill stays in submitted")
+                    pass
+            
+            # god save the queen
+            pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+    
+    submitted_orders_main(api)
+    
+    
+    # >for every ticker position join in running-positions to account for total position
+    # >for each running position determine to exit the position                
+    all_positions = api.list_positions()
+    portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
+
+    def validate_portfolio_with_RUNNING(queen_running, portfolio):
+        # return QTY of shares for all tickers in RUNNING and match with qty in portfolio
+        return True
+
+    # if its in RUNNING then its fulfilled or partially fulfilled and now its time to figure out how to close the position
+    for idx, run_order in enumerate(QUEEN['command_conscience']['orders']['running']):
+        # try to close order
+        runorder_client_order_id = run_order['client_order_id']
+        ticker = run_order["symbol"]
+        trigname = run_order['trigname']
+
+        order_obj = check_order_status(api=api, client_order_id=runorder_client_order_id)
+
+        trigname_stopped = [item['client_order_id'] for item in QUEEN['command_conscience']['memory']['trigger_sell_stopped']]
+        # check if you already placed order or if a workerbee in transit to place order
+        if runorder_client_order_id in trigname_stopped:
+            continue # break loop
+
+
+        # return trade info
+        snap = api.get_snapshot(ticker)
+        # current_price = story_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+        current_price = snap.latest_trade.price
+        currnet_ask = snap.latest_quote.ask_price
+        currnet_bid = snap.latest_quote.bid_price
+        order_price = float(order_obj['filled_avg_price'])
+        current_profit_loss = (current_price - order_price) / order_price
+        # current_profit_loss = (currnet_ask - order_price) / order_price
+
+        # if profit has achived send order to take profit
+        def re_evaluate_kings_orders(run_order, order_obj):
+            # all scenarios if run_order should be closed out
+            take_profit = run_order['order_rules']['take_profit'] #  {'order_rules': order_rules, 'trigname': trig, 'order': order, 'datetime': date_mark, 'status_q': False, 'exit_order': False}                                    
+            sellout = run_order['order_rules']['sellout']
+            sell_qty = int(order_obj['filled_qty'])
+            
+            side = 'sell'
+            type ='market'
+
+            if take_profit <= current_profit_loss:
+                return {'bee_sell': True, 'type': type, 'side': side, 'sell_qty': sell_qty}
+            
+            return {'bee_sell': False}
+        
+        re_eval_order = re_evaluate_kings_orders(run_order)
+
+        if re_eval_order['bee_sell']:
+            # close out order variables
+            sell_qty = re_eval_order['sell_qty'] # int(order_obj['filled_qty'])
+            side = re_eval_order['side'] # 'sell'
+            type = re_eval_order['type'] # 'market'
+
+            #
+            sell_client_order_id = f'{"close__"}{runorder_client_order_id}'
+            send_close_order = submit_order(api=api, side=side, symbol=ticker, qty=sell_qty, type=type, client_order_id=sell_client_order_id) 
+            send_close_order = vars(send_close_order)['_raw']
+            if route_order_based_on_status(order_status=send_close_order['status']):
+                print("Did you bring me some Honey?")
+                order_process=process_order_submission(order=send_close_order, trig=trigname, exit_order_link=runorder_client_order_id, prod=prod, tablename='main_orders')
+                QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
+                QUEEN['command_conscience']['memory']['trigger_sell_stopped'].append(order_process['trig_stop_info'])
+                pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+                # json.dump(QUEEN['command_conscience'], open(PB_json_queen,"w"))
+
+            else:
+                msg = ("error order not accepted", run_order)
+                print(msg)
+                logging.error(msg)
+
+
+    # handle newly submitted closing orders 
+    submitted_orders_main(api)
+
+    # closed_orders_list = api.list_orders(status='closed')
+    # open_orders_list = api.list_orders(status='open')
+
+    # # get all orders that have been submitted
+    # beeorders = QUEEN[queens_chess_piece]['conscience']['orders']
+    
+    # get all orders that are open
+
+    if pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN):
+        pass
+    else:
+        print("ERROR WITH PICKLE")
+        logging.critical("{'type': 'orders', 'errorname': 'ERROR WITH PICKLE'}")
+
+    return True
+
+
+def route_order_based_on_status(order_status):
+    # https://alpaca.markets/docs/trading/orders/#order-lifecycle
+    if order_status in ['accepted', 'pending_new', 'accepted_for_bidding', 'filled', 'partially_filled', 'new', 'calculated']:
+        return True
+    elif order_status in ['canceled', 'expired', 'replaced', 'pending_cancel', 'pending_replace', 'stopped', 'rejected', 'suspended']:
+        return False
+
+try:
+    initiate_ttframe_charts(queens_chess_piece) # only Initiates if Castle or Bishop
+    if queens_chess_piece == 'queen':
+        init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        prod = False
+        if prod:
+            main_orders_file = os.path.join(db_root, 'main_orders.csv')
+            api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
+        else:
+            main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
+            api_orders = initialize_orders(api_paper, init_api_orders_start_date, init_api_orders_end_date)
+        
+        available_triggers = ["sell_cross-0", "buy_cross-0"]
+        print(available_triggers)
+
+    workerbee_run_times = []
     while True:
         if queens_chess_piece.lower() in ['castle', 'bishop']: # create the story
             s = datetime.datetime.now()
@@ -776,15 +1093,15 @@ try:
             
             pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
             ANGEl_bee = pollens_honey['conscience']['ANGEl_bee']
-            knights_sight_word = pollens_honey['conscience']['knights_sight_word']
+            knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
             STORY_bee = pollens_honey['conscience']['STORY_bee']
 
             # add all charts
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
 
             # populate conscience
-            QUEEN[queens_chess_piece]['conscience']['ANGEl_bee'] = ANGEl_bee
-            QUEEN[queens_chess_piece]['conscience']['knightsword'] = knights_sight_word
+            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEl_bee
+            QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
             
@@ -801,7 +1118,13 @@ try:
                 continue
 
             e = datetime.datetime.now()
-            print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+            cycle_run_time = (e-s)
+            if cycle_run_time.seconds > 5:
+                print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
+                logging.info("cycle_time > 5 seconds", cycle_run_time)
+            workerbee_run_times.append(cycle_run_time)
+            avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
+            print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
         if queens_chess_piece.lower() == 'workerbee': # return tics
             s = datetime.datetime.now()
@@ -885,7 +1208,7 @@ try:
 
                             # Buy in Prod or Sandbox
                             if prod:
-                                api =api
+                                api = api
                             else:
                                 api = api_paper
 
@@ -904,88 +1227,46 @@ try:
                     e = datetime.datetime.now()
                     print("knight", str((e - s).seconds) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
-        if queens_chess_piece.lower() == 'queen': # Rule On High         
+        if queens_chess_piece.lower() == 'queen': # Rule On High
+
+            pollenstory = read_pollenstory()
+            queensmind = read_queensmind() # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
+            castle = queensmind['castle']
+            # if castle['last_modified'] > QUEEN[queens_chess_piece]['last_modified']:
+            #     QUEEN[queens_chess_piece]["last_modified"] = lastmod
+            # else:
+            #     print("awaiting for Castle")
+            #     continue
+            
+            QUEEN[queens_chess_piece]['pollenstory'] = pollenstory # initiate story
+
+            queen = queensmind['queen']            
+            QUEEN['command_conscience']['memory'] = queen['command_conscience']['memory'] # return memory
+            QUEEN['command_conscience']['orders'] = queen['command_conscience']['orders'] # return memory
+            
+            QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = queensmind['STORY_bee'] # return memory
+            QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = queensmind['KNIGHTSWORD'] # return memory
+            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = queensmind['ANGEL_bee'] # return memory          
+            
+            story_bee = queensmind['STORY_bee'] # all ttframes with all immediate info needed
+            mind_knightsword = queensmind['KNIGHTSWORD'] # all ttframes with all triggers their lastmod times
+            ANGEl_bee = queensmind['ANGEL_bee'] # move into story?
+
             knight_bees = {}
             day_theme = {} # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
             current_positions = {}
 
-            # working with SPY TO START ONLY
-            def command_conscience(api, ticker, collective_story):
-                ticker = 'SPY'
-
-                ticker_storys = {k:v for (k, v) in collective_story.items() if k.split("_")[0] == ticker} # filter by ticker
-                all_current_triggers = {k:v['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['alltriggers_current_state']) > 0}
-                memory = {k.split("_")[0]: [] for (k,v) in ticker_storys.items()} # memory should be initialized
-                if all_current_triggers:
-                    if f'{ticker}{"_1Minute_1Day"}' in all_current_triggers.keys():
-                        # cycle through triggers and pass buy first logic for buy
-                        trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
-                        for trig in trigs:
-                            if trig == "buy_cross-0":
-                                print("trig", trig, return_timestamp_string())
-                                # check if you already placed order or if a workerbee in transit to place order
-                                all_position = api.list_positions() # return current position # check current position of order
-                                open_orders_list = api.list_orders(status='open') # check if open order exists
-                                if ticker in [i.symbol for i in all_position]:
-                                    memory_trig_stopped = memory[ticker]['trigger_stopped']
-                                    for trig_info in memory_trig_stopped:
-                                        if trig_info['trigname'] == trig:
-                                            print("trig already stopped moving on")
-                                    print("position already taken send info to Queen")
-                                    memory[ticker]['trigger_stopped'].append({'trigname': trig, 'datetime': datetime.datetime.now().isoformat()})
-                                else:
-                                    print("Always Bee Better > Each Buz in a gift")
-                                    # FUNCTION THAT CHECKS ORDER TO input Qty
-                                    order = submit_order(api=api, symbol=ticker, type='market', qty=1, side='buy', client_order_id=trig) # buy
-                                    QUEEN[queens_chess_piece]['conscience']['orders'].append({'ticker': ticker, 'order': order, 'datetime': datetime.datetime.now().isoformat()})
-                                    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_story=QUEEN)
-                            
-                            if trig == "sell_cross-0":
-                                if ticker in QUEEN[queens_chess_piece]['heartbeat']['main_indexes']: # SPY, QQQ
-                                    print("trig", trig, return_timestamp_string())
-                                    # check if you already placed order or if a workerbee in transit to place order
-                                    all_position = api.list_positions() # return current position # check current position of order
-                                    open_orders_list = api.list_orders(status='open') # check if open order exists
-                                    if ticker in [i.symbol for i in all_position]:
-                                        memory_trig_stopped = memory[ticker]['trigger_stopped']
-                                        for trig_info in memory_trig_stopped:
-                                            if trig_info['trigname'] == trig:
-                                                print("trig already stopped moving on")
-                                        print("position already taken send info to Queen")
-                                        memory[ticker]['trigger_stopped'].append({'trigname': trig, 'datetime': datetime.datetime.now().isoformat()})
-                                    else:
-                                        print("Always Bee Better > Each Buz in a gift")
-                                        # FUNCTION THAT CHECKS ORDER TO input Qty
-                                        order = submit_order(api=api, symbol=QUEEN[queens_chess_piece]['heartbeat']['main_indexes'][ticker]['inverse'], type='market', qty=1, side='buy', client_order_id=trig) # buy
-                                        QUEEN[queens_chess_piece]['conscience']['orders'].append({'ticker': ticker, 'order': order, 'datetime': datetime.datetime.now().isoformat()})
-                                        if pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN):
-                                            pass
-                                        else:
-                                            print("ERROR WITH PICKLE")
-                                            logging.critical("{'type': 'orders', 'errorname': 'ERROR WITH PICKLE'}")
+           
+            # submit orders / gather all info first THEN submit order
+            queens_requests_to_buy = {}
+            story_tickers = set([i.split("_")[0] for i in story_bee.keys()])
+            for story_ticker in story_tickers:
+                if story_ticker == 'SPY':
+                    command_conscience(api=api_paper, ticker=story_ticker, story_bee=story_bee)            
             
-            for ttframe, mind in mindseye.items():
-                ticker, time, frame = ttframe.split("_")
-                command_conscience(api=api_paper, ticker=ticker, collective_story=mindseye)
+            order_management(api=api_paper)
             
-
-            # manager orders
-            def order_management():
-                # you need a better name for the function : )
-                closed_orders_list = api.list_orders(status='closed')
-                open_orders_list = api.list_orders(status='open')
-
-                # get all orders that have been submitted
-                beeorders = QUEEN[queens_chess_piece]['conscience']['orders']
-                
-                # get all orders that are open
-
-
-                return True
-
-            # QUEEN[queens_chess_piece]['conscience']['pollenstory'] = mindseye
-            # QUEEN[queens_chess_piece]['conscience']['knightsword'] = mind_knightsword
-            
+            time.sleep(1)
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
 

@@ -177,8 +177,66 @@ api.get_order_by_client_order_id(client_order_id=client_order_id)
 
 replace = api.replace_order(qty=1, time_in_force='gtc', limit_price='14.71', order_id='98d15a9f-0f1e-4f0f-80c6-1b34719957ec')
 
+    def list_orders(self,
+                    status: str = None,
+                    limit: int = None,
+                    after: str = None,
+                    until: str = None,
+                    direction: str = None,
+                    params=None,
+                    nested: bool = None,
+                    symbols: List[str] = None
+                    )
+
+api_paper.list_orders(status, symbols, after, until, direction,  limit=500)
+
+def initiate_orders(api, symbols=False, start_date=(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), end_date=(datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")):
+
+    if start_date==(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"):
+        after = start_date
+        until = end_date
+        if symbols:
+            closed_orders = api.list_orders(status='closed', symbols=symbols, after=after, until=until)
+            open_orders = api.list_orders(status='open', symbols=symbols, after=after, until=until)
+        else:
+            closed_orders = api.list_orders(status='closed', after=after, until=until)
+            open_orders = api.list_orders(status='open', after=after, until=until)
+        
+        return {'open': open_orders, 'closed': closed_orders}
+    
+    else:
+        print("TDB chunk the dates and return all orders per day for x days")
+        start_date = '2022-06-01'
+        # count num of says from start and end
+        # for every day return all closed orders
+        # end_date = (datetime.datetime.now() - datetime.timedelta(days=1)) 
+        # after = start_date
+        # until = end_date
+        # api_paper.list_orders(status='closed', symbols=symbols, after=after, until=until)
+        pass
+
+    # after = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    # api_paper.list_orders(status='closed', symbols=['SPY'], after=after)
+
+def handle_order_submission(trig_side):
+    trig_side = 'sell' # 'buy'
+    order = submit_order(api=api, symbol=QUEEN['heartbeat']['main_indexes'][ticker]['inverse'], type='market', qty=1, side='buy', client_order_id=trig) # buy
+    QUEEN['command_conscience']['orders'].append({'ticker': ticker, 'order': order, 'datetime': datetime.datetime.now()})
 
 
+trigger_dict = {'triggers': {'buy_cross-0': {'timeduration': 1, 
+                                              'profit_take': .001,
+                                              'sellout': .01,
+                                              'adjustable': True,
+                                                },
+                            'sell_cross-0': {'timeduration': 1, 
+                                              'profit_take': .001,
+                                              'sellout': .01,
+                                              'adjustable': True,
+                                                },}
+}
+
+# for every trigger adjust order based on the story of other ttframes                               
 
 def convert_nano_timestamp_to_datetime(t):
     return datetime.datetime.utcfromtimestamp(t // 1000000000)
