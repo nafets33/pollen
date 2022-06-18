@@ -375,32 +375,41 @@ if option == 'test':
         st.experimental_rerun()
 
 if option == 'queen':
-    command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
-    orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
-    pollenstory_resp = read_pollenstory()
-    queens_mind = read_queensmind()
-    mainstate = queens_mind['STORY_bee']
-    knights_word = queens_mind['KNIGHTSWORD']
-    today_day = datetime.datetime.now().day
-    
-    if command_conscience_option == 'Yes':
-        st.write(queens_mind['queen']['command_conscience'])
+    coin_sidebar = st.sidebar.selectbox("coin", ('No', 'Yes'))
+    if coin_sidebar == "Yes":
+        queens_mind = read_queensmind()
+        castle_coin = queens_mind['castle_coin']
+        coin_chart_story = castle_coin['pollenstory']
+        coin_story = castle_coin['conscience']['STORY_bee']
 
-    if orders_table == 'Yes':
-        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
-        st.dataframe(main_orders_table)
-    
-    st.write("QUEENS Collective CONSCIENCE")
-    if ticker_option != 'all':
-        m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == ticker_option}
-        st.write(m)
-        # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
-        # df = df.tail(5)
-        # st.dataframe(df)
+        st.write(coin_story)
     else:
-        st.write(mainstate)
-    # if ticker_option == 'all':
-    #     st.write(mainstate)
+        command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
+        orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
+        pollenstory_resp = read_pollenstory()
+        queens_mind = read_queensmind()
+        mainstate = queens_mind['STORY_bee']
+        knights_word = queens_mind['KNIGHTSWORD']
+        today_day = datetime.datetime.now().day
+        
+        if command_conscience_option == 'Yes':
+            st.write(queens_mind['queen']['command_conscience'])
+
+        if orders_table == 'Yes':
+            main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+            st.dataframe(main_orders_table)
+        
+        st.write("QUEENS Collective CONSCIENCE")
+        if ticker_option != 'all':
+            m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == ticker_option}
+            st.write(m)
+            # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
+            # df = df.tail(5)
+            # st.dataframe(df)
+        else:
+            st.write(mainstate)
+        # if ticker_option == 'all':
+        #     st.write(mainstate)
     
 
     if option3 == "Yes":
