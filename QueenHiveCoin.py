@@ -37,34 +37,34 @@ current_day = datetime.datetime.now().day
 current_month = datetime.datetime.now().month
 current_year = datetime.datetime.now().year
 
-def init_logging(queens_chess_piece, db_root, loglog_newfile=False):
-    log_dir = dst = os.path.join(db_root, 'logs')
-    if os.path.exists(dst) == False:
-        os.mkdir(dst)
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-    log_file = os.path.join(os.getcwd(), log_name)
-    if os.path.exists(log_file) == False:
+# init_logging(queens_chess_piece, db_root)
+loglog_newfile = False
+log_dir = dst = os.path.join(db_root, 'logs')
+log_dir_logs = dst = os.path.join(log_dir, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if os.path.exists(log_file) == False:
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
+else:
+    if loglog_newfile:
+        # copy log file to log dir & del current log file
+        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+        shutil.copy(log_file, dst_path) # only when you want to log your log files
+        os.remove(log_file)
+    else:
         logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
                             filemode='a',
                             format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p',
                             level=logging.INFO)
-    else:
-        if loglog_newfile:
-            # copy log file to log dir & del current log file
-            datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-            dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-            shutil.copy(log_file, dst_path) # only when you want to log your log files
-            os.remove(log_file)
-        else:
-            logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                                filemode='a',
-                                format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                                datefmt='%m/%d/%Y %I:%M:%S %p',
-                                level=logging.INFO)
-        return True
 
-init_logging(queens_chess_piece, db_root)
 
 est = pytz.timezone("America/New_York")
 
@@ -184,8 +184,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         df = resp['df']
         knights_word = resp['bee_triggers']
         knights_sight_word[ticker_time_frame] = knights_word
-        # knight_sight_df[ticker_time_frame] = df_knight
-        
+        STORY_bee[ticker_time_frame]['KNIGHTSWORD'] = knights_word        
         # # return degree angle 0, 45, 90
         try:
             var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
@@ -444,7 +443,7 @@ def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_inp
         print("sending email of error", e)
 # r = return_bars(symbol='BTCUSD', timeframe='1Minute', ndays=0, exchange="CBSE")
 
-def return_bars_list(ticker_list, chart_times):
+def return_bars_list(ticker_list, chart_times, exchange):
     try:
         s = datetime.datetime.now()
         # ticker_list = ['BTCUSD', 'ETHUSD']
@@ -470,7 +469,7 @@ def return_bars_list(ticker_list, chart_times):
                 symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
                                             end=end_date,
-                                            ).df
+                                            exchanges=exchange).df
                 
                 # set index to EST time
                 symbol_data['index_timestamp'] = symbol_data.index
@@ -685,6 +684,7 @@ def print_line_of_error():
 ##################################################
 ################ NOT IN USE ######################
 ##################################################
+
 
 
 
@@ -933,7 +933,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     error_dict = {}
     s = datetime.datetime.now()
     dfs_index_tickers = {}
-    bars = return_bars_list(ticker_list, chart_times)
+    bars = return_bars_list(ticker_list, chart_times, exchange='CBSE')
     if bars[1]: # rebuild and split back to ticker_time with market hours only
         bars_dfs = bars[1]
         for timeframe, df in bars_dfs.items():

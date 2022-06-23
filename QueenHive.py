@@ -30,6 +30,8 @@ import shutil
 
 queens_chess_piece = os.path.basename(__file__)
 
+prod=True
+
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
@@ -37,34 +39,35 @@ current_day = datetime.datetime.now().day
 current_month = datetime.datetime.now().month
 current_year = datetime.datetime.now().year
 
-def init_logging(queens_chess_piece, db_root, loglog_newfile=False):
-    log_dir = dst = os.path.join(db_root, 'logs')
-    if os.path.exists(dst) == False:
-        os.mkdir(dst)
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-    log_file = os.path.join(os.getcwd(), log_name)
-    if os.path.exists(log_file) == False:
+# init_logging(queens_chess_piece, db_root)
+loglog_newfile = False
+log_dir = dst = os.path.join(db_root, 'logs')
+log_dir_logs = dst = os.path.join(log_dir, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if os.path.exists(log_file) == False:
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
+else:
+    if loglog_newfile:
+        # copy log file to log dir & del current log file
+        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+        shutil.copy(log_file, dst_path) # only when you want to log your log files
+        os.remove(log_file)
+    else:
+        print("logging")
         logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
                             filemode='a',
                             format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p',
                             level=logging.INFO)
-    else:
-        if loglog_newfile:
-            # copy log file to log dir & del current log file
-            datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-            dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-            shutil.copy(log_file, dst_path) # only when you want to log your log files
-            os.remove(log_file)
-        else:
-            logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                                filemode='a',
-                                format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                                datefmt='%m/%d/%Y %I:%M:%S %p',
-                                level=logging.INFO)
-        return True
 
-init_logging(queens_chess_piece, db_root)
 
 est = pytz.timezone("America/New_York")
 
@@ -174,7 +177,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     # >/ what current macd tier values in comparison to max/min
     s = datetime.datetime.now()
     story = {}
-    ANGEl_bee = {} # add to QUEENS mind
+    ANGEL_bee = {} # add to QUEENS mind
     STORY_bee = {} 
     # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
     betty_bee = {}  
@@ -184,7 +187,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
     for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
         # CHARLIE_bee[ticker_time_frame] = {}
-        ANGEl_bee[ticker_time_frame] = {}
+        ANGEL_bee[ticker_time_frame] = {}
         STORY_bee[ticker_time_frame] = {}
         
         df = df_i.fillna(0).copy()
@@ -208,7 +211,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         df = resp['df']
         knights_word = resp['bee_triggers']
         knights_sight_word[ticker_time_frame] = knights_word
-        # knight_sight_df[ticker_time_frame] = df_knight
+        STORY_bee[ticker_time_frame]['KNIGHTSWORD'] = knights_word
         
         # # return degree angle 0, 45, 90
         try:
@@ -221,7 +224,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                         x = df.iloc[df_len - t:df_len][var].to_list()
                         y = [1, 2]
                         name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
-                        ANGEl_bee[ticker_time_frame][name] = return_degree_angle(x, y)
+                        ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
         except Exception as e:
             msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
             logging.error(msg)
@@ -237,11 +240,9 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         
         # devation from vwap
         df['vwap_deviation'] = df['close'] - df['vwap_original']
+        
+        STORY_bee[ticker_time_frame]['vwap_deviation'] = df.iloc[-1]['vwap_deviation']
 
-        
-        # knights_word = knights_word[ticker_time_frame]
-        # get all current knowledge to consider trade
-        
         time_state = df['timestamp_est'].iloc[-1] # current time
         STORY_bee[ticker_time_frame]['time_state'] = time_state
         
@@ -258,7 +259,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         time_since_macd_change = (df['story_index'].iloc[-1] - prior_macd_df['story_index'].iloc[-1]) -1
         STORY_bee[ticker_time_frame]['time_since_macd_change'] = time_since_macd_change
         
-        STORY_bee[ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['lastmodified'].day == time_state.day and v['lastmodified'].hour == time_state.hour and v['lastmodified'].minute == time_state.minute]
+        STORY_bee[ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
 
         # count number of Macd Crosses
         # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
@@ -304,12 +305,13 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
     e = datetime.datetime.now()
     print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    return {'pollen_story': story, 'conscience': {'ANGEl_bee': ANGEl_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } }
+    return {'pollen_story': story, 'conscience': {'ANGEL_bee': ANGEL_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } }
 
 
 def knight_sight(df): # adds all triggers to dataframe
-    # ticker_time_frame = df['name'].iloc[-1]
-    # trigger_dict = {ticker_time_frame: {}}
+    # ticker_time_frame = df['name'].iloc[-1] #TEST
+    # trigger_dict = {ticker_time_frame: {}}  #TEST
+    
     trigger_dict_info = {}
     trigger_dict = {}
     
@@ -319,6 +321,19 @@ def knight_sight(df): # adds all triggers to dataframe
     # hist slope is up
 
     # Mac crosses
+    trigger = 'ready_buy_cross'
+    df[trigger] = np.where(
+        (df['macd_cross'].str.contains("buy")==False) &
+        (df['hist_slope-3'] > -.3)
+        ,"bee", 'nothing')
+    bee_df = df[df[trigger] == 'bee'].copy()
+    if len(bee_df) > 0:
+        trigger_dict[trigger] = {}
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    
+    # Mac crosses
     trigger = 'buy_cross-0'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy_cross-0")==True)
@@ -326,7 +341,10 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    
     trigger = 'sell_cross-0'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("sell_cross-0")==True)
@@ -334,7 +352,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     
     # Mac is very LOW and we are in buy cross
     trigger = 'buy_RED_tier-1_macdcross'
@@ -345,7 +365,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
 
     trigger = 'buy_RED_tier-2_macdcross'
     df[trigger] = np.where(
@@ -355,8 +377,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     trigger = 'buy_RED_tier-3_macdcross'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
@@ -365,8 +388,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     trigger = 'buy_RED_tier-4_macdcross'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
@@ -375,8 +399,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     trigger = 'buy_RED_tier-5_macdcross'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
@@ -385,8 +410,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     # Mac is very LOW and we are in buy cross
     trigger = 'buy_high-macdcross'
     df[trigger] = np.where(
@@ -396,8 +422,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     # Mac is very LOW and we are in buy cross
     trigger = 'buy_high-macdcross'
     df[trigger] = np.where(
@@ -407,8 +434,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-    
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     # Mac is very High and we are in a Sell Cross
     trigger = 'sell_high-macdcross'
     df[trigger] = np.where(
@@ -418,8 +446,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
     trigger = 'sell_high-macdcross'
     df[trigger] = np.where(
@@ -431,8 +460,9 @@ def knight_sight(df): # adds all triggers to dataframe
     bee_df = df[df[trigger] == 'bee'].copy()
     if len(bee_df) > 0:
         trigger_dict[trigger] = {}
-        trigger_dict[trigger]['lastmodified'] = bee_df['timestamp_est'].iloc[-1]
-
+        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+        if len(bee_df) > 1:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
 
     return {"df": df, "bee_triggers": trigger_dict}
 
@@ -1643,3 +1673,24 @@ def pollen_hunt(df_tickers_data, MACD):
 
 
 ###### >>>>>>>>>>>>>>>> CASTLE BISHOP FUNCTIONS <<<<<<<<<<<<<<<#########
+
+
+# ###### >>>>>>>>>>>>>>>> QUEEN <<<<<<<<<<<<<<<#########
+class return_pollen():
+    workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
+    POLLENSTORY = {}
+    STORY_bee = {}
+    KNIGHTSWORD = {}
+    ANGEL_bee = {}
+    QUEENSMIND = {}
+    for bee in workerbees:
+        chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, f'{bee}{".pkl"}'))
+        POLLENSTORY = {**POLLENSTORY, **chess_piece[bee]['pollenstory']}
+        STORY_bee = {**STORY_bee, **chess_piece[bee]['conscience']['STORY_bee']}
+        KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece[bee]['conscience']['KNIGHTSWORD']}
+        ANGEL_bee = {**ANGEL_bee, **chess_piece[bee]['conscience']['ANGEL_bee']}
+
+        if bee == "queen":
+            QUEENSMIND = chess_piece['command_conscience']
+if '__name__' == '__main__':
+    return_pollen()

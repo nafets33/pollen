@@ -35,7 +35,7 @@ import shutil
 from scipy import stats
 import hashlib
 import json
-from QueenHiveCoin import init_logging, pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, print_line_of_error
+from QueenHiveCoin import pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, print_line_of_error
 from QueenHiveCoin import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
@@ -51,7 +51,34 @@ prod = True
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
-init_logging(queens_chess_piece, db_root)
+# init_logging(queens_chess_piece, db_root)
+loglog_newfile = False
+log_dir = dst = os.path.join(db_root, 'logs')
+log_dir_logs = dst = os.path.join(log_dir, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if os.path.exists(log_file) == False:
+    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
+else:
+    if loglog_newfile:
+        # copy log file to log dir & del current log file
+        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+        shutil.copy(log_file, dst_path) # only when you want to log your log files
+        os.remove(log_file)
+    else:
+        logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+                            filemode='a',
+                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p',
+                            level=logging.INFO)
+
 
 # Macd Settings
 MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
@@ -171,7 +198,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     error_dict = {}
     s = datetime.datetime.now()
     dfs_index_tickers = {}
-    bars = return_bars_list(ticker_list, chart_times)
+    bars = return_bars_list(ticker_list, chart_times, exchange='CBSE')
     if bars['resp']: # rebuild and split back to ticker_time with market hours only
         bars_dfs = bars['return']
         for timeframe, df in bars_dfs.items():
@@ -320,7 +347,7 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
 
         for ticker_time, df in df_tickers_data.items():
             ticker, timeframe, days = ticker_time.split("_")
-            last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
+            last = df['timestamp_est'].iloc[-1].replace(tzinfo=None)
             now = datetime.datetime.now()
             timedelta_minutes = (now - last).seconds / 60
             now_day = now.day
@@ -331,6 +358,7 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
 
             if "1minute" == timeframe.lower():
                 if timedelta_minutes > 2:
+                    # ipdb.set_trace()
                     dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
@@ -428,6 +456,7 @@ def pollen_hunt(df_tickers_data, MACD):
     main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
     chart_rebuild_dict = {}
     for ticker_time, bars_data in df_tickers_data_rebuilt.items():
+        bars_data = bars_data[bars_data['exchange']=='CBSE']
         chart_rebuild_dict[ticker_time] = bars_data
         df_data_new = return_getbars_WithIndicators(bars_data=bars_data, MACD=MACD)
         if df_data_new[0] == True:

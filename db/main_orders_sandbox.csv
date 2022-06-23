@@ -1,8 +1,12 @@
-,Unnamed: 0.2,Unnamed: 0.1,Unnamed: 0,trigname,client_order_id,origin_client_order_id,date,lastmodified,info,exit_order_link,status_q,alpaca_order_id
-0,0,0,0,buy_cross-0,SPY-buy_cross-0--0,SPY-buy_cross-0--0,,2022-06-17T13:33:49.634719,,False,False,171cf49f-32aa-47b9-bd1e-ff853cb3df04
-1,1,1,1,buy_cross-0,SPY-buy_cross-0--0,SPY-buy_cross-0--0,,2022-06-17T14:00:59.669899,,False,False,171cf49f-32aa-47b9-bd1e-ff853cb3df04
-2,2,2,2,buy_cross-0,close__SPY-buy_cross-0--0,close__SPY-buy_cross-0--0,,2022-06-17T14:34:13.766827,,SPY-buy_cross-0--0,False,aa1b6560-5084-46f3-bc23-c89e7a8dc9d8
-3,3,3,3,buy_cross-0,SPY-buy_cross-0--1,SPY-buy_cross-0--1,,2022-06-17T15:18:45.206181,,False,False,76ff9250-8c0e-4334-8043-ade53cb5b404
-4,4,4,,buy_cross-0,SPY-buy_cross-0--1--220617-47.24,SPY-buy_cross-0--1--220617-47.24,,2022-06-17T15:47:25.065508,,False,False,de375e00-5126-4287-bd8b-6155cd579072
-5,5,,,buy_cross-0,SPY-buy_cross-0--1--220617-57.53,SPY-buy_cross-0--1--220617-57.53,,2022-06-17T15:57:54.212944,,False,False,e5f4ad5c-f9f8-45aa-b3cb-9b836abb4e0a
-6,,,,buy_cross-0,close__SPY-buy_cross-0--1--220617-57.53,close__SPY-buy_cross-0--1--220617-57.53,,2022-06-17T16:01:58.345433,,SPY-buy_cross-0--1--220617-57.53,False,616f130f-d2df-47af-a7cf-d7e87548be81
+,Unnamed: 0.6,Unnamed: 0.5,Unnamed: 0.4,Unnamed: 0.3,Unnamed: 0.2,Unnamed: 0.1,Unnamed: 0,trigname,client_order_id,origin_client_order_id,date,lastmodified,info,exit_order_link,status_q,alpaca_order_id
+0,0,0,0,0,0,0,0,buy_cross-0,SPY-buy_cross-0--0,SPY-buy_cross-0--0,,2022-06-17T13:33:49.634719,,False,False,171cf49f-32aa-47b9-bd1e-ff853cb3df04
+1,1,1,1,1,1,1,1,buy_cross-0,SPY-buy_cross-0--0,SPY-buy_cross-0--0,,2022-06-17T14:00:59.669899,,False,False,171cf49f-32aa-47b9-bd1e-ff853cb3df04
+2,2,2,2,2,2,2,2,buy_cross-0,close__SPY-buy_cross-0--0,close__SPY-buy_cross-0--0,,2022-06-17T14:34:13.766827,,SPY-buy_cross-0--0,False,aa1b6560-5084-46f3-bc23-c89e7a8dc9d8
+3,3,3,3,3,3,3,3,buy_cross-0,SPY-buy_cross-0--1,SPY-buy_cross-0--1,,2022-06-17T15:18:45.206181,,False,False,76ff9250-8c0e-4334-8043-ade53cb5b404
+4,4,4,4,4,4,4,,buy_cross-0,SPY-buy_cross-0--1--220617-47.24,SPY-buy_cross-0--1--220617-47.24,,2022-06-17T15:47:25.065508,,False,False,de375e00-5126-4287-bd8b-6155cd579072
+5,5,5,5,5,5,,,buy_cross-0,SPY-buy_cross-0--1--220617-57.53,SPY-buy_cross-0--1--220617-57.53,,2022-06-17T15:57:54.212944,,False,False,e5f4ad5c-f9f8-45aa-b3cb-9b836abb4e0a
+6,6,6,6,6,,,,buy_cross-0,close__SPY-buy_cross-0--1--220617-57.53,close__SPY-buy_cross-0--1--220617-57.53,,2022-06-17T16:01:58.345433,,SPY-buy_cross-0--1--220617-57.53,False,616f130f-d2df-47af-a7cf-d7e87548be81
+7,7,7,7,,,,,buy_cross-0,SPY-buy_cross-0--2--220622-01.10,SPY-buy_cross-0--2--220622-01.10,,2022-06-22T12:01:10.848898,,False,False,b13c046a-eb4d-4219-b5b0-5d486a3004cd
+8,8,8,,,,,,sell_cross-0,SHsell_cross-0_buy_2022-06-22 12-39-25 PM,SHsell_cross-0_buy_2022-06-22 12-39-25 PM,,2022-06-22T12:39:25.820070,,False,False,611c0b91-4f97-4f92-babb-a4d401d82cba
+9,9,,,,,,,buy_cross-0,close__SPY-buy_cross-0--2--220622-01.10,close__SPY-buy_cross-0--2--220622-01.10,,2022-06-22T15:04:43.192251,,SPY-buy_cross-0--2--220622-01.10,False,2dec63df-53bc-4c9b-9676-53b8bbb1112d
+10,,,,,,,,buy_cross-0,SPY-buy_cross-0--3--220622-16.12,SPY-buy_cross-0--3--220622-16.12,,2022-06-22T15:16:12.232232,,False,False,d66413b6-3c3d-4115-a69d-5a40be57db23

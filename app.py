@@ -1,3 +1,4 @@
+from asyncore import poll
 import pandas as pd  # pip install pandas openpyxl
 import plotly.express as px  # pip install plotly-express
 import streamlit as st  # pip install streamlit
@@ -38,6 +39,7 @@ from scipy.stats import linregress
 from scipy import stats
 import math
 import matplotlib.pyplot as plt
+from plotly.subplots import make_subplots
 from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
@@ -104,13 +106,24 @@ load_dotenv()
 # >>> initiate db directories
 system = 'windows' #mac, windows
 
-# """ Keys """
+""" Keys """
 api_key_id = os.environ.get('APCA_API_KEY_ID')
 api_secret = os.environ.get('APCA_API_SECRET_KEY')
 base_url = "https://api.alpaca.markets"
 keys = return_api_keys(base_url, api_key_id, api_secret)
 rest = keys[0]['rest']
 api = keys[0]['api']
+
+# Paper
+api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+base_url_paper = "https://paper-api.alpaca.markets"
+keys_paper = return_api_keys(base_url=base_url_paper, 
+    api_key_id=api_key_id_paper, 
+    api_secret=api_secret_paper,
+    prod=False)
+rest_paper = keys_paper[0]['rest']
+api_paper = keys_paper[0]['api']
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -153,24 +166,19 @@ def subPlot():
 
 
 
-def df_plotchart(title, df, y, x=False, figsize=(14,7)):
+def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
     st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
     if x == False:
         return df.plot(y=y,figsize=figsize)
     else:
-        df['date'] = df['date'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-        return df.plot(x='date', y=y,figsize=figsize)
+        if formatme:
+            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+            return df.plot(x='chartdate', y=y,figsize=figsize)
+        else:
+            return df.plot(x=x, y=y,figsize=figsize)
 
 
-# if queens_chess_piece.lower() == 'knight': # Read Bees Story
-# Read chart story dat
-# st.header('QueenBee')
-# st.sidebar.write("WelcomeSide")
 
-# st.markdown('<div style="text-align: center;">{}</div>'.format("buzz"), unsafe_allow_html=True)
-# st.markdown('<div style="text-align: left;">{}</div>'.format("buzzz"), unsafe_allow_html=True)
-# st.markdown('<div style="text-align: right;">{}</div>'.format("buzzzz"), unsafe_allow_html=True)
-# st.markdown('<div style="text-align: justify;">Hello World!</div>', unsafe_allow_html=True)
 
 st.button("ReRun")
 col1, col2, col3, col4 = st.columns(4)
@@ -179,280 +187,200 @@ image = Image.open(bee_image)
 with col3:
     st.image(image, caption='Jq', width=33)
 
-# option1 = st.selectbox("Dashboards", ('knight', 'Bishop', 'Castle'))
-pollenstory_resp = read_pollenstory()
-queens_mind = read_queensmind()
-mainstate = queens_mind['STORY_bee']
-knights_word = queens_mind['KNIGHTSWORD']
-today_day = datetime.datetime.now().day
-tickers_avail = [set(i.split("_")[0] for i in mainstate.keys())][0]
-tickers_avail.update({"all"})
+def create_main_macd_chart(df):
+    title = df.iloc[-1]['name']
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1999, row_heights=[0.7, 0.3])
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df=df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+    fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'])
+    # fig.add_scatter(x=df['chartdate'], y=df['close'], mode="lines", row=1, col=1)
+    fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1)
+    fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1)
+    fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1)
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+def create_slope_chart(df):
+    title = df.iloc[-1]['name']
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+    slope_cols = [i for i in df.columns if 'slope' in i]
+    for col in slope_cols:
+        df[col] = pd.to_numeric(df[col])
+        df[col] = np.where(abs(df[col])>5, 0, df[col])
+    fig.add_scatter(x=df['chartdate'], y=df['hist_slope-3'], mode="lines", row=1, col=1, name='hist_slope-3')
+    fig.add_scatter(x=df['chartdate'], y=df['hist_slope-6'], mode="lines", row=1, col=1, name='hist_slope-6')
+    # fig.add_scatter(x=df['chartdate'], y=df['hist_slope-23'], mode="lines", row=1, col=1, name='hist_slope-23')
+    fig.add_scatter(x=df['chartdate'], y=df['macd_slope-3'], mode="lines", row=2, col=1, name='macd_slope-3')
+    fig.add_scatter(x=df['chartdate'], y=df['macd_slope-6'], mode="lines", row=2, col=1, name='macd_slope-6')
+    # fig.add_scatter(x=df['chartdate'], y=df['macd_slope-23'], mode="lines", row=2, col=1, name='macd_slope-23')
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+class return_pollen():
+    workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
+    POLLENSTORY = {}
+    STORY_bee = {}
+    KNIGHTSWORD = {}
+    ANGEL_bee = {}
+    QUEENSMIND = {}
+    for bee in workerbees:
+        chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, f'{bee}{".pkl"}'))
+        POLLENSTORY = {**POLLENSTORY, **chess_piece[bee]['pollenstory']}        
+        STORY_bee = {**STORY_bee, **chess_piece[bee]['conscience']['STORY_bee']}
+        KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece[bee]['conscience']['KNIGHTSWORD']}
+        ANGEL_bee = {**ANGEL_bee, **chess_piece[bee]['conscience']['ANGEL_bee']}
+
+        if bee == "queen":
+            QUEENSMIND = chess_piece['command_conscience']
+
+
+pollen = return_pollen()
+
+
+# tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
+# tickers_avail.update({"all"})
+# ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
+# st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
 # we gather the labels and create a list
 # labels = list(tickers_avail.c.unique())
 
 # selected_values = st.multiselect("Select C values",tickers_avail)
 
-
-option = st.sidebar.selectbox("Dashboards", ('queen', 'test', 'knight', 'bishop', 'castle', 'slopes'))
+option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
+option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 # st.header(option)
 
-ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
-st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
+""" if "__name__" == "__main__": """
 
-
-if option == 'slopes':
-    pollenstory_resp = read_pollenstory()
-    ttframe_list = ['SPY_1Minute_1Day', 'QQQ_1Minute_1Day', 'SPY_5Minute_5Day', 'QQQ_5Minute_5Day', 'SPY_30Minute_1Month', 'QQQ_30Minute_1Month', 'SPY_1Hour_3Month', 'QQQ_1Hour_3Month', 'SPY_2Hour_6Month', 'QQQ_2Hour_6Month', 'SPY_1Day_1Year', 'QQQ_1Day_1Year']
-    # st.write(ttframe_list)
-    df_ = pollenstory_resp['SPY_1Minute_1Day']
-    df_['date'] = df_['timestamp_est'] # add as new col
-    df_ = df_.set_index('timestamp_est')
-    df_ = df_[df_.index.day == today_day].copy() # remove yesterday
-    chart = df_plotchart(title='1day', df=df_, y=['close'])
-    st.write('SPY_1Minute_1Day')
-    st.pyplot(chart.figure)
-    for ttframe in ttframe_list:
-        df_ = pollenstory_resp[ttframe]
-        df_['date'] = df_['timestamp_est'] # add as new col
-        df_ = df_.set_index('timestamp_est')
-        # df_ = df_[df_.index.day == today_day].copy() # remove yesterday
-        chart = df_plotchart(title='1day', df=df_, y=['close_slope-3', 'close_slope-6', 'close_slope-23'])
-        st.write(ttframe)
-        st.dataframe(df_.head(5))
-        st.pyplot(chart.figure)
-
-if option == 'knight':
-    # symbol = st.sidebar.text_input("Jq_Name", value='SPY_1Minute_1Day', max_chars=33)
-    symbol = ticker_option
-    pollenstory_resp = read_pollenstory()
-    spy = pollenstory_resp[f'{symbol}{"_"}{"1Minute_1Day"}']
-
-
-    c = spy
-    df = spy
-    df = df[:-1]  # test as last read doesn't have high & low
-    c2 = c.set_index("timestamp_est")
-    c3 = c2.tail(120)
-    c4=c3[['close']].plot(figsize=(14,7))
-    st.pyplot(c4.figure)
-
-    # fig = go.Figure(data=[go.Candlestick(x=df['timestamp_est'],
-    #                 open=df['open'],
-    #                 high=df['high'],
-    #                 low=df['low'],
-    #                 close=df['close'])])
-    # fig.update_xaxes(type='category')
-    # fig.update_layout(height=600)
-
-    # st.plotly_chart(fig, use_container_width=True)
-
-    c4=c3[['macd','macd_slope-3', 'macd_slope-6']].plot(figsize=(10,7))
-    st.pyplot(c4.figure)
-
-    c4=c3[['hist','hist_slope-3', 'hist_slope-6']].plot(figsize=(10,7))
-    st.pyplot(c4.figure)
-
-    df = spy[['symbol', 'nowdate', 'macd_slope-3', 'macd_slope-6', 'hist', 'hist_slope-3', 'hist_slope-6', 'story_index']].copy()
-    df = df.tail(30)
-    # my_df = my_df.sort_values(by=['col1','col2','col3'], ascending=[False, False, True])
-    df = df.sort_values(by=['story_index'], ascending=[False])
-    # df = df.sort_index(axis = 1, ascending=True)
-    st.subheader("Hists")
-    st.dataframe(df)
-
-    # subPlot() # plot multiple grpahs
-
-    # df_google = df[df['Name'] == 'GOOGL'].copy()
-    # spy = pollenstory_resp['SPY_1Day_1Year']
-    # df = spy
-    # df['date'] = df['timestamp_est']
-    # # df = df[df['date'] > pd.to_datetime('2017-12-31')]
-    # df = df.set_index('date')
-    # title=df['name'].iloc[-1]
-    # mpf.plot(df)
-
-
-    
-    full = spy.copy()
-    title = full.iloc[-1]['name']
-    full['date'] = full['timestamp_est'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-    # full['date'] = full['timestamp_est'].astype(str)
-    full=full[['close', 'date']].plot(x='date',figsize=(14,7))
-    st.subheader(title)
-    st.pyplot(full.figure)
-
-
-    # x, y = mpf.plot(df,type='candle',volume=True, figsize=(15,10), title=title, returnfig=True)
-    # # st.pyplot(x.figure)
-    # st.pyplot(x)
-
-    if option3 == "Yes":
-        time.sleep(3)
-        st.experimental_rerun()  ## rerun entire page
-
-if option == 'test':
-    pollenstory_resp = read_pollenstory()
-    queens_mind = read_queensmind()
-    mainstate = queens_mind['STORY_bee']
-    knights_word = queens_mind['KNIGHTSWORD']
-    today_day = datetime.datetime.now().day
-    
-    df = pollenstory_resp['SPY_1Minute_1Day'] # test
-    df['date'] = df['timestamp_est'] # test
-    df = df.set_index('timestamp_est') # test
-
-    # between certian times
-    df_t = df.between_time('9:30', '12:00')
-    df_t = df_t[df_t.index.day == today_day].copy() # remove yesterday
-    chart = df_plotchart(title='close', df=df_t, y='close')
-    chart2 = df_plotchart(title='mom_3', df=df_t, y='close_mom_3')
-    st.pyplot(chart.figure)
-    st.pyplot(chart2.figure)
-
-
-    st.dataframe(df_t[['close', 'close_slope-3', 'close_slope-6']])
-    
-    
-
-    st.write("QUEENS Collective CONSCIENCE")
-    tickers_avail = [set(i.split("_")[0] for i in mainstate.keys())][0]
+if option == 'charts':
+    tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
     tickers_avail.update({"all"})
-    conscience_option = st.selectbox("ttframes", tickers_avail)
-    if conscience_option.lower != 'all':
-        m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == conscience_option}
-        st.write(m)
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
+    st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+    pollen = return_pollen()
+    ttframe_list = list(set([i.split("_")[1] for i in pollen.POLLENSTORY.keys()]))
+    ttframe_list.append("all")
+    frame_option = st.sidebar.selectbox("ttframes", ttframe_list)
+    day_only_option = st.sidebar.selectbox('Show Today Only', ['yes', 'no'])
+    slope_option = st.sidebar.selectbox('Show Slopes', ['yes', 'no'])
+    if frame_option == 'all':
+        for ttframe, df in pollen.POLLENSTORY.items():
+            selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
+            for sel in selections:
+                df = pollen.POLLENSTORY[sel]
+                # if df.iloc[-1]['open'] == 0:
+                #     df = df.head(-1)
+                fig = create_main_macd_chart(df)
+                
+                st.write(fig)
+
+            # df_day = df['timestamp_est'].iloc[-1]
+            # df['date'] = df['timestamp_est'] # test
+            # df = df.set_index('timestamp_est') # test
+            # # between certian times
+            # df_t = df.between_time('9:30', '12:00')
+            # df_t = df_t[df_t.index.day == df_day.day].copy() # remove yesterday
+            # chart = create_main_macd_chart(df=df)
+            # st.write(chart)
+
     else:
-        st.write(mainstate.items())
+        selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
+        df = pollen.POLLENSTORY[selections[0]]
+        # if df.iloc[-1]['open'] == 0:
+        #     df = df.head(-1)
+        if day_only_option == 'yes':
+            df_day = df['timestamp_est'].iloc[-1]
+            df['date'] = df['timestamp_est'] # test
+            df = df.set_index('timestamp_est', drop=False) # test
+            # between certian times
+            # df_t = df.between_time('9:30', '12:00')
+            df = df[df.index.day == df_day.day].copy() # remove yesterday       
+        fig = create_main_macd_chart(df)
+        st.write(fig)
 
-
-    df_ = pollenstory_resp['SPY_1Minute_1Day']
-    df_['date'] = df_['timestamp_est'] # add as new col
-    df_ = df_.set_index('timestamp_est')
-    df_ = df_[df_.index.day == today_day].copy() # remove yesterday
-    chart = df_plotchart(title='1day', df=df_, y='close')
-    st.pyplot(chart.figure)
-
-    df_ = pollenstory_resp['SPY_5Minute_5Day']
-    df_['date'] = df_['timestamp_est'] # add as new col
-    chart = df_plotchart(title='5day', df=df_, y='close')
-    st.pyplot(chart.figure)
-    df_ = pollenstory_resp['SPY_5Minute_5Day']
-    df_['date'] = df_['timestamp_est'] # add as new col
-    chart = df_plotchart(title='5day-macd', df=df_, y=['macd', 'signal', 'hist'])
-    st.pyplot(chart.figure)
-
-
-    # between certian times
-    df_t = df.between_time('9:30', '12:00')
-    df_t = df_t[df_t.index.day == today_day].copy() # remove yesterday
-
-    df_t['prior_slopedelta'] = (df_t['macd_slope-3'] - df_t['macd_slope-3'].shift(1)).fillna(0)
-
-    p=df_t[['close']].plot(figsize=(14,7))
-    st.pyplot(p.figure)
-    p=df_t[['macd', 'macd_slope-3', 'prior_slopedelta']].plot(figsize=(14,7))
-    st.pyplot(p.figure)
-
-    # test candlestick chart
-    df = pollenstory_resp['SPY_1Minute_1Day']
-    df['date'] = df['timestamp_est'] # add as new col
-    df = df.head(-1) # drop current Min until you fix upstream
-    fig = go.Figure(data=[go.Candlestick(x=df['date'],
-                    open=df['open'],
-                    high=df['high'],
-                    low=df['low'],
-                    close=df['close'])])
-    fig.update_xaxes(type='category')
-    fig.update_layout(height=600)
-    st.markdown('<div style="text-align: center;">{}</div>'.format(df['name'].iloc[-1]), unsafe_allow_html=True)
-    st.plotly_chart(fig, use_container_width=True)
-
-    if option3 == "Yes":
-        time.sleep(3)
-        st.experimental_rerun()
+        if slope_option == 'yes':
+            slope_cols = [i for i in df.columns if "slope" in i]
+            slope_cols.append("close")
+            slope_cols.append("timestamp_est")
+            slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
+            fig = create_slope_chart(df=df)
+            st.write(fig)
+            st.dataframe(slopes_df)
+        
 
 if option == 'queen':
-    coin_sidebar = st.sidebar.selectbox("coin", ('No', 'Yes'))
-    if coin_sidebar == "Yes":
-        queens_mind = read_queensmind()
-        castle_coin = queens_mind['castle_coin']
-        coin_chart_story = castle_coin['pollenstory']
-        coin_story = castle_coin['conscience']['STORY_bee']
+    tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
+    tickers_avail.update({"all"})
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
+    st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-        st.write(coin_story)
+    command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
+    orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
+    pollen = return_pollen()
+    today_day = datetime.datetime.now().day
+
+    if command_conscience_option == 'Yes':
+        st.write("memory")
+        st.write(pollen.QUEENSMIND['memory'])
+        st.write('orders')
+        st.write(pollen.QUEENSMIND['orders'])
+
+    if orders_table == 'Yes':
+        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+        st.dataframe(main_orders_table)
+
+    st.write("QUEENS Collective CONSCIENCE")
+    if ticker_option != 'all':
+        m = {k:v for (k,v) in pollen.STORY_bee.items() if k.split("_")[0] == ticker_option}
+        m2 = {k:v for (k,v) in pollen.KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
+        st.write(m)
+        st.write(m2)
+        # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
+        # df = df.tail(5)
+        # st.dataframe(df)
     else:
-        command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
-        orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
-        pollenstory_resp = read_pollenstory()
-        queens_mind = read_queensmind()
-        mainstate = queens_mind['STORY_bee']
-        knights_word = queens_mind['KNIGHTSWORD']
-        today_day = datetime.datetime.now().day
-        
-        if command_conscience_option == 'Yes':
-            st.write(queens_mind['queen']['command_conscience'])
-
-        if orders_table == 'Yes':
-            main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
-            st.dataframe(main_orders_table)
-        
-        st.write("QUEENS Collective CONSCIENCE")
-        if ticker_option != 'all':
-            m = {k:v for (k,v) in mainstate.items() if k.split("_")[0] == ticker_option}
-            st.write(m)
-            # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
-            # df = df.tail(5)
-            # st.dataframe(df)
-        else:
-            st.write(mainstate)
-        # if ticker_option == 'all':
-        #     st.write(mainstate)
+        st.write(pollen.STORY_bee)
+    # if ticker_option == 'all':
+    #     st.write(mainstate)
     
-
     if option3 == "Yes":
         time.sleep(3)
         st.experimental_rerun()
 
 
+if option == 'signal':
+
+
+    
+    db_app_dir = os.path.join(db_root, 'app')
+    client_signal = pd.read_csv(os.path.join(db_app_dir, 'signals.csv'))
+    current_orders = pollen.QUEENSMIND['orders']
+    running_orders = current_orders['running']
+    position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
+    closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
+    tickers = [i['symbol'] for i in position_orders]
+    tickers.append("NONE")
+    st.selectbox('ticker', tickers)
+
+    # current number avail to sell if selling order in place
+    qty_default = range(100)
+    st.selectbox('Qty', qty_default)
+    st.button("Save")
+    values = ['<select>',3, 5, 10, 15, 20, 30]
+    default_ix = values.index('<select>')
+    window_ANTICOR = st.sidebar.selectbox('Window ANTICOR', values, index=default_ix)
+    # FEATURE: replace order using client_order_id
 
 
 
-
-
-
-
-# st.text('Fixed width text')
-# st.markdown('_Markdown_') # see *
-# st.latex(r''' e^{i\pi} + 1 = 0 ''')
-# st.write('Most objects') # df, err, func, keras!
-# st.write(['st', 'is <', 3]) # see *
-# st.title('My title')
-# st.code('for i in range(8): foo()')
-# st.json({
-#      'foo': 'bar',
-#      'baz': 'boz',
-#      'stuff': [
-#          'stuff 1',
-#          'stuff 2',
-#          'stuff 3',
-#          'stuff 5',
-#      ],
-#  })
-
-# import random
-# while True:
-#     g = st.subheader('me')
-# plot chart
-# sales_by_hour = df_selection.groupby(by=["hour"]).sum()[["Total"]]
-# fig_hourly_sales = px.bar(
-#     sales_by_hour,
-#     x=sales_by_hour.index,
-#     y="Total",
-#     title="<b>Sales by hour</b>",
-#     color_discrete_sequence=["#0083B8"] * len(sales_by_hour),
-#     template="plotly_white",
-# )
-#  re

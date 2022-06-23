@@ -35,7 +35,7 @@ import shutil
 from scipy import stats
 import hashlib
 import json
-from QueenHive import read_csv_db, update_csv_db, read_queensmind, read_pollenstory, init_logging, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 # script arguments
 queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
@@ -48,7 +48,29 @@ prod = True
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
-init_logging(queens_chess_piece, db_root)
+# init_logging(queens_chess_piece, db_root)
+loglog_newfile = False
+log_dir = dst = os.path.join(db_root, 'logs')
+log_dir_logs = dst = os.path.join(log_dir, 'logs')
+if os.path.exists(dst) == False:
+    os.mkdir(dst)
+log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+log_file = os.path.join(os.getcwd(), log_name)
+if loglog_newfile:
+    # copy log file to log dir & del current log file
+    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+    dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+    shutil.copy(log_file, dst_path) # only when you want to log your log files
+    os.remove(log_file)
+else:
+    # print("logging",log_file)
+    logging.basicConfig(filename=log_file,
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO,
+                        force=True)
+    # logging.info("Welcome")
 
 # Macd Settings
 MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
@@ -63,7 +85,7 @@ QUEEN = { # The Queens Mind
         'kings_order_rules': {},
     # Worker Bees
     queens_chess_piece: {
-    'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEl_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+    'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
     'pollenstory': {}, # latest story of dataframes castle and bishop
     'pollencharts': {}, # latest chart rebuild
     'pollencharts_nectar': {}, # latest chart rebuild with indicators
@@ -384,12 +406,12 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
 
             d = {
                 'close': snapshots[ticker].latest_trade.price,
-                'high': 0, # snapshots[ticker].minute_bar.high,
-                'low': 0, # snapshots[ticker].minute_bar.low,
+                'high': snapshots[ticker].latest_trade.price,
+                'low': snapshots[ticker].latest_trade.price,
                 'timestamp_est': snapshots[ticker].latest_trade.timestamp,
-                'open': 0, # snapshots[ticker].minute_bar.open,
-                'volume': 0, # snapshots[ticker].minute_bar.volume,
-                'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
+                'open': snapshots[ticker].latest_trade.price,
+                'volume': snapshots[ticker].minute_bar.volume,
+                'trade_count': snapshots[ticker].minute_bar.trade_count,
                 'vwap': snapshots[ticker].minute_bar.vwap
                 }
             df_minute = pd.Series(d).to_frame().T
@@ -654,7 +676,7 @@ try:
     while True:
         if queens_chess_piece.lower() in ['castle', 'bishop']: # create the story
             s = datetime.datetime.now()
-            if s > datetime.datetime(s.year, s.month, s.day, 16):
+            if s >= datetime.datetime(s.year, s.month, s.day, hour=16, minute=1):
                 logging.info("Happy Bee Day End")
                 print("Great Job! See you Tomorrow")
                 break
@@ -665,7 +687,7 @@ try:
             QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
             
             pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
-            ANGEl_bee = pollens_honey['conscience']['ANGEl_bee']
+            ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
             knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
             STORY_bee = pollens_honey['conscience']['STORY_bee']
 
@@ -673,7 +695,7 @@ try:
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
 
             # populate conscience
-            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEl_bee
+            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
             QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
