@@ -43,6 +43,7 @@ from plotly.subplots import make_subplots
 from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
+import base64
 from QueenHive import return_api_keys, read_pollenstory, read_queensmind, read_csv_db
 
 prod = False
@@ -245,6 +246,24 @@ class return_pollen():
 pollen = return_pollen()
 
 
+# main_bg = "bee.jpg" 
+# side_bg = "bee.jpg"
+# main_bg_ext = "jpg"
+# side_bg_ext = "jpg"
+# st.markdown(
+#     f"""
+#     <style>
+#     .reportview-container {{
+#         background: url(data:image/{main_bg_ext};base64,{base64.b64encode(open(main_bg, "rb").read()).decode()})
+#     }}
+#    .sidebar .sidebar-content {{
+#         background: url(data:image/{side_bg_ext};base64,{base64.b64encode(open(side_bg, "rb").read()).decode()})
+#     }}
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+# )
+
 # tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
 # tickers_avail.update({"all"})
 # ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
@@ -263,6 +282,7 @@ option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 """ if "__name__" == "__main__": """
 
 if option == 'charts':
+
     tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
     tickers_avail.update({"all"})
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
@@ -285,6 +305,7 @@ if option == 'charts':
                 
                 st.write(fig)
 
+
             # df_day = df['timestamp_est'].iloc[-1]
             # df['date'] = df['timestamp_est'] # test
             # df = df.set_index('timestamp_est') # test
@@ -296,7 +317,8 @@ if option == 'charts':
 
     else:
         selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
-        df = pollen.POLLENSTORY[selections[0]]
+        sel = selections[0]
+        df = pollen.POLLENSTORY[sel].copy()
         # if df.iloc[-1]['open'] == 0:
         #     df = df.head(-1)
         if day_only_option == 'yes':
@@ -318,6 +340,14 @@ if option == 'charts':
             st.write(fig)
             st.dataframe(slopes_df)
         
+        if "BTCUSD" in sel:
+            df = pollen.POLLENSTORY[sel].copy()
+            df_output = df[['timestamp_est', 'story_index', 'close']].copy()
+            df_output = df_output.sort_values(by='story_index', ascending=False)
+
+            st.write(df_output)
+        
+
 
 if option == 'queen':
     tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]

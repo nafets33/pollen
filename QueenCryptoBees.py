@@ -35,13 +35,8 @@ import shutil
 from scipy import stats
 import hashlib
 import json
-from collections import deque
 from QueenHive import read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
-
-# FEAT List
-# rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
-
 # script arguments
 queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
 
@@ -96,14 +91,28 @@ QUEEN = { # The Queens Mind
     'pollencharts_nectar': {}, # latest chart rebuild with indicators
     'pollenstory_info': {}, # Misc Info,
     'client': {},
-    'heartbeat': {'cycle_time': deque([], 89)},
+    # 'heartbeat': {},
     'last_modified' : datetime.datetime.now(),
     }
 }
 
+if queens_chess_piece == 'queen':
+    kings_order_rules = {'triggers': {'buy_cross-0': {'timeduration': 1, 
+                                                'take_profit': .005,
+                                                'sellout': .01,
+                                                'adjustable': True,
+                                                    },
+                                      'sell_cross-0': {'timeduration': 1, 
+                                                'take_profit': .005,
+                                                'sellout': .01,
+                                                'adjustable': True,
+                                                    },
+                                        }
+    }
+    QUEEN['kings_order_rules'] = kings_order_rules
 
 
-if queens_chess_piece.lower() not in ['castle', 'knight', 'bishop', 'workerbee']:
+if queens_chess_piece.lower() not in ['queen', 'castle', 'knight', 'bishop', 'workerbee']:
     print("wrong chess move")
     sys.exit()
 
@@ -344,6 +353,9 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
     ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
 
     snapshots = api.get_snapshots(ticker_list)
+    # snapshots = api.get_crypto_snapshot(ticker_list)
+    # snapshots['SPY'].latest_trade
+    # snapshots['SPY'].latest_trade.conditions
 
     for ticker in snapshots.keys(): # replace snapshot if in exclude_conditions
         c = 0
@@ -362,7 +374,6 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
     float_cols = ['close', 'high', 'open', 'low', 'vwap']
     int_cols = ['volume', 'trade_count']
     main_return_dict = {}
-    
     # min_bars_dict = rebuild_timeframe_bars(ticker_list)
     # if min_bars_dict['resp'] == False:
     #     print("Min Bars Error", min_bars_dict)
@@ -413,8 +424,6 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
             return_dict[ticker + "_minute"] = df_minute
         
         return return_dict
-    
- 
     snapshot_ticker_data = response_returned(ticker_list)
     
     for ticker_time, df in df_tickers_data.items():
@@ -587,8 +596,8 @@ else:
 # init files needed
 PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
 if queens_chess_piece == 'castle':
-    # if os.path.exists(PB_Story_Pickle):
-    #     os.remove(PB_Story_Pickle)
+    if os.path.exists(PB_Story_Pickle):
+        os.remove(PB_Story_Pickle)
     chart_times_castle = {
             "1Minute_1Day": 1, "5Minute_5Day": 5,
             "30Minute_1Month": 18, 
@@ -596,17 +605,22 @@ if queens_chess_piece == 'castle':
             "1Day_1Year": 250}
 
 if queens_chess_piece == 'bishop':
-    # if os.path.exists(PB_Story_Pickle):
-    #     os.remove(PB_Story_Pickle)
+    if os.path.exists(PB_Story_Pickle):
+        os.remove(PB_Story_Pickle)
     chart_times_bishop = {
             "1Minute_1Day": 1, "5Minute_5Day": 5,
             "30Minute_1Month": 18, 
             "1Hour_3Month": 48, "2Hour_6Month": 72, 
             "1Day_1Year": 250}
 
-# if queens_chess_piece == 'workerbee':
-#     if os.path.exists(PB_Story_Pickle):
-#         os.remove(PB_Story_Pickle)
+if queens_chess_piece == 'workerbee':
+    if os.path.exists(PB_Story_Pickle):
+        os.remove(PB_Story_Pickle)
+
+if queens_chess_piece == 'queen':
+    PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{".json"}')
+    print("My Queen")
+
 
 """ Initiate your Charts with Indicators """
 def initiate_ttframe_charts(queens_chess_piece):
@@ -700,13 +714,12 @@ try:
 
             e = datetime.datetime.now()
             cycle_run_time = (e-s)
-            QUEEN[queens_chess_piece]['heartbeat']['cycle_time'].append(cycle_run_time)
             if cycle_run_time.seconds > 5:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
                 logging.info("cycle_time > 5 seconds", cycle_run_time)
-            workerbee_run_times = QUEEN[queens_chess_piece]['heartbeat']['cycle_time']
+            workerbee_run_times.append(cycle_run_time)
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
-            print(queens_chess_piece, " avg cycle time(last89):", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+            print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
         if queens_chess_piece.lower() == 'workerbee': # return tics
             s = datetime.datetime.now()
@@ -744,13 +757,74 @@ try:
                 logging.info("Happy Bee Day End")
                 print("Great Job! See you Tomorrow")
                 break
-            print("seek out and find the best tickers to play with")
+
+            # Read chart story data
+            castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
+            bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
+            if castle == False or bishop == False:
+                msg = ("Failed in Reading of Castle of Bishop Pickle File")
+                print(msg)
+                logging.warning(msg)
+                continue
+            else:
+                pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+                # make recording of last modified
+                lastmod = bishop["last_modified"]["last_modified"]
+                
+                if lastmod > QUEEN[queens_chess_piece]["last_modified"]:
+                    QUEEN[queens_chess_piece]["last_modified"] = lastmod
+                    
+                    if prod:
+                        def bid_ask_devation(symbol):
+                            devation = .01  #(bid - ask) / ask
+                            return devation
+
+
+                        def generate_order_id():
+                            var_1 = 'buy'
+                            var_2 = 'type'  # create category types based on framework of scenarios
+                            now = return_timestamp_string()
+                            x = now
+                            # id = str(int(hashlib.md5(x.encode('utf8')).hexdigest(), 16))
+                            id = now + "_" + str(var_1) + "_" + str(var_2)
+                            return id # OR just return the string iteslf? that is better no?
+                        
+
+                        def queens_order_managment(prod, spy, symbols):
+                            prod = 'sandbox'
+                            symbols = {'sting': ['spy']}  # sting: fast day trade
+                            symbols_argu = {'qty': 1, 'side': 'buy', 'type': 'market'}
+                            symbol = spy
+                            qty = 1
+                            side = 'buy'
+                            type = 'market'  #'limit', 'market'
+                            time_in_force = 'gtc'
+                            client_order_id = generate_order_id()
+
+                            # Buy in Prod or Sandbox
+                            if prod:
+                                api = api
+                            else:
+                                api = api_paper
+
+
+
+                        if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+                            msg=("Pickle Data Failed")
+                            print(msg)
+                            logging.critical(msg)
+                            continue
+                    
+                        spy = pollenstory['SPY_1Minute_1Day']
+                        print(spy[['macd_cross', 'close_mom_3', 'nowdate']].tail(5))
+
+                    
+                    e = datetime.datetime.now()
+                    print("knight", str((e - s).seconds) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
 
 except Exception as errbuz:
     print(errbuz)
-    erline = print_line_of_error()
-    log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
-    print(log_msg)
+    log_msg = {'type': 'ProgramCrash'}
     logging.critical(log_msg)
     pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 

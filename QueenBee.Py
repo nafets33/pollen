@@ -35,7 +35,8 @@ import shutil
 from scipy import stats
 import hashlib
 import json
-from QueenHive import read_csv_db, return_pollen, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from collections import deque
+from QueenHive import slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 # from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 # script arguments
@@ -74,12 +75,13 @@ else:
 # Macd Settings
 MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 QUEEN = { # The Queens Mind
-    'command_conscience': {'memory': {'trigger_stopped': [], 'trigger_sell_stopped': [], 'orders_completed': []}, 
-                            'orders': { 'requests': [],
+    'command_conscience': {'memory': {'trigger_stopped': [], 'trigger_sell_stopped': [], 'orders_completed': [], 'running_bees': deque([], 89)}, 
+                           'orders': { 'requests': [],
                                         'submitted': [],
                                         'running': [],
                                         'running_close': []}
-                                        }, # ONLY for the Kings Eyes
+                                        }, 
+                            'collective_conscience': {'theme': {}}, # ONLY for the Kings Eyes
         'heartbeat': {}, # ticker info ... change name
         'kings_order_rules': {},
     # Worker Bees
@@ -96,25 +98,29 @@ QUEEN = { # The Queens Mind
 }
 
 if queens_chess_piece == 'queen':  ## KINGS ORDERS
-    kings_order_rules = {'triggers': {'buy_cross-0': {'timeduration': 1, 
+    kings_order_rules = {'knight_bees': {'buy_cross-0': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
                                                 'adjustable': True,
+                                                'friend_links': [],
                                                     },
                                       'sell_cross-0': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
                                                 'adjustable': True,
+                                                'friend_links': [],
                                                     },
                                       'ready_buy_cross': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
                                                 'adjustable': True,
+                                                'friend_links': [],
                                                     },
                                       'ready_sell_cross': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
                                                 'adjustable': True,
+                                                'friend_links': [],
                                                     },
 
 ################## crypto >>> crypto >>> crypto >>> crypto >>> crypto ###################                                        
@@ -122,11 +128,13 @@ if queens_chess_piece == 'queen':  ## KINGS ORDERS
                                                 'take_profit': .005,
                                                 'sellout': .01,
                                                 'adjustable': True,
+                                                'friend_links': [],
                                                     },
                                       'crypto_sell_cross-0': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
                                                 'adjustable': True,
+                                                'friend_links': [],
                                                     },
                                         }
     }
@@ -280,24 +288,23 @@ Always Bee Better
 """
 )
 
-# if '_name_' == '_main_':
-# print("Buzz Buzz Where My Honey")
-if queens_chess_piece == 'queen':
-    logging.info("My Queen")
-else:
-    logging.info("Buzz Buzz Where My Honey")
-
-# init files needed
-PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-if queens_chess_piece == 'queen':
-    PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{".json"}')
-    print("My Queen")
 
 def reconcile_portforlio(api, running_orders):
     # every running order should match up to portfolio HANDLE Gaps
     all_positions = api.list_positions()
     portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
     running_orders = QUEEN['command_conscience']['orders']['running']
+
+    # recon symbols and qty
+    orders_current_status = [check_order_status(api=api, client_order_id=i['client_order_id']) for i in running_orders]
+    running_symbols = {i['symbol']: i['filled_qty'] for i in running_orders}
+
+    if running_close:
+        for sy, f_qty in running_close.items():
+            int(running_symbols[sy])
+    # check if any orders are paritially filled and account for delta
+
+
 
 def initialize_orders(api, start_date, end_date, symbols=False):
     if start_date==(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"):
@@ -324,8 +331,26 @@ def initialize_orders(api, start_date, end_date, symbols=False):
         pass
 
 
+def create_running_order(order, trig):
+    date_mark = datetime.datetime.now()
+    if order['side'] == 'buy':
+        running_order = {'symbol': order['symbol'], 'order_rules': kings_order_rules['knight_bees'][trig], 
+                        'trigname': trig, 'datetime': date_mark, 
+                        'status_q': status_q, 
+                        'exit_order_links': exit_order_link, 'client_order_id': order['client_order_id'],
+                        }
+    else: # sell
+        running_order = {'symbol': order['symbol'], 'order_rules': kings_order_rules['knight_bees'][trig], 
+                        'trigname': trig, 'datetime': date_mark, 
+                        'status_q': status_q, 
+                        'exit_order_links': exit_order_link, 'client_order_id': order['client_order_id'],
+                        }
+
+    return running_order
+
 def process_order_submission(order, trig, prod, tablename, status_q=False, exit_order_link=False):
     date_mark = datetime.datetime.now()
+    symbol = order['symbol']
     client_order_id = order['client_order_id']
     alpaca_order_id = order['id']
     df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 'exit_order_link':exit_order_link, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id} 
@@ -335,9 +360,11 @@ def process_order_submission(order, trig, prod, tablename, status_q=False, exit_
     df.columns = new_header #set the header row as the df header
     update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
 
-    sending_order = {'symbol': order['symbol'], 'order_rules': kings_order_rules['triggers'][trig], 'trigname': trig, 'datetime': date_mark, 'status_q': status_q, 'exit_order_links': exit_order_link, 'client_order_id': order['client_order_id']}                                    
-    logging.info(kings_order_rules['triggers'][trig])
-    trig_stop_info = {'trigname': trig, 'exit_order_link': exit_order_link, 'client_order_id': client_order_id, 'datetime': date_mark}
+    # sending_order = {'symbol': order['symbol'], 'order_rules': kings_order_rules['knight_bees'][trig], 'trigname': trig, 'datetime': date_mark, 'status_q': status_q, 'exit_order_links': exit_order_link, 'client_order_id': order['client_order_id'], 'sellable_qty': order['qty']}                                    
+    sending_order = create_running_order(order=order, trig=trig)
+    logging.info(kings_order_rules['knight_bees'][trig])
+    trig_stop_info = {'symbol': symbol, 'trigname': trig, 'exit_order_link': exit_order_link, 'client_order_id': client_order_id, 'datetime': date_mark}
+    
     return {'sending_order': sending_order, 'trig_stop_info': trig_stop_info}
 
 
@@ -359,16 +386,46 @@ def check_order_status(api, client_order_id):
     return order_
 
 
+def generate_client_order_id(ticker, trig):
+    main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+    main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')]
+    trig_num = len(main_trigs_df)
+    temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
+    order_id = f'{ticker}{"-"}{trig}{"--"}{trig_num}--{temp_date}'
+
+    return order_id
+
+
 def command_conscience(api, ticker, STORY_bee):
     # ticker = 'SPY'
     # api = api_paper
 
-    def handle_trigger_order():
-        return True
+    def king_knights_requests(QUEEN, ticker):
+        # answer all questions for order to be placed, compare against the rules
+        all_bees = QUEEN['kings_order_rules']['knight_bees'].keys()
+        all_bees = ['buy_cross-0', 'sell_cross-0'] # test
+        decision = {}
 
-    ticker_storys = {k:v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
+        for bee in all_bees:
+            if bee == 'buy_cross-0':
+                # Q?confirmation on trigger, should you wait for futher confirmation?
+
+                theme_input = QUEEN['command_conscience']['collective_conscience']['theme']['current_state'] # what is the theme?
+                # what is your timeblock?
+                # what does your friend_links(bees) say? or have said?
+                # 
+                # what is the % amount you want to buy?
+                # should you override your original order rules?
+
+
+                pass
+        return decision
+
+    # ipdb.set_trace()
+    ticker_storys = {k:v for (k, v) in STORY_bee['story'].items() if k.split("_")[0] == ticker} # filter by ticker
     all_current_triggers = {k:v['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['alltriggers_current_state']) > 0}
-    # all_current_triggers.update({'SPY_1Minute_1Day': ['buy_cross-0']})
+    # all_current_triggers.update({'SPY_1Minute_1Day': ['buy_cross-0']}) # test
+
     if all_current_triggers:
         # print("num of current triggers", len(all_current_triggers))
         if f'{ticker}{"_1Minute_1Day"}' in all_current_triggers.keys():
@@ -376,29 +433,25 @@ def command_conscience(api, ticker, STORY_bee):
             trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
             for trig in trigs:
                 if trig == "buy_cross-0":
-                    # print(trig)
                     # check if you already placed order or if a workerbee in transit to place order
                     trigname_stopped = [item['trigname'] for item in QUEEN['command_conscience']['memory']['trigger_stopped']]
                     if trig in trigname_stopped:
                         continue # break loop
                     else:
+                        print("CheckPoint_WhoAreYou?", trig, " time:", return_timestamp_string())
                         print("trig", trig, " time:", return_timestamp_string())
                         print("Each Buz in a gift")
                         # FUNCTION THAT CHECKS ORDER TO input Qty RETURN Story of other ttframes to influence order
+                        r=king_knights_requests(QUEEN=QUEEN, ticker=ticker)
                         
                         # return num of trig for client_order_id
-                        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
-                        main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')]
-                        trig_num = len(main_trigs_df)
-                        temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
-                        order_id = f'{ticker}{"-"}{trig}{"--"}{trig_num}--{temp_date}'
+                        order_id = generate_client_order_id(ticker=ticker, trig=trig)
                         
                         order_submit = submit_order(api=api, symbol=ticker, type='market', qty=1, side='buy', client_order_id=order_id) # buy
                         order = vars(order_submit)['_raw']
 
                         # ensure order went through
                         if route_order_based_on_status(order_status=order['status']):
-                        # if order['status'] in ['accepted', 'pending_new', 'accepted_for_bidding', 'filled', 'partially_filled', 'new']:
                             order_process = process_order_submission(trig=trig, order=order, prod=prod, tablename='main_orders')
                             QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
                             QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
@@ -422,11 +475,7 @@ def command_conscience(api, ticker, STORY_bee):
                             # FUNCTION THAT CHECKS ORDER TO input Qty RETURN Story of other ttframes to influence order
                             
                             # return num of trig for client_order_id
-                            main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
-                            main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')]
-                            trig_num = len(main_trigs_df)
-                            temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
-                            order_id = f'{ticker}{"-"}{trig}{"--"}{trig_num}--{temp_date}'
+                            order_id = generate_client_order_id()
                             
                             order_submit = submit_order(api=api, symbol=ticker, type='market', qty=1, side='buy', client_order_id=order_id) # buy
                             order = vars(order_submit)['_raw']
@@ -457,43 +506,85 @@ def order_management(api): # Handle ALL submitted orders and place them
                 order_id = order_sent['client_order_id']
                 # check if order fulfilled
                 order_status = check_order_status(api, client_order_id=order_id)
+                #               
                 # if order has fulfilled place in working orders else tag as partial order fulfilled
                 if order_status['filled_qty']:
-                    if order_status['qty'] == order_status['filled_qty']:
-                        print("order filled, and move to memory")
-                        QUEEN['command_conscience']['orders']['submitted'].remove(order_sent)
-                        if order_status['side'] == 'sell':
-                            ## order is now completed and remove all traces and put orders in completed
-                            # remove origin order from running
-                            exit_order_link = order_sent['exit_order_links']
-                            origin_order = [i for i in QUEEN['command_conscience']['orders']['running'] if i['client_order_id'] == exit_order_link][0]
-                            QUEEN['command_conscience']['orders']['running'].remove(origin_order)
-
-                            # remove trigger stops
-                            stop = [i for i in QUEEN['command_conscience']['memory']['trigger_stopped'] if i['client_order_id'] == exit_order_link][0]
-                            QUEEN['command_conscience']['memory']['trigger_stopped'].remove(stop)
+                    if order_status['side'] == 'buy':
+                        if order_status['filled_qty'] == order_status['qty']: # move out of submitted to running
+                            print("order filled, and move to memory")
+                            # update order with latest infomation
+                            fulfilled_qty = order_status['filled_qty']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_qty'] = fulfilled_qty
+                            filled_avg_price = order_status['filled_avg_price']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_avg_price'] = filled_avg_price
+                            # transistion from Submitted to Running
+                            QUEEN['command_conscience']['orders']['running'].append(QUEEN['command_conscience']['orders']['submitted'][idx])
+                            QUEEN['command_conscience']['orders']['submitted'].remove(QUEEN['command_conscience']['orders']['submitted'][idx])
+    
+                        elif int(order_status['filled_qty']) > 0: # move out of submitted to running same as if it was fully fulfilled
+                            print("order partially filled, and move to memory")
+                            # update order with latest infomation
+                            fulfilled_qty = order_status['filled_qty']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_qty'] = fulfilled_qty
+                            filled_avg_price = order_status['filled_avg_price']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_avg_price'] = filled_avg_price
+                            # transistion from Submitted to Running
+                            QUEEN['command_conscience']['orders']['running'].append(QUEEN['command_conscience']['orders']['submitted'][idx])
+                            QUEEN['command_conscience']['orders']['submitted'].remove(QUEEN['command_conscience']['orders']['submitted'][idx])
+                    
+                    if order_status['side'] == 'sell':
+                        if order_status['filled_qty'] == order_status['qty']:   
+                            
+                            # update order with latest infomation
+                            fulfilled_qty = order_status['filled_qty']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_qty'] = fulfilled_qty
+                            filled_avg_price = order_status['filled_avg_price']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_avg_price'] = filled_avg_price
+                            
+                            # remove from submitted and archive as you've done your job
                             stop = [i for i in QUEEN['command_conscience']['memory']['trigger_sell_stopped'] if i['client_order_id'] == order_id][0]
                             QUEEN['command_conscience']['memory']['trigger_sell_stopped'].remove(stop)
+                            
+                            # archive to memory
+                            QUEEN['command_conscience']['memory']['orders_completed'].append(QUEEN['command_conscience']['orders']['submitted'][idx])
+                            
+                            # remove from submitted
+                            QUEEN['command_conscience']['orders']['submitted'].remove(QUEEN['command_conscience']['orders']['submitted'][idx])
 
-                            # remove from running close if it was there
-                            if order_sent['status_q'] == 'partial_fill':
-                                order_sent = [i for i in QUEEN['command_conscience']['orders']['running_close'] if i['client_order_id'] == order_id][0]
-                                QUEEN['command_conscience']['orders']['running_close'].remove(order_sent)
 
-                            # put orders together in completed
-                            orders_completed = [origin_order, order_sent]
-                            QUEEN['command_conscience']['memory']['orders_completed'].append(orders_completed)
-                        else:
-                            QUEEN['command_conscience']['orders']['running'].append(order_sent)
+                            #### CHECK to see if Origin ORDER has Completed LifeCycle ####
+                            exit_order_link = order_sent['exit_order_links']
+                            orders_db = read_csv_db(db_root=db_root, tablename='main_orders', ext='.csv', prod=prod, init=False) # return all sellable orders where they have same client_order_id
+                            all_linked_orders = orders_db[orders_db['exit_order_link'] == exit_order_link].copy()
+                            all_linked_client_order_ids = all_linked_orders['exit_order_link'].to_list()
+                            all_linked_filled_qty = 0
+                            for c_order_id in all_linked_client_order_ids:
+                                token_order = check_order_status(api=api, client_order_id=c_order_id)
+                                all_linked_filled_qty += int(token_order['filled_qty'])
 
-                    elif int(order_status['filled_qty']) > 0:
-                        print("order partial fulfilled")
-                        QUEEN['command_conscience']['orders'][idx]['status_q']='partial_fill' # tag
-                        QUEEN['command_conscience']['orders']['submitted'].remove(order_sent)
-                        if order_status['side'] == 'sell':
-                            QUEEN['command_conscience']['orders']['running_close'].append(order_sent)
-                        else:
-                            QUEEN['command_conscience']['orders']['running'].append(order_sent)
+                            origin_order = [i for i in QUEEN['command_conscience']['orders']['running'] if i['client_order_id'] == exit_order_link][0]
+                            if origin_order['filled_qty'] == all_linked_filled_qty: 
+                                # running order has been fully sold out and now we can archive
+                                QUEEN['command_conscience']['orders']['running'].remove(origin_order)
+                                # remove trigger stops
+                                stop = [i for i in QUEEN['command_conscience']['memory']['trigger_stopped'] if i['client_order_id'] == exit_order_link][0]
+                                QUEEN['command_conscience']['memory']['trigger_stopped'].remove(stop)
+                                # send to memory
+                                QUEEN['command_conscience']['memory']['orders_completed'].append(origin_order)
+                                # update db on origin order status?
+                        
+                        elif int(order_status['filled_qty']) > 0:
+                            print("Order Partial fulfilled, move to running")
+                            # update order with latest infomation
+                            fulfilled_qty = order_status['filled_qty']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_qty'] = fulfilled_qty
+                            filled_avg_price = order_status['filled_avg_price']
+                            QUEEN['command_conscience']['orders']['submitted'][idx]['filled_avg_price'] = filled_avg_price
+                            
+                            # transistion from Submitted to Running
+                            QUEEN['command_conscience']['orders']['running_close'].append(QUEEN['command_conscience']['orders']['submitted'][idx])
+                            QUEEN['command_conscience']['orders']['submitted'].remove(QUEEN['command_conscience']['orders']['submitted'][idx])
+
                 else:
                     print(order_status['client_order_id'], "order pending fill stays in submitted")
                     pass
@@ -509,8 +600,16 @@ def order_management(api): # Handle ALL submitted orders and place them
     all_positions = api.list_positions()
     portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
 
+    def running_orders_main(api):
+        return True
+    
+    def running_close_orders_main(api):
+        return True
+
     def validate_portfolio_with_RUNNING(queen_running, portfolio):
-        # return QTY of shares for all tickers in RUNNING and match with qty in portfolio
+        all_positions = api.list_positions()
+        portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}        
+    
         return True
 
     # if profit has achived send order to take profit
@@ -564,7 +663,6 @@ def order_management(api): # Handle ALL submitted orders and place them
         if runorder_client_order_id in trigname_stopped:
             continue # break loop
 
-
         # return trade info
         snap = api.get_snapshot(ticker)
         # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
@@ -574,6 +672,7 @@ def order_management(api): # Handle ALL submitted orders and place them
         order_price = float(order_obj['filled_avg_price'])
         current_profit_loss = (current_price - order_price) / order_price
         # current_profit_loss = (currnet_ask - order_price) / order_price
+        QUEEN['command_conscience']['orders']['running'][idx]['honey'] = current_profit_loss
         
         re_eval_order = re_evaluate_kings_orders(run_order, order_obj, current_profit_loss)
 
@@ -582,6 +681,22 @@ def order_management(api): # Handle ALL submitted orders and place them
             sell_qty = re_eval_order['sell_qty'] # int(order_obj['filled_qty'])
             side = re_eval_order['side'] # 'sell'
             type = re_eval_order['type'] # 'market'
+
+            # check to see if you have enough Qty to Sell, if NOT archive running order and log as error
+            all_positions = api.list_positions()
+            portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
+            
+            if ticker in portfolio.keys():
+                if sell_qty <= portfolio[ticker]['qty']:
+                    sell_validation = True
+                else:
+                    sell_validation = False
+                    print("error, do not have enough shares to sell, check reason")
+            else:
+                sell_validation = False
+                print("error TICKER NOT in Portfolio")
+            
+            ticker_portfolio_qty = portfolio['']
 
             #
             sell_client_order_id = f'{"close__"}{runorder_client_order_id}'
@@ -626,6 +741,9 @@ def route_order_based_on_status(order_status):
         return True
     elif order_status in ['canceled', 'expired', 'replaced', 'pending_cancel', 'pending_replace', 'stopped', 'rejected', 'suspended']:
         return False
+    else:
+        print("unknown error")
+        logging.error("unknown error")
 
 
 
@@ -639,60 +757,112 @@ def route_order_based_on_status(order_status):
 ###############>>>>
 ###############>>>>
 
+# if '_name_' == '_main_':
+# print("Buzz Buzz Where My Honey")
 try:
     if queens_chess_piece == 'queen':
-        if prod:
-            api = api
-        else:
-            api = api_paper
+        logging.info("My Queen")
+
+    # init files needed
+    if prod:
+        api = api
+        main_orders_file = os.path.join(db_root, 'main_orders.csv')
+        PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
+        PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{".json"}')
+        print("My Queen Production")
+    else:
+        api = api_paper
+        main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
+        PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{'_sandbox'}{".pkl"}')
+        PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{'_sandbox'}{".json"}')
+        print("My Queen Sandbox")
         
         init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
-
-        
-        if prod:
-            main_orders_file = os.path.join(db_root, 'main_orders.csv')
-        else:
-            main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
         
         available_triggers = ["sell_cross-0", "buy_cross-0"]
         print(available_triggers)
 
+    POLLENSTORY = read_pollenstory()
+    def theme_calculator(POLLENSTORY, chart_times):
+        # ticker = 'SPY' # test
+        # chart_times = {
+        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
+        #     "1Day_1Year": 250}
+        # return all prior 5 days close and compare to current, return angle of the different periods
+
+        theme = {'castle': {},
+                'sub_indexes': {},
+                'big_players': {}
+                    }
+        tickers = set([i.split("_")[0] for i in POLLENSTORY.keys()])
+        all_tframes = chart_times.keys()
+        for ticker in tickers:
+            theme[ticker] = {}
+            for tframe in all_tframes:
+                story={}
+                # theme[ticker][] = {}
+                theme_df = POLLENSTORY[f'{ticker}{"_"}{tframe}'].copy()
+
+                if tframe == "1Minute_1Day":
+                    theme_df = split_today_vs_prior(df=theme_df) # remove prior day
+                    theme_today_df = theme_df['df_today']
+                    theme_prior_df = theme_df['df_prior']                
+                    
+                    # we want...last vs currnet close prices, && Height+length of wave
+
+                    # current from open price
+                    open_price = theme_today_df.iloc[0]['close']
+                    current_price = theme_today_df.iloc[-1]['close']
+                    delta_pct = (current_price - open_price) / current_price
+                    story['current_from_open'] = delta_pct
+                    # current day slope
+                    slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
+                    story['slope'] = slope
+                    
+                    # how did day start
+                    last_price = theme_prior_df.iloc[-1]['close']
+                    delta_pct = (open_price - last_price) / open_price
+                    story['open_start'] = delta_pct
+                    
+                    
+                    
+                    theme[ticker][tframe] = story
+        
+        return theme
+    
+    trigger_bee_enable = {'VWAP_GRAVITY': {'desc': 'VWAP Gravity Kicks in starting 10:15 - 2 > if up holds'}}
+    day_theme = {'strong_open': {'name': 'strong_open',
+                                'desc': """SPY/overall up > 1% 
+                                            & prior X(5) days decline is Z(-5%)
+                                            
+                                            """,
+                                'formula': theme_calculator(POLLENSTORY, chart_times),
+                                'triggerbees_tofind': ['VWAP_GRAVITY']
+                                }
+                    } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
+
+
     workerbee_run_times = []
     while True:
         if queens_chess_piece.lower() == 'queen': # Rule On High
+            # The story
+            POLLENSTORY = read_pollenstory()
+            queensmind = read_queensmind(prod) # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
+            # The story behind the story       
+            STORY_bee = queensmind['STORY_bee']
+            KNIGHTSWORD = queensmind['KNIGHTSWORD']
+            ANGEL_bee = queensmind['ANGEL_bee']
 
-            pollenstory = read_pollenstory()
-            queensmind = read_queensmind() # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
-            castle = queensmind['castle']
-            
-            castle_coin = queensmind['castle_coin']
+            # Should you operate now? I thnik the brain never sleeps ?
 
-            POLLENSTORY = {**pollenstory, **castle_coin['pollenstory']}
-            STORY_bee = {**queensmind['STORY_bee'], **castle_coin['conscience']['STORY_bee']}
-            KNIGHTSWORD = {**queensmind['KNIGHTSWORD'], **castle_coin['conscience']['KNIGHTSWORD']}
-            ANGEL_bee = {**queensmind['ANGEL_bee'], **castle_coin['conscience']['ANGEL_bee']}
-
-            pollen = return_pollen()
-            POLLENSTORY = pollen.POLLENSTORY
-            STORY_bee = pollen.STORY_bee
-            KNIGHTSWORD = pollen.KNIGHTSWORD
-            ANGEL_bee = pollen.ANGEL_bee
-            
-            # Should you operate now?
-            # if castle['last_modified'] > QUEEN[queens_chess_piece]['last_modified']:
-            #     QUEEN[queens_chess_piece]["last_modified"] = lastmod
-            # else:
-            #     print("awaiting for Castle")
-            #     continue
-            
-            # QUEEN[queens_chess_piece]['pollenstory'] = pollenstory # initiate story
-
+            # Populate QUEEN
             queen = queensmind['queen']            
             QUEEN['command_conscience']['memory'] = queen['command_conscience']['memory'] # return memory
             QUEEN['command_conscience']['orders'] = queen['command_conscience']['orders'] # return memory
-            
+            # Collective Conscience  
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = queensmind['STORY_bee'] # return memory
             QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = queensmind['KNIGHTSWORD'] # return memory
             QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = queensmind['ANGEL_bee'] # return memory          
@@ -705,72 +875,10 @@ try:
                 "1Day_1Year": 250}
 
             knight_bees = {}
-            # pollen = return_pollen
-            # POLLENSTORY = pollen.POLLENSTORY
 
-            def discard_allprior_days(df):
-                df_day = df['timestamp_est'].iloc[-1]
-                df = df.copy()
-                df = df.set_index('timestamp_est', drop=True) # test
-                # df = df[(df.index.day == df_day.day) & (df.index.year == df_day.year) & (df.index.month == df_day.month)].copy() # remove yesterday
-                df = df[(df.index.day == df_day.day)].copy()
-                df = df.reset_index()
-                return df
 
-            def slice_by_time(df, between_a, between_b):
-                df = df.copy()
-                df = df.set_index('timestamp_est', drop=True) # test
-                # df = df.between_time('9:30', '12:00') #test
-                df = df.between_time(between_a, between_b)
-                df = df.reset_index()
-                return df
-
-            def theme_calculator(POLLENSTORY, chart_times):
-                # ticker = 'SPY' # test
-                # chart_times = {
-                #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-                #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
-                #     "1Day_1Year": 250}
-                # return all prior 5 days close and compare to current, return angle of the different periods
-
-                theme = {}
-                tickers = set([i.split("_")[0] for i in POLLENSTORY.keys()])
-                all_tframes = chart_times.keys()
-                for ticker in tickers:
-                    theme[ticker] = {}
-                    for tframe in all_tframes:
-                        story={}
-                        # theme[ticker][] = {}
-                        theme_df = POLLENSTORY[f'{ticker}{"_"}{tframe}'].copy()
-
-                        if tframe == "1Minute_1Day":
-                            theme_df = discard_allprior_days(df=theme_df) # remove prior day
-                        
-                        # we want...last vs currnet close prices, && Height+length of wave
-                        last_price = theme_df.iloc[0]['close']
-                        current_price = theme_df.iloc[-1]['close']
-                        delta_pct = (current_price - last_price) / current_price
-                        story['lastVcurrent'] = delta_pct
-
-                        slope, intercept, r_value, p_value, std_err = stats.linregress(theme_df.index, theme_df['close'])
-                        story['slope'] = slope
-                        # story finish
-                        theme[ticker][tframe] = story
-                return theme
-            
-            trigger_bee_enable = {'VWAP_GRAVITY': {'desc': 'VWAP Gravity Kicks in starting 10:15 - 2 > if up holds'}}
-            day_theme = {'strong_open': {'name': 'strong_open',
-                                        'desc': """SPY/overall up > 1% 
-                                                    & prior X(5) days decline is Z(-5%)
-                                                    
-                                                    """,
-                                        'formula': theme_calculator(POLLENSTORY, chart_times),
-                                        'triggerbees_tofind': ['VWAP_GRAVITY']
-                                        }
-                            } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
             current_positions = {}
-
-           
+      
             # submit orders / gather all info first THEN submit order
             queens_requests_to_buy = {}
             story_tickers = set([i.split("_")[0] for i in STORY_bee.keys()])
@@ -794,7 +902,9 @@ try:
     # >>> NEED TO FIX the return for each time interval, rebuild 5 Min, 1 hr...etc....Put rebuild charts into new dict where they get maintained...add logic for each interval...i.e. on 5Min Mark rebuild with Initiate OR replace last 5 Minutes....?
 except Exception as errbuz:
     print(errbuz)
-    log_msg = {'type': 'ProgramCrash'}
+    erline = print_line_of_error()
+    log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
+    print(log_msg)
     logging.critical(log_msg)
     pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 

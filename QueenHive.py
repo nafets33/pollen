@@ -139,11 +139,24 @@ def read_pollenstory(): # return combined dataframes
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
     pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
+
+    if os.path.exists(os.path.join(db_root, 'castle_coin.pkl')):
+        castle_coin = ReadPickleData(pickle_file=os.path.join(db_root, 'castle_coin.pkl'))
+    else:
+        castle_coin = False
+    
+    pollenstory = {**pollenstory, **castle_coin['castle_coin']['pollenstory']} # combine daytrade and longterm info
     return pollenstory
 
 
-def read_queensmind(): # return active story workers
-    queen = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+def read_queensmind(prod): # return active story workers
+    
+    if prod:
+        queen = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+    else:
+        queen = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+
+    # return beeworkers data
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
     bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
     # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
@@ -153,6 +166,9 @@ def read_queensmind(): # return active story workers
     
     if os.path.exists(os.path.join(db_root, 'castle_coin.pkl')):
         castle_coin = ReadPickleData(pickle_file=os.path.join(db_root, 'castle_coin.pkl'))['castle_coin']
+        STORY_bee = {**STORY_bee, **castle['conscience']['STORY_bee']}
+        KNIGHTSWORD = {**KNIGHTSWORD, **castle['conscience']['KNIGHTSWORD']}
+        ANGEL_bee = {**ANGEL_bee, **castle['conscience']['ANGEL_bee']}
     else:
         castle_coin = False
 
@@ -186,9 +202,10 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     # knight_sight_df = {}
 
     for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+        ticker, tframe, frame = ticker_time_frame.split("_")
         # CHARLIE_bee[ticker_time_frame] = {}
         ANGEL_bee[ticker_time_frame] = {}
-        STORY_bee[ticker_time_frame] = {}
+        STORY_bee[ticker_time_frame] = {'story': {}}
         
         df = df_i.fillna(0).copy()
         df = df.reset_index(drop=True)
@@ -212,6 +229,18 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         knights_word = resp['bee_triggers']
         knights_sight_word[ticker_time_frame] = knights_word
         STORY_bee[ticker_time_frame]['KNIGHTSWORD'] = knights_word
+
+        # how long does trigger stay profitable?
+        """for every index(timeframe) calculate profit length, bell curve
+            conclude with how well trigger is doing to then determine when next trigger will do well
+        """
+        # # for every trigger return calculated price
+        # trig_entry_dict = {}
+        # for trig in knights_word.keys(): # "buy_cross-0"
+        #     if "cross" in trig:
+        #         t_df = df[df['macd_cross'] == trig].copy()
+        #         t_dict = dict(zip(t_df['timestamp_est'], df['macd_cross']))
+        # formula = (trig_price - current_price) / trig_price
         
         # # return degree angle 0, 45, 90
         try:
@@ -238,33 +267,42 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
             logging.error(msg)
         
+        time_state = df['timestamp_est'].iloc[-1] # current time
+        STORY_bee[ticker_time_frame]['story']['time_state'] = time_state
+
         # devation from vwap
         df['vwap_deviation'] = df['close'] - df['vwap_original']
+        STORY_bee[ticker_time_frame]['story']['vwap_deviation'] = df.iloc[-1]['vwap_deviation']     
         
-        STORY_bee[ticker_time_frame]['vwap_deviation'] = df.iloc[-1]['vwap_deviation']
-
-        time_state = df['timestamp_est'].iloc[-1] # current time
-        STORY_bee[ticker_time_frame]['time_state'] = time_state
-        
+        # MACD WAVE
         macd_state = df['macd_cross'].iloc[-1]
-        STORY_bee[ticker_time_frame]['macd_state'] = macd_state
-        
-        macd_state_side = STORY_bee[ticker_time_frame]['macd_state'].split("_")[0] # buy/sell
-        STORY_bee[ticker_time_frame]['macd_state_side'] = macd_state_side
-        
-        prior_macd_df = df[~df['macd_cross'].str.contains(macd_state_side)].copy()
-        prior_macd_state_time = prior_macd_df['timestamp_est'].iloc[-1] # filter not current state
-        STORY_bee[ticker_time_frame]['prior_macd_state_time'] = prior_macd_state_time
+        macd_state_side = macd_state.split("_")[0] # buy_cross-num
+        middle_crossname = macd_state.split("_")[1].split("-")[0]
+        state_count = macd_state.split("-")[1] # buy/sell_name_number
+        STORY_bee[ticker_time_frame]['story']['macd_state'] = macd_state
+        STORY_bee[ticker_time_frame]['story']['macd_state_side'] = macd_state_side
+        STORY_bee[ticker_time_frame]['story']['time_since_macd_change'] = state_count
 
-        time_since_macd_change = (df['story_index'].iloc[-1] - prior_macd_df['story_index'].iloc[-1]) -1
-        STORY_bee[ticker_time_frame]['time_since_macd_change'] = time_since_macd_change
+        # last time there was buycross
+        if 'buy_cross-0' in knights_word.keys():
+            prior_macd_time = knights_word['buy_cross-0']['last_seen']
+            STORY_bee[ticker_time_frame]['story'][f'{"last_seen_macd_buy_time"}'] = prior_macd_time
+            prior_macd_time = knights_word['buy_cross-0']['prior_seen']
+            STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_buy_time"}'] = prior_macd_time
+        # last time there was sellcross
+        if 'sell_cross-0' in knights_word.keys():
+            prior_macd_time = knights_word['sell_cross-0']['last_seen']
+            STORY_bee[ticker_time_frame]['story'][f'{"last_seen_macd_sell_time"}'] = prior_macd_time
+            prior_macd_time = knights_word['sell_cross-0']['prior_seen']
+            STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_sell_time"}'] = prior_macd_time
         
-        STORY_bee[ticker_time_frame]['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
+        # all triggers ? move to top?
+        STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
 
         # count number of Macd Crosses
         # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
         today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
-        STORY_bee[ticker_time_frame]['macd_cross_count'] = {
+        STORY_bee[ticker_time_frame]['story']['macd_cross_count'] = {
             'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
             'sell_cross_totalrunning_count' : sum(np.where(df['macd_cross'] == 'sell_cross-0',1,0)),
             'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
@@ -272,11 +310,30 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         }
         
         # latest_close_price
-        STORY_bee[ticker_time_frame]['last_close_price'] = df.iloc[-1]['close']
+        STORY_bee[ticker_time_frame]['story']['last_close_price'] = df.iloc[-1]['close']
 
         # macd signal divergence
         df['macd_singal_deviation'] = df['macd'] - df['signal']
-        STORY_bee[ticker_time_frame]['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
+        STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
+
+
+        if "1Minute_1Day" in ticker_time_frame:
+            theme_df = df.copy()
+            theme_df = split_today_vs_prior(df=theme_df) # remove prior day
+            theme_today_df = theme_df['df_today']
+            theme_prior_df = theme_df['df_prior']
+            
+            # we want...last vs currnet close prices, && Height+length of wave
+            last_price = theme_today_df.iloc[0]['close']
+            current_price = theme_today_df.iloc[-1]['close']
+            delta_pct = (current_price - last_price) / current_price
+            STORY_bee[ticker_time_frame]['story']['current_from_open'] = delta_pct
+
+            slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
+            STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
+
+
+
 
         # how long have you been stuck at vwap ?
         
@@ -355,6 +412,8 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
     # Mac is very LOW and we are in buy cross
     trigger = 'buy_RED_tier-1_macdcross'
@@ -368,6 +427,8 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
 
     trigger = 'buy_RED_tier-2_macdcross'
     df[trigger] = np.where(
@@ -380,6 +441,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     trigger = 'buy_RED_tier-3_macdcross'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
@@ -391,6 +455,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     trigger = 'buy_RED_tier-4_macdcross'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
@@ -402,6 +469,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     trigger = 'buy_RED_tier-5_macdcross'
     df[trigger] = np.where(
         (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
@@ -413,6 +483,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     # Mac is very LOW and we are in buy cross
     trigger = 'buy_high-macdcross'
     df[trigger] = np.where(
@@ -425,6 +498,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     # Mac is very LOW and we are in buy cross
     trigger = 'buy_high-macdcross'
     df[trigger] = np.where(
@@ -437,6 +513,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     # Mac is very High and we are in a Sell Cross
     trigger = 'sell_high-macdcross'
     df[trigger] = np.where(
@@ -449,6 +528,9 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    
     # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
     trigger = 'sell_high-macdcross'
     df[trigger] = np.where(
@@ -463,12 +545,13 @@ def knight_sight(df): # adds all triggers to dataframe
         trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
         if len(bee_df) > 1:
             trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+        else:
+            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
 
     return {"df": df, "bee_triggers": trigger_dict}
 
 
 def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses 
-    
     # running totals 
     try:
         m=df['macd'].to_list()
@@ -525,6 +608,18 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
     except Exception as e:
         msg=(e,"--", print_line_of_error(), "--", 'macd_cross')
         logging.critical(msg)     
+
+
+def split_today_vs_prior(df):
+    df_day = df['timestamp_est'].iloc[-1]
+    df = df.copy()
+    df = df.set_index('timestamp_est', drop=True) # test
+    # df = df[(df.index.day == df_day.day) & (df.index.year == df_day.year) & (df.index.month == df_day.month)].copy() # remove yesterday
+    df = df[(df.index.day == df_day.day)].copy()
+    df_prior = df[~(df.index.day == df_day.day)].copy()
+    df = df.reset_index()
+    df_prior = df_prior.reset_index()
+    return {'df_today': df, 'df_prior': df_prior}
 
 
 def return_degree_angle(x, y): #
@@ -1173,18 +1268,18 @@ def update_csv_db(df_to_add, tablename, append, update=False, replace=False, ext
 
         if append:
             new_df = pd.concat([main_df, df_to_add], axis=0, ignore_index=True)
-            new_df.to_csv(table_path, index=True, encoding='utf8')
+            new_df.to_csv(table_path, index=False, encoding='utf8')
         
         if update:
             indx = list(df_to_add.index)
             main_df['index'] = main_df.index
             main_df = main_df[~main_df['index'].isin(indx)]
             new_df = pd.concat([main_df, df_to_add], axis=0)
-            new_df.to_csv(table_path, index=True, encoding='utf8')
+            new_df.to_csv(table_path, index=False, encoding='utf8')
         
         if replace:
             new_df = df_to_add
-            new_df.to_csv(table_path, index=True, encoding='utf8')      
+            new_df.to_csv(table_path, index=False, encoding='utf8')      
 
 
 def convert_todatetime_string(date_string):
@@ -1676,21 +1771,40 @@ def pollen_hunt(df_tickers_data, MACD):
 
 
 # ###### >>>>>>>>>>>>>>>> QUEEN <<<<<<<<<<<<<<<#########
-class return_pollen():
-    workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
-    POLLENSTORY = {}
-    STORY_bee = {}
-    KNIGHTSWORD = {}
-    ANGEL_bee = {}
-    QUEENSMIND = {}
-    for bee in workerbees:
-        chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, f'{bee}{".pkl"}'))
-        POLLENSTORY = {**POLLENSTORY, **chess_piece[bee]['pollenstory']}
-        STORY_bee = {**STORY_bee, **chess_piece[bee]['conscience']['STORY_bee']}
-        KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece[bee]['conscience']['KNIGHTSWORD']}
-        ANGEL_bee = {**ANGEL_bee, **chess_piece[bee]['conscience']['ANGEL_bee']}
 
-        if bee == "queen":
-            QUEENSMIND = chess_piece['command_conscience']
-if '__name__' == '__main__':
-    return_pollen()
+def discard_allprior_days(df):
+    df_day = df['timestamp_est'].iloc[-1]
+    df = df.copy()
+    df = df.set_index('timestamp_est', drop=True) # test
+    # df = df[(df.index.day == df_day.day) & (df.index.year == df_day.year) & (df.index.month == df_day.month)].copy() # remove yesterday
+    df = df[(df.index.day == df_day.day)].copy()
+    df = df.reset_index()
+    return df
+
+
+def slice_by_time(df, between_a, between_b):
+    df = df.copy()
+    df = df.set_index('timestamp_est', drop=True) # test
+    # df = df.between_time('9:30', '12:00') #test
+    df = df.between_time(between_a, between_b)
+    df = df.reset_index()
+    return df
+
+# class return_pollen():
+#     workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
+#     POLLENSTORY = {}
+#     STORY_bee = {}
+#     KNIGHTSWORD = {}
+#     ANGEL_bee = {}
+#     QUEENSMIND = {}
+#     for bee in workerbees:
+#         chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, f'{bee}{".pkl"}'))
+#         POLLENSTORY = {**POLLENSTORY, **chess_piece[bee]['pollenstory']}
+#         STORY_bee = {**STORY_bee, **chess_piece[bee]['conscience']['STORY_bee']}
+#         KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece[bee]['conscience']['KNIGHTSWORD']}
+#         ANGEL_bee = {**ANGEL_bee, **chess_piece[bee]['conscience']['ANGEL_bee']}
+
+#         if bee == "queen":
+#             QUEENSMIND = chess_piece['command_conscience']
+# if '__name__' == '__main__':
+#     return_pollen()

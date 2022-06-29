@@ -16,3 +16,7 @@ git rm -r --cashed db
 *.pyc
 .DS_Store
 db/castle_coin.pkl
+db/queen.pkl
+db/castle_coin.pkl
+db/main_orders_sandbox.csv
+db/queen_sandbox.pkl

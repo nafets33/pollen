@@ -35,8 +35,8 @@ import shutil
 from scipy import stats
 import hashlib
 import json
-from QueenHiveCoin import pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, print_line_of_error
-from QueenHiveCoin import return_macd, return_VWAP, return_RSI, return_sma_slope
+from QueenHiveCoin import speedybee,  return_bars_list, return_bars
+from QueenHive import pollen_story, return_api_keys, pickle_chesspiece, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
@@ -59,25 +59,20 @@ if os.path.exists(dst) == False:
     os.mkdir(dst)
 log_name = f'{"log_"}{queens_chess_piece}{".log"}'
 log_file = os.path.join(os.getcwd(), log_name)
-if os.path.exists(log_file) == False:
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+if loglog_newfile:
+    # copy log file to log dir & del current log file
+    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+    dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+    shutil.copy(log_file, dst_path) # only when you want to log your log files
+    os.remove(log_file)
+else:
+    # print("logging",log_file)
+    logging.basicConfig(filename=log_file,
                         filemode='a',
                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
-else:
-    if loglog_newfile:
-        # copy log file to log dir & del current log file
-        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
-        shutil.copy(log_file, dst_path) # only when you want to log your log files
-        os.remove(log_file)
-    else:
-        logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                            filemode='a',
-                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                            datefmt='%m/%d/%Y %I:%M:%S %p',
-                            level=logging.INFO)
+                        level=logging.INFO,
+                        force=True)
 
 
 # Macd Settings
@@ -93,7 +88,7 @@ QUEEN = { # The Queens Mind
         'kings_order_rules': {},
     # Worker Bees
     queens_chess_piece: {
-    'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEl_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+    'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
     'pollenstory': {}, # latest story of dataframes castle and bishop
     'pollencharts': {}, # latest chart rebuild
     'pollencharts_nectar': {}, # latest chart rebuild with indicators
@@ -103,22 +98,6 @@ QUEEN = { # The Queens Mind
     'last_modified' : datetime.datetime.now(),
     }
 }
-
-if queens_chess_piece == 'queen':
-    kings_order_rules = {'triggers': {'buy_cross-0': {'timeduration': 1, 
-                                                'take_profit': .005,
-                                                'sellout': .01,
-                                                'adjustable': True,
-                                                    },
-                                      'sell_cross-0': {'timeduration': 1, 
-                                                'take_profit': .005,
-                                                'sellout': .01,
-                                                'adjustable': True,
-                                                    },
-                                        }
-    }
-    QUEEN['kings_order_rules'] = kings_order_rules
-
 
 if queens_chess_piece.lower() not in ['castle_coin']:
     print("wrong chess move")
@@ -212,6 +191,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
                 # market_hours_data = df.between_time('9:30', '16:00')
                 # market_hours_data = market_hours_data.reset_index()
                 market_hours_data = df
+                print(time_frame, df.iloc[-1][['timestamp_est']])
                 for ticker in ticker_list:
                     df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
                     dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
@@ -286,15 +266,15 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
             # df_daily = df_daily.rename(columns={'timestamp': 'timestamp_est'})
             
             return_dict[ticker + "_day"] = df_daily
-            
+
             d = {
                 'close': snapshots[ticker].latest_trade.price,
-                'high': 0, # snapshots[ticker].minute_bar.high,
-                'low': 0, # snapshots[ticker].minute_bar.low,
+                'high': snapshots[ticker].latest_trade.price,
+                'low': snapshots[ticker].latest_trade.price,
                 'timestamp_est': snapshots[ticker].latest_trade.timestamp,
-                'open': 0, # snapshots[ticker].minute_bar.open,
-                'volume': 0, # snapshots[ticker].minute_bar.volume,
-                'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
+                'open': snapshots[ticker].latest_trade.price,
+                'volume': snapshots[ticker].minute_bar.volume,
+                'trade_count': snapshots[ticker].minute_bar.trade_count,
                 'vwap': snapshots[ticker].minute_bar.vwap
                 }
             df_minute = pd.Series(d).to_frame().T
@@ -307,7 +287,8 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
             return_dict[ticker + "_minute"] = df_minute
         
         return return_dict
-   
+    
+ 
     snapshot_ticker_data = response_returned(ticker_list)
     
     for ticker_time, df in df_tickers_data.items():
@@ -326,6 +307,8 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
                 df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
                 main_return_dict[ticker_time] = df_rebuild
             else:
+                ipdb.set_trace()
+                print(df[['timestamp_est']].tail(2))
                 df = df.head(-1) # drop last row which has current day
                 df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
                 main_return_dict[ticker_time] = df_rebuild
@@ -347,7 +330,7 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
 
         for ticker_time, df in df_tickers_data.items():
             ticker, timeframe, days = ticker_time.split("_")
-            last = df['timestamp_est'].iloc[-1].replace(tzinfo=None)
+            last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
             now = datetime.datetime.now()
             timedelta_minutes = (now - last).seconds / 60
             now_day = now.day
@@ -452,7 +435,11 @@ def pollen_hunt(df_tickers_data, MACD):
     
     # re-add snapshot
     df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
-    
+    now = datetime.datetime.now()
+    print(now)
+    t = df_tickers_data_rebuilt['BTCUSD_5Minute_5Day']
+    print(t[['timestamp_est', 'close']].tail(2))
+    # ipdb.set_trace()
     main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
     chart_rebuild_dict = {}
     for ticker_time, bars_data in df_tickers_data_rebuilt.items():
@@ -476,18 +463,19 @@ Always Bee Better
 """
 )
 
-# if '_name_' == '_main_':
-# print("Buzz Buzz Where My Honey")
+# if '__name__' == '__main__':
+#     print("Buzz Buzz Where My Honey")
+#     logging.info("Buzz Buzz Where My Honey")
 
 # init files needed
 PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
 if queens_chess_piece == 'castle_coin':
-    if os.path.exists(PB_Story_Pickle):
-        os.remove(PB_Story_Pickle)
+    # if os.path.exists(PB_Story_Pickle):
+    #     os.remove(PB_Story_Pickle)
     chart_times_castle = {
             "1Minute_1Day": 1, "5Minute_5Day": 5,
-            "30Minute_1Month": 18, 
-            "1Hour_3Month": 48, "2Hour_6Month": 72, 
+            # "30Minute_1Month": 18, 
+            # "1Hour_3Month": 48, "2Hour_6Month": 72, 
             "1Day_1Year": 250}
 
 
@@ -533,7 +521,7 @@ try:
             QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
             
             pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
-            ANGEl_bee = pollens_honey['conscience']['ANGEl_bee']
+            ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
             knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
             STORY_bee = pollens_honey['conscience']['STORY_bee']
 
@@ -541,7 +529,7 @@ try:
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
 
             # populate conscience
-            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEl_bee
+            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
             QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
@@ -569,7 +557,9 @@ try:
 
 except Exception as errbuz:
     print(errbuz)
-    log_msg = {'type': 'ProgramCrash'}
+    erline = print_line_of_error()
+    log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
+    print(log_msg)
     logging.critical(log_msg)
     pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
