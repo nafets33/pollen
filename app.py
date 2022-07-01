@@ -19,7 +19,7 @@ import sys
 # from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
-# from QueenHive import ReadPickleData
+from QueenHive import ReadPickleData
 import sys
 import datetime
 from datetime import date, timedelta
@@ -44,7 +44,7 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from QueenHive import return_api_keys, read_pollenstory, read_queensmind, read_csv_db
+from QueenHive import return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior
 
 prod = False
 
@@ -73,31 +73,6 @@ else:
                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.INFO)
-
-def ReadPickleData(pickle_file): 
-    # for reading also binary mode is important try 3 times
-    try:
-        dbfile = open(pickle_file, 'rb')      
-        db = pickle.load(dbfile) 
-        dbfile.close()
-        return db
-    except Exception as e:
-        try:
-            time.sleep(.33)
-            dbfile = open(pickle_file, 'rb')      
-            db = pickle.load(dbfile) 
-            dbfile.close()
-            return db
-        except Exception as e:
-            try:
-                time.sleep(.33)
-                dbfile = open(pickle_file, 'rb')      
-                db = pickle.load(dbfile) 
-                dbfile.close()
-                return db
-            except Exception as e:
-                print("CRITICAL ERROR logme", e)
-                return False
 
 
 # prod = True
@@ -225,6 +200,48 @@ def create_slope_chart(df):
     fig.update_layout(height=600, width=900, title_text=title)
     return fig
 
+def create_wave_chart(df):
+    title = f'buy+sell cross __waves {df.iloc[-1]["name"]}'
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+
+    fig.add_bar(x=df['chartdate'], y=df['buy_cross-0__wave'],  row=1, col=1, name='buycross wave')
+    fig.add_bar(x=df['chartdate'], y=df['sell_cross-0__wave'],  row=1, col=1, name='sellcross wave')
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+def create_wave_chart_single(df, wave_col):
+    title = df.iloc[-1]['name']
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+
+    fig.add_bar(x=df['chartdate'], y=df[wave_col],  row=1, col=1, name=wave_col)
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+
+def create_wave_chart_all(df, wave_col):
+    title = df.iloc[-1]['name']
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    # df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+    # df[f'{wave_col}{"_number"}'] = df[f'{wave_col}{"_number"}'].astype(str)
+    # dft = df[df[f'{wave_col}{"_number"}'] == '1'].copy()
+    fig.add_bar(x=df[f'{wave_col}{"_number"}'], y=df[wave_col].values,  row=1, col=1, name=wave_col)
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
 class return_pollen():
     workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
     POLLENSTORY = {}
@@ -294,11 +311,13 @@ if option == 'charts':
     frame_option = st.sidebar.selectbox("ttframes", ttframe_list)
     day_only_option = st.sidebar.selectbox('Show Today Only', ['yes', 'no'])
     slope_option = st.sidebar.selectbox('Show Slopes', ['yes', 'no'])
+    wave_option = st.sidebar.selectbox('Show Waves', ['yes', 'no'], index=['yes'].index('yes'))
+    
     if frame_option == 'all':
         for ttframe, df in pollen.POLLENSTORY.items():
             selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
-            for sel in selections:
-                df = pollen.POLLENSTORY[sel]
+            for ticker_time_frame in selections:
+                df = pollen.POLLENSTORY[ticker_time_frame]
                 # if df.iloc[-1]['open'] == 0:
                 #     df = df.head(-1)
                 fig = create_main_macd_chart(df)
@@ -316,9 +335,9 @@ if option == 'charts':
             # st.write(chart)
 
     else:
-        selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
-        sel = selections[0]
-        df = pollen.POLLENSTORY[sel].copy()
+        selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+        ticker_time_frame = selections[0]
+        df = pollen.POLLENSTORY[ticker_time_frame].copy()
         # if df.iloc[-1]['open'] == 0:
         #     df = df.head(-1)
         if day_only_option == 'yes':
@@ -340,8 +359,34 @@ if option == 'charts':
             st.write(fig)
             st.dataframe(slopes_df)
         
-        if "BTCUSD" in sel:
-            df = pollen.POLLENSTORY[sel].copy()
+        if wave_option == "yes":
+            fig = create_wave_chart(df=df)
+            st.write(fig)
+            
+            dft = split_today_vs_prior(df=df)
+            dft = dft['df_today']
+
+            fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
+            st.write(fig)
+
+            st.write("current wave")
+            current_buy_wave = df['buy_cross-0__wave_number'].tolist()
+            current_buy_wave = [int(i) for i in current_buy_wave]
+            current_buy_wave = max(current_buy_wave)
+            st.write("current wave number")
+            st.write(current_buy_wave)
+            dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
+            st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
+            fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
+            st.write(fig)
+
+            st.write("waves")
+
+            waves = pollen.STORY_bee[ticker_time_frame]['waves']
+            st.write(waves)
+        
+        if "BTCUSD" in ticker_time_frame:
+            df = pollen.POLLENSTORY[ticker_time_frame].copy()
             df_output = df[['timestamp_est', 'story_index', 'close']].copy()
             df_output = df_output.sort_values(by='story_index', ascending=False)
 
@@ -391,8 +436,6 @@ if option == 'queen':
 
 if option == 'signal':
 
-
-    
     db_app_dir = os.path.join(db_root, 'app')
     client_signal = pd.read_csv(os.path.join(db_app_dir, 'signals.csv'))
     current_orders = pollen.QUEENSMIND['orders']

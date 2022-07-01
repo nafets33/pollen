@@ -40,8 +40,8 @@ from QueenHive import slice_by_time, split_today_vs_prior, read_csv_db, update_c
 # from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 # script arguments
-queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
-
+# queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
+queens_chess_piece = 'queen'
 prod = False
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -289,7 +289,7 @@ Always Bee Better
 )
 
 
-def reconcile_portforlio(api, running_orders):
+def reconcile_portforlio(api, running_orders):  # TBD
     # every running order should match up to portfolio HANDLE Gaps
     all_positions = api.list_positions()
     portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
@@ -305,8 +305,42 @@ def reconcile_portforlio(api, running_orders):
     # check if any orders are paritially filled and account for delta
 
 
+def liquidate_position(api, ticker, side, type, client_order_id): # TBD
+    client_order_id = f'{ticker}{"_"}{side}{"_"}{datetime.datetime.now().isoformat()}'
+    p = api.get_position(ticker)
+    p_qty = p.qty
+    p_side = p.side
+    if type ==  'market':
+        order = submit_order(api=api, side=side, symbol=ticker, qty=p_qty, type=type, client_order_id=client_order_id)
+    else:
+        print("make this a limit order")
+    return order
 
-def initialize_orders(api, start_date, end_date, symbols=False):
+
+def check_order_status(api, client_order_id): # return raw dict form
+    order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+    order_ = vars(order)['_raw']
+    return order_
+
+
+def generate_client_order_id(ticker, trig, db_root=db_root, sellside_client_order_id=False): # generate using main_order table and trig count
+    main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+    temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
+    
+    if sellside:
+        main_trigs_df = main_orders_table[main_orders_table['exit_order_link'] == sellside_client_order_id].copy()
+        trig_num = len(main_trigs_df)
+        order_id = f'{"close__"}{trig_num}-{sellside}'
+    else:
+        main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')].copy()
+        
+        trig_num = len(main_trigs_df)
+        order_id = f'{ticker}-{trig}-{trig_num}-{temp_date}'
+
+    return order_id
+
+
+def initialize_orders(api, start_date, end_date, symbols=False): # TBD
     if start_date==(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d"):
         after = start_date
         until = end_date
@@ -348,6 +382,7 @@ def create_running_order(order, trig):
 
     return running_order
 
+
 def process_order_submission(order, trig, prod, tablename, status_q=False, exit_order_link=False):
     date_mark = datetime.datetime.now()
     symbol = order['symbol']
@@ -367,33 +402,6 @@ def process_order_submission(order, trig, prod, tablename, status_q=False, exit_
     
     return {'sending_order': sending_order, 'trig_stop_info': trig_stop_info}
 
-
-def liquidate_position(api, ticker, side, type, client_order_id):
-    client_order_id = f'{ticker}{"_"}{side}{"_"}{datetime.datetime.now().isoformat()}'
-    p = api.get_position(ticker)
-    p_qty = p.qty
-    p_side = p.side
-    if type ==  'market':
-        order = submit_order(api=api, side=side, symbol=ticker, qty=p_qty, type=type, client_order_id=client_order_id)
-    else:
-        print("make this a limit order")
-    return order
-
-
-def check_order_status(api, client_order_id):
-    order = api.get_order_by_client_order_id(client_order_id=client_order_id)
-    order_ = vars(order)['_raw']
-    return order_
-
-
-def generate_client_order_id(ticker, trig):
-    main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
-    main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')]
-    trig_num = len(main_trigs_df)
-    temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
-    order_id = f'{ticker}{"-"}{trig}{"--"}{trig_num}--{temp_date}'
-
-    return order_id
 
 
 def command_conscience(api, ticker, STORY_bee):
@@ -475,7 +483,7 @@ def command_conscience(api, ticker, STORY_bee):
                             # FUNCTION THAT CHECKS ORDER TO input Qty RETURN Story of other ttframes to influence order
                             
                             # return num of trig for client_order_id
-                            order_id = generate_client_order_id()
+                            order_id = generate_client_order_id(ticker=ticker, trig=trig)
                             
                             order_submit = submit_order(api=api, symbol=ticker, type='market', qty=1, side='buy', client_order_id=order_id) # buy
                             order = vars(order_submit)['_raw']
@@ -490,7 +498,8 @@ def command_conscience(api, ticker, STORY_bee):
                                 msg = ("error order not accepted", order)
                                 print(msg)
                                 logging.error(msg)
-
+    
+    return True
 
 def order_management(api): # Handle ALL submitted orders and place them
 
@@ -591,7 +600,9 @@ def order_management(api): # Handle ALL submitted orders and place them
             
             # god save the queen
             pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
-    
+        
+        return True
+
     submitted_orders_main(api)
     
     
@@ -629,7 +640,7 @@ def order_management(api): # Handle ALL submitted orders and place them
         db_app_dir = os.path.join(db_root, 'app')
         client_signal_json = os.path.join(db_app_dir, 'signals.json')
         client_signals_db = json.load(open(client_signal_json))
-        json.dump(client_signals_db, open(client_signal_json,"w"))
+        # json.dump(client_signals_db, open(client_signal_json,"w"))
         
         def initate_app_clientsignal_json_file(json_file):
             # re-create with 
@@ -698,8 +709,8 @@ def order_management(api): # Handle ALL submitted orders and place them
             
             ticker_portfolio_qty = portfolio['']
 
-            #
-            sell_client_order_id = f'{"close__"}{runorder_client_order_id}'
+            # generate_client_order_id()
+            sell_client_order_id = f'{"close__"}{runorder_client_order_id}' # update to be unique
             send_close_order = submit_order(api=api, side=side, symbol=ticker, qty=sell_qty, type=type, client_order_id=sell_client_order_id) 
             send_close_order = vars(send_close_order)['_raw']
             if route_order_based_on_status(order_status=send_close_order['status']):
@@ -773,8 +784,8 @@ try:
     else:
         api = api_paper
         main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
-        PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{'_sandbox'}{".pkl"}')
-        PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{'_sandbox'}{".json"}')
+        PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
+        PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".json"}')
         print("My Queen Sandbox")
         
         init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -874,9 +885,8 @@ try:
                 "1Hour_3Month": 48, "2Hour_6Month": 72, 
                 "1Day_1Year": 250}
 
+            
             knight_bees = {}
-
-
             current_positions = {}
       
             # submit orders / gather all info first THEN submit order

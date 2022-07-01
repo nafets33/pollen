@@ -27,6 +27,7 @@ from collections import defaultdict
 import talib
 from scipy import stats
 import shutil
+import ipdb
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -191,362 +192,491 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
     # >/ create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
     # >/ what current macd tier values in comparison to max/min
-    s = datetime.datetime.now()
-    story = {}
-    ANGEL_bee = {} # add to QUEENS mind
-    STORY_bee = {} 
-    # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
-    betty_bee = {}  
-    macd_tier_range = 33
-    knights_sight_word = {}
-    # knight_sight_df = {}
+    try:
+        s = datetime.datetime.now()
+        story = {}
+        ANGEL_bee = {} # add to QUEENS mind
+        STORY_bee = {} 
+        # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
+        betty_bee = {}  
+        macd_tier_range = 33
+        knights_sight_word = {}
+        # knight_sight_df = {}
 
-    for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
-        ticker, tframe, frame = ticker_time_frame.split("_")
-        # CHARLIE_bee[ticker_time_frame] = {}
-        ANGEL_bee[ticker_time_frame] = {}
-        STORY_bee[ticker_time_frame] = {'story': {}}
-        
-        df = df_i.fillna(0).copy()
-        df = df.reset_index(drop=True)
-        df['story_index'] = df.index
-        df_len = len(df)
-        df['nowdate'] = df['timestamp_est'].apply(lambda x: f'{x.hour}{":"}{x.minute}{":"}{x.second}')
-        mac_world = {
-        'macd_high': df['macd'].max(),
-        'macd_low': df['macd'].min(),
-        'signal_high': df['signal'].max(),
-        'signal_low': df['signal'].min(),
-        'hist_high': df['hist'].max(),
-        'hist_low': df['hist'].min(),
-        }
-
-        # mac cross
-        df = mark_macd_signal_cross(df=df)
-
-        resp = knight_sight(df=df)
-        df = resp['df']
-        knights_word = resp['bee_triggers']
-        knights_sight_word[ticker_time_frame] = knights_word
-        STORY_bee[ticker_time_frame]['KNIGHTSWORD'] = knights_word
-
-        # how long does trigger stay profitable?
-        """for every index(timeframe) calculate profit length, bell curve
-            conclude with how well trigger is doing to then determine when next trigger will do well
-        """
-        # # for every trigger return calculated price
-        # trig_entry_dict = {}
-        # for trig in knights_word.keys(): # "buy_cross-0"
-        #     if "cross" in trig:
-        #         t_df = df[df['macd_cross'] == trig].copy()
-        #         t_dict = dict(zip(t_df['timestamp_est'], df['macd_cross']))
-        # formula = (trig_price - current_price) / trig_price
-        
-        # # return degree angle 0, 45, 90
-        try:
-            var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
-            var_timeframes = [3, 6, 8, 10, 25, 33]
-            for var in var_list:
-                for t in var_timeframes:
-                    # apply rollowing angle
-                    if df_len >= t:
-                        x = df.iloc[df_len - t:df_len][var].to_list()
-                        y = [1, 2]
-                        name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
-                        ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
-        except Exception as e:
-            msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
-            logging.error(msg)
-
-        # add close price momentum
-        try:
-            close = df['close']
-            df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
-            df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
-        except Exception as e:
-            msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
-            logging.error(msg)
-        
-        time_state = df['timestamp_est'].iloc[-1] # current time
-        STORY_bee[ticker_time_frame]['story']['time_state'] = time_state
-
-        # devation from vwap
-        df['vwap_deviation'] = df['close'] - df['vwap_original']
-        STORY_bee[ticker_time_frame]['story']['vwap_deviation'] = df.iloc[-1]['vwap_deviation']     
-        
-        # MACD WAVE
-        macd_state = df['macd_cross'].iloc[-1]
-        macd_state_side = macd_state.split("_")[0] # buy_cross-num
-        middle_crossname = macd_state.split("_")[1].split("-")[0]
-        state_count = macd_state.split("-")[1] # buy/sell_name_number
-        STORY_bee[ticker_time_frame]['story']['macd_state'] = macd_state
-        STORY_bee[ticker_time_frame]['story']['macd_state_side'] = macd_state_side
-        STORY_bee[ticker_time_frame]['story']['time_since_macd_change'] = state_count
-
-        # last time there was buycross
-        if 'buy_cross-0' in knights_word.keys():
-            prior_macd_time = knights_word['buy_cross-0']['last_seen']
-            STORY_bee[ticker_time_frame]['story'][f'{"last_seen_macd_buy_time"}'] = prior_macd_time
-            prior_macd_time = knights_word['buy_cross-0']['prior_seen']
-            STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_buy_time"}'] = prior_macd_time
-        # last time there was sellcross
-        if 'sell_cross-0' in knights_word.keys():
-            prior_macd_time = knights_word['sell_cross-0']['last_seen']
-            STORY_bee[ticker_time_frame]['story'][f'{"last_seen_macd_sell_time"}'] = prior_macd_time
-            prior_macd_time = knights_word['sell_cross-0']['prior_seen']
-            STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_sell_time"}'] = prior_macd_time
-        
-        # all triggers ? move to top?
-        STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
-
-        # count number of Macd Crosses
-        # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
-        today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
-        STORY_bee[ticker_time_frame]['story']['macd_cross_count'] = {
-            'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
-            'sell_cross_totalrunning_count' : sum(np.where(df['macd_cross'] == 'sell_cross-0',1,0)),
-            'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
-            'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
-        }
-        
-        # latest_close_price
-        STORY_bee[ticker_time_frame]['story']['last_close_price'] = df.iloc[-1]['close']
-
-        # macd signal divergence
-        df['macd_singal_deviation'] = df['macd'] - df['signal']
-        STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
-
-
-        if "1Minute_1Day" in ticker_time_frame:
-            theme_df = df.copy()
-            theme_df = split_today_vs_prior(df=theme_df) # remove prior day
-            theme_today_df = theme_df['df_today']
-            theme_prior_df = theme_df['df_prior']
+        for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+            ticker, tframe, frame = ticker_time_frame.split("_")
+            # CHARLIE_bee[ticker_time_frame] = {}
+            ANGEL_bee[ticker_time_frame] = {}
+            STORY_bee[ticker_time_frame] = {'story': {}}
             
-            # we want...last vs currnet close prices, && Height+length of wave
-            last_price = theme_today_df.iloc[0]['close']
-            current_price = theme_today_df.iloc[-1]['close']
-            delta_pct = (current_price - last_price) / current_price
-            STORY_bee[ticker_time_frame]['story']['current_from_open'] = delta_pct
+            df = df_i.fillna(0).copy()
+            df = df.reset_index(drop=True)
+            df['story_index'] = df.index
+            df_len = len(df)
+            df['nowdate'] = df['timestamp_est'].apply(lambda x: f'{x.hour}{":"}{x.minute}{":"}{x.second}')
+            mac_world = {
+            'macd_high': df['macd'].max(),
+            'macd_low': df['macd'].min(),
+            'signal_high': df['signal'].max(),
+            'signal_low': df['signal'].min(),
+            'hist_high': df['hist'].max(),
+            'hist_low': df['hist'].min(),
+            }
 
-            slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
-            STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
+            # mac cross
+            df = mark_macd_signal_cross(df=df)
+
+            resp = knight_sight(df=df)
+            df = resp['df']
+            knights_word = resp['bee_triggers']
+            # how long does trigger stay profitable?
+            """for every index(timeframe) calculate profit length, bell curve
+                conclude with how well trigger is doing to then determine when next trigger will do well
+            """
+            def return_knightbee_waves(df, knights_word):  # adds profit wave based on trigger
+                # df = POLLENSTORY['SPY_1Minute_1Day'] # test
+                wave = {ticker_time_frame: {}}
+                # knights_word = {'ready_buy_cross': 2, 'buy_cross-0':1,}
+                for knight_trigger in knights_word.keys():
+                    trig_name = knight_trigger # "buy_cross-0" # test
+                    wave[ticker_time_frame][trig_name] = {}
+                    trigger_bee = df[trig_name].tolist()
+                    close = df['close'].tolist()
+                    track_bees = {}
+                    track_bees_profits = {}
+                    trig_bee_count = 0
+                    for idx, trig_bee in enumerate(trigger_bee):
+                        beename = f'{trig_bee_count}'
+                        if idx == 0:
+                            continue
+                        if trig_bee == 'bee':
+                            # ipdb.set_trace()
+                            # trig_bee_count+=1
+                            # beename = f'{trig_name}{trig_bee_count}'
+                            close_price = close[idx]
+                            track_bees[beename] = close_price
+                            # reset only if bee not continous
+                            if trigger_bee[idx-1] != 'bee':
+                                trig_bee_count+=1
+                            continue
+                        if trig_bee_count > 0:
+                            # ipdb.set_trace()
+                            # beename = f'{trig_name}{trig_bee_count}'
+                            origin_trig_price = track_bees[str(int(beename) - 1)]
+                            latest_price = close[idx]
+                            profit_loss = (latest_price - origin_trig_price) / latest_price
+                            
+                            if "sell_cross-0" in knight_trigger: # all triggers with short reverse number to reflect profit
+                                profit_loss = profit_loss * -1
+                            
+                            if beename in track_bees_profits.keys():
+                                track_bees_profits[beename].update({idx: profit_loss})
+                            else:
+                                track_bees_profits[beename] = {idx: profit_loss}
+                    # ipdb.set_trace()
+                    # knights_word[trig_name]['wave'] = track_bees_profits
+                    wave[ticker_time_frame][trig_name] = track_bees_profits
+                    # wave[ticker_time_frame]["buy_cross-0"].keys()
+                    # bees_wave = wave['AAPL_1Minute_1Day']["buy_cross-0"]
+                    index_perwave = {}
+                    for k, v in track_bees_profits.items():
+                        for kn, vn in v.items():
+                            index_perwave[kn] = k
+                    index_wave_dict = [v for (k,v) in track_bees_profits.items()]
+                    index_wave_series = {} 
+                    for di in index_wave_dict:
+                        for k,v in di.items():
+                            index_wave_series[k] = v
+                    df[f'{trig_name}{"__wave"}'] = df['story_index'].map(index_wave_series).fillna(0)
+                    df[f'{trig_name}{"__wave_number"}'] = df['story_index'].map(index_perwave).fillna("0")
+                    # bees_wave_df = df[df['story_index'].isin(bees_wave_list)].copy()
+                    # tag greatest profit
+                return wave
+            
+            wave = return_knightbee_waves(df=df, knights_word=knights_word)
+            # wave_trigger_list = wave[ticker_time_frame].keys()
+            wave_trigger_list = ['buy_cross-0', 'sell_cross-0']
+
+            # Queen to make understanding of trigger-profit waves
+            #Q? split up time blocks and describe wave-buy time segments, morning, beforenoon, afternoon
+            #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
+
+
+            def return_macd_wave_story(df, wave_trigger_list):
+                # POLLENSTORY = read_pollenstory()
+                # df = POLLENSTORY["SPY_1Minute_1Day"]
+                # wave_trigger_list = ["buy_cross-0", "sell_cross-0"]
+                
+                t = split_today_vs_prior(df=df)
+                dft = t['df_today']
+
+                # length and height of wave
+                MACDWAVE_story = {'story': {}}
+                MACDWAVE_story.update({trig_name: {} for trig_name in wave_trigger_list})
+
+                for trigger in wave_trigger_list:
+                    wave_col_name = f'{trigger}{"__wave"}'
+                    wave_col_wavenumber = f'{trigger}{"__wave_number"}'
+                
+                    num_waves = dft[wave_col_wavenumber].tolist()
+                    num_waves_list = list(set(num_waves))
+                    num_waves_list = [str(i) for i in sorted([int(i) for i in num_waves_list])]
+
+                    for wave_n in num_waves_list:
+                        MACDWAVE_story[trigger][wave_n] = {}
+                        if wave_n == '0':
+                            continue
+                        t = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
+                        t = dft[dft[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
+                        
+                        row_1 = t.iloc[0]['story_index']
+                        row_2 = t.iloc[-1]['story_index']
+
+                        # Assign each waves timeblock
+                        if "Day" in tframe:
+                            wave_blocktime = "Day"
+                        else:
+                            wave_starttime = t.iloc[0]['timestamp_est']
+                            wave_endtime = t.iloc[-1]['timestamp_est']
+                            wave_starttime_token = wave_starttime.replace(tzinfo=None)
+                            if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+                                wave_blocktime = 'morning_9-11'
+                            elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                                wave_blocktime = 'lunch_11-2'
+                            elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                                wave_blocktime = 'afternoon_2-4'
+                            else:
+                                wave_blocktime = 'afterhours'
+
+                        MACDWAVE_story[trigger][wave_n].update({'length': row_2 - row_1, 
+                        'wave_blocktime' : wave_blocktime,
+                        'wave_times': ( wave_starttime, wave_endtime ),
+                        })
+                        
+                        wave_height_value = max(t[wave_col_name].values)
+                        # how long was it profitable?
+                        profit_df = t[t[wave_col_name] > 0].copy()
+                        profit_length  = len(profit_df)
+                        if profit_length > 0:
+                            max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]['story_index']
+                            time_to_max_profit = max_profit_index - row_1
+                            MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': time_to_max_profit})
+
+                        else:
+                            MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
+                
+                # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
+                # bee_89 = MACDWAVE_story["buy_cross-0"]
+                # for wave in bee_89:
+                # gather current avg waves
+
+                return MACDWAVE_story
+            
+            MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list)
+            STORY_bee[ticker_time_frame]['waves'] = MACDWAVE_story
+
+            knights_sight_word[ticker_time_frame] = knights_word
+            STORY_bee[ticker_time_frame]['KNIGHTSWORD'] = knights_word
+            # # return degree angle 0, 45, 90
+            try:
+                var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
+                var_timeframes = [3, 6, 8, 10, 25, 33]
+                for var in var_list:
+                    for t in var_timeframes:
+                        # apply rollowing angle
+                        if df_len >= t:
+                            x = df.iloc[df_len - t:df_len][var].to_list()
+                            y = [1, 2]
+                            name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
+                            ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
+            except Exception as e:
+                msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
+                logging.error(msg)
+
+            # add close price momentum
+            try:
+                close = df['close']
+                df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
+                df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
+            except Exception as e:
+                msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
+                logging.error(msg)
+            
+            time_state = df['timestamp_est'].iloc[-1] # current time
+            STORY_bee[ticker_time_frame]['story']['time_state'] = time_state
+
+            # devation from vwap
+            df['vwap_deviation'] = df['close'] - df['vwap_original']
+            STORY_bee[ticker_time_frame]['story']['vwap_deviation'] = df.iloc[-1]['vwap_deviation']     
+            
+            # MACD WAVE
+            macd_state = df['macd_cross'].iloc[-1]
+            macd_state_side = macd_state.split("_")[0] # buy_cross-num
+            middle_crossname = macd_state.split("_")[1].split("-")[0]
+            state_count = macd_state.split("-")[1] # buy/sell_name_number
+            STORY_bee[ticker_time_frame]['story']['macd_state'] = macd_state
+            STORY_bee[ticker_time_frame]['story']['macd_state_side'] = macd_state_side
+            STORY_bee[ticker_time_frame]['story']['time_since_macd_change'] = state_count
+
+            # last time there was buycross
+            if 'buy_cross-0' in knights_word.keys():
+                prior_macd_time = knights_word['buy_cross-0']['last_seen']
+                STORY_bee[ticker_time_frame]['story'][f'{"last_seen_macd_buy_time"}'] = prior_macd_time
+                prior_macd_time = knights_word['buy_cross-0']['prior_seen']
+                STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_buy_time"}'] = prior_macd_time
+            # last time there was sellcross
+            if 'sell_cross-0' in knights_word.keys():
+                prior_macd_time = knights_word['sell_cross-0']['last_seen']
+                STORY_bee[ticker_time_frame]['story'][f'{"last_seen_macd_sell_time"}'] = prior_macd_time
+                prior_macd_time = knights_word['sell_cross-0']['prior_seen']
+                STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_sell_time"}'] = prior_macd_time
+            
+            # all triggers ? move to top?
+            STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
+
+            # count number of Macd Crosses
+            # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
+            today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
+            STORY_bee[ticker_time_frame]['story']['macd_cross_count'] = {
+                'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
+                'sell_cross_totalrunning_count' : sum(np.where(df['macd_cross'] == 'sell_cross-0',1,0)),
+                'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
+                'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
+            }
+            
+            # latest_close_price
+            STORY_bee[ticker_time_frame]['story']['last_close_price'] = df.iloc[-1]['close']
+
+            # macd signal divergence
+            df['macd_singal_deviation'] = df['macd'] - df['signal']
+            STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
+
+
+            if "1Minute_1Day" in ticker_time_frame:
+                theme_df = df.copy()
+                theme_df = split_today_vs_prior(df=theme_df) # remove prior day
+                theme_today_df = theme_df['df_today']
+                theme_prior_df = theme_df['df_prior']
+                
+                # we want...last vs currnet close prices, && Height+length of wave
+                current_price = theme_today_df.iloc[-1]['close']
+                open_price = theme_today_df.iloc[0]['close'] # change to timestamp lookup
+                yesterday_close = theme_prior_df.iloc[-1]['close'] # change to timestamp lookup
+                
+                STORY_bee[ticker_time_frame]['story']['current_from_open'] = (current_price - open_price) / current_price
+
+                # Current from Yesterdays Close
+                STORY_bee[ticker_time_frame]['story']['current_from_yesterday_close'] = (current_price - yesterday_close) / current_price
+
+                # how did day start ## this could be moved to queen and calculated once only
+                STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
+
+                slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
+                STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
 
 
 
 
-        # how long have you been stuck at vwap ?
+            # how long have you been stuck at vwap ?
+            
+            # Measure MACD WAVES
+            # change % shifts for each, close, macd, signal, hist....
+
+            # # add timeblocks [9:30 - 10, 10-12, 12-1, 1-3, 3-4]:: NOT SURE ABOUT TIMEBLOCK YET?
+            # def add_timeblock(dt):
+            #     if dt.hour > 9 and dt.hour < 10:
+            #         return 1
+            #     elif dt.hour == 10 and dt.hour < 12:
+            #         return 2
+            #     elif dt.hour == 12 and dt.hour < 1 
+            # df['timeblock'] = 
+
+            # add to story
+            df['chartdate'] = df['timestamp_est'] # add as new col
+            df['name'] = ticker_time_frame
+            story[ticker_time_frame] = df
+            # ticker, _time, _frame = ticker_time_frame.split("_")
+
+            
+            # add momentem ( when macd < signal & past 3 macds are > X Value or %)
+            
+            # when did macd and signal share same tier?
+
+        e = datetime.datetime.now()
+        print("pollen_story", str((e - s)))
+        return {'pollen_story': story, 'conscience': {'ANGEL_bee': ANGEL_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } }
+    except Exception as e:
+        print("pollen_story error ", e)
+        print_line_of_error()
         
-        # Measure MACD WAVES
-        # change % shifts for each, close, macd, signal, hist....
-
-        # # add timeblocks [9:30 - 10, 10-12, 12-1, 1-3, 3-4]:: NOT SURE ABOUT TIMEBLOCK YET?
-        # def add_timeblock(dt):
-        #     if dt.hour > 9 and dt.hour < 10:
-        #         return 1
-        #     elif dt.hour == 10 and dt.hour < 12:
-        #         return 2
-        #     elif dt.hour == 12 and dt.hour < 1 
-        # df['timeblock'] = 
-
-        # add to story
-        df['chartdate'] = df['timestamp_est'] # add as new col
-        df['name'] = ticker_time_frame
-        story[ticker_time_frame] = df
-        # ticker, _time, _frame = ticker_time_frame.split("_")
-
-        
-        # add momentem ( when macd < signal & past 3 macds are > X Value or %)
-        
-        # when did macd and signal share same tier?
-
-    e = datetime.datetime.now()
-    print("pollen_story", str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M:%S%p"))
-    return {'pollen_story': story, 'conscience': {'ANGEL_bee': ANGEL_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } }
-
 
 def knight_sight(df): # adds all triggers to dataframe
     # ticker_time_frame = df['name'].iloc[-1] #TEST
     # trigger_dict = {ticker_time_frame: {}}  #TEST
     
-    trigger_dict_info = {}
+    def trig_89(df): 
+        trig = np.where(
+            (df['macd_cross'].str.contains("buy_cross-0")==True)
+            ,"bee", 'nothing')
+        return trig
+    
+    def trig_98(df): 
+        trig = np.where(
+            (df['macd_cross'].str.contains("sell_cross-0")==True)
+            ,"bee", 'nothing')
+        return trig
+    
+    def trig_pre_89(df):
+        trig = np.where(
+            (df['macd_cross'].str.contains("buy")==False) &
+            (df['hist_slope-3'] > -.3)
+            ,"bee", 'nothing')
+        return trig
+    
+    trigger_dict_info = {"buy_cross-0": trig_89, "sell_cross-0": trig_98, 'ready_buy_cross': trig_pre_89}
+
     trigger_dict = {}
+    for trigger, trig_func in trigger_dict_info.items():
+        df[trigger] = trig_func(df=df)
+        bee_df = df[df[trigger] == 'bee'].copy()
+        if len(bee_df) > 0:
+            trigger_dict[trigger] = {}
+            trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+            if len(bee_df) > 1:
+                trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
     
-    # >>> ready for cross trigger: 
-    # current macd = sell, & 
-    # macd signal deviation "very close" &
-    # hist slope is up
+    # # Mac is very LOW and we are in buy cross
+    # trigger = 'buy_RED_tier-1_macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     ((df['macd'] < 0) & (df['macd'] > -.3))
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
 
-    # Mac crosses
-    trigger = 'ready_buy_cross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==False) &
-        (df['hist_slope-3'] > -.3)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    # trigger = 'buy_RED_tier-2_macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     ((df['macd'] < -.3) & (df['macd'] > -.5))
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    # Mac crosses
-    trigger = 'buy_cross-0'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy_cross-0")==True)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    # trigger = 'buy_RED_tier-3_macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     ((df['macd'] < -.5) & (df['macd'] > -.1))
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    trigger = 'sell_cross-0'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("sell_cross-0")==True)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    # trigger = 'buy_RED_tier-4_macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     ((df['macd'] < -.1) & (df['macd'] > -.15))
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    # Mac is very LOW and we are in buy cross
-    trigger = 'buy_RED_tier-1_macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        ((df['macd'] < 0) & (df['macd'] > -.3))
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
-
-    trigger = 'buy_RED_tier-2_macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        ((df['macd'] < -.3) & (df['macd'] > -.5))
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    # trigger = 'buy_RED_tier-5_macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     (df['macd'] < -.15)
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    trigger = 'buy_RED_tier-3_macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        ((df['macd'] < -.5) & (df['macd'] > -.1))
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    # # Mac is very LOW and we are in buy cross
+    # trigger = 'buy_high-macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     (df['macd'] < -.1)
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    trigger = 'buy_RED_tier-4_macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        ((df['macd'] < -.1) & (df['macd'] > -.15))
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    # # Mac is very LOW and we are in buy cross
+    # trigger = 'buy_high-macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
+    #     (df['macd'] < -.1)
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    trigger = 'buy_RED_tier-5_macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        (df['macd'] < -.15)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    # # Mac is very High and we are in a Sell Cross
+    # trigger = 'sell_high-macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("sell")==True) &
+    #     (df['macd'] > 1)
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
     
-    # Mac is very LOW and we are in buy cross
-    trigger = 'buy_high-macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        (df['macd'] < -.1)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
-    
-    # Mac is very LOW and we are in buy cross
-    trigger = 'buy_high-macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("buy")==True) & # is not in BUY cycle
-        (df['macd'] < -.1)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
-    
-    # Mac is very High and we are in a Sell Cross
-    trigger = 'sell_high-macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("sell")==True) &
-        (df['macd'] > 1)
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
-    
-    # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
-    trigger = 'sell_high-macdcross'
-    df[trigger] = np.where(
-        (df['macd_cross'].str.contains("sell_hold")==False) & # is not in Sell cycle
-        (df['macd'] > 1.5) &
-        (df['macd_slope-3'] < .1) &
-        ((df['hist_slope-3'] < .33) |(df['hist_slope-6'] < .10))
-        ,"bee", 'nothing')
-    bee_df = df[df[trigger] == 'bee'].copy()
-    if len(bee_df) > 0:
-        trigger_dict[trigger] = {}
-        trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
-        if len(bee_df) > 1:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
-        else:
-            trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
+    # # Mac is very High and the prior hist slow was steep and we are not in a Sell CROSS Cycle Yet
+    # trigger = 'sell_high-macdcross'
+    # df[trigger] = np.where(
+    #     (df['macd_cross'].str.contains("sell_hold")==False) & # is not in Sell cycle
+    #     (df['macd'] > 1.5) &
+    #     (df['macd_slope-3'] < .1) &
+    #     ((df['hist_slope-3'] < .33) |(df['hist_slope-6'] < .10))
+    #     ,"bee", 'nothing')
+    # bee_df = df[df[trigger] == 'bee'].copy()
+    # if len(bee_df) > 0:
+    #     trigger_dict[trigger] = {}
+    #     trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
+    #     if len(bee_df) > 1:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+    #     else:
+    #         trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-1]
 
     return {"df": df, "bee_triggers": trigger_dict}
 
@@ -602,7 +732,7 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                 cross_list.append(f'{"hold"}{"-"}{0}')
                 wave_mark_list.append(0)
         df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
-        df3 = pd.DataFrame(cross_list, columns=['macd_cross_wavedistance'])
+        df3 = pd.DataFrame(wave_mark_list, columns=['macd_cross_wavedistance'])
         df_new = pd.concat([df, df2, df3], axis=1)
         return df_new
     except Exception as e:
@@ -614,12 +744,12 @@ def split_today_vs_prior(df):
     df_day = df['timestamp_est'].iloc[-1]
     df = df.copy()
     df = df.set_index('timestamp_est', drop=True) # test
-    # df = df[(df.index.day == df_day.day) & (df.index.year == df_day.year) & (df.index.month == df_day.month)].copy() # remove yesterday
-    df = df[(df.index.day == df_day.day)].copy()
     df_prior = df[~(df.index.day == df_day.day)].copy()
-    df = df.reset_index()
+    
+    df_today = df[(df.index.day == df_day.day)].copy()
+    df_today = df_today.reset_index()
     df_prior = df_prior.reset_index()
-    return {'df_today': df, 'df_prior': df_prior}
+    return {'df_today': df_today, 'df_prior': df_prior}
 
 
 def return_degree_angle(x, y): #
@@ -1063,25 +1193,28 @@ def PickleData(pickle_file, data_to_store):
         p_timestamp = {'file_creation': datetime.datetime.now()} 
         
         if os.path.exists(pickle_file) == False:
-            print("init", pickle_file)
-            db = {} 
-            db['jp_timestamp'] = p_timestamp 
-            dbfile = open(pickle_file, 'ab') 
-            pickle.dump(db, dbfile)                   
-            dbfile.close() 
+            with open(pickle_file, 'wb+') as dbfile:
+                print("init", pickle_file)
+                db = {} 
+                db['jp_timestamp'] = p_timestamp 
+                # dbfile = open(pickle_file, 'ab')
+                pickle.dump(db, dbfile)                   
+                # dbfile.close()
 
         if data_to_store:
             p_timestamp = {'last_modified': datetime.datetime.now()}
-            dbfile = open(pickle_file, 'rb+')      
-            db = pickle.load(dbfile)
-            dbfile.seek(0)
-            dbfile.truncate()
-            for k, v in data_to_store.items(): 
-                db[k] = v
-            db['last_modified'] = p_timestamp 
-            # print(db)
-            pickle.dump(db, dbfile)                   
-            dbfile.close()
+            with open(pickle_file, 'wb+') as dbfile:
+                # dbfile = open(pickle_file, 'rb+')      
+                # db = pickle.load(dbfile)
+                db = {}
+                # db = pickle.load(dbfile)
+                for k, v in data_to_store.items(): 
+                    db[k] = v
+                db['last_modified'] = p_timestamp 
+                # dbfile.seek(0)
+                # dbfile.truncate()
+                pickle.dump(db, dbfile)                   
+                # dbfile.close()
         
         return True
     except Exception as e:
@@ -1092,27 +1225,16 @@ def PickleData(pickle_file, data_to_store):
 def ReadPickleData(pickle_file): 
     # for reading also binary mode is important try 3 times
     try:
-        dbfile = open(pickle_file, 'rb')      
-        db = pickle.load(dbfile) 
-        dbfile.close()
-        return db
+        with open(pickle_file, "rb") as f:
+            return pickle.load(f)
     except Exception as e:
         try:
             time.sleep(.33)
-            dbfile = open(pickle_file, 'rb')      
-            db = pickle.load(dbfile) 
-            dbfile.close()
-            return db
+            with open(pickle_file, "rb") as f:
+                return pickle.load(f)
         except Exception as e:
-            try:
-                time.sleep(.33)
-                dbfile = open(pickle_file, 'rb')      
-                db = pickle.load(dbfile) 
-                dbfile.close()
-                return db
-            except Exception as e:
-                print("CRITICAL ERROR logme", e)
-                return False
+            print("CRITICAL ERROR logme", e)
+            return False
 
 
 def timestamp_string(format="%m-%d-%Y %I.%M%p"):
@@ -1808,3 +1930,38 @@ def slice_by_time(df, between_a, between_b):
 #             QUEENSMIND = chess_piece['command_conscience']
 # if '__name__' == '__main__':
 #     return_pollen()
+
+
+# df = POLLENSTORY['SPY_1Minute_1Day']
+# buy_cross = df['buy_cross-0'].tolist()
+# close = df['close'].tolist()
+# track_bees = {}
+# track_bees_profits = {}
+# trig_bee_count = 0
+# trig_name = 'buy_cross-0'
+# for idx, trig_bee in enumerate(buy_cross):
+#     if idx == 0:
+#         continue
+#     if trig_bee == 'bee':
+#         trig_bee_count+=1
+#         beename = f'{trig_name}{trig_bee_count}'
+#         close_price = close[idx]
+#         track_bees[beename] = close_price
+#         continue
+#     if trig_bee_count > 0:
+#         beename = f'{trig_name}{trig_bee_count}'
+#         origin_trig_price = track_bees[beename]
+#         latest_price = close[idx]
+#         profit_loss = (latest_price - origin_trig_price) / latest_price
+#         if beename in track_bees_profits.keys():
+#             track_bees_profits[beename].update({idx: profit_loss})
+#         else:
+#             track_bees_profits[beename] = {idx: profit_loss}
+
+def return_main_chart_times(queens_chess_piece):
+    if queens_chess_piece in ['queen', 'castle', 'bishop']:
+        chart_times = {
+            "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+            "1Hour_3Month": 48, "2Hour_6Month": 72, 
+            "1Day_1Year": 250}
+        return chart_times

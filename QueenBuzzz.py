@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from collections import deque
-from QueenHive import read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import return_main_chart_times, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 # FEAT List
@@ -692,6 +692,7 @@ try:
                 QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_resp['speedybee']
             
             # God Save The QUEEN
+            # ipdb.set_trace()
             if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
                 msg=("Pickle Data Failed")
                 print(msg)
@@ -700,13 +701,14 @@ try:
 
             e = datetime.datetime.now()
             cycle_run_time = (e-s)
+            cycle_run_time_print = str(cycle_run_time.seconds) + "." + str(cycle_run_time.microseconds)[:2]
             QUEEN[queens_chess_piece]['heartbeat']['cycle_time'].append(cycle_run_time)
             if cycle_run_time.seconds > 5:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info("cycle_time > 5 seconds", cycle_run_time)
+                logging.info("cycle_time > 5 seconds", cycle_run_time_print)
             workerbee_run_times = QUEEN[queens_chess_piece]['heartbeat']['cycle_time']
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
-            print(queens_chess_piece, " avg cycle time(last89):", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+            print(queens_chess_piece, " avg cycle time(last89):", avg_time, ": ", cycle_run_time_print,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
         if queens_chess_piece.lower() == 'workerbee': # return tics
             s = datetime.datetime.now()
