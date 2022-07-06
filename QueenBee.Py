@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from collections import deque
-from QueenHive import slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 # from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 # script arguments
@@ -48,6 +48,7 @@ est = pytz.timezone("US/Eastern")
 load_dotenv()
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
+db_app_root = os.path.join(db_root, 'app')
 
 # init_logging(queens_chess_piece, db_root)
 loglog_newfile = False
@@ -81,9 +82,12 @@ QUEEN = { # The Queens Mind
                                         'running': [],
                                         'running_close': []}
                                         }, 
-                            'collective_conscience': {'theme': {}}, # ONLY for the Kings Eyes
         'heartbeat': {}, # ticker info ... change name
         'kings_order_rules': {},
+        'queen_controls': {
+                            'theme': 'strong',
+                            'app_order_requests': [],
+                            'orders': []},
     # Worker Bees
     queens_chess_piece: {
     'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -98,6 +102,7 @@ QUEEN = { # The Queens Mind
 }
 
 if queens_chess_piece == 'queen':  ## KINGS ORDERS
+    
     kings_order_rules = {'knight_bees': {'buy_cross-0': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
@@ -122,8 +127,7 @@ if queens_chess_piece == 'queen':  ## KINGS ORDERS
                                                 'adjustable': True,
                                                 'friend_links': [],
                                                     },
-
-################## crypto >>> crypto >>> crypto >>> crypto >>> crypto ###################                                        
+                                    # CRYPTO
                                       'crypto_buy_cross-0': {'timeduration': 1, 
                                                 'take_profit': .005,
                                                 'sellout': .01,
@@ -317,12 +321,6 @@ def liquidate_position(api, ticker, side, type, client_order_id): # TBD
     return order
 
 
-def check_order_status(api, client_order_id): # return raw dict form
-    order = api.get_order_by_client_order_id(client_order_id=client_order_id)
-    order_ = vars(order)['_raw']
-    return order_
-
-
 def generate_client_order_id(ticker, trig, db_root=db_root, sellside_client_order_id=False): # generate using main_order table and trig count
     main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
     temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
@@ -335,7 +333,7 @@ def generate_client_order_id(ticker, trig, db_root=db_root, sellside_client_orde
         main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')].copy()
         
         trig_num = len(main_trigs_df)
-        order_id = f'{ticker}-{trig}-{trig_num}-{temp_date}'
+        order_id = f'{"run__"}{ticker}-{trig}-{trig_num}-{temp_date}'
 
     return order_id
 
@@ -383,12 +381,14 @@ def create_running_order(order, trig):
     return running_order
 
 
-def process_order_submission(order, trig, prod, tablename, status_q=False, exit_order_link=False):
+def process_order_submission(order, trig, prod, tablename, status_q=False, exit_order_link=False, bulkorder_origin__client_order_id=False):
     date_mark = datetime.datetime.now()
     symbol = order['symbol']
     client_order_id = order['client_order_id']
     alpaca_order_id = order['id']
-    df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 'exit_order_link':exit_order_link, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id} 
+    df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 
+    'exit_order_link':exit_order_link, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id,
+    'bulkorder_origin__client_order_id': bulkorder_origin__client_order_id} 
     df = pd.DataFrame(df_details.items()).T
     new_header = df.iloc[0] #grab the first row for the header
     df = df[1:] #take the data less the header row
@@ -398,7 +398,8 @@ def process_order_submission(order, trig, prod, tablename, status_q=False, exit_
     # sending_order = {'symbol': order['symbol'], 'order_rules': kings_order_rules['knight_bees'][trig], 'trigname': trig, 'datetime': date_mark, 'status_q': status_q, 'exit_order_links': exit_order_link, 'client_order_id': order['client_order_id'], 'sellable_qty': order['qty']}                                    
     sending_order = create_running_order(order=order, trig=trig)
     logging.info(kings_order_rules['knight_bees'][trig])
-    trig_stop_info = {'symbol': symbol, 'trigname': trig, 'exit_order_link': exit_order_link, 'client_order_id': client_order_id, 'datetime': date_mark}
+    trig_stop_info = {'symbol': symbol, 'trigname': trig, 'exit_order_link': exit_order_link, 
+    'client_order_id': client_order_id, 'datetime': date_mark}
     
     return {'sending_order': sending_order, 'trig_stop_info': trig_stop_info}
 
@@ -418,11 +419,34 @@ def command_conscience(api, ticker, STORY_bee):
             if bee == 'buy_cross-0':
                 # Q?confirmation on trigger, should you wait for futher confirmation?
 
-                theme_input = QUEEN['command_conscience']['collective_conscience']['theme']['current_state'] # what is the theme?
+                theme = QUEEN['queen_controls']['theme'] # what is the theme?
                 # what is your timeblock?
                 # what does your friend_links(bees) say? or have said?
-                # 
-                # what is the % amount you want to buy?
+
+                # Total Buying Power
+                info = api.get_account()
+                total_buying_power = info.buying_power # what is the % amount you want to buy?
+                app_portfolio_day_trade_allowed = .8
+                app_portfolio_long_trade_allowed = .2
+                if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
+                    print("Critical Error Fix buying power numbers")
+                    sys.exit()
+                
+                # wave power allowance
+                app_portfolio_waveup_buying_power = .6
+                app_portfolio_wavedown_buying_power = .4
+                if app_portfolio_waveup_buying_power + app_portfolio_wavedown_buying_power != 1:
+                    print("Critical Error Fix buying power numbers")
+                    sys.exit()
+                
+                client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
+                
+                morning_waveup_buyingpower = pollen_themes[theme]['waveup']['morning_9-11']
+
+                # how many trades have we completed today? whats our total profit loss with wave trades
+
+
+
                 # should you override your original order rules?
 
 
@@ -464,7 +488,6 @@ def command_conscience(api, ticker, STORY_bee):
                             QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
                             QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
                             pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
-                            # json.dump(QUEEN['command_conscience'], open(PB_json_queen,"w"))
                         else:
                             msg = ("error order not accepted", order)
                             print(msg)
@@ -493,7 +516,6 @@ def command_conscience(api, ticker, STORY_bee):
                                 QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
                                 QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
                                 pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
-                                # json.dump(QUEEN['command_conscience'], open(PB_json_queen,"w"))
                             else:
                                 msg = ("error order not accepted", order)
                                 print(msg)
@@ -604,8 +626,29 @@ def order_management(api): # Handle ALL submitted orders and place them
         return True
 
     submitted_orders_main(api)
-    
-    
+
+    # Confirm Theme
+    if len(app_theme_base) > 0:
+        if len(app_theme_base) != 1:
+            print("dup theme requests, removing dups processing last")
+            logging.info("dup theme requests, removing dups processing last")
+            app_request = app_theme_base[len(app_theme_base)-1]
+            for i in range(len(app_theme_base) - 1):
+                APP_requests['orders'].remove(i)
+                PickleData(pickle_file=PB_App_main_Pickle, data_to_store=APP_requests)
+        else:
+            app_request = app_theme_base[0]
+            if app_request['app_requests_id'] in QUEEN['queen_controls']['app_order_requests']:
+                continue
+            else:
+                QUEEN['queen_controls'] = app_request['theme']
+                QUEEN['queen_controls']['app_order_requests'].append(app_request['app_requests_id'])
+                pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+
+                APP_requests['queen_processed'].append(app_request)
+                APP_requests['theme'].remove(app_request)
+                PickleData(pickle_file=PB_App_main_Pickle, data_to_store=APP_requests)
+
     # >for every ticker position join in running-positions to account for total position
     # >for each running position determine to exit the position                
     all_positions = api.list_positions()
@@ -626,6 +669,7 @@ def order_management(api): # Handle ALL submitted orders and place them
     # if profit has achived send order to take profit
     def re_evaluate_kings_orders(run_order, order_obj, current_profit_loss):
         # all scenarios if run_order should be closed out
+        runorder_client_order_id = run_order['client_order_id']
         take_profit = run_order['order_rules']['take_profit'] #  {'order_rules': order_rules, 'trigname': trig, 'order': order, 'datetime': date_mark, 'status_q': False, 'exit_order': False}                                    
         sellout = run_order['order_rules']['sellout']
         sell_qty = int(order_obj['filled_qty'])
@@ -633,30 +677,43 @@ def order_management(api): # Handle ALL submitted orders and place them
         side = 'sell'
         type ='market'
 
+        """Read App Controls and update if anything new"""
+        # app_request = QUEEN['queen_controls']['orders']
+        app_order_base = [i for i in APP_requests['orders']]
+        c_ord_ids = {idx: i for idx, i in enumerate(app_order_base) if i['client_order_id'] == runorder_client_order_id}
+        if c_order_ids: # App Requests to sell client_order_id
+            print("App Request Order")
+            logging.info("App Request Order")
+            if len(c_order_ids) != 1:
+                print("error duplicate client_order_id requests, taking latest")
+                logging.info("error duplicate client_order_id requests, taking latest")
+                app_request = c_order_ids[len(c_order_ids)-1]
+                for i in range(len(c_order_ids) - 1):
+                    APP_requests['orders'].remove(i)
+                    PickleData(pickle_file=PB_App_main_Pickle, data_to_store=APP_requests)
+            else:
+                app_request = c_order_ids[0]
+                if app_request['app_requests_id'] in QUEEN['queen_controls']['app_order_requests']:
+                    continue
+                else:
+                    sell_qty = app_request['sellable_qty']
+                    type = app_request['type']
+                    side = app_request['side']
+
+                    QUEEN['queen_controls']['app_order_requests'].append(app_request['app_requests_id'])
+                    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+
+                    APP_requests['queen_processed'].append(app_request)
+                    APP_requests['orders'].remove(app_request)
+                    PickleData(pickle_file=PB_App_main_Pickle, data_to_store=APP_requests)
+                    
+                    return {'bee_sell': True, 'type': type, 'side': side, 'sell_qty': sell_qty}
+
         if take_profit <= current_profit_loss:
             return {'bee_sell': True, 'type': type, 'side': side, 'sell_qty': sell_qty}
         
-        # return client signal to sell
-        db_app_dir = os.path.join(db_root, 'app')
-        client_signal_json = os.path.join(db_app_dir, 'signals.json')
-        client_signals_db = json.load(open(client_signal_json))
-        # json.dump(client_signals_db, open(client_signal_json,"w"))
-        
-        def initate_app_clientsignal_json_file(json_file):
-            # re-create with 
-            if os.path.exists(json_file):
-                return json.load(open(json_file))
-            else:
-                # initiate app json file
-                i = {'app': {'orders': {'sell': [], 'buy': []},
-                            'themes' : {'main': True},
-                            'throttle' : 1 
-                                },
-                    'self': {}
-                    }
-                json.dump(i, open(client_signal_json,"w"))
-        
-        
+        # if the 3 wisemen pointing to sell or re-chunk profits
+
         return {'bee_sell': False, 'run_order': run_order}
 
 
@@ -707,7 +764,7 @@ def order_management(api): # Handle ALL submitted orders and place them
                 sell_validation = False
                 print("error TICKER NOT in Portfolio")
             
-            ticker_portfolio_qty = portfolio['']
+            # ticker_portfolio_qty = portfolio['']
 
             # generate_client_order_id()
             sell_client_order_id = f'{"close__"}{runorder_client_order_id}' # update to be unique
@@ -779,13 +836,17 @@ try:
         api = api
         main_orders_file = os.path.join(db_root, 'main_orders.csv')
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-        PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{".json"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
+        PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{".pkl"}')
+
         print("My Queen Production")
     else:
         api = api_paper
         main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
-        PB_json_queen = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".json"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
+        PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
+
         print("My Queen Sandbox")
         
         init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -795,67 +856,11 @@ try:
         available_triggers = ["sell_cross-0", "buy_cross-0"]
         print(available_triggers)
 
+    init_app(pickle_file=PB_App_main_Pickle)
     POLLENSTORY = read_pollenstory()
-    def theme_calculator(POLLENSTORY, chart_times):
-        # ticker = 'SPY' # test
-        # chart_times = {
-        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-        #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
-        #     "1Day_1Year": 250}
-        # return all prior 5 days close and compare to current, return angle of the different periods
-
-        theme = {'castle': {},
-                'sub_indexes': {},
-                'big_players': {}
-                    }
-        tickers = set([i.split("_")[0] for i in POLLENSTORY.keys()])
-        all_tframes = chart_times.keys()
-        for ticker in tickers:
-            theme[ticker] = {}
-            for tframe in all_tframes:
-                story={}
-                # theme[ticker][] = {}
-                theme_df = POLLENSTORY[f'{ticker}{"_"}{tframe}'].copy()
-
-                if tframe == "1Minute_1Day":
-                    theme_df = split_today_vs_prior(df=theme_df) # remove prior day
-                    theme_today_df = theme_df['df_today']
-                    theme_prior_df = theme_df['df_prior']                
-                    
-                    # we want...last vs currnet close prices, && Height+length of wave
-
-                    # current from open price
-                    open_price = theme_today_df.iloc[0]['close']
-                    current_price = theme_today_df.iloc[-1]['close']
-                    delta_pct = (current_price - open_price) / current_price
-                    story['current_from_open'] = delta_pct
-                    # current day slope
-                    slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
-                    story['slope'] = slope
-                    
-                    # how did day start
-                    last_price = theme_prior_df.iloc[-1]['close']
-                    delta_pct = (open_price - last_price) / open_price
-                    story['open_start'] = delta_pct
-                    
-                    
-                    
-                    theme[ticker][tframe] = story
-        
-        return theme
     
-    trigger_bee_enable = {'VWAP_GRAVITY': {'desc': 'VWAP Gravity Kicks in starting 10:15 - 2 > if up holds'}}
-    day_theme = {'strong_open': {'name': 'strong_open',
-                                'desc': """SPY/overall up > 1% 
-                                            & prior X(5) days decline is Z(-5%)
-                                            
-                                            """,
-                                'formula': theme_calculator(POLLENSTORY, chart_times),
-                                'triggerbees_tofind': ['VWAP_GRAVITY']
-                                }
-                    } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
-
-
+    # trigger_bee_enable = {'VWAP_GRAVITY': {'desc': 'VWAP Gravity Kicks in starting 10:15 - 2 > if up holds'}}
+    pollen_theme_dict = pollen_themes()
     workerbee_run_times = []
     while True:
         if queens_chess_piece.lower() == 'queen': # Rule On High
@@ -879,6 +884,14 @@ try:
             QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = queensmind['ANGEL_bee'] # return memory          
             
             STORY_bee = queensmind['STORY_bee'] # all ttframes with all immediate info needed
+
+            queen_controls = ReadPickleData(pickle_file=PB_App_Pickle)
+            QUEEN['queen_controls'] = queen_controls
+            
+            APP_requests = ReadPickleData(pickle_file=PB_App_main_Pickle)
+            app_order_base = [i for i in APP_requests['orders']]
+            app_theme_base = [i for i in APP_requests['theme']]
+            # app_processed = [i for i in APP_requests['queen_processed']]
 
             chart_times = {
                 "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 

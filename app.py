@@ -19,7 +19,6 @@ import sys
 # from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
 import threading
-from QueenHive import ReadPickleData
 import sys
 import datetime
 from datetime import date, timedelta
@@ -44,14 +43,34 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from QueenHive import return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior
+from QueenHive import PickleData, return_timestamp_string, update_queen_controls, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+import json
+
+def ReadPickleData(pickle_file): 
+    # for reading also binary mode is important try 3 times
+    try:
+        with open(pickle_file, "rb") as f:
+            return pickle.load(f)
+    except Exception as e:
+        try:
+            time.sleep(.33)
+            with open(pickle_file, "rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            print("CRITICAL ERROR logme", e)
+            return False
+
 
 prod = False
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
+db_app_root = os.path.join(db_root, 'app')
+
 queens_chess_piece = os.path.basename(__file__)
 log_dir = dst = os.path.join(db_root, 'logs')
+
+
 if os.path.exists(dst) == False:
     os.mkdir(dst)
 log_name = f'{"log_"}{queens_chess_piece}{".log"}'
@@ -153,6 +172,15 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
         else:
             return df.plot(x=x, y=y,figsize=figsize)
 
+st.write(prod)
+if prod:
+    api = api
+    PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{".pkl"}')
+    print("My Queen Production")
+else:
+    api = api_paper
+    PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
+    print("My Queen Sandbox")
 
 
 
@@ -262,41 +290,14 @@ class return_pollen():
 
 pollen = return_pollen()
 
-
-# main_bg = "bee.jpg" 
-# side_bg = "bee.jpg"
-# main_bg_ext = "jpg"
-# side_bg_ext = "jpg"
-# st.markdown(
-#     f"""
-#     <style>
-#     .reportview-container {{
-#         background: url(data:image/{main_bg_ext};base64,{base64.b64encode(open(main_bg, "rb").read()).decode()})
-#     }}
-#    .sidebar .sidebar-content {{
-#         background: url(data:image/{side_bg_ext};base64,{base64.b64encode(open(side_bg, "rb").read()).decode()})
-#     }}
-#     </style>
-#     """,
-#     unsafe_allow_html=True
-# )
-
-# tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
-# tickers_avail.update({"all"})
-# ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
-# st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
-
-# we gather the labels and create a list
-# labels = list(tickers_avail.c.unique())
-
-# selected_values = st.multiselect("Select C values",tickers_avail)
-
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
 option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 # st.header(option)
 
 
 """ if "__name__" == "__main__": """
+
+
 
 if option == 'charts':
 
@@ -436,24 +437,93 @@ if option == 'queen':
 
 if option == 'signal':
 
-    db_app_dir = os.path.join(db_root, 'app')
-    client_signal = pd.read_csv(os.path.join(db_app_dir, 'signals.csv'))
-    current_orders = pollen.QUEENSMIND['orders']
-    running_orders = current_orders['running']
-    position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
-    closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
-    tickers = [i['symbol'] for i in position_orders]
-    tickers.append("NONE")
-    st.selectbox('ticker', tickers)
+    # PB_App_main_Pickle = os.path.join(db_app_root, 'queen_controls.pkl')
+    save_signals = st.selectbox('Send to Queen', ['orders', 'controls'], index=['Select'].index('Select'))
 
-    # current number avail to sell if selling order in place
-    qty_default = range(100)
-    st.selectbox('Qty', qty_default)
-    st.button("Save")
-    values = ['<select>',3, 5, 10, 15, 20, 30]
-    default_ix = values.index('<select>')
-    window_ANTICOR = st.sidebar.selectbox('Window ANTICOR', values, index=default_ix)
-    # FEATURE: replace order using client_order_id
+
+    ## SHOW CURRENT THEME
+    with st.sidebar:
+        # with st.echo():
+            # st.write("theme>>>", pollen.QUEENSMIND['collective_conscience']['theme']['current_state'])
+        st.write("theme>>>", 'theme')
+    
+    if save_signals == 'controls':
+        
+        # CHANGE Theme_list or any selections has to come from QUEEN
+        theme_list = ['high_start', 'low_start', 'strong', 'nuetral', 'short']
+        theme_option = st.selectbox('theme', theme_list, index=theme_list.index('strong'))
+        
+        sell_command = st.button("Save Controls")
+        if sell_command:
+            updates = {'theme': theme_option,
+                       'request_time': datetime.datetime.now(),
+                       'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{"__"}{datetime.datetime.now().microsecond}'
+            }
+            
+            app_queen = ReadPickleData(pickle_file=PB_App_main_Pickle)
+            app_queen['theme'].append(updates)
+            PickleData(pickle_file=PB_App_main_Pickle, data_to_store=app_queen)
+            
+            # update_queen_controls(pickle_file=PB_App_main_Pickle, dict_update=updates, queen=False)
+            st.write("Controls Saved", return_timestamp_string())
+
+    if save_signals == 'orders':
+        current_orders = pollen.QUEENSMIND['orders']
+        running_orders = current_orders['running']
+        position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
+        closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
+        c_order_ids = [i['client_order_id'] for i in position_orders]
+        c_order_iddict = {i['client_order_id']: idx for idx, i in enumerate(position_orders)}
+        c_order_ids.append("Select")
+        c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
+        if c_order_id_option != 'Select':
+            run_order = position_orders[c_order_iddict[c_order_id_option]]
+            run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, prod=False)
+            st.write(run_order_alpaca['filled_qty'] == run_order['filled_qty']) ## VALIDATION FOR RUN ORDERS
+            st.write(run_order_alpaca)
+            sell_qty_option = st.selectbox('sell_qty', list(run_order['filled_qty']))
+            type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
+
+            if save_signals == 'orders':
+                sell_command = st.button("Sell Order")
+                if sell_command:
+                    st.write("yes")
+                    # process order signal
+                    client_order_id = c_order_id_option
+                    sellable_qty = sell_qty_option
+                    
+                    order_dict = {'system': 'app',
+                    'request_time': datetime.datetime.now(),
+                    'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
+                    'side': 'sell',
+                    'type': type_option,
+                    'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+
+                    }
+                    data = ReadPickleData(pickle_file=PB_App_main_Pickle)
+                    data['orders'].append(order_dict)
+                    PickleData(pickle_file=PB_App_main_Pickle, data_to_store=data)
+                    data = ReadPickleData(pickle_file=PB_App_main_Pickle)
+                    st.write(data['orders'])
+
+
+            
+            st.write(" BUY BUY Honey to be Made")
+            
+            quick_buy_short = st.button("Lightning BUY SQQQ")
+            quick_buy_long = st.button("Lightning BUY TQQQ")
+            quick_buy_amt = st.selectbox("Lightning BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
+
+            if quick_buy_short:
+                print("buy ")
+
+            buy_option = st.selectbox('BUY', ['market', 'limit'], index=['market'].index('market'))
+            # quick_buy = st.button("Lightning BUY SQQQ")
+
+
+
+
+
 
 
 

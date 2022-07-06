@@ -28,6 +28,7 @@ import talib
 from scipy import stats
 import shutil
 import ipdb
+import json
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -35,6 +36,7 @@ prod=True
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
+db_app_root = os.path.join(db_root, 'app')
 
 current_day = datetime.datetime.now().day
 current_month = datetime.datetime.now().month
@@ -250,7 +252,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                         if idx == 0:
                             continue
                         if trig_bee == 'bee':
-                            # ipdb.set_trace()
                             # trig_bee_count+=1
                             # beename = f'{trig_name}{trig_bee_count}'
                             close_price = close[idx]
@@ -260,7 +261,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                                 trig_bee_count+=1
                             continue
                         if trig_bee_count > 0:
-                            # ipdb.set_trace()
                             # beename = f'{trig_name}{trig_bee_count}'
                             origin_trig_price = track_bees[str(int(beename) - 1)]
                             latest_price = close[idx]
@@ -273,7 +273,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                                 track_bees_profits[beename].update({idx: profit_loss})
                             else:
                                 track_bees_profits[beename] = {idx: profit_loss}
-                    # ipdb.set_trace()
                     # knights_word[trig_name]['wave'] = track_bees_profits
                     wave[ticker_time_frame][trig_name] = track_bees_profits
                     # wave[ticker_time_frame]["buy_cross-0"].keys()
@@ -332,9 +331,13 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                         row_1 = t.iloc[0]['story_index']
                         row_2 = t.iloc[-1]['story_index']
 
+                        # we want to know the how long it took to get to low? 
+
                         # Assign each waves timeblock
                         if "Day" in tframe:
                             wave_blocktime = "Day"
+                            wave_starttime = t.iloc[0]['timestamp_est']
+                            wave_endtime = t.iloc[-1]['timestamp_est']
                         else:
                             wave_starttime = t.iloc[0]['timestamp_est']
                             wave_endtime = t.iloc[-1]['timestamp_est']
@@ -371,7 +374,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 # gather current avg waves
 
                 return MACDWAVE_story
-            
             MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list)
             STORY_bee[ticker_time_frame]['waves'] = MACDWAVE_story
 
@@ -508,6 +510,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     except Exception as e:
         print("pollen_story error ", e)
         print_line_of_error()
+        print(ticker_time_frame)
         
 
 def knight_sight(df): # adds all triggers to dataframe
@@ -967,6 +970,17 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
 
 
 ### Orders ###
+
+def check_order_status(api, client_order_id, prod=True): # return raw dict form
+    if prod:
+        order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+        order_ = vars(order)['_raw']
+    else:
+        order = api_paper.get_order_by_client_order_id(client_order_id=client_order_id)
+        order_ = vars(order)['_raw']
+    return order_
+
+
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
@@ -1189,40 +1203,34 @@ def pickle_chesspiece(pickle_file, data_to_store):
 
 def PickleData(pickle_file, data_to_store): 
     # initializing data to be stored in db
-    try:
-        p_timestamp = {'file_creation': datetime.datetime.now()} 
-        
-        if os.path.exists(pickle_file) == False:
-            with open(pickle_file, 'wb+') as dbfile:
-                print("init", pickle_file)
-                db = {} 
-                db['jp_timestamp'] = p_timestamp 
-                # dbfile = open(pickle_file, 'ab')
-                pickle.dump(db, dbfile)                   
-                # dbfile.close()
+    p_timestamp = {'file_creation': datetime.datetime.now()} 
+    if os.path.exists(pickle_file) == False:
+        with open(pickle_file, 'wb+') as dbfile:
+            print("init", pickle_file)
+            db = {} 
+            db['jp_timestamp'] = p_timestamp 
+            pickle.dump(db, dbfile)                   
 
-        if data_to_store:
-            p_timestamp = {'last_modified': datetime.datetime.now()}
-            with open(pickle_file, 'wb+') as dbfile:
-                # dbfile = open(pickle_file, 'rb+')      
-                # db = pickle.load(dbfile)
-                db = {}
-                # db = pickle.load(dbfile)
-                for k, v in data_to_store.items(): 
-                    db[k] = v
-                db['last_modified'] = p_timestamp 
-                # dbfile.seek(0)
-                # dbfile.truncate()
-                pickle.dump(db, dbfile)                   
-                # dbfile.close()
+    if data_to_store:
+        p_timestamp = {'last_modified': datetime.datetime.now()}
+        db = {}
+        with open(pickle_file, 'wb+') as dbfile:
+            for k, v in data_to_store.items(): 
+                db[k] = v
+            db['last_modified'] = p_timestamp 
+            pickle.dump(db, dbfile)                   
         
         return True
-    except Exception as e:
-        print("logme", e)
-        return False
 
 
-def ReadPickleData(pickle_file): 
+def ReadPickleData(pickle_file, db_init_dict=False): 
+    p_timestamp = {'file_creation': datetime.datetime.now()} 
+    if os.path.exists(pickle_file) == False:
+        with open(pickle_file, 'wb+') as dbfile:
+            print("init", pickle_file)
+            db = {} 
+            db['jp_timestamp'] = p_timestamp 
+            pickle.dump(db, dbfile) 
     # for reading also binary mode is important try 3 times
     try:
         with open(pickle_file, "rb") as f:
@@ -1345,7 +1353,7 @@ def log_script(log_file, loginfo_dict):
 
 def read_csv_db(db_root, tablename, ext='.csv', prod=True, init=False):
     orders = False
-    main_orders_cols = ['trigname', 'client_order_id', 'origin_client_order_id', 'exit_order_link', 'date', 'lastmodified', 'selfnote']
+    main_orders_cols = ['trigname', 'client_order_id', 'origin_client_order_id', 'exit_order_link', 'date', 'lastmodified', 'selfnote', 'app_requests_id', 'bulkorder_origin__client_order_id']
 
     if init:
         def create_csv_table(cols, db_root, tablename, ext):
@@ -1427,6 +1435,7 @@ def convert_Todatetime_return_est_stringtime(date_string):
 
 def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     digit_trc_time = 1644523144856422000
+    digit_trc_time=1656785012.538478
     dt = datetime.datetime.utcfromtimestamp(digit_trc_time // 1000000000) # 9 zeros
     dt = dt.strftime('%Y-%m-%d %H:%M:%S')
     return dt
@@ -1965,3 +1974,99 @@ def return_main_chart_times(queens_chess_piece):
             "1Hour_3Month": 48, "2Hour_6Month": 72, 
             "1Day_1Year": 250}
         return chart_times
+
+
+def update_queen_controls(pickle_file, dict_update, queen=False):
+
+    data = ReadPickleData(pickle_file=pickle_file)
+    for k, v in dict_update.items():
+        data[k] = v
+    
+    if queen:
+        data['queens_last_update'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        data['app_last_update'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    
+    PickleData(pickle_file=pickle_file, data_to_store=data)        
+    
+    return data
+
+def init_app(pickle_file):
+    if os.path.exists(pickle_file) == False:
+        print("init app")
+        data = {'orders': [], 'theme': [], 'queen_processed': []}
+        PickleData(pickle_file=pickle_file, data_to_store=data)
+
+def pollen_themes():
+
+    pollen_themes = {'strong_open': {'name': 'strong_open',
+                                'desc': """SPY/overall up > 1% 
+                                            & prior X(5) days decline is Z(-5%)
+                                            
+                                            """,
+                                # 'formula': theme_calculator(POLLENSTORY, chart_times),
+                                'triggerbees_tofind': ['VWAP_GRAVITY'],
+                                'waveup' : {'morning_9-11': .3,
+                                'lunch_11-2': .1,
+                                'afternoon_2-4': .1
+                                    },
+                                'wavedown' : {'morning_9-11': .1,
+                                'lunch_11-2': .3,
+                                'afternoon_2-4': .3
+                                    }
+                                }
+                    } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
+    return pollen_themes
+
+
+
+
+
+def theme_calculator(POLLENSTORY, chart_times):
+    # ticker = 'SPY' # test
+    # chart_times = {
+    #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+    #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
+    #     "1Day_1Year": 250}
+    # return all prior 5 days close and compare to current, return angle of the different periods
+
+    theme = {'castle': {},
+            'sub_indexes': {},
+            'big_players': {}
+                }
+    tickers = set([i.split("_")[0] for i in POLLENSTORY.keys()])
+    all_tframes = chart_times.keys()
+    for ticker in tickers:
+        theme[ticker] = {}
+        for tframe in all_tframes:
+            story={}
+            # theme[ticker][] = {}
+            theme_df = POLLENSTORY[f'{ticker}{"_"}{tframe}'].copy()
+
+            if tframe == "1Minute_1Day":
+                theme_df = split_today_vs_prior(df=theme_df) # remove prior day
+                theme_today_df = theme_df['df_today']
+                theme_prior_df = theme_df['df_prior']                
+                
+                # we want...last vs currnet close prices, && Height+length of wave
+
+                # current from open price
+                open_price = theme_today_df.iloc[0]['close']
+                current_price = theme_today_df.iloc[-1]['close']
+                delta_pct = (current_price - open_price) / current_price
+                story['current_from_open'] = delta_pct
+                # current day slope
+                slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
+                story['slope'] = slope
+                
+                # how did day start
+                last_price = theme_prior_df.iloc[-1]['close']
+                delta_pct = (open_price - last_price) / open_price
+                story['open_start'] = delta_pct
+                
+                
+                
+                theme[ticker][tframe] = story
+    
+    return theme
