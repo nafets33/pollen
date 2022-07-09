@@ -43,23 +43,8 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from QueenHive import PickleData, return_timestamp_string, update_queen_controls, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+from QueenHive import ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
-
-def ReadPickleData(pickle_file): 
-    # for reading also binary mode is important try 3 times
-    try:
-        with open(pickle_file, "rb") as f:
-            return pickle.load(f)
-    except Exception as e:
-        try:
-            time.sleep(.33)
-            with open(pickle_file, "rb") as f:
-                return pickle.load(f)
-        except Exception as e:
-            print("CRITICAL ERROR logme", e)
-            return False
-
 
 prod = False
 
@@ -73,8 +58,12 @@ log_dir = dst = os.path.join(db_root, 'logs')
 
 if os.path.exists(dst) == False:
     os.mkdir(dst)
-log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(os.getcwd(), log_name)
+if prod:
+    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+else:
+    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+
+log_file = os.path.join(log_dir, log_name)
 if os.path.exists(log_file) == False:
     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
                         filemode='a',
@@ -172,16 +161,19 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
         else:
             return df.plot(x=x, y=y,figsize=figsize)
 
-st.write(prod)
+st.write("Production: ", prod)
+# st.write(prod)
 if prod:
     api = api
     PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{".pkl"}')
-    print("My Queen Production")
+    """My Queen Production"""
 else:
     api = api_paper
     PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
-    print("My Queen Sandbox")
+    """My Queen Sandbox"""
 
+
+pollen_theme = pollen_themes()
 
 
 st.button("ReRun")
@@ -255,7 +247,6 @@ def create_wave_chart_single(df, wave_col):
     fig.update_layout(height=600, width=900, title_text=title)
     return fig
 
-
 def create_wave_chart_all(df, wave_col):
     title = df.iloc[-1]['name']
     # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -270,23 +261,14 @@ def create_wave_chart_all(df, wave_col):
     fig.update_layout(height=600, width=900, title_text=title)
     return fig
 
-class return_pollen():
-    workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
-    POLLENSTORY = {}
-    STORY_bee = {}
-    KNIGHTSWORD = {}
-    ANGEL_bee = {}
-    QUEENSMIND = {}
-    for bee in workerbees:
-        chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, f'{bee}{".pkl"}'))
-        POLLENSTORY = {**POLLENSTORY, **chess_piece[bee]['pollenstory']}        
-        STORY_bee = {**STORY_bee, **chess_piece[bee]['conscience']['STORY_bee']}
-        KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece[bee]['conscience']['KNIGHTSWORD']}
-        ANGEL_bee = {**ANGEL_bee, **chess_piece[bee]['conscience']['ANGEL_bee']}
-
-        if bee == "queen":
-            QUEENSMIND = chess_piece['command_conscience']
-
+class return_pollen:
+    POLLENSTORY = read_pollenstory()
+    QUEENSMIND = read_queensmind(prod) # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
+    QUEEN = QUEENSMIND['queen']
+    # The story behind the story       
+    STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
+    KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
+    ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 pollen = return_pollen()
 
@@ -295,18 +277,16 @@ option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 # st.header(option)
 
 
-""" if "__name__" == "__main__": """
-
-
+# """ if "__name__" == "__main__": """
 
 if option == 'charts':
-
-    tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
+    pollen = return_pollen()
+    
+    tickers_avail = [set(i.split("_")[0] for i in pollen.POLLENSTORY.keys())][0]
     tickers_avail.update({"all"})
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-    pollen = return_pollen()
     ttframe_list = list(set([i.split("_")[1] for i in pollen.POLLENSTORY.keys()]))
     ttframe_list.append("all")
     frame_option = st.sidebar.selectbox("ttframes", ttframe_list)
@@ -394,8 +374,8 @@ if option == 'charts':
             st.write(df_output)
         
 
-
 if option == 'queen':
+    pollen = return_pollen()
     tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
     tickers_avail.update({"all"})
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
@@ -408,9 +388,16 @@ if option == 'queen':
 
     if command_conscience_option == 'Yes':
         st.write("memory")
-        st.write(pollen.QUEENSMIND['memory'])
+        st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
+        
+        # st.write(pollen.QUEEN['command_conscience']['memory'])
+        ORDERS = pollen.QUEEN['command_conscience']['memory']['orders_completed']
+        # queen shows only today orders
+        now_ = datetime.datetime.now()
+        orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
+        st.write(orders_today)
         st.write('orders')
-        st.write(pollen.QUEENSMIND['orders'])
+        st.write(pollen.QUEEN['command_conscience']['orders'])
 
     if orders_table == 'Yes':
         main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
@@ -436,7 +423,7 @@ if option == 'queen':
 
 
 if option == 'signal':
-
+    pollen = return_pollen()
     # PB_App_main_Pickle = os.path.join(db_app_root, 'queen_controls.pkl')
     save_signals = st.selectbox('Send to Queen', ['orders', 'controls'], index=['Select'].index('Select'))
 
@@ -444,14 +431,15 @@ if option == 'signal':
     ## SHOW CURRENT THEME
     with st.sidebar:
         # with st.echo():
-            # st.write("theme>>>", pollen.QUEENSMIND['collective_conscience']['theme']['current_state'])
-        st.write("theme>>>", 'theme')
+            # st.write("theme>>>", QUEEN['collective_conscience']['theme']['current_state'])
+        st.write("theme>>>", pollen.QUEEN['queen_controls']['theme'])
+
     
     if save_signals == 'controls':
         
         # CHANGE Theme_list or any selections has to come from QUEEN
-        theme_list = ['high_start', 'low_start', 'strong', 'nuetral', 'short']
-        theme_option = st.selectbox('theme', theme_list, index=theme_list.index('strong'))
+        theme_list = list(pollen_theme.keys())
+        theme_option = st.selectbox('theme', theme_list, index=theme_list.index('nuetral'))
         
         sell_command = st.button("Save Controls")
         if sell_command:
@@ -468,8 +456,9 @@ if option == 'signal':
             st.write("Controls Saved", return_timestamp_string())
 
     if save_signals == 'orders':
-        current_orders = pollen.QUEENSMIND['orders']
+        current_orders = pollen.QUEEN['command_conscience']['orders']
         running_orders = current_orders['running']
+        
         position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
         closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
         c_order_ids = [i['client_order_id'] for i in position_orders]

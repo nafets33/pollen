@@ -48,8 +48,12 @@ log_dir = dst = os.path.join(db_root, 'logs')
 log_dir_logs = dst = os.path.join(log_dir, 'logs')
 if os.path.exists(dst) == False:
     os.mkdir(dst)
-log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(os.getcwd(), log_name)
+if prod:
+    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+else:
+    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+
+log_file = os.path.join(log_dir, log_name)
 if os.path.exists(log_file) == False:
     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
                         filemode='a',
@@ -155,9 +159,9 @@ def read_pollenstory(): # return combined dataframes
 def read_queensmind(prod): # return active story workers
     
     if prod:
-        queen = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+        QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
     else:
-        queen = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+        QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
     # return beeworkers data
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
@@ -175,7 +179,11 @@ def read_queensmind(prod): # return active story workers
     else:
         castle_coin = False
 
-    return {'queen': queen, 
+    QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
+    QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
+    QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
+
+    return {'queen': QUEEN, 
     'bishop': bishop, 'castle': castle, 
     'STORY_bee': STORY_bee, 'KNIGHTSWORD': KNIGHTSWORD, 'ANGEL_bee': ANGEL_bee, 'castle_coin': castle_coin}
 
@@ -1976,51 +1984,98 @@ def return_main_chart_times(queens_chess_piece):
         return chart_times
 
 
-def update_queen_controls(pickle_file, dict_update, queen=False):
-
-    data = ReadPickleData(pickle_file=pickle_file)
-    for k, v in dict_update.items():
-        data[k] = v
-    
-    if queen:
-        data['queens_last_update'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        data['app_last_update'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    
-    PickleData(pickle_file=pickle_file, data_to_store=data)        
-    
-    return data
-
 def init_app(pickle_file):
     if os.path.exists(pickle_file) == False:
-        print("init app")
-        data = {'orders': [], 'theme': [], 'queen_processed': []}
-        PickleData(pickle_file=pickle_file, data_to_store=data)
+        if "_App_" in pickle_file:
+            print("init app")
+            data = {'orders': [], 'theme': [], 'queen_processed': []}
+            PickleData(pickle_file=pickle_file, data_to_store=data)
+        if "_Orders_" in pickle_file:
+            print("init Orders")
+            data = {'orders_completed': [], 'archived': []}
+            PickleData(pickle_file=pickle_file, data_to_store=data)            
+
 
 def pollen_themes():
 
-    pollen_themes = {'strong_open': {'name': 'strong_open',
-                                'desc': """SPY/overall up > 1% 
-                                            & prior X(5) days decline is Z(-5%)
-                                            
-                                            """,
-                                # 'formula': theme_calculator(POLLENSTORY, chart_times),
-                                'triggerbees_tofind': ['VWAP_GRAVITY'],
-                                'waveup' : {'morning_9-11': .3,
+    pollen_themes = {
+        'nuetral': {'name': 'nuetral',
+                    'desc': """Start Even, Seek Forever, Never Shy, Greatness awaits
+                            """,
+                    'triggerbees_tofind': [],
+                    'waveup' : {'morning_9-11': .05,
+                            'lunch_11-2': .05,
+                            'afternoon_2-4': .05
+                            },
+                    'wavedown' : {'morning_9-11': .03,
+                                'lunch_11-2': .03,
+                                'afternoon_2-4': .03
+                            }
+                },
+        'strong_open': {'name': 'strong_open',
+                        'desc': """SPY/overall up > 1% 
+                                & prior X(5) days decline is Z(-5%)
+                                
+                                """,
+                        'triggerbees_tofind': ['VWAP_GRAVITY', 'SCALP'],
+                        'waveup' : {'morning_9-11': .1,
                                 'lunch_11-2': .1,
                                 'afternoon_2-4': .1
-                                    },
-                                'wavedown' : {'morning_9-11': .1,
-                                'lunch_11-2': .3,
-                                'afternoon_2-4': .3
-                                    }
+                                },
+                        'wavedown' : {'morning_9-11': .05,
+                                    'lunch_11-2': .05,
+                                    'afternoon_2-4': .05
                                 }
-                    } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
+                    }
+        } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     return pollen_themes
 
 
 
+def init_QUEEN():
+    QUEEN = { # The Queens Mind
+        'last_modified': datetime.datetime.now(),
+        'command_conscience': {'memory': {'trigger_stopped': [],'trigger_sell_stopped': [], 'orders_completed': [],}, 
+                            'orders': { 'requests': [],
+                                            'submitted': [],
+                                            'running': [],
+                                            'running_close': []}
+                                            },
+            
+        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+        'heartbeat': {}, # ticker info ... change name
+        'kings_order_rules': {},
+        'queen_controls': { 'theme': 'nuetral',
+                            'app_order_requests': [],
+                            'orders': []},
+        # Worker Bees
+        queens_chess_piece: {
+        'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+        'pollenstory': {}, # latest story of dataframes castle and bishop
+        'pollencharts': {}, # latest chart rebuild
+        'pollencharts_nectar': {}, # latest chart rebuild with indicators
+        'pollenstory_info': {}, # Misc Info,
+        'client': {},
+        # 'heartbeat': {},
+        'last_modified' : datetime.datetime.now(),
+        }
+    }
+    return QUEEN
+
+
+def add_key_to_chesspiecePICKLE_if_key_does_not_exist(QUEEN, queens_chess_piece): # returns QUEES
+    q_keys = QUEEN.keys()
+    latest_queen = init_QUEEN()
+    for k, v in latest_queen.items():
+        if k not in q_keys:
+            QUEEN[k] = v
+            update=True
+            msg = f'{k}{"Key Updated to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+        else:
+            update=False
+    return QUEEN
 
 
 def theme_calculator(POLLENSTORY, chart_times):

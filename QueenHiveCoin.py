@@ -28,6 +28,7 @@ import talib
 from scipy import stats
 import shutil
 
+prod = True
 queens_chess_piece = os.path.basename(__file__)
 
 main_root = os.getcwd()
@@ -43,8 +44,12 @@ log_dir = dst = os.path.join(db_root, 'logs')
 log_dir_logs = dst = os.path.join(log_dir, 'logs')
 if os.path.exists(dst) == False:
     os.mkdir(dst)
-log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(os.getcwd(), log_name)
+if prod:
+    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+else:
+    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+
+log_file = os.path.join(log_dir, log_name)
 if os.path.exists(log_file) == False:
     logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
                         filemode='a',

@@ -41,8 +41,8 @@ from QueenHive import pollen_story, return_api_keys, pickle_chesspiece, PickleDa
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
 # script arguments
-queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
-# queens_chess_piece = 'castle_coin'
+# queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
+queens_chess_piece = 'castle_coin'
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 load_dotenv()
@@ -57,8 +57,12 @@ log_dir = dst = os.path.join(db_root, 'logs')
 log_dir_logs = dst = os.path.join(log_dir, 'logs')
 if os.path.exists(dst) == False:
     os.mkdir(dst)
-log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(os.getcwd(), log_name)
+if prod:
+    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+else:
+    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+
+log_file = os.path.join(log_dir, log_name)
 if loglog_newfile:
     # copy log file to log dir & del current log file
     datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
@@ -191,7 +195,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
                 # market_hours_data = df.between_time('9:30', '16:00')
                 # market_hours_data = market_hours_data.reset_index()
                 market_hours_data = df
-                print(time_frame, df.iloc[-1][['timestamp_est']])
+                # print(time_frame, df.iloc[-1][['timestamp_est']])
                 for ticker in ticker_list:
                     df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
                     dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
@@ -234,7 +238,7 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
 def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & consider using day.min.chart to rebuild other timeframes
     ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
 
-
+    # snapshots = {tic: api.get_crypto_snapshot(tic, exchange='CBSE') for tic in ticker_list}
     snapshots = {}
     for tic in ticker_list:
         snapshot = api.get_crypto_snapshot(tic, exchange='CBSE')
@@ -256,7 +260,8 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
             'open': snapshots[ticker].daily_bar.open,
             'volume': snapshots[ticker].daily_bar.volume,
             'trade_count': snapshots[ticker].daily_bar.trade_count,
-            'vwap': snapshots[ticker].daily_bar.vwap
+            'vwap': snapshots[ticker].daily_bar.vwap,
+            'exchange': snapshots[ticker].daily_bar.exchange,
             }
             df_daily = pd.Series(dl).to_frame().T  # reshape dataframe
             for i in float_cols:
@@ -275,7 +280,8 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
                 'open': snapshots[ticker].latest_trade.price,
                 'volume': snapshots[ticker].minute_bar.volume,
                 'trade_count': snapshots[ticker].minute_bar.trade_count,
-                'vwap': snapshots[ticker].minute_bar.vwap
+                'vwap': snapshots[ticker].minute_bar.vwap,
+                'exchange': snapshots[ticker].minute_bar.exchange,
                 }
             df_minute = pd.Series(d).to_frame().T
             for i in float_cols:
@@ -307,8 +313,8 @@ def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & co
                 df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
                 main_return_dict[ticker_time] = df_rebuild
             else:
-                ipdb.set_trace()
-                print(df[['timestamp_est']].tail(2))
+                # ipdb.set_trace()
+                # print(df[['name', 'timestamp_est']].tail(2))
                 df = df.head(-1) # drop last row which has current day
                 df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
                 main_return_dict[ticker_time] = df_rebuild
@@ -335,13 +341,13 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
             timedelta_minutes = (now - last).seconds / 60
             now_day = now.day
             last_day = last.day
+            # ipdb.set_trace()
             if now_day != last_day:
                 return_dict[ticker_time] = df
                 continue
 
             if "1minute" == timeframe.lower():
                 if timedelta_minutes > 2:
-                    # ipdb.set_trace()
                     dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
@@ -436,9 +442,9 @@ def pollen_hunt(df_tickers_data, MACD):
     # re-add snapshot
     df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
     now = datetime.datetime.now()
-    print(now)
-    t = df_tickers_data_rebuilt['BTCUSD_5Minute_5Day']
-    print(t[['timestamp_est', 'close']].tail(2))
+    # print(now)
+    # t = df_tickers_data_rebuilt['BTCUSD_5Minute_5Day']
+    # print(t[['timestamp_est', 'close']].tail(2))
     # ipdb.set_trace()
     main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
     chart_rebuild_dict = {}
@@ -474,8 +480,8 @@ if queens_chess_piece == 'castle_coin':
     #     os.remove(PB_Story_Pickle)
     chart_times_castle = {
             "1Minute_1Day": 1, "5Minute_5Day": 5,
-            # "30Minute_1Month": 18, 
-            # "1Hour_3Month": 48, "2Hour_6Month": 72, 
+            "30Minute_1Month": 18, 
+            "1Hour_3Month": 48, "2Hour_6Month": 72, 
             "1Day_1Year": 250}
 
 
@@ -550,7 +556,7 @@ try:
             cycle_run_time = (e-s)
             if cycle_run_time.seconds > 5:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info("cycle_time > 5 seconds", cycle_run_time)
+                logging.info("cycle_time > 5 seconds", cycle_run_time.seconds)
             workerbee_run_times.append(cycle_run_time)
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
             print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
