@@ -43,7 +43,7 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from QueenHive import ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+from QueenHive import return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 
 prod = False
@@ -90,7 +90,7 @@ load_dotenv()
 # >>> initiate db directories
 system = 'windows' #mac, windows
 
-""" Keys """
+# """ Keys """
 api_key_id = os.environ.get('APCA_API_KEY_ID')
 api_secret = os.environ.get('APCA_API_SECRET_KEY')
 base_url = "https://api.alpaca.markets"
@@ -111,11 +111,14 @@ api_paper = keys_paper[0]['api']
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
+
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
 client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
 df_client = pd.read_csv(client_ticker_file, dtype=str)
 client_symbols = df_client.tickers.to_list()
+crypto_currency_symbols = ['BTCUSD', 'ETHUSD']
+coin_exchange = "CBSE"
 
 main_root = os.getcwd() 
 db_root = os.path.join(main_root, 'db') 
@@ -161,16 +164,16 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
         else:
             return df.plot(x=x, y=y,figsize=figsize)
 
-st.write("Production: ", prod)
+st.sidebar.write("Production: ", prod)
 # st.write(prod)
 if prod:
     api = api
-    PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{".pkl"}')
-    """My Queen Production"""
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
+    st.sidebar.write("""My Queen Production""")
 else:
     api = api_paper
-    PB_App_main_Pickle = os.path.join(db_app_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
-    """My Queen Sandbox"""
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
+    st.sidebar.write("""My Queen Sandbox""")
 
 
 pollen_theme = pollen_themes()
@@ -295,25 +298,16 @@ if option == 'charts':
     wave_option = st.sidebar.selectbox('Show Waves', ['yes', 'no'], index=['yes'].index('yes'))
     
     if frame_option == 'all':
-        for ttframe, df in pollen.POLLENSTORY.items():
-            selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
-            for ticker_time_frame in selections:
-                df = pollen.POLLENSTORY[ticker_time_frame]
-                # if df.iloc[-1]['open'] == 0:
-                #     df = df.head(-1)
-                fig = create_main_macd_chart(df)
+        print("TDB")
+        # for ttframe, df in pollen.POLLENSTORY.items():
+        #     selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] == ticker_option]
+        #     for ticker_time_frame in selections:
+        #         df = pollen.POLLENSTORY[ticker_time_frame]
+        #         # if df.iloc[-1]['open'] == 0:
+        #         #     df = df.head(-1)
+        #         fig = create_main_macd_chart(df)
                 
-                st.write(fig)
-
-
-            # df_day = df['timestamp_est'].iloc[-1]
-            # df['date'] = df['timestamp_est'] # test
-            # df = df.set_index('timestamp_est') # test
-            # # between certian times
-            # df_t = df.between_time('9:30', '12:00')
-            # df_t = df_t[df_t.index.day == df_day.day].copy() # remove yesterday
-            # chart = create_main_macd_chart(df=df)
-            # st.write(chart)
+        #         st.write(fig)
 
     else:
         selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
@@ -385,6 +379,11 @@ if option == 'queen':
     orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
     pollen = return_pollen()
     today_day = datetime.datetime.now().day
+    col11, col22 = st.columns(2)
+    with col11:
+        st.write("current errors")
+    with col22:
+        st.write(pollen.QUEEN["errors"])
 
     if command_conscience_option == 'Yes':
         st.write("memory")
@@ -398,6 +397,18 @@ if option == 'queen':
         st.write(orders_today)
         st.write('orders')
         st.write(pollen.QUEEN['command_conscience']['orders'])
+
+        col1_a, col2_b, = st.columns(2)
+
+        with col2_b:
+            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">memory</p>'
+            st.markdown(new_title, unsafe_allow_html=True)
+            # st.write("memory")
+        # with col2_a:
+        st.write("trigger_stopped")
+        st.write(pollen.QUEEN['command_conscience']['memory']['trigger_stopped'])
+        st.write("trigger_sell_stopped")
+        st.write(pollen.QUEEN['command_conscience']['memory']['trigger_sell_stopped'])
 
     if orders_table == 'Yes':
         main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
@@ -424,8 +435,8 @@ if option == 'queen':
 
 if option == 'signal':
     pollen = return_pollen()
-    # PB_App_main_Pickle = os.path.join(db_app_root, 'queen_controls.pkl')
-    save_signals = st.selectbox('Send to Queen', ['orders', 'controls'], index=['Select'].index('Select'))
+    # PB_App_Pickle = os.path.join(db_app_root, 'queen_controls.pkl')
+    save_signals = st.selectbox('Send to Queen', ['beeaction', 'orders', 'controls'], index=['Select'].index('Select'))
 
 
     ## SHOW CURRENT THEME
@@ -443,22 +454,26 @@ if option == 'signal':
         
         sell_command = st.button("Save Controls")
         if sell_command:
-            updates = {'theme': theme_option,
-                       'request_time': datetime.datetime.now(),
-                       'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{"__"}{datetime.datetime.now().microsecond}'
-            }
+            # updates = {'theme': theme_option,
+            #            'request_time': datetime.datetime.now(),
+            #            'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{"__"}{datetime.datetime.now().microsecond}'
+            # }
             
-            app_queen = ReadPickleData(pickle_file=PB_App_main_Pickle)
-            app_queen['theme'].append(updates)
-            PickleData(pickle_file=PB_App_main_Pickle, data_to_store=app_queen)
+            APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+            APP_requests['theme'] = theme_option
+            APP_requests['last_app_update'] = datetime.datetime.now()
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
             
-            # update_queen_controls(pickle_file=PB_App_main_Pickle, dict_update=updates, queen=False)
+            # update_queen_controls(pickle_file=PB_App_Pickle, dict_update=updates, queen=False)
             st.write("Controls Saved", return_timestamp_string())
 
     if save_signals == 'orders':
         current_orders = pollen.QUEEN['command_conscience']['orders']
         running_orders = current_orders['running']
         
+        running_portfolio = return_dfshaped_orders(running_orders)
+        st.write(running_portfolio)
+
         position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
         closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
         c_order_ids = [i['client_order_id'] for i in position_orders]
@@ -467,16 +482,20 @@ if option == 'signal':
         c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
         if c_order_id_option != 'Select':
             run_order = position_orders[c_order_iddict[c_order_id_option]]
-            run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, prod=False)
+            run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=False)
             st.write(run_order_alpaca['filled_qty'] == run_order['filled_qty']) ## VALIDATION FOR RUN ORDERS
             st.write(run_order_alpaca)
-            sell_qty_option = st.selectbox('sell_qty', list(run_order['filled_qty']))
+            st.write(run_order['filled_qty'])
+            sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']))
+            # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
             type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
 
-            if save_signals == 'orders':
-                sell_command = st.button("Sell Order")
-                if sell_command:
-                    st.write("yes")
+            sell_command = st.button("Sell Order")
+            if sell_command:
+                st.write("yes")
+                # val qty
+                if sell_qty_option > 0 and sell_qty_option <= float(run_order['filled_qty']):
+                    print("qty validated")
                     # process order signal
                     client_order_id = c_order_id_option
                     sellable_qty = sell_qty_option
@@ -489,24 +508,74 @@ if option == 'signal':
                     'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
 
                     }
-                    data = ReadPickleData(pickle_file=PB_App_main_Pickle)
-                    data['orders'].append(order_dict)
-                    PickleData(pickle_file=PB_App_main_Pickle, data_to_store=data)
-                    data = ReadPickleData(pickle_file=PB_App_main_Pickle)
-                    st.write(data['orders'])
+                    data = ReadPickleData(pickle_file=PB_App_Pickle)
+                    data['sell_orders'].append(order_dict)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+                    data = ReadPickleData(pickle_file=PB_App_Pickle)
+                    st.write(data['sell_orders'])
 
+    if save_signals == 'beeaction':
+        st.write("beeaction")
 
+        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">BUY BUY Honey to be Made</p>'
+        st.markdown(new_title, unsafe_allow_html=True)
+        
+        quick_buy_short = st.button("FLASH BUY SQQQ")
+        quick_buy_long = st.button("FLASH BUY TQQQ")
+        quick_buy_BTC = st.button("FLASH BUY BTC")
+        quick_buy_amt = st.selectbox("FLASH BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
+        
+        type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
+
+        if quick_buy_short or quick_buy_long or quick_buy_BTC:
             
-            st.write(" BUY BUY Honey to be Made")
-            
-            quick_buy_short = st.button("Lightning BUY SQQQ")
-            quick_buy_long = st.button("Lightning BUY TQQQ")
-            quick_buy_amt = st.selectbox("Lightning BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
-
             if quick_buy_short:
-                print("buy ")
+                ticker = "SQQQQ"
+            elif quick_buy_long:
+                ticker = "TQQQ"
+            elif quick_buy_BTC:
+                ticker = "BTCUSD"
+            
+            print("buy buy meee, sending app request")
+            # get price convert to amount
+            if ticker in crypto_currency_symbols:
+                crypto = True
+                snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+                current_price = snap.latest_trade.price
+            else:
+                crypto = False
+                snap = api.get_snapshot(ticker)
+                current_price = snap.latest_trade.price
+            
+            info = api.get_account()
+            total_buying_power = info.buying_power # what is the % amount you want to buy?
 
-            buy_option = st.selectbox('BUY', ['market', 'limit'], index=['market'].index('market'))
+
+            validation = True # not > 50% of buying power COIN later
+            
+            if validation:
+                print("qty validated")
+                # process order signal                
+                order_dict = {'ticker': ticker,
+                'system': 'app',
+                'trig': 'app',
+                'request_time': datetime.datetime.now(),
+                'wave_amo': quick_buy_amt,
+                'app_seen_price': current_price,
+                'side': 'buy',
+                'type': type_option,
+                'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+                }
+
+                data = ReadPickleData(pickle_file=PB_App_Pickle)
+                data['buy_orders'].append(order_dict)
+                PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+                data = ReadPickleData(pickle_file=PB_App_Pickle)
+                st.write(data['buy_orders'])
+
+
+            
+            # buy_option = st.selectbox('BUY', ['market', 'limit'], index=['market'].index('market'))
             # quick_buy = st.button("Lightning BUY SQQQ")
 
 

@@ -173,9 +173,9 @@ def read_queensmind(prod): # return active story workers
     
     if os.path.exists(os.path.join(db_root, 'castle_coin.pkl')):
         castle_coin = ReadPickleData(pickle_file=os.path.join(db_root, 'castle_coin.pkl'))['castle_coin']
-        STORY_bee = {**STORY_bee, **castle['conscience']['STORY_bee']}
-        KNIGHTSWORD = {**KNIGHTSWORD, **castle['conscience']['KNIGHTSWORD']}
-        ANGEL_bee = {**ANGEL_bee, **castle['conscience']['ANGEL_bee']}
+        STORY_bee = {**STORY_bee, **castle_coin['conscience']['STORY_bee']}
+        KNIGHTSWORD = {**KNIGHTSWORD, **castle_coin['conscience']['KNIGHTSWORD']}
+        ANGEL_bee = {**ANGEL_bee, **castle_coin['conscience']['ANGEL_bee']}
     else:
         castle_coin = False
 
@@ -979,7 +979,10 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
 
 ### Orders ###
 
-def check_order_status(api, client_order_id, prod=True): # return raw dict form
+def check_order_status(api, client_order_id, queen_order=False, prod=True): # return raw dict form
+    if queen_order:
+        if "queen_gen" == queen_order['trigname']:
+            return queen_order
     if prod:
         order = api.get_order_by_client_order_id(client_order_id=client_order_id)
         order_ = vars(order)['_raw']
@@ -988,6 +991,11 @@ def check_order_status(api, client_order_id, prod=True): # return raw dict form
         order_ = vars(order)['_raw']
     return order_
 
+
+# def update_QUEEN_with_order_status(api, order):
+#     q_order = [i for i in QUEEN["command_conscience"]["orders"] if i["client_order_id"] == order["client_order_id"]][0]
+#     QUEEN[]
+#     return True
 
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
@@ -2034,6 +2042,7 @@ def pollen_themes():
 
 def init_QUEEN():
     QUEEN = { # The Queens Mind
+        'prod': "",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {'memory': {'trigger_stopped': [],'trigger_sell_stopped': [], 'orders_completed': [],}, 
                             'orders': { 'requests': [],
@@ -2047,7 +2056,10 @@ def init_QUEEN():
         'kings_order_rules': {},
         'queen_controls': { 'theme': 'nuetral',
                             'app_order_requests': [],
-                            'orders': []},
+                            'orders': [],
+                            'last_read_app': datetime.datetime.now(),},
+        'errors': {},
+        'client_order_ids_qgen': [],
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -2063,6 +2075,30 @@ def init_QUEEN():
     return QUEEN
 
 
+def init_QUEEN_App():
+    app = {'theme': '', 'app_order_requests': [], 
+    'sell_orders': [], 'buy_orders': [], 
+    'last_modified': datetime.datetime.now(),
+    'queen_processed_orders': [],
+    }
+    return app
+
+
+def add_key_to_app(APP_requests): # returns QUEES
+    q_keys = APP_requests.keys()
+    latest_queen = init_QUEEN_App()
+    for k, v in latest_queen.items():
+        if k not in q_keys:
+            APP_requests[k] = v
+            update=True
+            msg = f'{k}{" : Key Updated to "}'
+            print(msg)
+            logging.info(msg)
+        else:
+            update=False
+    return APP_requests
+
+
 def add_key_to_chesspiecePICKLE_if_key_does_not_exist(QUEEN, queens_chess_piece): # returns QUEES
     q_keys = QUEEN.keys()
     latest_queen = init_QUEEN()
@@ -2070,12 +2106,26 @@ def add_key_to_chesspiecePICKLE_if_key_does_not_exist(QUEEN, queens_chess_piece)
         if k not in q_keys:
             QUEEN[k] = v
             update=True
-            msg = f'{k}{"Key Updated to "}{queens_chess_piece}'
+            msg = f'{k}{" : Key Updated to "}{queens_chess_piece}'
             print(msg)
             logging.info(msg)
         else:
             update=False
     return QUEEN
+
+
+def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
+    running_orders_df = pd.DataFrame(running_orders)
+    if len(running_orders_df) > 0:
+        running_orders_df = running_orders_df[running_orders_df['portfolio_name']==portfolio_name].copy()
+        running_portfolio = running_orders_df.groupby('symbol')['filled_qty'].sum().reset_index()
+    else:
+        running_portfolio = [] # empty
+    
+    return running_portfolio
+
+
+
 
 
 def theme_calculator(POLLENSTORY, chart_times):
