@@ -36,9 +36,11 @@ from scipy import stats
 import hashlib
 import json
 from collections import deque
-from QueenHive import return_dfshaped_orders, add_key_to_app, init_QUEEN, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_chesspiecePICKLE_if_key_does_not_exist
+from QueenHive import return_market_hours, return_dfshaped_orders, add_key_to_app, init_QUEEN, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_chesspiecePICKLE_if_key_does_not_exist
 # from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
+# if prior day abs(change) > 1 ignore ticker for the day! 
+ 
 # script arguments
 # queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
 queens_chess_piece = 'queen'
@@ -295,6 +297,39 @@ Always Bee Better
 """
 )
 
+            
+def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False):
+    
+    if side == 'buy':
+        return {'qty_correction': qty}
+    else: # sel == sell
+        position = float(portfolio[ticker]['qty_available'])
+        if position > 0 and position < qty:
+            msg = {"submit_order_validation()": {'p': position,  'msg': "not enough shares avail to sell, updating sell qty", 'ticker': ticker}}
+            logging.error(msg)
+            QUEEN["errors"].update({f'{symbol}{"_portfolio!=queen"}': {'msg': msg}})
+            
+            qty_correction = position - qty
+            if run_order_idx: # update run_order
+                print('Correcting Run Order Qty')
+                msg = {"submit_order_validation()": {'p': position,  'msg': "not enough shares avail to sell, updating sell qty & RUN Index", 'ticker': ticker}}
+                logging.error(msg)
+
+                QUEEN['command_conscience']['orders']['running'][run_order_idx]['filled_qty'] = qty_correction
+                QUEEN['command_conscience']['orders']['running'][run_order_idx]['status_q'] = True
+                QUEEN['command_conscience']['orders']['running'][run_order_idx]['original_fulflled_qty'] = qty
+            
+            return {'qty_correction': qty_correction}
+        else:
+            return {'qty_correction': qty}
+
+
+
+def return_alpc_portolio(api):
+    all_positions = api.list_positions()
+    portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
+    return {'portfolio': portfolio}
+
 
 def reconcile_portfolio(running_orders, portfolio, portfolio_name='Jq'):  # IF MISSING FROM RUNNING ADD
     # If Ticker in portfolio but not in RUNNING !!!!!! Need to consider changing to qty_available from pending close orders
@@ -312,10 +347,11 @@ def reconcile_portfolio(running_orders, portfolio, portfolio_name='Jq'):  # IF M
                 logging.error(msg)
                 
                 # create a system gen. running order with portfolio info
-                filled_qty = portfolio[symbol]["qty_available"]
+                filled_qty = float(portfolio[symbol]["qty"])
                 filled_avg_price = portfolio[symbol]["avg_entry_price"]
                 side = portfolio[symbol]["side"]
-                system_recon = {'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': side}
+                req_qty = portfolio[symbol]["qty"]
+                system_recon = {'req_qty': req_qty, 'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': side}
                 ticker_time_frame = f'{"symbol"}{"_queen_gen"}'
                 trig = 'queen_gen'
                 order = {'symbol': symbol, 'side': False, "id": "pollen_recon", 'client_order_id': generate_client_order_id(QUEEN=QUEEN,ticker=symbol, trig=trig)}
@@ -324,22 +360,42 @@ def reconcile_portfolio(running_orders, portfolio, portfolio_name='Jq'):  # IF M
                 QUEEN['command_conscience']['orders']['running'].append(order_process['sending_order'])
                 QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
             else: # symbol is in running check our totals
-                total_running_ticker_qty = running_portfolio[running_portfolio['symbol']==symbol].iloc[0]['filled_qty']
-                total_portfolio_ticker_qty = portfolio[symbol]["qty_available"]
+                total_running_ticker_qty = float(running_portfolio[running_portfolio['symbol']==symbol].iloc[0]['filled_qty'])
+                total_portfolio_ticker_qty = float(portfolio[symbol]["qty"])
                 # !!! check in running_close to see if you have an open order to match qty !!!
                 if total_running_ticker_qty != total_portfolio_ticker_qty:
-                    # print(symbol, ": qty does not match, create new running order to account for disparity OR find buy order?")
+                    print(symbol, ": qty does not match, adjust running order to fix")
                     QUEEN["errors"].update({symbol: {'msg': "recon portfolio qty does not match!", 'root': "reconcile_portfolio"}})
+                    run_order_ = {idx: i for (idx, i) in enumerate(QUEEN["command_conscience"]["orders"]["running"]) if i['symbol']==symbol}
+                    if run_order_:
+                        QUEEN["command_conscience"]["orders"]["running"][list(run_order_.keys())[0]]['filled_qty'] = total_portfolio_ticker_qty
+                        QUEEN["command_conscience"]["orders"]["running"][list(run_order_.keys())[0]]['status_q'] = True
+                    
+                    # # update any running order
+                    # if total_running_ticker_qty > total_portfolio_ticker_qty: # if T_run > portfolio 
+                    #     qty_correction = total_portfolio_ticker_qty - (total_running_ticker_qty - total_portfolio_ticker_qty)
+                    #     QUEEN["command_conscience"]["orders"]["running"][0]['filled_qty'] = qty_correction
+                    #     QUEEN["command_conscience"]["orders"]["running"][0]['status_q'] = True
+                    # else:
+                    #     if total_portfolio_ticker_qty < 0: # short
+                    #         qty_correction = (total_running_ticker_qty-total_portfolio_ticker_qty)
+                    #     else:
+                    #         qty_correction = total_running_ticker_qty + (total_portfolio_ticker_qty- total_running_ticker_qty)
+                        
+                    #     QUEEN["command_conscience"]["orders"]["running"][0]['filled_qty'] = qty_correction
+                    #     QUEEN["command_conscience"]["orders"]["running"][0]['status_q'] = True
+
         else:
             msg = {"reconcile_portfolio()": f'{symbol}{": was missing added to RUNNING"}'}
             print(msg)
             logging.error(msg)
             
             # create a system gen. running order with portfolio info
-            filled_qty = portfolio[symbol]["qty_available"]
-            filled_avg_price = portfolio[symbol]["avg_entry_price"]
+            filled_qty = float(portfolio[symbol]["qty_available"])
+            filled_avg_price = float(portfolio[symbol]["avg_entry_price"])
             side = portfolio[symbol]["side"]
-            system_recon = {'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': side}
+            req_qty = float(portfolio[symbol]["qty_available"])
+            system_recon = {'req_qty': req_qty, 'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': side}
             ticker_time_frame = f'{"symbol"}{"_1Minute_1Day"}'
             trig = 'queen_gen'
             order = {'symbol': symbol, 'side': False, "id": "pollen_recon", 'client_order_id': generate_client_order_id(QUEEN=QUEEN,ticker=symbol, trig=trig)}
@@ -347,20 +403,10 @@ def reconcile_portfolio(running_orders, portfolio, portfolio_name='Jq'):  # IF M
             order_process = process_order_submission(prod=prod, order=order, trig=trig, tablename='main_orders', ticker_time_frame=False, system_recon=system_recon)
             QUEEN['command_conscience']['orders']['running'].append(order_process['sending_order'])
             QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
+            # PickleData(PB_Story_Pickle, QUEEN)
     
     return True
 
-
-def liquidate_position(api, ticker, side, type, client_order_id): # TBD
-    client_order_id = f'{ticker}{"_"}{side}{"_"}{datetime.datetime.now().isoformat()}'
-    p = api.get_position(ticker)
-    p_qty = p.qty
-    p_side = p.side
-    if type ==  'market':
-        order = submit_order(api=api, side=side, symbol=ticker, qty=p_qty, type=type, client_order_id=client_order_id)
-    else:
-        print("make this a limit order")
-    return order
 
 
 # def all_client_order_ids():
@@ -434,6 +480,7 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
                             'portfolio_name': portfolio_name,
                             'exit_order_link': exit_order_link, 'client_order_id': order['client_order_id'],
                             'system_recon': True,
+                            'req_qty': system_recon['req_qty'],
                             'filled_qty': system_recon['filled_qty'],
                             'filled_avg_price': system_recon['filled_avg_price'],
                             'side': system_recon['side'],
@@ -450,6 +497,7 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
                             'portfolio_name': portfolio_name,
                             'exit_order_link': exit_order_link, 'client_order_id': order['client_order_id'],
                             'system_recon': False,
+                            'req_qty': order['qty'],
                             'filled_qty': order['filled_qty'],
                             'filled_avg_price': order['filled_avg_price'],
                             'side': order['side'],
@@ -466,6 +514,7 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
                             'portfolio_name': portfolio_name,
                             'exit_order_link': exit_order_link, 'client_order_id': order['client_order_id'],
                             'system_recon': False,
+                            'req_qty': order['qty'],
                             'filled_qty': order['filled_qty'],
                             'filled_avg_price': order['filled_avg_price'],
                             'side': order['side'],
@@ -558,16 +607,17 @@ def recon_running_trigger_stops(QUEEN):
     return True
 
 
-def process_app_buy_requests(APP_requests):
+def process_app_requests(APP_requests, buy_sell):
     APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+    buy_sell = "buy_orders" # buy_orders
     # theme, sell, buy
-    app_order_base = [i for i in APP_requests['buy_orders']]
+    app_order_base = [i for i in APP_requests[buy_sell]]
     if app_order_base:
         for app_request in app_order_base:
             if app_request['app_requests_id'] in QUEEN['queen_controls']['app_order_requests']:
                 print("request Id already received")
                 APP_requests['app_order_requests'].append(app_request)
-                APP_requests['buy_orders'].remove(app_request)
+                APP_requests[buy_sell].remove(app_request)
                 PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
                 order_flag = False
             else:
@@ -587,13 +637,12 @@ def process_app_buy_requests(APP_requests):
 
 
 
-
 """  >>>><<<< MAIN <<<<>>>> """
 
 def command_conscience(api, pollen):
 
     
-    def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig):
+    def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio):
         try:
             print(ticker_time_frame)
             logging.info(ticker_time_frame)
@@ -631,7 +680,10 @@ def command_conscience(api, pollen):
             
             # return num of trig for client_order_id
             order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
-            
+
+            send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
+            qty_order = send_order_val['qty_correction'] # same return unless more validation done here
+
             # ONLY allows Market
             if type == 'market':
                 order_submit = submit_order(api=api, symbol=ticker, type=type, qty=qty_order, side=side, client_order_id=order_id) # buy
@@ -664,124 +716,144 @@ def command_conscience(api, pollen):
             sys.exit()
 
     
+    def king_knights_requests(trigbee, ticker_time_frame, trig_action=False, crypto=False):
+        # answer all questions for order to be placed, compare against the rules
+        
+        def knigh_request_recon_portfolio():
+            # debate if we should place a new order based on current portfolio trades
+            pass
+        
+        
+        def eval_trig_action():
+            # evaluate if the current trade needs more love$
+            pass
+
+
+        ticker, tframe, frame = ticker_time_frame.split("_")
+        decision = {}
+        # Waves: current wave, answer questions what happen with proir waves
+        waves = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame]['waves'][trigbee]
+        if "0" in waves.keys():
+            waves.pop("0")
+        total_waves = len(waves.keys())
+        morning_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "morning_9-11"}
+        lunch_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "lunch_11-2"}
+        afternoon_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "afternoon_2-4"}
+
+        # Total Buying Power
+        info = api.get_account()
+        total_buying_power = info.buying_power # what is the % amount you want to buy?
+        app_portfolio_day_trade_allowed = .8
+        app_portfolio_long_trade_allowed = .2
+        if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
+            print("Critical Error Fix buying power numbers")
+            sys.exit()
+        
+        # wave power allowance
+        app_portfolio_waveup_buying_power = .6
+        app_portfolio_wavedown_buying_power = .4
+        if app_portfolio_waveup_buying_power + app_portfolio_wavedown_buying_power != 1:
+            print("Critical Error Fix buying power numbers")
+            sys.exit()
+        
+        client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
+        
+        theme = QUEEN['queen_controls']['theme'] # what is the theme?
+
+        # for bee in all_bees:
+        if trigbee == 'buy_cross-0':
+            # Q?confirmation on trigger, should you wait for futher confirmation?
+
+            theme_buyingpower = {
+            'morning_9-11' : pollen_theme_dict[theme]['waveup']['morning_9-11'],
+            'lunch_11-2' : pollen_theme_dict[theme]['waveup']['lunch_11-2'],
+            'afternoon_2-4' : pollen_theme_dict[theme]['waveup']['afternoon_2-4'],
+            }
+
+            # what is your timeblock?
+            
+            # what does your friend_links(bees) say? or have said?
+            
+            # current wave
+            current_wave_index = list(waves.keys())[len(waves)-1]
+            current_wave = waves[current_wave_index]
+            current_wave_blocktime = current_wave['wave_blocktime']
+            current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]
+            
+            # total budget
+            client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
+
+            order_type = "market"
+            wave_amo = current_wave_amo * client_totalday_trade_amt_allowed
+            
+            # how many trades have we completed today? whats our total profit loss with wave trades
+            
+            # should you override your original order rules?
+
+            kings_blessing = True
+
+            if trig_action:
+                print("evalatue if there is another trade to make on top of current wave")
+                kings_blessing = False
+
+
+        if trigbee == 'sell_cross-0':
+            # Q?confirmation on trigger, should you wait for futher confirmation?
+
+            theme_buyingpower = {
+            'morning_9-11' : pollen_theme_dict[theme]['wavedown']['morning_9-11'],
+            'lunch_11-2' : pollen_theme_dict[theme]['wavedown']['lunch_11-2'],
+            'afternoon_2-4' : pollen_theme_dict[theme]['wavedown']['afternoon_2-4'],
+            }
+            
+            # current wave
+            current_wave_index = list(waves.keys())[len(waves)-1]
+            current_wave = waves[current_wave_index]
+            current_wave_blocktime = current_wave['wave_blocktime']
+            current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]
+
+            order_type = "market"
+            wave_amo = current_wave_amo * client_totalday_trade_amt_allowed
+            
+            # how many trades have we completed today? whats our total profit loss with wave trades
+            # should you override your original order rules?
+
+            kings_blessing = True
+
+            if trig_action:
+                print("evalatue if there is another trade to make on top of current wave")
+                kings_blessing = False
+
+        
+        decision[trigbee] = {'kings_blessing': kings_blessing, 'wave_amo': wave_amo, 'type': order_type}
+        
+        return decision
+
+
     # The Golden Ticket
     for ticker_time_frame in pollen.STORY_bee.keys():
         ticker, tframe, frame = ticker_time_frame.split("_")
 
-        if "SPY" != ticker: # only allowing SPY
+        if ticker not in ["SPY", "BTCUSD"]: # only allowing SPY
             continue # break loop
-
-        def king_knights_requests(trigbee, ticker_time_frame, trig_action=False):
-            # answer all questions for order to be placed, compare against the rules
-            
-            def knigh_request_recon_portfolio():
-                # debate if we should place a new order based on current portfolio trades
-                pass
-            
-            def eval_trig_inaction():
-                # evaluate if the current trade needs more love$
-                pass
-
-
-            ticker, tframe, frame = ticker_time_frame.split("_")
-            decision = {}
-            # Waves: current wave, answer questions what happen with proir waves
-            waves = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame]['waves'][trigbee]
-            if "0" in waves.keys():
-                waves.pop("0")
-            total_waves = len(waves.keys())
-            morning_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "morning_9-11"}
-            lunch_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "lunch_11-2"}
-            afternoon_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "afternoon_2-4"}
-
-            # Total Buying Power
-            info = api.get_account()
-            total_buying_power = info.buying_power # what is the % amount you want to buy?
-            app_portfolio_day_trade_allowed = .8
-            app_portfolio_long_trade_allowed = .2
-            if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
-                print("Critical Error Fix buying power numbers")
-                sys.exit()
-            
-            # wave power allowance
-            app_portfolio_waveup_buying_power = .6
-            app_portfolio_wavedown_buying_power = .4
-            if app_portfolio_waveup_buying_power + app_portfolio_wavedown_buying_power != 1:
-                print("Critical Error Fix buying power numbers")
-                sys.exit()
-            
-            client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
-
-            # for bee in all_bees:
-            if trigbee == 'buy_cross-0':
-                # Q?confirmation on trigger, should you wait for futher confirmation?
-
-                theme = QUEEN['queen_controls']['theme'] # what is the theme?
-                theme_buyingpower = {
-                'morning_9-11' : pollen_theme_dict[theme]['waveup']['morning_9-11'],
-                'lunch_11-2' : pollen_theme_dict[theme]['waveup']['lunch_11-2'],
-                'afternoon_2-4' : pollen_theme_dict[theme]['waveup']['afternoon_2-4'],
-                }
-
-                # what is your timeblock?
-                # what does your friend_links(bees) say? or have said?
-                
-                # current wave
-                current_wave_index = list(waves.keys())[len(waves)-1]
-                current_wave = waves[current_wave_index]
-                current_wave_blocktime = current_wave['wave_blocktime']
-                current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]
-                
-                client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
-
-                order_type = "market"
-                wave_amo = current_wave_amo * client_totalday_trade_amt_allowed
-                # how many trades have we completed today? whats our total profit loss with wave trades
-                # should you override your original order rules?
-
-                kings_blessing = True
-
-                if trig_inaction:
-                    print("evalatue if there is another trade to make on top of current wave")
-                    kings_blessing = False
-
-
-            if trigbee == 'sell_cross-0':
-                # Q?confirmation on trigger, should you wait for futher confirmation?
-
-                theme = QUEEN['queen_controls']['theme'] # what is the theme?
-                theme_buyingpower = {
-                'morning_9-11' : pollen_theme_dict[theme]['wavedown']['morning_9-11'],
-                'lunch_11-2' : pollen_theme_dict[theme]['wavedown']['lunch_11-2'],
-                'afternoon_2-4' : pollen_theme_dict[theme]['wavedown']['afternoon_2-4'],
-                }
-                
-                # current wave
-                current_wave_index = list(waves.keys())[len(waves)-1]
-                current_wave = waves[current_wave_index]
-                current_wave_blocktime = current_wave['wave_blocktime']
-                current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]
-
-                order_type = "market"
-                wave_amo = current_wave_amo * client_totalday_trade_amt_allowed
-                
-                # how many trades have we completed today? whats our total profit loss with wave trades
-                # should you override your original order rules?
-
-                kings_blessing = True
-
-                if trig_inaction:
-                    print("evalatue if there is another trade to make on top of current wave")
-                    kings_blessing = False
-
-            decision[trigbee] = {'kings_blessing': kings_blessing, 'wave_amo': wave_amo, 'type': order_type}
-            
-            return decision
-
+        
+        # if market closed do NOT Sell
+        if rn_order_symbol in crypto_currency_symbols:
+            crypto = True
+        else:
+            crypto = False
+        
+        mkhrs = return_market_hours(api_cal=trading_days, crypto=crypto)
+        
+        if mkhrs == 'open':
+            val_pass = True
+        else:
+            continue # break loop
+        
 
         ticker_storys = {k:v for (k, v) in pollen.STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
         all_current_triggers = {k:v['story']['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['story']['alltriggers_current_state']) > 0}
-        all_current_triggers.update({'SPY_1Minute_1Day': ['buy_cross-0']}) # test
+        all_current_triggers.update({'BTCUSD_1Minute_1Day': ['buy_cross-0']}) # test
 
         if all_current_triggers:
             try:
@@ -792,83 +864,53 @@ def command_conscience(api, pollen):
                     for trig in trigs:
                         if trig == "buy_cross-0":
                             ipdb.set_trace()
+                                                        
                             # check if you already placed order or if a workerbee in transit to place order
                             trigname_stopped = [item['trigname'] for item in QUEEN['command_conscience']['memory']['trigger_stopped']]
                             if trig in trigname_stopped:
-                                trig_inaction = True # trig in a trade
+                                trig_action = True # trig in a trade
                             else:
-                                trig_inaction = False
+                                trig_action = False
                             
                             """ HAIL TRIGGER, WHAT SAY YOU?
                             ~forgive me but I bring a gift for the king and queen
                             """
-                            king_resp = king_knights_requests(trigbee=trig, ticker_time_frame=ticker_time_frame, trig_inaction=trig_inaction)
+                            king_resp = king_knights_requests(trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action)
 
                             if king_resp['kings_blessing']:
                                 print("CheckPoint_WhoAreYou?", trig, " time:", return_timestamp_string())
                                 print("trig", trig, " time:", return_timestamp_string())
                                 print("Each Buz in a gift")
 
-                                execute_order(king_resp, ticker_time_frame, trig)
+                                execute_order(king_resp, ticker_time_frame, trig, portfolio)
            
-                        
-                        
-                        
                         if trig == "sell_cross-0":
                             # print(trig)
-                            if ticker in QUEEN['heartbeat']['main_indexes']: # SPY, QQQ
-                                ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
+                            # if ticker in QUEEN['heartbeat']['main_indexes']: # SPY, QQQ
+                            ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
 
                             trigname_stopped = [item['trigname'] for item in QUEEN['command_conscience']['memory']['trigger_stopped']]
                             # check if you already placed order or if a workerbee in transit to place order
                             if trig in trigname_stopped:
-                                trig_inaction = True # trig in a trade
+                                trig_action = True # trig in a trade
                             else:
-                                trig_inaction = False
-                            else:
-                                if king_resp['kings_blessing']:
-                                    print("trig", trig, return_timestamp_string())
-                                    print("Each Buz in a gift")
-                                    king_resp = king_knights_requests(trigbee=trig, ticker_time_frame=ticker_time_frame, trig_inaction=trig_inaction)
-                                    if trig in king_resp.keys():
-                                        type_order = king_resp[trig]['type']
-                                        wave_amo = king_resp[trig]['wave_amo']
-                                        if ticker in crypto_currency_symbols:
-                                            snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-                                        else:
-                                            snap = api.get_snapshot(ticker)
-                                        
-                                        # get latest pricing
-                                        current_price = snap.latest_trade.price
-                                        current_bid = snap.latest_quote.bid_price
-                                        current_ask = snap.latest_quote.ask_price
-                                        priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
-                                        qty_order = float(round(wave_amo / current_price, 0))                
+                                trig_action = False
+                            
+                            king_resp = king_knights_requests(trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action)
 
-                                        order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
-                                        
-                                        if type_order == 'market':
-                                            order_submit = submit_order(api=api, symbol=ticker, type=type_order, qty=qty_order, side='buy', client_order_id=order_id) # buy
-                                        else:
-                                            order_submit = submit_order(api=api, symbol=ticker, type=type_order, qty=qty_order, side='buy', client_order_id=order_id) # buy
+                            if king_resp['kings_blessing']:
+                                print("trig", trig, return_timestamp_string())
+                                print("Each Buz in a gift")
+                                
+                                execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portflio)
 
-                                        order = vars(order_submit)['_raw']
-                                        # ensure order went through
-                                        if route_order_based_on_status(order_status=order['status']):
-                                            order_process = process_order_submission(trig=trig, order=order, prod=prod, tablename='main_orders', ticker_time_frame=ticker_time_frame, priceinfo=priceinfo)
-                                            QUEEN['command_conscience']['orders']['submitted'].append(order_process['sending_order'])
-                                            QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
-                                            pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
-                                        else:
-                                            msg = ("error order not accepted", order)
-                                            print(msg)
-                                            logging.error(msg)
             except Exception as e:
                 print(e, print_line_of_error())
                 print(ticker_time_frame)
     
     # App Buy Order Requests
-    app_resp = process_app_buy_requests(APP_requests)
+    # app_resp = process_app_buy_requests(APP_requests)
+    app_resp = process_app_requests(APP_requests, 'buy_orders')
     if app_resp['order_flag']:
         msg = {'process_app_buy_requests()': 'queen processed app request'}
         print(msg)
@@ -883,7 +925,8 @@ def command_conscience(api, pollen):
         trig=app_resp['app_request']['trig'], 
         king_resp=app_resp['king_resp'], 
         ticker=app_resp['app_request']['ticker'], 
-        ticker_time_frame=app_resp['ticker_time_frame'])
+        ticker_time_frame=app_resp['ticker_time_frame'],
+        portfolio=portfolio)
 
 
     return True
@@ -895,16 +938,32 @@ def order_management(api): # Handle ALL submitted orders and place them
         # check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
         if ticker in portfolio.keys():
             qty_avail = float(portfolio[ticker]['qty'])
-            if float(run_order["filled_qty"]) > qty_avail:
+            qty_run = float(run_order["filled_qty"])
+            
+            if qty_avail < 0 and qty_run < qty_avail: # short and run < avail (-10, -5)
                 print("CRITICAL ERROR PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL ARCHVIE RUNNING ORDER")
                 logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
-                
-                # update running order with adjusted filled_qty
-                QUEEN['command_conscience']['orders']['running'][run_index]["filled_qty"] = qty_avail - float(run_order["filled_qty"])
-                QUEEN['command_conscience']['orders']['running'][run_index]["status_q"] = True
                 portfolio_validated = True
+                QUEEN['command_conscience']['orders']['running'][run_index]["filled_qty"] = qty_avail
+                QUEEN['command_conscience']['orders']['running'][run_index]["status_q"] = True
+            
+            elif qty_avail > 0 and qty_run > qty_avail: # long and run > avail (10, 5)
+                    print("CRITICAL ERROR PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL ARCHVIE RUNNING ORDER")
+                    logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
+                    portfolio_validated = True
+                    QUEEN['command_conscience']['orders']['running'][run_index]["filled_qty"] = qty_avail
+                    QUEEN['command_conscience']['orders']['running'][run_index]["status_q"] = True
+            
+            elif qty_run == 0:
+                print("Critical Error run qty is ZERO")
+                logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
+                portfolio_validated = True
+                QUEEN['command_conscience']['orders']['running'][run_index]["filled_qty"] = qty_avail
+                QUEEN['command_conscience']['orders']['running'][run_index]["status_q"] = True
+            
             else:
                 portfolio_validated = True
+        
         else:
             print(ticker, "CRITICAL ERROR PORTFOLIO DOES NOT HAVE TICKER ARCHVIE RUNNING ORDER")
             logging.critical({'msg': f'{ticker}{" :Ticker not in Portfolio"}'})
@@ -921,6 +980,7 @@ def order_management(api): # Handle ALL submitted orders and place them
                 msg = {"validate_portfolio_with_RUNNING": ("client_order_id NOT in trigger_stopped")}
                 print(msg)
                 logging.error(msg)
+            
             portfolio_validated = False
 
         if portfolio_validated:
@@ -931,9 +991,9 @@ def order_management(api): # Handle ALL submitted orders and place them
             return {"run_order_valid":False}
 
     
-    def kning_queens_order_evaluation(run_order, current_profit_loss):
+    def kning_queens_order_evaluation(run_order, current_profit_loss, portfolio):
 
-        def process_app_sell_signal(runorder_client_order_id):
+        def process_app_sell_signal(runorder_client_order_id): # ONLY returns if not empty
             """Read App Controls and update if anything new"""
             # app_request = QUEEN['queen_controls']['orders']
             APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
@@ -943,12 +1003,14 @@ def order_management(api): # Handle ALL submitted orders and place them
                 print("App Request Order")
                 logging.info("App Request Order")
                 if len(c_order_ids) != 1:
+                    ipdb.set_trace()
                     print("error duplicate client_order_id requests, taking latest")
                     logging.info("error duplicate client_order_id requests, taking latest")
                     app_request = c_order_ids[len(c_order_ids)-1]
                     for i in range(len(c_order_ids) - 1):
-                        APP_requests['orders'].remove(i)
+                        APP_requests["sell_orders"].remove(APP_requests["sell_orders"][i])
                         PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    return {'sell_order': False}
                 else:
                     app_request = c_order_ids[0]
                     if app_request['app_requests_id'] in QUEEN['queen_controls']['app_order_requests']:
@@ -968,29 +1030,35 @@ def order_management(api): # Handle ALL submitted orders and place them
 
                         QUEEN['queen_controls']['app_order_requests'].append(app_request['app_requests_id'])
                         pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
-                        APP_requests['orders'].remove(app_request)
+                        APP_requests['sell_orders'].remove(app_request)
                         PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
                                         
-                return {'sell_order': sell_order, 'sell_qty': sell_qty, 'type': type, 'side': side}
-        
+                        return {'sell_order': sell_order, 'sell_qty': sell_qty, 'type': type, 'side': side}
+            else:
+                return {'sell_order': False}
+
         # all scenarios if run_order should be closed out
+        sell_order = False # convince me to sell
+        
+        rn_order_symbol = run_order['symbol']
         runorder_client_order_id = run_order['client_order_id']
         take_profit = run_order['order_rules']['take_profit'] #  {'order_rules': order_rules, 'trigname': trig, 'order': order, 'datetime': date_mark, 'status_q': False, 'exit_order': False}                                    
         sellout = run_order['order_rules']['sellout']
-        sell_qty = float(order_obj['filled_qty'])
+        sell_qty = float(run_order['filled_qty'])
         
         side = 'sell'
         type ='market'
 
         app_req = process_app_sell_signal(runorder_client_order_id)
 
-        if app_req['sell_order']:
-            sell_order = True
-            app_reqest = True
-            
-            sell_qty = app_req['sell_qty']
-            type = app_req['type']
-            side = app_req['side']
+        if app_req:
+            if app_req['sell_order']:
+                sell_order = True
+                app_reqest = True
+                
+                sell_qty = app_req['sell_qty']
+                type = app_req['type']
+                side = app_req['side']
 
         elif take_profit <= current_profit_loss:
             sell_order = True
@@ -1003,12 +1071,30 @@ def order_management(api): # Handle ALL submitted orders and place them
         else:
             sell_order = False
         
+        
         # recon portolio to validate if sell qty allowed
         if app_req:
             app_reqest = True
         else:
             app_request = False
 
+        # check if position is neg, if so, switch side to sell and sell_qty to buy
+        if portfolio[rn_order_symbol]['side'] == 'short':
+            sell_qty = abs(sell_qty)
+            side = 'buy'
+        
+        # if market closed do NOT Sell
+        if rn_order_symbol in crypto_currency_symbols:
+            crypto = True
+        else:
+            crypto = False
+        
+        mkhrs = return_market_hours(api_cal=trading_days, crypto=crypto)
+        
+        if mkhrs == 'open':
+            sell_order = sell_order
+        else:
+            sell_order = False
 
         if sell_order:
             return {'bee_sell': True, 'type': type, 'side': side, 'sell_qty': sell_qty, 'app_request': app_request}
@@ -1028,11 +1114,11 @@ def order_management(api): # Handle ALL submitted orders and place them
                 order_id = order_sent['client_order_id']
                 # check if order fulfilled
                 order_status = check_order_status(api=api, client_order_id=order_id, queen_order=order_sent)
-                
+                ipdb.set_trace()
                 # if order has fulfilled place in working orders else tag as partial order fulfilled
-                if order_status['filled_qty']:
+                if order_status["filled_qty"]:
                     if order_status['side'] == 'buy':
-                        if order_status['filled_qty'] == order_status['qty']: # move out of submitted to running
+                        if float(order_status['filled_qty']) == float(order_sent['filled_qty']): # move out of submitted to running
                             print("order filled, and move to memory")
                             # update order with latest infomation
                             fulfilled_qty = order_status['filled_qty']
@@ -1055,10 +1141,10 @@ def order_management(api): # Handle ALL submitted orders and place them
                             QUEEN['command_conscience']['orders']['submitted'].remove(QUEEN['command_conscience']['orders']['submitted'][idx])
                     
                     if order_status['side'] == 'sell':
-                        if order_status['filled_qty'] == order_status['qty']:
+                        if float(order_status['filled_qty']) == float(order_sent['filled_qty']):
                             
                             # update order with latest infomation
-                            fulfilled_qty = order_status['filled_qty']
+                            fulfilled_qty = float(order_status['filled_qty'])
                             QUEEN['command_conscience']['orders']['submitted'][idx]['filled_qty'] = fulfilled_qty
                             filled_avg_price = order_status['filled_avg_price']
                             QUEEN['command_conscience']['orders']['submitted'][idx]['filled_avg_price'] = filled_avg_price
@@ -1073,7 +1159,7 @@ def order_management(api): # Handle ALL submitted orders and place them
                             # remove from submitted
                             QUEEN['command_conscience']['orders']['submitted'].remove(QUEEN['command_conscience']['orders']['submitted'][idx])
 
-
+                            # def origin_order_complete(exit_order_link):
                             #### CHECK to see if Origin ORDER has Completed LifeCycle ####
                             exit_order_link = order_sent['exit_order_link']
                             orders_db = read_csv_db(db_root=db_root, tablename='main_orders', ext='.csv', prod=prod, init=False) # return all sellable orders where they have same client_order_id
@@ -1085,7 +1171,7 @@ def order_management(api): # Handle ALL submitted orders and place them
                                 all_linked_filled_qty += float(token_order['filled_qty'])
 
                             origin_order = [i for i in QUEEN['command_conscience']['orders']['running'] if i['client_order_id'] == exit_order_link][0]
-                            if origin_order['filled_qty'] == all_linked_filled_qty: 
+                            if float(origin_order["filled_qty"]) == all_linked_filled_qty: 
                                 # running order has been fully sold out and now we can archive
                                 QUEEN['command_conscience']['orders']['running'].remove(origin_order)
                                 # remove trigger stops
@@ -1100,9 +1186,9 @@ def order_management(api): # Handle ALL submitted orders and place them
                         elif float(order_status['filled_qty']) > 0:
                             print("Order Partial fulfilled, move to running")
                             # update order with latest infomation
-                            fulfilled_qty = order_status['filled_qty']
+                            fulfilled_qty = float(order_status['filled_qty'])
                             QUEEN['command_conscience']['orders']['submitted'][idx]['filled_qty'] = fulfilled_qty
-                            filled_avg_price = order_status['filled_avg_price']
+                            filled_avg_price = float(order_status['filled_avg_price'])
                             QUEEN['command_conscience']['orders']['submitted'][idx]['filled_avg_price'] = filled_avg_price
                             
                             # transistion from Submitted to Running
@@ -1132,20 +1218,19 @@ def order_management(api): # Handle ALL submitted orders and place them
                 # VALIDATE BEE ORDER check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
                 val = validate_portfolio_with_RUNNING(ticker=ticker, run_index=idx, run_order=run_order, portfolio=portfolio)
                 if val["run_order_valid"] == False:
+                    pass
+                    ### space ###
                     continue # break loop run order archived
                 
                 # if not system recon
                 order_obj = check_order_status(api=api, client_order_id=runorder_client_order_id, queen_order=run_order)
-
-                if 'queen_gen' != ['trigname']:
-                    run_order['filled_qty'] = order_obj['filled_qty']
-                    run_order['filled_avg_price'] = order_obj['filled_avg_price']
                 
                 # a. check if you already placed a SELL Order OR b. if a workerbee in transit to place order
                 trigname_stopped = [item['exit_order_link'] for item in QUEEN['command_conscience']['memory']['trigger_sell_stopped']] # a
                 if runorder_client_order_id in trigname_stopped:
+                    pass
+                    ### space ###
                     continue # break loop
-
                 # return trade info
                 if ticker in crypto_currency_symbols:
                     snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
@@ -1162,16 +1247,22 @@ def order_management(api): # Handle ALL submitted orders and place them
                 QUEEN['command_conscience']['orders']['running'][idx]['honey'] = current_profit_loss
                 QUEEN['command_conscience']['orders']['running'][idx]['$honey'] = float(order_obj['filled_avg_price']) * float(order_obj['filled_qty']) - current_price * float(order_obj['filled_qty'])
                 
-                re_eval_order = kning_queens_order_evaluation(run_order, current_profit_loss)
+                re_eval_order = kning_queens_order_evaluation(run_order, current_profit_loss, portfolio)
 
                 if re_eval_order['bee_sell']:
                     # close out order variables
                     sell_qty = float(re_eval_order['sell_qty']) # float(order_obj['filled_qty'])
-                    side = re_eval_order['side'] # 'sell'
+                    side = re_eval_order['side'] # 'sell' Unless it short then it will be a 'buy'
                     type = re_eval_order['type'] # 'market'
                     # print(ticker_time_frame, " meee")
                     # ipdb.set_trace()
                     sell_client_order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trigname, db_root=db_root, sellside_client_order_id=runorder_client_order_id)
+                    run_order_idx = {'runorder_idx': idx}
+                    
+                    send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
+                    
+                    sell_qty = send_order_val['qty_correction']
+
                     send_close_order = submit_order(api=api, side=side, symbol=ticker, qty=sell_qty, type=type, client_order_id=sell_client_order_id) 
                     send_close_order = vars(send_close_order)['_raw']
                     if route_order_based_on_status(order_status=send_close_order['status']):
@@ -1195,8 +1286,9 @@ def order_management(api): # Handle ALL submitted orders and place them
     #### MAIN ####
     # >for every ticker position join in running-positions to account for total position
     # >for each running position determine to exit the position                
-    all_positions = api.list_positions()
-    portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
+
+    portfolio = return_alpc_portolio(api)
+    portfolio = portfolio['portfolio']
 
     running_orders = QUEEN['command_conscience']['orders']['running']
 
@@ -1303,10 +1395,12 @@ try:
                 "1Day_1Year": 250}
             
             recon_running_trigger_stops(QUEEN=QUEEN)
-                        
-            command_conscience(api=api, pollen=pollen)        
-            
-            order_management(api=api)
+
+            order_management(api=api)  ### <>
+                                                    #>
+            command_conscience(api=api, pollen=pollen) ###>   
+                                                    #>
+            order_management(api=api) ### <>
             
             time.sleep(1)
             e = datetime.datetime.now()

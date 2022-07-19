@@ -31,3 +31,6 @@ db/queen.pkl
 db/castle_coin.pkl
 db/app.py_App__sandbox.pkl
 .gitignore
+db/castle_coin.pkl
+db/queen.pkl
+db/main_orders_sandbox.csv

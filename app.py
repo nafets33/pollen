@@ -486,7 +486,7 @@ if option == 'signal':
             st.write(run_order_alpaca['filled_qty'] == run_order['filled_qty']) ## VALIDATION FOR RUN ORDERS
             st.write(run_order_alpaca)
             st.write(run_order['filled_qty'])
-            sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']))
+            sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
             # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
             type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
 

@@ -2117,15 +2117,34 @@ def add_key_to_chesspiecePICKLE_if_key_does_not_exist(QUEEN, queens_chess_piece)
 def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
     running_orders_df = pd.DataFrame(running_orders)
     if len(running_orders_df) > 0:
+        running_orders_df['filled_qty'] =  running_orders_df['filled_qty'].apply(lambda x: float(x))
+        running_orders_df['req_qty'] =  running_orders_df['req_qty'].apply(lambda x: float(x))
         running_orders_df = running_orders_df[running_orders_df['portfolio_name']==portfolio_name].copy()
-        running_portfolio = running_orders_df.groupby('symbol')['filled_qty'].sum().reset_index()
+        running_portfolio = running_orders_df.groupby('symbol')[['filled_qty', 'req_qty']].sum().reset_index()
     else:
         running_portfolio = [] # empty
     
     return running_portfolio
 
 
-
+def return_market_hours(api_cal, crypto):
+    trading_days = api_cal # api.get_calendar()
+    trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+    s = datetime.datetime.now()
+    s_iso = s.isoformat()[:10]
+    mk_open_today = s_iso in trading_days_df["date"].tolist()
+    mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30)
+    mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0)
+    if crypto:
+        return "open"
+    else:
+        if mk_open_today:
+            if s >= mk_open and s <= mk_close:
+                return "open"
+            else:
+                return "closed"
+        else:
+            return "closed"
 
 
 def theme_calculator(POLLENSTORY, chart_times):
@@ -2175,3 +2194,16 @@ def theme_calculator(POLLENSTORY, chart_times):
                 theme[ticker][tframe] = story
     
     return theme
+
+
+
+# def liquidate_position(api, ticker, side, type, client_order_id): # TBD
+#     client_order_id = f'{ticker}{"_"}{side}{"_"}{datetime.datetime.now().isoformat()}'
+#     p = api.get_position(ticker)
+#     p_qty = p.qty
+#     p_side = p.side
+#     if type ==  'market':
+#         order = submit_order(api=api, side=side, symbol=ticker, qty=p_qty, type=type, client_order_id=client_order_id)
+#     else:
+#         print("make this a limit order")
+#     return order
