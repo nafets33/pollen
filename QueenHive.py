@@ -2046,9 +2046,9 @@ def init_QUEEN():
         'last_modified': datetime.datetime.now(),
         'command_conscience': {'memory': {'trigger_stopped': [],'trigger_sell_stopped': [], 'orders_completed': [],}, 
                             'orders': { 'requests': [],
-                                            'submitted': [],
-                                            'running': [],
-                                            'running_close': []}
+                                        'submitted': [],
+                                        'running': [],
+                                        'running_close': []}
                                             },
             
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},

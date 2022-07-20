@@ -1,4 +1,42 @@
 # archived_functions
+# def recon_running_trigger_stops(QUEEN):
+#     run_dict = {'running': 'trigger_stopped', 'running_close': 'trigger_sell_stopped'}
+#     save_queen = False
+#     for run, runstop in run_dict.items():
+#         # check if item in other bucket, if NOT its MISSING
+#         for idx, run_order in enumerate(QUEEN['command_conscience']['orders'][run]):
+#             stop = [i for i in QUEEN['command_conscience']['memory'][runstop] if i['client_order_id'] == run_order['client_order_id']]
+#             if len(stop) == 0:
+#                 save_queen = True
+#                 msg = {"recon_running_trigger_stops": {"run_order": run_order['client_order_id']}}
+#                 print(msg)
+#                 logging.error(msg)
+
+#                 # create trig stop
+#                 trig_stop_info = {'symbol': run_order['symbol'], 'trigname': run_order['trigname'], 
+#                 'ticker_time_frame': run_order['ticker_time_frame'], 'exit_order_link': run_order['exit_order_link'], 
+#                 'client_order_id': run_order['client_order_id'], 'datetime': run_order['datetime']}
+#                 QUEEN['command_conscience']['memory'][runstop].append(trig_stop_info)
+
+#         for idx, stop_trig in enumerate(QUEEN['command_conscience']['memory'][runstop]):
+#             matching_run = [i for i in QUEEN['command_conscience']['orders'][run] if i['client_order_id'] == stop_trig['client_order_id']]
+#             if len(matching_run) == 0:
+#                 save_queen = True
+#                 msg = {"recon_running_trigger_stops": {"msg": "stop found but no running order exists: REMOVING STOP", "run_order": stop_trig['client_order_id']}}
+#                 print(msg)
+#                 logging.error(msg)
+
+#                 QUEEN['command_conscience']['memory'][runstop].remove(stop_trig)
+
+
+    
+#     # God save the Queen
+#     if save_queen:
+#         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+    
+#     return True
+
+
 # pollenstory():
         # # Create Tiers
         # for tier in range(1, macd_tier_range + 1): # Tiers of MinMax

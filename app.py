@@ -390,7 +390,8 @@ if option == 'queen':
         st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
         
         # st.write(pollen.QUEEN['command_conscience']['memory'])
-        ORDERS = pollen.QUEEN['command_conscience']['memory']['orders_completed']
+        ORDERS = pollen.QUEEN['command_conscience']['orders']['requests']
+        ORDERS = [i for i in ORDERS if i['queen_order_state'] == 'completed']
         # queen shows only today orders
         now_ = datetime.datetime.now()
         orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
@@ -405,10 +406,10 @@ if option == 'queen':
             st.markdown(new_title, unsafe_allow_html=True)
             # st.write("memory")
         # with col2_a:
-        st.write("trigger_stopped")
-        st.write(pollen.QUEEN['command_conscience']['memory']['trigger_stopped'])
-        st.write("trigger_sell_stopped")
-        st.write(pollen.QUEEN['command_conscience']['memory']['trigger_sell_stopped'])
+        # st.write("trigger_stopped")
+        # st.write(pollen.QUEEN['command_conscience']['memory']['trigger_stopped'])
+        # st.write("trigger_sell_stopped")
+        # st.write(pollen.QUEEN['command_conscience']['memory']['trigger_sell_stopped'])
 
     if orders_table == 'Yes':
         main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
@@ -513,6 +514,28 @@ if option == 'signal':
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
                     data = ReadPickleData(pickle_file=PB_App_Pickle)
                     st.write(data['sell_orders'])
+                
+                if sell_qty_option < 0 and sell_qty_option >= float(run_order['filled_qty']):
+                    print("qty validated")
+                    # process order signal
+                    client_order_id = c_order_id_option
+                    sellable_qty = sell_qty_option
+                    
+                    order_dict = {'system': 'app',
+                    'request_time': datetime.datetime.now(),
+                    'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
+                    'side': 'sell',
+                    'type': type_option,
+                    'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+
+                    }
+                    data = ReadPickleData(pickle_file=PB_App_Pickle)
+                    data['sell_orders'].append(order_dict)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+                    data = ReadPickleData(pickle_file=PB_App_Pickle)
+                    st.write(data['sell_orders'])
+
+
 
     if save_signals == 'beeaction':
         st.write("beeaction")

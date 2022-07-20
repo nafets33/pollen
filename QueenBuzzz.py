@@ -661,6 +661,12 @@ def initiate_ttframe_charts(queens_chess_piece):
         print(msg)
 
 try:
+    # heartbeat_day = datetime.datetime.now().strftime("%Y-%m-%d")
+    # if heartbeat_day in QUEEN[queens_chess_piece]['heartbeat'].keys():
+    #     pass
+    # else:
+    #     QUEEN[queens_chess_piece]['heartbeat'][heartbeat_day] = []
+    
     initiate_ttframe_charts(queens_chess_piece) # only Initiates if Castle or Bishop
     workerbee_run_times = []
     while True:
