@@ -591,21 +591,21 @@ else:
 # init files needed
 PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
 if queens_chess_piece == 'castle':
-    # if os.path.exists(PB_Story_Pickle):
-    #     os.remove(PB_Story_Pickle)
     chart_times_castle = {
-            "1Minute_1Day": 1, "5Minute_5Day": 5,
+            "1Minute_1Day": 1, 
+            "5Minute_5Day": 5,
             "30Minute_1Month": 18, 
-            "1Hour_3Month": 48, "2Hour_6Month": 72, 
+            "1Hour_3Month": 48,
+            "2Hour_6Month": 72, 
             "1Day_1Year": 250}
 
 if queens_chess_piece == 'bishop':
-    # if os.path.exists(PB_Story_Pickle):
-    #     os.remove(PB_Story_Pickle)
     chart_times_bishop = {
-            "1Minute_1Day": 1, "5Minute_5Day": 5,
+            "1Minute_1Day": 1, 
+            "5Minute_5Day": 5,
             "30Minute_1Month": 18, 
-            "1Hour_3Month": 48, "2Hour_6Month": 72, 
+            "1Hour_3Month": 48, 
+            "2Hour_6Month": 72, 
             "1Day_1Year": 250}
 
 # if queens_chess_piece == 'workerbee':
@@ -715,7 +715,7 @@ try:
             QUEEN[queens_chess_piece]['heartbeat']['cycle_time'].append(cycle_run_time)
             if cycle_run_time.seconds > 5:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info("cycle_time > 5 seconds", cycle_run_time_print)
+                logging.info(("cycle_time > 5 seconds", cycle_run_time_print))
             workerbee_run_times = QUEEN[queens_chess_piece]['heartbeat']['cycle_time']
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
             print(queens_chess_piece, " avg cycle time(last89):", avg_time, ": ", cycle_run_time_print,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))

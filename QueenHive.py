@@ -215,7 +215,11 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
         for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
             ticker, tframe, frame = ticker_time_frame.split("_")
-            # CHARLIE_bee[ticker_time_frame] = {}
+
+            # if ticker_time_frame == 'QQQ_1Hour_3Month':
+            #     ipdb.set_trace()
+                # continue
+
             ANGEL_bee[ticker_time_frame] = {}
             STORY_bee[ticker_time_frame] = {'story': {}}
             
@@ -235,7 +239,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
             # mac cross
             df = mark_macd_signal_cross(df=df)
-
             resp = knight_sight(df=df)
             df = resp['df']
             knights_word = resp['bee_triggers']
@@ -737,8 +740,9 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                             cross_list.append(f'{"sell_hold"}{"-"}{c}')
                             wave_mark_list.append(0)
                     else:
+                        # ipdb.set_trace()
                         cross_list.append(f'{"hold"}{"-"}{0}')
-                        wave_mark_list.apend(0)
+                        wave_mark_list.append(0)
             else:
                 cross_list.append(f'{"hold"}{"-"}{0}')
                 wave_mark_list.append(0)
@@ -978,10 +982,15 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
 
 
 ### Orders ###
+def return_alpc_portolio(api):
+    all_positions = api.list_positions()
+    portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
+    return {'portfolio': portfolio}
+
 
 def check_order_status(api, client_order_id, queen_order=False, prod=True): # return raw dict form
     if queen_order:
-        if "queen_gen" == queen_order['trigname']:
+        if "queen_gen" in queen_order['client_order_id']:
             return queen_order
     if prod:
         order = api.get_order_by_client_order_id(client_order_id=client_order_id)
@@ -1937,51 +1946,6 @@ def slice_by_time(df, between_a, between_b):
     df = df.reset_index()
     return df
 
-# class return_pollen():
-#     workerbees = ['queen', 'castle', 'bishop', 'castle_coin']
-#     POLLENSTORY = {}
-#     STORY_bee = {}
-#     KNIGHTSWORD = {}
-#     ANGEL_bee = {}
-#     QUEENSMIND = {}
-#     for bee in workerbees:
-#         chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, f'{bee}{".pkl"}'))
-#         POLLENSTORY = {**POLLENSTORY, **chess_piece[bee]['pollenstory']}
-#         STORY_bee = {**STORY_bee, **chess_piece[bee]['conscience']['STORY_bee']}
-#         KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece[bee]['conscience']['KNIGHTSWORD']}
-#         ANGEL_bee = {**ANGEL_bee, **chess_piece[bee]['conscience']['ANGEL_bee']}
-
-#         if bee == "queen":
-#             QUEENSMIND = chess_piece['command_conscience']
-# if '__name__' == '__main__':
-#     return_pollen()
-
-
-# df = POLLENSTORY['SPY_1Minute_1Day']
-# buy_cross = df['buy_cross-0'].tolist()
-# close = df['close'].tolist()
-# track_bees = {}
-# track_bees_profits = {}
-# trig_bee_count = 0
-# trig_name = 'buy_cross-0'
-# for idx, trig_bee in enumerate(buy_cross):
-#     if idx == 0:
-#         continue
-#     if trig_bee == 'bee':
-#         trig_bee_count+=1
-#         beename = f'{trig_name}{trig_bee_count}'
-#         close_price = close[idx]
-#         track_bees[beename] = close_price
-#         continue
-#     if trig_bee_count > 0:
-#         beename = f'{trig_name}{trig_bee_count}'
-#         origin_trig_price = track_bees[beename]
-#         latest_price = close[idx]
-#         profit_loss = (latest_price - origin_trig_price) / latest_price
-#         if beename in track_bees_profits.keys():
-#             track_bees_profits[beename].update({idx: profit_loss})
-#         else:
-#             track_bees_profits[beename] = {idx: profit_loss}
 
 def return_main_chart_times(queens_chess_piece):
     if queens_chess_piece in ['queen', 'castle', 'bishop']:
@@ -2039,6 +2003,66 @@ def pollen_themes():
     return pollen_themes
 
 
+def KING():
+    return_dict = {}
+    kings_order_rules = {'knight_bees': 
+                                    {
+                                    'queen_gen': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'app': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'buy_cross-0': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'sell_cross-0': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'ready_buy_cross': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'ready_sell_cross': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    # CRYPTO
+                                    'crypto_buy_cross-0': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'crypto_sell_cross-0': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    }
+    }
+
+    return_dict['kings_order_rules'] = kings_order_rules
+    
+    return return_dict
+
 
 def init_QUEEN():
     QUEEN = { # The Queens Mind
@@ -2050,7 +2074,7 @@ def init_QUEEN():
                                         'running': [],
                                         'running_close': []}
                                             },
-            
+        'queen_orders': [],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {}, # ticker info ... change name
         'kings_order_rules': {},
@@ -2076,10 +2100,14 @@ def init_QUEEN():
 
 
 def init_QUEEN_App():
-    app = {'theme': '', 'app_order_requests': [], 
+    app = {'theme': '', 
+    'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
     'last_modified': datetime.datetime.now(),
     'queen_processed_orders': [],
+    'wave_triggers': [],
+    'app_wave_requests': [],
+    'knight_bees_kings_rules': [],
     }
     return app
 
@@ -2087,31 +2115,30 @@ def init_QUEEN_App():
 def add_key_to_app(APP_requests): # returns QUEES
     q_keys = APP_requests.keys()
     latest_queen = init_QUEEN_App()
+    update=False
     for k, v in latest_queen.items():
         if k not in q_keys:
             APP_requests[k] = v
             update=True
-            msg = f'{k}{" : Key Updated to "}'
+            msg = f'{k}{" : Key Added"}'
             print(msg)
             logging.info(msg)
-        else:
-            update=False
-    return APP_requests
+    return {'APP_requests': APP_requests, 'update': update}
 
 
-def add_key_to_chesspiecePICKLE_if_key_does_not_exist(QUEEN, queens_chess_piece): # returns QUEES
+def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEES
+    update = False
     q_keys = QUEEN.keys()
     latest_queen = init_QUEEN()
     for k, v in latest_queen.items():
         if k not in q_keys:
             QUEEN[k] = v
             update=True
-            msg = f'{k}{" : Key Updated to "}{queens_chess_piece}'
+            msg = f'{k}{" : Key Added to "}{queens_chess_piece}'
             print(msg)
             logging.info(msg)
-        else:
-            update=False
-    return QUEEN
+
+    return {'QUEEN': QUEEN, 'update': update}
 
 
 def return_dfshaped_orders(running_orders, portfolio_name='Jq'):

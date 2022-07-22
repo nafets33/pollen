@@ -43,7 +43,7 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from QueenHive import return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+from QueenHive import return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 
 prod = False
@@ -367,12 +367,15 @@ if option == 'charts':
 
             st.write(df_output)
         
+        if option3 == "Yes":
+            time.sleep(3)
+            st.experimental_rerun()
 
 if option == 'queen':
     pollen = return_pollen()
     tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
     tickers_avail.update({"all"})
-    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=['SPY'].index('SPY'))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
     command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
@@ -386,18 +389,32 @@ if option == 'queen':
         st.write(pollen.QUEEN["errors"])
 
     if command_conscience_option == 'Yes':
+        # all_trigs = []
+        all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in pollen.STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0}
+        # df = pd.DataFrame(all_trigs)
+        st.write("all trigger bees", all_trigs)
+        
         st.write("memory")
         st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
+
+        QUEEN = pollen.QUEEN
+
+        QUEEN['command_conscience']['orders']['active'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in ['submitted', 'running', 'running_close']]
+        QUEEN['command_conscience']['orders']['submitted'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'submitted']
+        QUEEN['command_conscience']['orders']['running'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'running']
         
         # st.write(pollen.QUEEN['command_conscience']['memory'])
-        ORDERS = pollen.QUEEN['command_conscience']['orders']['requests']
+        ORDERS = pollen.QUEEN['queen_orders']
         ORDERS = [i for i in ORDERS if i['queen_order_state'] == 'completed']
         # queen shows only today orders
         now_ = datetime.datetime.now()
         orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
         st.write(orders_today)
         st.write('orders')
-        st.write(pollen.QUEEN['command_conscience']['orders'])
+        # st.write(pollen.QUEEN['command_conscience']['orders'])
+        st.write("submitted", pollen.QUEEN['command_conscience']['orders']['submitted'])
+        st.write("running", pollen.QUEEN['command_conscience']['orders']['running'])
+        st.write("running_close", pollen.QUEEN['command_conscience']['orders']['running_close'])
 
         col1_a, col2_b, = st.columns(2)
 
@@ -469,10 +486,19 @@ if option == 'signal':
             st.write("Controls Saved", return_timestamp_string())
 
     if save_signals == 'orders':
+        show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
+        if show_app_req == 'yes':
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            st.write("sell orders", data['sell_orders'])
+            st.write("buy orders", data['buy_orders'])
         current_orders = pollen.QUEEN['command_conscience']['orders']
         running_orders = current_orders['running']
         
         running_portfolio = return_dfshaped_orders(running_orders)
+        
+        portfolio = return_alpc_portolio(api)['portfolio']
+        p_view = {k: [v['qty'], v['qty_available']] for (k,v) in portfolio.items()}
+        st.write(p_view)
         st.write(running_portfolio)
 
         position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
@@ -484,7 +510,7 @@ if option == 'signal':
         if c_order_id_option != 'Select':
             run_order = position_orders[c_order_iddict[c_order_id_option]]
             run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=False)
-            st.write(run_order_alpaca['filled_qty'] == run_order['filled_qty']) ## VALIDATION FOR RUN ORDERS
+            st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
             st.write(run_order_alpaca)
             st.write(run_order['filled_qty'])
             sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
@@ -535,10 +561,44 @@ if option == 'signal':
                     data = ReadPickleData(pickle_file=PB_App_Pickle)
                     st.write(data['sell_orders'])
 
-
-
     if save_signals == 'beeaction':
         st.write("beeaction")
+
+        initiate_waveup = st.button("buy_cross-0")
+        pollen = return_pollen()
+        ticker_time_frame = [set(i for i in pollen.STORY_bee.keys())][0]
+        ticker_time_frame = [i for i in ticker_time_frame]
+        ticker_time_frame.sort()
+        ticker_wave_option = st.sidebar.selectbox("Tickers", ticker_time_frame)
+
+        wave_trigger = {ticker_wave_option: ['buy_cross-0']}
+        data = ReadPickleData(pickle_file=PB_App_Pickle)
+        st.write(data['wave_triggers'])  
+
+        def create_app_request(var_dict):
+            valid_cols = ['app_requests_id', 'ticker', 'ticker_time_frame', 'wave_trigger']
+            for k,v in var_dict.items():
+                if k not in v:
+                    print("invalid key")
+                else:
+                    var_dict
+
+        if initiate_waveup:
+            order_dict = {'ticker': ticker_wave_option.split("_")[0],
+            'ticker_time_frame': ticker_wave_option,
+            'system': 'app',
+            'wave_trigger': wave_trigger,
+            'request_time': datetime.datetime.now(),
+            'app_requests_id' : f'{save_signals}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+            }
+
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            # st.write(data.keys())
+            data['wave_triggers'].append(order_dict)
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            st.write(data['wave_triggers'])            
+
 
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">BUY BUY Honey to be Made</p>'
         st.markdown(new_title, unsafe_allow_html=True)
