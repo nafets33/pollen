@@ -698,9 +698,11 @@ try:
             
             # speedybee to get past 30 second tics from major stocks with highest weight for SPY / QQQ
             if queens_chess_piece == 'castle':
-                speedybee_resp = speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
-                QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_resp['speedybee']
-            
+                try:
+                    speedybee_resp = speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
+                    QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_resp['speedybee']
+                except Exception as e:
+                    print(e)
             # God Save The QUEEN
             # ipdb.set_trace()
             if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:

@@ -274,11 +274,25 @@ class return_pollen:
     ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 pollen = return_pollen()
+QUEEN = read_queensmind(prod)['queen']
 
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
 option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 # st.header(option)
+def return_total_profits(QUEEN):
+    st.write("Total Profit Loss")
+    ORDERS = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'completed' and i['side'] == 'sell']
+    df = pd.DataFrame(ORDERS)
+    tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
+    st.write(tic_group_df)
 
+    st.write("Today Profit Loss")
+    now_ = datetime.datetime.now()
+    orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
+    if orders_today:
+        df = pd.DataFrame(orders_today)
+        tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
+        st.write(tic_group_df)
 
 # """ if "__name__" == "__main__": """
 
@@ -377,6 +391,8 @@ if option == 'queen':
     tickers_avail.update({"all"})
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=['SPY'].index('SPY'))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+    return_total_profits(QUEEN=QUEEN)
 
     command_conscience_option = st.sidebar.selectbox("command conscience", ('No', 'Yes'))
     orders_table = st.sidebar.selectbox("orders_table", ('No', 'Yes'))
