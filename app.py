@@ -46,7 +46,7 @@ import base64
 from QueenHive import return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 
-prod = False
+prod = True
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -282,17 +282,19 @@ option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 def return_total_profits(QUEEN):
     st.write("Total Profit Loss")
     ORDERS = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'completed' and i['side'] == 'sell']
-    df = pd.DataFrame(ORDERS)
-    tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
-    st.write(tic_group_df)
-
-    st.write("Today Profit Loss")
-    now_ = datetime.datetime.now()
-    orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
-    if orders_today:
-        df = pd.DataFrame(orders_today)
+    
+    if ORDERS:
+        df = pd.DataFrame(ORDERS)
         tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
         st.write(tic_group_df)
+
+        st.write("Today Profit Loss")
+        now_ = datetime.datetime.now()
+        orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
+        if orders_today:
+            df = pd.DataFrame(orders_today)
+            tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
+            st.write(tic_group_df)
 
 # """ if "__name__" == "__main__": """
 
@@ -301,7 +303,7 @@ if option == 'charts':
     
     tickers_avail = [set(i.split("_")[0] for i in pollen.POLLENSTORY.keys())][0]
     tickers_avail.update({"all"})
-    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail)
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=["SPY"].index("SPY"))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
     ttframe_list = list(set([i.split("_")[1] for i in pollen.POLLENSTORY.keys()]))
@@ -525,7 +527,7 @@ if option == 'signal':
         c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
         if c_order_id_option != 'Select':
             run_order = position_orders[c_order_iddict[c_order_id_option]]
-            run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=False)
+            run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=prod)
             st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
             st.write(run_order_alpaca)
             st.write(run_order['filled_qty'])
@@ -629,7 +631,7 @@ if option == 'signal':
         if quick_buy_short or quick_buy_long or quick_buy_BTC:
             
             if quick_buy_short:
-                ticker = "SQQQQ"
+                ticker = "SQQQ"
             elif quick_buy_long:
                 ticker = "TQQQ"
             elif quick_buy_BTC:

@@ -1378,7 +1378,7 @@ def log_script(log_file, loginfo_dict):
 
 def read_csv_db(db_root, tablename, ext='.csv', prod=True, init=False):
     orders = False
-    main_orders_cols = ['trigname', 'client_order_id', 'origin_client_order_id', 'exit_order_link', 'date', 'lastmodified', 'selfnote', 'app_requests_id', 'bulkorder_origin__client_order_id']
+    main_orders_cols = ['trigname', 'client_order_id', 'origin_client_order_id', 'exit_order_link', 'date', 'lastmodified', 'selfnote', 'app_requests_id', 'bulkorder_origin__client_order_id', 'portfolio_name', 'system_recon']
 
     if init:
         def create_csv_table(cols, db_root, tablename, ext):
@@ -2108,6 +2108,7 @@ def init_QUEEN_App():
     'wave_triggers': [],
     'app_wave_requests': [],
     'knight_bees_kings_rules': [],
+    'last_app_update': datetime.datetime.now(),
     }
     return app
 
