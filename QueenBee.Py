@@ -36,15 +36,24 @@ from scipy import stats
 import hashlib
 import json
 from collections import deque
-from QueenHive import KING, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, init_QUEEN, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+import argparse
+from QueenHive import KING, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, init_QUEEN, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 # from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 # if prior day abs(change) > 1 ignore ticker for the day! 
  
 # script arguments
-# queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
+parser = createParser()
+namespace = parser.parse_args()
+queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
 queens_chess_piece = 'queen'
-prod = True
+if queens_chess_piece.lower() not in ['queen']:
+    print("wrong chess move")
+    sys.exit()
+if namespace.prod.lower() == "true":
+    prod = True
+else:
+    prod = False
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 load_dotenv()
@@ -52,42 +61,36 @@ main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 db_app_root = os.path.join(db_root, 'app')
 
-# init_logging(queens_chess_piece, db_root)
-loglog_newfile = False
-log_dir = dst = os.path.join(db_root, 'logs')
-log_dir_logs = dst = os.path.join(log_dir, 'logs')
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-if prod:
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-else:
-    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+def init_logging(queens_chess_piece, db_root):
+    loglog_newfile = False
+    log_dir = dst = os.path.join(db_root, 'logs')
+    log_dir_logs = dst = os.path.join(log_dir, 'logs')
+    if os.path.exists(dst) == False:
+        os.mkdir(dst)
+    if prod:
+        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+    else:
+        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
 
-log_file = os.path.join(log_dir, log_name)
-if loglog_newfile:
-    # copy log file to log dir & del current log file
-    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-    dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
-    shutil.copy(log_file, dst_path) # only when you want to log your log files
-    os.remove(log_file)
-else:
-    # print("logging",log_file)
-    logging.basicConfig(filename=log_file,
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO,
-                        force=True)
-
-# class return_pollen:
-#     POLLENSTORY = read_pollenstory()
-#     QUEENMIND = read_queensmind(prod) # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
-#     QUEEN = QUEENMIND['queen']
+    log_file = os.path.join(log_dir, log_name)
+    if loglog_newfile:
+        # copy log file to log dir & del current log file
+        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+        shutil.copy(log_file, dst_path) # only when you want to log your log files
+        os.remove(log_file)
+    else:
+        # print("logging",log_file)
+        logging.basicConfig(filename=log_file,
+                            filemode='a',
+                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p',
+                            level=logging.INFO,
+                            force=True)
     
-#     # The story behind the story       
-#     STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
-#     KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
-#     ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
+    return True
+
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
 # Macd Settings
 # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
@@ -149,12 +152,6 @@ if queens_chess_piece == 'queen':  ## KINGS ORDERS
                                                 },
                                     }
     }
-
-
-
-if queens_chess_piece.lower() not in ['queen']:
-    print("wrong chess move")
-    sys.exit()
 
 
 # Client Tickers
@@ -310,7 +307,7 @@ def update_queen_order(QUEEN, update_client_order_ids, prod):
             print({'field':field_, 'new_value': new_value})
             QUEEN['queen_orders'][idx][field_] = new_value
     
-    PickleData(PB_Story_Pickle, QUEEN)
+    PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
     return True
 
 
@@ -484,8 +481,9 @@ def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TB
 def process_order_submission(order, trig, prod, tablename, ticker_time_frame, portfolio_name='Jq', status_q=False, exit_order_link=False, bulkorder_origin__client_order_id=False, system_recon=False, priceinfo=False):
 
     try:
-        def create_running_order(): # Create Running Order
+        def create_QueenOrderBee(): # Create Running Order
             date_mark = datetime.datetime.now()
+            # allowed_col = ["queen_order_state", ]
             if system_recon:
                 print("create recon order")
                 running_order = {'queen_order_state': 'submitted',
@@ -567,7 +565,7 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
         update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
 
         # Create Running Order
-        sending_order = create_running_order()
+        sending_order = create_QueenOrderBee()
 
         QUEEN['queen_orders'].append(sending_order)
 
@@ -886,7 +884,6 @@ def command_conscience(api, QUEEN):
     # def app_request_triggerbees():
     app_wave_trig_req = process_app_requests(APP_requests, 'wave_triggers')
 
-
     # cycle through stories     # The Golden Ticket
     for ticker in story_tickers:
         if ticker not in ["SPY", "ETHUSD"]:
@@ -992,69 +989,9 @@ def command_conscience(api, QUEEN):
 
     return True
 
+# Handle ALL Orders
+def order_management(api, QUEEN): 
 
-def order_management(api, QUEEN): # Handle ALL submitted orders and place them
-
-    def update_origin_orders_profits(queen_order, origin_order, origin_order_idx):
-        origin_order_cost_basis = float(origin_order['filled_qty']) * float(origin_order['filled_avg_price'])
-        
-        # closing_orders_cost_basis
-        origin_closing_orders_df = return_closing_orders_df(exit_order_link=queen_order['exit_order_link'])
-        origin_closing_orders_df['filled_qty'] = origin_closing_orders_df['filled_qty'].apply(lambda x: float(x))
-        origin_closing_orders_df['filled_avg_price'] = origin_closing_orders_df['filled_avg_price'].apply(lambda x: float(x))
-        origin_closing_orders_df['cost_basis'] = origin_closing_orders_df['filled_qty'] * origin_closing_orders_df['filled_avg_price']
-        closing_orders_cost_basis = sum(origin_closing_orders_df['cost_basis'])
-
-        profit_loss = closing_orders_cost_basis - origin_order_cost_basis
-
-        origin_closing_orders_df['filled_qty'] = origin_closing_orders_df['filled_qty'].apply(lambda x: float(x))
-        closing_filled = sum(origin_closing_orders_df['filled_qty'])
-
-        QUEEN['queen_orders'][origin_order_idx]['profit_loss'] = profit_loss
-
-        return {'closing_filled': closing_filled }
-
-    
-    def validate_portfolio_with_RUNNING(ticker, run_index, run_order, portfolio):        
-        # check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
-        # if ticker in crypto_currency_symbols:
-        #     return {"run_order_valid":True}
-        if ticker in portfolio.keys():
-            # ipdb.()
-            qty_avail = float(portfolio[ticker]['qty'])
-            qty_run = float(run_order["filled_qty"])
-            # ipdb.()
-            if qty_avail < 0 and qty_run < qty_avail: # short and run < avail (-10, -5)
-                print("CRITICAL ERROR SHORT POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
-                logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
-                QUEEN['queen_orders'][run_index]["filled_qty"] = qty_avail
-                QUEEN['queen_orders'][run_index]["status_q"] = True
-                return QUEEN['queen_orders'][run_index]
-            
-            elif qty_avail > 0 and qty_run > qty_avail: # long and run > avail (10, 5)
-                print("CRITICAL ERROR LONG POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
-                logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
-                QUEEN['queen_orders'][run_index]["filled_qty"] = qty_avail
-                QUEEN['queen_orders'][run_index]["status_q"] = True
-                return QUEEN['queen_orders'][run_index]
-           
-            else:
-                return QUEEN['queen_orders'][run_index]
-        
-        else:
-            print(ticker, "CRITICAL ERROR PORTFOLIO DOES NOT HAVE TICKER ARCHVIE RUNNING ORDER")
-            logging.critical({'msg': f'{ticker}{" :Ticker not in Portfolio"}'})
-
-            order_status = check_order_status(api=api, client_order_id=run_order['client_order_id'], queen_order=run_order)
-            queen_order = update_latest_queen_order_status(order_status=order_status, queen_order_idx=run_index)
-            # closing_filled = update_origin_orders_profits(queen_order, origin_order, origin_order_idx)
-
-            # REMOVE running order
-            QUEEN['queen_orders'][run_index]['queen_order_state'] = "error"        
-            return QUEEN['queen_orders'][run_index]
-
-
-    
     def kning_queens_order_evaluation(run_order, current_profit_loss, portfolio):
 
         def process_app_sell_signal(runorder_client_order_id): # ONLY returns if not empty
@@ -1157,6 +1094,65 @@ def order_management(api, QUEEN): # Handle ALL submitted orders and place them
             return {'bee_sell': True, 'type': type, 'side': side, 'sell_qty': sell_qty, 'app_request': app_request}
         else:
             return {'bee_sell': False, 'run_order': run_order}
+
+
+    def update_origin_orders_profits(queen_order, origin_order, origin_order_idx):
+        origin_order_cost_basis = float(origin_order['filled_qty']) * float(origin_order['filled_avg_price'])
+        
+        # closing_orders_cost_basis
+        origin_closing_orders_df = return_closing_orders_df(exit_order_link=queen_order['exit_order_link'])
+        origin_closing_orders_df['filled_qty'] = origin_closing_orders_df['filled_qty'].apply(lambda x: float(x))
+        origin_closing_orders_df['filled_avg_price'] = origin_closing_orders_df['filled_avg_price'].apply(lambda x: float(x))
+        origin_closing_orders_df['cost_basis'] = origin_closing_orders_df['filled_qty'] * origin_closing_orders_df['filled_avg_price']
+        closing_orders_cost_basis = sum(origin_closing_orders_df['cost_basis'])
+
+        profit_loss = closing_orders_cost_basis - origin_order_cost_basis
+
+        origin_closing_orders_df['filled_qty'] = origin_closing_orders_df['filled_qty'].apply(lambda x: float(x))
+        closing_filled = sum(origin_closing_orders_df['filled_qty'])
+
+        QUEEN['queen_orders'][origin_order_idx]['profit_loss'] = profit_loss
+
+        return {'closing_filled': closing_filled }
+
+    
+    def validate_portfolio_with_RUNNING(ticker, run_index, run_order, portfolio):        
+        # check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
+        # if ticker in crypto_currency_symbols:
+        #     return {"run_order_valid":True}
+        if ticker in portfolio.keys():
+            # ipdb.()
+            qty_avail = float(portfolio[ticker]['qty'])
+            qty_run = float(run_order["filled_qty"])
+            # ipdb.()
+            if qty_avail < 0 and qty_run < qty_avail: # short and run < avail (-10, -5)
+                print("CRITICAL ERROR SHORT POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
+                logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
+                QUEEN['queen_orders'][run_index]["filled_qty"] = qty_avail
+                QUEEN['queen_orders'][run_index]["status_q"] = True
+                return QUEEN['queen_orders'][run_index]
+            
+            elif qty_avail > 0 and qty_run > qty_avail: # long and run > avail (10, 5)
+                print("CRITICAL ERROR LONG POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
+                logging.critical({"msg": "run order qty > then avail in portfolio, adjust to remaining"})
+                QUEEN['queen_orders'][run_index]["filled_qty"] = qty_avail
+                QUEEN['queen_orders'][run_index]["status_q"] = True
+                return QUEEN['queen_orders'][run_index]
+           
+            else:
+                return QUEEN['queen_orders'][run_index]
+        
+        else:
+            print(ticker, "CRITICAL ERROR PORTFOLIO DOES NOT HAVE TICKER ARCHVIE RUNNING ORDER")
+            logging.critical({'msg': f'{ticker}{" :Ticker not in Portfolio"}'})
+
+            order_status = check_order_status(api=api, client_order_id=run_order['client_order_id'], queen_order=run_order)
+            queen_order = update_latest_queen_order_status(order_status=order_status, queen_order_idx=run_index)
+            # closing_filled = update_origin_orders_profits(queen_order, origin_order, origin_order_idx)
+
+            # REMOVE running order
+            QUEEN['queen_orders'][run_index]['queen_order_state'] = "error"        
+            return QUEEN['queen_orders'][run_index]
 
 
     def update_latest_queen_order_status(order_status, queen_order_idx): # returns queen_order
@@ -1398,6 +1394,19 @@ def order_management(api, QUEEN): # Handle ALL submitted orders and place them
                     print(msg)
                     sys.exit()
     
+
+    def confirm_Theme(QUEEN, APP_requests):
+        if APP_requests['last_app_update'] > QUEEN['queen_controls']['last_read_app']:
+            print("app request, checking theme")
+            print(APP_requests['theme'])
+            # always set Theme
+            if QUEEN['queen_controls']['theme'] != APP_requests['theme'] and APP_requests['theme'] in pollen_theme_dict.keys():
+                print("setting new theme", APP_requests['theme'])
+                logging.info({'new_theme': APP_requests['theme'] })
+                QUEEN['queen_controls']['theme'] = APP_requests['theme']
+                QUEEN['queen_controls']['last_read_app'] = APP_requests['last_app_update']
+        return True    
+    
     
     #### MAIN ####
     # >for every ticker position join in running-positions to account for total position
@@ -1405,17 +1414,8 @@ def order_management(api, QUEEN): # Handle ALL submitted orders and place them
 
     portfolio = return_alpc_portolio(api)['portfolio']
 
-    # Confirm Theme
-    if APP_requests['last_app_update'] > QUEEN['queen_controls']['last_read_app']:
-        print("app request, checking theme")
-        print(APP_requests['theme'])
-        # always set Theme
-        if QUEEN['queen_controls']['theme'] != APP_requests['theme'] and APP_requests['theme'] in pollen_theme_dict.keys():
-            print("setting new theme", APP_requests['theme'])
-            logging.info({'new_theme': APP_requests['theme'] })
-            QUEEN['queen_controls']['theme'] = APP_requests['theme']
-            QUEEN['queen_controls']['last_read_app'] = APP_requests['last_app_update']
-
+    # return Theme from App    
+    confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
 
     # Submitted Orders First
     queen_orders_main(portfolio=portfolio)
@@ -1432,6 +1432,7 @@ def order_management(api, QUEEN): # Handle ALL submitted orders and place them
 
 # if '_name_' == '_main_':
 try:
+    # namespace.q_1
     chart_times = {
         "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
         "1Hour_3Month": 48, "2Hour_6Month": 72, 

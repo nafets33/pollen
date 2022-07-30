@@ -29,6 +29,7 @@ from scipy import stats
 import shutil
 import ipdb
 import json
+import argparse
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -2155,6 +2156,13 @@ def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
     return running_portfolio
 
 
+def createParser ():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default=False)
+    parser.add_argument ('-prod', default=False)
+    return parser
+
+
 def return_market_hours(api_cal, crypto):
     trading_days = api_cal # api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
@@ -2222,6 +2230,9 @@ def theme_calculator(POLLENSTORY, chart_times):
                 theme[ticker][tframe] = story
     
     return theme
+
+       
+
 
 
 

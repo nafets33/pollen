@@ -43,6 +43,7 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
+from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
 from QueenHive import return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 
@@ -186,6 +187,33 @@ image = Image.open(bee_image)
 with col3:
     st.image(image, caption='Jq', width=33)
 
+    
+def build_AGgrid_df(data, reload_data=False):
+    gb = GridOptionsBuilder.from_dataframe(data)
+    gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+    gb.configure_side_bar() #Add a sidebar
+    gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+    gb.configure_column("first_column", header_name="First", editable=True, groupable=True)
+
+
+    gridOptions = gb.build()
+    gridOptions['rememberGroupStateWhenNewData'] = 'true'
+
+
+    grid_response = AgGrid(
+        data,
+        gridOptions=gridOptions,
+        data_return_mode='AS_INPUT', 
+        update_mode='MODEL_CHANGED', 
+        fit_columns_on_grid_load=False,
+        theme='blue', #Add theme color to the table
+        enable_enterprise_modules=True,
+        height=350, 
+        width='100%',
+        reload_data=reload_data
+    )
+    return grid_response
+
 def create_main_macd_chart(df):
     title = df.iloc[-1]['name']
     # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -275,26 +303,35 @@ class return_pollen:
 
 pollen = return_pollen()
 QUEEN = read_queensmind(prod)['queen']
+POLLENSTORY = read_pollenstory()
+APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+
 
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
 option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
 # st.header(option)
 def return_total_profits(QUEEN):
-    st.write("Total Profit Loss")
+    
     ORDERS = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'completed' and i['side'] == 'sell']
+    c_1, c_2 = st.columns(2)
     
     if ORDERS:
         df = pd.DataFrame(ORDERS)
         tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
-        st.write(tic_group_df)
+        
+        with c_1:
+            st.write("Total Profit Loss")
+            st.write(tic_group_df)
 
-        st.write("Today Profit Loss")
+
         now_ = datetime.datetime.now()
         orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
         if orders_today:
             df = pd.DataFrame(orders_today)
             tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
-            st.write(tic_group_df)
+            with c_2:
+                st.write("Today Profit Loss")
+                st.write(tic_group_df)
 
 # """ if "__name__" == "__main__": """
 
@@ -470,7 +507,7 @@ if option == 'queen':
 
 
 if option == 'signal':
-    pollen = return_pollen()
+    # pollen = return_pollen()
     # PB_App_Pickle = os.path.join(db_app_root, 'queen_controls.pkl')
     save_signals = st.selectbox('Send to Queen', ['beeaction', 'orders', 'controls'], index=['Select'].index('Select'))
 
@@ -481,28 +518,58 @@ if option == 'signal':
             # st.write("theme>>>", QUEEN['collective_conscience']['theme']['current_state'])
         st.write("theme>>>", pollen.QUEEN['queen_controls']['theme'])
 
-    
+
     if save_signals == 'controls':
         
         # CHANGE Theme_list or any selections has to come from QUEEN
         theme_list = list(pollen_theme.keys())
         theme_option = st.selectbox('theme', theme_list, index=theme_list.index('nuetral'))
         
-        sell_command = st.button("Save Controls")
-        if sell_command:
+        save_button = st.button("Save Theme")
+        if save_button:
             # updates = {'theme': theme_option,
             #            'request_time': datetime.datetime.now(),
             #            'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{"__"}{datetime.datetime.now().microsecond}'
             # }
             
-            APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+            # Set Theme
+            # APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
             APP_requests['theme'] = theme_option
             APP_requests['last_app_update'] = datetime.datetime.now()
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
             
-            # update_queen_controls(pickle_file=PB_App_Pickle, dict_update=updates, queen=False)
             st.write("Controls Saved", return_timestamp_string())
 
+        # Update run order
+        save_button_runorder = st.button("Save RunOrderUpdate")
+        latest_queen_order = [pollen.QUEEN['queen_orders'][-1]] # latest
+        df = pd.DataFrame(latest_queen_order)
+        df = df.T.reset_index()
+        for col in df.columns:
+            df[col] = df[col].astype(str)
+        df = df.rename(columns={0: 'main'})
+        grid_response = build_AGgrid_df(data=df)
+        data = grid_response['data']
+        selected = grid_response['selected_rows'] 
+        df = pd.DataFrame(selected)
+        st.write(df)
+
+        if save_button_runorder:
+            df = pd.DataFrame(latest_queen_order)
+            df = df.T
+            for col in df.columns:
+                df[col] = df[col].astype(str)
+            df = df.rename(columns={0: 'main'})
+            grid_response = build_AGgrid_df(data=df, reload_data=True)
+            data = grid_response['data']
+            selected = grid_response['selected_rows'] 
+            df = pd.DataFrame(selected)
+            st.write(df)
+
+    
+    
+    
+    
     if save_signals == 'orders':
         show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
         if show_app_req == 'yes':
@@ -579,6 +646,10 @@ if option == 'signal':
                     data = ReadPickleData(pickle_file=PB_App_Pickle)
                     st.write(data['sell_orders'])
 
+    
+    
+    
+    
     if save_signals == 'beeaction':
         st.write("beeaction")
 
