@@ -1,4 +1,25 @@
 # archived_functions
+
+
+def produce_pollen_story(pollen_charts):
+    # add in indicators
+    # produce pollenstory
+    main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
+    for ticker_time, bars_data in pollen_charts.items():
+        df_data_new = return_getbars_WithIndicators(bars_data=bars_data, MACD=MACD)
+        if df_data_new[0] == True:
+            main_rebuild_dict[ticker_time] = df_data_new[1]
+        else:
+            print("error", ticker_time)
+    # for ticker_time_frame, df_data in main_rebuild_dict.items():
+    pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
+
+
+    return {'pollencharts_nectar': main_rebuild_dict, 'pollencharts': chart_rebuild_dict}
+
+
+
+
 # def recon_running_trigger_stops(QUEEN):
 #     run_dict = {'running': 'trigger_stopped', 'running_close': 'trigger_sell_stopped'}
 #     save_queen = False

@@ -247,64 +247,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             """for every index(timeframe) calculate profit length, bell curve
                 conclude with how well trigger is doing to then determine when next trigger will do well
             """
-            def return_knightbee_waves(df, knights_word):  # adds profit wave based on trigger
-                # df = POLLENSTORY['SPY_1Minute_1Day'] # test
-                wave = {ticker_time_frame: {}}
-                # knights_word = {'ready_buy_cross': 2, 'buy_cross-0':1,}
-                for knight_trigger in knights_word.keys():
-                    trig_name = knight_trigger # "buy_cross-0" # test
-                    wave[ticker_time_frame][trig_name] = {}
-                    trigger_bee = df[trig_name].tolist()
-                    close = df['close'].tolist()
-                    track_bees = {}
-                    track_bees_profits = {}
-                    trig_bee_count = 0
-                    for idx, trig_bee in enumerate(trigger_bee):
-                        beename = f'{trig_bee_count}'
-                        if idx == 0:
-                            continue
-                        if trig_bee == 'bee':
-                            # trig_bee_count+=1
-                            # beename = f'{trig_name}{trig_bee_count}'
-                            close_price = close[idx]
-                            track_bees[beename] = close_price
-                            # reset only if bee not continous
-                            if trigger_bee[idx-1] != 'bee':
-                                trig_bee_count+=1
-                            continue
-                        if trig_bee_count > 0:
-                            # beename = f'{trig_name}{trig_bee_count}'
-                            origin_trig_price = track_bees[str(int(beename) - 1)]
-                            latest_price = close[idx]
-                            profit_loss = (latest_price - origin_trig_price) / latest_price
-                            
-                            if "sell_cross-0" in knight_trigger: # all triggers with short reverse number to reflect profit
-                                profit_loss = profit_loss * -1
-                            
-                            if beename in track_bees_profits.keys():
-                                track_bees_profits[beename].update({idx: profit_loss})
-                            else:
-                                track_bees_profits[beename] = {idx: profit_loss}
-                    # knights_word[trig_name]['wave'] = track_bees_profits
-                    wave[ticker_time_frame][trig_name] = track_bees_profits
-                    # wave[ticker_time_frame]["buy_cross-0"].keys()
-                    # bees_wave = wave['AAPL_1Minute_1Day']["buy_cross-0"]
-                    index_perwave = {}
-                    for k, v in track_bees_profits.items():
-                        for kn, vn in v.items():
-                            index_perwave[kn] = k
-                    index_wave_dict = [v for (k,v) in track_bees_profits.items()]
-                    index_wave_series = {} 
-                    for di in index_wave_dict:
-                        for k,v in di.items():
-                            index_wave_series[k] = v
-                    df[f'{trig_name}{"__wave"}'] = df['story_index'].map(index_wave_series).fillna(0)
-                    df[f'{trig_name}{"__wave_number"}'] = df['story_index'].map(index_perwave).fillna("0")
-                    # bees_wave_df = df[df['story_index'].isin(bees_wave_list)].copy()
-                    # tag greatest profit
-                return wave
-            
-            wave = return_knightbee_waves(df=df, knights_word=knights_word)
+            wave = return_knightbee_waves(df=df, knights_word=knights_word, ticker_time_frame=ticker_time_frame)
             # wave_trigger_list = wave[ticker_time_frame].keys()
             wave_trigger_list = ['buy_cross-0', 'sell_cross-0']
 
@@ -312,81 +255,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             #Q? split up time blocks and describe wave-buy time segments, morning, beforenoon, afternoon
             #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
 
-
-            def return_macd_wave_story(df, wave_trigger_list):
-                # POLLENSTORY = read_pollenstory()
-                # df = POLLENSTORY["SPY_1Minute_1Day"]
-                # wave_trigger_list = ["buy_cross-0", "sell_cross-0"]
-                
-                t = split_today_vs_prior(df=df)
-                dft = t['df_today']
-
-                # length and height of wave
-                MACDWAVE_story = {'story': {}}
-                MACDWAVE_story.update({trig_name: {} for trig_name in wave_trigger_list})
-
-                for trigger in wave_trigger_list:
-                    wave_col_name = f'{trigger}{"__wave"}'
-                    wave_col_wavenumber = f'{trigger}{"__wave_number"}'
-                
-                    num_waves = dft[wave_col_wavenumber].tolist()
-                    num_waves_list = list(set(num_waves))
-                    num_waves_list = [str(i) for i in sorted([int(i) for i in num_waves_list])]
-
-                    for wave_n in num_waves_list:
-                        MACDWAVE_story[trigger][wave_n] = {}
-                        if wave_n == '0':
-                            continue
-                        t = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
-                        t = dft[dft[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
-                        
-                        row_1 = t.iloc[0]['story_index']
-                        row_2 = t.iloc[-1]['story_index']
-
-                        # we want to know the how long it took to get to low? 
-
-                        # Assign each waves timeblock
-                        if "Day" in tframe:
-                            wave_blocktime = "Day"
-                            wave_starttime = t.iloc[0]['timestamp_est']
-                            wave_endtime = t.iloc[-1]['timestamp_est']
-                        else:
-                            wave_starttime = t.iloc[0]['timestamp_est']
-                            wave_endtime = t.iloc[-1]['timestamp_est']
-                            wave_starttime_token = wave_starttime.replace(tzinfo=None)
-                            if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
-                                wave_blocktime = 'morning_9-11'
-                            elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
-                                wave_blocktime = 'lunch_11-2'
-                            elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
-                                wave_blocktime = 'afternoon_2-4'
-                            else:
-                                wave_blocktime = 'afterhours'
-
-                        MACDWAVE_story[trigger][wave_n].update({'length': row_2 - row_1, 
-                        'wave_blocktime' : wave_blocktime,
-                        'wave_times': ( wave_starttime, wave_endtime ),
-                        })
-                        
-                        wave_height_value = max(t[wave_col_name].values)
-                        # how long was it profitable?
-                        profit_df = t[t[wave_col_name] > 0].copy()
-                        profit_length  = len(profit_df)
-                        if profit_length > 0:
-                            max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]['story_index']
-                            time_to_max_profit = max_profit_index - row_1
-                            MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': time_to_max_profit})
-
-                        else:
-                            MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
-                
-                # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
-                # bee_89 = MACDWAVE_story["buy_cross-0"]
-                # for wave in bee_89:
-                # gather current avg waves
-
-                return MACDWAVE_story
-            MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list)
+            MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list, tframe=tframe)
             STORY_bee[ticker_time_frame]['waves'] = MACDWAVE_story
 
             knights_sight_word[ticker_time_frame] = knights_word
@@ -489,8 +358,8 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
 
 
-
-
+            df = assign_MACD_Tier(df=df, mac_world=mac_world, tiers_num=7,  ticker_time_frame=ticker_time_frame)
+            STORY_bee[ticker_time_frame]['story']['current_macd_tier'] = df.iloc[-1]['macd_tier']
             # how long have you been stuck at vwap ?
             
             # Measure MACD WAVES
@@ -742,10 +611,10 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                             wave_mark_list.append(0)
                     else:
                         # ipdb.set_trace()
-                        cross_list.append(f'{"hold"}{"-"}{0}')
+                        cross_list.append(f'{"init_hold"}{"-"}{0}')
                         wave_mark_list.append(0)
             else:
-                cross_list.append(f'{"hold"}{"-"}{0}')
+                cross_list.append(f'{"init_hold"}{"-"}{0}')
                 wave_mark_list.append(0)
         df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
         df3 = pd.DataFrame(wave_mark_list, columns=['macd_cross_wavedistance'])
@@ -754,6 +623,218 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
     except Exception as e:
         msg=(e,"--", print_line_of_error(), "--", 'macd_cross')
         logging.critical(msg)     
+
+
+def assign_tier_num(num_value,  td):
+    length_td = len(td)
+    max_num_value = td[length_td-1][1]
+    for k, v in td.items():
+        # ipdb.set_trace()
+        num_value = float(num_value)
+        if num_value > 0 and num_value > v[0] and num_value < v[1]:
+            # print(k, num_value)
+            return k
+        elif num_value < 0 and num_value < v[0] and num_value > v[1]:
+            # print(k, num_value)
+            return k
+        elif num_value > 0 and num_value > max_num_value:
+            # print("way above")
+            return length_td
+        elif num_value < 0 and num_value < max_num_value:
+            # print("way below")
+            return length_td
+        elif num_value == 0:
+            # print('0 really')
+            return 0
+
+
+def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
+    # create tier ranges
+    tiers_num = 7
+    ftime = ticker_time_frame.split("_")[1]
+    
+    # m_high = mac_world['macd_high']
+    mac_world_ranges = {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}
+
+    m_high = mac_world_ranges[ftime]
+    m_low = mac_world_ranges[ftime] * -1
+
+    tiers_add = m_high/tiers_num
+    td_high = {}
+    for i in range(tiers_num):
+        if i == 0:
+            td_high[i] = (0, tiers_add)
+        else:
+            td_high[i] = (td_high[i-1][1], td_high[i-1][1] + tiers_add)
+
+    tiers_add = m_low/tiers_num
+    td_low = {}
+    for i in range(tiers_num):
+        if i == 0:
+            td_low[i] = (0, tiers_add)
+        else:
+            td_low[i] = (td_low[i-1][1], td_low[i-1][1] + tiers_add)
+    
+    # apply tier
+    df['macd_tier'] = np.where( (df['macd'] > 0), 
+    df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_high)), 
+    df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_low))
+    )
+
+    return df
+
+
+    # # Add macd_tiers
+    # df['macd_tier'] = np.where( (df['macd'] == 0), 'tier0', 'undefined')
+    # df['macd_tier'] = np.where( (df['macd'] > 0) & ( (df['macd'] + tiers_add) < tiers_add), 'tier1', df['macd_tier'] )
+    
+    # df['macd_tier'] = np.where( (df['macd'] > .33) & (df['macd'] < .5), 'tier2', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] > .5) & (df['macd'] < .1), 'tier3', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] > .1) & (df['macd'] < 1.33), 'tier4', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] > 1.33) & (df['macd'] < 1.5), 'tier5', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] > 1.5) & (df['macd'] < 2), 'tier6', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] > 2), 'tier7', df['macd_tier'] )
+
+    # df['macd_tier'] = np.where( (df['macd'] < 0) & (df['macd'] > -.33), 'subtier1', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] < -.33) & (df['macd'] > -.5), 'subtier2', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] < -.5) & (df['macd'] > -.1), 'subtier3', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] < -.1) & (df['macd'] > -1.33), 'subtier4', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] < -1.33) & (df['macd'] > -1.5), 'subtier5', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] < -1.5) & (df['macd'] > -2), 'subtier6', df['macd_tier'] )
+    # df['macd_tier'] = np.where( (df['macd'] < -2), 'subtier7', df['macd_tier'] )
+
+
+def return_knightbee_waves(df, knights_word, ticker_time_frame):  # adds profit wave based on trigger
+    # df = POLLENSTORY['SPY_1Minute_1Day'] # test
+    wave = {ticker_time_frame: {}}
+    # knights_word = {'ready_buy_cross': 2, 'buy_cross-0':1,}
+    for knight_trigger in knights_word.keys():
+        trig_name = knight_trigger # "buy_cross-0" # test
+        wave[ticker_time_frame][trig_name] = {}
+        trigger_bee = df[trig_name].tolist()
+        close = df['close'].tolist()
+        track_bees = {}
+        track_bees_profits = {}
+        trig_bee_count = 0
+        for idx, trig_bee in enumerate(trigger_bee):
+            beename = f'{trig_bee_count}'
+            if idx == 0:
+                continue
+            if trig_bee == 'bee':
+                # trig_bee_count+=1
+                # beename = f'{trig_name}{trig_bee_count}'
+                close_price = close[idx]
+                track_bees[beename] = close_price
+                # reset only if bee not continous
+                if trigger_bee[idx-1] != 'bee':
+                    trig_bee_count+=1
+                continue
+            if trig_bee_count > 0:
+                # beename = f'{trig_name}{trig_bee_count}'
+                origin_trig_price = track_bees[str(int(beename) - 1)]
+                latest_price = close[idx]
+                profit_loss = (latest_price - origin_trig_price) / latest_price
+                
+                if "sell_cross-0" in knight_trigger: # all triggers with short reverse number to reflect profit
+                    profit_loss = profit_loss * -1
+                
+                if beename in track_bees_profits.keys():
+                    track_bees_profits[beename].update({idx: profit_loss})
+                else:
+                    track_bees_profits[beename] = {idx: profit_loss}
+        # knights_word[trig_name]['wave'] = track_bees_profits
+        wave[ticker_time_frame][trig_name] = track_bees_profits
+        # wave[ticker_time_frame]["buy_cross-0"].keys()
+        # bees_wave = wave['AAPL_1Minute_1Day']["buy_cross-0"]
+        index_perwave = {}
+        for k, v in track_bees_profits.items():
+            for kn, vn in v.items():
+                index_perwave[kn] = k
+        index_wave_dict = [v for (k,v) in track_bees_profits.items()]
+        index_wave_series = {} 
+        for di in index_wave_dict:
+            for k,v in di.items():
+                index_wave_series[k] = v
+        df[f'{trig_name}{"__wave"}'] = df['story_index'].map(index_wave_series).fillna(0)
+        df[f'{trig_name}{"__wave_number"}'] = df['story_index'].map(index_perwave).fillna("0")
+        # bees_wave_df = df[df['story_index'].isin(bees_wave_list)].copy()
+        # tag greatest profit
+    return wave
+
+
+def return_macd_wave_story(df, wave_trigger_list, tframe):
+    # POLLENSTORY = read_pollenstory()
+    # df = POLLENSTORY["SPY_1Minute_1Day"]
+    # wave_trigger_list = ["buy_cross-0", "sell_cross-0"]
+    
+    t = split_today_vs_prior(df=df)
+    dft = t['df_today']
+
+    # length and height of wave
+    MACDWAVE_story = {'story': {}}
+    MACDWAVE_story.update({trig_name: {} for trig_name in wave_trigger_list})
+
+    for trigger in wave_trigger_list:
+        wave_col_name = f'{trigger}{"__wave"}'
+        wave_col_wavenumber = f'{trigger}{"__wave_number"}'
+    
+        num_waves = dft[wave_col_wavenumber].tolist()
+        num_waves_list = list(set(num_waves))
+        num_waves_list = [str(i) for i in sorted([int(i) for i in num_waves_list])]
+
+        for wave_n in num_waves_list:
+            MACDWAVE_story[trigger][wave_n] = {}
+            if wave_n == '0':
+                continue
+            t = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
+            t = dft[dft[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
+            
+            row_1 = t.iloc[0]['story_index']
+            row_2 = t.iloc[-1]['story_index']
+
+            # we want to know the how long it took to get to low? 
+
+            # Assign each waves timeblock
+            if "Day" in tframe:
+                wave_blocktime = "Day"
+                wave_starttime = t.iloc[0]['timestamp_est']
+                wave_endtime = t.iloc[-1]['timestamp_est']
+            else:
+                wave_starttime = t.iloc[0]['timestamp_est']
+                wave_endtime = t.iloc[-1]['timestamp_est']
+                wave_starttime_token = wave_starttime.replace(tzinfo=None)
+                if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+                    wave_blocktime = 'morning_9-11'
+                elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                    wave_blocktime = 'lunch_11-2'
+                elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                    wave_blocktime = 'afternoon_2-4'
+                else:
+                    wave_blocktime = 'afterhours'
+
+            MACDWAVE_story[trigger][wave_n].update({'length': row_2 - row_1, 
+            'wave_blocktime' : wave_blocktime,
+            'wave_times': ( wave_starttime, wave_endtime ),
+            })
+            
+            wave_height_value = max(t[wave_col_name].values)
+            # how long was it profitable?
+            profit_df = t[t[wave_col_name] > 0].copy()
+            profit_length  = len(profit_df)
+            if profit_length > 0:
+                max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]['story_index']
+                time_to_max_profit = max_profit_index - row_1
+                MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': time_to_max_profit})
+
+            else:
+                MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
+    
+    # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
+    # bee_89 = MACDWAVE_story["buy_cross-0"]
+    # for wave in bee_89:
+    # gather current avg waves
+
+    return MACDWAVE_story
 
 
 def split_today_vs_prior(df):
@@ -2110,6 +2191,8 @@ def init_QUEEN_App():
     'app_wave_requests': [],
     'knight_bees_kings_rules': [],
     'last_app_update': datetime.datetime.now(),
+    'update_queen_order': [],
+    'update_queen_order_requests': [],
     }
     return app
 
@@ -2158,7 +2241,7 @@ def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
 
 def createParser ():
     parser = argparse.ArgumentParser()
-    parser.add_argument ('-qcp', default=False)
+    parser.add_argument ('-qcp', default="queen")
     parser.add_argument ('-prod', default=False)
     return parser
 
@@ -2171,7 +2254,8 @@ def return_market_hours(api_cal, crypto):
     mk_open_today = s_iso in trading_days_df["date"].tolist()
     mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30)
     mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0)
-    if crypto:
+    
+    if str(crypto).lower() == 'true':
         return "open"
     else:
         if mk_open_today:
@@ -2181,6 +2265,13 @@ def return_market_hours(api_cal, crypto):
                 return "closed"
         else:
             return "closed"
+
+
+def clean_queens_memory(QUEEN, keyitem): # MISC
+    if keyitem == "trigger_stopped":
+        QUEEN['command_conscience']['memory']['trigger_stopped'] = []
+        PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+
 
 
 def theme_calculator(POLLENSTORY, chart_times):
