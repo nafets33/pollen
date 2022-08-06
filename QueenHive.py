@@ -2273,7 +2273,6 @@ def clean_queens_memory(QUEEN, keyitem): # MISC
         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 
-
 def theme_calculator(POLLENSTORY, chart_times):
     # ticker = 'SPY' # test
     # chart_times = {
