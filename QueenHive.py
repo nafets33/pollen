@@ -368,22 +368,14 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
 
 
+            # Measure MACD WAVES
+            # change % shifts for each, close, macd, signal, hist....
             df = assign_MACD_Tier(df=df, mac_world=mac_world, tiers_num=macd_tiers,  ticker_time_frame=ticker_time_frame)
             STORY_bee[ticker_time_frame]['story']['current_macd_tier'] = df.iloc[-1]['macd_tier']
             STORY_bee[ticker_time_frame]['story']['current_hist_tier'] = df.iloc[-1]['hist_tier']
-            # how long have you been stuck at vwap ?
             
-            # Measure MACD WAVES
-            # change % shifts for each, close, macd, signal, hist....
-
-            # # add timeblocks [9:30 - 10, 10-12, 12-1, 1-3, 3-4]:: NOT SURE ABOUT TIMEBLOCK YET?
-            # def add_timeblock(dt):
-            #     if dt.hour > 9 and dt.hour < 10:
-            #         return 1
-            #     elif dt.hour == 10 and dt.hour < 12:
-            #         return 2
-            #     elif dt.hour == 12 and dt.hour < 1 
-            # df['timeblock'] = 
+            
+            # how long have you been stuck at vwap ?
 
             # add to story
             df['chartdate'] = df['timestamp_est'] # add as new col
@@ -2354,6 +2346,40 @@ def logging_log_message(type='info', msg='default', error='none', origin_func='d
         return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
     if type == 'critical':
         return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
+
+
+
+def story_view(STORY_bee, ticker): # --> returns dataframe
+    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'close_mom_3']
+    wave_view = ['length', 'maxprofit', 'time_to_max_profit']
+    ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
+    return_view = [] # queenmemory objects in conscience {}
+    for ttframe, conscience in ttframe__items.items():
+        queen_return = {'StarName': ttframe}
+
+        story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
+        last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
+        last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
+        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
+
+        if 'buy' in story['macd_state']:
+            current_wave = last_buy_wave
+        else:
+            current_wave = last_sell_wave
+        
+        current_wave = {k: v for (k,v) in current_wave.items() if k in wave_view}
+
+        obj_return = {**story, **current_wave}
+        obj_return_ = {**obj_return, **p_story}
+        queen_return = {**queen_return, **obj_return_}
+        
+        return_view.append(queen_return)
+    
+    
+    df =  pd.DataFrame(return_view)
+    return {'df': df, 'current_wave': current_wave}
+
+
 
 
 # def liquidate_position(api, ticker, side, type, client_order_id): # TBD

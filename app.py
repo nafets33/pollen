@@ -44,14 +44,20 @@ import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
-from QueenHive import return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+from QueenHive import story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 
 prod = False
 
+main_root = os.getcwd()
+db_root = os.path.join(main_root, 'db')
+db_app_root = os.path.join(db_root, 'app')
+
+bee_image = os.path.join(db_root, 'bee.jpg')
+image = Image.open(bee_image)
 st.set_page_config(
-     page_title="Ex-stream-ly Cool App",
-     page_icon="🧊",
+     page_title="pollen",
+     page_icon=image,
      layout="wide",
      initial_sidebar_state="expanded",
      menu_items={
@@ -61,39 +67,43 @@ st.set_page_config(
      }
  )
 
-main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
-db_app_root = os.path.join(db_root, 'app')
+st.sidebar.image(image, caption='pollen', width=89)
+
 
 queens_chess_piece = os.path.basename(__file__)
 log_dir = dst = os.path.join(db_root, 'logs')
 
 
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-if prod:
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-else:
-    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+def init_logging(queens_chess_piece, db_root):
+    loglog_newfile = False
+    log_dir = dst = os.path.join(db_root, 'logs')
+    log_dir_logs = dst = os.path.join(log_dir, 'logs')
+    if os.path.exists(dst) == False:
+        os.mkdir(dst)
+    if prod:
+        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+    else:
+        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
 
-log_file = os.path.join(log_dir, log_name)
-if os.path.exists(log_file) == False:
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
-else:
-    # copy log file to log dir & del current log file
-    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
-    dst_path = os.path.join(log_dir, f'{log_name}{"_"}{datet}{".log"}')
-    # shutil.copy(log_file, dst_path) # only when you want to log your log files
-    # os.remove(log_file)
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
+    log_file = os.path.join(log_dir, log_name)
+    if loglog_newfile:
+        # copy log file to log dir & del current log file
+        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+        shutil.copy(log_file, dst_path) # only when you want to log your log files
+        os.remove(log_file)
+    else:
+        # print("logging",log_file)
+        logging.basicConfig(filename=log_file,
+                            filemode='a',
+                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p',
+                            level=logging.INFO,
+                            force=True)
+    
+    return True
+
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
 
 # prod = True
@@ -122,8 +132,6 @@ keys_paper = return_api_keys(base_url=base_url_paper,
 rest_paper = keys_paper[0]['rest']
 api_paper = keys_paper[0]['api']
 
-main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
 
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
@@ -133,8 +141,6 @@ client_symbols = df_client.tickers.to_list()
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD']
 coin_exchange = "CBSE"
 
-main_root = os.getcwd() 
-db_root = os.path.join(main_root, 'db') 
 
 today_day = datetime.datetime.now().day
 
@@ -196,9 +202,7 @@ pollen_theme = pollen_themes()
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.button("ReRun")
-bee_image = os.path.join(db_root, 'bee.jpg')
-image = Image.open(bee_image)
-st.sidebar.image(image, caption='pollen', width=89)
+
 
     
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True):
@@ -354,37 +358,7 @@ def return_total_profits(QUEEN):
 # """ if "__name__" == "__main__": """
 
 # full view of all stories 
-# # macd_state, Macd Tier, Macd, Hist Tier, Hist, Signal Tier, Signal, & Current Wave dimensions (length, profit)
-
-def story_view(STORY_bee, ticker_option):
-    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'close_mom_3']
-    wave_view = ['length__w', 'maxprofit', 'time_to_max_profit']
-    ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
-    return_view = [] # queenmemory objects in conscience {}
-    for ttframe, conscience in ttframe__items.items():
-        queen_return = {'StarName': ttframe}
-
-        story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
-        last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
-        last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
-        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
-
-        if 'buy' in story['macd_state']:
-            current_wave = last_buy_wave
-        else:
-            current_wave = last_sell_wave
-        
-        current_wave = {k: v for (k,v) in current_wave.items() if k in wave_view}
-
-        obj_return = {**story, **current_wave}
-        obj_return_ = {**obj_return, **p_story}
-        queen_return = {**queen_return, **obj_return_}
-        
-        return_view.append(queen_return)
-    
-    
-    df =  pd.DataFrame(return_view)
-    return df
+# # macd_state, Macd Tier, Macd, Hist Tier, Hist, Signal Tier, Signal, & Current Wave dimensions (length, profit)story
 
 
 if option == 'charts':
@@ -535,12 +509,7 @@ if option == 'queen':
         with col2_b:
             new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">memory</p>'
             st.markdown(new_title, unsafe_allow_html=True)
-            # st.write("memory")
-        # with col2_a:
-        # st.write("trigger_stopped")
-        # st.write(pollen.QUEEN['command_conscience']['memory']['trigger_stopped'])
-        # st.write("trigger_sell_stopped")
-        # st.write(pollen.QUEEN['command_conscience']['memory']['trigger_sell_stopped'])
+
 
     if orders_table == 'yes':
         main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
@@ -552,9 +521,7 @@ if option == 'queen':
 
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Stars In Heaven</p>'
         st.markdown(new_title, unsafe_allow_html=True)        
-        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker_option=ticker_option), width=2000)
-        # grid_response = build_AGgrid_df(data=story_view(STORY_bee=STORY_bee, ticker_option=ticker_option), reload_data=False)
-        # st.write(grid_response['data'])
+        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
 
         m = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}

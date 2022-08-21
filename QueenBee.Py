@@ -37,7 +37,7 @@ import hashlib
 import json
 from collections import deque
 import argparse
-from QueenHive import KING, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, init_QUEEN, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+from QueenHive import KING, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, init_QUEEN, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, update_csv_db, read_queensmind, read_pollenstory, pickle_chesspiece, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 # from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 
 # if prior day abs(change) > 1 ignore ticker for the day! 
@@ -652,7 +652,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         sys.exit()
 
 
-def king_knights_requests(trigbee, ticker_time_frame, trig_action=False, crypto=False):
+def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, crypto=False):
     # answer all questions for order to be placed, compare against the rules
     
     def knight_request_recon_portfolio():
@@ -668,32 +668,12 @@ def king_knights_requests(trigbee, ticker_time_frame, trig_action=False, crypto=
     def trade_Scenarios(trigbee):
         # Create buying power upgrades depending on the STARS waves
         return True
-    
 
-    def tickers_story(ticker_time_frame):
-        # state of every wave per timeframe, buy/sell, len, weight to add on
-        # ticker_influence = {} #change value return or multiplier
-        # rules = {}
-        # weight = {
-        #     '1M':{1: {'5D': 0, '5D_1M': 0, '5D_1M_3M': 0, '5D_1M_3M_6M': 0 },
-        #           2 : {},
-        #           3: {},  
-        #         },
-        #     '5D':,
-        #     '1M':,
-        #     '3M':,
-        # }
-        
-        return True
-    
+
     def trade_Allowance():
         # trade is not allowed x% level, if so kill/reduce trade
         return True
 
-    
-    def current_wave():
-        # attach self to latest wave
-        return True
     
     def proir_waves():
         # return fequency of prior waves and statement conclusions
@@ -701,10 +681,15 @@ def king_knights_requests(trigbee, ticker_time_frame, trig_action=False, crypto=
 
 
     try:
-        ticker, tframe, frame = ticker_time_frame.split("_")            
+        ticker, tframe, frame = ticker_time_frame.split("_")      
+
+        STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
+        stars = story_view(STORY_bee=STORY_bee, ticker=ticker)
+        stars_df = stars['df']
+        current_wave = stars['current_wave']      
 
         """ Waves: Current Wave, answer questions about proir waves """
-        waves = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame]['waves'][trigbee]
+        waves = STORY_bee[ticker_time_frame]['waves'][trigbee]
         if "0" in waves.keys():
             waves.pop("0")
         
@@ -1257,8 +1242,9 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx):
 
 def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
     try:
-        # all scenarios if run_order should be closed out
-        sell_order = False # convince me to sell
+        # """ all scenarios if run_order should be closed out """
+        
+        sell_order = False # #### >>> convince me to sell  $$
 
         rn_order_symbol = run_order['symbol']
         runorder_client_order_id = run_order['client_order_id']
@@ -1271,6 +1257,10 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
         
+        stars = story_view(STORY_bee=STORY_bee, ticker=rn_order_symbol)
+        stars_df = stars['df']
+        current_wave = stars['current_wave']
+
         # POLLEN-STORY
         ttframe_story = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame_origin]['story']
         current_macd = ttframe_story['macd_state']
@@ -1323,9 +1313,9 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
             print("selling out due to TIME DURATION")
             sell_order = True
 
-        # where are we at in relation to Max Profit
+        # >>> where are we at in relation to Max Profit
         
-        # time in trade
+        # >>> time in trade
 
         # elif run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and current_macd_time > 0:
         #     print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
@@ -1490,7 +1480,7 @@ def order_management(api, QUEEN):
 
 # if '_name_' == '_main_':
 try:
-    # namespace.q_1
+    ### namespace.q_1  # script arg
     chart_times = {
         "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
         "1Hour_3Month": 48, "2Hour_6Month": 72, 
