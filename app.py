@@ -49,6 +49,18 @@ import json
 
 prod = False
 
+st.set_page_config(
+     page_title="Ex-stream-ly Cool App",
+     page_icon="🧊",
+     layout="wide",
+     initial_sidebar_state="expanded",
+     menu_items={
+         'Get Help': 'https://www.extremelycoolapp.com/help',
+         'Report a bug': "https://www.extremelycoolapp.com/bug",
+         'About': "# This is a header. This is an *extremely* cool app!"
+     }
+ )
+
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 db_app_root = os.path.join(db_root, 'app')
@@ -180,12 +192,13 @@ else:
 pollen_theme = pollen_themes()
 
 
-st.button("ReRun")
+
 col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.button("ReRun")
 bee_image = os.path.join(db_root, 'bee.jpg')
 image = Image.open(bee_image)
-with col3:
-    st.image(image, caption='Jq', width=33)
+st.sidebar.image(image, caption='pollen', width=89)
 
     
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True):
@@ -302,13 +315,18 @@ class return_pollen:
     ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 pollen = return_pollen()
+
 QUEEN = read_queensmind(prod)['queen']
 POLLENSTORY = read_pollenstory()
 APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
+KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
+ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
 option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
+st.sidebar.write("<<<('')>>>")
 # st.header(option)
 def return_total_profits(QUEEN):
     
@@ -335,6 +353,40 @@ def return_total_profits(QUEEN):
 
 # """ if "__name__" == "__main__": """
 
+# full view of all stories 
+# # macd_state, Macd Tier, Macd, Hist Tier, Hist, Signal Tier, Signal, & Current Wave dimensions (length, profit)
+
+def story_view(STORY_bee, ticker_option):
+    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'close_mom_3']
+    wave_view = ['length__w', 'maxprofit', 'time_to_max_profit']
+    ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
+    return_view = [] # queenmemory objects in conscience {}
+    for ttframe, conscience in ttframe__items.items():
+        queen_return = {'StarName': ttframe}
+
+        story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
+        last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
+        last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
+        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
+
+        if 'buy' in story['macd_state']:
+            current_wave = last_buy_wave
+        else:
+            current_wave = last_sell_wave
+        
+        current_wave = {k: v for (k,v) in current_wave.items() if k in wave_view}
+
+        obj_return = {**story, **current_wave}
+        obj_return_ = {**obj_return, **p_story}
+        queen_return = {**queen_return, **obj_return_}
+        
+        return_view.append(queen_return)
+    
+    
+    df =  pd.DataFrame(return_view)
+    return df
+
+
 if option == 'charts':
     pollen = return_pollen()
     
@@ -343,7 +395,7 @@ if option == 'charts':
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=["SPY"].index("SPY"))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-    ttframe_list = list(set([i.split("_")[1] for i in pollen.POLLENSTORY.keys()]))
+    ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in pollen.POLLENSTORY.keys()]))
     ttframe_list.append("all")
     frame_option = st.sidebar.selectbox("ttframes", ttframe_list)
     day_only_option = st.sidebar.selectbox('Show Today Only', ['yes', 'no'])
@@ -364,6 +416,7 @@ if option == 'charts':
 
     else:
         selections = [i for i in pollen.POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+        st.write(selections[0])
         ticker_time_frame = selections[0]
         df = pollen.POLLENSTORY[ticker_time_frame].copy()
         # if df.iloc[-1]['open'] == 0:
@@ -410,7 +463,7 @@ if option == 'charts':
 
             st.write("waves")
 
-            waves = pollen.STORY_bee[ticker_time_frame]['waves']
+            waves = STORY_bee[ticker_time_frame]['waves']
             st.write(waves)
         
         if "BTCUSD" in ticker_time_frame:
@@ -426,9 +479,10 @@ if option == 'charts':
 
 if option == 'queen':
     # pollen = return_pollen()
-    tickers_avail = [set(i.split("_")[0] for i in pollen.STORY_bee.keys())][0]
+    tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
     tickers_avail.update({"all"})
-    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=['SPY'].index('SPY'))
+    tickers_avail_op = list(tickers_avail)
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
     return_total_profits(QUEEN=QUEEN)
@@ -437,21 +491,25 @@ if option == 'queen':
     orders_table = st.sidebar.selectbox("orders_table", ('no', 'yes'), index=["no"].index("no"))
     today_day = datetime.datetime.now().day
     col11, col22 = st.columns(2)
-    with col11:
+    with col22:
         st.write("current errors")
     with col22:
         st.write(pollen.QUEEN["errors"])
 
     if command_conscience_option == 'yes':
         # all_trigs = []
-        all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in pollen.STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0}
+        all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0}
         # df = pd.DataFrame(all_trigs)
-        st.write("all trigger bees", all_trigs)
+        df = pd.DataFrame(all_trigs.items())
+        df = df.rename(columns={0: 'ttf', 1: 'trig'})
+        df = df.sort_values('ttf')
+        st.write("<<all trigger bees>>")
+        st.write(df)
         
         st.write("memory")
         st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
 
-        QUEEN = pollen.QUEEN
+        # QUEEN = pollen.QUEEN
 
         QUEEN['command_conscience']['orders']['active'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in ['submitted', 'running', 'running_close']]
         QUEEN['command_conscience']['orders']['submitted'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'submitted']
@@ -490,10 +548,40 @@ if option == 'queen':
 
     st.write("QUEENS Collective CONSCIENCE")
     if ticker_option != 'all':
-        m = {k:v for (k,v) in pollen.STORY_bee.items() if k.split("_")[0] == ticker_option}
-        m2 = {k:v for (k,v) in pollen.KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
-        st.write(m)
-        st.write(m2)
+        # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
+
+        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Stars In Heaven</p>'
+        st.markdown(new_title, unsafe_allow_html=True)        
+        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker_option=ticker_option), width=2000)
+        # grid_response = build_AGgrid_df(data=story_view(STORY_bee=STORY_bee, ticker_option=ticker_option), reload_data=False)
+        # st.write(grid_response['data'])
+
+        m = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
+        # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
+        
+        for ttframe, knowledge in m.items():
+            
+            st.write(ttframe)
+            story_sort = knowledge['story']
+            st.write(story_sort)
+            
+            st.write("buy cross waves")
+            m_sort = knowledge['waves']['buy_cross-0']
+            df_m_sort = pd.DataFrame(m_sort).T
+            df_m_sort = df_m_sort.astype(str)
+            st.dataframe(data=df_m_sort, width=1000)
+
+            st.write("sell cross waves")
+            m_sort = knowledge['waves']['sell_cross-0']
+            df_m_sort = pd.DataFrame(m_sort).T
+            df_m_sort = df_m_sort.astype(str)
+            st.write(df_m_sort)
+
+            # st.write("KNIGHTSWORDS")
+            # st.write(m2[ttframe])
+        
+        # st.write(m)
+        # st.write(m2)
         # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
         # df = df.tail(5)
         # st.dataframe(df)

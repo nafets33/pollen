@@ -142,6 +142,19 @@ trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 start_date = datetime.datetime.now().strftime('%Y-%m-%d')
 end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
+""" Global VARS"""
+crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+macd_tiers = 7
+MACD_WORLDS = {
+    'crypto': 
+        {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
+        'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
+    
+    'default': 
+        {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
+        'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
+    }
+
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
 def read_pollenstory(): # return combined dataframes
     castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
@@ -192,10 +205,7 @@ def read_queensmind(prod): # return active story workers
 ### Story
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
-    # where is max and depending on which time consider different weights of buy...
     # define weights in global and do multiple weights for different scenarios..
-    # 1. 1 Month Leads + 3 + 6 month lead the 1 & 5 day...
-    # long term uses 1ry and reverse leading 6 + 3 + 1
 
     # MACD momentum from past N times/days
     # TIME PAST SINCE LAST HIGH TO LOW to change weight & how much time passed since tier cross last high?   
@@ -358,8 +368,9 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
 
 
-            df = assign_MACD_Tier(df=df, mac_world=mac_world, tiers_num=7,  ticker_time_frame=ticker_time_frame)
+            df = assign_MACD_Tier(df=df, mac_world=mac_world, tiers_num=macd_tiers,  ticker_time_frame=ticker_time_frame)
             STORY_bee[ticker_time_frame]['story']['current_macd_tier'] = df.iloc[-1]['macd_tier']
+            STORY_bee[ticker_time_frame]['story']['current_hist_tier'] = df.iloc[-1]['hist_tier']
             # how long have you been stuck at vwap ?
             
             # Measure MACD WAVES
@@ -379,6 +390,11 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             df['name'] = ticker_time_frame
             story[ticker_time_frame] = df
             # ticker, _time, _frame = ticker_time_frame.split("_")
+
+            # latest Pull
+            df_lastrow = df.iloc[-1]
+            # df_lastrow_remaining = df_lastrow[[i for i in df_lastrow.index.tolist() if i not in STORY_bee[ticker_time_frame]['story'].keys()]].copy
+            STORY_bee[ticker_time_frame]['story']['current_mind'] = df_lastrow
 
             
             # add momentem ( when macd < signal & past 3 macds are > X Value or %)
@@ -650,58 +666,66 @@ def assign_tier_num(num_value,  td):
 
 def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     # create tier ranges
-    tiers_num = 7
-    ftime = ticker_time_frame.split("_")[1]
+    # tiers_num = 7
     
-    # m_high = mac_world['macd_high']
-    mac_world_ranges = {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}
-
-    m_high = mac_world_ranges[ftime]
-    m_low = mac_world_ranges[ftime] * -1
-
-    tiers_add = m_high/tiers_num
-    td_high = {}
-    for i in range(tiers_num):
-        if i == 0:
-            td_high[i] = (0, tiers_add)
-        else:
-            td_high[i] = (td_high[i-1][1], td_high[i-1][1] + tiers_add)
-
-    tiers_add = m_low/tiers_num
-    td_low = {}
-    for i in range(tiers_num):
-        if i == 0:
-            td_low[i] = (0, tiers_add)
-        else:
-            td_low[i] = (td_low[i-1][1], td_low[i-1][1] + tiers_add)
+    ticker, ftime, frame = ticker_time_frame.split("_")
+    # ftime = ticker_time_frame.split("_")[1]
     
-    # apply tier
+
+    def create_tier_range(mac_world_ranges):
+        m_high = mac_world_ranges[ftime]
+        m_low = mac_world_ranges[ftime] * -1
+
+        tiers_add = m_high/tiers_num
+        td_high = {}
+        for i in range(tiers_num):
+            if i == 0:
+                td_high[i] = (0, tiers_add)
+            else:
+                td_high[i] = (td_high[i-1][1], td_high[i-1][1] + tiers_add)
+
+        tiers_add = m_low/tiers_num
+        td_low = {}
+        for i in range(tiers_num):
+            if i == 0:
+                td_low[i] = (0, tiers_add)
+            else:
+                td_low[i] = (td_low[i-1][1], td_low[i-1][1] + tiers_add)
+        
+        return {'td_high': td_high, 'td_low': td_low}
+
+    # select mac_world &  # apply tiers
+
+    # "MAC"
+    if ticker in crypto_currency_symbols:
+        mac_world_ranges = MACD_WORLDS['crypto']['macd']
+    else:
+        mac_world_ranges = MACD_WORLDS['default']['macd']
+    tier_range = create_tier_range(mac_world_ranges=mac_world_ranges)
+    td_high = tier_range['td_high']
+    td_low = tier_range['td_low']
     df['macd_tier'] = np.where( (df['macd'] > 0), 
     df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_high)), 
     df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_low))
     )
+    df['macd_tier'] = np.where(df['macd'] > 0, df['macd_tier'], df['macd_tier'] * -1)
+
+    
+    # "Hist"
+    if ticker in crypto_currency_symbols:
+        mac_world_ranges = MACD_WORLDS['crypto']['hist']
+    else:
+        mac_world_ranges = MACD_WORLDS['default']['hist']
+    tier_range = create_tier_range(mac_world_ranges=mac_world_ranges)
+    td_high = tier_range['td_high']
+    td_low = tier_range['td_low']
+    df['hist_tier'] = np.where( (df['hist'] > 0), 
+    df['hist'].apply(lambda x: assign_tier_num(num_value=x, td=td_high)), 
+    df['hist'].apply(lambda x: assign_tier_num(num_value=x, td=td_low))
+    )
+    df['hist_tier'] = np.where(df['hist'] > 0, df['hist_tier'], df['hist_tier'] * -1)
 
     return df
-
-
-    # # Add macd_tiers
-    # df['macd_tier'] = np.where( (df['macd'] == 0), 'tier0', 'undefined')
-    # df['macd_tier'] = np.where( (df['macd'] > 0) & ( (df['macd'] + tiers_add) < tiers_add), 'tier1', df['macd_tier'] )
-    
-    # df['macd_tier'] = np.where( (df['macd'] > .33) & (df['macd'] < .5), 'tier2', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] > .5) & (df['macd'] < .1), 'tier3', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] > .1) & (df['macd'] < 1.33), 'tier4', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] > 1.33) & (df['macd'] < 1.5), 'tier5', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] > 1.5) & (df['macd'] < 2), 'tier6', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] > 2), 'tier7', df['macd_tier'] )
-
-    # df['macd_tier'] = np.where( (df['macd'] < 0) & (df['macd'] > -.33), 'subtier1', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] < -.33) & (df['macd'] > -.5), 'subtier2', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] < -.5) & (df['macd'] > -.1), 'subtier3', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] < -.1) & (df['macd'] > -1.33), 'subtier4', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] < -1.33) & (df['macd'] > -1.5), 'subtier5', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] < -1.5) & (df['macd'] > -2), 'subtier6', df['macd_tier'] )
-    # df['macd_tier'] = np.where( (df['macd'] < -2), 'subtier7', df['macd_tier'] )
 
 
 def return_knightbee_waves(df, knights_word, ticker_time_frame):  # adds profit wave based on trigger
@@ -767,8 +791,10 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
     # df = POLLENSTORY["SPY_1Minute_1Day"]
     # wave_trigger_list = ["buy_cross-0", "sell_cross-0"]
     
-    t = split_today_vs_prior(df=df)
-    dft = t['df_today']
+    # t = split_today_vs_prior(df=df)
+    # dft = t['df_today']
+    
+    dft = df
 
     # length and height of wave
     MACDWAVE_story = {'story': {}}
@@ -780,28 +806,28 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
     
         num_waves = dft[wave_col_wavenumber].tolist()
         num_waves_list = list(set(num_waves))
-        num_waves_list = [str(i) for i in sorted([int(i) for i in num_waves_list])]
+        num_waves_list = [str(i) for i in sorted([int(i) for i in num_waves_list], reverse=True)]
 
         for wave_n in num_waves_list:
             MACDWAVE_story[trigger][wave_n] = {}
             if wave_n == '0':
                 continue
-            t = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
-            t = dft[dft[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
+            df_waveslice = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
+            df_waveslice = dft[dft[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
             
-            row_1 = t.iloc[0]['story_index']
-            row_2 = t.iloc[-1]['story_index']
+            row_1 = df_waveslice.iloc[0]['story_index']
+            row_2 = df_waveslice.iloc[-1]['story_index']
 
             # we want to know the how long it took to get to low? 
 
             # Assign each waves timeblock
             if "Day" in tframe:
                 wave_blocktime = "Day"
-                wave_starttime = t.iloc[0]['timestamp_est']
-                wave_endtime = t.iloc[-1]['timestamp_est']
+                wave_starttime = df_waveslice.iloc[0]['timestamp_est']
+                wave_endtime = df_waveslice.iloc[-1]['timestamp_est']
             else:
-                wave_starttime = t.iloc[0]['timestamp_est']
-                wave_endtime = t.iloc[-1]['timestamp_est']
+                wave_starttime = df_waveslice.iloc[0]['timestamp_est']
+                wave_endtime = df_waveslice.iloc[-1]['timestamp_est']
                 wave_starttime_token = wave_starttime.replace(tzinfo=None)
                 if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
                     wave_blocktime = 'morning_9-11'
@@ -817,9 +843,9 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
             'wave_times': ( wave_starttime, wave_endtime ),
             })
             
-            wave_height_value = max(t[wave_col_name].values)
+            wave_height_value = max(df_waveslice[wave_col_name].values)
             # how long was it profitable?
-            profit_df = t[t[wave_col_name] > 0].copy()
+            profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
             profit_length  = len(profit_df)
             if profit_length > 0:
                 max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]['story_index']
@@ -1348,7 +1374,7 @@ def ReadPickleData(pickle_file, db_init_dict=False):
             with open(pickle_file, "rb") as f:
                 return pickle.load(f)
         except Exception as e:
-            print("CRITICAL ERROR logme", e)
+            print("CRITICAL PICKLE READ ERROR logme", e)
             return False
 
 
@@ -2089,25 +2115,25 @@ def KING():
     return_dict = {}
     kings_order_rules = {'knight_bees': 
                                     {
-                                    'queen_gen': {'timeduration': 1, 
+                                    'queen_gen': {'timeduration': 10, 
                                             'take_profit': .005,
                                             'sellout': -.01,
                                             'adjustable': True,
                                             'friend_links': [],
                                                 },
-                                    'app': {'timeduration': 1, 
+                                    'app': {'timeduration': 3, 
                                             'take_profit': .005,
                                             'sellout': -.01,
                                             'adjustable': True,
                                             'friend_links': [],
                                                 },
-                                    'buy_cross-0': {'timeduration': 1, 
+                                    'buy_cross-0': {'timeduration': 10, 
                                             'take_profit': .005,
                                             'sellout': -.01,
                                             'adjustable': True,
                                             'friend_links': [],
                                                 },
-                                    'sell_cross-0': {'timeduration': 1, 
+                                    'sell_cross-0': {'timeduration': 10, 
                                             'take_profit': .005,
                                             'sellout': -.01,
                                             'adjustable': True,
@@ -2140,13 +2166,14 @@ def KING():
                                                 },
                                     }
     }
-
+    
+    
     return_dict['kings_order_rules'] = kings_order_rules
     
     return return_dict
 
 
-def init_QUEEN():
+def init_QUEEN(queens_chess_piece):
     QUEEN = { # The Queens Mind
         'prod': "",
         'last_modified': datetime.datetime.now(),
@@ -2214,7 +2241,7 @@ def add_key_to_app(APP_requests): # returns QUEES
 def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEES
     update = False
     q_keys = QUEEN.keys()
-    latest_queen = init_QUEEN()
+    latest_queen = init_QUEEN('queen')
     for k, v in latest_queen.items():
         if k not in q_keys:
             QUEEN[k] = v
@@ -2321,9 +2348,12 @@ def theme_calculator(POLLENSTORY, chart_times):
     
     return theme
 
-       
 
-
+def logging_log_message(type='info', msg='default', error='none', origin_func='default', ticker='false'):
+    if type == 'error':
+        return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
+    if type == 'critical':
+        return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
 
 
 # def liquidate_position(api, ticker, side, type, client_order_id): # TBD
@@ -2336,3 +2366,94 @@ def theme_calculator(POLLENSTORY, chart_times):
 #     else:
 #         print("make this a limit order")
 #     return order
+
+
+# def reconcile_portfolio(portfolio_name='Jq'):  # IF MISSING FROM RUNNING ADD
+#     # If Ticker in portfolio but not in RUNNING !!!!!! Need to consider changing to qty_available from pending close orders
+#     # portfolio_holdings = {k : v['qty_available'] for (k,v) in portfolio.items()}
+#     # portfolio_holdings = {k : v['qty'] for (k,v) in portfolio.items()} 
+#     portfolio = return_alpc_portolio(api)['portfolio']
+#     running_orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in ['running', 'submitted', 'running_close']]
+
+#     # return running_orders in df    
+#     running_portfolio = return_dfshaped_orders(running_orders=running_orders)
+#     clean_errors = []
+#     for symbol in portfolio:
+#         for sy in QUEEN['errors'].keys():
+#             if sy not in portfolio.keys():
+#                 clean_errors.append(sy)
+#         if len(running_portfolio) > 0:
+#             if symbol not in running_portfolio['symbol'].values:
+#                 msg = {"reconcile portfolio()": f'{symbol}{": was missing added to RUNNING"}'}
+#                 print(msg)
+#                 logging.error(msg)
+                
+#                 # # create a system gen. running order with portfolio info
+#                 # filled_qty = float(portfolio[symbol]["qty"])
+#                 # filled_avg_price = portfolio[symbol]["avg_entry_price"]
+#                 # side = portfolio[symbol]["side"]
+#                 # req_qty = portfolio[symbol]["qty"]
+#                 # system_recon = {'req_qty': req_qty, 'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': side}
+#                 # ticker_time_frame = f'{"symbol"}{"_queen_gen"}'
+#                 # trig = 'buy_cross-0'
+#                 # order = {'symbol': symbol, 'side': False, "id": "pollen_recon", 'client_order_id': generate_client_order_id(QUEEN=QUEEN,ticker=symbol, trig=trig)}
+                
+#                 # order_process = process_order_submission(prod=prod, order=order, trig=trig, tablename='main_orders', ticker_time_frame=ticker_time_frame, system_recon=system_recon)
+#                 # QUEEN['queen_orders'].append(order_process['sending_order'])
+#                 # QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
+#             else: # symbol is in running check our totals
+#                 total_running_ticker_qty = float(running_portfolio[running_portfolio['symbol']==symbol].iloc[0]['filled_qty'])
+#                 total_portfolio_ticker_qty = float(portfolio[symbol]["qty"])
+#                 # !!! check in running_close to see if you have an open order to match qty !!!
+#                 if total_running_ticker_qty != total_portfolio_ticker_qty:
+#                     # print(symbol, ": qty does not match, adjust running order to fix")
+#                     QUEEN["errors"].update({symbol: {'msg': "recon portfolio qty does not match!", 'root': "reconcile portfolio"}})
+#                     # run_order_ = {idx: i for (idx, i) in enumerate(QUEEN["command_conscience"]["orders"]["requests"]) if i['queen_order_state'] == 'running' and i['symbol']==symbol}
+#                     # if run_order_:
+#                     #     if total_portfolio_ticker_qty < 0 : # short
+#                     #         print("NEED TO UPDATE")
+#                     #     else:
+#                     #         qty_correction = total_running_ticker_qty - abs(total_portfolio_ticker_qty - total_running_ticker_qty)
+#                     #         QUEEN["command_conscience"]["orders"]["requests"][list(run_order_.keys())[0]]['filled_qty'] = total_portfolio_ticker_qty
+#                     #         QUEEN["command_conscience"]["orders"]["requests"][list(run_order_.keys())[0]]['status_q'] = True
+                    
+#                     # # update any running order
+#                     # if total_running_ticker_qty > total_portfolio_ticker_qty: # if T_run > portfolio 
+#                     #     qty_correction = total_portfolio_ticker_qty - (total_running_ticker_qty - total_portfolio_ticker_qty)
+#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['filled_qty'] = qty_correction
+#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['status_q'] = True
+#                     # else:
+#                     #     if total_portfolio_ticker_qty < 0: # short
+#                     #         qty_correction = (total_running_ticker_qty-total_portfolio_ticker_qty)
+#                     #     else:
+#                     #         qty_correction = total_running_ticker_qty + (total_portfolio_ticker_qty- total_running_ticker_qty)
+                        
+#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['filled_qty'] = qty_correction
+#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['status_q'] = True
+#                 else:
+#                     if symbol in QUEEN["errors"].keys():
+#                         clean_errors.append(symbol)
+
+#         else:
+#             msg = {"reconcile portfolio()": f'{symbol}{": was missing added to RUNNING"}'}
+#             print(msg)
+#             logging.error(msg)
+            
+#             # create a system gen. running order with portfolio info
+#             filled_qty = float(portfolio[symbol]["qty_available"])
+#             filled_avg_price = float(portfolio[symbol]["avg_entry_price"])
+#             side = portfolio[symbol]["side"]
+#             req_qty = float(portfolio[symbol]["qty_available"])
+#             system_recon = {'req_qty': req_qty, 'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': 'buy'}
+#             ticker_time_frame = f'{"symbol"}{"_1Minute_1Day"}'
+#             trig = 'queen_gen'
+#             order = {'symbol': symbol, 'side': False, "id": "pollen_recon", 'client_order_id': generate_client_order_id(QUEEN=QUEEN,ticker=symbol, trig=trig)}
+            
+#             order_process = process_order_submission(prod=prod, order=order, trig=trig, tablename='main_orders', ticker_time_frame=False, system_recon=system_recon)
+#             order_process['sending_order']['queen_order_state'] = 'running'
+#             QUEEN['queen_orders'].append(order_process['sending_order'])
+    
+#     if clean_errors:
+#         QUEEN['errors'] = {k:v for (k,v) in QUEEN['errors'].items() if k not in clean_errors}
+#     return True
+

@@ -516,10 +516,10 @@ try:
     while True:
         if queens_chess_piece.lower() in ['castle_coin']: # create the story
             s = datetime.datetime.now()
-            # if s > datetime.datetime(s.year, s.month, s.day, 16):
-            #     logging.info("Happy Bee Day End")
-            #     print("Great Job! See you Tomorrow")
-            #     break
+            if s > datetime.datetime(s.year, s.month, s.day, 23):
+                logging.info("Happy Bee Crypto Day End")
+                print("Great Job! See you Tomorrow")
+                break
             
             # main 
             pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
@@ -554,9 +554,9 @@ try:
 
             e = datetime.datetime.now()
             cycle_run_time = (e-s)
-            if cycle_run_time.seconds > 5:
+            if cycle_run_time.seconds > 8:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info({"cycle_time > 5 seconds": str(cycle_run_time.seconds)})
+                logging.info({"cycle_time > 8 seconds": str(cycle_run_time.seconds)})
             workerbee_run_times.append(cycle_run_time)
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
             print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))

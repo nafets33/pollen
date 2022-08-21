@@ -119,7 +119,7 @@ df_client = pd.read_csv(client_ticker_file, dtype=str)
 df_client_f = df_client[df_client['status']=='active'].copy()
 client_symbols = df_client_f.tickers.to_list()
 client_symbols_castle = ['SPY', 'QQQ']
-client_symbols_bishop = ['AAPL', 'GOOG']
+client_symbols_bishop = ['AAPL', 'GOOG', 'META', 'SOFI', 'HD']
 client_market_movers = ['AAPL', 'TSLA', 'GOOG', 'META']
 
 QUEEN['heartbeat']['main_indexes'] = {
@@ -675,6 +675,16 @@ try:
             if s >= datetime.datetime(s.year, s.month, s.day, hour=16, minute=1):
                 logging.info("Happy Bee Day End")
                 print("Great Job! See you Tomorrow")
+
+                if queens_chess_piece.lower() == 'castle':
+                    # make os copy
+                    save_files = ['queen.pkl', 'queen_sandbox.pkl']
+                    for fname in save_files:
+                        src = os.path.join(db_root, fname)
+                        dst = os.path.join(os.path.join(os.path.join(db_root, 'logs'), 'logs'), 'queens')
+                        dst_ = os.path.join(dst, fname)
+                        shutil.copy(src, dst_)
+                    print("Queen Bee Saved")
                 break
             
             # main 
@@ -715,9 +725,9 @@ try:
             cycle_run_time = (e-s)
             cycle_run_time_print = str(cycle_run_time.seconds) + "." + str(cycle_run_time.microseconds)[:2]
             QUEEN[queens_chess_piece]['heartbeat']['cycle_time'].append(cycle_run_time)
-            if cycle_run_time.seconds > 5:
+            if cycle_run_time.seconds > 20:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info(("cycle_time > 5 seconds", cycle_run_time_print))
+                logging.info(("cycle_time > 20 seconds", cycle_run_time_print))
             workerbee_run_times = QUEEN[queens_chess_piece]['heartbeat']['cycle_time']
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
             print(queens_chess_piece, " avg cycle time(last89):", avg_time, ": ", cycle_run_time_print,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
