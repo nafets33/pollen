@@ -660,9 +660,7 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     # create tier ranges
     # tiers_num = 7
     
-    ticker, ftime, frame = ticker_time_frame.split("_")
-    # ftime = ticker_time_frame.split("_")[1]
-    
+    ticker, ftime, frame = ticker_time_frame.split("_")    
 
     def create_tier_range(mac_world_ranges):
         m_high = mac_world_ranges[ftime]
@@ -802,6 +800,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 
         for wave_n in num_waves_list:
             MACDWAVE_story[trigger][wave_n] = {}
+            MACDWAVE_story[trigger][wave_n].update({'wave_n': wave_n})
             if wave_n == '0':
                 continue
             df_waveslice = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
@@ -1193,6 +1192,7 @@ def submit_order(api, symbol, qty, side, type, limit_price=False, client_order_i
     #         order_class='bracket', 
     #         stop_loss=dict(stop_price='360.00'), 
     #         take_profit=dict(limit_price='440.00'))
+
 
 def refresh_account_info(api):
             """
@@ -2077,14 +2077,16 @@ def pollen_themes():
                     'triggerbees_tofind': [],
                     'waveup' : {'morning_9-11': .05,
                             'lunch_11-2': .05,
-                            'afternoon_2-4': .05
+                            'afternoon_2-4': .05,
+                            'Day': .05,
                             },
                     'wavedown' : {'morning_9-11': .03,
                                 'lunch_11-2': .03,
-                                'afternoon_2-4': .03
+                                'afternoon_2-4': .03,
+                                'Day': .05,
                             }
                 },
-        'strong_open': {'name': 'strong_open',
+        'strong': {'name': 'strong',
                         'desc': """SPY/overall up > 1% 
                                 & prior X(5) days decline is Z(-5%)
                                 
@@ -2092,11 +2094,13 @@ def pollen_themes():
                         'triggerbees_tofind': ['VWAP_GRAVITY', 'SCALP'],
                         'waveup' : {'morning_9-11': .1,
                                 'lunch_11-2': .1,
-                                'afternoon_2-4': .1
+                                'afternoon_2-4': .1,
+                                'Day': .05,
                                 },
                         'wavedown' : {'morning_9-11': .05,
                                     'lunch_11-2': .05,
-                                    'afternoon_2-4': .05
+                                    'afternoon_2-4': .05,
+                                    'Day': .05,
                                 }
                     }
         } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
@@ -2185,6 +2189,7 @@ def init_QUEEN(queens_chess_piece):
                             'last_read_app': datetime.datetime.now(),},
         'errors': {},
         'client_order_ids_qgen': [],
+        'power_rangers': init_PowerRangers(),
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -2230,7 +2235,7 @@ def add_key_to_app(APP_requests): # returns QUEES
     return {'APP_requests': APP_requests, 'update': update}
 
 
-def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEES
+def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
     update = False
     q_keys = QUEEN.keys()
     latest_queen = init_QUEEN('queen')
@@ -2258,10 +2263,10 @@ def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
     return running_portfolio
 
 
-def createParser ():
+def createParser():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="queen")
-    parser.add_argument ('-prod', default=False)
+    parser.add_argument ('-prod', default='false')
     return parser
 
 
@@ -2290,6 +2295,151 @@ def clean_queens_memory(QUEEN, keyitem): # MISC
     if keyitem == "trigger_stopped":
         QUEEN['command_conscience']['memory']['trigger_stopped'] = []
         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+
+
+def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
+    if log_type == 'error':
+        return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
+    if log_type == 'critical':
+        return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
+
+
+def analze_waves(wave_series):
+    # len and profits
+    wave_series = STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0']
+    upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
+    df = pd.DataFrame(upwave_dict)
+    df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+
+    groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+
+    
+    return {'df': df}
+
+
+# def waves_storyview(wave_series):
+#     wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
+#     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
+#     upwave_view = [] # queenmemory objects in conscience {}
+#     downwave_view = []
+#     for ttframe, conscience in ttframe__items.items():
+#         queen_return = {'StarName': ttframe}
+#         for wave in conscience['waves']['buy_cross-0']:
+#             pass
+
+    
+#     df =  pd.DataFrame(upwave_view)
+#     return {'df': df}
+
+def story_view(STORY_bee, ticker): # --> returns dataframe
+    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'close_mom_3', 'close_mom_6']
+    wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
+    ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
+    return_view = [] # queenmemory objects in conscience {}
+    for ttframe, conscience in ttframe__items.items():
+        queen_return = {'StarName': ttframe}
+
+        story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
+        last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str((len(conscience['waves']['buy_cross-0'].keys()) - 1)) == str(k)][0]
+        last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str((len(conscience['waves']['sell_cross-0'].keys()) - 1)) == str(k)][0]
+        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
+
+        if 'buy' in story['macd_state']:
+            current_wave = last_buy_wave
+        else:
+            current_wave = last_sell_wave
+        
+        current_wave_view = {k: v for (k,v) in current_wave.items() if k in wave_view}
+
+        obj_return = {**story, **current_wave_view}
+        obj_return_ = {**obj_return, **p_story}
+        queen_return = {**queen_return, **obj_return_}
+        
+        return_view.append(queen_return)
+    
+    
+    df =  pd.DataFrame(return_view)
+    return {'df': df}
+
+
+def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False):
+    if cols_to_view:
+        col_view = col_view
+    else:
+        col_view = ['trigname', 'ticker_time_frame', 'cost_basis', 'honey', '$honey', 'profit_loss', 'status_q', 'client_order_id', 'queen_order_state']
+    orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == queen_order_state]
+    df = pd.DataFrame(orders)
+    df = df.astype(str)
+    if len(df) > 0:
+        col_view = [i for i in col_view if i in df.columns]
+        df_return = df[col_view].copy()
+    else:
+        df_return = df
+    
+    if return_all_cols:
+        all_cols = col_view + [i for i in df.columns.tolist() if i not in col_view]
+        df_return = df[all_cols].copy()
+
+    return {'df': df_return}
+
+
+def init_PowerRangers(ranger_dimensions=False):
+    # ranger = '1Minute_1Day'
+    # rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+    # trigbees = ['buy_wave', 'sell_wave']
+    # theme_list = ['nuetral', 'strong']
+    # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+    # bee_ranger_tiers = 9
+
+    # BUY_Cross
+    # When 1M macd tier in range (-7, -5) + 50% : Red // Sell :: 1%
+    # When 1M macd tier in range (-5, -3) + 40% : Blue // Sell :: 1%
+    # When 1M macd tier in range (-3, -2) + 25% : Pink // Sell :: 1%
+    # When 1M macd tier in range (-2, -1) + 10% : Yellow // Sell :: 1%
+    # When 1M macd tier in range (-1, 1) + 1% : White // Sell :: 1%
+    # When 1M macd tier in range (1, 2) + 1% : Green // Sell :: 1%
+    # When 1M macd tier in range (2, 3) + 1% : Green1 // Sell :: 25%
+    # When 1M macd tier in range (3, 5) + 1% : Green2 // Sell :: 40%
+    # When 1M macd tier in range (5, 7) + 1% : Black // Sell :: 50%
+
+
+    if ranger_dimensions:
+        rangers = ranger_dimensions['rangers'] #  = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+        trigbees = ranger_dimensions['trigbees'] # = ['buy_wave', 'sell_wave']
+        theme_list = ranger_dimensions['theme_list'] # theme_list = ['nuetral', 'strong']
+        colors = ranger_dimensions['colors'] # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+        # bee_ranger_tiers = 9
+        ranger_init = ranger_dimensions['ranger_init']
+    else:
+        rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+        trigbees = ['buy_wave', 'sell_wave']
+        theme_list = ['nuetral', 'strong']
+        colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+        # bee_ranger_tiers = 9
+        ranger_init = {'buy_wave': {'nuetral': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .001},
+                                        'strong': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .001},
+                                    },
+                        'sell_wave': {'nuetral': 
+                                            {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'green1': .01, 'green2': .01, 'black': .01},
+                                        'strong': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .01},
+                                            }
+                }
+
+    r_dict = {}
+    for ranger in rangers:
+        r_dict[ranger] = {}
+        for trigbee in trigbees:
+            r_dict[ranger][trigbee] = {}
+            for theme in theme_list:
+                r_dict[ranger][trigbee][theme] = {}
+                for color in colors:
+                    r_dict[ranger][trigbee][theme][color] = ranger_init[trigbee][theme][color]
+ 
+    return r_dict
+
 
 
 def theme_calculator(POLLENSTORY, chart_times):
@@ -2341,43 +2491,10 @@ def theme_calculator(POLLENSTORY, chart_times):
     return theme
 
 
-def logging_log_message(type='info', msg='default', error='none', origin_func='default', ticker='false'):
-    if type == 'error':
-        return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
-    if type == 'critical':
-        return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
 
 
 
-def story_view(STORY_bee, ticker): # --> returns dataframe
-    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'close_mom_3']
-    wave_view = ['length', 'maxprofit', 'time_to_max_profit']
-    ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
-    return_view = [] # queenmemory objects in conscience {}
-    for ttframe, conscience in ttframe__items.items():
-        queen_return = {'StarName': ttframe}
 
-        story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
-        last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
-        last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str(len(v.keys()) - 1) == k][0]
-        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
-
-        if 'buy' in story['macd_state']:
-            current_wave = last_buy_wave
-        else:
-            current_wave = last_sell_wave
-        
-        current_wave = {k: v for (k,v) in current_wave.items() if k in wave_view}
-
-        obj_return = {**story, **current_wave}
-        obj_return_ = {**obj_return, **p_story}
-        queen_return = {**queen_return, **obj_return_}
-        
-        return_view.append(queen_return)
-    
-    
-    df =  pd.DataFrame(return_view)
-    return {'df': df, 'current_wave': current_wave}
 
 
 

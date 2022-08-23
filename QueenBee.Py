@@ -99,7 +99,7 @@ init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 # Macd Settings
 # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
 
-active_order_state_list = ['running', 'running_close', 'submitted']
+active_order_state_list = ['running', 'running_close', 'submitted', 'error']
 
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
@@ -328,10 +328,10 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
 
     try:
         def create_QueenOrderBee(): # Create Running Order
-            date_mark = datetime.datetime.now()
+            date_mark = datetime.datetime.now().astimezone(est)
             # allowed_col = ["queen_order_state", ]
             if system_recon:
-                print("create recon order")
+                print("LOG ME create recon order")
                 running_order = {'queen_order_state': 'submitted',
                                 'side': system_recon['side'],
                                 'order_trig_buy_stop': True,
@@ -403,7 +403,7 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
             return running_order
 
         # update db
-        date_mark = datetime.datetime.now()
+        # date_mark = datetime.datetime.now()
         symbol = order['symbol']
         client_order_id = order['client_order_id']
         alpaca_order_id = order['id']
@@ -522,15 +522,15 @@ def process_app_requests(APP_requests, request_name):
 
 
 """  >>>><<<< MAIN <<<<>>>> """
-def trig_In_Action_cc(active_orders, trig, ticker):
-    # all_orders = pd.DataFrame(QUEEN['queen_orders'])
-    # active_orders = all_orders[all_orders['queen_order_state'].isin(QUEEN['heartbeat']['active_order_state_list'])].copy()
+def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
+    all_orders = pd.DataFrame(QUEEN['queen_orders'])
+    active_orders = all_orders[all_orders['queen_order_state'].isin(QUEEN['heartbeat']['active_order_state_list'])].copy()
     if queens_first_go == 0:
         return False
     
     order_exits = np.where(
         (active_orders['trigname'] == trig) &
-        (active_orders['symbol'] == ticker)
+        (active_orders['ticker_time_frame'] == ticker_time_frame)
     )
 
     if sum(order_exits[0]) > 0:
@@ -555,27 +555,6 @@ def add_app_wave_trigger(all_current_triggers, ticker, app_wave_trig_req):
             return all_current_triggers
         else:
             return all_current_triggers
-
-
-def buying_Power_cc(api, client_args="TBD", daytrade=True):
-    info = api.get_account()
-    total_buying_power = info.buying_power # what is the % amount you want to buy?
-    app_portfolio_day_trade_allowed = .8
-    app_portfolio_long_trade_allowed = .2
-    if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
-        print("Critical Error Fix buying power numbers")
-        sys.exit()
-    
-    # wave power allowance
-    app_portfolio_waveup_buying_power = .6
-    app_portfolio_wavedown_buying_power = .4
-    if app_portfolio_waveup_buying_power + app_portfolio_wavedown_buying_power != 1:
-        print("Critical Error Fix buying power numbers")
-        sys.exit()
-    
-    client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
-    
-    return {'client_totalday_trade_amt_allowed': client_totalday_trade_amt_allowed, 'app_portfolio_day_trade_allowed': app_portfolio_day_trade_allowed, 'total_buying_power': total_buying_power}
 
 
 def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, run_order_idx=False):
@@ -652,8 +631,37 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         sys.exit()
 
 
+def buying_Power_cc(api, client_args="TBD", daytrade=True):
+    info = api.get_account()
+    argu_validate = ['portfolio', 'daytrade_pct', 'longtrade_pct', 'waveup_pct', 'wavedown_pct']
+    
+    total_buying_power = info.buying_power # what is the % amount you want to buy?
+    
+    app_portfolio_day_trade_allowed = .8
+    app_portfolio_long_trade_allowed = .2
+    if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
+        print("Critical Error Fix buying power numbers")
+        sys.exit()
+    
+    # wave power allowance
+    app_portfolio_waveup_buying_power = .6
+    app_portfolio_wavedown_buying_power = .4
+    if app_portfolio_waveup_buying_power + app_portfolio_wavedown_buying_power != 1:
+        print("Critical Error Fix buying power numbers")
+        sys.exit()
+    
+    client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
+    
+    return { 'total_buying_power': total_buying_power,
+        'client_totalday_trade_amt_allowed': client_totalday_trade_amt_allowed, 
+    'app_portfolio_day_trade_allowed': app_portfolio_day_trade_allowed, 
+    'waveup_power_allocation': app_portfolio_waveup_buying_power,
+    'wavedown_power_allocation': app_portfolio_waveup_buying_power}
+
+
 def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, crypto=False):
     # answer all questions for order to be placed, compare against the rules
+    # measure len of trigbee how long has trigger been there?
     
     def knight_request_recon_portfolio():
         # debate if we should place a new order based on current portfolio trades
@@ -665,8 +673,15 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
         pass
 
     
-    def trade_Scenarios(trigbee):
+    def trade_Scenarios(trigbee, wave_amo):
         # Create buying power upgrades depending on the STARS waves
+        
+        # Current Star Power? the Incremate of macd_tier, macd_state for a given Star
+
+
+        # if "buy_cross-0" == trigbee:
+        #     pass
+
         return True
 
 
@@ -682,17 +697,19 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
 
     try:
         ticker, tframe, frame = ticker_time_frame.split("_")      
-
         STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
-        stars = story_view(STORY_bee=STORY_bee, ticker=ticker)
-        stars_df = stars['df']
-        current_wave = stars['current_wave']      
+
+        """Stars Forever Be in Heaven"""
+        stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df']    
 
         """ Waves: Current Wave, answer questions about proir waves """
         waves = STORY_bee[ticker_time_frame]['waves'][trigbee]
+        current_wave_index = str(len(waves)-1)
+        current_wave = waves[current_wave_index]
+
         if "0" in waves.keys():
             waves.pop("0")
-        
+
         # wave slices
         total_waves = len(waves.keys())
         morning_waves = {k:v for (k,v) in waves.items() if v['wave_blocktime'] == "morning_9-11"}
@@ -725,22 +742,22 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
                 'afternoon_2-4' : pollen_theme_dict[theme]['waveup']['afternoon_2-4'],
                 }
 
-                # what is your timeblock?
                 
-                # what does your friend_links(bees) say? or have said?
-                
-                # current wave
-                current_wave_index = list(waves.keys())[len(waves)-1]
-                current_wave = waves[current_wave_index]
+                # Current wave : what is your timeblock?
                 current_wave_blocktime = current_wave['wave_blocktime']
-                current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]
+                current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]  # PERCENTAGE
                 
-                # total budget
-                client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
+                # what do the Stars say?
 
+
+                # total budget
+                client_totalday_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed)
+
+                # Order Variables
                 order_type = "market"
                 order_side = "buy"
-                wave_amo = current_wave_amo * client_totalday_trade_amt_allowed
+                wave_amo = current_wave_amo * client_totalday_trade_amt_allowed  # (10% * ($500,000 * 3%))
+
                 
                 # how many trades have we completed today? whats our total profit loss with wave trades
                 
@@ -752,9 +769,12 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
                 # print("evalatue if there is another trade to make on top of current wave")
                 kings_blessing = False
 
-            return {'kings_blessing': kings_blessing, 'wave_amo': wave_amo, 'type': order_type, 'side': order_side}
+            return {'kings_blessing': kings_blessing, 'ticker': ticker, 'wave_amo': wave_amo, 'type': order_type, 'side': order_side}
 
         if trigbee == 'sell_cross-0':
+            
+            ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
+            
             # Q?confirmation on trigger, should you wait for futher confirmation?
 
             if crypto:
@@ -767,31 +787,35 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
                 }
                 
                 # current wave
-                current_wave_index = list(waves.keys())[len(waves)-1]
-                current_wave = waves[current_wave_index]
                 current_wave_blocktime = current_wave['wave_blocktime']
                 current_wave_amo = theme_buyingpower[current_wave['wave_blocktime']]
 
                 order_type = "market"
                 order_side = "buy"
                 wave_amo = current_wave_amo * client_totalday_trade_amt_allowed
+                
                 # how many trades have we completed today? whats our total profit loss with wave trades
                 # should you override your original order rules?
+                
+                
+                
                 kings_blessing = True
 
             if trig_action:
                 # print("evalatue if there is another trade to make on top of current wave")
                 kings_blessing = False
+            
             if crypto:
                 kings_blessing = False
 
-            return {'kings_blessing': kings_blessing, 'wave_amo': wave_amo, 'type': order_type, 'side': order_side}
+            return {'kings_blessing': kings_blessing, 'ticker': ticker, 'wave_amo': wave_amo, 'type': order_type, 'side': order_side}
         
         else:
             print("Error New Trig not in Queens Mind: ", trigbee )
 
     except Exception as e:
         print(e, print_line_of_error(), ticker_time_frame)
+        print("logme")
 
 
 def command_conscience(api, QUEEN, active_tickers):
@@ -812,9 +836,10 @@ def command_conscience(api, QUEEN, active_tickers):
 
     # cycle through stories  # The Golden Ticket
     for ticker in story_tickers:
-        # Accept Ticker
+        
+        """ # Accept Ticker """
         if ticker not in active_tickers:
-            continue # break loop
+            continue ##### break loop
         
         # crypto
         if ticker in crypto_currency_symbols:
@@ -847,50 +872,50 @@ def command_conscience(api, QUEEN, active_tickers):
                     trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
                     for trig in trigs:
                         # ipdb.()
-                        if trig == "buy_cross-0":                                                        
+                        if trig in ["buy_cross-0", "sell_cross-0"]:                                                        
                             # check if you already placed order or if a workerbee in transit to place order
-                            if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker=ticker):
+                            if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame):
                                 trig_action = True
                             else:
                                 trig_action = False
-
-                            
+ 
                             """ HAIL TRIGGER, WHAT SAY YOU?
                             ~forgive me but I bring a gift for the king and queen
                             """
-                            king_resp = king_knights_requests(trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action, crypto=crypto)
+                            # ipdb.set_trace()
+                            king_resp = king_knights_requests(QUEEN=QUEEN, trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action, crypto=crypto)
 
                             if king_resp['kings_blessing']:
-                                print("CheckPoint_WhoAreYou?", trig, " time:", return_timestamp_string())
-                                # print("Each Buz in a gift")
+                                print("CheckPoint WhoAreYou?", trig, " time:", return_timestamp_string())
 
-                                execute_order(QUEEN=QUEEN, king_resp=king_resp, ticker=ticker, ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio)
+                                execute_order(QUEEN=QUEEN, king_resp=king_resp, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio)
                         
-                        if trig == "sell_cross-0":
-                            # print(trig)
-                            # if ticker in QUEEN['heartbeat']['main_indexes']: # SPY, QQQ
-                            if ticker in crypto_currency_symbols:
-                                continue # break loop
+                        # if trig == "sell_cross-0":
+                        #     # print(trig)
+                        #     # if ticker in QUEEN['heartbeat']['main_indexes']: # SPY, QQQ
+                        #     if ticker in crypto_currency_symbols:
+                        #         continue # break loop
                             
-                            ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
+                        #     ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
 
-                            # check if you already placed order or if a workerbee in transit to place order
-                            if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker=ticker):
-                                trig_action = True
-                            else:
-                                trig_action = False
+                        #     # check if you already placed order or if a workerbee in transit to place order
+                        #     if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker=ticker):
+                        #         trig_action = True
+                        #     else:
+                        #         trig_action = False
                             
-                            king_resp = king_knights_requests(trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action, crypto=crypto)
+                        #     king_resp = king_knights_requests(QUEEN=QUEEN, trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action, crypto=crypto)
 
-                            if king_resp['kings_blessing']:
-                                print("CheckPoint_WhoAreYou?", trig, " time:", return_timestamp_string())
-                                print("Each Buz in a gift")
+                        #     if king_resp['kings_blessing']:
+                        #         print("CheckPoint_WhoAreYou?", trig, " time:", return_timestamp_string())
+                        #         print("Each Buz in a gift")
                                 
-                                execute_order(QUEEN=QUEEN, king_resp=king_resp, ticker=ticker, ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio)
+                        #         execute_order(QUEEN=QUEEN, king_resp=king_resp, ticker=ticker, ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio)
 
             except Exception as e:
                 print(e, print_line_of_error())
                 print(ticker_time_frame)
+                sys.exit()
     
     # App Buy Order Requests
     app_resp = process_app_requests(APP_requests, 'buy_orders')
@@ -916,11 +941,11 @@ def command_conscience(api, QUEEN, active_tickers):
 
 
 
-""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> order management <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
 
 def order_past_duration(queen_order):
-    nowtime = datetime.datetime.now()
-    qorder_time = queen_order['datetime']
+    nowtime = datetime.datetime.now().astimezone(est)
+    qorder_time = queen_order['datetime'].astimezone(est)
     duration_rule = queen_order['order_rules']['timeduration']
     order_time_delta = nowtime - qorder_time
     # duration_divide_time = {'1Minute': 60, "5Minute": }
@@ -984,13 +1009,7 @@ def confirm_Theme(QUEEN, APP_requests): # King
     return True 
 
 
-def update_origin_order_qty_available(): # TBD
-    # return all closed orders & running close
-    # reduce qty filled by qty filled in close orders
-    return True
-
-
-def fix_crypto_ticker(QUEEN, ticker): # order manage
+def fix_crypto_ticker(QUEEN, ticker, idx): # order manage
     # fix symbol for crypto
     if ticker == 'BTC/USD':
         print("correcting symbol for ", ticker)
@@ -1246,6 +1265,8 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         
         sell_order = False # #### >>> convince me to sell  $$
 
+        now_datetime = datetime.datetime.now().astimezone(est)
+
         rn_order_symbol = run_order['symbol']
         runorder_client_order_id = run_order['client_order_id']
         take_profit = run_order['order_rules']['take_profit'] #  {'order_rules': order_rules, 'trigname': trig, 'order': order, 'datetime': date_mark, 'status_q': False, 'exit_order': False}                                    
@@ -1253,13 +1274,13 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         sell_qty = float(run_order['filled_qty'])
         ticker_time_frame = run_order['ticker_time_frame']
         ticker_time_frame_origin = run_order['ticker_time_frame_origin']
-        
+        entered_trade_time = run_order['datetime'].astimezone(est)
+        time_in_trade = now_datetime - entered_trade_time
+
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
         
-        stars = story_view(STORY_bee=STORY_bee, ticker=rn_order_symbol)
-        stars_df = stars['df']
-        current_wave = stars['current_wave']
+        stars_df = story_view(STORY_bee=STORY_bee, ticker=rn_order_symbol)['df']
 
         # POLLEN-STORY
         ttframe_story = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame_origin]['story']
@@ -1288,7 +1309,7 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
             return {'bee_sell': False}
         
         side = 'sell'
-        type ='market'
+        order_type ='market'
         app_req = process_app_sell_signal(QUEEN=QUEEN, PB_App_Pickle=PB_App_Pickle, runorder_client_order_id=runorder_client_order_id)
         if app_req['sell_order']:
             print("process app sell order")
@@ -1296,7 +1317,7 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
             app_request = True
             
             sell_qty = app_req['sell_qty']
-            type = app_req['type']
+            order_type = app_req['type']
             side = app_req['side']
         else:
             app_request = False
@@ -1317,13 +1338,13 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         
         # >>> time in trade
 
-        # elif run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and current_macd_time > 0:
-        #     print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
-        #     sell_order = True
+        elif run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 120:
+            print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
+            sell_order = True
 
-        # elif run_order['trigname'] == "sell_cross-0" and "buy" in current_macd and current_macd_time > 0:
-        #     print("SELL ORDER change from Sell to Buy", current_macd, current_macd_time)
-        #     sell_order = True
+        elif run_order['trigname'] == "sell_cross-0" and "buy" in current_macd and time_in_trade.seconds > 120:
+            print("SELL ORDER change from Sell to Buy", current_macd, current_macd_time)
+            sell_order = True
         
         # elif the 3 wisemen pointing to sell or re-chunk profits
         
@@ -1336,12 +1357,12 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
 
 
         if sell_order:
-            return {'bee_sell': True, 'type': type, 'side': side, 'sell_qty': sell_qty, 'app_request': app_request}
+            return {'bee_sell': True, 'type': order_type, 'side': side, 'sell_qty': sell_qty, 'app_request': app_request}
         else:
             return {'bee_sell': False, 'run_order': run_order}
     except Exception as e:
         print(e, print_line_of_error())
-        log_error_dict = logging_log_message(type='error', msg='unable to process kings read on queen order', error=str(e), origin_func='king Evaluate QueenOrder')
+        log_error_dict = logging_log_message(log_type='error', msg='unable to process kings read on queen order', error=str(e), origin_func='king Evaluate QueenOrder')
         logging.error(log_error_dict)
 
 
@@ -1377,7 +1398,7 @@ def queen_orders_main(portfolio):
                 else:
                     qo_crypto = 'false'
 
-                ticker = fix_crypto_ticker(QUEEN=QUEEN, ticker=ticker)
+                ticker = fix_crypto_ticker(QUEEN=QUEEN, ticker=ticker, idx=idx)
 
                 mkhrs = return_market_hours(api_cal=trading_days, crypto=qo_crypto)
                 if mkhrs != 'open':
@@ -1443,14 +1464,14 @@ def queen_orders_main(portfolio):
                         logging.error(msg)
             except Exception as e:
                 print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
-                log_error_dict = logging_log_message(type='error', msg='Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
+                log_error_dict = logging_log_message(log_type='error', msg='Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
                 logging.error(log_error_dict)
                 # archive order?
                 QUEEN['queen_orders'][idx]['queen_order_state'] = 'error'
     
     except Exception as e:
         print('Queen Order Main FAILED', e, print_line_of_error())
-        log_error_dict = logging_log_message(type='critical', msg='Queen Main Orders Failed', error=str(e), origin_func='Quen Main Orders')
+        log_error_dict = logging_log_message(log_type='critical', msg='Queen Main Orders Failed', error=str(e), origin_func='Quen Main Orders')
         logging.critical(log_error_dict)
         sys.exit()
 
@@ -1549,7 +1570,7 @@ try:
         'SPY': {'long3X': 'SPXL', 'inverse': 'SH', 'inverse2X': 'SDS', 'inverse3X': 'SPXU'},
         'QQQ': {'long3X': 'TQQQ', 'inverse': 'PSQ', 'inverse2X': 'QID', 'inverse3X': 'SQQQ'}
         }
-    # active_order_state_list = ['running', 'running_close', 'submitted']
+
     QUEEN['heartbeat']['active_order_state_list'] = active_order_state_list
     QUEEN['heartbeat']['active_tickers'] = ["SPY", "ETHUSD"]
     PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
@@ -1568,10 +1589,12 @@ try:
         # Should you operate now? I thnik the brain never sleeps ?
 
         if queens_chess_piece.lower() == 'queen': # Rule On High
+            
             """ The Story of every Knight and their Quest """
 
             pollen = read_queensmind(prod)
             QUEEN = pollen['queen']
+            STORY_bee = pollen['STORY_bee']
             POLLENSTORY = read_pollenstory()
 
 
@@ -1579,12 +1602,11 @@ try:
             APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
 
             # Process All Orders
-            order_management(api=api, QUEEN=QUEEN)  ### <>
-                                                    ####>
+            order_management(api=api, QUEEN=QUEEN)
+
             # Hunt for Triggers
             command_conscience(api=api, QUEEN=QUEEN, active_tickers=QUEEN['heartbeat']['active_tickers']) #####>   
-                                                    ####>
-            # order_management(api=api, QUEEN=QUEEN) ### <>
+
             
 
             time.sleep(1)
@@ -1597,9 +1619,6 @@ try:
                 love: anchor on the 1 min macd crosses or better yet just return all triggers and base everything off the trigger
             """
 
-    # >>> Buy Sell Weights 
-
-    # >>> NEED TO FIX the return for each time interval, rebuild 5 Min, 1 hr...etc....Put rebuild charts into new dict where they get maintained...add logic for each interval...i.e. on 5Min Mark rebuild with Initiate OR replace last 5 Minutes....?
 except Exception as errbuz:
     print(errbuz)
     erline = print_line_of_error()
