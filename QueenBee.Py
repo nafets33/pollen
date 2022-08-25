@@ -1160,6 +1160,21 @@ def update_queen_order_profits(ticker, queen_order, queen_order_idx):
         print(e, print_line_of_error())
 
 
+def runorder_HoneyGauge_metric(run_order):
+    # measure latest profits to determine to sell out / not
+    
+    gauge = run_order['honey_gauge']
+    last_3 = [gauge[n*-1] for n in range(1,4)] # roughly ~10seconds
+    last_9 = [gauge[n*-1] for n in range(1,10)] # roughly ~30seconds
+    last_15 = [gauge[n*-1] for n in range(1,16)] # roughly ~1Min
+    
+    last_3_avg = sum(last_3) / len(last_3)
+    last_9_avg = sum(last_9) / len(last_9)
+    last_15_avg = sum(last_15) / len(last_15)
+
+    return {'last_3_avg': last_3_avg, 'last_9_avg': last_9_avg, 'last_15_avg': last_15_avg}
+
+
 def route_queen_order(QUEEN, queen_order, queen_order_idx):
     try:
         idx = queen_order_idx
@@ -1263,6 +1278,8 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
     try:
         # """ all scenarios if run_order should be closed out """
         
+        portfolio = return_alpc_portolio(api)['portfolio']
+
         sell_order = False # #### >>> convince me to sell  $$
 
         now_datetime = datetime.datetime.now().astimezone(est)
@@ -1280,7 +1297,7 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
         
-        stars_df = story_view(STORY_bee=STORY_bee, ticker=rn_order_symbol)['df']
+        stars_df = story_view(STORY_bee=STORY_bee, ticker=run_order['symbol'])['df']
 
         # POLLEN-STORY
         ttframe_story = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame_origin]['story']
@@ -1290,8 +1307,8 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         # trade is past excepted duration time 
         past_trade_duration = order_past_duration(queen_order=run_order)
 
-        # if market closed do NOT Sell
-        if rn_order_symbol in crypto_currency_symbols:
+        # Market closed do NOT Sell
+        if run_order['symbol'] in crypto_currency_symbols:
             crypto = True
         else:
             crypto = False
@@ -1304,13 +1321,13 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
             return {'bee_sell': False, 'run_order': run_order}
 
         if str(run_order['order_trig_sell_stop']).lower() == 'true': ### consider remaining qty
-            logging.info({"sell in progress": rn_order_symbol})
+            logging.info({"sell in progress": run_order['symbol']})
             print("sell in progress")
             return {'bee_sell': False}
         
         side = 'sell'
         order_type ='market'
-        app_req = process_app_sell_signal(QUEEN=QUEEN, PB_App_Pickle=PB_App_Pickle, runorder_client_order_id=runorder_client_order_id)
+        app_req = process_app_sell_signal(QUEEN=QUEEN, PB_App_Pickle=PB_App_Pickle, runorder_client_order_id=run_order['client_order_id'])
         if app_req['sell_order']:
             print("process app sell order")
             sell_order = True
@@ -1322,11 +1339,11 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         else:
             app_request = False
 
-        if take_profit <= current_profit_loss:
+        if run_order['order_rules']['take_profit'] <= current_profit_loss:
             print("selling out due PROFIT ACHIVED")
             sell_order = True
         
-        elif current_profit_loss <= sellout:
+        elif current_profit_loss <= run_order['order_rules']['sellout']:
             print("selling out due STOP LOSS")
             sell_order = True
         
@@ -1336,13 +1353,14 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
 
         # >>> where are we at in relation to Max Profit
         
+        # >>> if profit gauge is falling and we need to bail trade or sell profits
+        
         # >>> time in trade
-
-        elif run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 120:
+        elif run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 500:
             print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
             sell_order = True
 
-        elif run_order['trigname'] == "sell_cross-0" and "buy" in current_macd and time_in_trade.seconds > 120:
+        elif run_order['trigname'] == "sell_cross-0" and "buy" in current_macd and time_in_trade.seconds > 500:
             print("SELL ORDER change from Sell to Buy", current_macd, current_macd_time)
             sell_order = True
         
@@ -1350,10 +1368,19 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         
 
         # check if position is neg, if so, switch side to sell and sell_qty to buy
-        if portfolio[rn_order_symbol]['side'] == 'short':
-            sell_qty = abs(sell_qty)
-            side = 'buy'
-        
+        # try:
+        #     if portfolio[run_order['symbol']]['side'] == 'short':
+        #         sell_qty = abs(sell_qty)
+        #         side = 'buy'
+        # except Exception as e:
+        #     msg = (rn_order_symbol, " not found in portfolio, wait a moment and make second attempt call to portfolio :::: error: ", e)
+        #     print(msg)
+        #     logging.error(logging_log_message(log_type='error', msg=msg, error=str(e), origin_func='Main Queen orders()', ticker=rn_order_symbol))
+        #     time.sleep(1)
+        #     portfolio = return_alpc_portolio(api)['portfolio']
+        #     if portfolio[run_order['symbol']]['side'] == 'short':
+        #         sell_qty = abs(sell_qty)
+        #         side = 'buy'
 
 
         if sell_order:
@@ -1385,6 +1412,9 @@ def queen_orders_main(portfolio):
         active_orders = {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['queen_order_state'] in ['submitted', 'running', 'running_close']}
 
         for idx, run_order in active_orders.items():
+            
+
+
             try:
                 # ipdb.()
                 # Queen Order Local Vars
@@ -1430,6 +1460,7 @@ def queen_orders_main(portfolio):
 
                 resp = update_queen_order_profits(ticker=ticker, queen_order=run_order, queen_order_idx=idx)
                 current_profit_loss = resp['current_profit_loss']
+                
                 re_eval_order = king_Evaluate_QueenOrder(run_order=run_order, current_profit_loss=current_profit_loss, portfolio=portfolio)
                 if re_eval_order['bee_sell']:
                     # VALIDATE BEE ORDER check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY

@@ -1316,6 +1316,39 @@ def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.l
     return {'speedybee': speedybee_dict}
 
 
+
+
+def init_logging(queens_chess_piece, db_root):
+    loglog_newfile = False
+    log_dir = dst = os.path.join(db_root, 'logs')
+    log_dir_logs = dst = os.path.join(log_dir, 'logs')
+    if os.path.exists(dst) == False:
+        os.mkdir(dst)
+    if prod:
+        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+    else:
+        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+
+    log_file = os.path.join(log_dir, log_name)
+    if loglog_newfile:
+        # copy log file to log dir & del current log file
+        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
+        shutil.copy(log_file, dst_path) # only when you want to log your log files
+        os.remove(log_file)
+    else:
+        # print("logging",log_file)
+        logging.basicConfig(filename=log_file,
+                            filemode='a',
+                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p',
+                            level=logging.INFO,
+                            force=True)
+    
+    return True
+
+
+
 def pickle_chesspiece(pickle_file, data_to_store):
     if PickleData(pickle_file=pickle_file, data_to_store=data_to_store) == False:
         msg=("Pickle Data Failed")
@@ -2190,6 +2223,7 @@ def init_QUEEN(queens_chess_piece):
         'errors': {},
         'client_order_ids_qgen': [],
         'power_rangers': init_PowerRangers(),
+        'triggerBee_frequency': {}, # hold a star and the running trigger
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -2291,10 +2325,10 @@ def return_market_hours(api_cal, crypto):
             return "closed"
 
 
-def clean_queens_memory(QUEEN, keyitem): # MISC
-    if keyitem == "trigger_stopped":
-        QUEEN['command_conscience']['memory']['trigger_stopped'] = []
-        PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+# def clean_queens_memory(QUEEN, keyitem): # MISC
+#     if keyitem == "trigger_stopped":
+#         QUEEN['command_conscience']['memory']['trigger_stopped'] = []
+#         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 
 def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
@@ -2366,11 +2400,17 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
     if cols_to_view:
         col_view = col_view
     else:
-        col_view = ['trigname', 'ticker_time_frame', 'cost_basis', 'honey', '$honey', 'profit_loss', 'status_q', 'client_order_id', 'queen_order_state']
+        col_view = ['trigname', 'ticker_time_frame', 'filled_avg_price', 'cost_basis', 'honey', '$honey', 'profit_loss', 'status_q', 'client_order_id', 'queen_order_state']
     orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == queen_order_state]
     df = pd.DataFrame(orders)
-    df = df.astype(str)
+    # df = df.astype(str)
     if len(df) > 0:
+        # df["honey"] = df["honey"] * 100
+        df["honey"] = df['honey'].map("{:.2%}".format)
+        # df["$honey"] = df['honey'].map("{:.2f}".format)
+        df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
+        if 'profit_loss' in df.columns:
+            df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
         col_view = [i for i in col_view if i in df.columns]
         df_return = df[col_view].copy()
     else:
@@ -2380,6 +2420,8 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
         all_cols = col_view + [i for i in df.columns.tolist() if i not in col_view]
         df_return = df[all_cols].copy()
 
+    df_return = df_return.astype(str)
+    
     return {'df': df_return}
 
 

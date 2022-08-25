@@ -483,10 +483,10 @@ if option == 'queen':
         df = df.sort_values('ttf')
         st.write("<<all trigger bees>>")
         st.write(df)
-        
-        st.write("memory")
-        st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
 
+        col1_a, col2_b, = st.columns(2)
+        
+        st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
 
         QUEEN['command_conscience']['orders']['active'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in ['submitted', 'running', 'running_close']]
         QUEEN['command_conscience']['orders']['submitted'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'submitted']
@@ -503,24 +503,27 @@ if option == 'queen':
         st.write(orders_today)
         st.write('orders')
 
-        st.write("errors")
+        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
+        st.markdown(new_title, unsafe_allow_html=True)
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='error', return_all_cols=True)['df']
         st.dataframe(error_orders)
 
-        st.write("submitted")
+        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
+        st.markdown(new_title, unsafe_allow_html=True)
         submitted_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
         st.dataframe(submitted_orders)
         
-        st.write("running")
+        new_title = '<p style="font-family:sans-serif; color:Green; font-size: 25px;">RUNNING</p>'
+        st.markdown(new_title, unsafe_allow_html=True)
         run_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running')['df']
         st.dataframe(run_orders)
 
-        st.write("running_close")
+        new_title = '<p style="font-family:sans-serif; color:Green; font-size: 25px;">RUNNING CLOSE</p>'
+        st.markdown(new_title, unsafe_allow_html=True)
         runclose_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running_close')['df']
         st.dataframe(runclose_orders)
 
-        col1_a, col2_b, = st.columns(2)
-
+ 
         with col2_b:
             new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">memory</p>'
             st.markdown(new_title, unsafe_allow_html=True)
@@ -613,10 +616,12 @@ if option == 'signal':
             st.write("Controls Saved", return_timestamp_string())
 
         # Update run order
-
-        latest_queen_order = [QUEEN['queen_orders'][-1]] # latest
-        # latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state']=='error'] # latest
-        # latest_queen_order = [latest_queen_order[-1]]
+        show_errors_option = st.selectbox('show last error', ['no', 'yes'], index=['no'].index('no'))
+        if show_errors_option == 'no':
+            latest_queen_order = [QUEEN['queen_orders'][-1]] # latest
+        else:
+            latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state']=='error'] # latest
+            latest_queen_order = [latest_queen_order[-1]]
         c_order_input = st.text_input("client_order_id", latest_queen_order[0]['client_order_id'])
         q_order = {k: i for k, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_input}
         idx = list(q_order.keys())[0]
