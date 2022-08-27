@@ -776,6 +776,5 @@ except Exception as errbuz:
     log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
     print(log_msg)
     logging.critical(log_msg)
-    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

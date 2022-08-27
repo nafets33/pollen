@@ -2098,157 +2098,103 @@ def init_app(pickle_file):
             PickleData(pickle_file=pickle_file, data_to_store=data)            
 
 
-def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
-    if chart_times:
-        return chart_times
-    else:
-        chart_times = {
-        "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-        "1Hour_3Month": 48, "2Hour_6Month": 72, 
-        "1Day_1Year": 250}
-        return chart_times
-    
+def pollen_themes():
 
-def pollen_themes(KING, themes=['nuetral', 'strong']):
-    ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
-    # themes = ['nuetral', 'strong']
-    stars = KING['stars']
-    
-    pollen_themes = {}
-    for theme in themes:
-        pollen_themes[theme] = {}
-        for star in stars.keys():
-            pollen_themes[theme][star] = {
-                    'name': star, 
-                    'waveup' : {'morning_9-11': .01,
-                            'lunch_11-2': .01,
-                            'afternoon_2-4': .01,
-                            'Day': .01,
+    pollen_themes = {
+        'nuetral': {'name': 'nuetral',
+                    'desc': """Start Even, Seek Forever, Never Shy, Greatness awaits
+                            """,
+                    'triggerbees_tofind': [],
+                    'waveup' : {'morning_9-11': .05,
+                            'lunch_11-2': .05,
+                            'afternoon_2-4': .05,
+                            'Day': .05,
                             },
-                    'wavedown' : {'morning_9-11': .01,
-                                'lunch_11-2': .01,
-                                'afternoon_2-4': .01,
-                                'Day': .01,
+                    'wavedown' : {'morning_9-11': .03,
+                                'lunch_11-2': .03,
+                                'afternoon_2-4': .03,
+                                'Day': .05,
                             }
-                }
-
-    # pollen_themes = {
-    #     'nuetral': {'name': 'nuetral',
-    #                 'desc': """Start Even, Seek Forever, Never Shy, Greatness awaits
-    #                         """,
-    #                 'triggerbees_tofind': [],
-    #                 'waveup' : {'morning_9-11': .05,
-    #                         'lunch_11-2': .05,
-    #                         'afternoon_2-4': .05,
-    #                         'Day': .05,
-    #                         },
-    #                 'wavedown' : {'morning_9-11': .03,
-    #                             'lunch_11-2': .03,
-    #                             'afternoon_2-4': .03,
-    #                             'Day': .05,
-    #                         }
-    #             },
-    #     'strong': {'name': 'strong',
-    #                     'desc': """SPY/overall up > 1% 
-    #                             & prior X(5) days decline is Z(-5%)
+                },
+        'strong': {'name': 'strong',
+                        'desc': """SPY/overall up > 1% 
+                                & prior X(5) days decline is Z(-5%)
                                 
-    #                             """,
-    #                     'triggerbees_tofind': ['VWAP_GRAVITY', 'SCALP'],
-    #                     'waveup' : {'morning_9-11': .1,
-    #                             'lunch_11-2': .1,
-    #                             'afternoon_2-4': .1,
-    #                             'Day': .05,
-    #                             },
-    #                     'wavedown' : {'morning_9-11': .05,
-    #                                 'lunch_11-2': .05,
-    #                                 'afternoon_2-4': .05,
-    #                                 'Day': .05,
-    #                             }
-    #                 }
-    
-    
+                                """,
+                        'triggerbees_tofind': ['VWAP_GRAVITY', 'SCALP'],
+                        'waveup' : {'morning_9-11': .1,
+                                'lunch_11-2': .1,
+                                'afternoon_2-4': .1,
+                                'Day': .05,
+                                },
+                        'wavedown' : {'morning_9-11': .05,
+                                    'lunch_11-2': .05,
+                                    'afternoon_2-4': .05,
+                                    'Day': .05,
+                                }
+                    }
+        } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     return pollen_themes
 
 
-def KINGME(QUEEN, APP_requests, chart_times=False):
+def KING():
     return_dict = {}
-    # read QUEEN to get latest chart and check for reset
-    if len(APP_requests['savedstars']) > 0:
-        savedstar = {idx: i for idx, i in enumerate(APP_requests['savedstars']) if i['read'] != 'true' and 'savedstar' in i}
-        if len(savedstar) > 0:
-            item_idx = list(savedstar.keys())[0]
-            APP_requests['misc_bucket'][item_idx]['read'] = 'true'
-            QUEEN['queen_controls']['stars'] = savedstar
-            PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
-
-    if len(APP_requests['misc_bucket']) > 0:
-        # unread = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true'}
-        reset = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true' and 'reset' in i}
-
-        # unread_df = pd.DataFrame(APP_requests['misc_bucket'])
-        # unread_df['index'] = unread_df.index
-        # reset = unread_df[unread_df['read'] != 'true'].copy()
-        # savedstar = unread_df[unread_df['read'] != 'true'].copy()
-
-        if len(reset) > 0:
-            # unread_df.at[reset_last['index'],'read'] = 'true'
-            QUEEN['queen_controls']['stars'] = stars()
-            item_idx = list(reset.keys())[0]
-            APP_requests['misc_bucket'][item_idx]['read'] = 'true'
-            PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
-
-
-
-    if chart_times:
-        return_dict['stars'] = stars(chart_times)
-    else:
-        return_dict['stars'] = stars()
-
-    
     kings_order_rules = {'knight_bees': 
                                     {
-    'queen_gen': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'app': {'timeduration': 30, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'buy_cross-0': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'sell_cross-0': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'ready_buy_cross': {'timeduration': 1, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'ready_sell_cross': {'timeduration': 1, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
+                                    'queen_gen': {'timeduration': 10, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'app': {'timeduration': 30, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'buy_cross-0': {'timeduration': 10, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'sell_cross-0': {'timeduration': 10, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'ready_buy_cross': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'ready_sell_cross': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    # CRYPTO
+                                    'crypto_buy_cross-0': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
+                                    'crypto_sell_cross-0': {'timeduration': 1, 
+                                            'take_profit': .005,
+                                            'sellout': -.01,
+                                            'adjustable': True,
+                                            'friend_links': [],
+                                                },
                                     }
     }
     
-    # add order rules
+    
     return_dict['kings_order_rules'] = kings_order_rules
-    return_dict['QUEEN'] = QUEEN
     
     return return_dict
 
@@ -2256,7 +2202,6 @@ def KINGME(QUEEN, APP_requests, chart_times=False):
 def init_QUEEN(queens_chess_piece):
     QUEEN = { # The Queens Mind
         'prod': "",
-        'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {'memory': {'trigger_stopped': [],'trigger_sell_stopped': [], 'orders_completed': [],}, 
                             'orders': { 'requests': [],
@@ -2272,13 +2217,11 @@ def init_QUEEN(queens_chess_piece):
                             'app_order_requests': [],
                             'orders': [],
                             'last_read_app': datetime.datetime.now(),
-                            'reset_stars': False,
-                            'stars': stars()},
+                            'reset_stars': False,},
         'errors': {},
         'client_order_ids_qgen': [],
         'power_rangers': init_PowerRangers(),
         'triggerBee_frequency': {}, # hold a star and the running trigger
-        'saved_stars': [], # bucket of saved star settings to choose from
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -2306,9 +2249,6 @@ def init_QUEEN_App():
     'last_app_update': datetime.datetime.now(),
     'update_queen_order': [],
     'update_queen_order_requests': [],
-    'savedstars': [],
-    'misc_bucket': [],
-    'source': 'na',
     }
     return app
 
