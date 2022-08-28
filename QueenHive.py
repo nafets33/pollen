@@ -2058,6 +2058,48 @@ def pollen_hunt(df_tickers_data, MACD):
 
 # ###### >>>>>>>>>>>>>>>> QUEEN <<<<<<<<<<<<<<<#########
 
+def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
+    running_orders_df = pd.DataFrame(running_orders)
+    if len(running_orders_df) > 0:
+        running_orders_df['filled_qty'] =  running_orders_df['filled_qty'].apply(lambda x: float(x))
+        running_orders_df['req_qty'] =  running_orders_df['req_qty'].apply(lambda x: float(x))
+        running_orders_df = running_orders_df[running_orders_df['portfolio_name']==portfolio_name].copy()
+        running_portfolio = running_orders_df.groupby('symbol')[['filled_qty', 'req_qty']].sum().reset_index()
+    else:
+        running_portfolio = [] # empty
+    
+    return running_portfolio
+
+
+def createParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default="queen")
+    parser.add_argument ('-prod', default='false')
+    return parser
+
+
+def return_market_hours(api_cal, crypto):
+    trading_days = api_cal # api.get_calendar()
+    trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+    s = datetime.datetime.now()
+    s_iso = s.isoformat()[:10]
+    mk_open_today = s_iso in trading_days_df["date"].tolist()
+    mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30)
+    mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0)
+    
+    if str(crypto).lower() == 'true':
+        return "open"
+    else:
+        if mk_open_today:
+            if s >= mk_open and s <= mk_close:
+                return "open"
+            else:
+                return "closed"
+        else:
+            return "closed"
+
+
+
 def discard_allprior_days(df):
     df_day = df['timestamp_est'].iloc[-1]
     df = df.copy()
@@ -2113,6 +2155,8 @@ def pollen_themes(KING, themes=['nuetral', 'strong']):
     ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     # themes = ['nuetral', 'strong']
     stars = KING['stars']
+    waves_cycles = ['waveup', 'wavedown']
+    wave_periods = ['morning_9-11', 'lunch_11-2', 'afternoon_2-4', 'Day', 'afterhours']
     
     pollen_themes = {}
     for theme in themes:
@@ -2131,71 +2175,36 @@ def pollen_themes(KING, themes=['nuetral', 'strong']):
                                 'Day': .01,
                             }
                 }
-
-    # pollen_themes = {
-    #     'nuetral': {'name': 'nuetral',
-    #                 'desc': """Start Even, Seek Forever, Never Shy, Greatness awaits
-    #                         """,
-    #                 'triggerbees_tofind': [],
-    #                 'waveup' : {'morning_9-11': .05,
-    #                         'lunch_11-2': .05,
-    #                         'afternoon_2-4': .05,
-    #                         'Day': .05,
-    #                         },
-    #                 'wavedown' : {'morning_9-11': .03,
-    #                             'lunch_11-2': .03,
-    #                             'afternoon_2-4': .03,
-    #                             'Day': .05,
-    #                         }
-    #             },
-    #     'strong': {'name': 'strong',
-    #                     'desc': """SPY/overall up > 1% 
-    #                             & prior X(5) days decline is Z(-5%)
-                                
-    #                             """,
-    #                     'triggerbees_tofind': ['VWAP_GRAVITY', 'SCALP'],
-    #                     'waveup' : {'morning_9-11': .1,
-    #                             'lunch_11-2': .1,
-    #                             'afternoon_2-4': .1,
-    #                             'Day': .05,
-    #                             },
-    #                     'wavedown' : {'morning_9-11': .05,
-    #                                 'lunch_11-2': .05,
-    #                                 'afternoon_2-4': .05,
-    #                                 'Day': .05,
-    #                             }
-    #                 }
-    
-    
+     
     return pollen_themes
 
 
-def KINGME(QUEEN, APP_requests, chart_times=False):
+def KINGME(QUEEN, chart_times=False):
     return_dict = {}
-    # read QUEEN to get latest chart and check for reset
-    if len(APP_requests['savedstars']) > 0:
-        savedstar = {idx: i for idx, i in enumerate(APP_requests['savedstars']) if i['read'] != 'true' and 'savedstar' in i}
-        if len(savedstar) > 0:
-            item_idx = list(savedstar.keys())[0]
-            APP_requests['misc_bucket'][item_idx]['read'] = 'true'
-            QUEEN['queen_controls']['stars'] = savedstar
-            PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
+    # # read QUEEN to get latest chart and check for reset
+    # if len(APP_requests['savedstars']) > 0:
+    #     savedstar = {idx: i for idx, i in enumerate(APP_requests['savedstars']) if i['read'] != 'true' and 'savedstar' in i}
+    #     if len(savedstar) > 0:
+    #         item_idx = list(savedstar.keys())[0]
+    #         APP_requests['misc_bucket'][item_idx]['read'] = 'true'
+    #         QUEEN['queen_controls']['stars'] = savedstar
+    #         PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
 
-    if len(APP_requests['misc_bucket']) > 0:
-        # unread = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true'}
-        reset = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true' and 'reset' in i}
+    # if len(APP_requests['misc_bucket']) > 0:
+    #     # unread = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true'}
+    #     reset = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true' and 'reset' in i}
 
-        # unread_df = pd.DataFrame(APP_requests['misc_bucket'])
-        # unread_df['index'] = unread_df.index
-        # reset = unread_df[unread_df['read'] != 'true'].copy()
-        # savedstar = unread_df[unread_df['read'] != 'true'].copy()
+    #     # unread_df = pd.DataFrame(APP_requests['misc_bucket'])
+    #     # unread_df['index'] = unread_df.index
+    #     # reset = unread_df[unread_df['read'] != 'true'].copy()
+    #     # savedstar = unread_df[unread_df['read'] != 'true'].copy()
 
-        if len(reset) > 0:
-            # unread_df.at[reset_last['index'],'read'] = 'true'
-            QUEEN['queen_controls']['stars'] = stars()
-            item_idx = list(reset.keys())[0]
-            APP_requests['misc_bucket'][item_idx]['read'] = 'true'
-            PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
+    #     if len(reset) > 0:
+    #         # unread_df.at[reset_last['index'],'read'] = 'true'
+    #         QUEEN['queen_controls']['stars'] = stars()
+    #         item_idx = list(reset.keys())[0]
+    #         APP_requests['misc_bucket'][item_idx]['read'] = 'true'
+    #         PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
 
 
 
@@ -2273,12 +2282,18 @@ def init_QUEEN(queens_chess_piece):
                             'orders': [],
                             'last_read_app': datetime.datetime.now(),
                             'reset_stars': False,
-                            'stars': stars()},
+                            'stars': stars(),
+                            'reset_power_rangers': False,
+                            'power_rangers': init_PowerRangers(),
+                            },
         'errors': {},
         'client_order_ids_qgen': [],
+        'app_requests__bucket': [],
         'power_rangers': init_PowerRangers(),
         'triggerBee_frequency': {}, # hold a star and the running trigger
-        'saved_stars': [], # bucket of saved star settings to choose from
+        'saved_pollenThemes': [], # bucket of saved star settings to choose from
+        'saved_powerRangers': [], # bucket of saved star settings to choose from
+        
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -2302,7 +2317,12 @@ def init_QUEEN_App():
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],
+    'power_rangers': [],
+    'app_powerRanger_requests': [],
     'knight_bees_kings_rules': [],
+    'knight_bees_kings_rules_requests': [],
+    'del_QUEEN_object': [],
+    'del_QUEEN_object_requests': [],
     'last_app_update': datetime.datetime.now(),
     'update_queen_order': [],
     'update_queen_order_requests': [],
@@ -2340,47 +2360,6 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             logging.info(msg)
 
     return {'QUEEN': QUEEN, 'update': update}
-
-
-def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
-    running_orders_df = pd.DataFrame(running_orders)
-    if len(running_orders_df) > 0:
-        running_orders_df['filled_qty'] =  running_orders_df['filled_qty'].apply(lambda x: float(x))
-        running_orders_df['req_qty'] =  running_orders_df['req_qty'].apply(lambda x: float(x))
-        running_orders_df = running_orders_df[running_orders_df['portfolio_name']==portfolio_name].copy()
-        running_portfolio = running_orders_df.groupby('symbol')[['filled_qty', 'req_qty']].sum().reset_index()
-    else:
-        running_portfolio = [] # empty
-    
-    return running_portfolio
-
-
-def createParser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument ('-qcp', default="queen")
-    parser.add_argument ('-prod', default='false')
-    return parser
-
-
-def return_market_hours(api_cal, crypto):
-    trading_days = api_cal # api.get_calendar()
-    trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-    s = datetime.datetime.now()
-    s_iso = s.isoformat()[:10]
-    mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30)
-    mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0)
-    
-    if str(crypto).lower() == 'true':
-        return "open"
-    else:
-        if mk_open_today:
-            if s >= mk_open and s <= mk_close:
-                return "open"
-            else:
-                return "closed"
-        else:
-            return "closed"
 
 
 # def clean_queens_memory(QUEEN, keyitem): # MISC
