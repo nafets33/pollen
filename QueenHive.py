@@ -2119,15 +2119,6 @@ def slice_by_time(df, between_a, between_b):
     return df
 
 
-def return_main_chart_times(queens_chess_piece):
-    if queens_chess_piece in ['queen', 'castle', 'bishop']:
-        chart_times = {
-            "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-            "1Hour_3Month": 48, "2Hour_6Month": 72, 
-            "1Day_1Year": 250}
-        return chart_times
-
-
 def init_app(pickle_file):
     if os.path.exists(pickle_file) == False:
         if "_App_" in pickle_file:
@@ -2151,62 +2142,40 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
         return chart_times
     
 
-def pollen_themes(KING, themes=['nuetral', 'strong']):
+def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'wavedown'], wave_periods={'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}):
     ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     # themes = ['nuetral', 'strong']
-    stars = KING['stars']
-    waves_cycles = ['waveup', 'wavedown']
-    wave_periods = ['morning_9-11', 'lunch_11-2', 'afternoon_2-4', 'Day', 'afterhours']
+    # waves_cycles = ['waveup', 'wavedown']
+    # wave_periods = {'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}
     
+    star_times = KING['stars']
     pollen_themes = {}
     for theme in themes:
         pollen_themes[theme] = {}
-        for star in stars.keys():
-            pollen_themes[theme][star] = {
-                    'name': star, 
-                    'waveup' : {'morning_9-11': .01,
-                            'lunch_11-2': .01,
-                            'afternoon_2-4': .01,
-                            'Day': .01,
-                            },
-                    'wavedown' : {'morning_9-11': .01,
-                                'lunch_11-2': .01,
-                                'afternoon_2-4': .01,
-                                'Day': .01,
-                            }
-                }
+        for star in star_times.keys():
+            pollen_themes[theme][star] = {}
+            for wave_c in waves_cycles:
+                pollen_themes[theme][star][wave_c] = {wave_period: n for (wave_period, n) in wave_periods.items()}
+            
+            # pollen_themes[theme][star] = {
+            #         'name': star, 
+            #         'waveup' : {'morning_9-11': .01,
+            #                 'lunch_11-2': .01,
+            #                 'afternoon_2-4': .01,
+            #                 'Day': .01,
+            #                 },
+            #         'wavedown' : {'morning_9-11': .01,
+            #                     'lunch_11-2': .01,
+            #                     'afternoon_2-4': .01,
+            #                     'Day': .01,
+            #                 }
+            #     }
      
     return pollen_themes
 
 
-def KINGME(QUEEN, chart_times=False):
+def KINGME(chart_times=False):
     return_dict = {}
-    # # read QUEEN to get latest chart and check for reset
-    # if len(APP_requests['savedstars']) > 0:
-    #     savedstar = {idx: i for idx, i in enumerate(APP_requests['savedstars']) if i['read'] != 'true' and 'savedstar' in i}
-    #     if len(savedstar) > 0:
-    #         item_idx = list(savedstar.keys())[0]
-    #         APP_requests['misc_bucket'][item_idx]['read'] = 'true'
-    #         QUEEN['queen_controls']['stars'] = savedstar
-    #         PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
-
-    # if len(APP_requests['misc_bucket']) > 0:
-    #     # unread = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true'}
-    #     reset = {idx: i for idx, i in enumerate(APP_requests['misc_bucket']) if i['read'] != 'true' and 'reset' in i}
-
-    #     # unread_df = pd.DataFrame(APP_requests['misc_bucket'])
-    #     # unread_df['index'] = unread_df.index
-    #     # reset = unread_df[unread_df['read'] != 'true'].copy()
-    #     # savedstar = unread_df[unread_df['read'] != 'true'].copy()
-
-    #     if len(reset) > 0:
-    #         # unread_df.at[reset_last['index'],'read'] = 'true'
-    #         QUEEN['queen_controls']['stars'] = stars()
-    #         item_idx = list(reset.keys())[0]
-    #         APP_requests['misc_bucket'][item_idx]['read'] = 'true'
-    #         PickleData(pickle_file=APP_requests['source'], data_to_store=APP_requests)
-
-
 
     if chart_times:
         return_dict['stars'] = stars(chart_times)
@@ -2257,7 +2226,6 @@ def KINGME(QUEEN, chart_times=False):
     
     # add order rules
     return_dict['kings_order_rules'] = kings_order_rules
-    return_dict['QUEEN'] = QUEEN
     
     return return_dict
 
@@ -2267,30 +2235,37 @@ def init_QUEEN(queens_chess_piece):
         'prod': "",
         'source': "na",
         'last_modified': datetime.datetime.now(),
-        'command_conscience': {'memory': {'trigger_stopped': [],'trigger_sell_stopped': [], 'orders_completed': [],}, 
-                            'orders': { 'requests': [],
-                                        'submitted': [],
-                                        'running': [],
-                                        'running_close': []}
-                                            },
+        'command_conscience': {},
         'queen_orders': [],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {}, # ticker info ... change name
         'kings_order_rules': {},
-        'queen_controls': { 'theme': 'nuetral',
-                            'app_order_requests': [],
-                            'orders': [],
-                            'last_read_app': datetime.datetime.now(),
-                            'reset_stars': False,
-                            'stars': stars(),
-                            'reset_power_rangers': False,
-                            'power_rangers': init_PowerRangers(),
+        'queen_controls': { 
+            'theme': 'nuetral',
+            'app_order_requests': [],
+            'orders': [],
+            'last_read_app': datetime.datetime.now(),
+            'reset_stars': False,
+            'stars': stars(),
+            'reset_power_rangers': False,
+            'power_rangers': init_PowerRangers(),
+            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9}
                             },
+        'workerbees': {
+            'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['SPY'],
+                        'stars': stars(),},
+            'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['META', 'GOOG', 'HD'],
+                        'stars': stars(),},
+            'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['META', 'GOOG', 'HD'],
+                        'stars': stars(),},
+            },
         'errors': {},
         'client_order_ids_qgen': [],
         'app_requests__bucket': [],
-        'power_rangers': init_PowerRangers(),
-        'triggerBee_frequency': {}, # hold a star and the running trigger
+        # 'triggerBee_frequency': {}, # hold a star and the running trigger
         'saved_pollenThemes': [], # bucket of saved star settings to choose from
         'saved_powerRangers': [], # bucket of saved star settings to choose from
         
@@ -2358,14 +2333,17 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             msg = f'{k}{" : Key Added to "}{queens_chess_piece}'
             print(msg)
             logging.info(msg)
+    
+    for k, v in latest_queen['queen_controls'].items():
+        if k not in QUEEN['queen_controls'].keys():
+            QUEEN['queen_controls'][k] = v
+            update=True
+            msg = f'{k}{" : queen controls Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
 
     return {'QUEEN': QUEEN, 'update': update}
 
-
-# def clean_queens_memory(QUEEN, keyitem): # MISC
-#     if keyitem == "trigger_stopped":
-#         QUEEN['command_conscience']['memory']['trigger_stopped'] = []
-#         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 
 def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
@@ -2470,7 +2448,7 @@ def init_PowerRangers(ranger_dimensions=False):
     # rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
     # trigbees = ['buy_wave', 'sell_wave']
     # theme_list = ['nuetral', 'strong']
-    # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+    # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
     # bee_ranger_tiers = 9
 
     # BUY_Cross
@@ -2480,8 +2458,8 @@ def init_PowerRangers(ranger_dimensions=False):
     # When 1M macd tier in range (-2, -1) + 10% : Yellow // Sell :: 1%
     # When 1M macd tier in range (-1, 1) + 1% : White // Sell :: 1%
     # When 1M macd tier in range (1, 2) + 1% : Green // Sell :: 1%
-    # When 1M macd tier in range (2, 3) + 1% : Green1 // Sell :: 25%
-    # When 1M macd tier in range (3, 5) + 1% : Green2 // Sell :: 40%
+    # When 1M macd tier in range (2, 3) + 1% : orange // Sell :: 25%
+    # When 1M macd tier in range (3, 5) + 1% : purple // Sell :: 40%
     # When 1M macd tier in range (5, 7) + 1% : Black // Sell :: 50%
 
 
@@ -2489,24 +2467,24 @@ def init_PowerRangers(ranger_dimensions=False):
         rangers = ranger_dimensions['rangers'] #  = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ranger_dimensions['trigbees'] # = ['buy_wave', 'sell_wave']
         theme_list = ranger_dimensions['theme_list'] # theme_list = ['nuetral', 'strong']
-        colors = ranger_dimensions['colors'] # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+        colors = ranger_dimensions['colors'] # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
         ranger_init = ranger_dimensions['ranger_init']
     else:
         rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ['buy_wave', 'sell_wave']
         theme_list = ['nuetral', 'strong']
-        colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+        colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
         ranger_init = {'buy_wave': {'nuetral': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .001},
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                         'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .001},
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                     },
                         'sell_wave': {'nuetral': 
-                                            {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'green1': .01, 'green2': .01, 'black': .01},
+                                            {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
                                         'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .01},
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
                                             }
                 }
 
@@ -2521,6 +2499,48 @@ def init_PowerRangers(ranger_dimensions=False):
                     r_dict[ranger][trigbee][theme][color] = ranger_init[trigbee][theme][color]
  
     return r_dict
+
+
+def init_pollen_dbs(prod, queens_chess_piece):
+    
+    if prod:
+        api = api
+        main_orders_file = os.path.join(db_root, 'main_orders.csv')
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
+        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
+        if os.path.exists(PB_QUEEN_Pickle) == False:
+            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            print("You Need a Queen")
+            logging.info(("queen created", timestamp_string()))
+            # sys.exit()
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
+        if os.path.exists(PB_App_Pickle) == False:
+            init_app(pickle_file=PB_App_Pickle)
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
+        if os.path.exists(PB_Orders_Pickle) == False:
+            init_app(pickle_file=PB_Orders_Pickle)
+        print("My Queen Production")
+    else:
+        api = api_paper
+        main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
+        if os.path.exists(PB_QUEEN_Pickle) == False:
+            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            print("You Need a Queen__sandbox")
+            logging.info(("queen created", timestamp_string()))
+            # sys.exit()
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
+        if os.path.exists(PB_App_Pickle) == False:
+            init_app(pickle_file=PB_App_Pickle)
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
+        if os.path.exists(PB_Orders_Pickle) == False:
+            init_app(pickle_file=PB_Orders_Pickle)
+        print("My Queen Sandbox")
+    
+    return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
+
 
 
 

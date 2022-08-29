@@ -196,12 +196,14 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
         else:
             return df.plot(x=x, y=y,figsize=figsize)
   
-def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True):
+
+def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update']):
     gb = GridOptionsBuilder.from_dataframe(data)
     gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-    gb.configure_column("update_column", header_name="Update", editable=True, groupable=True)
+    for colName in update_cols:
+        gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
 
 
     gridOptions = gb.build()
@@ -216,7 +218,7 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True):
         fit_columns_on_grid_load=fit_columns_on_grid_load,
         theme='blue', #Add theme color to the table
         enable_enterprise_modules=True,
-        height=750, 
+        height=height, 
         # width='100%',
         reload_data=reload_data
     )
@@ -348,9 +350,10 @@ else:
     st.sidebar.write("""My Queen Sandbox""")
 
 
-pollen_theme = pollen_themes()
 KING = KINGME()
 stars = KING['stars']
+pollen_theme = pollen_themes(KING=KING)
+
 
 QUEEN = read_queensmind(prod)['queen']
 POLLENSTORY = read_pollenstory()
@@ -454,6 +457,7 @@ if option == 'charts':
         if option3 == "Yes":
             time.sleep(10)
             st.experimental_rerun()
+
 
 if option == 'queen':
     # pollen = return_pollen()
@@ -593,7 +597,7 @@ if option == 'queen':
 if option == 'signal':
     # pollen = return_pollen()
     # PB_App_Pickle = os.path.join(db_app_root, 'queen_controls.pkl')
-    save_signals = st.sidebar.selectbox('Send to Queen', ['beeaction', 'orders', 'controls'], index=['controls'].index('controls'))
+    save_signals = st.sidebar.selectbox('Send to Queen', ['beeaction', 'orders', 'controls', 'QueenOrders'], index=['controls'].index('controls'))
 
 
     ## SHOW CURRENT THEME
@@ -604,7 +608,7 @@ if option == 'signal':
 
 
     if save_signals == 'controls':
-        
+        # save_signals = st.selectbox('Queen Controls', ['theme', 'power rangers'], index=['controls'].index('controls'))
         # CHANGE Theme_list or any selections has to come from QUEEN
         theme_list = list(pollen_theme.keys())
         theme_option = st.selectbox('theme', theme_list, index=theme_list.index('nuetral'))
@@ -625,7 +629,27 @@ if option == 'signal':
             st.write("Controls Saved", return_timestamp_string())
             st.image(Image.open(bee_power_image), width=89)
 
+        # power rangers
+        queens_power_rangers = QUEEN['queen_controls']['power_rangers']
+        powerRangers = list(queens_power_rangers.keys())
+        ranger = st.selectbox('Power Rangers', powerRangers, index=powerRangers.index(["1Minute_1Day" if "1Minute_1Day" in powerRangers else powerRangers[0]][0]))
+        ranger_waves = list(queens_power_rangers[ranger].keys())
+        
+        for wave_ in ranger_waves:
+            st.write(wave_)
+            ranger_settings = queens_power_rangers[ranger][wave_]
+            df_i = pd.DataFrame(ranger_settings)
+            df_i['PowerRanger'] = df_i.index
+            df = df_i[['PowerRanger', theme_option]].copy()
+            grid_response = build_AGgrid_df(data=df, reload_data=False, height=333, update_cols=['Update Ranger Theme'])
+            data = grid_response['data']
+            selected = grid_response['selected_rows'] 
+            df_sel = pd.DataFrame(selected)
+            st.write(df_sel)
 
+
+
+    if save_signals == 'QueenOrders':
         # Update run order
         show_errors_option = st.selectbox('show last error', ['no', 'yes'], index=['no'].index('no'))
         if show_errors_option == 'no':
@@ -693,9 +717,7 @@ if option == 'signal':
                 data = ReadPickleData(pickle_file=PB_App_Pickle)
                 st.write(data['update_queen_order'])
                 
-
-
-    
+   
     if save_signals == 'orders':
         show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
         if show_app_req == 'yes':
