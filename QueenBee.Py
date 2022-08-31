@@ -594,7 +594,16 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
                     return {'app_flag': True, 'app_request': app_request}
         else:
             return {'app_flag': False}
-    
+
+    elif request_name == "stop_queen":
+        if APP_requests[request_name] == 'true':
+            logging.info(("app stopping queen"))
+            print("exiting QUEEN stopping queen")
+            APP_requests[request_name] = 'false'
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            sys.exit()
+        else:
+            return {'app_flag': False}    
     else:
         return {'app_flag': False}
 
@@ -773,7 +782,8 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
 
 
     try:
-        ticker, tframe, frame = ticker_time_frame.split("_")      
+        ticker, tframe, frame = ticker_time_frame.split("_")
+        star_time = f'{tframe}{"_"}{frame}'
         STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
 
         """Stars Forever Be in Heaven"""
@@ -814,9 +824,9 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
                 kings_blessing = True
             else:
                 theme_buyingpower = {
-                'morning_9-11' : pollen_theme_dict[theme][ticker_time_frame]['waveup']['morning_9-11'],
-                'lunch_11-2' : pollen_theme_dict[theme][ticker_time_frame]['waveup']['lunch_11-2'],
-                'afternoon_2-4' : pollen_theme_dict[theme][ticker_time_frame]['waveup']['afternoon_2-4'],
+                'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
+                'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
+                'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
                 }
 
                 
@@ -849,7 +859,7 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
             return {'kings_blessing': kings_blessing, 'ticker': ticker, 'wave_amo': wave_amo, 'type': order_type, 'side': order_side}
 
         if trigbee == 'sell_cross-0':
-            
+            ## create process of shorting when regular tickers
             ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
             
             # Q?confirmation on trigger, should you wait for futher confirmation?
@@ -858,9 +868,9 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
                 kings_blessing = False
             else:
                 theme_buyingpower = {
-                'morning_9-11' : pollen_theme_dict[theme]['wavedown']['morning_9-11'],
-                'lunch_11-2' : pollen_theme_dict[theme]['wavedown']['lunch_11-2'],
-                'afternoon_2-4' : pollen_theme_dict[theme]['wavedown']['afternoon_2-4'],
+                'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
+                'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
+                'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
                 }
                 
                 # current wave
@@ -899,6 +909,8 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
 
     STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
 
+    refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee)
+
     story_tickers = set([i.split("_")[0] for i in list(STORY_bee.keys())])
     portfolio = return_alpc_portolio(api)['portfolio']
        
@@ -911,9 +923,10 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
         active_orders = all_orders[all_orders['queen_order_state'].isin(active_order_state_list)].copy()
 
     # cycle through stories  # The Golden Ticket
-    for ticker in story_tickers:
+    for ttf_star, ticker_info in QUEEN['heartbeat']['active_tickerStars'].items():
+        ticker = ttf_star.split("_")[0]
         
-        """ # Accept Ticker """
+        # """ # Accept Ticker """
         if ticker not in active_tickers:
             continue ##### break loop
         
@@ -992,8 +1005,6 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
 
     return True
 
-
-
 """>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
 
 def order_past_duration(queen_order):
@@ -1049,7 +1060,7 @@ def process_app_sell_signal(QUEEN, PB_App_Pickle, runorder_client_order_id): # O
         return {'sell_order': False}
 
 
-def confirm_Theme(QUEEN, APP_requests): # King 
+def confirm_Theme(QUEEN, APP_requests, savequeen=True): # King 
     if APP_requests['last_app_update'] > QUEEN['queen_controls']['last_read_app']:
         print("app request, checking theme")
         print(APP_requests['theme'])
@@ -1447,6 +1458,7 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         log_error_dict = logging_log_message(log_type='error', msg='unable to process kings read on queen order', error=str(e), origin_func='king Evaluate QueenOrder')
         logging.error(log_error_dict)
 
+
 def queen_orders_main(portfolio, APP_requests):
     
     try:
@@ -1457,11 +1469,6 @@ def queen_orders_main(portfolio, APP_requests):
         # active orders
         if queens_first_go == 0:
             return False
-        
-        # QUEEN['command_conscience']['orders']['active'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in active_order_state_list]
-        # QUEEN['command_conscience']['orders']['submitted'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'submitted']
-        # QUEEN['command_conscience']['orders']['running'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'running']
-        # QUEEN['command_conscience']['orders']['running_close'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'running_close']
 
         active_orders = {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['queen_order_state'] in ['submitted', 'running', 'running_close']}
 
@@ -1582,16 +1589,46 @@ def order_management(api, QUEEN, APP_requests):
     return True
 
 
+def refresh_QUEEN_starTickers(QUEEN, STORY_bee):
+    ticker_allowed = 'SPY'
+    now_time = datetime.datetime.now().astimezone(est)
+
+    original_state = QUEEN['heartbeat']['active_tickerStars']
+    
+    QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 33]
+    # create dict of allowed long term and short term of a given ticker so ticker as info for trading
+    QUEEN['heartbeat']['active_tickerStars'] = {k: {'trade_type': ['long_term', 'short_term']} for k in QUEEN['heartbeat']['available_tickers']}
+    ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['active_tickerStars'].keys()])
+
+    QUEEN['heartbeat']['active_tickers'] = [i for i in ticker_set if i in ticker_allowed]
+
+    new_active = QUEEN['heartbeat']['active_tickerStars']
+    if original_state != new_active:
+        # ipdb.set_trace()
+        print('added dropped / updated tickers')
+        for k,v in original_state.items():
+            if k not in new_active:
+                print("dropped", k, return_timestamp_string())
+            else:
+                print("added", k, return_timestamp_string())
+                v2 = original_state[k]
+                if v2 != v:
+                    print("updated", k, v)
+        print(new_active)
+        PickleData(PB_QUEEN_Pickle, QUEEN)
+
+    return True
+
+
 # if '_name_' == '_main_':
 try:
+    # s_time = datetime.datetime.now().astimezone(est)
 
     # init files needed
-
-    
-    init_pollen = init_pollen_dbs(prod=prod, queens_chess_piece=queens_chess_piece)
+    init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
     PB_App_Pickle = init_pollen['PB_App_Pickle']
-
+    # init orders
     init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
     init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
@@ -1633,11 +1670,13 @@ try:
         }
 
     QUEEN['heartbeat']['active_order_state_list'] = active_order_state_list
-    QUEEN['heartbeat']['active_tickers'] = ["SPY", "ETHUSD"]
+
+    refresh_QUEEN_starTickers(QUEEN, STORY_bee)
+
     PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
     
-    available_triggers = ["sell_cross-0", "buy_cross-0"]
-    print("active trigs", available_triggers)
+    available_triggerbees = ["sell_cross-0", "buy_cross-0"]
+    print("active trigs", available_triggerbees)
     print("active tickers", QUEEN['heartbeat']['active_tickers'])
 
     print("Here we go Mario")
@@ -1652,6 +1691,7 @@ try:
         if queens_chess_piece.lower() == 'queen': # Rule On High
             
             """ The Story of every Knight and their Quest """
+            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='stop_queen', archive_bucket=False)
 
             pollen = read_queensmind(prod)
             QUEEN = pollen['queen']
@@ -1681,6 +1721,10 @@ try:
                 love: anchor on the 1 min macd crosses or better yet just return all triggers and base everything off the trigger
             """
 
+        e = datetime.datetime.now()
+        if (e - s).seconds > 3:
+            logging.info((queens_chess_piece, ": cycle time > 3 seconds:  SLOW cycle: ", (e - s).seconds ))
+            print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 except Exception as errbuz:
     print(errbuz)
     erline = print_line_of_error()

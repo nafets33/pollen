@@ -196,6 +196,7 @@ def read_queensmind(prod): # return active story workers
     QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
     QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
     QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
+    # QUEEN['queen']['conscience']['SPEEDY_bee'] = castle['conscience']['SPEEDY_bee']
 
     return {'queen': QUEEN, 
     'bishop': bishop, 'castle': castle, 
@@ -228,7 +229,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             ticker, tframe, frame = ticker_time_frame.split("_")
 
             # if ticker_time_frame == 'QQQ_1Hour_3Month':
-            #     ipdb.set_trace()
+            #     ipdb
                 # continue
 
             ANGEL_bee[ticker_time_frame] = {}
@@ -343,7 +344,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             # macd signal divergence
             df['macd_singal_deviation'] = df['macd'] - df['signal']
             STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
-
 
             if "1Minute_1Day" in ticker_time_frame:
                 theme_df = df.copy()
@@ -1100,11 +1100,6 @@ def check_order_status(api, client_order_id, queen_order=False, prod=True): # re
     return order_
 
 
-# def update_QUEEN_with_order_status(api, order):
-#     q_order = [i for i in QUEEN["command_conscience"]["orders"] if i["client_order_id"] == order["client_order_id"]][0]
-#     QUEEN[]
-#     return True
-
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
@@ -1291,29 +1286,6 @@ def init_index_ticker(index_list, db_root, init=True):
     # S&P 500 Real Estate (S5REAS)
     # S&P 500 Utilities (S5UTIL)"""
     return True
-
-
-def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
-    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
-
-    s = datetime.datetime.now()
-    r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
-    resp = r['resp'] # return slope of collective tics
-    speedybee_dict = {}
-    slope_dict = {}
-    for symbol in set(resp['symbol'].to_list()):
-        df = resp[resp['symbol']==symbol].copy()
-        df = df.reset_index()
-        df_len = len(df)
-        if df_len > 2:
-            slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
-            slope_dict[df.iloc[0].symbol] = slope
-    speedybee_dict['slope'] = slope_dict
-    
-    # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
-
-    print("cum.slope", sum([v for k,v in slope_dict.items()]))
-    return {'speedybee': speedybee_dict}
 
 
 def init_logging(queens_chess_piece, db_root):
@@ -2136,7 +2108,7 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
         return chart_times
     else:
         chart_times = {
-        "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        "1Minute_1Day": 1, "5Minute_5Day": 5, "30Minute_1Month": 18, 
         "1Hour_3Month": 48, "2Hour_6Month": 72, 
         "1Day_1Year": 250}
         return chart_times
@@ -2236,9 +2208,9 @@ def init_QUEEN(queens_chess_piece):
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [],
+        'queen_orders': [{'pollen': 'let the force guide you and adhere to your mind and feeling, good hunting', 'queen_order_state': 'init'}],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {}, # ticker info ... change name
+        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
         'queen_controls': { 
             'theme': 'nuetral',
@@ -2304,6 +2276,7 @@ def init_QUEEN_App():
     'savedstars': [],
     'misc_bucket': [],
     'source': 'na',
+    'stop_queen' : 'false',
     }
     return app
 
@@ -2339,6 +2312,14 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             QUEEN['queen_controls'][k] = v
             update=True
             msg = f'{k}{" : queen controls Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    for k, v in latest_queen['heartbeat'].items():
+        if k not in QUEEN['heartbeat'].keys():
+            QUEEN['heartbeat'][k] = v
+            update=True
+            msg = f'{k}{" : queen heartbeat Key Added to "}{queens_chess_piece}'
             print(msg)
             logging.info(msg)
 
@@ -2501,45 +2482,77 @@ def init_PowerRangers(ranger_dimensions=False):
     return r_dict
 
 
-def init_pollen_dbs(prod, queens_chess_piece):
+def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
     
     if prod:
         api = api
         main_orders_file = os.path.join(db_root, 'main_orders.csv')
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
-        if os.path.exists(PB_QUEEN_Pickle) == False:
-            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-            print("You Need a Queen")
-            logging.info(("queen created", timestamp_string()))
-            # sys.exit()
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
-        if os.path.exists(PB_App_Pickle) == False:
-            init_app(pickle_file=PB_App_Pickle)
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
-        if os.path.exists(PB_Orders_Pickle) == False:
-            init_app(pickle_file=PB_Orders_Pickle)
+
+
+        if 'queen' in queens_chess_piece:
+            if os.path.exists(PB_QUEEN_Pickle) == False:
+                QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                print("You Need a Queen")
+                logging.info(("queen created", timestamp_string()))
+            # sys.exit()
+            if os.path.exists(PB_App_Pickle) == False:
+                init_app(pickle_file=PB_App_Pickle)
+            if os.path.exists(PB_Orders_Pickle) == False:
+                init_app(pickle_file=PB_Orders_Pickle)
         print("My Queen Production")
     else:
         api = api_paper
         main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
-        if os.path.exists(PB_QUEEN_Pickle) == False:
-            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-            print("You Need a Queen__sandbox")
-            logging.info(("queen created", timestamp_string()))
-            # sys.exit()
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
-        if os.path.exists(PB_App_Pickle) == False:
-            init_app(pickle_file=PB_App_Pickle)
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
-        if os.path.exists(PB_Orders_Pickle) == False:
-            init_app(pickle_file=PB_Orders_Pickle)
+
+        if 'queen' in queens_chess_piece:
+            if os.path.exists(PB_QUEEN_Pickle) == False:
+                QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                print("You Need a Queen__sandbox")
+                logging.info(("queen created", timestamp_string()))
+                # sys.exit()
+            
+            if os.path.exists(PB_App_Pickle) == False:
+                init_app(pickle_file=PB_App_Pickle)
+            
+            if os.path.exists(PB_Orders_Pickle) == False:
+                init_app(pickle_file=PB_Orders_Pickle)
         print("My Queen Sandbox")
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
+
+
+
+### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
+def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
+    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
+
+    s = datetime.datetime.now()
+    r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+    resp = r['resp'] # return slope of collective tics
+    speedybee_dict = {}
+    slope_dict = {}
+    for symbol in set(resp['symbol'].to_list()):
+        df = resp[resp['symbol']==symbol].copy()
+        df = df.reset_index()
+        df_len = len(df)
+        if df_len > 2:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
+            slope_dict[df.iloc[0].symbol] = slope
+    speedybee_dict['slope'] = slope_dict
+    
+    # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
+
+    print("cum.slope", sum([v for k,v in slope_dict.items()]))
+    return {'speedybee': speedybee_dict}
 
 
 

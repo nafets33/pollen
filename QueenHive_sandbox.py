@@ -196,6 +196,7 @@ def read_queensmind(prod): # return active story workers
     QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
     QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
     QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
+    # QUEEN['queen']['conscience']['SPEEDY_bee'] = castle['conscience']['SPEEDY_bee']
 
     return {'queen': QUEEN, 
     'bishop': bishop, 'castle': castle, 
@@ -228,7 +229,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             ticker, tframe, frame = ticker_time_frame.split("_")
 
             # if ticker_time_frame == 'QQQ_1Hour_3Month':
-            #     ipdb.set_trace()
+            #     ipdb
                 # continue
 
             ANGEL_bee[ticker_time_frame] = {}
@@ -343,7 +344,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             # macd signal divergence
             df['macd_singal_deviation'] = df['macd'] - df['signal']
             STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
-
 
             if "1Minute_1Day" in ticker_time_frame:
                 theme_df = df.copy()
@@ -1100,11 +1100,6 @@ def check_order_status(api, client_order_id, queen_order=False, prod=True): # re
     return order_
 
 
-# def update_QUEEN_with_order_status(api, order):
-#     q_order = [i for i in QUEEN["command_conscience"]["orders"] if i["client_order_id"] == order["client_order_id"]][0]
-#     QUEEN[]
-#     return True
-
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
@@ -1291,29 +1286,6 @@ def init_index_ticker(index_list, db_root, init=True):
     # S&P 500 Real Estate (S5REAS)
     # S&P 500 Utilities (S5UTIL)"""
     return True
-
-
-def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
-    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
-
-    s = datetime.datetime.now()
-    r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
-    resp = r['resp'] # return slope of collective tics
-    speedybee_dict = {}
-    slope_dict = {}
-    for symbol in set(resp['symbol'].to_list()):
-        df = resp[resp['symbol']==symbol].copy()
-        df = df.reset_index()
-        df_len = len(df)
-        if df_len > 2:
-            slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
-            slope_dict[df.iloc[0].symbol] = slope
-    speedybee_dict['slope'] = slope_dict
-    
-    # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
-
-    print("cum.slope", sum([v for k,v in slope_dict.items()]))
-    return {'speedybee': speedybee_dict}
 
 
 def init_logging(queens_chess_piece, db_root):
@@ -2058,230 +2030,6 @@ def pollen_hunt(df_tickers_data, MACD):
 
 # ###### >>>>>>>>>>>>>>>> QUEEN <<<<<<<<<<<<<<<#########
 
-def discard_allprior_days(df):
-    df_day = df['timestamp_est'].iloc[-1]
-    df = df.copy()
-    df = df.set_index('timestamp_est', drop=True) # test
-    # df = df[(df.index.day == df_day.day) & (df.index.year == df_day.year) & (df.index.month == df_day.month)].copy() # remove yesterday
-    df = df[(df.index.day == df_day.day)].copy()
-    df = df.reset_index()
-    return df
-
-
-def slice_by_time(df, between_a, between_b):
-    df = df.copy()
-    df = df.set_index('timestamp_est', drop=True) # test
-    # df = df.between_time('9:30', '12:00') #test
-    df = df.between_time(between_a, between_b)
-    df = df.reset_index()
-    return df
-
-
-def return_main_chart_times(queens_chess_piece):
-    if queens_chess_piece in ['queen', 'castle', 'bishop']:
-        chart_times = {
-            "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-            "1Hour_3Month": 48, "2Hour_6Month": 72, 
-            "1Day_1Year": 250}
-        return chart_times
-
-
-def init_app(pickle_file):
-    if os.path.exists(pickle_file) == False:
-        if "_App_" in pickle_file:
-            print("init app")
-            data = {'orders': [], 'theme': [], 'queen_processed': []}
-            PickleData(pickle_file=pickle_file, data_to_store=data)
-        if "_Orders_" in pickle_file:
-            print("init Orders")
-            data = {'orders_completed': [], 'archived': []}
-            PickleData(pickle_file=pickle_file, data_to_store=data)            
-
-
-def pollen_themes():
-
-    pollen_themes = {
-        'nuetral': {'name': 'nuetral',
-                    'desc': """Start Even, Seek Forever, Never Shy, Greatness awaits
-                            """,
-                    'triggerbees_tofind': [],
-                    'waveup' : {'morning_9-11': .05,
-                            'lunch_11-2': .05,
-                            'afternoon_2-4': .05,
-                            'Day': .05,
-                            },
-                    'wavedown' : {'morning_9-11': .03,
-                                'lunch_11-2': .03,
-                                'afternoon_2-4': .03,
-                                'Day': .05,
-                            }
-                },
-        'strong': {'name': 'strong',
-                        'desc': """SPY/overall up > 1% 
-                                & prior X(5) days decline is Z(-5%)
-                                
-                                """,
-                        'triggerbees_tofind': ['VWAP_GRAVITY', 'SCALP'],
-                        'waveup' : {'morning_9-11': .1,
-                                'lunch_11-2': .1,
-                                'afternoon_2-4': .1,
-                                'Day': .05,
-                                },
-                        'wavedown' : {'morning_9-11': .05,
-                                    'lunch_11-2': .05,
-                                    'afternoon_2-4': .05,
-                                    'Day': .05,
-                                }
-                    }
-        } # set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
-    return pollen_themes
-
-
-def KING():
-    return_dict = {}
-    kings_order_rules = {'knight_bees': 
-                                    {
-                                    'queen_gen': {'timeduration': 10, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    'app': {'timeduration': 30, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    'buy_cross-0': {'timeduration': 10, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    'sell_cross-0': {'timeduration': 10, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    'ready_buy_cross': {'timeduration': 1, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    'ready_sell_cross': {'timeduration': 1, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    # CRYPTO
-                                    'crypto_buy_cross-0': {'timeduration': 1, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    'crypto_sell_cross-0': {'timeduration': 1, 
-                                            'take_profit': .005,
-                                            'sellout': -.01,
-                                            'adjustable': True,
-                                            'friend_links': [],
-                                                },
-                                    }
-    }
-    
-    
-    return_dict['kings_order_rules'] = kings_order_rules
-    
-    return return_dict
-
-
-def init_QUEEN(queens_chess_piece):
-    QUEEN = { # The Queens Mind
-        'prod': "",
-        'last_modified': datetime.datetime.now(),
-        'command_conscience': {'memory': {'trigger_stopped': [],'trigger_sell_stopped': [], 'orders_completed': [],}, 
-                            'orders': { 'requests': [],
-                                        'submitted': [],
-                                        'running': [],
-                                        'running_close': []}
-                                            },
-        'queen_orders': [],
-        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {}, # ticker info ... change name
-        'kings_order_rules': {},
-        'queen_controls': { 'theme': 'nuetral',
-                            'app_order_requests': [],
-                            'orders': [],
-                            'last_read_app': datetime.datetime.now(),
-                            'reset_stars': False,},
-        'errors': {},
-        'client_order_ids_qgen': [],
-        'power_rangers': init_PowerRangers(),
-        'triggerBee_frequency': {}, # hold a star and the running trigger
-        # Worker Bees
-        queens_chess_piece: {
-        'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
-        'pollenstory': {}, # latest story of dataframes castle and bishop
-        'pollencharts': {}, # latest chart rebuild
-        'pollencharts_nectar': {}, # latest chart rebuild with indicators
-        'pollenstory_info': {}, # Misc Info,
-        'client': {},
-        # 'heartbeat': {},
-        'last_modified' : datetime.datetime.now(),
-        }
-    }
-    return QUEEN
-
-
-def init_QUEEN_App():
-    app = {'theme': '', 
-    'app_order_requests': [], 
-    'sell_orders': [], 'buy_orders': [], 
-    'last_modified': datetime.datetime.now(),
-    'queen_processed_orders': [],
-    'wave_triggers': [],
-    'app_wave_requests': [],
-    'knight_bees_kings_rules': [],
-    'last_app_update': datetime.datetime.now(),
-    'update_queen_order': [],
-    'update_queen_order_requests': [],
-    }
-    return app
-
-
-def add_key_to_app(APP_requests): # returns QUEES
-    q_keys = APP_requests.keys()
-    latest_queen = init_QUEEN_App()
-    update=False
-    for k, v in latest_queen.items():
-        if k not in q_keys:
-            APP_requests[k] = v
-            update=True
-            msg = f'{k}{" : Key Added"}'
-            print(msg)
-            logging.info(msg)
-    return {'APP_requests': APP_requests, 'update': update}
-
-
-def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
-    update = False
-    q_keys = QUEEN.keys()
-    latest_queen = init_QUEEN('queen')
-    for k, v in latest_queen.items():
-        if k not in q_keys:
-            QUEEN[k] = v
-            update=True
-            msg = f'{k}{" : Key Added to "}{queens_chess_piece}'
-            print(msg)
-            logging.info(msg)
-
-    return {'QUEEN': QUEEN, 'update': update}
-
-
 def return_dfshaped_orders(running_orders, portfolio_name='Jq'):
     running_orders_df = pd.DataFrame(running_orders)
     if len(running_orders_df) > 0:
@@ -2323,10 +2071,251 @@ def return_market_hours(api_cal, crypto):
             return "closed"
 
 
-# def clean_queens_memory(QUEEN, keyitem): # MISC
-#     if keyitem == "trigger_stopped":
-#         QUEEN['command_conscience']['memory']['trigger_stopped'] = []
-#         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+
+def discard_allprior_days(df):
+    df_day = df['timestamp_est'].iloc[-1]
+    df = df.copy()
+    df = df.set_index('timestamp_est', drop=True) # test
+    # df = df[(df.index.day == df_day.day) & (df.index.year == df_day.year) & (df.index.month == df_day.month)].copy() # remove yesterday
+    df = df[(df.index.day == df_day.day)].copy()
+    df = df.reset_index()
+    return df
+
+
+def slice_by_time(df, between_a, between_b):
+    df = df.copy()
+    df = df.set_index('timestamp_est', drop=True) # test
+    # df = df.between_time('9:30', '12:00') #test
+    df = df.between_time(between_a, between_b)
+    df = df.reset_index()
+    return df
+
+
+def init_app(pickle_file):
+    if os.path.exists(pickle_file) == False:
+        if "_App_" in pickle_file:
+            print("init app")
+            data = {'orders': [], 'theme': [], 'queen_processed': []}
+            PickleData(pickle_file=pickle_file, data_to_store=data)
+        if "_Orders_" in pickle_file:
+            print("init Orders")
+            data = {'orders_completed': [], 'archived': []}
+            PickleData(pickle_file=pickle_file, data_to_store=data)            
+
+
+def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
+    if chart_times:
+        return chart_times
+    else:
+        chart_times = {
+        "1Minute_1Day": 1, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        "1Hour_3Month": 48, "2Hour_6Month": 72, 
+        "1Day_1Year": 250}
+        return chart_times
+    
+
+def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'wavedown'], wave_periods={'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}):
+    ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
+    # themes = ['nuetral', 'strong']
+    # waves_cycles = ['waveup', 'wavedown']
+    # wave_periods = {'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}
+    
+    star_times = KING['stars']
+    pollen_themes = {}
+    for theme in themes:
+        pollen_themes[theme] = {}
+        for star in star_times.keys():
+            pollen_themes[theme][star] = {}
+            for wave_c in waves_cycles:
+                pollen_themes[theme][star][wave_c] = {wave_period: n for (wave_period, n) in wave_periods.items()}
+            
+            # pollen_themes[theme][star] = {
+            #         'name': star, 
+            #         'waveup' : {'morning_9-11': .01,
+            #                 'lunch_11-2': .01,
+            #                 'afternoon_2-4': .01,
+            #                 'Day': .01,
+            #                 },
+            #         'wavedown' : {'morning_9-11': .01,
+            #                     'lunch_11-2': .01,
+            #                     'afternoon_2-4': .01,
+            #                     'Day': .01,
+            #                 }
+            #     }
+     
+    return pollen_themes
+
+
+def KINGME(chart_times=False):
+    return_dict = {}
+
+    if chart_times:
+        return_dict['stars'] = stars(chart_times)
+    else:
+        return_dict['stars'] = stars()
+
+    
+    kings_order_rules = {'knight_bees': 
+                                    {
+    'queen_gen': {'timeduration': 10, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
+    'app': {'timeduration': 30, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
+    'buy_cross-0': {'timeduration': 10, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
+    'sell_cross-0': {'timeduration': 10, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
+    'ready_buy_cross': {'timeduration': 1, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
+    'ready_sell_cross': {'timeduration': 1, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
+                                    }
+    }
+    
+    # add order rules
+    return_dict['kings_order_rules'] = kings_order_rules
+    
+    return return_dict
+
+
+def init_QUEEN(queens_chess_piece):
+    QUEEN = { # The Queens Mind
+        'prod': "",
+        'source': "na",
+        'last_modified': datetime.datetime.now(),
+        'command_conscience': {},
+        'queen_orders': [{'pollen': 'let the force guide you and adhere to your mind and feeling, good hunting', 'queen_order_state': 'init'}],
+        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+        'heartbeat': {}, # ticker info ... change name
+        'kings_order_rules': {},
+        'queen_controls': { 
+            'theme': 'nuetral',
+            'app_order_requests': [],
+            'orders': [],
+            'last_read_app': datetime.datetime.now(),
+            'reset_stars': False,
+            'stars': stars(),
+            'reset_power_rangers': False,
+            'power_rangers': init_PowerRangers(),
+            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9}
+                            },
+        'workerbees': {
+            'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['SPY'],
+                        'stars': stars(),},
+            'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['META', 'GOOG', 'HD'],
+                        'stars': stars(),},
+            'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['META', 'GOOG', 'HD'],
+                        'stars': stars(),},
+            },
+        'errors': {},
+        'client_order_ids_qgen': [],
+        'app_requests__bucket': [],
+        # 'triggerBee_frequency': {}, # hold a star and the running trigger
+        'saved_pollenThemes': [], # bucket of saved star settings to choose from
+        'saved_powerRangers': [], # bucket of saved star settings to choose from
+        
+        # Worker Bees
+        queens_chess_piece: {
+        'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+        'pollenstory': {}, # latest story of dataframes castle and bishop
+        'pollencharts': {}, # latest chart rebuild
+        'pollencharts_nectar': {}, # latest chart rebuild with indicators
+        'pollenstory_info': {}, # Misc Info,
+        'client': {},
+        # 'heartbeat': {},
+        'last_modified' : datetime.datetime.now(),
+        }
+    }
+    return QUEEN
+
+
+def init_QUEEN_App():
+    app = {'theme': '', 
+    'app_order_requests': [], 
+    'sell_orders': [], 'buy_orders': [], 
+    'last_modified': datetime.datetime.now(),
+    'queen_processed_orders': [],
+    'wave_triggers': [],
+    'app_wave_requests': [],
+    'power_rangers': [],
+    'app_powerRanger_requests': [],
+    'knight_bees_kings_rules': [],
+    'knight_bees_kings_rules_requests': [],
+    'del_QUEEN_object': [],
+    'del_QUEEN_object_requests': [],
+    'last_app_update': datetime.datetime.now(),
+    'update_queen_order': [],
+    'update_queen_order_requests': [],
+    'savedstars': [],
+    'misc_bucket': [],
+    'source': 'na',
+    }
+    return app
+
+
+def add_key_to_app(APP_requests): # returns QUEES
+    q_keys = APP_requests.keys()
+    latest_queen = init_QUEEN_App()
+    update=False
+    for k, v in latest_queen.items():
+        if k not in q_keys:
+            APP_requests[k] = v
+            update=True
+            msg = f'{k}{" : Key Added"}'
+            print(msg)
+            logging.info(msg)
+    return {'APP_requests': APP_requests, 'update': update}
+
+
+def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
+    update = False
+    q_keys = QUEEN.keys()
+    latest_queen = init_QUEEN('queen')
+    for k, v in latest_queen.items():
+        if k not in q_keys:
+            QUEEN[k] = v
+            update=True
+            msg = f'{k}{" : Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+    
+    for k, v in latest_queen['queen_controls'].items():
+        if k not in QUEEN['queen_controls'].keys():
+            QUEEN['queen_controls'][k] = v
+            update=True
+            msg = f'{k}{" : queen controls Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    return {'QUEEN': QUEEN, 'update': update}
+
 
 
 def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
@@ -2431,7 +2420,7 @@ def init_PowerRangers(ranger_dimensions=False):
     # rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
     # trigbees = ['buy_wave', 'sell_wave']
     # theme_list = ['nuetral', 'strong']
-    # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+    # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
     # bee_ranger_tiers = 9
 
     # BUY_Cross
@@ -2441,8 +2430,8 @@ def init_PowerRangers(ranger_dimensions=False):
     # When 1M macd tier in range (-2, -1) + 10% : Yellow // Sell :: 1%
     # When 1M macd tier in range (-1, 1) + 1% : White // Sell :: 1%
     # When 1M macd tier in range (1, 2) + 1% : Green // Sell :: 1%
-    # When 1M macd tier in range (2, 3) + 1% : Green1 // Sell :: 25%
-    # When 1M macd tier in range (3, 5) + 1% : Green2 // Sell :: 40%
+    # When 1M macd tier in range (2, 3) + 1% : orange // Sell :: 25%
+    # When 1M macd tier in range (3, 5) + 1% : purple // Sell :: 40%
     # When 1M macd tier in range (5, 7) + 1% : Black // Sell :: 50%
 
 
@@ -2450,24 +2439,24 @@ def init_PowerRangers(ranger_dimensions=False):
         rangers = ranger_dimensions['rangers'] #  = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ranger_dimensions['trigbees'] # = ['buy_wave', 'sell_wave']
         theme_list = ranger_dimensions['theme_list'] # theme_list = ['nuetral', 'strong']
-        colors = ranger_dimensions['colors'] # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+        colors = ranger_dimensions['colors'] # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
         ranger_init = ranger_dimensions['ranger_init']
     else:
         rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ['buy_wave', 'sell_wave']
         theme_list = ['nuetral', 'strong']
-        colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'green1', 'green2', 'black']
+        colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
         ranger_init = {'buy_wave': {'nuetral': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .001},
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                         'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .001},
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                     },
                         'sell_wave': {'nuetral': 
-                                            {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'green1': .01, 'green2': .01, 'black': .01},
+                                            {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
                                         'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'green1': .01, 'green2': .01, 'black': .01},
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
                                             }
                 }
 
@@ -2482,6 +2471,80 @@ def init_PowerRangers(ranger_dimensions=False):
                     r_dict[ranger][trigbee][theme][color] = ranger_init[trigbee][theme][color]
  
     return r_dict
+
+
+def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
+    
+    if prod:
+        api = api
+        main_orders_file = os.path.join(db_root, 'main_orders.csv')
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
+        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
+
+
+        if 'queen' in queens_chess_piece:
+            if os.path.exists(PB_QUEEN_Pickle) == False:
+                QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                print("You Need a Queen")
+                logging.info(("queen created", timestamp_string()))
+            # sys.exit()
+            if os.path.exists(PB_App_Pickle) == False:
+                init_app(pickle_file=PB_App_Pickle)
+            if os.path.exists(PB_Orders_Pickle) == False:
+                init_app(pickle_file=PB_Orders_Pickle)
+        print("My Queen Production")
+    else:
+        api = api_paper
+        main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
+
+        if 'queen' in queens_chess_piece:
+            if os.path.exists(PB_QUEEN_Pickle) == False:
+                QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                print("You Need a Queen__sandbox")
+                logging.info(("queen created", timestamp_string()))
+                # sys.exit()
+            
+            if os.path.exists(PB_App_Pickle) == False:
+                init_app(pickle_file=PB_App_Pickle)
+            
+            if os.path.exists(PB_Orders_Pickle) == False:
+                init_app(pickle_file=PB_Orders_Pickle)
+        print("My Queen Sandbox")
+    
+    return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
+
+
+
+### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
+def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
+    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
+
+    s = datetime.datetime.now()
+    r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+    resp = r['resp'] # return slope of collective tics
+    speedybee_dict = {}
+    slope_dict = {}
+    for symbol in set(resp['symbol'].to_list()):
+        df = resp[resp['symbol']==symbol].copy()
+        df = df.reset_index()
+        df_len = len(df)
+        if df_len > 2:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
+            slope_dict[df.iloc[0].symbol] = slope
+    speedybee_dict['slope'] = slope_dict
+    
+    # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
+
+    print("cum.slope", sum([v for k,v in slope_dict.items()]))
+    return {'speedybee': speedybee_dict}
+
 
 
 

@@ -197,7 +197,7 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
             return df.plot(x=x, y=y,figsize=figsize)
   
 
-def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update']):
+def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL'):
     gb = GridOptionsBuilder.from_dataframe(data)
     gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
@@ -214,7 +214,7 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
         data,
         gridOptions=gridOptions,
         data_return_mode='AS_INPUT', 
-        update_mode='MODEL_CHANGED', 
+        update_mode=update_mode_value, 
         fit_columns_on_grid_load=fit_columns_on_grid_load,
         theme='blue', #Add theme color to the table
         enable_enterprise_modules=True,
@@ -237,7 +237,10 @@ def create_main_macd_chart(df):
     fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1)
     fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1)
     fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1)
-    fig.update_layout(height=600, width=900, title_text=title)
+    fig.update_layout(height=600, width=1500, title_text=title)
+    df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
+    fig.add_scatter(x=df['chartdate'], y=df['cross'], row=2, col=1)
+
     return fig
 
 def create_slope_chart(df):
@@ -327,16 +330,16 @@ def return_total_profits(QUEEN):
                 st.write(tic_group_df)
 
 
-class return_pollen:
-    POLLENSTORY = read_pollenstory()
-    QUEENSMIND = read_queensmind(prod) # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
-    QUEEN = QUEENSMIND['queen']
-    # The story behind the story       
-    STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
-    KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
-    ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
+# class return_pollen:
+#     POLLENSTORY = read_pollenstory()
+#     QUEENSMIND = read_queensmind(prod) # return {'bishop': bishop, 'castle': castle, 'STORY_bee': STORY_bee, 'knightsword': knightsword}
+#     QUEEN = QUEENSMIND['queen']
+#     # The story behind the story       
+#     STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
+#     KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
+#     ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
-# pollen = return_pollen()
+# # pollen = return_pollen()
 
 st.sidebar.write("Production: ", prod)
 # st.write(prod)
@@ -374,9 +377,82 @@ st.sidebar.write("<<<('')>>>")
 # full view of all stories 
 # # macd_state, Macd Tier, Macd, Hist Tier, Hist, Signal Tier, Signal, & Current Wave dimensions (length, profit)story
 
+def run_charts(POLLENSTORY = False):
+    # with st.form("my_form"):
+    #     # tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
+    #     # ticker_option = st.sidebar.selectbox("Tickersme", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+    #     st.write("Inside the form")
+    #     slider_val = st.slider("Form slider")
+    #     checkbox_val = st.checkbox("Form checkbox")
+
+    #     # Every form must have a submit button.
+    #     submitted = st.form_submit_button("Submit")
+    #     if submitted:
+    #         st.write("slider", slider_val, "checkbox", checkbox_val)
+
+    # st.write("Outside the form")
+    return True
+
+def stop_queen(APP_requests):
+    with st.form("stop_queen"):
+        checkbox_val = st.checkbox("Stop Queen")
+
+        # Every form must have a submit button.
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            ("checkbox", checkbox_val)
+            APP_requests['stop_queen'] = str(checkbox_val).lower()
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            
+            test = ReadPickleData(PB_App_Pickle)
+            st.write(test['stop_queen'])
+    return True
+
+
+def queen_order_update():
+    with st.form("my_form"):
+        df = pd.DataFrame(latest_queen_order)
+        df = df.T.reset_index()
+        df = df.astype(str)
+        # for col in df.columns:
+        #     df[col] = df[col].astype(str)
+        df = df.rename(columns={0: 'main'})
+        grid_response = build_AGgrid_df(data=df, reload_data=False, update_cols=['update_column'])
+        data = grid_response['data']
+        # st.write(data)
+        ttframe = data[data['index'] == 'ticker_time_frame'].copy()
+        ttframe = ttframe.iloc[0]['main']
+        # st.write(ttframe.iloc[0]['main'])
+        selected = grid_response['selected_rows'] 
+        df_sel = pd.DataFrame(selected)
+        st.write(df_sel)
+        if len(df_sel) > 0:
+            up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
+            up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
+            update_dict = {c_order_input: up_values}
+            st.session_state['update'] = update_dict
+            st.session_state['ttframe_update'] = ttframe
+
+        save_button_runorder = st.button("Save RunOrderUpdate")
+        if save_button_runorder:
+            # st.write(st.session_state['update'])
+            update_sstate = st.session_state['update']
+            update_ttframe = st.session_state['ttframe_update']
+            order_dict = {'system': 'app',
+            'queen_order_update_package': update_sstate,
+            'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}',
+            'ticker_time_frame': update_ttframe,
+            }
+            # st.write(order_dict)
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            data['update_queen_order'].append(order_dict)
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            st.write(data['update_queen_order'])
 
 if option == 'charts':
     # pollen = return_pollen()
+    run_charts(POLLENSTORY = POLLENSTORY)
     
     tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
     # tickers_avail.update({"all"})
@@ -460,7 +536,6 @@ if option == 'charts':
 
 
 if option == 'queen':
-    # pollen = return_pollen()
     tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
     tickers_avail.update({"all"})
     tickers_avail_op = list(tickers_avail)
@@ -608,6 +683,10 @@ if option == 'signal':
 
 
     if save_signals == 'controls':
+        st.write(QUEEN['queen_controls'])
+        st.write(QUEEN['heartbeat'])
+
+        stop_queen(APP_requests)
         # save_signals = st.selectbox('Queen Controls', ['theme', 'power rangers'], index=['controls'].index('controls'))
         # CHANGE Theme_list or any selections has to come from QUEEN
         theme_list = list(pollen_theme.keys())
@@ -684,7 +763,7 @@ if option == 'signal':
             # for col in df.columns:
             #     df[col] = df[col].astype(str)
             df = df.rename(columns={0: 'main'})
-            grid_response = build_AGgrid_df(data=df, reload_data=False)
+            grid_response = build_AGgrid_df(data=df, reload_data=False, update_cols=['update_column'])
             data = grid_response['data']
             # st.write(data)
             ttframe = data[data['index'] == 'ticker_time_frame'].copy()
@@ -694,7 +773,7 @@ if option == 'signal':
             df_sel = pd.DataFrame(selected)
             st.write(df_sel)
             if len(df_sel) > 0:
-                up_values = dict(zip(df_sel['index'], df_sel['update_column']))
+                up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
                 up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
                 update_dict = {c_order_input: up_values}
                 st.session_state['update'] = update_dict

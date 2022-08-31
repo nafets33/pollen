@@ -616,52 +616,6 @@ def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD
     msg = {queens_chess_piece:'initiate ttframe charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
     logging.info(msg)
     print(msg)    
-        
-    # if queens_chess_piece.lower() == 'castle':    # >>> Initiate your Charts
-    #     res = Return_Init_ChartData(ticker_list=client_symbols_castle, chart_times=chart_times_castle)
-    #     errors = res['errors']
-    #     if errors:
-    #         msg = ("Return_Init_ChartData Failed", "--", errors)
-    #         print(msg)
-    #         logging.critical(msg)
-    #         sys.exit()
-    #     df_tickers_data_init = res['init_charts']
-    #     # add snapshot to initial chartdata -1
-    #     df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
-    #     # give it all to the QUEEN put directkly in function
-    #     pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
-    #     QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
-    #     QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
-    
-    #     """# mark final times and return values"""
-    #     e_mainbeetime = datetime.datetime.now()
-    #     msg = {queens_chess_piece:'initiate ttframe charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
-    #     logging.info(msg)
-    #     print(msg)
-
-    # if queens_chess_piece.lower() == 'bishop':
-    #     # >>> Initiate your Charts
-    #     res = Return_Init_ChartData(ticker_list=client_symbols_bishop, chart_times=chart_times_bishop)
-    #     errors = res['errors']
-    #     if errors:
-    #         msg = ("Return_Init_ChartData Failed", "--", errors)
-    #         print(msg)
-    #         logging.critical(msg)
-    #         sys.exit()
-    #     df_tickers_data_init = res['init_charts']
-    #     # add snapshot to initial chartdata -1
-    #     df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
-    #     # give it all to the QUEEN put directkly in function
-    #     pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
-    #     QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
-    #     QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
-    
-    #     """# mark final times and return values"""
-    #     e_mainbeetime = datetime.datetime.now()
-    #     msg = {queens_chess_piece:'initiate ttframe charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
-    #     logging.info(msg)
-    #     print(msg)
-
 
 
 print(
@@ -701,7 +655,7 @@ if queens_chess_piece == 'bishop':
             "1Day_1Year": 250}
 
 
-init_pollen = init_pollen_dbs(prod=prod, queens_chess_piece=queens_chess_piece)
+init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
 PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
 # PB_App_Pickle = init_pollen['PB_App_Pickle']
 
@@ -725,35 +679,34 @@ try:
 
     initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
     workerbee_run_times = []
-    trigger_bee_gauge = {f'{tic}{"_"}{star_}': deque([], 89) for tic in master_tickers for star_ in star_times.keys()}
+    speed_gauges = {
+        f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+        for tic in master_tickers for star_ in star_times.keys()}
+
     while True:
         if queens_chess_piece.lower() in ['castle', 'bishop']: # create the story
             s = datetime.datetime.now()
             close_worker(queens_chess_piece=queens_chess_piece)
-            # if s >= datetime.datetime(s.year, s.month, s.day, hour=16, minute=1):
-            #     logging.info("Happy Bee Day End")
-            #     print("Great Job! See you Tomorrow")
-
-            #     if queens_chess_piece.lower() == 'castle':
-            #         # make os copy
-            #         save_files = ['queen.pkl', 'queen_sandbox.pkl']
-            #         for fname in save_files:
-            #             src = os.path.join(db_root, fname)
-            #             dst = os.path.join(os.path.join(os.path.join(db_root, 'logs'), 'logs'), 'queens')
-            #             dst_ = os.path.join(dst, fname)
-            #             shutil.copy(src, dst_)
-            #         print("Queen Bee Saved")
-            #     break
             
             # main 
             pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
             QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
             QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
             
-            pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece, trigger_bee_gauge=trigger_bee_gauge)
+            pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
             ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
             knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
             STORY_bee = pollens_honey['conscience']['STORY_bee']
+
+            # for each star append last macd state
+            for ticker_time_frame, i in STORY_bee.items():
+                speed_gauges[ticker_time_frame]['macd_gauge'].append(i['story']['macd_state'])
+                speed_gauges[ticker_time_frame]['price_gauge'].append(i['story']['last_close_price'])
+                STORY_bee[ticker_time_frame]['story']['macd_gauge'] = speed_gauges[ticker_time_frame]['macd_gauge']
+                STORY_bee[ticker_time_frame]['story']['price_gauge'] = speed_gauges[ticker_time_frame]['price_gauge']
+
+            
+            SPEEDY_bee = speed_gauges
 
             # add all charts
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
@@ -762,9 +715,8 @@ try:
             QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
             QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
+            QUEEN[queens_chess_piece]['conscience']['SPEEDY_bee'] = SPEEDY_bee
 
-            # for each star append last macd state
-            l = [trigger_bee_gauge[ticker_time_frame].append(i['story']['macd_state']) for ticker_time_frame, i in STORY_bee.items()]
 
             
             # speedybee to get past 30 second tics from major stocks with highest weight for SPY / QQQ
