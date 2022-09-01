@@ -30,6 +30,7 @@ import shutil
 import ipdb
 import json
 import argparse
+from collections import deque
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -2163,6 +2164,12 @@ def KINGME(chart_times=False):
             'adjustable': True,
             'friend_links': [],
                 },
+    'init': {'timeduration': 10, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
     'app': {'timeduration': 30, 
             'take_profit': .005,
             'sellout': -.01,
@@ -2202,15 +2209,104 @@ def KINGME(chart_times=False):
     return return_dict
 
 
+
+def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+    date_mark = datetime.datetime.now().astimezone(est)
+    # allowed_col = ["queen_order_state", ]
+    if queen_init:
+        print("LOG ME create recon order")
+        running_order = {'queen_order_state': 'init',
+                        'side': 'init',
+                        'order_trig_buy_stop': 'false',
+                        'order_trig_sell_stop': 'false',
+                        'symbol': 'init', 
+                        'order_rules': KING["kings_order_rules"]["knight_bees"]['init'], 
+                        'trigname': trig, 
+                        'datetime': date_mark,
+                        'ticker_time_frame': 'init_init_init',
+                        'ticker_time_frame_origin': 'init_init_init',
+                        'status_q': 'init',
+                        'portfolio_name': 'init',
+                        'exit_order_link': 'init', 
+                        'client_order_id': 'init',
+                        'system_recon': True,
+                        'req_qty': 0,
+                        'filled_qty': 0,
+                        'qty_available': 0,
+                        'filled_avg_price': 0,
+                        'price_time_of_request': 'na',
+                        'bid': 'na',
+                        'ask': 'na',
+                        'honey_gauge': deque([], 89),
+                        '$honey': 'na',
+                        } 
+    elif order['side'] == 'buy':
+        # print("create buy running order")
+        running_order = {'queen_order_state': 'submitted',
+                        'side': order['side'],
+                        'order_trig_buy_stop': True,
+                        'order_trig_sell_stop': 'false',
+                        'symbol': order['symbol'], 
+                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'trigname': trig, 'datetime': date_mark,
+                        'ticker_time_frame': ticker_time_frame,
+                        'ticker_time_frame_origin': ticker_time_frame, 
+                        'status_q': status_q,
+                        'portfolio_name': portfolio_name,
+                        'exit_order_link': exit_order_link, 
+                        'client_order_id': order['client_order_id'],
+                        'system_recon': False,
+                        'req_qty': order['qty'],
+                        'filled_qty': order['filled_qty'],
+                        'qty_available': order['filled_qty'],
+                        'filled_avg_price': order['filled_avg_price'],
+                        'price_time_of_request': priceinfo['price'],
+                        'bid': priceinfo['bid'],
+                        'ask': priceinfo['ask'],
+                        'honey_gauge': deque([], 89),
+                        '$honey': 'na',
+                        }
+    elif order['side'] == 'sell':
+        # print("create sell order")
+        running_order = {'queen_order_state': 'submitted',
+                        'side': order['side'],
+                        'order_trig_buy_stop': True,
+                        'order_trig_sell_stop': 'true',
+                        'symbol': order['symbol'], 
+                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'trigname': trig, 'datetime': date_mark,
+                        'ticker_time_frame': ticker_time_frame,
+                        'ticker_time_frame_origin': ticker_time_frame, 
+                        'status_q': status_q,
+                        'portfolio_name': portfolio_name,
+                        'exit_order_link': exit_order_link, 
+                        'client_order_id': order['client_order_id'],
+                        'system_recon': False,
+                        'req_qty': order['qty'],
+                        'filled_qty': order['filled_qty'],
+                        'qty_available': order['filled_qty'],
+                        'filled_avg_price': order['filled_avg_price'],
+                        'price_time_of_request': priceinfo['price'],
+                        'bid': priceinfo['bid'],
+                        'ask': priceinfo['ask'],
+                        'honey_gauge': deque([], 89),
+                        '$honey': 'na',
+                        }
+
+    return running_order
+
+
+
 def init_QUEEN(queens_chess_piece):
+    KING = KINGME()
     QUEEN = { # The Queens Mind
         'prod': "",
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [{'pollen': 'let the force guide you and adhere to your mind and feeling, good hunting', 'queen_order_state': 'init'}],
+        'queen_orders': [create_QueenOrderBee(KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {}, # ticker info ... change name
+        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
         'queen_controls': { 
             'theme': 'nuetral',
@@ -2276,6 +2372,7 @@ def init_QUEEN_App():
     'savedstars': [],
     'misc_bucket': [],
     'source': 'na',
+    'stop_queen' : 'false',
     }
     return app
 
@@ -2311,6 +2408,14 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             QUEEN['queen_controls'][k] = v
             update=True
             msg = f'{k}{" : queen controls Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    for k, v in latest_queen['heartbeat'].items():
+        if k not in QUEEN['heartbeat'].keys():
+            QUEEN['heartbeat'][k] = v
+            update=True
+            msg = f'{k}{" : queen heartbeat Key Added to "}{queens_chess_piece}'
             print(msg)
             logging.info(msg)
 

@@ -556,7 +556,8 @@ if option == 'queen':
         st.write(QUEEN["errors"])
 
     if command_conscience_option == 'yes':
-        # all_trigs = []
+        ORDERS = QUEEN['queen_orders']
+        
         all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0}
         # df = pd.DataFrame(all_trigs)
         df = pd.DataFrame(all_trigs.items())
@@ -569,21 +570,6 @@ if option == 'queen':
 
         col1_a, col2_b, = st.columns(2)
         
-        st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
-
-        # QUEEN['command_conscience']['orders']['active'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in ['submitted', 'running', 'running_close']]
-        # QUEEN['command_conscience']['orders']['submitted'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'submitted']
-        # QUEEN['command_conscience']['orders']['running'] = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'running']
-
-        
-        ORDERS = QUEEN['queen_orders']
-        ORDERS = [i for i in ORDERS if i['queen_order_state'] == 'completed']
-        # queen shows only today orders
-        now_ = datetime.datetime.now()
-        orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
-        orders_today = pd.DataFrame(orders_today)
-        orders_today = orders_today.astype(str)
-        st.write(orders_today)
         st.write('orders')
 
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
@@ -611,7 +597,6 @@ if option == 'queen':
             new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">memory</p>'
             st.markdown(new_title, unsafe_allow_html=True)
         
-
 
     if orders_table == 'yes':
         main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
@@ -641,8 +626,11 @@ if option == 'queen':
                 st.write("buy cross waves")
                 m_sort = knowledge['waves']['buy_cross-0']
                 df_m_sort = pd.DataFrame(m_sort).T
+                # df_m_sort['wave_times'] = df_m_sort['wave_times'].apply(lambda x: [])
                 df_m_sort = df_m_sort.astype(str)
                 st.dataframe(data=df_m_sort)
+                # grid_response = build_AGgrid_df(data=df_m_sort, reload_data=False, height=333, update_cols=['Note'])
+                # data = grid_response['data']
 
                 st.write("sell cross waves")
                 m_sort = knowledge['waves']['sell_cross-0']
@@ -650,20 +638,19 @@ if option == 'queen':
                 df_m_sort = df_m_sort.astype(str)
                 st.dataframe(data=df_m_sort)
 
-            # st.write("KNIGHTSWORDS")
-            # st.write(m2[ttframe])
-        
-        # st.write(m)
-        # st.write(m2)
-        # df = pollenstory_resp[f'{ticker_option}{"_1Day_1Year"}']
-        # df = df.tail(5)
-        # st.dataframe(df)
     else:
         # st.write(STORY_bee)
         print("groups not allowed yet")
-    # if ticker_option == 'all':
-    #     st.write(mainstate)
     
+    st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
+    ORDERS = [i for i in ORDERS if i['queen_order_state'] == 'completed']
+    # queen shows only today orders
+    now_ = datetime.datetime.now()
+    orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
+    orders_today = pd.DataFrame(orders_today)
+    orders_today = orders_today.astype(str)
+    st.write(orders_today)
+
     if option3 == "Yes":
         time.sleep(10)
         st.experimental_rerun()
@@ -803,8 +790,8 @@ if option == 'signal':
             data = ReadPickleData(pickle_file=PB_App_Pickle)
             st.write("sell orders", data['sell_orders'])
             st.write("buy orders", data['buy_orders'])
-        current_orders = QUEEN['command_conscience']['orders']
-        running_orders = current_orders['running']
+        current_orders = QUEEN['queen_orders']
+        running_orders = [i for i in current_orders if i['queen_order_state'] == 'running']
         
         running_portfolio = return_dfshaped_orders(running_orders)
         

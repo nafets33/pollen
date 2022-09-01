@@ -30,6 +30,7 @@ import shutil
 import ipdb
 import json
 import argparse
+from collections import deque
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -782,9 +783,9 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
     # wave_trigger_list = ["buy_cross-0", "sell_cross-0"]
     
     # t = split_today_vs_prior(df=df)
-    # dft = t['df_today']
+    # df = t['df_today']
     
-    dft = df
+    # df = df
 
     # length and height of wave
     MACDWAVE_story = {'story': {}}
@@ -794,7 +795,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
         wave_col_name = f'{trigger}{"__wave"}'
         wave_col_wavenumber = f'{trigger}{"__wave_number"}'
     
-        num_waves = dft[wave_col_wavenumber].tolist()
+        num_waves = df[wave_col_wavenumber].tolist()
         num_waves_list = list(set(num_waves))
         num_waves_list = [str(i) for i in sorted([int(i) for i in num_waves_list], reverse=True)]
 
@@ -803,8 +804,8 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
             MACDWAVE_story[trigger][wave_n].update({'wave_n': wave_n})
             if wave_n == '0':
                 continue
-            df_waveslice = dft[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
-            df_waveslice = dft[dft[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
+            df_waveslice = df[['timestamp_est', wave_col_wavenumber, 'story_index', wave_col_name]].copy()
+            df_waveslice = df[df[wave_col_wavenumber] == wave_n] # slice by trigger event wave start / end 
             
             row_1 = df_waveslice.iloc[0]['story_index']
             row_2 = df_waveslice.iloc[-1]['story_index']
@@ -831,7 +832,10 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 
             MACDWAVE_story[trigger][wave_n].update({'length': row_2 - row_1, 
             'wave_blocktime' : wave_blocktime,
-            'wave_times': ( wave_starttime, wave_endtime ),
+            # 'wave_times': ( wave_starttime, wave_endtime ),
+            'wave_start_time': wave_starttime,
+            'wave_end_time': wave_endtime,
+            'trigbee': trigger,
             })
             
             wave_height_value = max(df_waveslice[wave_col_name].values)
@@ -845,7 +849,42 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 
             else:
                 MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
-    
+
+    all_waves = []
+    all_waves_temp = []
+    for trig_name in wave_trigger_list:
+        l_waves = list(MACDWAVE_story[trig_name].values())
+        all_waves_temp.append(l_waves)
+    for el_list in range(len(all_waves_temp)):
+        all_waves = all_waves + all_waves_temp[el_list - 1]
+    df_waves = pd.DataFrame(all_waves)
+    df_waves = df_waves.sort_values(by=['wave_start_time'], ascending=False).reset_index()
+    df_waves['macd_wave_n'] = df_waves.index
+    df_waves = macd_wave_length_story(df_waves) # df_waves['macd_wave_length']
+
+    MACDWAVE_story['story'] = df_waves
+    # df_t = df_waves[[i for i in df_waves.columns if 'macd' in i or i in ['wave_start_time', 'trigbee', 'wave_blocktime']]].copy()
+
+    return MACDWAVE_story
+
+
+def macd_wave_length_story(df_waves):
+    d_wave_lengths = {}
+    l_waves = df_waves['macd_wave_n'].tolist()
+    last_wave = max(l_waves)
+    for wave_n in l_waves:
+        try:
+            if wave_n == last_wave:
+                d_wave_lengths[wave_n] = 'NULL'
+            else:
+                wave_distance = df_waves.iloc[wave_n]['wave_start_time'] - df_waves.iloc[wave_n + 1]['wave_start_time'] 
+                d_wave_lengths[wave_n] = wave_distance
+        except Exception as e:
+            print(wave_n, e)
+    df_waves['macd_wave_length'] = df_waves['macd_wave_n'].map(d_wave_lengths)
+
+    return df_waves
+
     # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
     # bee_89 = MACDWAVE_story["buy_cross-0"]
     # for wave in bee_89:
@@ -1319,12 +1358,38 @@ def init_logging(queens_chess_piece, db_root):
 
 
 def pickle_chesspiece(pickle_file, data_to_store):
-    if PickleData(pickle_file=pickle_file, data_to_store=data_to_store) == False:
-        msg=("Pickle Data Failed")
-        print(msg)
-        logging.critical(msg)
-        return False
-    else:
+    # initializing data to be stored in db
+    p_timestamp = {'file_creation': datetime.datetime.now()} 
+    if os.path.exists(pickle_file) == False:
+        with open(pickle_file, 'wb+') as dbfile:
+            print("init", pickle_file)
+            db = {} 
+            db['jp_timestamp'] = p_timestamp 
+            pickle.dump(db, dbfile)                   
+
+    if data_to_store:
+        p_timestamp = {'last_modified': datetime.datetime.now()}
+        db = {}
+        root, name = os.path.split(pickle_file)
+        pickle_file_temp = os.path.join(root, ("temp" + name))
+        with open(pickle_file_temp, 'wb+') as dbfile:
+            for k, v in data_to_store.items(): 
+                db[k] = v
+            db['last_modified'] = p_timestamp
+            pickle.dump(db, dbfile)
+
+        try:
+            os.rename(pickle_file_temp, pickle_file)
+        except Exception as e:
+            logging.critical(("Not able to Rename Pickle File Trying again: err: ", e))
+            for attempt in range(5):
+                time.sleep(1)
+                try:
+                    os.rename(pickle_file_temp, pickle_file)
+                except Exception as e:
+                    print(attempt, e)
+                    pass
+        
         return True
 
 
@@ -2163,6 +2228,12 @@ def KINGME(chart_times=False):
             'adjustable': True,
             'friend_links': [],
                 },
+    'init': {'timeduration': 10, 
+            'take_profit': .005,
+            'sellout': -.01,
+            'adjustable': True,
+            'friend_links': [],
+                },
     'app': {'timeduration': 30, 
             'take_profit': .005,
             'sellout': -.01,
@@ -2202,13 +2273,102 @@ def KINGME(chart_times=False):
     return return_dict
 
 
+
+def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+    date_mark = datetime.datetime.now().astimezone(est)
+    # allowed_col = ["queen_order_state", ]
+    if queen_init:
+        print("LOG ME create recon order")
+        running_order = {'queen_order_state': 'init',
+                        'side': 'init',
+                        'order_trig_buy_stop': 'false',
+                        'order_trig_sell_stop': 'false',
+                        'symbol': 'init', 
+                        'order_rules': KING["kings_order_rules"]["knight_bees"]['init'], 
+                        'trigname': trig, 
+                        'datetime': date_mark,
+                        'ticker_time_frame': 'init_init_init',
+                        'ticker_time_frame_origin': 'init_init_init',
+                        'status_q': 'init',
+                        'portfolio_name': 'init',
+                        'exit_order_link': 'init', 
+                        'client_order_id': 'init',
+                        'system_recon': True,
+                        'req_qty': 0,
+                        'filled_qty': 0,
+                        'qty_available': 0,
+                        'filled_avg_price': 0,
+                        'price_time_of_request': 'na',
+                        'bid': 'na',
+                        'ask': 'na',
+                        'honey_gauge': deque([], 89),
+                        '$honey': 'na',
+                        } 
+    elif order['side'] == 'buy':
+        # print("create buy running order")
+        running_order = {'queen_order_state': 'submitted',
+                        'side': order['side'],
+                        'order_trig_buy_stop': True,
+                        'order_trig_sell_stop': 'false',
+                        'symbol': order['symbol'], 
+                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'trigname': trig, 'datetime': date_mark,
+                        'ticker_time_frame': ticker_time_frame,
+                        'ticker_time_frame_origin': ticker_time_frame, 
+                        'status_q': status_q,
+                        'portfolio_name': portfolio_name,
+                        'exit_order_link': exit_order_link, 
+                        'client_order_id': order['client_order_id'],
+                        'system_recon': False,
+                        'req_qty': order['qty'],
+                        'filled_qty': order['filled_qty'],
+                        'qty_available': order['filled_qty'],
+                        'filled_avg_price': order['filled_avg_price'],
+                        'price_time_of_request': priceinfo['price'],
+                        'bid': priceinfo['bid'],
+                        'ask': priceinfo['ask'],
+                        'honey_gauge': deque([], 89),
+                        '$honey': 'na',
+                        }
+    elif order['side'] == 'sell':
+        # print("create sell order")
+        running_order = {'queen_order_state': 'submitted',
+                        'side': order['side'],
+                        'order_trig_buy_stop': True,
+                        'order_trig_sell_stop': 'true',
+                        'symbol': order['symbol'], 
+                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'trigname': trig, 'datetime': date_mark,
+                        'ticker_time_frame': ticker_time_frame,
+                        'ticker_time_frame_origin': ticker_time_frame, 
+                        'status_q': status_q,
+                        'portfolio_name': portfolio_name,
+                        'exit_order_link': exit_order_link, 
+                        'client_order_id': order['client_order_id'],
+                        'system_recon': False,
+                        'req_qty': order['qty'],
+                        'filled_qty': order['filled_qty'],
+                        'qty_available': order['filled_qty'],
+                        'filled_avg_price': order['filled_avg_price'],
+                        'price_time_of_request': priceinfo['price'],
+                        'bid': priceinfo['bid'],
+                        'ask': priceinfo['ask'],
+                        'honey_gauge': deque([], 89),
+                        '$honey': 'na',
+                        }
+
+    return running_order
+
+
+
 def init_QUEEN(queens_chess_piece):
+    KING = KINGME()
     QUEEN = { # The Queens Mind
         'prod': "",
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [{'pollen': 'let the force guide you and adhere to your mind and feeling, good hunting', 'queen_order_state': 'init'}],
+        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
@@ -2221,7 +2381,9 @@ def init_QUEEN(queens_chess_piece):
             'stars': stars(),
             'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
-            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9}
+            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+            'buying_powers': [{'portfolio_name': 'Jq', 'total_dayTrade_allocation': .8, 'total_longTrade_allocation': .2}],
+            'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()}
                             },
         'workerbees': {
             'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
