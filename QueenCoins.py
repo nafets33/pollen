@@ -27,7 +27,7 @@ import pickle
 from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
-from collections import defaultdict
+from collections import defaultdict, deque
 import ipdb
 import tempfile
 import shutil
@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from QueenHiveCoin import speedybee,  return_bars_list, return_bars
-from QueenHive import pollen_story, return_api_keys, pickle_chesspiece, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
+from QueenHive import pollen_story, init_pollen_dbs, ReadPickleData, return_api_keys, pickle_chesspiece, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
@@ -486,10 +486,10 @@ if queens_chess_piece == 'castle_coin':
 
 
 """ Initiate your Charts with Indicators """
-def initiate_ttframe_charts(queens_chess_piece):
+def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD_settings):
     s_mainbeetime = datetime.datetime.now()
     if queens_chess_piece.lower() == 'castle_coin':    # >>> Initiate your Charts
-        res = Return_Init_ChartData(ticker_list=client_symbols_castle, chart_times=chart_times_castle)
+        res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
         errors = res['errors']
         if errors:
             msg = ("Return_Init_ChartData Failed", "--", errors)
@@ -500,7 +500,7 @@ def initiate_ttframe_charts(queens_chess_piece):
         # add snapshot to initial chartdata -1
         df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
         # give it all to the QUEEN put directkly in function
-        pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
+        pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_settings)
         QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
         QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
     
@@ -510,9 +510,34 @@ def initiate_ttframe_charts(queens_chess_piece):
         logging.info(msg)
         print(msg)
 
+
+init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
+PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+# PB_App_Pickle = init_pollen['PB_App_Pickle']
+
+if os.path.exists(PB_QUEEN_Pickle) == False:
+    print("WorkerBee Needs a Queen")
+    sys.exit()
+
+# Pollen QUEEN
+if prod:
+    WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+else:
+    WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+WORKER_QUEEN['source'] = PB_QUEEN_Pickle
+MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
+master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']
+MACD_settings = WORKER_QUEEN['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
+star_times = WORKER_QUEEN['workerbees'][queens_chess_piece]['stars']
+
+
 try:
-    initiate_ttframe_charts(queens_chess_piece) # only Initiates if Castle or Bishop
+    initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings)
     workerbee_run_times = []
+    speed_gauges = {
+        f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+        for tic in master_tickers for star_ in star_times.keys()}
+
     while True:
         if queens_chess_piece.lower() in ['castle_coin']: # create the story
             s = datetime.datetime.now()
@@ -522,7 +547,7 @@ try:
                 break
             
             # main 
-            pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
+            pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
             QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
             QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
             
@@ -534,16 +559,22 @@ try:
             # add all charts
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
 
+
+            # for each star append last macd state
+            for ticker_time_frame, i in STORY_bee.items():
+                speed_gauges[ticker_time_frame]['macd_gauge'].append(i['story']['macd_state'])
+                speed_gauges[ticker_time_frame]['price_gauge'].append(i['story']['last_close_price'])
+                STORY_bee[ticker_time_frame]['story']['macd_gauge'] = speed_gauges[ticker_time_frame]['macd_gauge']
+                STORY_bee[ticker_time_frame]['story']['price_gauge'] = speed_gauges[ticker_time_frame]['price_gauge']
+            SPEEDY_bee = speed_gauges
+
             # populate conscience
             QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
             QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
             
-            # # speedybee to get past 30 second tics from major stocks with highest weight for SPY / QQQ
-            # if queens_chess_piece == 'castle':
-            #     speedybee_resp = speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
-            #     QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_resp['speedybee']
+
             
             # God Save The QUEEN
             if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:

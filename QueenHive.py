@@ -221,12 +221,13 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         ANGEL_bee = {} # add to QUEENS mind
         STORY_bee = {} 
         # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
-        betty_bee = {}  
+        betty_bee = {k: {} for k in pollen_nectar.keys()} # monitor function speeds
         macd_tier_range = 33
         knights_sight_word = {}
         # knight_sight_df = {}
 
         for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+            s_ttfame_func_check = datetime.datetime.now().astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
 
             # if ticker_time_frame == 'QQQ_1Hour_3Month':
@@ -249,7 +250,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             'hist_high': df['hist'].max(),
             'hist_low': df['hist'].min(),
             }
-
+            s_timetoken = datetime.datetime.now().astimezone(est)
             # mac cross
             df = mark_macd_signal_cross(df=df)
             resp = knight_sight(df=df)
@@ -259,6 +260,10 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             """for every index(timeframe) calculate profit length, bell curve
                 conclude with how well trigger is doing to then determine when next trigger will do well
             """
+            e_timetoken = datetime.datetime.now().astimezone(est)
+            betty_bee[ticker_time_frame]['macdcross'] = (e_timetoken - s_timetoken)
+            
+            s_timetoken = datetime.datetime.now().astimezone(est)
             wave = return_knightbee_waves(df=df, knights_word=knights_word, ticker_time_frame=ticker_time_frame)
             # wave_trigger_list = wave[ticker_time_frame].keys()
             wave_trigger_list = ['buy_cross-0', 'sell_cross-0']
@@ -270,10 +275,16 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list, tframe=tframe)
             STORY_bee[ticker_time_frame]['waves'] = MACDWAVE_story
 
+            e_timetoken = datetime.datetime.now().astimezone(est)
+            betty_bee[ticker_time_frame]['waves'] = (e_timetoken - s_timetoken)
+
             knights_sight_word[ticker_time_frame] = knights_word
             STORY_bee[ticker_time_frame]['KNIGHTSWORD'] = knights_word
+
+            
             # # return degree angle 0, 45, 90
             try:
+                s_timetoken = datetime.datetime.now().astimezone(est)
                 var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
                 var_timeframes = [3, 6, 8, 10, 25, 33]
                 for var in var_list:
@@ -284,15 +295,20 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                             y = [1, 2]
                             name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
                             ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
+                e_timetoken = datetime.datetime.now().astimezone(est)
+                betty_bee[ticker_time_frame]['Angel_Bee'] = (e_timetoken - s_timetoken)
             except Exception as e:
                 msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
                 logging.error(msg)
 
             # add close price momentum
             try:
+                s_timetoken = datetime.datetime.now().astimezone(est)
                 close = df['close']
                 df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
                 df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
+                e_timetoken = datetime.datetime.now().astimezone(est)
+                betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
             except Exception as e:
                 msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
                 logging.error(msg)
@@ -331,6 +347,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
             # count number of Macd Crosses
             # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
+            s_timetoken = datetime.datetime.now().astimezone(est)
             today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
             STORY_bee[ticker_time_frame]['story']['macd_cross_count'] = {
                 'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
@@ -338,6 +355,8 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 'buy_cross_todays_running_count': sum(np.where(today_df['macd_cross'] == 'buy_cross-0',1,0)),
                 'sell_cross_todays_running_count' : sum(np.where(today_df['macd_cross'] == 'sell_cross-0',1,0))
             }
+            e_timetoken = datetime.datetime.now().astimezone(est)
+            betty_bee[ticker_time_frame]['count_cross'] = (e_timetoken - s_timetoken)
             
             # latest_close_price
             STORY_bee[ticker_time_frame]['story']['last_close_price'] = df.iloc[-1]['close']
@@ -365,9 +384,11 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 # how did day start ## this could be moved to queen and calculated once only
                 STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
 
+                e_timetoken = datetime.datetime.now().astimezone(est)
                 slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
                 STORY_bee[ticker_time_frame]['story']['current_slope'] = slope
-
+                e_timetoken = datetime.datetime.now().astimezone(est)
+                betty_bee[ticker_time_frame]['slope'] = (e_timetoken - s_timetoken)
 
             # Measure MACD WAVES
             # change % shifts for each, close, macd, signal, hist....
@@ -389,6 +410,8 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             # df_lastrow_remaining = df_lastrow[[i for i in df_lastrow.index.tolist() if i not in STORY_bee[ticker_time_frame]['story'].keys()]].copy
             STORY_bee[ticker_time_frame]['story']['current_mind'] = df_lastrow
 
+            e_ttfame_func_check = datetime.datetime.now().astimezone(est)
+            betty_bee[ticker_time_frame]['full_loop'] = (e_ttfame_func_check - s_ttfame_func_check)
             
             # add momentem ( when macd < signal & past 3 macds are > X Value or %)
             
@@ -396,7 +419,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
         e = datetime.datetime.now()
         print("pollen_story", str((e - s)))
-        return {'pollen_story': story, 'conscience': {'ANGEL_bee': ANGEL_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } }
+        return {'pollen_story': story, 'conscience': {'ANGEL_bee': ANGEL_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } , 'betty_bee': betty_bee}
     except Exception as e:
         print("pollen_story error ", e)
         print_line_of_error()
@@ -854,10 +877,13 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
     all_waves_temp = []
     for trig_name in wave_trigger_list:
         l_waves = list(MACDWAVE_story[trig_name].values())
+        l_waves = [i for i in l_waves if i['wave_n'] != '0']
         all_waves_temp.append(l_waves)
     for el_list in range(len(all_waves_temp)):
         all_waves = all_waves + all_waves_temp[el_list - 1]
     df_waves = pd.DataFrame(all_waves)
+    # df_waves = df_waves.fillna("NULL")
+    # df_waves = df_waves
     df_waves = df_waves.sort_values(by=['wave_start_time'], ascending=False).reset_index()
     df_waves['macd_wave_n'] = df_waves.index
     df_waves = macd_wave_length_story(df_waves) # df_waves['macd_wave_length']
@@ -983,8 +1009,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
 
         e = datetime.datetime.now()
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
-        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
-        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+
         return [True, symbol_data, market_hours_data, after_hours_data]
     # handle error
     except Exception as e:
@@ -1357,14 +1382,14 @@ def init_logging(queens_chess_piece, db_root):
     return True
 
 
-def pickle_chesspiece(pickle_file, data_to_store):
+def PickleData(pickle_file, data_to_store):
     # initializing data to be stored in db
     p_timestamp = {'file_creation': datetime.datetime.now()} 
     if os.path.exists(pickle_file) == False:
         with open(pickle_file, 'wb+') as dbfile:
             print("init", pickle_file)
             db = {} 
-            db['jp_timestamp'] = p_timestamp 
+            db['jp_timestamp'] = p_timestamp
             pickle.dump(db, dbfile)                   
 
     if data_to_store:
@@ -1388,31 +1413,30 @@ def pickle_chesspiece(pickle_file, data_to_store):
                     os.rename(pickle_file_temp, pickle_file)
                 except Exception as e:
                     print(attempt, e)
-                    pass
-        
+                    sys.exit()        
         return True
 
 
-def PickleData(pickle_file, data_to_store): 
-    # initializing data to be stored in db
-    p_timestamp = {'file_creation': datetime.datetime.now()} 
-    if os.path.exists(pickle_file) == False:
-        with open(pickle_file, 'wb+') as dbfile:
-            print("init", pickle_file)
-            db = {} 
-            db['jp_timestamp'] = p_timestamp 
-            pickle.dump(db, dbfile)                   
+# def PickleData(pickle_file, data_to_store): 
+#     # initializing data to be stored in db
+#     p_timestamp = {'file_creation': datetime.datetime.now()} 
+#     if os.path.exists(pickle_file) == False:
+#         with open(pickle_file, 'wb+') as dbfile:
+#             print("init", pickle_file)
+#             db = {} 
+#             db['jp_timestamp'] = p_timestamp 
+#             pickle.dump(db, dbfile)                   
 
-    if data_to_store:
-        p_timestamp = {'last_modified': datetime.datetime.now()}
-        db = {}
-        with open(pickle_file, 'wb+') as dbfile:
-            for k, v in data_to_store.items(): 
-                db[k] = v
-            db['last_modified'] = p_timestamp 
-            pickle.dump(db, dbfile)                   
+#     if data_to_store:
+#         p_timestamp = {'last_modified': datetime.datetime.now()}
+#         db = {}
+#         with open(pickle_file, 'wb+') as dbfile:
+#             for k, v in data_to_store.items(): 
+#                 db[k] = v
+#             db['last_modified'] = p_timestamp 
+#             pickle.dump(db, dbfile)                   
         
-        return True
+#         return True
 
 
 def ReadPickleData(pickle_file, db_init_dict=False): 
@@ -2219,6 +2243,7 @@ def KINGME(chart_times=False):
     else:
         return_dict['stars'] = stars()
 
+    order_rule_types = ['queen_gen']
     
     kings_order_rules = {'knight_bees': 
                                     {
@@ -2240,13 +2265,13 @@ def KINGME(chart_times=False):
             'adjustable': True,
             'friend_links': [],
                 },
-    'buy_cross-0': {'timeduration': 10, 
+    'buy_cross-0': {'timeduration': 60, 
             'take_profit': .005,
             'sellout': -.01,
             'adjustable': True,
             'friend_links': [],
                 },
-    'sell_cross-0': {'timeduration': 10, 
+    'sell_cross-0': {'timeduration': 60, 
             'take_profit': .005,
             'sellout': -.01,
             'adjustable': True,
@@ -2278,7 +2303,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
     date_mark = datetime.datetime.now().astimezone(est)
     # allowed_col = ["queen_order_state", ]
     if queen_init:
-        print("LOG ME create recon order")
+        print("Queen Template Initalized")
         running_order = {'queen_order_state': 'init',
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
@@ -2303,6 +2328,9 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'ask': 'na',
                         'honey_gauge': deque([], 89),
                         '$honey': 'na',
+                        'origin_wave': {},
+                        'assigned_wave': {},
+                        'sell_reason': {},
                         } 
     elif order['side'] == 'buy':
         # print("create buy running order")
@@ -2329,6 +2357,9 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'ask': priceinfo['ask'],
                         'honey_gauge': deque([], 89),
                         '$honey': 'na',
+                        'origin_wave': {},
+                        'assigned_wave': {},
+                        'sell_reason': {},
                         }
     elif order['side'] == 'sell':
         # print("create sell order")
@@ -2355,6 +2386,9 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'ask': priceinfo['ask'],
                         'honey_gauge': deque([], 89),
                         '$honey': 'na',
+                        'origin_wave': {},
+                        'assigned_wave': {},
+                        'sell_reason': {},
                         }
 
     return running_order
@@ -2363,6 +2397,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
 
 def init_QUEEN(queens_chess_piece):
     KING = KINGME()
+    num_of_stars = len(stars())
     QUEEN = { # The Queens Mind
         'prod': "",
         'source': "na",
@@ -2379,11 +2414,13 @@ def init_QUEEN(queens_chess_piece):
             'last_read_app': datetime.datetime.now(),
             'reset_stars': False,
             'stars': stars(),
+            'stars_allocation':{k: 1/num_of_stars for k in stars()},
+            'symbols_stars_allocRules': {'SPY': {k: {'status': 'active'} for k in stars()}},
             'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             'buying_powers': [{'portfolio_name': 'Jq', 'total_dayTrade_allocation': .8, 'total_longTrade_allocation': .2}],
-            'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()}
+            'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
                             },
         'workerbees': {
             'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
@@ -2394,6 +2431,9 @@ def init_QUEEN(queens_chess_piece):
                         'stars': stars(),},
             'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
                         'tickers': ['META', 'GOOG', 'HD'],
+                        'stars': stars(),},
+            'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['BTCUSD', 'ETHUSD'],
                         'stars': stars(),},
             },
         'errors': {},
@@ -2427,12 +2467,16 @@ def init_QUEEN_App():
     'wave_triggers': [],
     'app_wave_requests': [],
     'power_rangers': [],
-    'app_powerRanger_requests': [],
+    'power_rangers_requests': [],
+    'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),
     'knight_bees_kings_rules': [],
     'knight_bees_kings_rules_requests': [],
+    'queen_controls': [],
+    'queen_controls_requests': [],
+    'queen_contorls_lastupdate': 'false', 
     'del_QUEEN_object': [],
     'del_QUEEN_object_requests': [],
-    'last_app_update': datetime.datetime.now(),
+    'last_app_update': datetime.datetime.now(), ## Update Time Zone... Low Priority
     'update_queen_order': [],
     'update_queen_order_requests': [],
     'savedstars': [],
@@ -2482,6 +2526,14 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             QUEEN['heartbeat'][k] = v
             update=True
             msg = f'{k}{" : queen heartbeat Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    for k, v in latest_queen['workerbees'].items():
+        if k not in QUEEN['workerbees'].keys():
+            QUEEN['workerbees'][k] = v
+            update=True
+            msg = f'{k}{" : queen workerbees Key Added to "}{queens_chess_piece}'
             print(msg)
             logging.info(msg)
 

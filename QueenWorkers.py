@@ -697,6 +697,8 @@ try:
             ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
             knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
             STORY_bee = pollens_honey['conscience']['STORY_bee']
+            betty_bee = pollens_honey['betty_bee']
+            PickleData(pickle_file=os.path.join(db_root, 'betty_bee.pkl'), data_to_store=betty_bee)
 
             # for each star append last macd state
             for ticker_time_frame, i in STORY_bee.items():
