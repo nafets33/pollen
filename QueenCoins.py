@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from QueenHiveCoin import speedybee,  return_bars_list, return_bars
-from QueenHive import pollen_story, init_pollen_dbs, ReadPickleData, return_api_keys, pickle_chesspiece, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
+from QueenHive import pollen_story, init_pollen_dbs, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
@@ -585,9 +585,9 @@ try:
 
             e = datetime.datetime.now()
             cycle_run_time = (e-s)
-            if cycle_run_time.seconds > 8:
+            if cycle_run_time.seconds > 15:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info({"cycle_time > 8 seconds": str(cycle_run_time.seconds)})
+                logging.info({"cycle_time > 15 seconds": str(cycle_run_time.seconds)})
             workerbee_run_times.append(cycle_run_time)
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
             print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
@@ -598,6 +598,5 @@ except Exception as errbuz:
     log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
     print(log_msg)
     logging.critical(log_msg)
-    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

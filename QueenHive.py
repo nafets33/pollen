@@ -263,16 +263,21 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             e_timetoken = datetime.datetime.now().astimezone(est)
             betty_bee[ticker_time_frame]['macdcross'] = (e_timetoken - s_timetoken)
             
+            # MACD WAVE ~~~~~~~~~~~~~~~~~~~~~~~~ WAVES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MACD WAVE #
+            # Queen to make understanding of trigger-profit waves
+            #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
+
             s_timetoken = datetime.datetime.now().astimezone(est)
             wave = return_knightbee_waves(df=df, knights_word=knights_word, ticker_time_frame=ticker_time_frame)
             # wave_trigger_list = wave[ticker_time_frame].keys()
             wave_trigger_list = ['buy_cross-0', 'sell_cross-0']
 
-            # Queen to make understanding of trigger-profit waves
-            #Q? split up time blocks and describe wave-buy time segments, morning, beforenoon, afternoon
-            #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
-
             MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list, tframe=tframe)
+
+            resp = return_waves_measurements(df=df, trigbees=['buy_cross-0', 'sell_cross-0'], ticker_time_frame=ticker_time_frame)
+            df = resp['df']
+            MACDWAVE_story['story'] = resp['df_waves']
+
             STORY_bee[ticker_time_frame]['waves'] = MACDWAVE_story
 
             e_timetoken = datetime.datetime.now().astimezone(est)
@@ -320,7 +325,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             df['vwap_deviation'] = df['close'] - df['vwap_original']
             STORY_bee[ticker_time_frame]['story']['vwap_deviation'] = df.iloc[-1]['vwap_deviation']     
             
-            # MACD WAVE
+            # MACD WAVE 
             macd_state = df['macd_cross'].iloc[-1]
             macd_state_side = macd_state.split("_")[0] # buy_cross-num
             middle_crossname = macd_state.split("_")[1].split("-")[0]
@@ -607,9 +612,9 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
         c = 0  # count which side of trade you are on (c brings deveations from prior cross)
         buy_c = 0
         sell_c = 0
-        last_buycross_index = 0
-        last_sellcross_index = 0
-        wave_mark_list = []
+        # last_buycross_index = 0
+        # last_sellcross_index = 0
+        # wave_mark_list = []
         for i, macdvalue in enumerate(m):
             if i != 0:
                 prior_mac = m[i-1]
@@ -621,36 +626,36 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                     c = 0
                     prior_cross = 'buy'
                     buy_c += 1
-                    last_buycross_index = i
-                    wave_mark_list.append(last_buycross_index)
+                    # last_buycross_index = i
+                    # wave_mark_list.append(last_buycross_index)
                 elif now_mac < now_signal and prior_mac >= prior_signal:
                     cross_list.append(f'{"sell_cross"}{"-"}{0}')
                     c = 0
                     prior_cross = 'sell'
                     sell_c += 1
-                    last_sellcross_index = i
-                    wave_mark_list.append(last_sellcross_index)
+                    # last_sellcross_index = i
+                    # wave_mark_list.append(last_sellcross_index)
 
                 else:
                     if prior_cross:
                         if prior_cross == 'buy':
                             c+=1
                             cross_list.append(f'{"buy_hold"}{"-"}{c}')
-                            wave_mark_list.append(0)
+                            # wave_mark_list.append(0)
                         else:
                             c+=1
                             cross_list.append(f'{"sell_hold"}{"-"}{c}')
-                            wave_mark_list.append(0)
+                            # wave_mark_list.append(0)
                     else:
                         # ipdb.set_trace()
                         cross_list.append(f'{"init_hold"}{"-"}{0}')
-                        wave_mark_list.append(0)
+                        # wave_mark_list.append(0)
             else:
                 cross_list.append(f'{"init_hold"}{"-"}{0}')
-                wave_mark_list.append(0)
+                # wave_mark_list.append(0)
         df2 = pd.DataFrame(cross_list, columns=['macd_cross'])
-        df3 = pd.DataFrame(wave_mark_list, columns=['macd_cross_wavedistance'])
-        df_new = pd.concat([df, df2, df3], axis=1)
+        # df3 = pd.DataFrame(wave_mark_list, columns=['macd_cross_wavedistance'])
+        df_new = pd.concat([df, df2], axis=1)
         return df_new
     except Exception as e:
         msg=(e,"--", print_line_of_error(), "--", 'macd_cross')
@@ -793,7 +798,7 @@ def return_knightbee_waves(df, knights_word, ticker_time_frame):  # adds profit 
         for di in index_wave_dict:
             for k,v in di.items():
                 index_wave_series[k] = v
-        df[f'{trig_name}{"__wave"}'] = df['story_index'].map(index_wave_series).fillna(0)
+        df[f'{trig_name}{"__wave"}'] = df['story_index'].map(index_wave_series).fillna("0")
         df[f'{trig_name}{"__wave_number"}'] = df['story_index'].map(index_perwave).fillna("0")
         # bees_wave_df = df[df['story_index'].isin(bees_wave_list)].copy()
         # tag greatest profit
@@ -873,50 +878,165 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
             else:
                 MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
 
-    all_waves = []
-    all_waves_temp = []
-    for trig_name in wave_trigger_list:
-        l_waves = list(MACDWAVE_story[trig_name].values())
-        l_waves = [i for i in l_waves if i['wave_n'] != '0']
-        all_waves_temp.append(l_waves)
-    for el_list in range(len(all_waves_temp)):
-        all_waves = all_waves + all_waves_temp[el_list - 1]
-    df_waves = pd.DataFrame(all_waves)
-    # df_waves = df_waves.fillna("NULL")
-    # df_waves = df_waves
-    df_waves = df_waves.sort_values(by=['wave_start_time'], ascending=False).reset_index()
-    df_waves['macd_wave_n'] = df_waves.index
-    df_waves = macd_wave_length_story(df_waves) # df_waves['macd_wave_length']
+    # all_waves = []
+    # all_waves_temp = []
+    # for trig_name in wave_trigger_list:
+    #     l_waves = list(MACDWAVE_story[trig_name].values())
+    #     l_waves = [i for i in l_waves if i['wave_n'] != '0']
+    #     all_waves_temp.append(l_waves)
+    # for el_list in range(len(all_waves_temp)):
+    #     all_waves = all_waves + all_waves_temp[el_list - 1]
+    # df_waves = pd.DataFrame(all_waves)
+    # # df_waves = df_waves.fillna("NULL")
+    # # df_waves = df_waves
+    # df_waves = df_waves.sort_values(by=['wave_start_time'], ascending=True).reset_index()
+    # df_waves['macd_wave_n'] = df_waves.index
+    # df_waves = macd_wave_length_story(df_waves) # df_waves['macd_wave_length']
 
-    MACDWAVE_story['story'] = df_waves
+    # MACDWAVE_story['story'] = df_waves
     # df_t = df_waves[[i for i in df_waves.columns if 'macd' in i or i in ['wave_start_time', 'trigbee', 'wave_blocktime']]].copy()
 
     return MACDWAVE_story
 
 
-def macd_wave_length_story(df_waves):
-    d_wave_lengths = {}
-    l_waves = df_waves['macd_wave_n'].tolist()
-    last_wave = max(l_waves)
-    for wave_n in l_waves:
-        try:
-            if wave_n == last_wave:
-                d_wave_lengths[wave_n] = 'NULL'
+def return_waves_measurements(df, trigbees, ticker_time_frame):
+    # POLLENSTORY = read_pollenstory()
+    # df = POLLENSTORY["SPY_1Minute_1Day"]
+    # wave_trigger_list = ["macd_cross"]
+    # length and height of wave
+
+    ticker, tframe, frame  = ticker_time_frame.split("_")
+
+    def profit_loss(df_waves, x):
+        if x == 0:
+            return 0
+        else:
+            prior_row = df_waves.iloc[x-1]
+            current_row = df_waves.iloc[x]
+            latest_price = current_row['close']
+            origin_trig_price = prior_row['close']
+            profit_loss = (latest_price - origin_trig_price) / latest_price
+            if df_waves.iloc[x]['macd_cross'] == 'sell_cross-0':
+                profit_loss * -1
+            return profit_loss
+
+    
+    def macd_cross_WaveLength(df_waves, x):
+        if x == 0:
+            return 0
+        else:
+            prior_row = df_waves.iloc[x-1]
+            current_row = df_waves.iloc[x]
+            latest_price = current_row['story_index']
+            origin_trig_price = prior_row['story_index']
+            length = latest_price - origin_trig_price
+            return length
+    
+    
+    def macd_cross_WaveBlocktime(df_waves, x):
+        # Assign each waves timeblock
+        if x == 0:
+            return 0
+        if "Day" in tframe:
+            return "Day"
+            # wave_starttime = df_waves.iloc[x]['timestamp_est']
+            # wave_endtime = df_waves.iloc[x]['timestamp_est']
+        else:
+            wave_starttime = df_waves.iloc[x]['timestamp_est']
+            # wave_endtime = df_waves.iloc[x]['timestamp_est']
+            wave_starttime_token = wave_starttime.replace(tzinfo=None)
+            if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+                return 'morning_9-11'
+            elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                return 'lunch_11-2'
+            elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                return 'afternoon_2-4'
             else:
-                wave_distance = df_waves.iloc[wave_n]['wave_start_time'] - df_waves.iloc[wave_n + 1]['wave_start_time'] 
-                d_wave_lengths[wave_n] = wave_distance
-        except Exception as e:
-            print(wave_n, e)
-    df_waves['macd_wave_length'] = df_waves['macd_wave_n'].map(d_wave_lengths)
+                return 'afterhours'
 
-    return df_waves
+    ### Needs a little extra Love >> index max profit, count length, add to df_waves and df >> ensure max profit is correct as 2 rows could share same value
+    def macd_cross_TimeToMaxProfit(df, df_waves, x):
+        # Assign each waves timeblock
+        for x in df_waves['wave_n'].tolist():
+            if x == 0:
+                return 0
+            else:
+                prior_row = df_waves.iloc[x - 1]['story_index']
+                current_row = df_waves.iloc[x]['story_index']
+                
+                df_waveslice = df[(df.index >= int(prior_row)) & (df.index < int(current_row))].copy()
+                origin_trig_price = df_waves.iloc[x - 1]['close']
+                df_waveslice['macd_cross__maxprofit'] = (df_waveslice['close'] - origin_trig_price) / df_waveslice['close']
+                
+                index_wave_series = dict(zip(df_waveslice['story_index'], df_waveslice['macd_cross__maxprofit']))
+                # df['macd_cross__maxprofit'] = df['story_index'].map(index_wave_series).fillna("0")
+                # return index_wave_series
+                # return df
+                wave_col_name = 'macd_cross__maxprofit'
+                wave_height_value = max(df_waveslice[wave_col_name].values)
+                # how long was it profitable?
+                profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
+                profit_length  = len(profit_df)
+                if profit_length > 0:
+                    max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]['story_index']
+                    time_to_max_profit = max_profit_index - prior_row
+                    # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': time_to_max_profit})
 
-    # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
-    # bee_89 = MACDWAVE_story["buy_cross-0"]
-    # for wave in bee_89:
-    # gather current avg waves
+                else:
+                    time_to_max_profit = 0
+                    # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
 
-    return MACDWAVE_story
+
+    # set wave num
+    trigbees = ['buy_cross-0', 'sell_cross-0']
+    df_waves = df[df['macd_cross'].isin(trigbees)].copy().reset_index()
+    df_waves['wave_n'] = df_waves.index
+    df_waves['length'] = df_waves['wave_n'].apply(lambda x: macd_cross_WaveLength(df_waves, x))
+    df_waves['profits'] = df_waves['wave_n'].apply(lambda x: profit_loss(df_waves, x))
+    df_waves['wave_blocktime'] = df_waves['wave_n'].apply(lambda x: macd_cross_WaveBlocktime(df_waves, x))
+
+
+    index_wave_series = dict(zip(df_waves['story_index'], df_waves['wave_n']))
+    df['wave_n'] = df['story_index'].map(index_wave_series).fillna("0")
+    
+    index_wave_series = dict(zip(df_waves['story_index'], df_waves['length']))
+    df['length'] = df['story_index'].map(index_wave_series).fillna("0")
+
+    index_wave_series = dict(zip(df_waves['story_index'], df_waves['wave_blocktime']))
+    df['wave_blocktime'] = df['story_index'].map(index_wave_series).fillna("0")
+
+    index_wave_series = dict(zip(df_waves['story_index'], df_waves['profits']))
+    df['profits'] = df['story_index'].map(index_wave_series).fillna("0")
+
+    df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits']]
+    
+    return {'df': df, 'df_waves': df_waves}
+
+# def macd_wave_length_story(df_waves):
+#     # fix holidays and weekends
+#     d_wave_lengths = {}
+#     l_waves = df_waves['macd_wave_n'].tolist()
+#     last_wave = max(l_waves)
+#     for wave_n in l_waves:
+#         try:
+#             if wave_n == last_wave:
+#                 d_wave_lengths[wave_n] = 'NULL'
+#             else:
+#                 wave_distance = df_waves.iloc[wave_n]['wave_start_time'] - df_waves.iloc[wave_n + 1]['wave_start_time']
+#                 # wave_distance = df_waves.iloc[wave_n]['story_index'] - df_waves.iloc[wave_n + 1]['story_index'] 
+#                 d_wave_lengths[wave_n] = wave_distance
+#         except Exception as e:
+#             print(wave_n, e)
+#     df_waves['macd_wave_length'] = df_waves['macd_wave_n'].map(d_wave_lengths)
+
+#     return df_waves
+
+#     # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
+#     # bee_89 = MACDWAVE_story["buy_cross-0"]
+#     # for wave in bee_89:
+#     # gather current avg waves
+
+#     return MACDWAVE_story
 
 
 def split_today_vs_prior(df):
@@ -2421,6 +2541,15 @@ def init_QUEEN(queens_chess_piece):
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             'buying_powers': [{'portfolio_name': 'Jq', 'total_dayTrade_allocation': .8, 'total_longTrade_allocation': .2}],
             'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
+            'macd_worlds' : {
+                'crypto': 
+                    {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
+                    'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
+                
+                'default': 
+                    {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
+                    'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
+                }
                             },
         'workerbees': {
             'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
@@ -2548,17 +2677,47 @@ def logging_log_message(log_type='info', msg='default', error='none', origin_fun
         return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
 
 
-def analze_waves(STORY_bee):
+def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
     # len and profits
-    wave_series = STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0']
-    upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
-    df = pd.DataFrame(upwave_dict)
-    df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+    if ttframe_wave_trigbee:
+        wave_series = STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0']
+        upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
+        df = pd.DataFrame(upwave_dict)
+        df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+        groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+        df_return = groups.rename(columns={'length': 'avg_length'})
+        return {'df': df_return}
 
-    groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-
+    d_return = {} # every star and the data by grouping
+    for symbol_star, data in STORY_bee.items():
+        d_return[symbol_star] = {}
+        waves = data['waves']
+        for trigbee, wave in waves.items():
+            if trigbee == 'story':
+                continue
+            else:
+                d_wave = [wave_data for (k, wave_data) in wave.items() if k != '0']
+                df = pd.DataFrame(d_wave)
+                if len(df) > 0:
+                    df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+                    groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+                    groups = groups.rename(columns={'length': 'avg_length'})
+                    d_return[symbol_star][trigbee] = groups
     
-    return {'df': df}
+    d_return2 = {} # every star and the data by grouping
+    for symbol_star, data in STORY_bee.items():
+        d_return[symbol_star] = {}
+        waves = data['waves']['story']
+        df = pd.DataFrame(waves)
+        # df = df[~df['macd_wave_length'] == 'NULL'].copy()
+        if len(df) > 0:
+            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+            groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+            groups = groups.rename(columns={'length': 'avg_length'})
+            d_return[symbol_star][trigbee] = groups
+
+
+    return {'df': d_return}
 
 
 # def waves_storyview(wave_series):
@@ -2640,7 +2799,7 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
 
 def init_PowerRangers(ranger_dimensions=False):
     # ranger = '1Minute_1Day'
-    # rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+    # stars = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
     # trigbees = ['buy_wave', 'sell_wave']
     # theme_list = ['nuetral', 'strong']
     # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
@@ -2659,39 +2818,58 @@ def init_PowerRangers(ranger_dimensions=False):
 
 
     if ranger_dimensions:
-        rangers = ranger_dimensions['rangers'] #  = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+        stars = ranger_dimensions['stars'] #  = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ranger_dimensions['trigbees'] # = ['buy_wave', 'sell_wave']
         theme_list = ranger_dimensions['theme_list'] # theme_list = ['nuetral', 'strong']
         colors = ranger_dimensions['colors'] # colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
+        wave_types = ranger_dimensions['wave_types']
         # bee_ranger_tiers = 9
         ranger_init = ranger_dimensions['ranger_init']
     else:
-        rangers = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+        wave_types = ['mac', 'hist']
+        stars = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ['buy_wave', 'sell_wave']
         theme_list = ['nuetral', 'strong']
         colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
-        ranger_init = {'buy_wave': {'nuetral': 
+        
+        ranger_init = {
+        'mac' : {'buy_wave': {'nuetral': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                         'strong': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                     },
-                        'sell_wave': {'nuetral': 
-                                            {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                    'sell_wave': {'nuetral': 
+                                        {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                    'strong': 
+                                        {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                        }
+                },
+        'hist' : {'buy_wave': {'nuetral': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                         'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                            }
-                }
-
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+                                    },
+                    'sell_wave': {'nuetral': 
+                                        {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                    'strong': 
+                                        {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .05, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                        }
+                },
+        }
+    # ranger_init = wave_type_ranger['mac']
     r_dict = {}
-    for ranger in rangers:
-        r_dict[ranger] = {}
-        for trigbee in trigbees:
-            r_dict[ranger][trigbee] = {}
-            for theme in theme_list:
-                r_dict[ranger][trigbee][theme] = {}
-                for color in colors:
-                    r_dict[ranger][trigbee][theme][color] = ranger_init[trigbee][theme][color]
+    for star in stars:
+        r_dict[star] = {}
+        for wave_type in wave_types:
+            r_dict[star][wave_type] = {}
+            for trigbee in trigbees:
+                r_dict[star][wave_type][trigbee] = {}
+                for theme in theme_list:
+                    r_dict[star][wave_type][theme] = {}
+
+                    for color in colors:
+                        r_dict[star][wave_type][color] = ranger_init[wave_type][trigbee][theme][color]
  
     return r_dict
 

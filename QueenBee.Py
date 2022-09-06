@@ -720,16 +720,22 @@ def last_2_trades(): # change to pull from alpaca and join in by client_order_id
 def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy/sell cross
     """ Waves: Current Wave, answer questions about proir waves """
     df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']  # df
-    current_wave = df_waves_story.iloc[0]
-    # current_wave = df_waves_story.iloc[1]
+    current_wave = df_waves_story.iloc[-1]
     
-    trigbees = set(df_waves_story['trigbee'])
+    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
+    current_buywave = token_df.iloc[-1]
 
-    d_return = {}
-    for trigbee in trigbees:
-        if trigbee in available_triggerbees:
-            df_token = df_waves_story[df_waves_story['trigbee'] == trigbee].copy()
-            d_return[trigbee] = df_token.iloc[0]
+    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
+    current_sellwave = token_df.iloc[-1]
+
+    d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave }
+    # trigbees = set(df_waves_story['macd_cross'])
+
+    # d_return = {}
+    # for trigbee in trigbees:
+    #     if trigbee in available_triggerbees:
+    #         df_token = df_waves_story[df_waves_story['macd_cross'] == trigbee].copy()
+    #         d_return[trigbee] = df_token.iloc[-1]
     
     # index                                                                 0
     # wave_n                                                               37
@@ -1404,7 +1410,7 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         past_trade_duration = order_past_duration(queen_order=run_order)
 
         # Waves
-        current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
+        current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigname]
         current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
         ticker, tframe, tperiod = ticker_time_frame.split("_")
