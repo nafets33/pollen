@@ -1415,7 +1415,7 @@ def king_Evaluate_QueenOrder(run_order, current_profit_loss, portfolio):
         current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
         ticker, tframe, tperiod = ticker_time_frame.split("_")
         ttframe_take_max_profit = QUEEN['queen_controls']['max_profit_waveDeviation'][f'{tframe}{"_"}{tperiod}']
-        wave_past_max_profit = ttframe_take_max_profit >= current_wave_maxprofit_stat # max profits exceed setting
+        wave_past_max_profit = float(ttframe_take_max_profit) >= current_wave_maxprofit_stat # max profits exceed setting
 
         # Market closed do NOT Sell
         if run_order['symbol'] in crypto_currency_symbols:

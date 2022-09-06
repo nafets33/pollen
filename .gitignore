@@ -44,3 +44,4 @@ db/logs/logs/archive/queen_whiteblood.pkl
 db/logs/logs/queens/queen.pkl
 db/main_orders.csv
 db/main_orders_sandbox.csv
+*.pkl
