@@ -947,11 +947,12 @@ def return_waves_measurements(df, trigbees, ticker_time_frame):
             wave_starttime_token = wave_starttime.replace(tzinfo=None)
             if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
                 return 'morning_9-11'
-            elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+            elif wave_starttime_token >= wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
                 return 'lunch_11-2'
-            elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+            elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
                 return 'afternoon_2-4'
             else:
+                # ipdb.set_trace()
                 return 'afterhours'
 
     ### Needs a little extra Love >> index max profit, count length, add to df_waves and df >> ensure max profit is correct as 2 rows could share same value
