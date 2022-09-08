@@ -251,6 +251,11 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             'hist_high': df['hist'].max(),
             'hist_low': df['hist'].min(),
             }
+
+            # macd signal divergence
+            df['macd_singal_deviation'] = df['macd'] - df['signal']
+            STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
+
             s_timetoken = datetime.datetime.now().astimezone(est)
             # mac cross
             df = mark_macd_signal_cross(df=df)
@@ -367,9 +372,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             # latest_close_price
             STORY_bee[ticker_time_frame]['story']['last_close_price'] = df.iloc[-1]['close']
 
-            # macd signal divergence
-            df['macd_singal_deviation'] = df['macd'] - df['signal']
-            STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
 
             if "1Minute_1Day" in ticker_time_frame:
                 theme_df = df.copy()
@@ -453,7 +455,7 @@ def knight_sight(df): # adds all triggers to dataframe
             (df['macd_cross'].str.contains("buy")==False) &
             (df['hist_slope-3'] > 5) &
             (df['macd_singal_deviation'] < -.04) &
-            (df['macd_singal_deviation'] > -.06) & 
+            (df['macd_singal_deviation'] > -.06)
 
             ,"bee", 'nothing')
         return trig
@@ -1831,7 +1833,7 @@ def return_macd(df_main, fast, slow, smooth):
 
 def return_VWAP(df, window=3):
     # VWAP
-    df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=3, fillna=True).volume_weighted_average_price()
+    df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=15, fillna=True).volume_weighted_average_price()
     return df
 
 
@@ -2395,15 +2397,15 @@ def KINGME(chart_times=False):
             'adjustable': True,
             'friend_links': [],
                 },
-    'buy_cross-0': {'timeduration': 60, 
+    'buy_cross-0': {'timeduration': 33, 
             'take_profit': .005,
-            'sellout': -.01,
+            'sellout': -.008,
             'adjustable': True,
             'friend_links': [],
                 },
-    'sell_cross-0': {'timeduration': 60, 
+    'sell_cross-0': {'timeduration': 33, 
             'take_profit': .005,
-            'sellout': -.01,
+            'sellout': -.0089,
             'adjustable': True,
             'friend_links': [],
                 },

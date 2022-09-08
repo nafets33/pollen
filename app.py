@@ -361,7 +361,7 @@ ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
+option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory'))
 st.sidebar.write("<<<('')>>>")
 # st.header(option)
 
@@ -370,6 +370,11 @@ st.sidebar.write("<<<('')>>>")
 
 # full view of all stories 
 # # macd_state, Macd Tier, Macd, Hist Tier, Hist, Signal Tier, Signal, & Current Wave dimensions (length, profit)story
+
+def pollenstory_view(POLLENSTORY):
+    option_ticker = st.selectbox("ticker", ('queen', 'charts', 'signal', 'pollenstory'))
+
+    return True
 
 def run_charts(POLLENSTORY = False):
     # with st.form("my_form"):
@@ -550,6 +555,7 @@ def create_AppRequest_package(request_name, archive_bucket):
 if option == 'charts':
     # pollen = return_pollen()
     run_charts(POLLENSTORY = POLLENSTORY)
+
     
     tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
     # tickers_avail.update({"all"})
@@ -557,12 +563,14 @@ if option == 'charts':
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
     ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-    # ttframe_list.append("all")
+    ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
     frame_option = st.sidebar.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
     day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
     slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
     wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-    
+    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['no'].index('no'))
+
+
     if frame_option == 'all':
         st.write("TDB")
 
@@ -584,6 +592,9 @@ if option == 'charts':
                     (df.index.year == df_day.year)
                 ].copy() # remove other days       
 
+        if fullstory_option:
+            df_write = df.astype(str)
+            st.dataframe(df_write)
         
         fig = create_main_macd_chart(df)
         st.write(fig)
@@ -832,10 +843,19 @@ if option == 'signal':
                 latest_queen_order = pd.DataFrame()
                 orders_present = False
             else:
-                latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state']=='error'] # latest
-                latest_queen_order = [latest_queen_order[-1]]
+                # latest_queen_order = [i for i in QUEEN['queen_orders']] # latest
+                # latest_queen_order = [latest_queen_order[-1]]
+                latest_queen_order = QUEEN['queen_orders'][-1]
                 orders_present = True
         if orders_present:
+            # latest_queen_order_error = [i for i in QUEEN['queen_orders'] if i['queen_order_status'] == 'error'] # latest
+            # if latest_queen_order_error:
+                # st.write(pd.DataFrame())
+            # last_n_trades = pd.DataFrame([QUEEN['queen_orders'][-1], QUEEN['queen_orders'][-2], QUEEN['queen_orders'][-3]])
+            # st.write(last_n_trades)
+            all_orders = pd.DataFrame(QUEEN['queen_orders'])
+            last3 = all_orders.iloc[-3:].astype(str)
+            st.write(last3)
             c_order_input = st.text_input("client_order_id", latest_queen_order[0]['client_order_id'])
             q_order = {k: i for k, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_input}
             idx = list(q_order.keys())[0]
