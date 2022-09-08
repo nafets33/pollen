@@ -31,6 +31,7 @@ import ipdb
 import json
 import argparse
 from collections import deque
+import ta as bta
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -450,7 +451,10 @@ def knight_sight(df): # adds all triggers to dataframe
     def trig_pre_89(df):
         trig = np.where(
             (df['macd_cross'].str.contains("buy")==False) &
-            (df['hist_slope-3'] > -.3)
+            (df['hist_slope-3'] > 5) &
+            (df['macd_singal_deviation'] < -.04) &
+            (df['macd_singal_deviation'] > -.06) & 
+
             ,"bee", 'nothing')
         return trig
     
@@ -1816,13 +1820,18 @@ def return_macd(df_main, fast, slow, smooth):
     return df_main
 
 
-def return_VWAP(df):
+# def return_VWAP(df):
+#     # VWAP
+#     df = df.assign(
+#         vwap=df.eval(
+#             'wgtd = close * volume', inplace=False
+#         ).groupby(df['timestamp_est']).cumsum().eval('wgtd / volume')
+#     )
+#     return df
+
+def return_VWAP(df, window=3):
     # VWAP
-    df = df.assign(
-        vwap=df.eval(
-            'wgtd = close * volume', inplace=False
-        ).groupby(df['timestamp_est']).cumsum().eval('wgtd / volume')
-    )
+    df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=3, fillna=True).volume_weighted_average_price()
     return df
 
 
@@ -2514,6 +2523,14 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
 
     return running_order
 
+# def symbols_stars_TradingModel(stars, client_dict):
+#     val_cols = ['ticker', 'status', 'buyingpower_allocation_LongTerm', 'buyingpower_allocation_ShortTerm', 'power_rangers']
+#     val = [i for i in val_cols if i not in client_dict.keys()]
+#     if val:
+#         print(val, "key missing")
+#         return False
+#     else:
+#         return {}
 
 
 def init_QUEEN(queens_chess_piece):
@@ -2535,8 +2552,9 @@ def init_QUEEN(queens_chess_piece):
             'last_read_app': datetime.datetime.now(),
             'reset_stars': False,
             'stars': stars(),
-            'stars_allocation':{k: 1/num_of_stars for k in stars()},
-            'symbols_stars_allocRules': {'SPY': {k: {'status': 'active'} for k in stars()}},
+            # 'stars_allocation':{k: 1/num_of_stars for k in stars()},
+            # 'symbols_stars_allocRules': {'SPY': {k: {'status': 'active', 'allocation': 1/num_of_stars} for k in stars()}},
+            'symbols_stars_TradingModel': {'SPY': {k: {'status': 'active', 'buyingpower_allocation_LongTerm': 1/num_of_stars, 'buyingpower_allocation_ShortTerm': 1/num_of_stars, 'power_rangers': [k]} for k in stars()}},
             'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},

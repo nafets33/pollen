@@ -235,6 +235,9 @@ def create_main_macd_chart(df):
     df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
     fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
     # fig.add_scatter(x=df['chartdate'], y=df['close'], mode="lines", row=1, col=1)
+    if '1Minute_1Day' in df.iloc[0]['name']:
+        fig.add_scatter(x=df['chartdate'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
+
     fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
     fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
     fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
@@ -655,16 +658,15 @@ if option == 'queen':
 
     if command_conscience_option == 'yes':
         ORDERS = QUEEN['queen_orders']
-        
-        all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0}
-        # df = pd.DataFrame(all_trigs)
-        df = pd.DataFrame(all_trigs.items())
-        df = df.rename(columns={0: 'ttf', 1: 'trig'})
-        df = df.sort_values('ttf')
+        now_time = datetime.datetime.now().astimezone(est)
+        all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
 
-        # df_1 = df[df['ttf'].lower().contians('spys')]
         st.write("<<all trigger bees>>")
-        st.write(df)
+        if len(all_trigs) > 0:
+            df = pd.DataFrame(all_trigs.items())
+            df = df.rename(columns={0: 'ttf', 1: 'trig'})
+            df = df.sort_values('ttf')
+            st.write(df)
 
         col1_a, col2_b, = st.columns(2)
         
