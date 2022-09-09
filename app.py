@@ -58,8 +58,9 @@ else:
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db_local')
 db_app_root = os.path.join(db_root, 'app')
+jpg_root = os.path.join(main_root, 'misc')
 
-bee_image = os.path.join(db_root, 'bee.jpg')
+bee_image = os.path.join(jpg_root, 'bee.jpg')
 image = Image.open(bee_image)
 st.set_page_config(
      page_title="pollenq",

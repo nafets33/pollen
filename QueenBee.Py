@@ -820,7 +820,7 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig
         total_buying_power = bpower_resp['total_buying_power']
 
         # Trading Model
-        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][tframe]
+        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
         # tradingModel['status'] .. buyingpower_allocation_LongTerm, buyingpower_allocation_ShortTerm, power_rangers
 
 
