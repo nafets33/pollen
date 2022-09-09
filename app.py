@@ -56,7 +56,7 @@ else:
     prod = True
 
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
+db_root = os.path.join(main_root, 'db_local')
 db_app_root = os.path.join(db_root, 'app')
 
 bee_image = os.path.join(db_root, 'bee.jpg')

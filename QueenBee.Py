@@ -690,10 +690,12 @@ def buying_Power_cc(api, client_args="TBD", daytrade=True):
     
     total_buying_power = info.buying_power # what is the % amount you want to buy?
     
-    portfolio_name = 'Jq'
-    portfolio_buyingpowers = [i for i in QUEEN['queen_controls']['buying_powers'] if i == portfolio_name][0]
-    app_portfolio_day_trade_allowed = float(portfolio_buyingpowers['total_dayTrade_allocation']) #.8
-    app_portfolio_long_trade_allowed = float(portfolio_buyingpowers['total_longTrade_allocation']) #.2
+    # portfolio_name = 'Jq'
+    # portfolio_buyingpowers = [i for i in QUEEN['queen_controls']['buying_powers'] if i == portfolio_name][0]
+    # app_portfolio_day_trade_allowed = float(portfolio_buyingpowers['total_dayTrade_allocation']) #.8
+    # app_portfolio_long_trade_allowed = float(portfolio_buyingpowers['total_longTrade_allocation']) #.2
+    app_portfolio_day_trade_allowed = .8
+    app_portfolio_long_trade_allowed = .2
     if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
         print("Critical Error Fix buying power numbers")
         sys.exit()
