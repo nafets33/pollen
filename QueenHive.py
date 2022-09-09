@@ -146,7 +146,7 @@ end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
 """ Global VARS"""
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-macd_tiers = 7
+macd_tiers = 8
 MACD_WORLDS = {
     'crypto': 
         {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
@@ -403,7 +403,9 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             df = assign_MACD_Tier(df=df, mac_world=mac_world, tiers_num=macd_tiers,  ticker_time_frame=ticker_time_frame)
             STORY_bee[ticker_time_frame]['story']['current_macd_tier'] = df.iloc[-1]['macd_tier']
             STORY_bee[ticker_time_frame]['story']['current_hist_tier'] = df.iloc[-1]['hist_tier']
-            
+
+            df['mac_ranger'] = df['macd_tier'].apply(lambda x: power_ranger_mapping(x))
+            df['hist_ranger'] = df['hist_tier'].apply(lambda x: power_ranger_mapping(x))
             
             # how long have you been stuck at vwap ?
 
@@ -2424,6 +2426,11 @@ def KINGME(chart_times=False):
                                     }
     }
     
+    
+    def tradingModel_kings_order_rules():
+        
+        return True
+    
     # add order rules
     return_dict['kings_order_rules'] = kings_order_rules
     
@@ -2756,7 +2763,7 @@ def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
 #     return {'df': df}
 
 def story_view(STORY_bee, ticker): # --> returns dataframe
-    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'close_mom_3', 'close_mom_6']
+    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'macd_ranger', 'hist_ranger']
     wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
     return_view = [] # queenmemory objects in conscience {}
@@ -2783,6 +2790,10 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     
     
     df =  pd.DataFrame(return_view)
+    # map in ranger color
+    # df['mac_ranger'] = df['current_mac_tier'].apply(lambda x: power_ranger_mapping(x))
+    # df['hist_ranger'] = df['current_hist_tier'].apply(lambda x: power_ranger_mapping(x))
+    
     return {'df': df}
 
 
@@ -2816,6 +2827,41 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
         return {'df': df_return}
     else:
         return {'df': pd.DataFrame()}
+
+
+def power_ranger_mapping(tier_value,  colors=['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']):
+
+    # When 1M macd tier in range (-7, -5) + 50% : Red // Sell :: 1%
+    # When 1M macd tier in range (-5, -3) + 40% : Blue // Sell :: 1%
+    # When 1M macd tier in range (-3, -2) + 25% : Pink // Sell :: 1%
+    # When 1M macd tier in range (-2, -1) + 10% : Yellow // Sell :: 1%
+    # When 1M macd tier in range (-1, 1) + 1% : White // Sell :: 1%
+    # When 1M macd tier in range (1, 2) + 1% : Green // Sell :: 1%
+    # When 1M macd tier in range (2, 3) + 1% : orange // Sell :: 25%
+    # When 1M macd tier in range (3, 5) + 1% : purple // Sell :: 40%
+    # When 1M macd tier in range (5, 7) + 1% : Black // Sell :: 50%
+
+    tier_value = float(tier_value)
+    
+    if tier_value >= -8 and tier_value <=-7:
+        return 'red'
+    elif tier_value >=-6 and tier_value <=-5:
+        return 'blue'
+    elif tier_value >=-4 and tier_value <=-3:
+        return 'pink'
+    elif tier_value >=-2 and tier_value <=-1:
+        return 'yellow'
+    elif tier_value >-1 and tier_value <=1:
+        return 'white'
+    elif tier_value >=2 and tier_value <=3:
+        return 'green'
+    elif tier_value >=4 and tier_value <=5:
+        return 'purple'
+    elif tier_value >=6 and tier_value >=7:
+        return 'black'
+    else:
+        return 'black'
+
 
 
 def init_PowerRangers(ranger_dimensions=False):

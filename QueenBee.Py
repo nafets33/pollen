@@ -689,9 +689,9 @@ def buying_Power_cc(api, client_args="TBD", daytrade=True):
     argu_validate = ['portfolio', 'daytrade_pct', 'longtrade_pct', 'waveup_pct', 'wavedown_pct']
     
     total_buying_power = info.buying_power # what is the % amount you want to buy?
-    
-    app_portfolio_day_trade_allowed = .8
-    app_portfolio_long_trade_allowed = .2
+        
+    app_portfolio_day_trade_allowed = float(QUEEN['queen_controls']['total_dayTrade_allocation']) #.8
+    app_portfolio_long_trade_allowed = float(QUEEN['queen_controls']['total_longTrade_allocation']) #.2
     if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
         print("Critical Error Fix buying power numbers")
         sys.exit()
@@ -764,7 +764,7 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     return {'current_wave': current_wave, 'current_active_waves': d_return}
 
 
-def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, crypto=False):
+def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig_action=False, crypto=False):
     # answer all questions for order to be placed, compare against the rules
     # measure len of trigbee how long has trigger been there?
     # Std Deivation from last X trade prices
@@ -803,24 +803,109 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trig_action=False, 
 
 
     try:
+        # # # # vars
         ticker, tframe, frame = ticker_time_frame.split("_")
         star_time = f'{tframe}{"_"}{frame}'
         STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
-
-        """Stars Forever Be in Heaven"""
-        stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df']    
-
-        current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
-
+        # Theme
+        theme = QUEEN['queen_controls']['theme'] # what is the theme?
         # Total buying power allowed
         bpower_resp = buying_Power_cc(api=api, client_args="TBD", daytrade=True)
         client_totalday_trade_amt_allowed = bpower_resp['client_totalday_trade_amt_allowed']
         app_portfolio_day_trade_allowed = bpower_resp['app_portfolio_day_trade_allowed']
         total_buying_power = bpower_resp['total_buying_power']
-        
-        # Theme
-        theme = QUEEN['queen_controls']['theme'] # what is the theme?
 
+        # Trading Model
+        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][tframe]
+        # tradingModel['status'] .. buyingpower_allocation_LongTerm, buyingpower_allocation_ShortTerm, power_rangers
+
+
+        """Stars Forever Be in Heaven"""
+        stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df']
+
+        current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
+
+        def return_kings_trade_ruling(trigbee, theme, pollen_theme_dict, trading_model, stars_df):
+            order_vars = {}
+            tmodel_power_rangers = trading_model['power_rangers']
+            # return power ups based on tiers
+            def its_morphin_time(QUEEN, trigbee, theme, trading_model, tmodel_power_rangers):
+                # need to map in the color on storyview
+
+                if 'buy' in trigbee:
+                    wave_type = 'buy_wave'
+                else:
+                    wave_type = 'sell_wave'
+                
+                star_rangers = [i for i in QUEEN['queen_controls']['power_rangers'].keys() if i in tmodel_power_rangers]
+                
+                # power_up = {sr: {sr[wave_t][theme][stars_df[sr][macd_r]]} for sr in star_rangers for macd_r in ['mac_ranger', 'hist_ranger']}
+                # power_up = {}
+                # for star_rger, in star_rangers:
+                #     for wave_t, data in star_rger.items():
+                #         mac_r = stars_df[star_]
+
+                power_up = {}
+                for star_name in stars_df['StarName'].tolist():
+                    if star_name in tmodel_power_rangers:
+                        mac_r_power = QUEEN['queen_controls']['power_rangers'][star_name][wave_type][theme]['mac_ranger']
+                        hist_r_power = QUEEN['queen_controls']['power_rangers'][star_name][wave_type][theme]['hist_ranger']
+                        
+
+                return True
+            
+            if trigbee == 'buy_cross-0':
+                # Q?confirmation on trigger, should you wait for futher confirmation?
+
+                if crypto:
+                    order_type = "market"
+                    order_side = "buy"
+                    wave_amo = 10000
+
+                    order_vars['order_type'] = 'market'
+                    order_vars['order_side'] = 'buy'
+                    order_vars['wave_amo'] = 10000
+
+                    kings_blessing = True
+                else:
+                    theme_buyingpower = {
+                    'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
+                    'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
+                    'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
+                    }
+                    
+                    # Current wave : what is your timeblock?
+                    current_wave_blocktime = current_wave['wave_blocktime']
+                    current_wave_amo = theme_buyingpower[current_wave_blocktime]  # PERCENTAGE
+                    
+                    # what do the Stars say?
+
+                    # total budget
+                    client_totalday_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed)
+
+                    # Order Variables
+                    order_type = "market"
+                    order_side = "buy"
+                    wave_amo = current_wave_amo * client_totalday_trade_amt_allowed  # (10% * ($500,000 * 3%))
+
+                    order_vars['order_type'] = 'market'
+                    order_vars['order_side'] = 'buy'
+                    order_vars['wave_amo'] = wave_amo
+
+                    
+                    # how many trades have we completed today? whats our total profit loss with wave trades
+                    
+                    # should you override your original order rules?
+
+                    kings_blessing = True
+                
+                if trig_action:
+                    # print("evalatue if there is another trade to make on top of current wave")
+                    kings_blessing = False
+
+            return {'kings_blessing': kings_blessing, 'order_vars': order_vars}
+        
+        # order rules
         # for bee in all_bees:
         if trigbee == 'buy_cross-0':
             # Q?confirmation on trigger, should you wait for futher confirmation?
@@ -960,11 +1045,21 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
 
         if all_current_triggers:
             try:
+                
+                # enabled stars
+                # QUEEN['heartbeat']
                 frame_block = "_1Minute_1Day"
                 if f'{ticker}{frame_block}' in all_current_triggers.keys():
                     ticker_time_frame = f'{ticker}{"_1Minute_1Day"}'
+                    ticker, tframe, frame = ticker_time_frame.split("_")
+                    trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][tframe]
+
                     # cycle through triggers and pass buy first logic for buy
                     trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
+                    if str(trading_model['status']) not in ['active']:
+                        print("model not active", tframe)
+                        continue
+
                     for trig in trigs:
                         # ipdb.()
                         if trig in ["buy_cross-0", "sell_cross-0"]:                                                        
@@ -977,8 +1072,9 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
                             """ HAIL TRIGGER, WHAT SAY YOU?
                             ~forgive me but I bring a gift for the king and queen
                             """
+
                             # ipdb
-                            king_resp = king_knights_requests(QUEEN=QUEEN, trigbee=trig, ticker_time_frame=ticker_time_frame, trig_action=trig_action, crypto=crypto)
+                            king_resp = king_knights_requests(QUEEN=QUEEN, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
 
                             if king_resp['kings_blessing']:
                                 # print("CheckPoint WhoAreYou?", trig, " time:", return_timestamp_string())
@@ -1012,7 +1108,18 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
 
     return True
 
+
+
+
 """>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+
 
 def order_past_duration(queen_order):
     nowtime = datetime.datetime.now().astimezone(est)

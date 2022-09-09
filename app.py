@@ -430,7 +430,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
 
     if control_option.lower() == 'max_profit_wavedeviation':
         st.write("active")
-        df = pd.DataFrame(QUEEN['queen_controls']['max_profit_waveDeviation'].items())
+        df = pd.DataFrame(QUEEN['queen_controls']['max_profit_waveDeviation'].items()).astype(str)
         df = df.rename(columns={0: 'star', 1: 'Sell At Devation'})
         grid_response = build_AGgrid_df(data=df, reload_data=False, height=250, update_cols=['Update_Value'], paginationOn=False)
         data = grid_response['data']
@@ -552,6 +552,24 @@ def create_AppRequest_package(request_name, archive_bucket):
     }
 
 
+def ag_grid_main_build(df, default=False, vars=False):
+    if default:
+        vars = {'reload_data': False, 'height': 333, 'update_cols': ['Comment'], 
+        'update_mode_value': 'MANUAL', 'paginationOn': True}
+    
+    grid_response = build_AGgrid_df(data=df, 
+    reload_data=vars['reload_data'],
+     height=vars['height'], update_cols=vars['update_cols'], 
+     update_mode_value=vars['update_mode_value'], 
+     paginationOn=vars['paginationOn'])
+    
+    data = grid_response['data']
+    selected = grid_response['selected_rows'] 
+    df_sel = pd.DataFrame(selected)
+    st.write(df_sel)
+
+    return df_sel
+
 if option == 'charts':
     # pollen = return_pollen()
     run_charts(POLLENSTORY = POLLENSTORY)
@@ -595,6 +613,7 @@ if option == 'charts':
         if fullstory_option:
             df_write = df.astype(str)
             st.dataframe(df_write)
+            ag_grid_main_build(df=df_write, default=True)
         
         fig = create_main_macd_chart(df)
         st.write(fig)
