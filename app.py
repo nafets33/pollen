@@ -44,10 +44,12 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
+from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 from QueenHive import KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 import argparse
+
+
 
 scriptname = os.path.basename(__file__)
 if 'sandbox' in scriptname:
@@ -198,7 +200,7 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
             return df.plot(x=x, y=y,figsize=figsize)
   
 
-def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True):
+def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, js_code=False):
     gb = GridOptionsBuilder.from_dataframe(data)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
@@ -211,6 +213,23 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
     gridOptions = gb.build()
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
 
+    # if js_code:
+    #     cellsytle_jscode = JsCode("""
+    #     function(params) {
+    #         if (params.value == 'white') {
+    #             return {
+    #                 'color': 'black',
+    #                 'backgroundColor': 'white'
+    #             }
+    #         } else {
+    #             return {
+    #                 'color': 'black',
+    #                 'backgroundColor': 'white'
+    #             }
+    #         }
+    #     };
+    #     """)
+    #     gb.configure_column("group", cellStyle=cellsytle_jscode)
 
     grid_response = AgGrid(
         data,

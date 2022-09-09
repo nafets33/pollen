@@ -2763,7 +2763,7 @@ def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
 #     return {'df': df}
 
 def story_view(STORY_bee, ticker): # --> returns dataframe
-    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'macd_ranger', 'hist_ranger']
+    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'mac_ranger', 'hist_ranger']
     wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
     return_view = [] # queenmemory objects in conscience {}
