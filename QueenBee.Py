@@ -689,9 +689,11 @@ def buying_Power_cc(api, client_args="TBD", daytrade=True):
     argu_validate = ['portfolio', 'daytrade_pct', 'longtrade_pct', 'waveup_pct', 'wavedown_pct']
     
     total_buying_power = info.buying_power # what is the % amount you want to buy?
-        
-    app_portfolio_day_trade_allowed = float(QUEEN['queen_controls']['total_dayTrade_allocation']) #.8
-    app_portfolio_long_trade_allowed = float(QUEEN['queen_controls']['total_longTrade_allocation']) #.2
+    
+    portfolio_name = 'Jq'
+    portfolio_buyingpowers = [i for i in QUEEN['queen_controls']['buying_powers'] if i == portfolio_name][0]
+    app_portfolio_day_trade_allowed = float(portfolio_buyingpowers['total_dayTrade_allocation']) #.8
+    app_portfolio_long_trade_allowed = float(portfolio_buyingpowers['total_longTrade_allocation']) #.2
     if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
         print("Critical Error Fix buying power numbers")
         sys.exit()
@@ -1052,7 +1054,7 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
                 if f'{ticker}{frame_block}' in all_current_triggers.keys():
                     ticker_time_frame = f'{ticker}{"_1Minute_1Day"}'
                     ticker, tframe, frame = ticker_time_frame.split("_")
-                    trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][tframe]
+                    trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
 
                     # cycle through triggers and pass buy first logic for buy
                     trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
