@@ -291,7 +291,7 @@ def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False):
 
 
 def generate_client_order_id(QUEEN, ticker, trig, db_root=db_root, sellside_client_order_id=False): # generate using main_order table and trig count
-    main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+    main_orders_table = pd.DataFrame(QUEEN['queen_orders'])
     temp_date = datetime.datetime.now().strftime("%y%m%d-%M.%S")
     
     if sellside_client_order_id:
@@ -679,7 +679,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
     except Exception as e:
         print(e, print_line_of_error())
         print(ticker_time_frame)
-        log_error_dict = logging_log_message(type='error', msg='Failed to Execute Order', error=str(e), origin_func='Execute Order', ticker=ticker)
+        log_error_dict = logging_log_message(log_type='error', msg='Failed to Execute Order', error=str(e), origin_func='Execute Order', ticker=ticker)
         logging.error(log_error_dict)
         sys.exit()
 
