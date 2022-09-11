@@ -487,6 +487,7 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
             return {'app_flag': False}
 
     elif request_name == "knight_bees_kings_rules": ## PEDNIGN
+        return False
         archive_bucket = "knight_bees_kings_rules_requests"
         all_items = [i for i in APP_requests[request_name]]
         if all_items:
@@ -525,6 +526,8 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
                     APP_requests[archive_bucket].append(app_request)
                     APP_requests[request_name].remove(app_request)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+
+                    # remove object from QUEEN
                     
                     return {'app_flag': True, 'app_request': app_request}
         else:
@@ -820,7 +823,7 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig
         total_buying_power = bpower_resp['total_buying_power']
 
         # Trading Model
-        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
+        # trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
         # tradingModel['status'] .. buyingpower_allocation_LongTerm, buyingpower_allocation_ShortTerm, power_rangers
 
 
@@ -829,33 +832,36 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig
 
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
 
-        def return_kings_trade_ruling(trigbee, theme, pollen_theme_dict, trading_model, stars_df):
+        def return_kings_trade_ruling(trigbee, theme, pollen_theme_dict, trading_model, stars_df, ticker):
             order_vars = {}
-            tmodel_power_rangers = trading_model['power_rangers']
+            tmodel_power_rangers = trading_model['power_rangers'] # stars
             # return power ups based on tiers
-            def its_morphin_time(QUEEN, trigbee, theme, trading_model, tmodel_power_rangers):
-                # need to map in the color on storyview
-
+            def its_morphin_time(QUEEN, trigbee, theme, trading_model, tmodel_power_rangers, ticker):
+                # Map in the color on storyview
+                power_rangers_universe = ['mac_ranger', 'hist_ranger']
+                # queens_star_rangers = [i for i in QUEEN['queen_controls']['power_rangers'].keys() if i in tmodel_power_rangers]
+                stars_colors_d = {ranger: dict(zip(stars_df['star'],stars_df[ranger])) for ranger in power_rangers_universe}
+                ticker = 'SPY' # default
+                ticker = f'{ticker}{"_"}'
+                
+                # color = .5 # for every star we want both mac and hist power_rangers_universe  
                 if 'buy' in trigbee:
                     wave_type = 'buy_wave'
                 else:
                     wave_type = 'sell_wave'
                 
-                star_rangers = [i for i in QUEEN['queen_controls']['power_rangers'].keys() if i in tmodel_power_rangers]
-                
-                # power_up = {sr: {sr[wave_t][theme][stars_df[sr][macd_r]]} for sr in star_rangers for macd_r in ['mac_ranger', 'hist_ranger']}
-                # power_up = {}
-                # for star_rger, in star_rangers:
-                #     for wave_t, data in star_rger.items():
-                #         mac_r = stars_df[star_]
-
+                """ Power Up """ # for every models stars, return stars value by its tier color
                 power_up = {}
-                for star_name in stars_df['StarName'].tolist():
-                    if star_name in tmodel_power_rangers:
-                        mac_r_power = QUEEN['queen_controls']['power_rangers'][star_name][wave_type][theme]['mac_ranger']
-                        hist_r_power = QUEEN['queen_controls']['power_rangers'][star_name][wave_type][theme]['hist_ranger']
-                        
+                for star in tmodel_power_rangers: # 1m 5m, 3M
+                    for ranger in power_rangers_universe:
+                        PowerRangerColor = stars_colors_d[f'{ticker}{star}'][ranger] # COLOR
+                        power_up['mac_power'] = QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor] #star-buywave-theme
+                        power_up['hist_power'] = QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor]
 
+                return power_up
+
+            def kings_Blessing(trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, pollen_theme_dict=pollen_theme_dict):
+                
                 return True
             
             if trigbee == 'buy_cross-0':
