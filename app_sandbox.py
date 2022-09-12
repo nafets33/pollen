@@ -80,7 +80,7 @@ st.sidebar.button("ReRun")
 # with col2_sb:
 st.sidebar.image(image, caption='pollenq', width=89)
 
-bee_power_image = os.path.join(db_root, 'power.jpg')
+bee_power_image = os.path.join(jpg_root, 'power.jpg')
 # with col4:
 #     st.image(Image.open(bee_image), width=89)
 

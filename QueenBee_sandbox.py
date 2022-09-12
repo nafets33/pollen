@@ -457,21 +457,21 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
             return {'app_flag': False}    
 
     elif request_name == "power_rangers": ## buz
-        archive_bucket = "app_powerRanger_requests"
+        # archive_bucket = "power_rangers_requests"
         # power rangers
         all_items = [i for i in APP_requests[request_name]]
         if all_items:
             for app_request in all_items:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("Power Rangers trigger request Id already received")
-                    APP_requests['app_powerRanger_requests'].append(app_request)
+                    APP_requests[archive_bucket].append(app_request)
                     APP_requests[request_name].remove(app_request)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
                     return {'app_flag': False}
                 else:
                     print("Power Ranger Change")
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests['app_powerRanger_requests'].append(app_request)
+                    APP_requests[archive_bucket].append(app_request)
                     APP_requests[request_name].remove(app_request)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
 
@@ -1906,6 +1906,7 @@ try:
             # Client
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='stop_queen', archive_bucket=False)
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls', archive_bucket='queen_controls_requests')
+            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='power_rangers', archive_bucket='power_rangers_requests')
 
             # Process All Orders
             order_management(api=api, QUEEN=QUEEN, APP_requests=APP_requests)
