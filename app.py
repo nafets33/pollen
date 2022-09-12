@@ -44,12 +44,10 @@ from PIL import Image
 import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
+from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
 from QueenHive import KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 import argparse
-
-
 
 scriptname = os.path.basename(__file__)
 if 'sandbox' in scriptname:
@@ -82,7 +80,7 @@ st.sidebar.button("ReRun")
 # with col2_sb:
 st.sidebar.image(image, caption='pollenq', width=89)
 
-bee_power_image = os.path.join(db_root, 'power.jpg')
+bee_power_image = os.path.join(jpg_root, 'power.jpg')
 # with col4:
 #     st.image(Image.open(bee_image), width=89)
 
@@ -200,7 +198,7 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
             return df.plot(x=x, y=y,figsize=figsize)
   
 
-def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, js_code=False):
+def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True):
     gb = GridOptionsBuilder.from_dataframe(data)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
@@ -213,23 +211,6 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
     gridOptions = gb.build()
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
 
-    # if js_code:
-    #     cellsytle_jscode = JsCode("""
-    #     function(params) {
-    #         if (params.value == 'white') {
-    #             return {
-    #                 'color': 'black',
-    #                 'backgroundColor': 'white'
-    #             }
-    #         } else {
-    #             return {
-    #                 'color': 'black',
-    #                 'backgroundColor': 'white'
-    #             }
-    #         }
-    #     };
-    #     """)
-    #     gb.configure_column("group", cellStyle=cellsytle_jscode)
 
     grid_response = AgGrid(
         data,
@@ -396,7 +377,7 @@ def pollenstory_view(POLLENSTORY):
 
     return True
 
-def run_charts(POLLENSTORY = False):
+# def run_charts(POLLENSTORY = False):
     # with st.form("my_form"):
     #     # tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
     #     # ticker_option = st.sidebar.selectbox("Tickersme", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
@@ -481,14 +462,18 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         queens_power_rangers = QUEEN['queen_controls']['power_rangers']
         powerRangers = list(queens_power_rangers.keys())
         star = st.selectbox('Power Rangers', powerRangers, index=powerRangers.index(["1Minute_1Day" if "1Minute_1Day" in powerRangers else powerRangers[0]][0]))
-        ranger_waves = list(queens_power_rangers[star].keys())
+        ranger_waves_types = list(queens_power_rangers[star].keys())
+        ranger_waves = list(queens_power_rangers[star]['mac'].keys())
 
+        wave_type = st.selectbox('Wave_Type', ranger_waves_types, index=ranger_waves_types.index(["mac" if "mac" in ranger_waves_types else ranger_waves_types[0]][0]))
         wave_ = st.selectbox('Wave', ranger_waves, index=ranger_waves.index(["buy_wave" if "buy_wave" in ranger_waves else ranger_waves[0]][0]))
 
+
         st.write(wave_)
-        ranger_settings = queens_power_rangers[star][wave_][theme_token]
+        ranger_settings = queens_power_rangers[star][wave_type][wave_][theme_token]
         df_i = pd.DataFrame(ranger_settings.items())
         df = df_i.rename(columns={0: 'PowerRanger', 1: theme_token}) 
+
         
         grid_response = build_AGgrid_df(data=df, reload_data=False, height=333, update_cols=['UpdateRangerTheme'])
         data = grid_response['data']
@@ -501,6 +486,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             # Create
             app_request_package = create_AppRequest_package(request_name=control_option, archive_bucket='queen_contorls_requests')
             app_request_package['star'] = star
+            app_request_package['wave_type'] = wave_type
             app_request_package['wave_'] = wave_
             app_request_package['theme_token'] = theme_token
             app_request_package['rangers_values'] = dict(zip(df_sel['PowerRanger'], df_sel['UpdateRangerTheme_update']))
@@ -592,7 +578,7 @@ def ag_grid_main_build(df, default=False, vars=False):
 
 if option == 'charts':
     # pollen = return_pollen()
-    run_charts(POLLENSTORY = POLLENSTORY)
+    # run_charts(POLLENSTORY = POLLENSTORY)
 
     
     tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
@@ -614,7 +600,7 @@ if option == 'charts':
 
     else:
         selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
-        st.write(selections[0])
+        # st.write(selections[0])
         ticker_time_frame = selections[0]
         df = POLLENSTORY[ticker_time_frame].copy()
         # if df.iloc[-1]['open'] == 0:
@@ -635,6 +621,8 @@ if option == 'charts':
             st.dataframe(df_write)
             ag_grid_main_build(df=df_write, default=True)
         
+        
+        # Main CHART Creation
         fig = create_main_macd_chart(df)
         st.write(fig)
 
@@ -749,7 +737,8 @@ if option == 'queen':
         
 
     if orders_table == 'yes':
-        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+        # main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+        main_orders_table = pd.DataFrame(QUEEN['queen_orders'])
         st.dataframe(main_orders_table)
 
     st.write("QUEENS Collective CONSCIENCE")

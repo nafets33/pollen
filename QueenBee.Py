@@ -1,42 +1,42 @@
 # QueenBee
 import logging
-from enum import Enum
-from operator import sub
-from queue import Queue
-from signal import signal
-from symtable import Symbol
+# from enum import Enum
+# from operator import sub
+# from queue import Queue
+# from signal import signal
+# from symtable import Symbol
 import time
-import alpaca_trade_api as tradeapi
-import asyncio
+# import alpaca_trade_api as tradeapi
+# import asyncio
 import os
 import pandas as pd
 import numpy as np
-import pandas_ta as ta
+# import pandas_ta as ta
 import sys
 # from alpaca_trade_api.rest import TimeFrame, URL
 # from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
-import threading
+# import threading
 import sys
 import datetime
-from datetime import date, timedelta
+# from datetime import date, timedelta
 import pytz
-from typing import Callable
-import random
-import collections
-import pickle
-from tqdm import tqdm
-from stocksymbol import StockSymbol
-import requests
-from collections import defaultdict
+# from typing import Callable
+# import random
+# import collections
+# import pickle
+# from tqdm import tqdm
+# from stocksymbol import StockSymbol
+# import requests
+# from collections import defaultdict
 import ipdb
-import tempfile
+# import tempfile
 import shutil
 # from scipy.stats import linregress
-from scipy import stats
-import hashlib
-import json
-from collections import deque
+# from scipy import stats
+# import hashlib
+# import json
+# from collections import deque
 import argparse
 
 
@@ -63,9 +63,9 @@ else:
     prod = False
 
 if prod:
-    from QueenHive import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, update_csv_db, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 else:
-    from QueenHive_sandbox import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, update_csv_db, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 
 
 # Green Light to Main
@@ -124,23 +124,24 @@ coin_exchange = "CBSE"
 
 
 """ Keys """
-api_key_id = os.environ.get('APCA_API_KEY_ID')
-api_secret = os.environ.get('APCA_API_SECRET_KEY')
-base_url = "https://api.alpaca.markets"
-keys = return_api_keys(base_url, api_key_id, api_secret)
-rest = keys[0]['rest']
-api = keys[0]['api']
-
-# Paper
-api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-base_url_paper = "https://paper-api.alpaca.markets"
-keys_paper = return_api_keys(base_url=base_url_paper, 
-    api_key_id=api_key_id_paper, 
-    api_secret=api_secret_paper,
-    prod=False)
-rest_paper = keys_paper[0]['rest']
-api_paper = keys_paper[0]['api']
+if prod:
+    api_key_id = os.environ.get('APCA_API_KEY_ID')
+    api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    base_url = "https://api.alpaca.markets"
+    keys = return_api_keys(base_url, api_key_id, api_secret, prod=True)
+    rest = keys[0]['rest']
+    api = keys[0]['api']
+else:
+    # Paper
+    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+    base_url_paper = "https://paper-api.alpaca.markets"
+    keys_paper = return_api_keys(base_url=base_url_paper, 
+        api_key_id=api_key_id_paper, 
+        api_secret=api_secret_paper,
+        prod=False)
+    rest = keys_paper[0]['rest']
+    api = keys_paper[0]['api']
 
 """# Dates """
 # current_day = api.get_clock().timestamp.date().isoformat()
@@ -336,20 +337,25 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
 
     try:
         # update db
-        symbol = order['symbol']
-        client_order_id = order['client_order_id']
-        alpaca_order_id = order['id']
-        df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 
-        'exit_order_link':exit_order_link, 'ticker_time_frame': ticker_time_frame, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id,
-        'bulkorder_origin__client_order_id': bulkorder_origin__client_order_id, 'portfolio_name': portfolio_name, 'system_recon': system_recon} 
-        df = pd.DataFrame(df_details.items()).T
-        new_header = df.iloc[0] #grab the first row for the header
-        df = df[1:] #take the data less the header row
-        df.columns = new_header #set the header row as the df header
-        update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
+        # symbol = order['symbol']
+        # client_order_id = order['client_order_id']
+        # alpaca_order_id = order['id']
+        # df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 
+        # 'exit_order_link':exit_order_link, 'ticker_time_frame': ticker_time_frame, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id,
+        # 'bulkorder_origin__client_order_id': bulkorder_origin__client_order_id, 'portfolio_name': portfolio_name, 'system_recon': system_recon} 
+        # df = pd.DataFrame(df_details.items()).T
+        # new_header = df.iloc[0] #grab the first row for the header
+        # df = df[1:] #take the data less the header row
+        # df.columns = new_header #set the header row as the df header
+        # update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
 
         # Create Running Order
-        sending_order = create_QueenOrderBee(KING=KING, order=order, ticker_time_frame=ticker_time_frame, portfolio_name=portfolio_name, status_q=status_q, trig=trig, exit_order_link=exit_order_link, priceinfo=priceinfo)
+        sending_order = create_QueenOrderBee(KING=KING, order=order, ticker_time_frame=ticker_time_frame, 
+        portfolio_name=portfolio_name, 
+        status_q=status_q, 
+        trig=trig, 
+        exit_order_link=exit_order_link, 
+        priceinfo=priceinfo)
 
         QUEEN['queen_orders'].append(sending_order)
 
@@ -452,34 +458,33 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
             return {'app_flag': False}    
 
     elif request_name == "power_rangers": ## buz
-        archive_bucket = "app_powerRanger_requests"
+        # archive_bucket = "power_rangers_requests"
         # power rangers
         all_items = [i for i in APP_requests[request_name]]
         if all_items:
             for app_request in all_items:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("Power Rangers trigger request Id already received")
-                    APP_requests['app_powerRanger_requests'].append(app_request)
+                    APP_requests[archive_bucket].append(app_request)
                     APP_requests[request_name].remove(app_request)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
                     return {'app_flag': False}
                 else:
                     print("Power Ranger Change")
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests['app_powerRanger_requests'].append(app_request)
+                    APP_requests[archive_bucket].append(app_request)
                     APP_requests[request_name].remove(app_request)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
 
                     #Update Rangers
-                    control_name = app_request['control_name']
+                    # control_name = app_request['control_name']
                     
-                    # for ranger, update_value in app_request['ranger_values'].items():
-                    #     QUEEN[request_name][control_name][app_request['star']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
-
-                    # QUEEN[request_name][control_name].update(app_request['control_update'])
-                    msg = ('control updated:: ', control_name)
-                    print(msg)
-                    logging.info(msg)
+                    for ranger, update_value in app_request['rangers_values'].items():
+                        QUEEN['queen_controls'][request_name][app_request['star']][app_request['wave_type']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
+                        logging_log_message(log_type='info', msg=(ranger, " :updated to: ", update_value ), origin_func='process app requests')
+                    # msg = ('control updated:: ', control_name)
+                    # print(msg)
+                    # logging.info(msg)
 
                     
                     return {'app_flag': True, 'app_request': app_request}
@@ -487,6 +492,7 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
             return {'app_flag': False}
 
     elif request_name == "knight_bees_kings_rules": ## PEDNIGN
+        return False
         archive_bucket = "knight_bees_kings_rules_requests"
         all_items = [i for i in APP_requests[request_name]]
         if all_items:
@@ -525,6 +531,8 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
                     APP_requests[archive_bucket].append(app_request)
                     APP_requests[request_name].remove(app_request)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+
+                    # remove object from QUEEN
                     
                     return {'app_flag': True, 'app_request': app_request}
         else:
@@ -820,7 +828,7 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig
         total_buying_power = bpower_resp['total_buying_power']
 
         # Trading Model
-        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
+        # trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
         # tradingModel['status'] .. buyingpower_allocation_LongTerm, buyingpower_allocation_ShortTerm, power_rangers
 
 
@@ -829,33 +837,36 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig
 
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
 
-        def return_kings_trade_ruling(trigbee, theme, pollen_theme_dict, trading_model, stars_df):
+        def return_kings_trade_ruling(trigbee, theme, pollen_theme_dict, trading_model, stars_df, ticker):
             order_vars = {}
-            tmodel_power_rangers = trading_model['power_rangers']
+            tmodel_power_rangers = trading_model['power_rangers'] # stars
             # return power ups based on tiers
-            def its_morphin_time(QUEEN, trigbee, theme, trading_model, tmodel_power_rangers):
-                # need to map in the color on storyview
-
+            def its_morphin_time(QUEEN, trigbee, theme, trading_model, tmodel_power_rangers, ticker):
+                # Map in the color on storyview
+                power_rangers_universe = ['mac_ranger', 'hist_ranger']
+                # queens_star_rangers = [i for i in QUEEN['queen_controls']['power_rangers'].keys() if i in tmodel_power_rangers]
+                stars_colors_d = {ranger: dict(zip(stars_df['star'],stars_df[ranger])) for ranger in power_rangers_universe}
+                ticker = 'SPY' # default
+                ticker = f'{ticker}{"_"}'
+                
+                # color = .5 # for every star we want both mac and hist power_rangers_universe  
                 if 'buy' in trigbee:
                     wave_type = 'buy_wave'
                 else:
                     wave_type = 'sell_wave'
                 
-                star_rangers = [i for i in QUEEN['queen_controls']['power_rangers'].keys() if i in tmodel_power_rangers]
-                
-                # power_up = {sr: {sr[wave_t][theme][stars_df[sr][macd_r]]} for sr in star_rangers for macd_r in ['mac_ranger', 'hist_ranger']}
-                # power_up = {}
-                # for star_rger, in star_rangers:
-                #     for wave_t, data in star_rger.items():
-                #         mac_r = stars_df[star_]
-
+                """ Power Up """ # for every models stars, return stars value by its tier color
                 power_up = {}
-                for star_name in stars_df['StarName'].tolist():
-                    if star_name in tmodel_power_rangers:
-                        mac_r_power = QUEEN['queen_controls']['power_rangers'][star_name][wave_type][theme]['mac_ranger']
-                        hist_r_power = QUEEN['queen_controls']['power_rangers'][star_name][wave_type][theme]['hist_ranger']
-                        
+                for star in tmodel_power_rangers: # 1m 5m, 3M
+                    for ranger in power_rangers_universe:
+                        PowerRangerColor = stars_colors_d[f'{ticker}{star}'][ranger] # COLOR
+                        power_up['mac_power'] = QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor] #star-buywave-theme
+                        power_up['hist_power'] = QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor]
 
+                return power_up
+
+            def kings_Blessing(trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, pollen_theme_dict=pollen_theme_dict):
+                
                 return True
             
             if trigbee == 'buy_cross-0':
@@ -1895,6 +1906,7 @@ try:
             # Client
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='stop_queen', archive_bucket=False)
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls', archive_bucket='queen_controls_requests')
+            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='power_rangers', archive_bucket='power_rangers_requests')
 
             # Process All Orders
             order_management(api=api, QUEEN=QUEEN, APP_requests=APP_requests)

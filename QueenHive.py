@@ -2556,8 +2556,8 @@ def init_QUEEN(queens_chess_piece):
         'kings_order_rules': {},
         'queen_controls': { 
             'theme': 'nuetral',
-            'app_order_requests': [],
-            'orders': [],
+            # 'app_order_requests': [],
+            # 'orders': [],
             'last_read_app': datetime.datetime.now(),
             'reset_stars': False,
             'stars': stars(),
@@ -2599,7 +2599,7 @@ def init_QUEEN(queens_chess_piece):
         # 'triggerBee_frequency': {}, # hold a star and the running trigger
         'saved_pollenThemes': [], # bucket of saved star settings to choose from
         'saved_powerRangers': [], # bucket of saved star settings to choose from
-        
+        'subconscious': {},
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -2900,6 +2900,32 @@ def init_PowerRangers(ranger_dimensions=False):
         colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
         
+        # ranger_init = {
+        # 'buy_wave': {'nuetral': 
+        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+        #                                 'strong': 
+        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+        #                             },
+        #             'sell_wave': {'nuetral': 
+        #                                 {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+        #                             'strong': 
+        #                                 {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                        
+        #         },
+        # 'buy_wave': {'nuetral': 
+        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+        #                                 'strong': 
+        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+        #                             },
+        #             'sell_wave': {'nuetral': 
+        #                                 {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+        #                             'strong': 
+        #                                 {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .05, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                        
+        #         },
+        # }
+
+        ## FEAT REQUEST: adjust upstream to include universe
         ranger_init = {
         'mac' : {'buy_wave': {'nuetral': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
@@ -2924,7 +2950,20 @@ def init_PowerRangers(ranger_dimensions=False):
                                         }
                 },
         }
-    # ranger_init = wave_type_ranger['mac']
+
+    # # ranger_init = wave_type_ranger['mac']
+    # r_dict = {}
+    # for star in stars:
+    #     r_dict[star] = {}
+    #     # for wave_type in wave_types:
+    #     #     r_dict[star][wave_type] = {}
+    #     for trigbee in trigbees:
+    #         r_dict[star][trigbee] = {}
+    #         for theme in theme_list:
+    #             r_dict[star][trigbee][theme] = {}
+    #             for color in colors:
+    #                 r_dict[star][trigbee][theme][color] = ranger_init[trigbee][theme][color]
+
     r_dict = {}
     for star in stars:
         r_dict[star] = {}
@@ -2933,10 +2972,9 @@ def init_PowerRangers(ranger_dimensions=False):
             for trigbee in trigbees:
                 r_dict[star][wave_type][trigbee] = {}
                 for theme in theme_list:
-                    r_dict[star][wave_type][theme] = {}
-
+                    r_dict[star][wave_type][trigbee][theme] = {}
                     for color in colors:
-                        r_dict[star][wave_type][color] = ranger_init[wave_type][trigbee][theme][color]
+                        r_dict[star][wave_type][trigbee][theme][color] = ranger_init[wave_type][trigbee][theme][color]
  
     return r_dict
 
