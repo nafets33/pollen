@@ -2556,8 +2556,8 @@ def init_QUEEN(queens_chess_piece):
         'kings_order_rules': {},
         'queen_controls': { 
             'theme': 'nuetral',
-            'app_order_requests': [],
-            'orders': [],
+            # 'app_order_requests': [],
+            # 'orders': [],
             'last_read_app': datetime.datetime.now(),
             'reset_stars': False,
             'stars': stars(),

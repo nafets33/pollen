@@ -377,7 +377,7 @@ def pollenstory_view(POLLENSTORY):
 
     return True
 
-def run_charts(POLLENSTORY = False):
+# def run_charts(POLLENSTORY = False):
     # with st.form("my_form"):
     #     # tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
     #     # ticker_option = st.sidebar.selectbox("Tickersme", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
@@ -578,7 +578,7 @@ def ag_grid_main_build(df, default=False, vars=False):
 
 if option == 'charts':
     # pollen = return_pollen()
-    run_charts(POLLENSTORY = POLLENSTORY)
+    # run_charts(POLLENSTORY = POLLENSTORY)
 
     
     tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
@@ -600,7 +600,7 @@ if option == 'charts':
 
     else:
         selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
-        st.write(selections[0])
+        # st.write(selections[0])
         ticker_time_frame = selections[0]
         df = POLLENSTORY[ticker_time_frame].copy()
         # if df.iloc[-1]['open'] == 0:
@@ -621,6 +621,8 @@ if option == 'charts':
             st.dataframe(df_write)
             ag_grid_main_build(df=df_write, default=True)
         
+        
+        # Main CHART Creation
         fig = create_main_macd_chart(df)
         st.write(fig)
 
@@ -735,7 +737,8 @@ if option == 'queen':
         
 
     if orders_table == 'yes':
-        main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+        # main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
+        main_orders_table = pd.DataFrame(QUEEN['queen_orders'])
         st.dataframe(main_orders_table)
 
     st.write("QUEENS Collective CONSCIENCE")

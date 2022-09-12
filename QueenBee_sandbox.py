@@ -63,9 +63,9 @@ else:
     prod = False
 
 if prod:
-    from QueenHive import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, update_csv_db, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 else:
-    from QueenHive_sandbox import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, update_csv_db, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 
 
 # Green Light to Main
@@ -336,20 +336,25 @@ def process_order_submission(order, trig, prod, tablename, ticker_time_frame, po
 
     try:
         # update db
-        symbol = order['symbol']
-        client_order_id = order['client_order_id']
-        alpaca_order_id = order['id']
-        df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 
-        'exit_order_link':exit_order_link, 'ticker_time_frame': ticker_time_frame, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id,
-        'bulkorder_origin__client_order_id': bulkorder_origin__client_order_id, 'portfolio_name': portfolio_name, 'system_recon': system_recon} 
-        df = pd.DataFrame(df_details.items()).T
-        new_header = df.iloc[0] #grab the first row for the header
-        df = df[1:] #take the data less the header row
-        df.columns = new_header #set the header row as the df header
-        update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
+        # symbol = order['symbol']
+        # client_order_id = order['client_order_id']
+        # alpaca_order_id = order['id']
+        # df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 
+        # 'exit_order_link':exit_order_link, 'ticker_time_frame': ticker_time_frame, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id,
+        # 'bulkorder_origin__client_order_id': bulkorder_origin__client_order_id, 'portfolio_name': portfolio_name, 'system_recon': system_recon} 
+        # df = pd.DataFrame(df_details.items()).T
+        # new_header = df.iloc[0] #grab the first row for the header
+        # df = df[1:] #take the data less the header row
+        # df.columns = new_header #set the header row as the df header
+        # update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
 
         # Create Running Order
-        sending_order = create_QueenOrderBee(KING=KING, order=order, ticker_time_frame=ticker_time_frame, portfolio_name=portfolio_name, status_q=status_q, trig=trig, exit_order_link=exit_order_link, priceinfo=priceinfo)
+        sending_order = create_QueenOrderBee(KING=KING, order=order, ticker_time_frame=ticker_time_frame, 
+        portfolio_name=portfolio_name, 
+        status_q=status_q, 
+        trig=trig, 
+        exit_order_link=exit_order_link, 
+        priceinfo=priceinfo)
 
         QUEEN['queen_orders'].append(sending_order)
 
