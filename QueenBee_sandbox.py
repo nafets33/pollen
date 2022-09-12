@@ -124,23 +124,24 @@ coin_exchange = "CBSE"
 
 
 """ Keys """
-api_key_id = os.environ.get('APCA_API_KEY_ID')
-api_secret = os.environ.get('APCA_API_SECRET_KEY')
-base_url = "https://api.alpaca.markets"
-keys = return_api_keys(base_url, api_key_id, api_secret)
-rest = keys[0]['rest']
-api = keys[0]['api']
-
-# Paper
-api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-base_url_paper = "https://paper-api.alpaca.markets"
-keys_paper = return_api_keys(base_url=base_url_paper, 
-    api_key_id=api_key_id_paper, 
-    api_secret=api_secret_paper,
-    prod=False)
-rest_paper = keys_paper[0]['rest']
-api_paper = keys_paper[0]['api']
+if prod:
+    api_key_id = os.environ.get('APCA_API_KEY_ID')
+    api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    base_url = "https://api.alpaca.markets"
+    keys = return_api_keys(base_url, api_key_id, api_secret)
+    rest = keys[0]['rest']
+    api = keys[0]['api']
+else:
+    # Paper
+    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+    base_url_paper = "https://paper-api.alpaca.markets"
+    keys_paper = return_api_keys(base_url=base_url_paper, 
+        api_key_id=api_key_id_paper, 
+        api_secret=api_secret_paper,
+        prod=False)
+    rest = keys_paper[0]['rest']
+    api = keys_paper[0]['api']
 
 """# Dates """
 # current_day = api.get_clock().timestamp.date().isoformat()
@@ -476,13 +477,12 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
 
                     #Update Rangers
-                    control_name = app_request['control_name']
+                    # control_name = app_request['control_name']
                     
-                    for ranger, update_value in app_request['ranger_values'].items():
-                        v = update_value
-                        QUEEN[request_name][control_name][app_request['star']][app_request['wave_type']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
+                    for ranger, update_value in app_request['rangers_values'].items():
+                        QUEEN['queen_controls'][request_name][app_request['star']][app_request['wave_type']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
                         logging_log_message(log_type='info', msg=(ranger, " :updated to: ", update_value ), origin_func='process app requests')
-                    msg = ('control updated:: ', control_name)
+                    # msg = ('control updated:: ', control_name)
                     print(msg)
                     logging.info(msg)
 
