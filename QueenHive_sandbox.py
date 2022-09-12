@@ -2616,7 +2616,7 @@ def init_QUEEN(queens_chess_piece):
 
 
 def init_QUEEN_App():
-    app = {'theme': '', 
+    app = {'theme': 'nuetral', 
     'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
     'last_modified': datetime.datetime.now(),

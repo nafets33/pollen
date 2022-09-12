@@ -1201,6 +1201,8 @@ def confirm_Theme(QUEEN, APP_requests, savequeen=True): # King
             QUEEN['queen_controls']['theme'] = APP_requests['theme']
             
             PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN) # Save
+        else:
+            print("theme not changed")
     return True 
 
 
