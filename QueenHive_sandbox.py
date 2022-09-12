@@ -2900,34 +2900,8 @@ def init_PowerRangers(ranger_dimensions=False):
         colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
         # bee_ranger_tiers = 9
         
-        ranger_init = {
-        'buy_wave': {'nuetral': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-                                        'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-                                    },
-                    'sell_wave': {'nuetral': 
-                                        {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                    'strong': 
-                                        {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                        
-                },
-        'buy_wave': {'nuetral': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-                                        'strong': 
-                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-                                    },
-                    'sell_wave': {'nuetral': 
-                                        {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                    'strong': 
-                                        {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .05, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                        
-                },
-        }
-
-        ## FEAT REQUEST: adjust upstream to include universe
         # ranger_init = {
-        # 'mac' : {'buy_wave': {'nuetral': 
+        # 'buy_wave': {'nuetral': 
         #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
         #                                 'strong': 
         #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
@@ -2936,9 +2910,9 @@ def init_PowerRangers(ranger_dimensions=False):
         #                                 {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
         #                             'strong': 
         #                                 {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-        #                                 }
+                                        
         #         },
-        # 'hist' : {'buy_wave': {'nuetral': 
+        # 'buy_wave': {'nuetral': 
         #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
         #                                 'strong': 
         #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
@@ -2947,11 +2921,49 @@ def init_PowerRangers(ranger_dimensions=False):
         #                                 {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
         #                             'strong': 
         #                                 {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .05, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-        #                                 }
+                                        
         #         },
         # }
 
-    # ranger_init = wave_type_ranger['mac']
+        ## FEAT REQUEST: adjust upstream to include universe
+        ranger_init = {
+        'mac' : {'buy_wave': {'nuetral': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+                                        'strong': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+                                    },
+                    'sell_wave': {'nuetral': 
+                                        {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                    'strong': 
+                                        {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                        }
+                },
+        'hist' : {'buy_wave': {'nuetral': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+                                        'strong': 
+                                            {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
+                                    },
+                    'sell_wave': {'nuetral': 
+                                        {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                    'strong': 
+                                        {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .05, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
+                                        }
+                },
+        }
+
+    # # ranger_init = wave_type_ranger['mac']
+    # r_dict = {}
+    # for star in stars:
+    #     r_dict[star] = {}
+    #     # for wave_type in wave_types:
+    #     #     r_dict[star][wave_type] = {}
+    #     for trigbee in trigbees:
+    #         r_dict[star][trigbee] = {}
+    #         for theme in theme_list:
+    #             r_dict[star][trigbee][theme] = {}
+    #             for color in colors:
+    #                 r_dict[star][trigbee][theme][color] = ranger_init[trigbee][theme][color]
+
     r_dict = {}
     for star in stars:
         r_dict[star] = {}
@@ -2960,9 +2972,9 @@ def init_PowerRangers(ranger_dimensions=False):
             for trigbee in trigbees:
                 r_dict[star][wave_type][trigbee] = {}
                 for theme in theme_list:
-                    r_dict[star][wave_type][theme] = {}
+                    r_dict[star][wave_type][trigbee][theme] = {}
                     for color in colors:
-                        r_dict[star][wave_type][color] = ranger_init[wave_type][trigbee][theme][color]
+                        r_dict[star][wave_type][trigbee][theme][color] = ranger_init[wave_type][trigbee][theme][color]
  
     return r_dict
 

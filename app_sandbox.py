@@ -462,14 +462,18 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         queens_power_rangers = QUEEN['queen_controls']['power_rangers']
         powerRangers = list(queens_power_rangers.keys())
         star = st.selectbox('Power Rangers', powerRangers, index=powerRangers.index(["1Minute_1Day" if "1Minute_1Day" in powerRangers else powerRangers[0]][0]))
-        ranger_waves = list(queens_power_rangers[star].keys())
+        ranger_waves_types = list(queens_power_rangers[star].keys())
+        ranger_waves = list(queens_power_rangers[star]['mac'].keys())
 
+        wave_type = st.selectbox('Wave_Type', ranger_waves_types, index=ranger_waves_types.index(["mac" if "mac" in ranger_waves_types else ranger_waves_types[0]][0]))
         wave_ = st.selectbox('Wave', ranger_waves, index=ranger_waves.index(["buy_wave" if "buy_wave" in ranger_waves else ranger_waves[0]][0]))
 
+
         st.write(wave_)
-        ranger_settings = queens_power_rangers[star][wave_][theme_token]
+        ranger_settings = queens_power_rangers[star][wave_type][wave_][theme_token]
         df_i = pd.DataFrame(ranger_settings.items())
         df = df_i.rename(columns={0: 'PowerRanger', 1: theme_token}) 
+
         
         grid_response = build_AGgrid_df(data=df, reload_data=False, height=333, update_cols=['UpdateRangerTheme'])
         data = grid_response['data']
@@ -482,6 +486,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             # Create
             app_request_package = create_AppRequest_package(request_name=control_option, archive_bucket='queen_contorls_requests')
             app_request_package['star'] = star
+            app_request_package['wave_type'] = wave_type
             app_request_package['wave_'] = wave_
             app_request_package['theme_token'] = theme_token
             app_request_package['rangers_values'] = dict(zip(df_sel['PowerRanger'], df_sel['UpdateRangerTheme_update']))

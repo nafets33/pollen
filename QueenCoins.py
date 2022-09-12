@@ -517,8 +517,8 @@ PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
 
 if os.path.exists(PB_QUEEN_Pickle) == False:
     print("WorkerBee Needs a Queen")
-    sys.exit()
-
+    # sys.exit()
+    PickleData(PB_QUEEN_Pickle, data_to_store=False)
 # Pollen QUEEN
 if prod:
     WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))

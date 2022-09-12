@@ -1,42 +1,42 @@
 # QueenBee
 import logging
-from enum import Enum
-from operator import sub
-from queue import Queue
-from signal import signal
-from symtable import Symbol
+# from enum import Enum
+# from operator import sub
+# from queue import Queue
+# from signal import signal
+# from symtable import Symbol
 import time
-import alpaca_trade_api as tradeapi
-import asyncio
+# import alpaca_trade_api as tradeapi
+# import asyncio
 import os
 import pandas as pd
 import numpy as np
-import pandas_ta as ta
+# import pandas_ta as ta
 import sys
 # from alpaca_trade_api.rest import TimeFrame, URL
 # from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
-import threading
+# import threading
 import sys
 import datetime
-from datetime import date, timedelta
+# from datetime import date, timedelta
 import pytz
-from typing import Callable
-import random
-import collections
-import pickle
-from tqdm import tqdm
-from stocksymbol import StockSymbol
-import requests
-from collections import defaultdict
+# from typing import Callable
+# import random
+# import collections
+# import pickle
+# from tqdm import tqdm
+# from stocksymbol import StockSymbol
+# import requests
+# from collections import defaultdict
 import ipdb
-import tempfile
+# import tempfile
 import shutil
 # from scipy.stats import linregress
-from scipy import stats
-import hashlib
-import json
-from collections import deque
+# from scipy import stats
+# import hashlib
+# import json
+# from collections import deque
 import argparse
 
 
@@ -473,10 +473,10 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
                     #Update Rangers
                     control_name = app_request['control_name']
                     
-                    # for ranger, update_value in app_request['ranger_values'].items():
-                    #     QUEEN[request_name][control_name][app_request['star']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
-
-                    # QUEEN[request_name][control_name].update(app_request['control_update'])
+                    for ranger, update_value in app_request['ranger_values'].items():
+                        v = update_value
+                        QUEEN[request_name][control_name][app_request['star']][app_request['wave_type']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
+                        logging_log_message(log_type='info', msg=(ranger, " :updated to: ", update_value ), origin_func='process app requests')
                     msg = ('control updated:: ', control_name)
                     print(msg)
                     logging.info(msg)
