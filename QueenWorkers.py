@@ -161,8 +161,8 @@ current_year = datetime.datetime.now().year
 # misc
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
-    'P','Q','R','T','U','V','Z'
-]
+    'P','Q','R','T','V','Z'
+] # 'U'
 
 """# Main Arguments """
 num = {1: .15, 2: .25, 3: .40, 4: .60, 5: .8}

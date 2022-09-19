@@ -408,6 +408,31 @@ def stop_queenbee(APP_requests):
             st.write(test['stop_queen'])
     return True
 
+def refresh_queenbee_controls(APP_requests):
+    with st.form("refresh QUEEN controls"):
+        checkbox_val = st.checkbox("Stop Queen")
+
+        # Every form must have a submit button.
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            ("checkbox", checkbox_val)
+            
+            APP_requests['queen_controls_reset'] = str(checkbox_val).lower()
+            
+            # app_request_package = create_AppRequest_package(request_name='queen_controls_reset', archive_bucket='misc_bucket')
+            # app_request_package['control_name'] = control_option
+            # control_upate = {'control_update' : dict(zip(df_sel['star'], df_sel['Update_Value_update']))}
+            # app_request_package.update(control_upate)
+            # Save
+            # st.write(app_request_package)
+            # APP_requests['queen_controls_reset'].append(app_request_package)
+            # APP_requests['queen_controls_lastupdate'] = datetime.datetime.now().astimezone(est)
+            # PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            
+    return True
+
 
 def return_image_upon_save():
     st.write("Controls Saved", return_timestamp_string())
@@ -824,10 +849,11 @@ if option == 'signal':
         with col1:
             st.write('Queen Controls')
             st.write(QUEEN['queen_controls'])
-            stop_queenbee(APP_requests)
+            stop_queenbee(APP_requests=APP_requests)
         with col2:
             st.write("HeartBeat")
             st.write(QUEEN['heartbeat'])
+            refresh_queenbee_controls(APP_requests=APP_requests)
 
         contorls = list(QUEEN['queen_controls'].keys())
         control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))

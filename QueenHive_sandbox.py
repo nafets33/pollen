@@ -87,8 +87,8 @@ load_dotenv()
 
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
-    'P','Q','R','T','U','V','Z'
-]
+    'P','Q','R','T','V','Z'
+] # 'U' afterhours
 
 # keys
 api_key_id = os.environ.get('APCA_API_KEY_ID')
@@ -1233,8 +1233,8 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
 
         exclude_conditions = [
         'B','W','4','7','9','C','G','H',
-        'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
-        ]
+        'I','M','N','P','Q','R','T', 'V', 'Z'
+        ] # 'U'
         # Fetch trades for the X seconds before the current time
         trades_df = api.get_trades(ticker_list,
                                     start=previous_time,
@@ -1268,7 +1268,7 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
         else:
             return {'resp': valid_trades}
     except Exception as e:
-        print("rebuild_timeframe_bars", e)
+        print("rebuild timeframe bars", e)
         return {'resp': False, 'msg': [e, current_time, previous_time]}
 # r = rebuild_timeframe_bars(ticker_list, sec_input=30)
 
@@ -2541,20 +2541,9 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
 #     else:
 #         return {}
 
-
-def init_QUEEN(queens_chess_piece):
-    KING = KINGME()
+def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
-    QUEEN = { # The Queens Mind
-        'prod': "",
-        'source': "na",
-        'last_modified': datetime.datetime.now(),
-        'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
-        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
-        'kings_order_rules': {},
-        'queen_controls': { 
+    queen_controls_dict = { 
             'theme': 'nuetral',
             # 'app_order_requests': [],
             # 'orders': [],
@@ -2577,8 +2566,28 @@ def init_QUEEN(queens_chess_piece):
                 'default': 
                     {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
                     'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
-                }
-                            },
+                },
+            'star_time_settings': {star_time: {'max_dayTrade_of_dayAlloc': .7, 'max_longTrade_of_longAlloc': .5} for star_time in stars().keys()
+                                },
+            'ticker_settings': {'SPY': {'max_day': .7, 'max_long': .5}},
+    
+    }
+    return queen_controls_dict
+
+
+def init_QUEEN(queens_chess_piece):
+    KING = KINGME()
+    num_of_stars = len(stars())
+    QUEEN = { # The Queens Mind
+        'prod': "",
+        'source': "na",
+        'last_modified': datetime.datetime.now(),
+        'command_conscience': {},
+        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
+        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
+        'kings_order_rules': {},
+        'queen_controls': return_queen_controls(stars),
         'workerbees': {
             'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
                         'tickers': ['SPY'],
@@ -2628,6 +2637,7 @@ def init_QUEEN_App():
     'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),
     'knight_bees_kings_rules': [],
     'knight_bees_kings_rules_requests': [],
+    'queen_controls_reset': 'false', 
     'queen_controls': [],
     'queen_controls_requests': [],
     'queen_contorls_lastupdate': 'false', 
