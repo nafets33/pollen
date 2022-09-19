@@ -618,7 +618,7 @@ if option == 'charts':
 
         if fullstory_option:
             df_write = df.astype(str)
-            st.dataframe(df_write)
+            # st.dataframe(df_write)
             ag_grid_main_build(df=df_write, default=True)
         
         

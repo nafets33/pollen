@@ -715,7 +715,7 @@ def buying_Power_cc(api, client_args="TBD", daytrade=True):
     #     print("Critical Error Fix buying power numbers")
     #     sys.exit()
     
-    client_totalday_trade_amt_allowed = app_portfolio_day_trade_allowed * float(total_buying_power)
+    client_totalday_trade_amt_allowed = float(app_portfolio_day_trade_allowed) * float(total_buying_power)
     
     return { 'total_buying_power': total_buying_power,
         'client_totalday_trade_amt_allowed': client_totalday_trade_amt_allowed, 
@@ -836,6 +836,8 @@ def king_knights_requests(QUEEN, trigbee, ticker_time_frame, trading_model, trig
         stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df']
 
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
+
+        tmodel_power_rangers = trading_model['power_rangers'] # stars
 
         def return_kings_trade_ruling(trigbee, theme, pollen_theme_dict, trading_model, stars_df, ticker):
             order_vars = {}
