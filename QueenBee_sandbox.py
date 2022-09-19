@@ -911,7 +911,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
 
                     theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
                     
-                    power_up_amo = its_morphin_time(QUEEN, trigbee, theme, tmodel_power_rangers, ticker, stars_df)
+                    power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
                     print(power_up_amo)
 
                     wave_amo = theme_amo + power_up_amo['mac_power'] + power_up_amo['hist_power']
@@ -982,11 +982,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 return {'kings_blessing': False}
 
 
-        return kings_Blessing(trigbee, current_wave, trig_action, 
-        total_buying_power, 
-        app_portfolio_day_trade_allowed, 
-        client_total_LONG_trade_amt_allowed, 
-        pollen_theme_dict=pollen_theme_dict)
+        return kings_Blessing(trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict)
 
     except Exception as e:
         print(e, print_line_of_error(), ticker_time_frame)
