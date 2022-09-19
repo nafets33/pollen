@@ -868,16 +868,19 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 wave_type = 'sell_wave'
             
             """ Power Up """ # for every models stars, return stars value by its tier color
-            power_up = {}
+            power_up = {ranger: 0 for ranger in power_rangers_universe}
             for star in tmodel_power_rangers: # 1m 5m, 3M
                 for ranger in power_rangers_universe:
-                    PowerRangerColor = stars_colors_d[f'{ticker_token}{star}'][ranger] # COLOR
-                    power_up['mac_power'] = float(QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor])#star-buywave-theme
-                    power_up['hist_power'] = float(QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor])
+                    PowerRangerColor = stars_colors_d[ranger][f'{ticker_token}{star}'] # COLOR
+                    power_up[ranger] += float(QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor]) # star-buywave-theme
+                    # power_up['hist_power'] = float(QUEEN['queen_controls']['power_rangers'][star][wave_type][theme][PowerRangerColor])
 
             return power_up
 
-        def kings_Blessing(trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict):
+
+        # powerup = its_morphin_time(QUEEN, trigbee, theme, tmodel_power_rangers, ticker, stars_df)
+
+        def kings_Blessing(ticker, trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict):
             
             if trigbee == 'buy_cross-0':
                 order_vars = {}
@@ -914,7 +917,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                     power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
                     print(power_up_amo)
 
-                    wave_amo = theme_amo + power_up_amo['mac_power'] + power_up_amo['hist_power']
+                    wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
                     
                     # Order Variables
                     order_vars['order_type'] = 'market'
@@ -982,7 +985,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 return {'kings_blessing': False}
 
 
-        return kings_Blessing(trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict)
+        return kings_Blessing(ticker, trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict)
 
     except Exception as e:
         print(e, print_line_of_error(), ticker_time_frame)

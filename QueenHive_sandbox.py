@@ -2778,7 +2778,7 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
     return_view = [] # queenmemory objects in conscience {}
     for ttframe, conscience in ttframe__items.items():
-        queen_return = {'StarName': ttframe}
+        queen_return = {'star': ttframe}
 
         story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
         last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str((len(conscience['waves']['buy_cross-0'].keys()) - 1)) == str(k)][0]
