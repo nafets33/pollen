@@ -199,7 +199,7 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
   
 
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True):
-    gb = GridOptionsBuilder.from_dataframe(data)
+    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
@@ -210,7 +210,6 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
 
     gridOptions = gb.build()
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
-
 
     grid_response = AgGrid(
         data,
@@ -583,10 +582,13 @@ def create_AppRequest_package(request_name, archive_bucket):
     }
 
 
-def ag_grid_main_build(df, default=False, vars=False):
+def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
     if default:
         vars = {'reload_data': False, 'height': 333, 'update_cols': ['Comment'], 
         'update_mode_value': 'MANUAL', 'paginationOn': True}
+    if add_vars:
+        for k, v in add_vars.items():
+            vars[k] = v
     
     grid_response = build_AGgrid_df(data=df, 
     reload_data=vars['reload_data'],
@@ -595,9 +597,10 @@ def ag_grid_main_build(df, default=False, vars=False):
      paginationOn=vars['paginationOn'])
     
     data = grid_response['data']
-    selected = grid_response['selected_rows'] 
-    df_sel = pd.DataFrame(selected)
-    st.write(df_sel)
+    if write_selection:
+        selected = grid_response['selected_rows'] 
+        df_sel = pd.DataFrame(selected)
+        st.write(df_sel)
 
     return df_sel
 
@@ -617,7 +620,7 @@ if option == 'charts':
     day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
     slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
     wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['no'].index('no'))
+    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
 
 
     if frame_option == 'all':
@@ -641,10 +644,10 @@ if option == 'charts':
                     (df.index.year == df_day.year)
                 ].copy() # remove other days       
 
-        if fullstory_option:
+        if fullstory_option == 'yes':
             df_write = df.astype(str)
             # st.dataframe(df_write)
-            ag_grid_main_build(df=df_write, default=True)
+            ag_grid_main_build(df=df_write, default=True, add_vars={'update_mode_value': 'MODEL_CHANGED'})
         
         
         # Main CHART Creation
