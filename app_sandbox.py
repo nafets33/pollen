@@ -407,9 +407,10 @@ def stop_queenbee(APP_requests):
             st.write(test['stop_queen'])
     return True
 
+
 def refresh_queenbee_controls(APP_requests):
     with st.form("refresh QUEEN controls"):
-        checkbox_val = st.checkbox("Stop Queen")
+        checkbox_val = st.checkbox("refresh QUEEN controls")
 
         # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
@@ -437,6 +438,7 @@ def return_image_upon_save():
     st.write("Controls Saved", return_timestamp_string())
     st.image(Image.open(bee_power_image), width=89)
 
+
 def update_QueenControls(APP_requests, control_option, theme_list):
     if control_option.lower() == 'theme':
         with st.form("Update Control"):
@@ -452,8 +454,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
                 return_image_upon_save()
         return True
 
-
-    if control_option.lower() == 'max_profit_wavedeviation':
+    elif control_option.lower() == 'max_profit_wavedeviation':
         st.write("active")
         df = pd.DataFrame(QUEEN['queen_controls']['max_profit_waveDeviation'].items()).astype(str)
         df = df.rename(columns={0: 'star', 1: 'Sell At Devation'})
@@ -476,10 +477,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
             return_image_upon_save()
 
-            # update queen
-            # QUEEN['queen_controls']['max_profit_waveDeviation']    
-
-    if control_option.lower() == 'power_rangers':
+    elif control_option.lower() == 'power_rangers':
         st.write("active")
         # power rangers
         theme_token = st.selectbox('Power Rangers Theme', theme_list, index=theme_list.index('nuetral'))
@@ -527,8 +525,48 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
             return_image_upon_save()
 
+            return True
+
 
         return True
+
+    elif control_option.lower() == 'symbols_stars_tradingmodel':
+        st.write("PENDING WORK")
+        st.write(QUEEN['queen_controls'][control_option])
+        tickers_avail = list(QUEEN['queen_controls'][control_option].keys())
+        ticker_option_qc = st.selectbox("Select Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+        star_avail = list(QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
+        star_option_qc = st.selectbox("Select Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
+
+        for k, v in QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc].items():
+            if k == 'status':
+                st.write(k, v)
+            elif k == 'buyingpower_allocation_LongTerm':
+                st.write(k, v)
+            elif k == 'buyingpower_allocation_ShortTerm':
+                st.write(k, v)
+            elif k == 'power_rangers':
+                st.write("active stars", k, v)
+                df = pd.DataFrame(v)
+                df = df.rename(columns={0: 'star'})
+                grid_response = build_AGgrid_df(data=df, reload_data=False)
+                data = grid_response['data']
+                selected = grid_response['selected_rows'] 
+                df_sel = pd.DataFrame(selected)
+                st.write(df_sel)
+                if len(df_sel) > 0:
+                    add_star_list = df_sel['star'].to_list()
+                    save_button_addranger = st.button("update active star rangers")
+                    if save_button_addranger:
+                        app_req = create_AppRequest_package(request_name='trading_models',  archive_bucket='trading_models_requests')
+                        app_req['star_list'] = add_star_list
+                        APP_requests['trading_models'].append(app_req)
+                        PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+        return True
+        
+    else:
+        st.write("PENDING WORK")
+        st.write(QUEEN['queen_controls'][control_option])
 
 
 def queen_order_update():
@@ -646,8 +684,8 @@ if option == 'charts':
 
         if fullstory_option == 'yes':
             df_write = df.astype(str)
-            # st.dataframe(df_write)
-            ag_grid_main_build(df=df_write, default=True, add_vars={'update_mode_value': 'MODEL_CHANGED'})
+            st.dataframe(df_write)
+            # ag_grid_main_build(df=df_write, default=True, add_vars={'update_mode_value': 'MODEL_CHANGED'})
         
         
         # Main CHART Creation
@@ -687,13 +725,6 @@ if option == 'charts':
             # st.write("waves")
             # waves = STORY_bee[ticker_time_frame]['waves']
             # st.write(waves)
-        
-        if "BTCUSD" in ticker_time_frame:
-            df = POLLENSTORY[ticker_time_frame].copy()
-            df_output = df[['timestamp_est', 'story_index', 'close']].copy()
-            df_output = df_output.sort_values(by='story_index', ascending=False)
-
-            st.write(df_output)
         
         if option3 == "Yes":
             time.sleep(10)

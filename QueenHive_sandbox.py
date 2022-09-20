@@ -2632,6 +2632,8 @@ def init_QUEEN_App():
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],
+    'trading_models': [],
+    'trading_models_requests': [],
     'power_rangers': [],
     'power_rangers_requests': [],
     'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),

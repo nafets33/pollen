@@ -588,7 +588,8 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
         else:
             return {'app_flag': False}    
 
-    
+    elif request_name == 'trading_models':
+        return False    
     else:
         return {'app_flag': False}
 
@@ -887,6 +888,16 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 # Q?confirmation on trigger, should you wait for futher confirmation?
 
                 if crypto:
+                    theme_buyingpower = {
+                    'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
+                    'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
+                    'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
+                    }
+                    
+                    # current wave
+                    current_wave_blocktime = current_wave['wave_blocktime']
+                    current_wave_amo = theme_buyingpower[current_wave_blocktime]
+
                     wave_amo = 10000
 
                     order_vars['order_type'] = 'market'
@@ -915,7 +926,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                     theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
                     
                     power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
-                    print(power_up_amo)
+                    print("POWERUP !!!!! ", power_up_amo)
 
                     wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
                     
@@ -948,9 +959,9 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                     kings_blessing = False
                 else:
                     theme_buyingpower = {
-                    'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
-                    'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
-                    'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
+                    'morning_9-11' : pollen_theme_dict[theme][star_time]['wavedown']['morning_9-11'],
+                    'lunch_11-2' : pollen_theme_dict[theme][star_time]['wavedown']['lunch_11-2'],
+                    'afternoon_2-4' : pollen_theme_dict[theme][star_time]['wavedown']['afternoon_2-4'],
                     }
                     
                     # current wave
