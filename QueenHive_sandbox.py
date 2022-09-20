@@ -2720,7 +2720,7 @@ def logging_log_message(log_type='info', msg='default', error='none', origin_fun
 def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
     # len and profits
     if ttframe_wave_trigbee:
-        wave_series = STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0']
+        wave_series = STORY_bee[ttframe_wave_trigbee]['waves']['buy_cross-0']
         upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
         df = pd.DataFrame(upwave_dict)
         df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
@@ -2744,17 +2744,17 @@ def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
                     groups = groups.rename(columns={'length': 'avg_length'})
                     d_return[symbol_star][trigbee] = groups
     
-    d_return2 = {} # every star and the data by grouping
-    for symbol_star, data in STORY_bee.items():
-        d_return[symbol_star] = {}
-        waves = data['waves']['story']
-        df = pd.DataFrame(waves)
-        # df = df[~df['macd_wave_length'] == 'NULL'].copy()
-        if len(df) > 0:
-            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
-            groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-            groups = groups.rename(columns={'length': 'avg_length'})
-            d_return[symbol_star][trigbee] = groups
+    # d_return2 = {} # every star and the data by grouping
+    # for symbol_star, data in STORY_bee.items():
+    #     d_return[symbol_star] = {}
+    #     waves = data['waves']['story']
+    #     df = pd.DataFrame(waves)
+    #     # df = df[~df['macd_wave_length'] == 'NULL'].copy()
+    #     if len(df) > 0:
+    #         df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+    #         groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+    #         groups = groups.rename(columns={'length': 'avg_length'})
+    #         d_return[symbol_star][trigbee] = groups
 
 
     return {'df': d_return}
@@ -2779,34 +2779,49 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
     return_view = [] # queenmemory objects in conscience {}
+    return_agg_view = []
     for ttframe, conscience in ttframe__items.items():
         queen_return = {'star': ttframe}
+
+        trigbees = ['buy_cross-0', 'sell_cross-0']
+
+        buys = conscience['waves']['buy_cross-0']
+        # max profit
+
 
         story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
         last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str((len(conscience['waves']['buy_cross-0'].keys()) - 1)) == str(k)][0]
         last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str((len(conscience['waves']['sell_cross-0'].keys()) - 1)) == str(k)][0]
         p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
 
+        all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
+        all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
+
+        # ALL waves groups
+        trigbee_waves_analzyed = analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+        return_agg_view.append(trigbee_waves_analzyed)
+
+        # Current Wave View
         if 'buy' in story['macd_state']:
             current_wave = last_buy_wave
         else:
             current_wave = last_sell_wave
-        
         current_wave_view = {k: v for (k,v) in current_wave.items() if k in wave_view}
-
         obj_return = {**story, **current_wave_view}
         obj_return_ = {**obj_return, **p_story}
         queen_return = {**queen_return, **obj_return_}
-        
+        """append view"""
         return_view.append(queen_return)
     
     
     df =  pd.DataFrame(return_view)
+    df_agg = pd.DataFrame(return_agg_view)
     # map in ranger color
     # df['mac_ranger'] = df['current_mac_tier'].apply(lambda x: power_ranger_mapping(x))
     # df['hist_ranger'] = df['current_hist_tier'].apply(lambda x: power_ranger_mapping(x))
-    
-    return {'df': df}
+
+
+    return {'df': df, 'df_agg': df_agg}
 
 
 def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False):

@@ -1789,7 +1789,7 @@ def order_management(api, QUEEN, APP_requests):
 
 
 def refresh_QUEEN_starTickers(QUEEN, STORY_bee):
-    ticker_allowed = ['SPY']
+    ticker_allowed = ['SPY', 'ETHUSD']
     now_time = datetime.datetime.now().astimezone(est)
 
     original_state = QUEEN['heartbeat']['available_tickers']

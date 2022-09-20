@@ -806,16 +806,28 @@ if option == 'queen':
 
         # View Stars
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Stars In Heaven</p>'
-        st.markdown(new_title, unsafe_allow_html=True)        
-        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000) 
+        st.markdown(new_title, unsafe_allow_html=True)
 
+        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
+        # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df_agg'], width=2000) 
+        from QueenHive import analze_waves
 
         # View Star and Waves
         m = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
         
         for ttframe, knowledge in m.items():
-            
+            st.write(analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe))
+
+            df = pd.DataFrame(analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
+            # agg_view = analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+            # df = pd.DataFrame(agg_view)
+            st.write(datetime.datetime.now())
+            st.dataframe(df)
+            # agg_view = pd.DataFrame(agg_view)
+            # agg_view = agg_view.astype(str)
+            # st.dataframe(agg_view)
+
             st.write(ttframe)
             story_sort = knowledge['story']
             st.write(story_sort)
