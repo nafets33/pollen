@@ -2705,7 +2705,7 @@ def logging_log_message(log_type='info', msg='default', error='none', origin_fun
         return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
 
 
-def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
+def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
     # len and profits
     if ttframe_wave_trigbee:
         wave_series = STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0']

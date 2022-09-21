@@ -90,56 +90,63 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U' afterhours
 
-# keys
-api_key_id = os.environ.get('APCA_API_KEY_ID')
-api_secret = os.environ.get('APCA_API_SECRET_KEY')
-base_url = "https://api.alpaca.markets"
+try:
+    # keys
+    api_key_id = os.environ.get('APCA_API_KEY_ID')
+    api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    base_url = "https://api.alpaca.markets"
 
 
-def return_api_keys(base_url, api_key_id, api_secret, prod=True):
+    def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
-    # api_key_id = os.environ.get('APCA_API_KEY_ID')
-    # api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    # base_url = "https://api.alpaca.markets"
-    # base_url_paper = "https://paper-api.alpaca.markets"
-    # feed = "sip"  # change to "sip" if you have a paid account
-    
-    if prod == False:
-        rest = AsyncRest(key_id=api_key_id,
-                    secret_key=api_secret)
+        # api_key_id = os.environ.get('APCA_API_KEY_ID')
+        # api_secret = os.environ.get('APCA_API_SECRET_KEY')
+        # base_url = "https://api.alpaca.markets"
+        # base_url_paper = "https://paper-api.alpaca.markets"
+        # feed = "sip"  # change to "sip" if you have a paid account
+        
+        if prod == False:
+            rest = AsyncRest(key_id=api_key_id,
+                        secret_key=api_secret)
 
-        api = tradeapi.REST(key_id=api_key_id,
-                    secret_key=api_secret,
-                    base_url=URL(base_url), api_version='v2')
-    else:
-        rest = AsyncRest(key_id=api_key_id,
-                            secret_key=api_secret)
+            api = tradeapi.REST(key_id=api_key_id,
+                        secret_key=api_secret,
+                        base_url=URL(base_url), api_version='v2')
+        else:
+            rest = AsyncRest(key_id=api_key_id,
+                                secret_key=api_secret)
 
-        api = tradeapi.REST(key_id=api_key_id,
-                            secret_key=api_secret,
-                            base_url=URL(base_url), api_version='v2')
-    return [{'rest': rest, 'api': api}]
+            api = tradeapi.REST(key_id=api_key_id,
+                                secret_key=api_secret,
+                                base_url=URL(base_url), api_version='v2')
+        return [{'rest': rest, 'api': api}]
 
-keys = return_api_keys(base_url, api_key_id, api_secret)
+    keys = return_api_keys(base_url, api_key_id, api_secret)
 
-rest = keys[0]['rest']
-api = keys[0]['api']
+    rest = keys[0]['rest']
+    api = keys[0]['api']
 
-# Paper
-api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-base_url_paper = "https://paper-api.alpaca.markets"
-keys_paper = return_api_keys(base_url=base_url_paper, 
-    api_key_id=api_key_id_paper, 
-    api_secret=api_secret_paper,
-    prod=False)
-rest_paper = keys_paper[0]['rest']
-api_paper = keys_paper[0]['api']
+    # Paper
+    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+    base_url_paper = "https://paper-api.alpaca.markets"
+    keys_paper = return_api_keys(base_url=base_url_paper, 
+        api_key_id=api_key_id_paper, 
+        api_secret=api_secret_paper,
+        prod=False)
+    rest_paper = keys_paper[0]['rest']
+    api_paper = keys_paper[0]['api']
 
-"""# Dates """
-current_day = api.get_clock().timestamp.date().isoformat()
-trading_days = api.get_calendar()
-trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+
+    """# Dates """
+    # current_day = api.get_clock().timestamp.date().isoformat()
+    # trading_days = api.get_calendar()
+    # trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+
+except Exception as e:
+    print("offline no connection")
+
+
 
 start_date = datetime.datetime.now().strftime('%Y-%m-%d')
 end_date = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -1076,13 +1083,6 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
     try:
         s = datetime.datetime.now()
         error_dict = {}
-        # ndays = 0 # today 1=yesterday...  # TEST
-        # timeframe = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
-        # symbol = 'SPY'  # TEST
-        # current_day = api.get_clock().timestamp.date().isoformat()  # TEST MOVED TO GLOBAL
-        # trading_days = api.get_calendar()  # TEST MOVED TO GLOBAL
-        # trading_days_df = pd.DataFrame([day._raw for day in trading_days])  # TEST MOVED TO GLOBAL
-        # est = pytz.timezone("US/Eastern") # GlovalVar
 
         try:
             # Fetch bars for prior ndays and then add on today
@@ -2717,8 +2717,11 @@ def logging_log_message(log_type='info', msg='default', error='none', origin_fun
         return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
 
 
-def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
+def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
     # len and profits
+    groupby_agg_dict = {'winners_n': 'sum', 'losers_n': 'sum', 'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}
+    # groupby_agg_dict = {'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}
+
     if ttframe_wave_trigbee:
         wave_series = STORY_bee[ttframe_wave_trigbee]['waves']['buy_cross-0']
         upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
@@ -2726,23 +2729,59 @@ def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
         df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
         groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
         df_return = groups.rename(columns={'length': 'avg_length'})
-        return {'df': df_return}
 
-    d_return = {} # every star and the data by grouping
-    for symbol_star, data in STORY_bee.items():
-        d_return[symbol_star] = {}
-        waves = data['waves']
-        for trigbee, wave in waves.items():
-            if trigbee == 'story':
-                continue
-            else:
-                d_wave = [wave_data for (k, wave_data) in wave.items() if k != '0']
-                df = pd.DataFrame(d_wave)
-                if len(df) > 0:
-                    df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
-                    groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-                    groups = groups.rename(columns={'length': 'avg_length'})
-                    d_return[symbol_star][trigbee] = groups
+        wave_series = STORY_bee[ttframe_wave_trigbee]['waves']['sell_cross-0']
+        upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
+        df = pd.DataFrame(upwave_dict)
+        df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+        df['winners_n'] = np.where(df['maxprofit'] > 0, 1, 0)
+        df['losers_n'] = np.where(df['maxprofit'] < 0, 1, 0)
+        groups = df.groupby(['wave_blocktime']).agg({'winners_n': 'sum', 'losers_n': 'sum', 'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+        df_return_wavedown = groups.rename(columns={'length': 'avg_length'})
+        
+        return {'df': df_return, 'df_wavedown': df_return_wavedown}
+    else:
+        d_return = {} # every star and the data by grouping
+        d_agg_view_return = {} # every star and the data by grouping
+
+        for symbol_star, data in STORY_bee.items():
+            try:
+                d_return[symbol_star] = {}
+                d_agg_view_return[symbol_star] = {}
+                
+                waves = data['waves']
+                for trigbee, wave in waves.items():
+                    if trigbee == 'story':
+                        continue
+                    else:
+                        d_wave = [wave_data for (k, wave_data) in wave.items() if k != '0']
+                        df = pd.DataFrame(d_wave)
+                        if len(df) > 0:
+                            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+                            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+                            df['winners_n'] = np.where(df['maxprofit'] > 0, 1, 0)
+                            df['losers_n'] = np.where(df['maxprofit'] < 0, 1, 0)
+                            
+                            groups = df.groupby(['wave_blocktime']).agg(groupby_agg_dict).reset_index()
+                            groups = groups.rename(columns={'length': 'avg_length'})
+                            d_return[symbol_star][trigbee] = groups
+
+                            groups = df.groupby(['trigbee', 'wave_blocktime']).agg(groupby_agg_dict).reset_index()
+                            groups = groups.rename(columns={'length': 'avg_length'})
+                            groups['ticker_time_frame'] = symbol_star
+                            d_agg_view_return[symbol_star][f'{trigbee}'] = groups
+
+
+            except Exception as e:
+                print(e)
+        
+
+        # 
+    
+        df_return = pd.DataFrame(d_return)
+        df_agg_view_return = pd.DataFrame(d_agg_view_return)
+        df_agg_view_return = df_agg_view_return.T
+
     
     # d_return2 = {} # every star and the data by grouping
     # for symbol_star, data in STORY_bee.items():
@@ -2757,7 +2796,7 @@ def analze_waves(STORY_bee, ttframe_wave_trigbee=False):
     #         d_return[symbol_star][trigbee] = groups
 
 
-    return {'df': d_return}
+    return {'df': d_return, 'd_agg_view_return': d_agg_view_return,'df_agg_view_return': df_agg_view_return}
 
 
 # def waves_storyview(wave_series):
@@ -2798,7 +2837,7 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
         all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
 
         # ALL waves groups
-        trigbee_waves_analzyed = analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+        trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
         return_agg_view.append(trigbee_waves_analzyed)
 
         # Current Wave View

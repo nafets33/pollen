@@ -1,7 +1,7 @@
 from asyncore import poll
 from turtle import width
-import pandas as pd  # pip install pandas openpyxl
-import plotly.express as px  # pip install plotly-express
+import pandas as pd
+# import plotly.express as px  # pip install plotly-express
 import streamlit as st  # pip install streamlit
 # QueenBee
 import logging
@@ -45,7 +45,6 @@ import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
-from QueenHive import KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 import argparse
 
@@ -54,6 +53,20 @@ if 'sandbox' in scriptname:
     prod = False
 else:
     prod = True
+
+def createParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default="queen")
+    parser.add_argument ('-prod', default='false')
+    return parser
+
+if prod:
+    from QueenHive import analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+else:
+    from QueenHive_sandbox import analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+
+
+
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db_local')
@@ -67,6 +80,7 @@ st.set_page_config(
      page_icon=image,
      layout="wide",
      initial_sidebar_state="expanded",
+    #  Theme='Light'
     #  menu_items={
     #      'Get Help': 'https://www.extremelycoolapp.com/help',
     #      'Report a bug': "https://www.extremelycoolapp.com/bug",
@@ -805,24 +819,78 @@ if option == 'queen':
         # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
 
         # View Stars
-        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Stars In Heaven</p>'
-        st.markdown(new_title, unsafe_allow_html=True)
-
+        st.markdown('<div style="text-align: center;color:Yellow; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
         st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
         # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df_agg'], width=2000) 
-        from QueenHive import analze_waves
 
         # View Star and Waves
-        m = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
+        ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
-        
-        for ttframe, knowledge in m.items():
-            st.write(analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe))
 
-            df = pd.DataFrame(analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
-            # agg_view = analze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
-            # df = pd.DataFrame(agg_view)
-            st.write(datetime.datetime.now())
+        # Analyze Waves
+        st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
+        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df'])
+        df = df.astype(str)
+        st.write(df)
+
+        # Summary of all ticker_time_frames
+        st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
+        st.markdown(new_title, unsafe_allow_html=True)
+        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
+        df = df.astype(str)
+        st.write(df)
+        
+        st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
+        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']
+        
+        for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+            ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+            buys = [data[trigbee] for k, data in ticker_selection.items()]
+            df_buys = pd.concat(buys, axis=0)
+            col_view = ['ticker_time_frame'] + [i for i in df_buys.columns if i not in 'ticker_time_frame']
+            df_buys = df_buys[col_view]
+            # st.write(trigbee)
+            if 'buy' in trigbee:
+                st.markdown('<div style="text-align: center;color:Green; font-size: 23px;">{}</div>'.format(trigbee), unsafe_allow_html=True)
+            else:
+                st.markdown('<div style="text-align: center;color:Red; font-size: 23px;">{}</div>'.format(trigbee), unsafe_allow_html=True)
+            st.dataframe(df_buys)
+
+        # ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+        # buys = [data['buy_cross-0'] for k, data in ticker_selection.items()]
+        # df_buys = pd.concat(buys, axis=0)
+
+        
+        # [st.write(k, v) for k,v in v.items()]
+        # df = pd.DataFrame(dict_list_ttf[ticker_option])
+        # df = df.astype(str)
+        # df = df.T
+        # st.write(df)
+
+        # d_agg_view_return[ticker_time_frame]["buy_cross-0"]
+        # avail_trigbees = df.columns.to_list()
+        # for trigbee in avail_trigbees:
+        #     trigbee_wave = df[trigbee]
+            
+        
+        for ttframe, knowledge in ticker_storys.items():
+            # WaveUp
+            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
+
+            # WaveDown
+            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
+            df = pd.DatyaFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
+            
+            # view details
+            st.write("VIEW TRANSPOSE")
+            df = df.T
             st.dataframe(df)
             # agg_view = pd.DataFrame(agg_view)
             # agg_view = agg_view.astype(str)
