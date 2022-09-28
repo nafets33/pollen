@@ -151,8 +151,14 @@ api_paper = keys_paper[0]['api']
 
 """# Dates """
 # current_day = api.get_clock().timestamp.date().isoformat()
+# trading_days = api.get_calendar()
+# trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+
+current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
+
 
 current_day = datetime.datetime.now().day
 current_month = datetime.datetime.now().month
@@ -254,6 +260,138 @@ if prod: # Return Ticker and Acct Info
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
 
 ####<>///<>///<>///<>///<>/// ALL FUNCTIONS NECTOR ####<>///<>///<>///<>///<>///
+### BARS
+def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False):
+    try:
+        s = datetime.datetime.now()
+        error_dict = {}
+
+        try:
+            # Fetch bars for prior ndays and then add on today
+            # s_fetch = datetime.datetime.now()
+            if edate_input != False:
+                end_date = edate_input
+            else:
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+            if sdate_input != False:
+                start_date = sdate_input
+            else:
+                if ndays == 0:
+                    start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                else:
+                    # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                    trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
+                    start_date = trading_days_df_.tail(ndays).head(1).date
+                    start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+
+            symbol_data = api.get_bars(symbol, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
+                                        adjustment='all').df
+
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[symbol] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[symbol] = e   
+
+        # set index to EST time
+        symbol_data['index_timestamp'] = symbol_data.index
+        symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+        del symbol_data['index_timestamp']
+        # symbol_data['timestamp'] = symbol_data['timestamp_est']
+        # symbol_data = symbol_data.reset_index()
+        symbol_data = symbol_data.set_index('timestamp_est')
+        # del symbol_data['timestamp']
+        # symbol_data['timestamp_est'] = symbol_data.index
+        symbol_data['symbol'] = symbol
+
+        # Make two dataframes one with just market hour data the other with after hour data
+        if "day" in timeframe:
+            market_hours_data = symbol_data  # keeping as copy since main func will want to return markethours
+            after_hours_data =  None
+        else:
+            market_hours_data = symbol_data.between_time('9:30', '16:00')
+            market_hours_data = market_hours_data.reset_index()
+            after_hours_data =  symbol_data.between_time('16:00', '9:30')
+            after_hours_data = after_hours_data.reset_index()          
+
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+
+        return [True, symbol_data, market_hours_data, after_hours_data]
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+# r = return_bars(symbol='SPY', timeframe='1Minute', ndays=0, trading_days_df=trading_days_df)
+
+
+def return_bars_list(ticker_list, chart_times):
+    try:
+        s = datetime.datetime.now()
+        # ticker_list = ['SPY', 'QQQ']
+        # chart_times = {
+        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
+        #     "1Day_1Year": 250
+        #     }
+        return_dict = {}
+        error_dict = {}
+
+        try:
+            for charttime, ndays in chart_times.items():
+                timeframe=charttime.split("_")[0] # '1Minute_1Day'
+                # if timeframe.lower() == '1minute':
+                #     start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d") # get yesterdays trades as well
+                # else:
+                #     start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                
+
+                trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
+                start_date = trading_days_df_.tail(ndays).head(1).date
+                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+
+                # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+                                            start=start_date,
+                                            end=end_date,
+                                            adjustment='all').df
+                
+                # set index to EST time
+                symbol_data['index_timestamp'] = symbol_data.index
+                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+                del symbol_data['index_timestamp']
+                # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                symbol_data = symbol_data.reset_index(drop=True)
+                # symbol_data = symbol_data.set_index('timestamp')
+                # del symbol_data['timestamp']
+                # symbol_data['timestamp_est'] = symbol_data.index
+                return_dict[charttime] = symbol_data
+
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[ticker_list] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[ticker_list] = e      
+
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        return [True, return_dict]
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+        return [False, e]
+# r = return_bars_list(ticker_list, chart_times)
 
 
 def close_worker(queens_chess_piece):

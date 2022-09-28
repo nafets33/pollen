@@ -1,7 +1,7 @@
 from asyncore import poll
 from turtle import width
-import pandas as pd  # pip install pandas openpyxl
-import plotly.express as px  # pip install plotly-express
+import pandas as pd
+# import plotly.express as px  # pip install plotly-express
 import streamlit as st  # pip install streamlit
 # QueenBee
 import logging
@@ -45,7 +45,6 @@ import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
-from QueenHive import KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 import json
 import argparse
 
@@ -54,6 +53,20 @@ if 'sandbox' in scriptname:
     prod = False
 else:
     prod = True
+
+def createParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default="queen")
+    parser.add_argument ('-prod', default='false')
+    return parser
+
+if prod:
+    from QueenHive import analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+else:
+    from QueenHive_sandbox import analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+
+
+
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db_local')
@@ -67,6 +80,7 @@ st.set_page_config(
      page_icon=image,
      layout="wide",
      initial_sidebar_state="expanded",
+    #  Theme='Light'
     #  menu_items={
     #      'Get Help': 'https://www.extremelycoolapp.com/help',
     #      'Report a bug': "https://www.extremelycoolapp.com/bug",
@@ -199,7 +213,7 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
   
 
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True):
-    gb = GridOptionsBuilder.from_dataframe(data)
+    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
@@ -210,7 +224,6 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
 
     gridOptions = gb.build()
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
-
 
     grid_response = AgGrid(
         data,
@@ -362,7 +375,7 @@ ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory'))
+option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory', 'app'))
 st.sidebar.write("<<<('')>>>")
 # st.header(option)
 
@@ -393,6 +406,7 @@ def pollenstory_view(POLLENSTORY):
     # st.write("Outside the form")
     return True
 
+
 def stop_queenbee(APP_requests):
     with st.form("stop queen"):
         checkbox_val = st.checkbox("Stop Queen")
@@ -409,9 +423,36 @@ def stop_queenbee(APP_requests):
     return True
 
 
+def refresh_queenbee_controls(APP_requests):
+    with st.form("refresh QUEEN controls"):
+        checkbox_val = st.checkbox("refresh QUEEN controls")
+
+        # Every form must have a submit button.
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            ("checkbox", checkbox_val)
+            
+            APP_requests['queen_controls_reset'] = str(checkbox_val).lower()
+            
+            # app_request_package = create_AppRequest_package(request_name='queen_controls_reset', archive_bucket='misc_bucket')
+            # app_request_package['control_name'] = control_option
+            # control_upate = {'control_update' : dict(zip(df_sel['star'], df_sel['Update_Value_update']))}
+            # app_request_package.update(control_upate)
+            # Save
+            # st.write(app_request_package)
+            # APP_requests['queen_controls_reset'].append(app_request_package)
+            # APP_requests['queen_controls_lastupdate'] = datetime.datetime.now().astimezone(est)
+            # PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            
+    return True
+
+
 def return_image_upon_save():
     st.write("Controls Saved", return_timestamp_string())
     st.image(Image.open(bee_power_image), width=89)
+
 
 def update_QueenControls(APP_requests, control_option, theme_list):
     if control_option.lower() == 'theme':
@@ -428,8 +469,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
                 return_image_upon_save()
         return True
 
-
-    if control_option.lower() == 'max_profit_wavedeviation':
+    elif control_option.lower() == 'max_profit_wavedeviation':
         st.write("active")
         df = pd.DataFrame(QUEEN['queen_controls']['max_profit_waveDeviation'].items()).astype(str)
         df = df.rename(columns={0: 'star', 1: 'Sell At Devation'})
@@ -452,10 +492,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
             return_image_upon_save()
 
-            # update queen
-            # QUEEN['queen_controls']['max_profit_waveDeviation']    
-
-    if control_option.lower() == 'power_rangers':
+    elif control_option.lower() == 'power_rangers':
         st.write("active")
         # power rangers
         theme_token = st.selectbox('Power Rangers Theme', theme_list, index=theme_list.index('nuetral'))
@@ -503,8 +540,48 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
             return_image_upon_save()
 
+            return True
+
 
         return True
+
+    elif control_option.lower() == 'symbols_stars_tradingmodel':
+        st.write("PENDING WORK")
+        st.write(QUEEN['queen_controls'][control_option])
+        tickers_avail = list(QUEEN['queen_controls'][control_option].keys())
+        ticker_option_qc = st.selectbox("Select Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+        star_avail = list(QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
+        star_option_qc = st.selectbox("Select Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
+
+        for k, v in QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc].items():
+            if k == 'status':
+                st.write(k, v)
+            elif k == 'buyingpower_allocation_LongTerm':
+                st.write(k, v)
+            elif k == 'buyingpower_allocation_ShortTerm':
+                st.write(k, v)
+            elif k == 'power_rangers':
+                st.write("active stars", k, v)
+                df = pd.DataFrame(v)
+                df = df.rename(columns={0: 'star'})
+                grid_response = build_AGgrid_df(data=df, reload_data=False)
+                data = grid_response['data']
+                selected = grid_response['selected_rows'] 
+                df_sel = pd.DataFrame(selected)
+                st.write(df_sel)
+                if len(df_sel) > 0:
+                    add_star_list = df_sel['star'].to_list()
+                    save_button_addranger = st.button("update active star rangers")
+                    if save_button_addranger:
+                        app_req = create_AppRequest_package(request_name='trading_models',  archive_bucket='trading_models_requests')
+                        app_req['star_list'] = add_star_list
+                        APP_requests['trading_models'].append(app_req)
+                        PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+        return True
+        
+    else:
+        st.write("PENDING WORK")
+        st.write(QUEEN['queen_controls'][control_option])
 
 
 def queen_order_update():
@@ -558,10 +635,13 @@ def create_AppRequest_package(request_name, archive_bucket):
     }
 
 
-def ag_grid_main_build(df, default=False, vars=False):
+def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
     if default:
         vars = {'reload_data': False, 'height': 333, 'update_cols': ['Comment'], 
         'update_mode_value': 'MANUAL', 'paginationOn': True}
+    if add_vars:
+        for k, v in add_vars.items():
+            vars[k] = v
     
     grid_response = build_AGgrid_df(data=df, 
     reload_data=vars['reload_data'],
@@ -570,9 +650,10 @@ def ag_grid_main_build(df, default=False, vars=False):
      paginationOn=vars['paginationOn'])
     
     data = grid_response['data']
-    selected = grid_response['selected_rows'] 
-    df_sel = pd.DataFrame(selected)
-    st.write(df_sel)
+    if write_selection:
+        selected = grid_response['selected_rows'] 
+        df_sel = pd.DataFrame(selected)
+        st.write(df_sel)
 
     return df_sel
 
@@ -592,7 +673,7 @@ if option == 'charts':
     day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
     slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
     wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['no'].index('no'))
+    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
 
 
     if frame_option == 'all':
@@ -616,10 +697,10 @@ if option == 'charts':
                     (df.index.year == df_day.year)
                 ].copy() # remove other days       
 
-        if fullstory_option:
+        if fullstory_option == 'yes':
             df_write = df.astype(str)
-            # st.dataframe(df_write)
-            ag_grid_main_build(df=df_write, default=True)
+            st.dataframe(df_write)
+            # ag_grid_main_build(df=df_write, default=True, add_vars={'update_mode_value': 'MODEL_CHANGED'})
         
         
         # Main CHART Creation
@@ -659,13 +740,6 @@ if option == 'charts':
             # st.write("waves")
             # waves = STORY_bee[ticker_time_frame]['waves']
             # st.write(waves)
-        
-        if "BTCUSD" in ticker_time_frame:
-            df = POLLENSTORY[ticker_time_frame].copy()
-            df_output = df[['timestamp_est', 'story_index', 'close']].copy()
-            df_output = df_output.sort_values(by='story_index', ascending=False)
-
-            st.write(df_output)
         
         if option3 == "Yes":
             time.sleep(10)
@@ -746,17 +820,116 @@ if option == 'queen':
         # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
 
         # View Stars
-        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Stars In Heaven</p>'
-        st.markdown(new_title, unsafe_allow_html=True)        
-        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000) 
-
+        st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
+        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
+        # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df_agg'], width=2000) 
 
         # View Star and Waves
-        m = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
+        ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
+
+        # Analyze Waves
+        st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
+        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df']) 
+        df = df.astype(str)
+        st.write(df)
+
+        # Summary of all ticker_time_frames
+        st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
+        st.markdown(new_title, unsafe_allow_html=True)
+        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
+        df = df.astype(str)
+        st.write(df)
         
-        for ttframe, knowledge in m.items():
+        st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
+        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
+
+        for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+            ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+            buys = [data[trigbee] for k, data in ticker_selection.items()]
+            df_buys = pd.concat(buys, axis=0)
+            col_view = ['ticker_time_frame'] + [i for i in df_buys.columns if i not in 'ticker_time_frame']
+            df_buys = df_buys[col_view]
+            # st.write(trigbee)
+            if 'buy' in trigbee:
+                st.markdown('<div style="text-align: center;color:Green; font-size: 23px;">{}{}</div>'.format("trigbee : ", trigbee), unsafe_allow_html=True)
+            else:
+                st.markdown('<div style="text-align: center;color:Red; font-size: 23px;">{}{}</div>'.format("trigbee : ", trigbee), unsafe_allow_html=True)
+            # df_buys["maxprofit"] = df_buys['maxprofit'].map("{:.2f}".format)
+            st.dataframe(df_buys)
+
+            # Top Winners 
+            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_buys['ticker_time_frame'].iloc[-1])['df_bestwaves']
+            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            st.dataframe(df_bestwaves)
+
+        # ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+        # buys = [data['buy_cross-0'] for k, data in ticker_selection.items()]
+        # df_buys = pd.concat(buys, axis=0)
+
+        
+        # [st.write(k, v) for k,v in v.items()]
+        # df = pd.DataFrame(dict_list_ttf[ticker_option])
+        # df = df.astype(str)
+        # df = df.T
+        # st.write(df)
+
+        # d_agg_view_return[ticker_time_frame]["buy_cross-0"]
+        # avail_trigbees = df.columns.to_list()
+        # for trigbee in avail_trigbees:
+        #     trigbee_wave = df[trigbee]
+
+        def buzzz_linebreak(icon=">>>", size=15):
+            line_break = str([icon for i in range(size)])
+            return st.write(line_break)
+
+        for ttframe, knowledge in ticker_storys.items():
+            # with st.form(str(ttframe)):
+            # WaveUp
+            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
+
+            # Top Winners
+            buzzz_linebreak()
+            df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
+            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
+            df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
+            df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
+            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            st.write('top buy waves', df_bestwaves)
+            st.write('top sell waves', df_bestwaves_sell)
+            st.write('top day buy waves', df_day_bestwaves)
+            st.write('top day buy/sell waves', df_best_buy__sell__waves)
+
+            buzzz_linebreak()
+
+            # Today Wave Up
+            buzzz_linebreak()
+            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
+            buzzz_linebreak()
+
+            # WaveDown
+            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
             
+            # view details
+            st.write("VIEW TRANSPOSE")
+            df = df.T
+            st.dataframe(df)
+            # agg_view = pd.DataFrame(agg_view)
+            # agg_view = agg_view.astype(str)
+            # st.dataframe(agg_view)
+
             st.write(ttframe)
             story_sort = knowledge['story']
             st.write(story_sort)
@@ -824,10 +997,11 @@ if option == 'signal':
         with col1:
             st.write('Queen Controls')
             st.write(QUEEN['queen_controls'])
-            stop_queenbee(APP_requests)
+            stop_queenbee(APP_requests=APP_requests)
         with col2:
             st.write("HeartBeat")
             st.write(QUEEN['heartbeat'])
+            refresh_queenbee_controls(APP_requests=APP_requests)
 
         contorls = list(QUEEN['queen_controls'].keys())
         control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
@@ -1108,4 +1282,6 @@ if option == 'signal':
                 st.write(data['buy_orders'])
 
 
+if option == 'app':
+    st.write(APP_requests['queen_controls_reset'])
 ##### END ####

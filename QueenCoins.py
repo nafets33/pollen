@@ -140,6 +140,121 @@ current_year = datetime.datetime.now().year
 
 
 ####<>///<>///<>///<>///<>/// ALL FUNCTIONS NECTOR ####<>///<>///<>///<>///<>///
+### BARS
+def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_input=False):
+    try:
+        s = datetime.datetime.now()
+        error_dict = {}
+        # ndays = 0 # today 1=yesterday...  # TEST
+        # timeframe = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
+        # symbol = 'BTCUSD'  # TEST
+
+        try:
+            # Fetch bars for prior ndays and then add on today
+            # s_fetch = datetime.datetime.now()
+            if edate_input != False:
+                end_date = edate_input
+            else:
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+            if sdate_input != False:
+                start_date = sdate_input
+            else:
+                if ndays == 0:
+                    start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                else:
+                    start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+
+            # start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+            symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
+                                        exchanges=exchange).df
+
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[symbol] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[symbol] = e   
+
+        # set index to EST time
+        symbol_data['index_timestamp'] = symbol_data.index
+        symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+        del symbol_data['index_timestamp']
+        symbol_data = symbol_data.reset_index()
+        symbol_data['symbol'] = symbol       
+
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        return {'resp': True, "df": symbol_data}
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+# r = return_bars(symbol='BTCUSD', timeframe='1Minute', ndays=0, exchange="CBSE")
+
+def return_bars_list(ticker_list, chart_times, exchange):
+    try:
+        s = datetime.datetime.now()
+        # ticker_list = ['BTCUSD', 'ETHUSD']
+        # chart_times = {
+        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
+        #     "1Day_1Year": 250
+        #     }
+        return_dict = {}
+        error_dict = {}
+
+        try:
+            for charttime, ndays in chart_times.items():
+                timeframe=charttime.split("_")[0] # '1Minute_1Day'
+                # if timeframe.lower() == '1minute':
+                    # start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d") # get yesterdays trades as well
+                # else:
+                #     start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
+                                            start=start_date,
+                                            end=end_date,
+                                            exchanges=exchange).df
+                
+                # set index to EST time
+                symbol_data['index_timestamp'] = symbol_data.index
+                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+                del symbol_data['index_timestamp']
+                # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                symbol_data = symbol_data.reset_index(drop=True)
+                # symbol_data = symbol_data.set_index('timestamp')
+                # del symbol_data['timestamp']
+                # symbol_data['timestamp_est'] = symbol_data.index
+                return_dict[charttime] = symbol_data
+
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[ticker_list] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[ticker_list] = e      
+
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        return {'resp': True, 'return': return_dict}
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+        return [False, e]
+# r = return_bars_list(ticker_list, chart_times)
 
 
 def return_getbars_WithIndicators(bars_data, MACD):

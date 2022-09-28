@@ -375,7 +375,7 @@ ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 
 option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory'))
+option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory', 'app'))
 st.sidebar.write("<<<('')>>>")
 # st.header(option)
 
@@ -405,6 +405,7 @@ def pollenstory_view(POLLENSTORY):
 
     # st.write("Outside the form")
     return True
+
 
 def stop_queenbee(APP_requests):
     with st.form("stop queen"):
@@ -819,7 +820,7 @@ if option == 'queen':
         # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
 
         # View Stars
-        st.markdown('<div style="text-align: center;color:Yellow; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
         st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
         # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df_agg'], width=2000) 
 
@@ -829,7 +830,7 @@ if option == 'queen':
 
         # Analyze Waves
         st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
-        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df'])
+        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df']) 
         df = df.astype(str)
         st.write(df)
 
@@ -841,8 +842,8 @@ if option == 'queen':
         st.write(df)
         
         st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
-        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']
-        
+        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
+
         for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
             ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
             buys = [data[trigbee] for k, data in ticker_selection.items()]
@@ -851,10 +852,16 @@ if option == 'queen':
             df_buys = df_buys[col_view]
             # st.write(trigbee)
             if 'buy' in trigbee:
-                st.markdown('<div style="text-align: center;color:Green; font-size: 23px;">{}</div>'.format(trigbee), unsafe_allow_html=True)
+                st.markdown('<div style="text-align: center;color:Green; font-size: 23px;">{}{}</div>'.format("trigbee : ", trigbee), unsafe_allow_html=True)
             else:
-                st.markdown('<div style="text-align: center;color:Red; font-size: 23px;">{}</div>'.format(trigbee), unsafe_allow_html=True)
+                st.markdown('<div style="text-align: center;color:Red; font-size: 23px;">{}{}</div>'.format("trigbee : ", trigbee), unsafe_allow_html=True)
+            # df_buys["maxprofit"] = df_buys['maxprofit'].map("{:.2f}".format)
             st.dataframe(df_buys)
+
+            # Top Winners 
+            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_buys['ticker_time_frame'].iloc[-1])['df_bestwaves']
+            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            st.dataframe(df_bestwaves)
 
         # ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
         # buys = [data['buy_cross-0'] for k, data in ticker_selection.items()]
@@ -871,9 +878,13 @@ if option == 'queen':
         # avail_trigbees = df.columns.to_list()
         # for trigbee in avail_trigbees:
         #     trigbee_wave = df[trigbee]
-            
-        
+
+        def buzzz_linebreak(icon=">>>", size=15):
+            line_break = str([icon for i in range(size)])
+            return st.write(line_break)
+
         for ttframe, knowledge in ticker_storys.items():
+            # with st.form(str(ttframe)):
             # WaveUp
             st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
             df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
@@ -881,9 +892,32 @@ if option == 'queen':
             st.write(datetime.datetime.now().astimezone(est), 'EST')
             st.dataframe(df)
 
+            # Top Winners
+            buzzz_linebreak()
+            df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
+            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
+            df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
+            df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
+            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            st.write('top buy waves', df_bestwaves)
+            st.write('top sell waves', df_bestwaves_sell)
+            st.write('top day buy waves', df_day_bestwaves)
+            st.write('top day buy/sell waves', df_best_buy__sell__waves)
+
+            buzzz_linebreak()
+
+            # Today Wave Up
+            buzzz_linebreak()
+            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
+            buzzz_linebreak()
+
             # WaveDown
             st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
-            df = pd.DatyaFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
             df = df.astype(str)
             st.write(datetime.datetime.now().astimezone(est), 'EST')
             st.dataframe(df)
@@ -1248,4 +1282,6 @@ if option == 'signal':
                 st.write(data['buy_orders'])
 
 
+if option == 'app':
+    st.write(APP_requests['queen_controls_reset'])
 ##### END ####

@@ -41,6 +41,8 @@ main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db_local')
 db_app_root = os.path.join(db_root, 'app')
 
+"""# Dates """
+
 current_day = datetime.datetime.now().day
 current_month = datetime.datetime.now().month
 current_year = datetime.datetime.now().year
@@ -87,59 +89,71 @@ load_dotenv()
 
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
-    'P','Q','R','T','U','V','Z'
-]
+    'P','Q','R','T','V','Z'
+] # 'U' afterhours
 
-# keys
-api_key_id = os.environ.get('APCA_API_KEY_ID')
-api_secret = os.environ.get('APCA_API_SECRET_KEY')
-base_url = "https://api.alpaca.markets"
+try:
+    # keys
+    api_key_id = os.environ.get('APCA_API_KEY_ID')
+    api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    base_url = "https://api.alpaca.markets"
 
 
-def return_api_keys(base_url, api_key_id, api_secret, prod=True):
+    def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
-    # api_key_id = os.environ.get('APCA_API_KEY_ID')
-    # api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    # base_url = "https://api.alpaca.markets"
-    # base_url_paper = "https://paper-api.alpaca.markets"
-    # feed = "sip"  # change to "sip" if you have a paid account
-    
-    if prod == False:
-        rest = AsyncRest(key_id=api_key_id,
-                    secret_key=api_secret)
+        # api_key_id = os.environ.get('APCA_API_KEY_ID')
+        # api_secret = os.environ.get('APCA_API_SECRET_KEY')
+        # base_url = "https://api.alpaca.markets"
+        # base_url_paper = "https://paper-api.alpaca.markets"
+        # feed = "sip"  # change to "sip" if you have a paid account
+        
+        if prod == False:
+            rest = AsyncRest(key_id=api_key_id,
+                        secret_key=api_secret)
 
-        api = tradeapi.REST(key_id=api_key_id,
-                    secret_key=api_secret,
-                    base_url=URL(base_url), api_version='v2')
-    else:
-        rest = AsyncRest(key_id=api_key_id,
-                            secret_key=api_secret)
+            api = tradeapi.REST(key_id=api_key_id,
+                        secret_key=api_secret,
+                        base_url=URL(base_url), api_version='v2')
+        else:
+            rest = AsyncRest(key_id=api_key_id,
+                                secret_key=api_secret)
 
-        api = tradeapi.REST(key_id=api_key_id,
-                            secret_key=api_secret,
-                            base_url=URL(base_url), api_version='v2')
-    return [{'rest': rest, 'api': api}]
+            api = tradeapi.REST(key_id=api_key_id,
+                                secret_key=api_secret,
+                                base_url=URL(base_url), api_version='v2')
+        return [{'rest': rest, 'api': api}]
 
-keys = return_api_keys(base_url, api_key_id, api_secret)
+    keys = return_api_keys(base_url, api_key_id, api_secret)
 
-rest = keys[0]['rest']
-api = keys[0]['api']
+    rest = keys[0]['rest']
+    api = keys[0]['api']
 
-# Paper
-api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-base_url_paper = "https://paper-api.alpaca.markets"
-keys_paper = return_api_keys(base_url=base_url_paper, 
-    api_key_id=api_key_id_paper, 
-    api_secret=api_secret_paper,
-    prod=False)
-rest_paper = keys_paper[0]['rest']
-api_paper = keys_paper[0]['api']
+    # Paper
+    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+    base_url_paper = "https://paper-api.alpaca.markets"
+    keys_paper = return_api_keys(base_url=base_url_paper, 
+        api_key_id=api_key_id_paper, 
+        api_secret=api_secret_paper,
+        prod=False)
+    rest_paper = keys_paper[0]['rest']
+    api_paper = keys_paper[0]['api']
 
-"""# Dates """
-current_day = api.get_clock().timestamp.date().isoformat()
+
+    """# Dates """
+    # current_day = api.get_clock().timestamp.date().isoformat()
+    # trading_days = api.get_calendar()
+    # trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+
+except Exception as e:
+    print("offline no connection")
+
+
+current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
+
 
 start_date = datetime.datetime.now().strftime('%Y-%m-%d')
 end_date = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -209,7 +223,6 @@ def read_queensmind(prod): # return active story workers
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
 def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
     # define weights in global and do multiple weights for different scenarios..
-
     # MACD momentum from past N times/days
     # TIME PAST SINCE LAST HIGH TO LOW to change weight & how much time passed since tier cross last high?   
     # how long since last max/min value reached (reset time at +- 2)    
@@ -251,7 +264,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             'hist_high': df['hist'].max(),
             'hist_low': df['hist'].min(),
             }
-
             # macd signal divergence
             df['macd_singal_deviation'] = df['macd'] - df['signal']
             STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
@@ -359,7 +371,8 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             # count number of Macd Crosses
             # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
             s_timetoken = datetime.datetime.now().astimezone(est)
-            today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
+            today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            # today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
             STORY_bee[ticker_time_frame]['story']['macd_cross_count'] = {
                 'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
                 'sell_cross_totalrunning_count' : sum(np.where(df['macd_cross'] == 'sell_cross-0',1,0)),
@@ -1048,16 +1061,38 @@ def return_waves_measurements(df, trigbees, ticker_time_frame):
 #     return MACDWAVE_story
 
 
-def split_today_vs_prior(df):
-    df_day = df['timestamp_est'].iloc[-1]
-    df = df.copy()
-    df = df.set_index('timestamp_est', drop=True) # test
-    df_prior = df[~(df.index.day == df_day.day)].copy()
+# def split_today_vs_prior(df):
+#     df_day = df['timestamp_est'].iloc[-1]
+#     df = df.copy()
+#     df = df.set_index('timestamp_est', drop=True) # test
+#     df_prior = df[~(df.index.day == df_day.day)].copy()
     
-    df_today = df[(df.index.day == df_day.day)].copy()
-    df_today = df_today.reset_index()
-    df_prior = df_prior.reset_index()
-    return {'df_today': df_today, 'df_prior': df_prior}
+#     df_today = df[(df.index.day == df_day.day)].copy()
+#     df_today = df_today.reset_index()
+#     df_prior = df_prior.reset_index()
+#     return {'df_today': df_today, 'df_prior': df_prior}
+
+def split_today_vs_prior(df, other_timestamp=False):
+    if other_timestamp:
+        df_day = df[other_timestamp].iloc[-1]
+        # df = df.set_index(other_timestamp, drop=False)
+        # df_today = df[(df.index.day == df_day.day) & (df.index.month == df_day.month) & (df.index.year == df_day.year)].copy()        
+        df_today = df[df['wave_start_time'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+        df_prior = df[~(df['wave_start_time'].isin(df_today['wave_start_time'].to_list()))].copy()
+        return {'df_today': df_today, 'df_prior': df_prior}
+        # df_today = df_today.reset_index()
+        # df_prior = df_prior.reset_index()
+    else:
+        df_day = df['timestamp_est'].iloc[-1]
+        # df = df.copy()
+        # df = df.set_index('timestamp_est', drop=False)
+        df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+        # df_today = df[(df['timestamp_est'].day == df_day.day) & (df['timestamp_est'].month == df_day.month) & (df['timestamp_est'].year == df_day.year)].copy()
+        df_prior = df[~(df['story_index'].isin(df_today['story_index'].to_list()))].copy()
+        
+        # df_today = df_today.reset_index()
+        # df_prior = df_prior.reset_index()
+        return {'df_today': df_today, 'df_prior': df_prior}
 
 
 def return_degree_angle(x, y): #
@@ -1076,13 +1111,6 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
     try:
         s = datetime.datetime.now()
         error_dict = {}
-        # ndays = 0 # today 1=yesterday...  # TEST
-        # timeframe = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
-        # symbol = 'SPY'  # TEST
-        # current_day = api.get_clock().timestamp.date().isoformat()  # TEST MOVED TO GLOBAL
-        # trading_days = api.get_calendar()  # TEST MOVED TO GLOBAL
-        # trading_days_df = pd.DataFrame([day._raw for day in trading_days])  # TEST MOVED TO GLOBAL
-        # est = pytz.timezone("US/Eastern") # GlovalVar
 
         try:
             # Fetch bars for prior ndays and then add on today
@@ -1164,7 +1192,13 @@ def return_bars_list(ticker_list, chart_times):
                 #     start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d") # get yesterdays trades as well
                 # else:
                 #     start_date = datetime.datetime.now().strftime("%Y-%m-%d")
-                start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                
+
+                trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
+                start_date = trading_days_df_.tail(ndays).head(1).date
+                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+
+                # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
                 end_date = datetime.datetime.now().strftime("%Y-%m-%d")
                 symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
@@ -1233,8 +1267,8 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
 
         exclude_conditions = [
         'B','W','4','7','9','C','G','H',
-        'I','M','N','P','Q','R','T', 'U', 'V', 'Z'
-        ]
+        'I','M','N','P','Q','R','T', 'V', 'Z'
+        ] # 'U'
         # Fetch trades for the X seconds before the current time
         trades_df = api.get_trades(ticker_list,
                                     start=previous_time,
@@ -1268,7 +1302,7 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
         else:
             return {'resp': valid_trades}
     except Exception as e:
-        print("rebuild_timeframe_bars", e)
+        print("rebuild timeframe bars", e)
         return {'resp': False, 'msg': [e, current_time, previous_time]}
 # r = rebuild_timeframe_bars(ticker_list, sec_input=30)
 
@@ -2466,6 +2500,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'bid': 'na',
                         'ask': 'na',
                         'honey_gauge': deque([], 89),
+                        'macd_gauge': deque([], 89),
                         '$honey': 'na',
                         'origin_wave': {},
                         'assigned_wave': {},
@@ -2495,6 +2530,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'bid': priceinfo['bid'],
                         'ask': priceinfo['ask'],
                         'honey_gauge': deque([], 89),
+                        'macd_gauge': deque([], 89),
                         '$honey': 'na',
                         'origin_wave': {},
                         'assigned_wave': {},
@@ -2524,6 +2560,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'bid': priceinfo['bid'],
                         'ask': priceinfo['ask'],
                         'honey_gauge': deque([], 89),
+                        'macd_gauge': deque([], 89),
                         '$honey': 'na',
                         'origin_wave': {},
                         'assigned_wave': {},
@@ -2541,20 +2578,9 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
 #     else:
 #         return {}
 
-
-def init_QUEEN(queens_chess_piece):
-    KING = KINGME()
+def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
-    QUEEN = { # The Queens Mind
-        'prod': "",
-        'source': "na",
-        'last_modified': datetime.datetime.now(),
-        'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
-        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
-        'kings_order_rules': {},
-        'queen_controls': { 
+    queen_controls_dict = { 
             'theme': 'nuetral',
             # 'app_order_requests': [],
             # 'orders': [],
@@ -2577,8 +2603,28 @@ def init_QUEEN(queens_chess_piece):
                 'default': 
                     {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
                     'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
-                }
-                            },
+                },
+            'star_time_settings': {star_time: {'max_dayTrade_of_dayAlloc': .7, 'max_longTrade_of_longAlloc': .5} for star_time in stars().keys()
+                                },
+            'ticker_settings': {'SPY': {'max_day': .7, 'max_long': .5}},
+    
+    }
+    return queen_controls_dict
+
+
+def init_QUEEN(queens_chess_piece):
+    KING = KINGME()
+    num_of_stars = len(stars())
+    QUEEN = { # The Queens Mind
+        'prod': "",
+        'source': "na",
+        'last_modified': datetime.datetime.now(),
+        'command_conscience': {},
+        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
+        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
+        'kings_order_rules': {},
+        'queen_controls': return_queen_controls(stars),
         'workerbees': {
             'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
                         'tickers': ['SPY'],
@@ -2623,11 +2669,14 @@ def init_QUEEN_App():
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],
+    'trading_models': [],
+    'trading_models_requests': [],
     'power_rangers': [],
     'power_rangers_requests': [],
     'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),
     'knight_bees_kings_rules': [],
     'knight_bees_kings_rules_requests': [],
+    'queen_controls_reset': 'false', 
     'queen_controls': [],
     'queen_controls_requests': [],
     'queen_contorls_lastupdate': 'false', 
@@ -2705,96 +2754,176 @@ def logging_log_message(log_type='info', msg='default', error='none', origin_fun
         return {'msg': msg, 'error': error, 'origin_func': origin_func, 'ticker': ticker}
 
 
+def return_Best_Waves(df, rankname='maxprofit', top=False):
+    if top:
+        df = df.sort_values(rankname)
+        return df.tail(top)
+    else:
+        df = df.sort_values(rankname)
+        return df
+
 def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
     # len and profits
+    groupby_agg_dict = {'winners_n': 'sum', 'losers_n': 'sum', 'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}
+    # groupby_agg_dict = {'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}
+
+
     if ttframe_wave_trigbee:
-        wave_series = STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0']
+        # buy_cross-0
+        wave_series = STORY_bee[ttframe_wave_trigbee]['waves']['buy_cross-0']
         upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
         df = pd.DataFrame(upwave_dict)
         df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+        df['winners_n'] = np.where(df['maxprofit'] > 0, 1, 0)
+        df['losers_n'] = np.where(df['maxprofit'] < 0, 1, 0)
+        df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
         groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-        df_return = groups.rename(columns={'length': 'avg_length'})
-        return {'df': df_return}
+        df_return = groups.rename(columns={'length': 'avg_length', 'time_to_max_profit': 'avg_time_to_max_profit', 'maxprofit': 'sum_maxprofit'})
 
-    d_return = {} # every star and the data by grouping
-    for symbol_star, data in STORY_bee.items():
-        d_return[symbol_star] = {}
-        waves = data['waves']
-        for trigbee, wave in waves.items():
-            if trigbee == 'story':
-                continue
-            else:
-                d_wave = [wave_data for (k, wave_data) in wave.items() if k != '0']
-                df = pd.DataFrame(d_wave)
-                if len(df) > 0:
-                    df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
-                    groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-                    groups = groups.rename(columns={'length': 'avg_length'})
-                    d_return[symbol_star][trigbee] = groups
+        df_bestwaves = return_Best_Waves(df=df, top=3)
+
+        # # show today only
+        df_today_return = pd.DataFrame()
+        # ipdb.set_trace()
+        df_today = split_today_vs_prior(df=df, other_timestamp='wave_start_time')['df_today']
+        df_day_bestwaves = return_Best_Waves(df=df_today, top=3)
+        groups = df_today.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+        df_today_return = groups.rename(columns={'length': 'avg_length', 'time_to_max_profit': 'avg_time_to_max_profit', 'maxprofit': 'sum_maxprofit'})
+
+
+        # sell_cross-0
+        wave_series = STORY_bee[ttframe_wave_trigbee]['waves']['sell_cross-0']
+        upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != '0']
+        df = pd.DataFrame(upwave_dict)
+        df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+        df['winners_n'] = np.where(df['maxprofit'] > 0, 1, 0)
+        df['losers_n'] = np.where(df['maxprofit'] < 0, 1, 0)
+        groups = df.groupby(['wave_blocktime']).agg({'winners_n': 'sum', 'losers_n': 'sum', 'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+        df_return_wavedown = groups.rename(columns={'length': 'avg_length', 'time_to_max_profit': 'avg_time_to_max_profit', 'maxprofit': 'sum_maxprofit'})
+        
+        df_bestwaves_sell_cross = return_Best_Waves(df=df, top=3)
+
+        df_best_buy__sell__waves = pd.concat([df_bestwaves, df_bestwaves_sell_cross], axis=0)
+
+        return {'df': df_return, 
+        'df_wavedown': df_return_wavedown, 
+        'df_today': df_today_return,
+        'df_bestwaves': df_bestwaves,
+        'df_bestwaves_sell_cross': df_bestwaves_sell_cross,
+        'df_day_bestwaves': df_day_bestwaves, 
+        'df_best_buy__sell__waves': df_best_buy__sell__waves,}
+    else:
+        df_bestwaves = pd.DataFrame()
+        d_return = {} # every star and the data by grouping
+        d_agg_view_return = {} # every star and the data by grouping
+
+        for symbol_star, data in STORY_bee.items():
+            try:
+                d_return[symbol_star] = {}
+                d_agg_view_return[symbol_star] = {}
+                
+                waves = data['waves']
+                for trigbee, wave in waves.items():
+                    if trigbee == 'story':
+                        continue
+                    else:
+                        d_wave = [wave_data for (k, wave_data) in wave.items() if k != '0']
+                        df = pd.DataFrame(d_wave)
+                        if len(df) > 0:
+                            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+                            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+                            df['winners_n'] = np.where(df['maxprofit'] > 0, 1, 0)
+                            df['losers_n'] = np.where(df['maxprofit'] < 0, 1, 0)
+                            
+                            groups = df.groupby(['wave_blocktime']).agg(groupby_agg_dict).reset_index()
+                            groups = groups.rename(columns={'length': 'avg_length', 'time_to_max_profit': 'avg_time_to_max_profit', 'maxprofit': 'sum_maxprofit'})
+                            d_return[symbol_star][trigbee] = groups
+
+                            groups = df.groupby(['trigbee', 'wave_blocktime']).agg(groupby_agg_dict).reset_index()
+                            groups = groups.rename(columns={'length': 'avg_length', 'time_to_max_profit': 'avg_time_to_max_profit', 'maxprofit': 'sum_maxprofit'})
+                            groups['ticker_time_frame'] = symbol_star
+                            d_agg_view_return[symbol_star][f'{trigbee}'] = groups
+
+
+            except Exception as e:
+                print(e)
+        
+
+        # 
     
-    d_return2 = {} # every star and the data by grouping
-    for symbol_star, data in STORY_bee.items():
-        d_return[symbol_star] = {}
-        waves = data['waves']['story']
-        df = pd.DataFrame(waves)
-        # df = df[~df['macd_wave_length'] == 'NULL'].copy()
-        if len(df) > 0:
-            df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
-            groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-            groups = groups.rename(columns={'length': 'avg_length'})
-            d_return[symbol_star][trigbee] = groups
-
-
-    return {'df': d_return}
-
-
-# def waves_storyview(wave_series):
-#     wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
-#     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
-#     upwave_view = [] # queenmemory objects in conscience {}
-#     downwave_view = []
-#     for ttframe, conscience in ttframe__items.items():
-#         queen_return = {'StarName': ttframe}
-#         for wave in conscience['waves']['buy_cross-0']:
-#             pass
+        df_return = pd.DataFrame(d_return)
+        df_agg_view_return = pd.DataFrame(d_agg_view_return)
+        df_agg_view_return = df_agg_view_return.T
 
     
-#     df =  pd.DataFrame(upwave_view)
-#     return {'df': df}
+    # d_return2 = {} # every star and the data by grouping
+    # for symbol_star, data in STORY_bee.items():
+    #     d_return[symbol_star] = {}
+    #     waves = data['waves']['story']
+    #     df = pd.DataFrame(waves)
+    #     # df = df[~df['macd_wave_length'] == 'NULL'].copy()
+    #     if len(df) > 0:
+    #         df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
+    #         groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
+    #         groups = groups.rename(columns={'length': 'avg_length'})
+    #         d_return[symbol_star][trigbee] = groups
+
+
+    return {'df': d_return, 
+    'd_agg_view_return': d_agg_view_return,
+    'df_agg_view_return': df_agg_view_return,
+    'df_bestwaves': df_bestwaves}
+
 
 def story_view(STORY_bee, ticker): # --> returns dataframe
     storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'mac_ranger', 'hist_ranger']
     wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
     ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker}
     return_view = [] # queenmemory objects in conscience {}
+    return_agg_view = []
     for ttframe, conscience in ttframe__items.items():
-        queen_return = {'StarName': ttframe}
+        queen_return = {'star': ttframe}
+
+        trigbees = ['buy_cross-0', 'sell_cross-0']
+
+        buys = conscience['waves']['buy_cross-0']
+        # max profit
+
 
         story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
         last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str((len(conscience['waves']['buy_cross-0'].keys()) - 1)) == str(k)][0]
         last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str((len(conscience['waves']['sell_cross-0'].keys()) - 1)) == str(k)][0]
         p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
 
+        all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
+        all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
+
+        # ALL waves groups
+        trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+        return_agg_view.append(trigbee_waves_analzyed)
+
+        # Current Wave View
         if 'buy' in story['macd_state']:
             current_wave = last_buy_wave
         else:
             current_wave = last_sell_wave
         
         current_wave_view = {k: v for (k,v) in current_wave.items() if k in wave_view}
-
         obj_return = {**story, **current_wave_view}
         obj_return_ = {**obj_return, **p_story}
         queen_return = {**queen_return, **obj_return_}
-        
+        """append view"""
         return_view.append(queen_return)
     
     
     df =  pd.DataFrame(return_view)
+    df_agg = pd.DataFrame(return_agg_view)
     # map in ranger color
     # df['mac_ranger'] = df['current_mac_tier'].apply(lambda x: power_ranger_mapping(x))
     # df['hist_ranger'] = df['current_hist_tier'].apply(lambda x: power_ranger_mapping(x))
-    
-    return {'df': df}
+
+
+    return {'df': df, 'df_agg': df_agg}
 
 
 def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False):
@@ -2808,11 +2937,13 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
         # df = df.astype(str)
         if len(df) > 0:
             # df["honey"] = df["honey"] * 100
-            df["honey"] = df['honey'].map("{:.2%}".format)
-            # df["$honey"] = df['honey'].map("{:.2f}".format)
-            df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
             if 'profit_loss' in df.columns:
                 df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
+            if "honey" in df.columns:
+                df["honey"] = df['honey'].map("{:.2%}".format)
+            if "cost_basis" in df.columns:
+                df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
+
             col_view = [i for i in col_view if i in df.columns]
             df_return = df[col_view].copy()
         else:
@@ -2893,7 +3024,7 @@ def init_PowerRangers(ranger_dimensions=False):
         # bee_ranger_tiers = 9
         ranger_init = ranger_dimensions['ranger_init']
     else:
-        wave_types = ['mac', 'hist']
+        wave_types = ['mac_ranger', 'hist_ranger']
         stars = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
         trigbees = ['buy_wave', 'sell_wave']
         theme_list = ['nuetral', 'strong']
@@ -2927,7 +3058,7 @@ def init_PowerRangers(ranger_dimensions=False):
 
         ## FEAT REQUEST: adjust upstream to include universe
         ranger_init = {
-        'mac' : {'buy_wave': {'nuetral': 
+        'mac_ranger' : {'buy_wave': {'nuetral': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                         'strong': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
@@ -2938,7 +3069,7 @@ def init_PowerRangers(ranger_dimensions=False):
                                         {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
                                         }
                 },
-        'hist' : {'buy_wave': {'nuetral': 
+        'hist_ranger' : {'buy_wave': {'nuetral': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
                                         'strong': 
                                             {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
