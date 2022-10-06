@@ -1,11 +1,12 @@
-from asyncio import streams
-from cgitb import reset
+# from asyncio import streams
+# from cgitb import reset
+from cmath import log
 from datetime import datetime
 import logging
 from enum import Enum
 import time
 import alpaca_trade_api as tradeapi
-import asyncio
+# import asyncio
 import os
 import pandas as pd
 import numpy as np
@@ -14,7 +15,7 @@ import sys
 from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
-import threading
+# import threading
 import datetime
 import pytz
 from typing import Callable
@@ -24,7 +25,7 @@ from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
-import talib
+# import talib
 from scipy import stats
 import shutil
 import ipdb
@@ -324,17 +325,17 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
                 logging.error(msg)
 
-            # add close price momentum
-            try:
-                s_timetoken = datetime.datetime.now().astimezone(est)
-                close = df['close']
-                df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
-                df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
-                e_timetoken = datetime.datetime.now().astimezone(est)
-                betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
-            except Exception as e:
-                msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
-                logging.error(msg)
+            # # add close price momentum
+            # try:
+            #     s_timetoken = datetime.datetime.now().astimezone(est)
+            #     close = df['close']
+            #     df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
+            #     df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
+            #     e_timetoken = datetime.datetime.now().astimezone(est)
+            #     betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
+            # except Exception as e:
+            #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
+            #     logging.error(msg)
             
             time_state = df['timestamp_est'].iloc[-1] # current time
             STORY_bee[ticker_time_frame]['story']['time_state'] = time_state
@@ -1331,10 +1332,10 @@ def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
     # symbol = 'BABA'
-    if api == 'paper':
-        api = api_paper
-    else:
-        api = api
+    # if api == 'paper':
+    #     api = api_paper
+    # else:
+    #     api = api
 
     snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
     conditions = snapshot.latest_quote.conditions
@@ -1399,6 +1400,16 @@ def submit_order(api, symbol, qty, side, type, limit_price=False, client_order_i
             type=type,
             time_in_force=time_in_force,
             client_order_id=client_order_id
+            )
+    if type == 'limit':
+        order = api.submit_order(
+            symbol=symbol,
+            qty=qty,
+            side=side,
+            type=type,
+            time_in_force=time_in_force,
+            client_order_id=client_order_id,
+            limit_price=limit_price,
             )
     
     return order
@@ -2477,6 +2488,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
     # allowed_col = ["queen_order_state", ]
     if queen_init:
         print("Queen Template Initalized")
+        logging_log_message(msg='QueenHive Queen Template Initalized')
         running_order = {'queen_order_state': 'init',
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
@@ -2505,6 +2517,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
+                        'power_up': {},
                         } 
     elif order['side'] == 'buy':
         # print("create buy running order")
@@ -2535,6 +2548,8 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
+                        'power_up': {},
+                        'honey_time_in_profit': {},
                         }
     elif order['side'] == 'sell':
         # print("create sell order")
@@ -2565,6 +2580,8 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
+                        'power_up': {},
+                        'honey_time_in_profit': {},
                         }
 
     return running_order
@@ -2578,6 +2595,20 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
 #     else:
 #         return {}
 
+def generate_TradingModel(ticker='SPY', stars=stars):
+    num_of_stars = len(stars())
+    tradingmodel1 = {ticker: 
+            {'status': 'active', 
+            'buyingpower_allocation_LongTerm': 1/num_of_stars, 
+            'buyingpower_allocation_ShortTerm': 1/num_of_stars, 
+            'power_rangers': {k: 'active' for k in stars().keys()},
+            'trade_using_limits': 'false',
+            }
+    }
+
+    return {'tradingmodel1': tradingmodel1}
+
+
 def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
     queen_controls_dict = { 
@@ -2589,7 +2620,8 @@ def return_queen_controls(stars=stars):
             'stars': stars(),
             # 'stars_allocation':{k: 1/num_of_stars for k in stars()},
             # 'symbols_stars_allocRules': {'SPY': {k: {'status': 'active', 'allocation': 1/num_of_stars} for k in stars()}},
-            'symbols_stars_TradingModel': {'SPY': {k: {'status': 'active', 'buyingpower_allocation_LongTerm': 1/num_of_stars, 'buyingpower_allocation_ShortTerm': 1/num_of_stars, 'power_rangers': [k]} for k in stars()}},
+            'symbols_stars_TradingModel': generate_TradingModel(ticker='SPY', stars=stars)['tradingmodel1'],
+
             'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
@@ -2744,7 +2776,6 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             logging.info(msg)
 
     return {'QUEEN': QUEEN, 'update': update}
-
 
 
 def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
@@ -3130,8 +3161,8 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
             # sys.exit()
             if os.path.exists(PB_App_Pickle) == False:
                 init_app(pickle_file=PB_App_Pickle)
-            if os.path.exists(PB_Orders_Pickle) == False:
-                init_app(pickle_file=PB_Orders_Pickle)
+            # if os.path.exists(PB_Orders_Pickle) == False:
+            #     init_app(pickle_file=PB_Orders_Pickle)
         print("My Queen Production")
     else:
         api = api_paper
@@ -3151,8 +3182,8 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
             if os.path.exists(PB_App_Pickle) == False:
                 init_app(pickle_file=PB_App_Pickle)
             
-            if os.path.exists(PB_Orders_Pickle) == False:
-                init_app(pickle_file=PB_Orders_Pickle)
+            # if os.path.exists(PB_Orders_Pickle) == False:
+            #     init_app(pickle_file=PB_Orders_Pickle)
         print("My Queen Sandbox")
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
