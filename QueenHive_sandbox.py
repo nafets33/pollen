@@ -2725,7 +2725,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
         }
 
 
-    def model_vars(star):
+    def model_vars(star, stars_vars):
         return {'status': stars_vars[star], 
                 'buyingpower_allocation_LongTerm': stars_vars[star], 
                 'buyingpower_allocation_ShortTerm': stars_vars[star], 
@@ -2740,7 +2740,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
     
     stars_vars = star_trading_model_vars()
     tradingmodel1 = {ticker: 
-        {star: model_vars(star) for star in stars().keys()}
+        {star: model_vars(star, stars_vars=stars_vars) for star in stars().keys()}
     }
 
     return {'tradingmodel1': tradingmodel1}

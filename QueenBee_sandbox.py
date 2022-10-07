@@ -1091,6 +1091,8 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
 
     refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee)
 
+    active_tickers = QUEEN['heartbeat']['active_tickers']
+
     story_tickers = set([i.split("_")[0] for i in list(STORY_bee.keys())])
     portfolio = return_alpc_portolio(api)['portfolio']
        
@@ -1108,7 +1110,7 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
         # # """ # Accept Ticker """
         # if ticker not in active_tickers:
         #     continue ##### break loop
-        add_trading_model(QUEEN=QUEEN, ticker=ticker, model='tradingmodel1')
+        # add_trading_model(QUEEN=QUEEN, ticker=ticker, model='tradingmodel1')
         
         # crypto
         if ticker in crypto_currency_symbols:
