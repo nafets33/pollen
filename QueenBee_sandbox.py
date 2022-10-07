@@ -73,7 +73,7 @@ pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 load_dotenv()
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db_local')
+db_root = os.path.join(main_root, 'db')
 db_app_root = os.path.join(db_root, 'app')
 
 def init_logging(queens_chess_piece, db_root):
@@ -894,7 +894,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
             power_up = {ranger: 0 for ranger in power_rangers_universe}
             # ipdb.set_trace()
             for star, v in tmodel_power_rangers.items(): # 1m 5m, 3M
-                if v[trigbee]['status'] == 'active':
+                if v == 'active':
                     for ranger in power_rangers_universe:
                         PowerRangerColor = stars_colors_d[ranger][f'{ticker_token}{star}'] # COLOR
                         power_up[ranger] += float(QUEEN['queen_controls']['power_rangers'][star][ranger][wave_type][theme][PowerRangerColor]) # star-buywave-theme
@@ -963,9 +963,10 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                     order_vars['limit_price'] = maker_middle # 10000
                 else:
                     order_vars['order_type'] = 'market'
+                    order_vars['limit_price'] = False
 
                 order_vars['order_side'] = 'buy'
-                order_vars['wave_amo'] = 10000
+                order_vars['wave_amo'] = wave_amo
                 
 
                 kings_blessing = True
@@ -1000,6 +1001,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                     order_vars['limit_price'] = maker_middle # 10000
                 else:
                     order_vars['order_type'] = 'market'
+                    order_vars['limit_price'] = False
 
                 order_vars['order_side'] = 'buy'
                 order_vars['wave_amo'] = wave_amo
@@ -1045,6 +1047,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                     order_vars['limit_price'] = maker_middle # 10000
                 else:
                     order_vars['order_type'] = 'market'
+                    order_vars['limit_price'] = False
 
                 order_vars['order_side'] = 'buy'
                 order_vars['wave_amo'] = wave_amo
@@ -1085,7 +1088,7 @@ def add_trading_model(QUEEN, ticker, model='tradingmodel1'):
         PickleData(QUEEN, PB_QUEEN_Pickle)
 
 
-def command_conscience(api, QUEEN, active_tickers, APP_requests):
+def command_conscience(api, QUEEN, APP_requests):
 
     STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
 
@@ -1159,20 +1162,19 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
                     if str(trading_model['status']) not in ['active']:
                         print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                         continue
-                    if frame_block != "1Minute_1Day":
-                        print("model not active", tframe)
-                        continue
+                    # if frame_block != "1Minute_1Day":
+                    #     print("model not active", tframe)
+                    #     continue
 
                     # cycle through triggers and pass buy first logic for buy
                     # trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
-
+                    # ipdb.set_trace()
                     for trig in avail_trigs:
                         if trig in trading_model['trigbees'].keys():
-                            if str(trading_model[trig]['status']) != 'active':
+                            if str(trading_model['trigbees'][trig]['status']) != 'active':
                                 print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                                 continue
-                        # ipdb.()
-                        else:
+                            
                             # check if you already placed order or if a workerbee in transit to place order
                             if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame):
                                 trig_action = True
@@ -1892,9 +1894,6 @@ def order_management(api, QUEEN, APP_requests):
 
     portfolio = return_alpc_portolio(api)['portfolio']
 
-    # return Theme from App    
-    confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
-
     # Submitted Orders First
     queen_orders_main(portfolio=portfolio, APP_requests=APP_requests)
 
@@ -2045,12 +2044,14 @@ try:
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls', archive_bucket='queen_controls_requests')
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='power_rangers', archive_bucket='power_rangers_requests')
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls_reset', archive_bucket=False)
+            # return Theme from App    
+            confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
 
             # Process All Orders
             order_management(api=api, QUEEN=QUEEN, APP_requests=APP_requests)
 
             # Hunt for Triggers
-            command_conscience(api=api, QUEEN=QUEEN, active_tickers=QUEEN['heartbeat']['active_tickers'], APP_requests=APP_requests) #####>   
+            command_conscience(api=api, QUEEN=QUEEN, APP_requests=APP_requests) #####>   
 
 
             time.sleep(1)

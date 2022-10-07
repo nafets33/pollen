@@ -39,7 +39,7 @@ queens_chess_piece = os.path.basename(__file__)
 prod=True
 
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db_local')
+db_root = os.path.join(main_root, 'db')
 db_app_root = os.path.join(db_root, 'app')
 
 """# Dates """
@@ -2363,7 +2363,7 @@ def init_app(pickle_file):
     if os.path.exists(pickle_file) == False:
         if "_App_" in pickle_file:
             print("init app")
-            data = {'orders': [], 'theme': [], 'queen_processed': []}
+            data = init_QUEEN_App()
             PickleData(pickle_file=pickle_file, data_to_store=data)
         if "_Orders_" in pickle_file:
             print("init Orders")
@@ -2612,11 +2612,11 @@ def generate_TradingModel(ticker='SPY', stars=stars):
     
     def star_trading_model_vars(stars=stars):
         
-        def kings_order_rules(status, trade_using_limits, total_budget, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+        def kings_order_rules(status, trade_using_limits, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
             return {
             'status': status,
             'trade_using_limits': trade_using_limits,
-            'total_budget': total_budget,
+            # 'total_budget': total_budget,
             'max_profit_waveDeviation': max_profit_waveDeviation,
             'timeduration': timeduration,
             'take_profit': take_profit,
@@ -2628,7 +2628,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
         default = kings_order_rules(
         status='active', 
         trade_using_limits=False, 
-        total_budget=100, 
+        # total_budget=100,
         max_profit_waveDeviation=1, 
         timeduration=33,
         take_profit=.005 , 
@@ -2831,7 +2831,7 @@ def init_QUEEN_App():
     app = {'theme': 'nuetral', 
     'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
-    'last_modified': datetime.datetime.now(),
+    'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],

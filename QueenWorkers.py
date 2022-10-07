@@ -52,7 +52,7 @@ load_dotenv()
 prod = True
 
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db_local')
+db_root = os.path.join(main_root, 'db')
 
 # init_logging(queens_chess_piece, db_root)
 loglog_newfile = False

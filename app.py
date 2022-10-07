@@ -41,10 +41,10 @@ import math
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 from PIL import Image
-import mplfinance as mpf
+# import mplfinance as mpf
 import plotly.graph_objects as go
 import base64
-from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode
+from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 import json
 import argparse
 
@@ -61,16 +61,16 @@ def createParser():
     return parser
 
 if prod:
-    from QueenHive import analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+    from QueenHive import stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 else:
-    from QueenHive_sandbox import analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+    from QueenHive_sandbox import generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 
 
 
 
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db_local')
-db_app_root = os.path.join(db_root, 'app')
+db_root = os.path.join(main_root, 'db')
+# db_app_root = os.path.join(db_root, 'app')
 jpg_root = os.path.join(main_root, 'misc')
 
 bee_image = os.path.join(jpg_root, 'bee.jpg')
@@ -199,7 +199,6 @@ def subPlot():
     st.pyplot(fig)
 
 
-
 def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
     st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
     if x == False:
@@ -212,17 +211,32 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
             return df.plot(x=x, y=y,figsize=figsize)
   
 
-def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True):
+def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-    for colName in update_cols:
-        gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
+    for colName in update_cols:        
+        if dropdownlst:
+            gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
+        else:
+            gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
 
-
+    jscode = JsCode("""
+    function(params) {
+        if (params.data.state === 'white') {
+            return {
+                'color': 'white',
+                'backgroundColor': 'red'
+            }
+        }
+    };
+    """)
+    
     gridOptions = gb.build()
+    
+    gridOptions['getRowStyle'] = jscode
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
 
     grid_response = AgGrid(
@@ -235,9 +249,11 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
         enable_enterprise_modules=True,
         height=height, 
         # width='100%',
-        reload_data=reload_data
+        reload_data=reload_data,
+        allow_unsafe_jscode=allow_unsafe_jscode
     )
     return grid_response
+
 
 def create_main_macd_chart(df):
     title = df.iloc[-1]['name']
@@ -261,6 +277,7 @@ def create_main_macd_chart(df):
 
     return fig
 
+
 def create_slope_chart(df):
     title = df.iloc[-1]['name']
     # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -282,6 +299,7 @@ def create_slope_chart(df):
     fig.update_layout(height=600, width=900, title_text=title)
     return fig
 
+
 def create_wave_chart(df):
     title = f'buy+sell cross __waves {df.iloc[-1]["name"]}'
     # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -296,6 +314,7 @@ def create_wave_chart(df):
     fig.update_layout(height=600, width=900, title_text=title)
     return fig
 
+
 def create_wave_chart_single(df, wave_col):
     title = df.iloc[-1]['name']
     # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -308,6 +327,7 @@ def create_wave_chart_single(df, wave_col):
     fig.add_bar(x=df['chartdate'], y=df[wave_col],  row=1, col=1, name=wave_col)
     fig.update_layout(height=600, width=900, title_text=title)
     return fig
+
 
 def create_wave_chart_all(df, wave_col):
     title = df.iloc[-1]['name']
@@ -347,43 +367,6 @@ def return_total_profits(QUEEN):
                 st.write("Today Profit Loss")
                 st.write(tic_group_df)
 
-
-
-st.sidebar.write("Production: ", prod)
-# st.write(prod)
-if prod:
-    api = api
-    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
-    st.sidebar.write("""My Queen Production""")
-else:
-    api = api_paper
-    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
-    st.sidebar.write("""My Queen Sandbox""")
-
-
-KING = KINGME()
-stars = KING['stars']
-pollen_theme = pollen_themes(KING=KING)
-
-
-QUEEN = read_queensmind(prod)['queen']
-POLLENSTORY = read_pollenstory()
-APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
-KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
-ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
-
-
-option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory', 'app'))
-st.sidebar.write("<<<('')>>>")
-# st.header(option)
-
-
-# """ if "__name__" == "__main__": """
-
-# full view of all stories 
-# # macd_state, Macd Tier, Macd, Hist Tier, Hist, Signal Tier, Signal, & Current Wave dimensions (length, profit)story
 
 def pollenstory_view(POLLENSTORY):
     option_ticker = st.selectbox("ticker", ('queen', 'charts', 'signal', 'pollenstory'))
@@ -546,38 +529,148 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         return True
 
     elif control_option.lower() == 'symbols_stars_tradingmodel':
-        st.write("PENDING WORK")
+        st.write("Current Model")
         st.write(QUEEN['queen_controls'][control_option])
         tickers_avail = list(QUEEN['queen_controls'][control_option].keys())
         ticker_option_qc = st.selectbox("Select Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
         star_avail = list(QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
         star_option_qc = st.selectbox("Select Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
 
-        for k, v in QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc].items():
-            if k == 'status':
-                st.write(k, v)
-            elif k == 'buyingpower_allocation_LongTerm':
-                st.write(k, v)
-            elif k == 'buyingpower_allocation_ShortTerm':
-                st.write(k, v)
-            elif k == 'power_rangers':
-                st.write("active stars", k, v)
-                df = pd.DataFrame(v)
-                df = df.rename(columns={0: 'star'})
-                grid_response = build_AGgrid_df(data=df, reload_data=False)
-                data = grid_response['data']
-                selected = grid_response['selected_rows'] 
-                df_sel = pd.DataFrame(selected)
-                st.write(df_sel)
+        with st.form('trading model form'):
+            trading_model_dict = QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc]
+            trigbees = trading_model_dict['trigbees']
+            for k, v in QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc].items():
+
+                if k == 'status':
+                    # st.write(k, v)
+                    control_status = st.selectbox("control_status", ['active', 'not_active'], index=['active', 'not_active'].index(v))
+                elif k == 'total_budget':
+                    st.write(k, v)
+                    total_budget = st.number_input(label=k, value=float(v))
+                elif k == 'trade_using_limits':
+                    # st.write(k, v)
+                    trade_using_limits = st.checkbox("trade_using_limits")
+                elif k == 'buyingpower_allocation_LongTerm':
+                    st.write(k, v)
+                    buyingpower_allocation_LongTerm = st.number_input(label=k, value=float(v))
+                elif k == 'buyingpower_allocation_ShortTerm':
+                    st.write(k, v)
+                    buyingpower_allocation_ShortTerm = st.number_input(label=k, value=float(v))
+                elif k == 'trigbees':
+                    st.write(k, v)
+                    if 'buy_cross-0' in v.keys():
+                        st.write('buy_cross-0')
+                        op_trigbee_bc = st.checkbox('status_bc', value=True)
+                        op_trigbee_max_profit_waveDeviation_bc = st.number_input(label='max_profit_waveDeviation_bc', value=int(v['buy_cross-0']['max_profit_waveDeviation']))
+                        op_trigbee_timeduration_bc = st.number_input(label='timeduration_bc', value=int(v['buy_cross-0']['timeduration']))
+                        op_trigbee_take_profit_bc = st.number_input(label='take_profit_bc', value=float(v['buy_cross-0']['take_profit']))
+                        op_trigbee_sellout_bc = st.number_input(label='sellout_bc', value=float(v['buy_cross-0']['sellout']))
+                        op_trigbee_sell_trigbee_trigger_bc = st.checkbox('sell_trigbee_trigger_bc', value=v['buy_cross-0']['sell_trigbee_trigger'])
+                        op_stagger_profits_bc = st.checkbox('stagger_profits_bc', value=v['buy_cross-0']['stagger_profits'])
+                        op_scalp_profits_bc = st.checkbox('scalp_profits_bc', value=v['buy_cross-0']['scalp_profits'])
+
+                    if 'sell_cross-0' in v.keys():
+                        st.write('sell_cross-0')
+                        op_trigbee_sc = st.checkbox('status_sc', value=True)
+                        op_trigbee_max_profit_waveDeviation_sc = st.number_input(label='max_profit_waveDeviation_sc', value=int(v['sell_cross-0']['max_profit_waveDeviation']))
+                        op_trigbee_timeduration_sc = st.number_input(label='timeduration_sc', value=float(v['sell_cross-0']['timeduration']))
+                        op_trigbee_take_profit_sc = st.number_input(label='take_profit_sc', value=float(v['sell_cross-0']['take_profit']))
+                        op_trigbee_sellout_sc = st.number_input(label='sellout_sc', value=float(v['sell_cross-0']['sellout']))
+                        op_trigbee_sell_trigbee_trigger_sc = st.checkbox('sell_trigbee_trigger_sc', value=v['sell_cross-0']['sell_trigbee_trigger'])
+                        op_stagger_profits_sc = st.checkbox('stagger_profits_sc', value=v['sell_cross-0']['stagger_profits'])
+                        op_scalp_profits_sc = st.checkbox('scalp_profits_sc', value=v['sell_cross-0']['scalp_profits'])
+
+                    if 'ready_buy_cross' in v.keys():
+                        st.write('ready_buy_cross')
+                        op_trigbee_rb = st.checkbox('status_rb', value=True)
+                        op_trigbee_max_profit_waveDeviation_rb = st.number_input(label='max_profit_waveDeviation_rb', value=int(v['ready_buy_cross']['max_profit_waveDeviation']))
+                        op_trigbee_timeduration_rb = st.number_input(label='timeduration_rb', value=int(v['ready_buy_cross']['timeduration']))
+                        op_trigbee_take_profit_rb = st.number_input(label='take_profit_rb', value=float(v['ready_buy_cross']['take_profit']))
+                        op_trigbee_sellout_rb = st.number_input(label='sellout_rb', value=float(v['ready_buy_cross']['sellout']))
+                        op_trigbee_sell_trigbee_trigger_rb = st.checkbox('sell_trigbee_trigger_rb', value=v['ready_buy_cross']['sell_trigbee_trigger'])
+                        op_stagger_profits_rb = st.checkbox('stagger_profits_rb', value=v['ready_buy_cross']['stagger_profits'])
+                        op_scalp_profits_rb = st.checkbox('scalp_profits_rb', value=v['ready_buy_cross']['scalp_profits'])
+
+                elif k == 'trigbees_kings_order_rules':
+                    st.write(k, v)
+                elif k == 'power_rangers':
+                    st.write("active stars", k, v)
+                    # all_stars = stars()
+
+                    df = pd.DataFrame(v.items())
+                    df = df.rename(columns={0: 'star', 1: 'status'})
+
+                    
+                    # make into 1
+                    # st.write(df)
+
+                    grid_response = build_AGgrid_df(data=df, reload_data=True, update_mode_value='SELECTION_CHANGED', height=333, update_cols=['star_status'], dropdownlst=['active', 'not_active'])
+                    data = grid_response['data']
+                    selected = grid_response['selected_rows'] 
+                    df_sel = pd.DataFrame(selected)
+                    st.write(df_sel)
+                    # if len(df_sel) > 0:
+                    #     star_dict = dict(zip(df_sel['star'], df['star_status_update']))
+                    #     trading_model_dict['power_rangers'] = star_dict # 'power_rangers'
+
+            # Create
+            
+            save_button_addranger = st.form_submit_button("update active star rangers")
+            if save_button_addranger:
+                app_req = create_AppRequest_package(request_name='trading_models',  archive_bucket='trading_models_requests')
+                trading_model_dict['status'] = control_status
+                trading_model_dict['trade_using_limits'] = trade_using_limits
+                trading_model_dict['buyingpower_allocation_LongTerm'] = buyingpower_allocation_LongTerm
+                trading_model_dict['buyingpower_allocation_ShortTerm'] = buyingpower_allocation_ShortTerm
+                trading_model_dict['total_budget'] = total_budget
+
+                if 'buy_cross-0' in trading_model_dict['trigbees'].keys():
+                    trigbees['buy_cross-0']['status'] = op_trigbee_bc
+                    trigbees['buy_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_bc
+                    trigbees['buy_cross-0']['timeduration'] = op_trigbee_timeduration_bc
+                    trigbees['buy_cross-0']['take_profit'] = op_trigbee_take_profit_bc
+                    trigbees['buy_cross-0']['sellout'] = op_trigbee_sellout_bc
+                    trigbees['buy_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_bc
+                    trigbees['buy_cross-0']['stagger_profits'] = op_stagger_profits_bc
+                    trigbees['buy_cross-0']['scalp_profits']= op_scalp_profits_bc
+                if 'sell_cross-0' in trading_model_dict['trigbees'].keys():
+                    trigbees['sell_cross-0']['status'] = op_trigbee_sc
+                    trigbees['sell_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_sc
+                    trigbees['sell_cross-0']['timeduration'] = op_trigbee_timeduration_sc
+                    trigbees['sell_cross-0']['take_profit'] = op_trigbee_take_profit_sc
+                    trigbees['sell_cross-0']['sellout'] = op_trigbee_sellout_sc
+                    trigbees['sell_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_sc
+                    trigbees['sell_cross-0']['stagger_profits'] = op_stagger_profits_sc
+                    trigbees['sell_cross-0']['scalp_profits']= op_scalp_profits_sc
+                if 'ready_buy_cross' in trading_model_dict['trigbees'].keys():
+                    trigbees['ready_buy_cross']['status'] = op_trigbee_rb
+                    trigbees['ready_buy_cross']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_rb
+                    trigbees['ready_buy_cross']['timeduration'] = op_trigbee_timeduration_rb
+                    trigbees['ready_buy_cross']['take_profit'] = op_trigbee_take_profit_rb
+                    trigbees['ready_buy_cross']['sellout'] = op_trigbee_sellout_rb
+                    trigbees['ready_buy_cross']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_rb
+                    trigbees['ready_buy_cross']['stagger_profits'] = op_stagger_profits_rb
+                    trigbees['ready_buy_cross']['scalp_profits']= op_scalp_profits_rb
+                
+                trading_model_dict['trigbees'] = trigbees
+                
                 if len(df_sel) > 0:
-                    add_star_list = df_sel['star'].to_list()
-                    save_button_addranger = st.button("update active star rangers")
-                    if save_button_addranger:
-                        app_req = create_AppRequest_package(request_name='trading_models',  archive_bucket='trading_models_requests')
-                        app_req['star_list'] = add_star_list
-                        APP_requests['trading_models'].append(app_req)
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-        return True
+                    star_original_dict = dict(zip(df['star'], df['status']))
+                    star_update_dict = dict(zip(df_sel['star'], df_sel['star_status_update']))
+                    star_dict = {**star_original_dict, **star_update_dict}
+                    trading_model_dict['power_rangers'] = star_dict # 'power_rangers'
+                
+                st.write(trading_model_dict)
+                app_req['trading_model_dict'] = trading_model_dict
+                APP_requests['trading_models'].append(app_req)
+                PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+        
+                # Save
+                st.write(app_request_package)
+                APP_requests['power_rangers'].append(app_request_package)
+                APP_requests['power_rangers_lastupdate'] = datetime.datetime.now().astimezone(est)
+                PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                return_image_upon_save()
         
     else:
         st.write("PENDING WORK")
@@ -656,6 +749,49 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
         st.write(df_sel)
 
     return df_sel
+
+
+def add_trading_model(QUEEN, ticker, trading_model_universe):
+    trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
+    if ticker not in trading_models.keys():
+        print("Ticker Missing Trading Model Adding Default Model1")
+        tradingmodel1 = generate_TradingModel(ticker=ticker)['tradingmodel1']
+        st.write(tradingmodel1)
+        app_req = create_AppRequest_package(request_name='add_trading_model', archive_bucket='add_trading_model_requests')
+        # QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
+
+# """ if "__name__" == "__main__": """
+
+st.sidebar.write("Production: ", prod)
+# st.write(prod)
+if prod:
+    api = api
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
+    st.sidebar.write("""My Queen Production""")
+else:
+    api = api_paper
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
+    st.sidebar.write("""My Queen Sandbox""")
+
+
+KING = KINGME()
+# stars = KING['stars']
+pollen_theme = pollen_themes(KING=KING)
+
+
+QUEEN = read_queensmind(prod)['queen']
+POLLENSTORY = read_pollenstory()
+APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
+KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
+ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
+
+
+option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
+option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory', 'app'))
+st.sidebar.write("<<<('')>>>")
+# st.header(option)
+
 
 if option == 'charts':
     # pollen = return_pollen()
@@ -835,13 +971,13 @@ if option == 'queen':
         st.write(df)
 
         # Summary of all ticker_time_frames
-        st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
         st.markdown(new_title, unsafe_allow_html=True)
         df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
         df = df.astype(str)
         st.write(df)
         
-        st.markdown('<div style="text-align: center;color:Black; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
         dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
 
         for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
@@ -1007,27 +1143,6 @@ if option == 'signal':
         control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
 
         update_QueenControls(APP_requests=APP_requests, control_option=control_option, theme_list=theme_list)
-
-        # theme_option = st.selectbox('Power Rangers Theme', theme_list, index=theme_list.index('nuetral'))
-
-        # # power rangers
-        # queens_power_rangers = QUEEN['queen_controls']['power_rangers']
-        # powerRangers = list(queens_power_rangers.keys())
-        # ranger = st.selectbox('Power Rangers', powerRangers, index=powerRangers.index(["1Minute_1Day" if "1Minute_1Day" in powerRangers else powerRangers[0]][0]))
-        # ranger_waves = list(queens_power_rangers[ranger].keys())
-        
-        # for wave_ in ranger_waves:
-        #     st.write(wave_)
-        #     ranger_settings = queens_power_rangers[ranger][wave_]
-        #     df_i = pd.DataFrame(ranger_settings)
-        #     df_i['PowerRanger'] = df_i.index
-        #     df = df_i[['PowerRanger', theme_option]].copy()
-        #     grid_response = build_AGgrid_df(data=df, reload_data=False, height=333, update_cols=['Update Ranger Theme'])
-        #     data = grid_response['data']
-        #     selected = grid_response['selected_rows'] 
-        #     df_sel = pd.DataFrame(selected)
-        #     st.write(df_sel)
-
 
 
     if save_signals == 'QueenOrders':

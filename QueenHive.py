@@ -1,11 +1,12 @@
-from asyncio import streams
-from cgitb import reset
+# from asyncio import streams
+# from cgitb import reset
+from cmath import log
 from datetime import datetime
 import logging
 from enum import Enum
 import time
 import alpaca_trade_api as tradeapi
-import asyncio
+# import asyncio
 import os
 import pandas as pd
 import numpy as np
@@ -14,7 +15,7 @@ import sys
 from alpaca_trade_api.rest import TimeFrame, URL
 from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
-import threading
+# import threading
 import datetime
 import pytz
 from typing import Callable
@@ -38,7 +39,7 @@ queens_chess_piece = os.path.basename(__file__)
 prod=True
 
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db_local')
+db_root = os.path.join(main_root, 'db')
 db_app_root = os.path.join(db_root, 'app')
 
 """# Dates """
@@ -1331,10 +1332,10 @@ def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
     # side = 'buy'
     # qty = '1'
     # symbol = 'BABA'
-    if api == 'paper':
-        api = api_paper
-    else:
-        api = api
+    # if api == 'paper':
+    #     api = api_paper
+    # else:
+    #     api = api
 
     snapshot = api.get_snapshot(symbol) # return_last_quote from snapshot
     conditions = snapshot.latest_quote.conditions
@@ -1399,6 +1400,16 @@ def submit_order(api, symbol, qty, side, type, limit_price=False, client_order_i
             type=type,
             time_in_force=time_in_force,
             client_order_id=client_order_id
+            )
+    if type == 'limit':
+        order = api.submit_order(
+            symbol=symbol,
+            qty=qty,
+            side=side,
+            type=type,
+            time_in_force=time_in_force,
+            client_order_id=client_order_id,
+            limit_price=limit_price,
             )
     
     return order
@@ -2352,7 +2363,7 @@ def init_app(pickle_file):
     if os.path.exists(pickle_file) == False:
         if "_App_" in pickle_file:
             print("init app")
-            data = {'orders': [], 'theme': [], 'queen_processed': []}
+            data = init_QUEEN_App()
             PickleData(pickle_file=pickle_file, data_to_store=data)
         if "_Orders_" in pickle_file:
             print("init Orders")
@@ -2415,47 +2426,68 @@ def KINGME(chart_times=False):
     
     kings_order_rules = {'knight_bees': 
                                     {
-    'queen_gen': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'queen_gen': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'init': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'init': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
+                    },
+    'app': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'app': {'timeduration': 30, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'buy_cross-0': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'buy_cross-0': {'timeduration': 33, 
-            'take_profit': .005,
-            'sellout': -.008,
-            'adjustable': True,
-            'friend_links': [],
+    'sell_cross-0': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'sell_cross-0': {'timeduration': 33, 
-            'take_profit': .005,
-            'sellout': -.0089,
-            'adjustable': True,
-            'friend_links': [],
+    'ready_buy_cross': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'ready_buy_cross': {'timeduration': 1, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'ready_sell_cross': {'timeduration': 1, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'ready_sell_cross': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
                                     }
     }
@@ -2477,6 +2509,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
     # allowed_col = ["queen_order_state", ]
     if queen_init:
         print("Queen Template Initalized")
+        logging_log_message(msg='QueenHive Queen Template Initalized')
         running_order = {'queen_order_state': 'init',
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
@@ -2505,6 +2538,7 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
+                        'power_up': {},
                         } 
     elif order['side'] == 'buy':
         # print("create buy running order")
@@ -2535,6 +2569,8 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
+                        'power_up': {},
+                        'honey_time_in_profit': {},
                         }
     elif order['side'] == 'sell':
         # print("create sell order")
@@ -2565,18 +2601,148 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
+                        'power_up': {},
+                        'honey_time_in_profit': {},
                         }
 
     return running_order
 
-# def symbols_stars_TradingModel(stars, client_dict):
-#     val_cols = ['ticker', 'status', 'buyingpower_allocation_LongTerm', 'buyingpower_allocation_ShortTerm', 'power_rangers']
-#     val = [i for i in val_cols if i not in client_dict.keys()]
-#     if val:
-#         print(val, "key missing")
-#         return False
-#     else:
-#         return {}
+
+def generate_TradingModel(ticker='SPY', stars=stars):
+    
+    def star_trading_model_vars(stars=stars):
+        
+        def kings_order_rules(status, trade_using_limits, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+            return {
+            'status': status,
+            'trade_using_limits': trade_using_limits,
+            # 'total_budget': total_budget,
+            'max_profit_waveDeviation': max_profit_waveDeviation,
+            'timeduration': timeduration,
+            'take_profit': take_profit,
+            'sellout': sellout,
+            'sell_trigbee_trigger': sell_trigbee_trigger,
+            'stagger_profits': stagger_profits,
+            'scalp_profits': scalp_profits}
+
+        default = kings_order_rules(
+        status='active', 
+        trade_using_limits=False, 
+        # total_budget=100,
+        max_profit_waveDeviation=1, 
+        timeduration=33,
+        take_profit=.005 , 
+        sellout=-.0089, 
+        sell_trigbee_trigger=True, 
+        stagger_profits=False, 
+        scalp_profits=True)
+        
+        return {
+            "1Minute_1Day": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default,
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "5Minute_5Day": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "30Minute_1Month": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "1Hour_3Month": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "2Hour_6Month": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "1Day_1Year": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default
+                },
+
+                    },
+        }
+
+
+    def model_vars(star, stars_vars):
+        return {'status': stars_vars[star]['status'], 
+                'buyingpower_allocation_LongTerm': stars_vars[star]['buyingpower_allocation_LongTerm'], 
+                'buyingpower_allocation_ShortTerm': stars_vars[star]['buyingpower_allocation_ShortTerm'], 
+                'power_rangers': stars_vars[star]['power_rangers'],
+                'trade_using_limits': stars_vars[star]['trade_using_limits'],
+                'total_budget': stars_vars[star]['total_budget'],
+                'trigbees': stars_vars[star]['trigbees'],
+                'index_reverse_X': '1X',
+                }
+    
+    stars_vars = star_trading_model_vars()
+    tradingmodel1 = {ticker: 
+        {star: model_vars(star, stars_vars=stars_vars) for star in stars().keys()}
+    }
+
+    return {'tradingmodel1': tradingmodel1}
+
 
 def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
@@ -2589,7 +2755,7 @@ def return_queen_controls(stars=stars):
             'stars': stars(),
             # 'stars_allocation':{k: 1/num_of_stars for k in stars()},
             # 'symbols_stars_allocRules': {'SPY': {k: {'status': 'active', 'allocation': 1/num_of_stars} for k in stars()}},
-            'symbols_stars_TradingModel': {'SPY': {k: {'status': 'active', 'buyingpower_allocation_LongTerm': 1/num_of_stars, 'buyingpower_allocation_ShortTerm': 1/num_of_stars, 'power_rangers': [k]} for k in stars()}},
+            'symbols_stars_TradingModel': generate_TradingModel(ticker='SPY', stars=stars)['tradingmodel1'],
             'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
@@ -2665,7 +2831,7 @@ def init_QUEEN_App():
     app = {'theme': 'nuetral', 
     'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
-    'last_modified': datetime.datetime.now(),
+    'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],
@@ -2744,7 +2910,6 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
             logging.info(msg)
 
     return {'QUEEN': QUEEN, 'update': update}
-
 
 
 def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
@@ -3130,8 +3295,8 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
             # sys.exit()
             if os.path.exists(PB_App_Pickle) == False:
                 init_app(pickle_file=PB_App_Pickle)
-            if os.path.exists(PB_Orders_Pickle) == False:
-                init_app(pickle_file=PB_Orders_Pickle)
+            # if os.path.exists(PB_Orders_Pickle) == False:
+            #     init_app(pickle_file=PB_Orders_Pickle)
         print("My Queen Production")
     else:
         api = api_paper
@@ -3151,8 +3316,8 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
             if os.path.exists(PB_App_Pickle) == False:
                 init_app(pickle_file=PB_App_Pickle)
             
-            if os.path.exists(PB_Orders_Pickle) == False:
-                init_app(pickle_file=PB_Orders_Pickle)
+            # if os.path.exists(PB_Orders_Pickle) == False:
+            #     init_app(pickle_file=PB_Orders_Pickle)
         print("My Queen Sandbox")
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
