@@ -2426,47 +2426,68 @@ def KINGME(chart_times=False):
     
     kings_order_rules = {'knight_bees': 
                                     {
-    'queen_gen': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'queen_gen': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'init': {'timeduration': 10, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'init': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
+                    },
+    'app': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'app': {'timeduration': 30, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'buy_cross-0': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'buy_cross-0': {'timeduration': 33, 
-            'take_profit': .005,
-            'sellout': -.008,
-            'adjustable': True,
-            'friend_links': [],
+    'sell_cross-0': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'sell_cross-0': {'timeduration': 33, 
-            'take_profit': .005,
-            'sellout': -.0089,
-            'adjustable': True,
-            'friend_links': [],
+    'ready_buy_cross': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
-    'ready_buy_cross': {'timeduration': 1, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
-                },
-    'ready_sell_cross': {'timeduration': 1, 
-            'take_profit': .005,
-            'sellout': -.01,
-            'adjustable': True,
-            'friend_links': [],
+    'ready_sell_cross': {'max_profit_waveDeviation': 1, 
+                'timeduration': 33, 
+                'take_profit': .005,
+                'sellout': -.0089,
+                'sell_trigbee_trigger': 'true',
+                'stagger_profits': 'false',
+                'scalp_profits': 'true',
+                'profit_gradiant': 1,
                 },
                                     }
     }
@@ -2586,24 +2607,395 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
 
     return running_order
 
-# def symbols_stars_TradingModel(stars, client_dict):
-#     val_cols = ['ticker', 'status', 'buyingpower_allocation_LongTerm', 'buyingpower_allocation_ShortTerm', 'power_rangers']
-#     val = [i for i in val_cols if i not in client_dict.keys()]
-#     if val:
-#         print(val, "key missing")
-#         return False
-#     else:
-#         return {}
+def star_trading_model_vars(stars=stars):
+    
+    def kings_order_rules(max_profit_waveDeviation, timeduration,take_profit,sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+        return {'max_profit_waveDeviation': max_profit_waveDeviation,
+        'timeduration': timeduration,
+        'take_profit': take_profit,
+        'sellout': sellout,
+        'sell_trigbee_trigger': sell_trigbee_trigger,
+        'stagger_profits': stagger_profits,
+        'scalp_profits': scalp_profits}
+
+    
+    return {
+        "1Minute_1Day": {
+        'status': 'active',
+        'trade_using_limits': 'false',
+        'total_budget': 100,
+        'buyingpower_allocation_LongTerm': .2,
+        'buyingpower_allocation_ShortTerm': .8,
+        'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        'trigbees': {'buy_cross-0': {
+                                            'status': 'active',
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,}, 
+                    'sell_cross-0': {
+                                            'status': 'active',                   
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                }, 'ready_buy_cross': {
+                                             'status': 'active',                   
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }
+            },
+
+                },
+        "5Minute_5Day": {
+        'status': 'active',
+        'trade_using_limits': False,
+        'total_budget': 100,
+        'buyingpower_allocation_LongTerm': .2,
+        'buyingpower_allocation_ShortTerm': .8,
+        'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        'trigbees_kings_order_rules': {'buy_cross-0': {
+                        'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'sell_cross-0': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'ready_buy_cross': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }
+            },
+
+                },
+        "30Minute_1Month": {
+        'status': 'active',
+        'trade_using_limits': False,
+        'total_budget': 100,
+        'buyingpower_allocation_LongTerm': .2,
+        'buyingpower_allocation_ShortTerm': .8,
+        'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        'trigbees_kings_order_rules': {'buy_cross-0': {
+                        'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'sell_cross-0': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'ready_buy_cross': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }
+            },
+
+                },
+        "1Hour_3Month": {
+        'status': 'active',
+        'trade_using_limits': False,
+        'total_budget': 100,
+        'buyingpower_allocation_LongTerm': .2,
+        'buyingpower_allocation_ShortTerm': .8,
+        'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        'trigbees_kings_order_rules': {'buy_cross-0': {
+                        'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'sell_cross-0': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'ready_buy_cross': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }
+            },
+
+                },
+        "2Hour_6Month": {
+        'status': 'active',
+        'trade_using_limits': False,
+        'total_budget': 100,
+        'buyingpower_allocation_LongTerm': .2,
+        'buyingpower_allocation_ShortTerm': .8,
+        'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        'trigbees_kings_order_rules': {'buy_cross-0': {
+                        'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'sell_cross-0': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'ready_buy_cross': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }
+            },
+
+                },
+        "1Day_1Year": {
+        'status': 'active',
+        'trade_using_limits': False,
+        'total_budget': 100,
+        'buyingpower_allocation_LongTerm': .2,
+        'buyingpower_allocation_ShortTerm': .8,
+        'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        'trigbees_kings_order_rules': {'buy_cross-0': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'sell_cross-0': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }, 'ready_buy_cross': {
+                                            'status': 'active'
+                                            'max_profit_waveDeviation': 1, 
+                                            'timeduration': 33, 
+                                            'take_profit': .005,
+                                            'sellout': -.0089,
+                                            'sell_trigbee_trigger': True,
+                                            'stagger_profits': False,
+                                            'scalp_profits': True,
+                            }
+            },
+
+                },
+    }
+    # "": {'kings_order_rules': {'max_profit_waveDeviation': 1}}, 
+    # "": {'kings_order_rules': {'max_profit_waveDeviation': 1}}, 
+    # "": {'kings_order_rules': {'max_profit_waveDeviation': 1}}, 
+    # "": {'kings_order_rules': {'max_profit_waveDeviation': 1}}, 
+    # "": {'kings_order_rules': {'max_profit_waveDeviation': 1}},
+    # }/-0
+
 
 def generate_TradingModel(ticker='SPY', stars=stars):
-    num_of_stars = len(stars())
+    
+    def star_trading_model_vars(stars=stars):
+        
+        def kings_order_rules(status, trade_using_limits, total_budget, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+            return {
+            'status': status,
+            'trade_using_limits': trade_using_limits,
+            'total_budget': total_budget,
+            'max_profit_waveDeviation': max_profit_waveDeviation,
+            'timeduration': timeduration,
+            'take_profit': take_profit,
+            'sellout': sellout,
+            'sell_trigbee_trigger': sell_trigbee_trigger,
+            'stagger_profits': stagger_profits,
+            'scalp_profits': scalp_profits}
+
+        default = kings_order_rules(
+        status='active', 
+        trade_using_limits=False, 
+        total_budget=100, 
+        max_profit_waveDeviation=1, 
+        timeduration=33,
+        take_profit=.005 , 
+        sellout=-.0089, 
+        sell_trigbee_trigger=True, 
+        stagger_profits=False, 
+        scalp_profits=True)
+        
+        return {
+            "1Minute_1Day": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default,
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "5Minute_5Day": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "30Minute_1Month": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "1Hour_3Month": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "2Hour_6Month": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+            "1Day_1Year": {
+            'status': 'active',
+            'trade_using_limits': False,
+            'total_budget': 100,
+            'buyingpower_allocation_LongTerm': .2,
+            'buyingpower_allocation_ShortTerm': .8,
+            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+            'trigbees': {'buy_cross-0': default, 
+                        'sell_cross-0': default, 
+                        'ready_buy_cross': default,
+                },
+
+                    },
+        }
+
+
+    def model_vars(star):
+        return {'status': stars_vars[star], 
+                'buyingpower_allocation_LongTerm': stars_vars[star], 
+                'buyingpower_allocation_ShortTerm': stars_vars[star], 
+                'power_rangers': stars_vars[star],
+                'trade_using_limits': stars_vars[star],
+                'total_budget': stars_vars[star],
+                'max_profit_waveDeviation': stars_vars[star],
+                'trigbees': stars_vars[star],
+                'trigbees_kings_order_rules': stars_vars[star],
+                'index_reverse_X': '1X',
+                }
+    
+    stars_vars = star_trading_model_vars()
     tradingmodel1 = {ticker: 
-            {'status': 'active', 
-            'buyingpower_allocation_LongTerm': 1/num_of_stars, 
-            'buyingpower_allocation_ShortTerm': 1/num_of_stars, 
-            'power_rangers': {k: 'active' for k in stars().keys()},
-            'trade_using_limits': 'false',
-            }
+        {star: model_vars(star) for star in stars().keys()}
     }
 
     return {'tradingmodel1': tradingmodel1}
@@ -2621,7 +3013,6 @@ def return_queen_controls(stars=stars):
             # 'stars_allocation':{k: 1/num_of_stars for k in stars()},
             # 'symbols_stars_allocRules': {'SPY': {k: {'status': 'active', 'allocation': 1/num_of_stars} for k in stars()}},
             'symbols_stars_TradingModel': generate_TradingModel(ticker='SPY', stars=stars)['tradingmodel1'],
-
             'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},

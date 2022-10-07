@@ -63,7 +63,7 @@ def createParser():
 if prod:
     from QueenHive import stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 else:
-    from QueenHive_sandbox import stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+    from QueenHive_sandbox import generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 
 
 
@@ -541,6 +541,9 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             if k == 'status':
                 # st.write(k, v)
                 control_status = st.selectbox("control_status", ['active', 'not_active'], index=['active', 'not_active'].index(v))
+            elif k == 'total_budget':
+                st.write(k, v)
+                total_budget = st.number_input(label=k, value=float(v))
             elif k == 'trade_using_limits':
                 # st.write(k, v)
                 trade_using_limits = st.checkbox("trade_using_limits")
@@ -550,6 +553,44 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             elif k == 'buyingpower_allocation_ShortTerm':
                 st.write(k, v)
                 buyingpower_allocation_ShortTerm = st.number_input(label=k, value=float(v))
+            elif k == 'trigbees':
+                trigbees = {}
+                st.write(k, v)
+                if 'buy_cross-0' in v.keys():
+                    st.write('buy_cross-0')
+                    op_trigbee = st.checkbox('status', value=True)
+                    op_trigbee_max_profit_waveDeviation = st.number_input(label='max_profit_waveDeviation', value=float(v['buy_cross-0']['max_profit_waveDeviation']))
+                    op_trigbee_timeduration = st.number_input(label='timeduration', value=float(v['buy_cross-0']['timeduration']))
+                    op_trigbee_take_profit = st.number_input(label='take_profit', value=float(v['buy_cross-0']['take_profit']))
+                    op_trigbee_sellout = st.number_input(label='sellout', value=float(v['buy_cross-0']['sellout']))
+                    op_trigbee_sell_trigbee_trigger = st.check_box('sell_trigbee_trigger', value=v['sell_trigbee_trigger'])
+                    op_stagger_profits = st.check_box('stagger_profits', value=v['stagger_profits'])
+                    op_scalp_profits = st.check_box('scalp_profits', value=v['scalp_profits'])
+
+                if 'sell_cross-0' in v.keys():
+                    st.write('sell_cross-0')
+                    op_trigbee = st.checkbox('status', value=True)
+                    op_trigbee_max_profit_waveDeviation = st.number_input(label='max_profit_waveDeviation', value=float(v['sell_cross-0']['max_profit_waveDeviation']))
+                    op_trigbee_timeduration = st.number_input(label='timeduration', value=float(v['sell_cross-0']['timeduration']))
+                    op_trigbee_take_profit = st.number_input(label='take_profit', value=float(v['sell_cross-0']['take_profit']))
+                    op_trigbee_sellout = st.number_input(label='sellout', value=float(v['sell_cross-0']['sellout']))
+                    op_trigbee_sell_trigbee_trigger = st.check_box('sell_trigbee_trigger', value=v['sell_trigbee_trigger'])
+                    op_stagger_profits = st.check_box('stagger_profits', value=v['stagger_profits'])
+                    op_scalp_profits = st.check_box('scalp_profits', value=v['scalp_profits'])
+
+                if 'ready_buy_cross' in v.keys():
+                    st.write('ready_buy_cross')
+                    op_trigbee = st.checkbox('status', value=True)
+                    op_trigbee_max_profit_waveDeviation = st.number_input(label='max_profit_waveDeviation', value=float(v['ready_buy_cross']['max_profit_waveDeviation']))
+                    op_trigbee_timeduration = st.number_input(label='timeduration', value=float(v['ready_by_cross']['timeduration']))
+                    op_trigbee_take_profit = st.number_input(label='take_profit', value=float(v['ready_by_cross']['take_profit']))
+                    op_trigbee_sellout = st.number_input(label='sellout', value=float(v['ready_by_cross']['sellout']))
+                    op_trigbee_sell_trigbee_trigger = st.check_box('sell_trigbee_trigger', value=v['sell_trigbee_trigger'])
+                    op_stagger_profits = st.check_box('stagger_profits', value=v['stagger_profits'])
+                    op_scalp_profits = st.check_box('scalp_profits', value=v['scalp_profits'])
+
+            elif k == 'trigbees_kings_order_rules':
+                st.write(k, v)
             elif k == 'power_rangers':
                 st.write("active stars", k, v)
                 df = pd.DataFrame(v)
@@ -579,6 +620,36 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             trading_model_dict['trade_using_limits'] = trade_using_limits
             trading_model_dict['buyingpower_allocation_LongTerm'] = buyingpower_allocation_LongTerm
             trading_model_dict['buyingpower_allocation_ShortTerm'] = buyingpower_allocation_ShortTerm
+            if 'buy_cross-0' in trading_model_dict.keys():
+                trigbees['buy_cross-0']['status'] = op_trigbee
+                trigbees['buy_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation
+                trigbees['buy_cross-0']['timeduration'] = op_trigbee_timeduration
+                trigbees['buy_corss-0']['take_profit'] = op_trigbee_take_profit
+                trigbees['buy_cross-0']['sellout'] = op_trigbee_sellout
+                trigbees['buy_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger
+                trigbees['buy_cross-0']['stagger_profits'] = op_stagger_profits
+                trigbees['buy_cross-0']['scalp_profits']= op_scalp_profits
+            if 'sell_cross-0' in trading_model_dict.keys():
+                trigbees['sell_cross-0']['status'] = op_trigbee
+                trigbees['sell_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation
+                trigbees['sell_cross-0']['timeduration'] = op_trigbee_timeduration
+                trigbees['sell_cross-0']['take_profit'] = op_trigbee_take_profit
+                trigbees['sell_cross-0']['sellout'] = op_trigbee_sellout
+                trigbees['sell_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger
+                trigbees['sell_cross-0']['stagger_profits'] = op_stagger_profits
+                trigbees['sell_cross-0']['scalp_profits']= op_scalp_profits
+            if 'ready_buy_cross' in trading_model_dict.keys():
+                trigbees['ready_buy_cross']['status'] = op_trigbee
+                trigbees['ready_buy_cross']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation
+                trigbees['ready_buy_cross']['timeduration'] = op_trigbee_timeduration
+                trigbees['ready_buy_cross']['take_profit'] = op_trigbee_take_profit
+                trigbees['ready_buy_cross']['sellout'] = op_trigbee_sellout
+                trigbees['ready_buy_cross']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger
+                trigbees['ready_buy_cross']['stagger_profits'] = op_stagger_profits
+                trigbees['ready_buy_cross']['scalp_profits']= op_scalp_profits
+            
+            trading_model_dict['trigbees'] = trigbees
+            
             if len(df_sel) > 0:
                 star_dict = dict(zip(df_sel['star'], df['star_status_update']))
                 trading_model_dict['power_rangers'] = star_dict # 'power_rangers'
@@ -673,6 +744,14 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
     return df_sel
 
 
+def add_trading_model(QUEEN, ticker, trading_model_universe):
+    trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
+    if ticker not in trading_models.keys():
+        print("Ticker Missing Trading Model Adding Default Model1")
+        tradingmodel1 = generate_TradingModel(ticker=ticker)['tradingmodel1']
+        st.write(tradingmodel1)
+        app_req = create_AppRequest_package(request_name='add_trading_model', archive_bucket='add_trading_model_requests')
+        # QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
 
 # """ if "__name__" == "__main__": """
 

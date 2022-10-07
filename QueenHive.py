@@ -24,7 +24,7 @@ from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
-import talib
+# import talib
 from scipy import stats
 import shutil
 import ipdb
@@ -324,17 +324,17 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 msg=(e,"--", print_line_of_error(), "--", ticker_time_frame, "--ANGEL_bee")
                 logging.error(msg)
 
-            # add close price momentum
-            try:
-                s_timetoken = datetime.datetime.now().astimezone(est)
-                close = df['close']
-                df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
-                df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
-                e_timetoken = datetime.datetime.now().astimezone(est)
-                betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
-            except Exception as e:
-                msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
-                logging.error(msg)
+            # # add close price momentum
+            # try:
+            #     s_timetoken = datetime.datetime.now().astimezone(est)
+            #     close = df['close']
+            #     df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
+            #     df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
+            #     e_timetoken = datetime.datetime.now().astimezone(est)
+            #     betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
+            # except Exception as e:
+            #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
+            #     logging.error(msg)
             
             time_state = df['timestamp_est'].iloc[-1] # current time
             STORY_bee[ticker_time_frame]['story']['time_state'] = time_state

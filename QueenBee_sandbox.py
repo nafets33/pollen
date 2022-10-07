@@ -65,7 +65,7 @@ else:
 if prod:
     from QueenHive import return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 else:
-    from QueenHive_sandbox import return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 
 
 # Green Light to Main
@@ -894,8 +894,8 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
             power_up = {ranger: 0 for ranger in power_rangers_universe}
             # ipdb.set_trace()
             for star, v in tmodel_power_rangers.items(): # 1m 5m, 3M
-                for ranger in power_rangers_universe:
-                    if v == 'active':
+                if v[trigbee]['status'] == 'active':
+                    for ranger in power_rangers_universe:
                         PowerRangerColor = stars_colors_d[ranger][f'{ticker_token}{star}'] # COLOR
                         power_up[ranger] += float(QUEEN['queen_controls']['power_rangers'][star][ranger][wave_type][theme][PowerRangerColor]) # star-buywave-theme
 
@@ -1075,6 +1075,16 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         print("logme")
 
 
+def add_trading_model(QUEEN, ticker, model='tradingmodel1'):
+    trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
+    if ticker not in trading_models.keys():
+        print("Ticker Missing Trading Model Adding Default Model1")
+        logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
+        tradingmodel1 = generate_TradingModel(ticker=ticker)[model]
+        QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
+        PickleData(QUEEN, PB_QUEEN_Pickle)
+
+
 def command_conscience(api, QUEEN, active_tickers, APP_requests):
 
     STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
@@ -1098,6 +1108,7 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
         # # """ # Accept Ticker """
         # if ticker not in active_tickers:
         #     continue ##### break loop
+        add_trading_model(QUEEN=QUEEN, ticker=ticker, model='tradingmodel1')
         
         # crypto
         if ticker in crypto_currency_symbols:
@@ -1154,8 +1165,12 @@ def command_conscience(api, QUEEN, active_tickers, APP_requests):
                     # trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
 
                     for trig in avail_trigs:
+                        if trig in trading_model['trigbees'].keys():
+                            if str(trading_model[trig]['status']) != 'active':
+                                print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                                continue
                         # ipdb.()
-                        if trig in ["buy_cross-0", "sell_cross-0"]:
+                        else:
                             # check if you already placed order or if a workerbee in transit to place order
                             if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame):
                                 trig_action = True
