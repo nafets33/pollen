@@ -2726,15 +2726,13 @@ def generate_TradingModel(ticker='SPY', stars=stars):
 
 
     def model_vars(star, stars_vars):
-        return {'status': stars_vars[star], 
-                'buyingpower_allocation_LongTerm': stars_vars[star], 
-                'buyingpower_allocation_ShortTerm': stars_vars[star], 
-                'power_rangers': stars_vars[star],
-                'trade_using_limits': stars_vars[star],
-                'total_budget': stars_vars[star],
-                'max_profit_waveDeviation': stars_vars[star],
-                'trigbees': stars_vars[star],
-                'trigbees_kings_order_rules': stars_vars[star],
+        return {'status': stars_vars[star]['status'], 
+                'buyingpower_allocation_LongTerm': stars_vars[star]['buyingpower_allocation_LongTerm'], 
+                'buyingpower_allocation_ShortTerm': stars_vars[star]['buyingpower_allocation_ShortTerm'], 
+                'power_rangers': stars_vars[star]['power_rangers'],
+                'trade_using_limits': stars_vars[star]['trade_using_limits'],
+                'total_budget': stars_vars[star]['total_budget'],
+                'trigbees': stars_vars[star]['trigbees'],
                 'index_reverse_X': '1X',
                 }
     
