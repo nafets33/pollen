@@ -4931,3 +4931,51 @@
 10/06/2022 05:07:52 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 6)
 10/06/2022 09:59:55 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 16343)
 10/06/2022 10:00:09 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+10/07/2022 01:22:09 PM:root:INFO: ('queen created', '10-07-2022 01.22PM')
+10/07/2022 01:22:10 PM:root:INFO: app_order_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: sell_orders : Key Added
+10/07/2022 01:22:10 PM:root:INFO: buy_orders : Key Added
+10/07/2022 01:22:10 PM:root:INFO: queen_processed_orders : Key Added
+10/07/2022 01:22:10 PM:root:INFO: wave_triggers : Key Added
+10/07/2022 01:22:10 PM:root:INFO: app_wave_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: trading_models : Key Added
+10/07/2022 01:22:10 PM:root:INFO: trading_models_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: power_rangers : Key Added
+10/07/2022 01:22:10 PM:root:INFO: power_rangers_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: power_rangers_lastupdate : Key Added
+10/07/2022 01:22:10 PM:root:INFO: knight_bees_kings_rules : Key Added
+10/07/2022 01:22:10 PM:root:INFO: knight_bees_kings_rules_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: queen_controls_reset : Key Added
+10/07/2022 01:22:10 PM:root:INFO: queen_controls : Key Added
+10/07/2022 01:22:10 PM:root:INFO: queen_controls_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: queen_contorls_lastupdate : Key Added
+10/07/2022 01:22:10 PM:root:INFO: del_QUEEN_object : Key Added
+10/07/2022 01:22:10 PM:root:INFO: del_QUEEN_object_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: last_app_update : Key Added
+10/07/2022 01:22:10 PM:root:INFO: update_queen_order : Key Added
+10/07/2022 01:22:10 PM:root:INFO: update_queen_order_requests : Key Added
+10/07/2022 01:22:10 PM:root:INFO: savedstars : Key Added
+10/07/2022 01:22:10 PM:root:INFO: misc_bucket : Key Added
+10/07/2022 01:22:10 PM:root:INFO: stop_queen : Key Added
+10/07/2022 01:22:10 PM:root:INFO: My Queen
+10/07/2022 01:22:11 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+10/07/2022 01:23:15 PM:root:INFO: My Queen
+10/07/2022 01:23:16 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+10/07/2022 01:42:06 PM:root:INFO: ('queen created', '10-07-2022 01.42PM')
+10/07/2022 01:42:07 PM:root:INFO: My Queen
+10/07/2022 01:44:52 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 4)
+10/07/2022 01:45:50 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 4)
+10/07/2022 01:49:14 PM:root:INFO: {'ex_order()': 'SPY_1Minute_1Day'}
+10/07/2022 01:49:14 PM:root:INFO: order submit
+10/07/2022 01:49:14 PM:root:INFO: {'max_profit_waveDeviation': 1, 'timeduration': 33, 'take_profit': 0.005, 'sellout': -0.0089, 'sell_trigbee_trigger': 'true', 'stagger_profits': 'false', 'scalp_profits': 'true', 'profit_gradiant': 1}
+10/07/2022 01:49:14 PM:root:INFO: {'execute order()': {'msg': 'order submitted : at : 2022-10-07 13-49-14 PM', 'ticker_time_frame': 'SPY_1Minute_1Day', 'trig': 'sell_cross-0', 'crypto': False, 'wave_amo': 588.96256}}
+10/07/2022 01:56:24 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 4)
+10/07/2022 02:03:58 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 4)
+10/07/2022 02:05:18 PM:root:INFO: {'ex_order()': 'SPY_1Minute_1Day'}
+10/07/2022 02:05:18 PM:root:INFO: order submit
+10/07/2022 02:05:18 PM:root:INFO: {'max_profit_waveDeviation': 1, 'timeduration': 33, 'take_profit': 0.005, 'sellout': -0.0089, 'sell_trigbee_trigger': 'true', 'stagger_profits': 'false', 'scalp_profits': 'true', 'profit_gradiant': 1}
+10/07/2022 02:05:18 PM:root:INFO: {'execute order()': {'msg': 'order submitted : at : 2022-10-07 14-05-18 PM', 'ticker_time_frame': 'SPY_1Minute_1Day', 'trig': 'buy_cross-0', 'crypto': False, 'wave_amo': 584.446616}}
+10/07/2022 02:06:08 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 4)
+10/07/2022 02:06:23 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 7)
+10/07/2022 02:06:39 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 4)
+10/07/2022 02:07:04 PM:root:INFO: ('queen', ': cycle time > 3 seconds:  SLOW cycle: ', 5)
