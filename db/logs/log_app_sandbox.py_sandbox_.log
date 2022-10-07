@@ -1,0 +1,19 @@
+09/23/2022 03:20:42 PM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+09/23/2022 03:20:42 PM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+09/23/2022 03:20:42 PM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmp_fdnctn5'
+09/23/2022 03:20:42 PM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+09/23/2022 03:20:42 PM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+09/23/2022 03:20:42 PM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmp0scss9_w'
+09/26/2022 06:57:14 PM:asyncio:ERROR: Task exception was never retrieved
+future: <Task finished name='Task-21062' coro=<WebSocketProtocol13.write_message.<locals>.wrapper() done, defined at /Users/stefanstapinski/Jq/lib/python3.9/site-packages/tornado/websocket.py:1100> exception=WebSocketClosedError()>
+Traceback (most recent call last):
+  File "/Users/stefanstapinski/Jq/lib/python3.9/site-packages/tornado/websocket.py", line 1102, in wrapper
+    await fut
+tornado.iostream.StreamClosedError: Stream is closed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/stefanstapinski/Jq/lib/python3.9/site-packages/tornado/websocket.py", line 1104, in wrapper
+    raise WebSocketClosedError()
+tornado.websocket.WebSocketClosedError
