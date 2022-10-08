@@ -2504,7 +2504,7 @@ def KINGME(chart_times=False):
 
 
 
-def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+def create_QueenOrderBee(KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
     date_mark = datetime.datetime.now().astimezone(est)
     # allowed_col = ["queen_order_state", ]
     if queen_init:
@@ -2547,10 +2547,10 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'order_trig_buy_stop': True,
                         'order_trig_sell_stop': 'false',
                         'symbol': order['symbol'], 
-                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'order_rules': order_vars['trigbees'][trig], 
                         'trigname': trig, 'datetime': date_mark,
                         'ticker_time_frame': ticker_time_frame,
-                        'ticker_time_frame_origin': ticker_time_frame, 
+                        'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
                         'status_q': status_q,
                         'portfolio_name': portfolio_name,
                         'exit_order_link': exit_order_link, 
@@ -2566,10 +2566,10 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'honey_gauge': deque([], 89),
                         'macd_gauge': deque([], 89),
                         '$honey': 'na',
-                        'origin_wave': {},
+                        'origin_wave': {'origin_wave': order_vars['origin_wave']},
+                        'power_up': {'power_up': order_vars['power_up']},
                         'assigned_wave': {},
                         'sell_reason': {},
-                        'power_up': {},
                         'honey_time_in_profit': {},
                         }
     elif order['side'] == 'sell':
@@ -2577,12 +2577,12 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
         running_order = {'queen_order_state': 'submitted',
                         'side': order['side'],
                         'order_trig_buy_stop': True,
-                        'order_trig_sell_stop': 'true',
+                        'order_trig_sell_stop': 'false',
                         'symbol': order['symbol'], 
-                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'order_rules': order_vars['trigbees'][trig], 
                         'trigname': trig, 'datetime': date_mark,
                         'ticker_time_frame': ticker_time_frame,
-                        'ticker_time_frame_origin': ticker_time_frame, 
+                        'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
                         'status_q': status_q,
                         'portfolio_name': portfolio_name,
                         'exit_order_link': exit_order_link, 
@@ -2598,10 +2598,10 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'honey_gauge': deque([], 89),
                         'macd_gauge': deque([], 89),
                         '$honey': 'na',
-                        'origin_wave': {},
+                        'origin_wave': {'origin_wave': order_vars['origin_wave']},
+                        'power_up': {'power_up': order_vars['power_up']},
                         'assigned_wave': {},
                         'sell_reason': {},
-                        'power_up': {},
                         'honey_time_in_profit': {},
                         }
 
@@ -2612,11 +2612,23 @@ def generate_TradingModel(ticker='SPY', stars=stars):
     
     def star_trading_model_vars(stars=stars):
         
-        def kings_order_rules(status, trade_using_limits, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+        def star_doubledown_timeduration(stars=stars):
+            star_doubledown_dict = {
+            # seconds
+            "1Minute_1Day": 60, 
+            "5Minute_5Day": 120, 
+            "30Minute_1Month": 120, 
+            "1Hour_3Month": 120, 
+            "2Hour_6Month": 120, 
+            "1Day_1Year": 86400}
+            return star_doubledown_dict
+
+
+        def kings_order_rules(status, doubledown_storylength, trade_using_limits, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
             return {
             'status': status,
             'trade_using_limits': trade_using_limits,
-            # 'total_budget': total_budget,
+            'doubledown_storylength': doubledown_storylength,
             'max_profit_waveDeviation': max_profit_waveDeviation,
             'timeduration': timeduration,
             'take_profit': take_profit,
@@ -2628,7 +2640,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
         default = kings_order_rules(
         status='active', 
         trade_using_limits=False, 
-        # total_budget=100,
+        doubledown_storylength=60,
         max_profit_waveDeviation=1, 
         timeduration=33,
         take_profit=.005 , 
@@ -2733,7 +2745,8 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                 'trade_using_limits': stars_vars[star]['trade_using_limits'],
                 'total_budget': stars_vars[star]['total_budget'],
                 'trigbees': stars_vars[star]['trigbees'],
-                'index_reverse_X': '1X',
+                'index_inverse_X': '1X',
+                'index_long_X': '1X',
                 }
     
     stars_vars = star_trading_model_vars()

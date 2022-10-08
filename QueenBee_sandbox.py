@@ -337,33 +337,21 @@ def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TB
     return {'open': open_orders, 'closed': closed_orders}
 
 
-def process_order_submission(order, trig, prod, tablename, ticker_time_frame, portfolio_name='Jq', status_q=False, exit_order_link=False, bulkorder_origin__client_order_id=False, system_recon=False, priceinfo=False):
+def process_order_submission(order, order_vars, trig, ticker_time_frame, portfolio_name='Jq', status_q=False, exit_order_link=False, bulkorder_origin__client_order_id=False, system_recon=False, priceinfo=False):
 
     try:
-        # update db
-        # symbol = order['symbol']
-        # client_order_id = order['client_order_id']
-        # alpaca_order_id = order['id']
-        # df_details = {'trigname': trig, 'client_order_id':client_order_id, 'origin_client_order_id':client_order_id, 
-        # 'exit_order_link':exit_order_link, 'ticker_time_frame': ticker_time_frame, 'status_q': status_q, 'alpaca_order_id': alpaca_order_id,
-        # 'bulkorder_origin__client_order_id': bulkorder_origin__client_order_id, 'portfolio_name': portfolio_name, 'system_recon': system_recon} 
-        # df = pd.DataFrame(df_details.items()).T
-        # new_header = df.iloc[0] #grab the first row for the header
-        # df = df[1:] #take the data less the header row
-        # df.columns = new_header #set the header row as the df header
-        # update_csv_db(df_to_add=df, tablename=tablename, prod=prod, append=True)
-
         # Create Running Order
-        sending_order = create_QueenOrderBee(KING=KING, order=order, ticker_time_frame=ticker_time_frame, 
+        sending_order = create_QueenOrderBee(KING=KING, order_vars=order_vars, order=order, ticker_time_frame=ticker_time_frame, 
         portfolio_name=portfolio_name, 
         status_q=status_q, 
         trig=trig, 
         exit_order_link=exit_order_link, 
         priceinfo=priceinfo)
 
+        # Append Order
         QUEEN['queen_orders'].append(sending_order)
 
-        logging.info(QUEEN["kings_order_rules"]["knight_bees"][trig])
+        logging.info("Order Bee Created")
 
         
         return {'sending_order': sending_order}
@@ -631,14 +619,18 @@ def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
     if len(all_orders) == 0:
         return False
     
-    active_orders = all_orders[all_orders['queen_order_state'].isin(QUEEN['heartbeat']['active_order_state_list'])].copy()
-    order_exits = np.where(
-        (active_orders['trigname'] == trig) &
-        (active_orders['ticker_time_frame'] == ticker_time_frame)
-    )
-    print('trig_action ', order_exits[0], len(order_exits[0]))
-    if sum(order_exits[0]) > 0 or len(order_exits[0]) > 0:
-        return True
+    # active_orders = all_orders[all_orders['queen_order_state'].isin(QUEEN['heartbeat']['active_order_state_list'])].copy()
+    if len(active_orders) > 0:
+        # print('trig_action ',  len(active_orders))
+        active_orders['order_exits'] = np.where(
+            (active_orders['trigname'] == trig) &
+            (active_orders['ticker_time_frame'] == ticker_time_frame), 1, 0)
+        trigbee_orders =  active_orders[active_orders['order_exits'] == 1].copy()
+        if len(trigbee_orders) > 0:
+            print('trig in action ',  len(active_orders))
+            return trigbee_orders
+        else:
+            return False
     else:
         return False
 
@@ -670,6 +662,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
             side = king_resp['side']
             type = king_resp['type']
             wave_amo = king_resp['wave_amo']
+            limit_price = False
         else:
             # up pack order vars
             side = king_resp['order_vars']['order_side']
@@ -691,6 +684,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         current_ask = snap.latest_quote.ask_price
         priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
         
+        # Adjust for Crypto
         if crypto:
             qty_order = float(round(wave_amo / current_price, 4))
         else:
@@ -724,12 +718,10 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         order = vars(order_submit)['_raw']
         # print(order['status'])
 
-        
         # Confirm order went through, end process and write results
         if route_order_based_on_status(order_status=order['status']):
-            # print(ticker_time_frame)
             
-            order_process = process_order_submission(trig=trig, order=order, prod=prod, tablename='main_orders', ticker_time_frame=ticker_time_frame, priceinfo=priceinfo)
+            order_process = process_order_submission(order=order, order_vars=king_resp['order_vars'], trig=trig, ticker_time_frame=ticker_time_frame, priceinfo=priceinfo)
 
             PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
             
@@ -847,17 +839,10 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         # debate if we should place a new order based on current portfolio trades
         pass
     
-    
-    def eval_trig_action():
-        # evaluate if the current trade needs more love$
-        pass
-
-    
     def trade_Scenarios(trigbee, wave_amo):
         # Create buying power upgrades depending on the STARS waves
         
         # Current Star Power? the Incremate of macd_tier, macd_state for a given Star
-
 
         # if "buy_cross-0" == trigbee:
         #     pass
@@ -934,132 +919,112 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         """Stars Forever Be in Heaven"""
         story_view_ = story_view(STORY_bee=STORY_bee, ticker=ticker)
         stars_df = story_view_['df']
-
+        # Wave Analysis
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
 
         tmodel_power_rangers = trading_model['power_rangers'] # stars
 
-        # def kings_Blessing(ticker, trigbee, current_wave, trig_action, total_buying_power, app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict):
-            
-        if trigbee == 'buy_cross-0':
+        def order_vars__queen_order_items(order_side, wave_amo, maker_middle, origin_wave, power_up, ticker_time_frame_origin):
             order_vars = {}
-            # Q?confirmation on trigger, should you wait for futher confirmation?
-
-            if crypto:
-                # theme_buyingpower = {
-                # 'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
-                # 'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
-                # 'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
-                # }
-                
-                # # current wave
-                # current_wave_blocktime = current_wave['wave_blocktime']
-                # current_wave_amo = theme_buyingpower[current_wave_blocktime]
-
-                wave_amo = 10000
-
-                if maker_middle:
-                    order_vars['order_type'] = 'limit'
-                    order_vars['limit_price'] = maker_middle # 10000
-                else:
-                    order_vars['order_type'] = 'market'
-                    order_vars['limit_price'] = False
-
-                order_vars['order_side'] = 'buy'
-                order_vars['wave_amo'] = wave_amo
-                
-
-                kings_blessing = True
+            if maker_middle:
+                order_vars['order_type'] = 'limit'
+                order_vars['limit_price'] = maker_middle # 10000
             else:
-                theme_buyingpower = {
-                'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
-                'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
-                'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],
-                }
-                
-                # Current wave : what is your timeblock?
-                current_wave_blocktime = current_wave['wave_blocktime']
-                current_wave_amo = theme_buyingpower[current_wave_blocktime]  # PERCENTAGE
-                
-                # what do the Stars say?
-
-                # total budget
-                client_total_DAY_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed)
-
-                # wave_amo = current_wave_amo * client_total_DAY_trade_amt_allowed  # (10% * ($500,000 * 3%))
-
-                theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
-                
-                power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
-                print("POWERUP !!!!! ", power_up_amo)
-
-                wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
-                
-                # Order Variables
-                if maker_middle:
-                    order_vars['order_type'] = 'limit'
-                    order_vars['limit_price'] = maker_middle # 10000
-                else:
-                    order_vars['order_type'] = 'market'
-                    order_vars['limit_price'] = False
-
-                order_vars['order_side'] = 'buy'
-                order_vars['wave_amo'] = wave_amo
-
-                # how many trades have we completed today? whats our total profit loss with wave trades
-                
-                # should you override your original order rules?
-
-                kings_blessing = True
+                order_vars['order_type'] = 'market'
+                order_vars['limit_price'] = False
             
+            order_vars['origin_wave'] = origin_wave
+            order_vars['power_up'] = power_up
+            order_vars['wave_amo'] = wave_amo
+            order_vars['order_side'] = order_side
+            order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+            
+            
+            return order_vars
+
+        # Init Buying Power
+        theme_buyingpower = {
+        'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
+        'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
+        'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],}
+        # Current wave : what is your timeblock?
+        current_wave_blocktime = current_wave['wave_blocktime']
+        current_wave_amo = theme_buyingpower[current_wave_blocktime]  # PERCENTAGE
+
+        # total budget
+        client_total_DAY_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed)
+        # wave_amo = current_wave_amo * client_total_DAY_trade_amt_allowed  # (10% * ($500,000 * 3%)
+        theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
+        power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
+        print("POWERUP !!!!! ", power_up_amo)
+        wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
+
+        # Index ETF Risk Level
+        if ticker in QUEEN['heartbeat']['main_indexes'].keys():
+            if f'{"long"}{trading_model["index_long_X"]}' in  QUEEN['heartbeat']['main_indexes'][ticker].keys():
+                etf_long_tier = trading_model['index_long_X']
+                ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_long_tier]
+            else:
+                etf_long_tier = False
+            
+            if f'{"inverse"}{trading_model["index_inverse_X"]}' in  QUEEN['heartbeat']['main_indexes'][ticker].keys():
+                etf_inverse_tier = f'{"inverse"}{trading_model["index_inverse_X"]}'
+                ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_inverse_tier]
+            else:
+                etf_inverse_tier = False        
+
+        # how many trades have we completed today? whats our total profit loss with wave trades
+        # should you override your original order rules?
+        
+        if trigbee == 'buy_cross-0':
+            if crypto:
+                kings_blessing = True
+                order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+            else:
+                kings_blessing = True
+                order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+
             if trig_action:
                 # print("evalatue if there is another trade to make on top of current wave")
-                kings_blessing = False
+                trig_action_trades = trig_action
+                now_time = datetime.datetime.now().astimezone(est)
+                trig_action_trades.iloc[-1]['datetime']
+                
+                time_delta = now_time - trig_action_trades.iloc[-1]['datetime']
+
+                if time_delta.seconds > trading_model['doubledown_storylength']:
+                    print("Trig In Action Double Down Trade")
+                    kings_blessing = True
+                    order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
+                else: 
+                    kings_blessing = False
 
             return {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
             # return {'kings_blessing': kings_blessing, 'ticker': ticker, 'wave_amo': wave_amo, 'type': order_type, 'side': order_side}
 
         elif trigbee == 'sell_cross-0':
-            order_vars = {}
             ## create process of shorting when regular tickers
-            ticker = QUEEN['heartbeat']['main_indexes'][ticker]['inverse'] # SH SQQQ...
-            
-            # Q?confirmation on trigger, should you wait for futher confirmation?
-
             if crypto:
-                kings_blessing = False
+                return {'kings_blessing': False}
             else:
-                theme_buyingpower = {
-                'morning_9-11' : pollen_theme_dict[theme][star_time]['wavedown']['morning_9-11'],
-                'lunch_11-2' : pollen_theme_dict[theme][star_time]['wavedown']['lunch_11-2'],
-                'afternoon_2-4' : pollen_theme_dict[theme][star_time]['wavedown']['afternoon_2-4'],
-                }
-                
-                # current wave
-                current_wave_blocktime = current_wave['wave_blocktime']
-                current_wave_amo = theme_buyingpower[current_wave_blocktime]
-
-                wave_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
-
-                # Order Variables
-                if maker_middle:
-                    order_vars['order_type'] = 'limit'
-                    order_vars['limit_price'] = maker_middle # 10000
-                else:
-                    order_vars['order_type'] = 'market'
-                    order_vars['limit_price'] = False
-
-                order_vars['order_side'] = 'buy'
-                order_vars['wave_amo'] = wave_amo
-                
-                # how many trades have we completed today? whats our total profit loss with wave trades
-                # should you override your original order rules?
-                
                 kings_blessing = True
+                order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
             if trig_action:
-                # print("evalatue if there is another trade to make on top of current wave")
-                kings_blessing = False
+                trig_action_trades = trig_action
+                now_time = datetime.datetime.now().astimezone(est)
+                trig_action_trades.iloc[-1]['datetime']
+                
+                time_delta = now_time - trig_action_trades.iloc[-1]['datetime']
+
+                if time_delta.seconds > trading_model['doubledown_storylength']:
+                    print("Trig In Action Double Down Trade")
+                    kings_blessing = True
+                    order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
+                else: 
+                    return {'kings_blessing': False}
 
             return {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
 
@@ -1085,7 +1050,7 @@ def add_trading_model(QUEEN, ticker, model='tradingmodel1'):
         logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
         tradingmodel1 = generate_TradingModel(ticker=ticker)[model]
         QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
-        PickleData(QUEEN, PB_QUEEN_Pickle)
+        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
 
 
 def command_conscience(api, QUEEN, APP_requests):
@@ -1104,16 +1069,14 @@ def command_conscience(api, QUEEN, APP_requests):
     all_orders = pd.DataFrame(QUEEN['queen_orders'])
     active_orders = all_orders[all_orders['queen_order_state'].isin(active_order_state_list)].copy()
 
-    # cycle through stories  # The Golden Ticket
-    # for ttf_star, ticker_info in QUEEN['heartbeat']['active_tickerStars'].items():
-    #     ticker = ttf_star.split("_")[0]
-    
+    # cycle through stories  # The Golden Ticket    
     for ticker in active_tickers:
         
         # # """ # Accept Ticker """
         # if ticker not in active_tickers:
         #     continue ##### break loop
-        # add_trading_model(QUEEN=QUEEN, ticker=ticker, model='tradingmodel1')
+        
+        add_trading_model(QUEEN=QUEEN, ticker=ticker, model='tradingmodel1')
         
         # crypto
         if ticker in crypto_currency_symbols:
@@ -1176,10 +1139,7 @@ def command_conscience(api, QUEEN, APP_requests):
                                 continue
                             
                             # check if you already placed order or if a workerbee in transit to place order
-                            if trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame):
-                                trig_action = True
-                            else:
-                                trig_action = False
+                            trig_action = trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame)
 
                             """ HAIL TRIGGER, WHAT SAY YOU?
                             ~forgive me but I bring a gift for the king and queen
@@ -1988,7 +1948,11 @@ try:
     # QUEEN['queen_controls']['MACD_fast_slow_smooth'] = {'fast': 12, 'slow': 26, 'smooth': 9}
     QUEEN['kings_order_rules'] = KING['kings_order_rules']
     QUEEN['heartbeat']['main_indexes'] = {
-        'SPY': {'long3X': 'SPXL', 'inverse': 'SH', 'inverse2X': 'SDS', 'inverse3X': 'SPXU'},
+        'SPY': {'long1X': "SPY",
+                'long3X': 'SPXL', 
+                'inverse1X': 'SH', 
+                'inverse2X': 'SDS', 
+                'inverse3X': 'SPXU'},
         'QQQ': {'long3X': 'TQQQ', 'inverse': 'PSQ', 'inverse2X': 'QID', 'inverse3X': 'SQQQ'}
         }
 
