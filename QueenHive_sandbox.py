@@ -2628,7 +2628,6 @@ def generate_TradingModel(ticker='SPY', stars=stars):
             'buyingpower_allocation_LongTerm': .2,
             'buyingpower_allocation_ShortTerm': .8,
             'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
             'trigbees': {'buy_cross-0': default, 
                         'sell_cross-0': default,
                         'ready_buy_cross': default,

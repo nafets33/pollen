@@ -651,7 +651,7 @@ def add_app_wave_trigger(all_current_triggers, ticker, app_wave_trig_req):
             return all_current_triggers
 
 
-def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, run_order_idx=False):
+def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, run_order_idx=False, crypto=False):
     try:
         # print(ticker_time_frame)
         logging.info({'ex_order()': ticker_time_frame})
@@ -671,7 +671,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
             limit_price = king_resp['order_vars']['limit_price']
         
         # flag crypto
-        if ticker in crypto_currency_symbols:
+        if crypto:
             snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
             crypto = True
         else:
@@ -859,7 +859,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         # return fequency of prior waves and statement conclusions
         return True
 
-    def order_vars__queen_order_items(order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin):
+    def order_vars__queen_order_items(king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin):
         order_vars = {}
         if maker_middle:
             order_vars['order_type'] = 'limit'
@@ -874,6 +874,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         order_vars['order_side'] = order_side
         order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
         order_vars['power_up_rangers'] = power_up_rangers
+        order_vars['king_order_rules'] = king_order_rules
         
         return order_vars
 
@@ -920,6 +921,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         theme = QUEEN['queen_controls']['theme'] # what is the theme?
         # Trading Model Vars
         tmodel_power_rangers = trading_model['power_rangers'] # stars
+        king_order_rules = trading_model['trigbees'][trigbee] # trigbee kings_order_rules
         if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True:
             maker_middle = ticker_priceinfo['maker_middle']
         else:
@@ -967,10 +969,10 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         if trigbee == 'buy_cross-0':
             if crypto:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
             else:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
             if trig_action:
                 # print("evalatue if there is another trade to make on top of current wave")
@@ -983,7 +985,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 if time_delta.seconds > trading_model['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
-                    order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
                     return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
                 else: 
                     kings_blessing = False
@@ -997,7 +999,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 return {'kings_blessing': False}
             else:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
             if trig_action:
                 trig_action_trades = trig_action
@@ -1009,7 +1011,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 if time_delta.seconds > trading_model['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
-                    order_vars = order_vars__queen_order_items(order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
                     return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
                 else: 
                     return {'kings_blessing': False}
@@ -1134,7 +1136,7 @@ def command_conscience(api, QUEEN, APP_requests):
                             king_resp = king_knights_requests(QUEEN=QUEEN, avail_trigs=avail_trigs, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
                             if king_resp['kings_blessing']:
                                 # last_2_trades()
-                                execute_order(QUEEN=QUEEN, king_resp=king_resp, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio)
+                                execute_order(QUEEN=QUEEN, king_resp=king_resp, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio, crypto=crypto)
 
                 
             except Exception as e:
@@ -1152,6 +1154,8 @@ def command_conscience(api, QUEEN, APP_requests):
         APP_requests['queen_processed_orders'].append(app_resp['app_request']['app_requests_id'])
         QUEEN['app_requests__bucket'].append(app_resp['app_request']['app_requests_id'])
         PickleData(PB_App_Pickle, APP_requests)
+
+        crypto = [True if app_resp['app_request']['ticker'] in crypto_currency_symbols else False][0]
         
         # execute order
         bzzz = execute_order(QUEEN=QUEEN, 
@@ -1159,7 +1163,8 @@ def command_conscience(api, QUEEN, APP_requests):
         king_resp=app_resp['king_resp'], 
         ticker=app_resp['app_request']['ticker'], 
         ticker_time_frame=app_resp['ticker_time_frame'],
-        portfolio=portfolio)
+        portfolio=portfolio,
+        crypto=crypto)
 
 
     return True
