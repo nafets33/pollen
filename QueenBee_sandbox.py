@@ -1374,21 +1374,16 @@ def return_snap_priceinfo(api, ticker, crypto, exclude_conditions=exclude_condit
         snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
     else:
         snap = api.get_snapshot(ticker)
-    
-    conditions = snap.latest_quote.conditions
-
-    c=0
-    while True:
-        print(conditions)
-        valid = [j for j in conditions if j in exclude_conditions]
-        if len(valid) == 0 or c > 10:
-            break
-        else:
-            if crypto:
-                snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+        conditions = snap.latest_quote.conditions
+        c=0
+        while True:
+            print(conditions)
+            valid = [j for j in conditions if j in exclude_conditions]
+            if len(valid) == 0 or c > 10:
+                break
             else:
                 snap = api.get_snapshot(ticker) # return_last_quote from snapshot
-            c+=1 
+                c+=1 
 
     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
     current_price = snap.latest_trade.price
