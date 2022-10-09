@@ -2770,7 +2770,7 @@ def init_QUEEN(queens_chess_piece):
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
+        'queen_orders': [create_QueenOrderBee(KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
