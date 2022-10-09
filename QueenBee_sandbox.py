@@ -159,8 +159,8 @@ current_year = datetime.datetime.now().year
 # misc
 exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
-    'P','Q','R','T','U','V','Z'
-]
+    'P','Q','R','T','V','Z'
+] # 'U'
 
 """# Main Arguments """
 num = {1: .15, 2: .25, 3: .40, 4: .60, 5: .8}
@@ -913,7 +913,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         ticker, tframe, frame = ticker_time_frame.split("_")
         star_time = f'{tframe}{"_"}{frame}'
         STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
-        ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker)
+        ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto)
         
         if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True:
             maker_middle = ticker_priceinfo['maker_middle']
@@ -1359,9 +1359,10 @@ def return_origin_order(exit_order_link): # Improvement: faster by sending in df
     return {'origin_order': origin_order, 'origin_idx': origin_idx}
 
 
-def get_best_limit_price(api, ticker, exclude_conditions):
-    snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
+def get_best_limit_price(snapshot, ticker, exclude_conditions, crypto=False):
+    # snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
     conditions = snapshot.latest_quote.conditions
+
     c=0
     while True:
         print(conditions)
@@ -1369,7 +1370,10 @@ def get_best_limit_price(api, ticker, exclude_conditions):
         if len(valid) == 0 or c > 10:
             break
         else:
-            snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
+            if crypto:
+                snapshot = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+            else:
+                snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
             c+=1   
 
     # print(snapshot) 
@@ -1384,18 +1388,19 @@ def get_best_limit_price(api, ticker, exclude_conditions):
     return {'maker_middle': maker_middle, 'maker_delta': maker_delta}
 
 
-def return_snap_priceinfo(api, ticker):
-    if ticker in crypto_currency_symbols:
+def return_snap_priceinfo(api, ticker, crypto=False):
+    if crypto:
         snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
     else:
         snap = api.get_snapshot(ticker)
+    
     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
     current_price = snap.latest_trade.price
     current_ask = snap.latest_quote.ask_price
     current_bid = snap.latest_quote.bid_price
 
     # best limit price
-    best_limit_price = get_best_limit_price(api, ticker, exclude_conditions)
+    best_limit_price = get_best_limit_price(snapshot=snap, ticker=ticker, exclude_conditions=exclude_conditions, crypto=crypto)
     maker_middle = best_limit_price['maker_middle']
     
     priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle}
@@ -1761,9 +1766,9 @@ def queen_orders_main(portfolio, APP_requests):
                 trigname = run_order['trigname']
 
                 if ticker in crypto_currency_symbols:
-                    qo_crypto = 'true'
+                    qo_crypto = True
                 else:
-                    qo_crypto = 'false'
+                    qo_crypto = False
 
                 ticker = fix_crypto_ticker(QUEEN=QUEEN, ticker=ticker, idx=idx)
 
@@ -1808,7 +1813,7 @@ def queen_orders_main(portfolio, APP_requests):
                     
                     print("bee_sell")
                     # close out order variables
-                    priceinfo = return_snap_priceinfo(api=api, ticker=ticker)
+                    priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=qo_crypto)
                     sell_qty = float(re_eval_order['sell_qty']) # float(order_obj['filled_qty'])
                     q_side = re_eval_order['side'] # 'sell' Unless it short then it will be a 'buy'
                     q_type = re_eval_order['type'] # 'market'
