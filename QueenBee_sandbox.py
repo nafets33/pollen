@@ -1359,8 +1359,28 @@ def return_origin_order(exit_order_link): # Improvement: faster by sending in df
     return {'origin_order': origin_order, 'origin_idx': origin_idx}
 
 
-def get_best_limit_price(snapshot, ticker, exclude_conditions, crypto=False):
+def get_best_limit_price(ask, bid):
     # snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
+
+    # print(snapshot) 
+    # last_trade = snapshot.latest_trade.price
+    # ask = snapshot.latest_quote.ask_price
+    # bid = snapshot.latest_quote.bid_price
+    maker_dif =  ask - bid
+    maker_delta = (maker_dif / ask) * 100
+    # check to ensure bid / ask not far
+    maker_middle = round(ask - (maker_dif / 2), 2)
+
+    return {'maker_middle': maker_middle, 'maker_delta': maker_delta}
+
+
+def return_snap_priceinfo(api, ticker, crypto, exclude_conditions=exclude_conditions):
+    
+    if crypto:
+        snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+    else:
+        snap = api.get_snapshot(ticker)
+    
     conditions = snapshot.latest_quote.conditions
 
     c=0
@@ -1374,36 +1394,19 @@ def get_best_limit_price(snapshot, ticker, exclude_conditions, crypto=False):
                 snapshot = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
             else:
                 snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
-            c+=1   
+            c+=1 
 
-    # print(snapshot) 
-    last_trade = snapshot.latest_trade.price
-    ask = snapshot.latest_quote.ask_price
-    bid = snapshot.latest_quote.bid_price
-    maker_dif =  ask - bid
-    maker_delta = (maker_dif / ask) * 100
-    # check to ensure bid / ask not far
-    maker_middle = round(ask - (maker_dif / 2), 2)
-
-    return {'maker_middle': maker_middle, 'maker_delta': maker_delta}
-
-
-def return_snap_priceinfo(api, ticker, crypto=False):
-    if crypto:
-        snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-    else:
-        snap = api.get_snapshot(ticker)
-    
     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
     current_price = snap.latest_trade.price
     current_ask = snap.latest_quote.ask_price
     current_bid = snap.latest_quote.bid_price
 
     # best limit price
-    best_limit_price = get_best_limit_price(snapshot=snap, ticker=ticker, exclude_conditions=exclude_conditions, crypto=crypto)
+    best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
     maker_middle = best_limit_price['maker_middle']
     
     priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle}
+    
     return priceinfo
 
 
