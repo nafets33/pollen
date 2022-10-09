@@ -1360,12 +1360,6 @@ def return_origin_order(exit_order_link): # Improvement: faster by sending in df
 
 
 def get_best_limit_price(ask, bid):
-    # snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
-
-    # print(snapshot) 
-    # last_trade = snapshot.latest_trade.price
-    # ask = snapshot.latest_quote.ask_price
-    # bid = snapshot.latest_quote.bid_price
     maker_dif =  ask - bid
     maker_delta = (maker_dif / ask) * 100
     # check to ensure bid / ask not far
@@ -1381,7 +1375,7 @@ def return_snap_priceinfo(api, ticker, crypto, exclude_conditions=exclude_condit
     else:
         snap = api.get_snapshot(ticker)
     
-    conditions = snapshot.latest_quote.conditions
+    conditions = snap.latest_quote.conditions
 
     c=0
     while True:
@@ -1391,9 +1385,9 @@ def return_snap_priceinfo(api, ticker, crypto, exclude_conditions=exclude_condit
             break
         else:
             if crypto:
-                snapshot = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+                snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
             else:
-                snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
+                snap = api.get_snapshot(ticker) # return_last_quote from snapshot
             c+=1 
 
     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
