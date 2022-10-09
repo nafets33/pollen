@@ -63,9 +63,9 @@ else:
     prod = False
 
 if prod:
-    from QueenHive import return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import order_vars__queen_order_items, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 else:
-    from QueenHive_sandbox import generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 
 
 # Green Light to Main
@@ -337,11 +337,12 @@ def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TB
     return {'open': open_orders, 'closed': closed_orders}
 
 
-def process_order_submission(order, order_vars, trig, ticker_time_frame, portfolio_name='Jq', status_q=False, exit_order_link=False, bulkorder_origin__client_order_id=False, system_recon=False, priceinfo=False):
+def process_order_submission(trading_model, order, order_vars, trig, ticker_time_frame, portfolio_name='Jq', status_q=False, exit_order_link=False, bulkorder_origin__client_order_id=False, system_recon=False, priceinfo=False):
 
     try:
         # Create Running Order
-        sending_order = create_QueenOrderBee(KING=KING, order_vars=order_vars, order=order, ticker_time_frame=ticker_time_frame, 
+        sending_order = create_QueenOrderBee(trading_model=trading_model,
+        KING=KING, order_vars=order_vars, order=order, ticker_time_frame=ticker_time_frame, 
         portfolio_name=portfolio_name, 
         status_q=status_q, 
         trig=trig, 
@@ -624,7 +625,7 @@ def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
         # print('trig_action ',  len(active_orders))
         active_orders['order_exits'] = np.where(
             (active_orders['trigname'] == trig) &
-            (active_orders['ticker_time_frame'] == ticker_time_frame), 1, 0)
+            (active_orders['ticker_time_frame_origin'] == ticker_time_frame), 1, 0)
         trigbee_orders =  active_orders[active_orders['order_exits'] == 1].copy()
         if len(trigbee_orders) > 0:
             print('trig in action ',  len(active_orders))
@@ -656,6 +657,8 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         # print(ticker_time_frame)
         logging.info({'ex_order()': ticker_time_frame})
 
+        trading_model = king_resp['order_vars']
+
         # if app order get order vars its way
         if 'order_vars' not in king_resp.keys():
             # up pack order vars
@@ -663,12 +666,14 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
             type = king_resp['type']
             wave_amo = king_resp['wave_amo']
             limit_price = False
+            trading_model = king_resp['order_vars']
         else:
             # up pack order vars
             side = king_resp['order_vars']['order_side']
             type = king_resp['order_vars']['order_type']
             wave_amo = king_resp['order_vars']['wave_amo']
             limit_price = king_resp['order_vars']['limit_price']
+            trading_model = king_resp['order_vars']['trading_model']
         
         # flag crypto
         if crypto:
@@ -721,7 +726,12 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         # Confirm order went through, end process and write results
         if route_order_based_on_status(order_status=order['status']):
             
-            order_process = process_order_submission(order=order, order_vars=king_resp['order_vars'], trig=trig, ticker_time_frame=ticker_time_frame, priceinfo=priceinfo)
+            (trading_model=trading_model, 
+            order=order, 
+            order_vars=king_resp['order_vars'], 
+            trig=trig, 
+            ticker_time_frame=ticker_time_frame, 
+            priceinfo=priceinfo)
 
             PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
             
@@ -830,6 +840,11 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     return {'current_wave': current_wave, 'current_active_waves': d_return}
 
 
+
+
+
+
+
 def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, trading_model, trig_action, crypto=False):
     # answer all questions for order to be placed, compare against the rules
     # measure len of trigbee how long has trigger been there?
@@ -858,25 +873,6 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
     def proir_waves():
         # return fequency of prior waves and statement conclusions
         return True
-
-    def order_vars__queen_order_items(king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin):
-        order_vars = {}
-        if maker_middle:
-            order_vars['order_type'] = 'limit'
-            order_vars['limit_price'] = maker_middle # 10000
-        else:
-            order_vars['order_type'] = 'market'
-            order_vars['limit_price'] = False
-        
-        order_vars['origin_wave'] = origin_wave
-        order_vars['power_up'] = sum(power_up_rangers.values())
-        order_vars['wave_amo'] = wave_amo
-        order_vars['order_side'] = order_side
-        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
-        order_vars['power_up_rangers'] = power_up_rangers
-        order_vars['king_order_rules'] = king_order_rules
-        
-        return order_vars
 
 
     def its_morphin_time(QUEEN, trigbee, theme, tmodel_power_rangers, ticker, stars_df):
@@ -919,6 +915,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
 
         # Theme
         theme = QUEEN['queen_controls']['theme'] # what is the theme?
+        
         # Trading Model Vars
         tmodel_power_rangers = trading_model['power_rangers'] # stars
         king_order_rules = trading_model['trigbees'][trigbee] # trigbee kings_order_rules
@@ -967,10 +964,10 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         if trigbee == 'buy_cross-0':
             if crypto:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                order_vars = order_vars__queen_order_items(trading_model=trading_model,king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
             else:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
             if trig_action:
                 # print("evalatue if there is another trade to make on top of current wave")
@@ -983,7 +980,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 if time_delta.seconds > trading_model['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
-                    order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
                     return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
                 else: 
                     kings_blessing = False
@@ -997,7 +994,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 return {'kings_blessing': False}
             else:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
             if trig_action:
                 trig_action_trades = trig_action
@@ -1009,7 +1006,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 if time_delta.seconds > trading_model['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
-                    order_vars = order_vars__queen_order_items(king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
                     return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
                 else: 
                     return {'kings_blessing': False}
@@ -1785,6 +1782,8 @@ def queen_orders_main(portfolio, APP_requests):
 
                 resp = update_queen_order_profits(ticker=ticker, queen_order=run_order, queen_order_idx=idx)
                 current_profit_loss = resp['current_profit_loss']
+
+                trading_model = run_order['order_rules']
                 
                 re_eval_order = king_Evaluate_QueenOrder(run_order=run_order, current_profit_loss=current_profit_loss, portfolio=portfolio)
                 if re_eval_order['bee_sell']:
@@ -1802,7 +1801,10 @@ def queen_orders_main(portfolio, APP_requests):
                     q_type = re_eval_order['type'] # 'market'
 
                     sell_client_order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trigname, db_root=db_root, sellside_client_order_id=runorder_client_order_id)
-                    
+                    trading_model = trading_model
+                    maker_middle = [priceinfo['maker_middle'] if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True else False][0]
+
+
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=idx)
                     
                     sell_qty = send_order_val['qty_correction']
@@ -1810,7 +1812,22 @@ def queen_orders_main(portfolio, APP_requests):
                     send_close_order = vars(send_close_order)['_raw']
                     if route_order_based_on_status(order_status=send_close_order['status']):
                         print("Did you bring me some Honey?")
-                        order_process = process_order_submission(order=send_close_order, trig=trigname, exit_order_link=runorder_client_order_id, prod=prod, tablename='main_orders', ticker_time_frame=ticker_time_frame, priceinfo=priceinfo)
+                        # Order Vars
+                        order_vars = order_vars__queen_order_items(trading_model=False,
+                        king_order_rules=False, 
+                        order_side='sell', 
+                        wave_amo=False, 
+                        maker_middle=maker_middle, 
+                        origin_wave=False, 
+                        power_up_rangers=False, 
+                        ticker_time_frame_origin=ticker_time_frame)
+                        
+                        process_order_submission(order=send_close_order, 
+                        order_vars=order_vars, 
+                        trig=trigname, 
+                        exit_order_link=runorder_client_order_id, 
+                        ticker_time_frame=ticker_time_frame, 
+                        priceinfo=priceinfo)
                         QUEEN['queen_orders'][idx]['order_trig_sell_stop'] = 'true'
 
                         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)

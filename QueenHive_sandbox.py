@@ -2503,14 +2503,62 @@ def KINGME(chart_times=False):
     return return_dict
 
 
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin):
+    order_vars = {}
+    if order_side == 'sell':
+        if maker_middle:
+            order_vars['order_type'] = 'limit'
+            order_vars['limit_price'] = maker_middle # 10000
+        else:
+            order_vars['order_type'] = 'market'
+            order_vars['limit_price'] = False
+        
 
-def create_QueenOrderBee(KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+        order_vars['origin_wave'] = origin_wave
+        order_vars['power_up'] = power_up_rangers
+        order_vars['wave_amo'] = wave_amo
+        order_vars['order_side'] = order_side
+        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+        order_vars['power_up_rangers'] = power_up_rangers
+        order_vars['king_order_rules'] = king_order_rules
+        order_vars['trading_model'] = trading_model
+        
+        
+        return order_vars
+    
+    elif order_side == 'buy':
+        if maker_middle:
+            order_vars['order_type'] = 'limit'
+            order_vars['limit_price'] = maker_middle # 10000
+        else:
+            order_vars['order_type'] = 'market'
+            order_vars['limit_price'] = False
+        
+        order_vars['origin_wave'] = origin_wave
+        order_vars['power_up'] = sum(power_up_rangers.values())
+        order_vars['wave_amo'] = wave_amo
+        order_vars['order_side'] = order_side
+        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+        order_vars['power_up_rangers'] = power_up_rangers
+        order_vars['king_order_rules'] = king_order_rules
+        order_vars['trading_model'] = trading_model
+        
+        return order_vars
+
+    else:
+        print("break in program")
+        logging_log_message(log_type='error', msg='break in program order vars queen order items')
+        return False
+
+
+def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
     date_mark = datetime.datetime.now().astimezone(est)
     # allowed_col = ["queen_order_state", ]
     if queen_init:
         # print("Queen Template Initalized")
         logging_log_message(msg='QueenHive Queen Template Initalized')
-        running_order = {'queen_order_state': 'init',
+        running_order = {'trading_model': trading_model,
+                        'queen_order_state': 'init',
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
                         'order_trig_sell_stop': 'false',
@@ -2544,17 +2592,23 @@ def create_QueenOrderBee(KING, order_vars, order, ticker_time_frame, portfolio_n
                         } 
     elif order['side'] == 'buy' or order['side'] == 'sell':
         # print("create buy running order")
-        running_order = {'queen_order_state': 'submitted',
+        running_order = {'trading_model': trading_model,
+                        'queen_order_state': 'submitted',
                         'side': order['side'],
                         'order_trig_buy_stop': True,
                         'order_trig_sell_stop': 'false',
                         'symbol': order['symbol'], 
-                        'order_rules': order_vars['king_order_rules'], 
+                        'order_rules': order_vars['king_order_rules'],
+                        'origin_wave': {'origin_wave': order_vars['origin_wave']},
+                        'power_up': {'power_up': order_vars['power_up']},
+                        'power_up_rangers': order_vars['power_up_rangers'], 
+                        'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
+
                         'trigname': trig, 'datetime': date_mark,
                         'ticker_time_frame': ticker_time_frame,
-                        'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
                         'status_q': status_q,
                         'portfolio_name': portfolio_name,
+
                         'exit_order_link': exit_order_link, 
                         'client_order_id': order['client_order_id'],
                         'system_recon': False,
@@ -2568,9 +2622,6 @@ def create_QueenOrderBee(KING, order_vars, order, ticker_time_frame, portfolio_n
                         'honey_gauge': deque([], 89),
                         'macd_gauge': deque([], 89),
                         '$honey': 0,
-                        'origin_wave': {'origin_wave': order_vars['origin_wave']},
-                        'power_up': {'power_up': order_vars['power_up']},
-                        'power_up_rangers': order_vars['power_up_rangers'],
                         'assigned_wave': {},
                         'sell_reason': {},
                         'honey_time_in_profit': {},
@@ -2769,7 +2820,7 @@ def init_QUEEN(queens_chess_piece):
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
+        'queen_orders': [create_QueenOrderBee(trading_model='false', KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
