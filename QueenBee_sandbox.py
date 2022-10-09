@@ -726,7 +726,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
         # Confirm order went through, end process and write results
         if route_order_based_on_status(order_status=order['status']):
             
-            (trading_model=trading_model, 
+            process_order_submission(trading_model=trading_model, 
             order=order, 
             order_vars=king_resp['order_vars'], 
             trig=trig, 
