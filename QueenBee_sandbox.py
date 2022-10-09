@@ -914,14 +914,16 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         star_time = f'{tframe}{"_"}{frame}'
         STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
         ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto)
-        
+        trigbee_wave_direction = ['waveup' if 'buy' in trigbee else 'wavedown' ][0]
+
+        # Theme
+        theme = QUEEN['queen_controls']['theme'] # what is the theme?
+        # Trading Model Vars
+        tmodel_power_rangers = trading_model['power_rangers'] # stars
         if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True:
             maker_middle = ticker_priceinfo['maker_middle']
         else:
             maker_middle = False
-
-        # Theme
-        theme = QUEEN['queen_controls']['theme'] # what is the theme?
         # Total buying power allowed
         bpower_resp = buying_Power_cc(api=api, client_args="TBD", daytrade=True)
         total_buying_power = bpower_resp['total_buying_power']
@@ -929,31 +931,17 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         app_portfolio_day_trade_allowed = bpower_resp['app_portfolio_day_trade_allowed']
         client_total_LONG_trade_amt_allowed = bpower_resp['client_total_LONG_trade_amt_allowed']
 
-        # Trading Model
-        # trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][f'{tframe}{"_"}{frame}']
-        # tradingModel['status'] .. buyingpower_allocation_LongTerm, buyingpower_allocation_ShortTerm, power_rangers
-
 
         """Stars Forever Be in Heaven"""
         story_view_ = story_view(STORY_bee=STORY_bee, ticker=ticker)
         stars_df = story_view_['df']
         # Wave Analysis
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
-
-        tmodel_power_rangers = trading_model['power_rangers'] # stars
-
-        # Init Buying Power
-        theme_buyingpower = {
-        'morning_9-11' : pollen_theme_dict[theme][star_time]['waveup']['morning_9-11'],
-        'lunch_11-2' : pollen_theme_dict[theme][star_time]['waveup']['lunch_11-2'],
-        'afternoon_2-4' : pollen_theme_dict[theme][star_time]['waveup']['afternoon_2-4'],}
-        # Current wave : what is your timeblock?
         current_wave_blocktime = current_wave['wave_blocktime']
-        current_wave_amo = theme_buyingpower[current_wave_blocktime]  # PERCENTAGE
-
+        current_wave_amo = pollen_theme_dict[theme][star_time][trigbee_wave_direction][current_wave_blocktime]
+        
         # total budget
-        client_total_DAY_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed)
-        # wave_amo = current_wave_amo * client_total_DAY_trade_amt_allowed  # (10% * ($500,000 * 3%)
+        client_total_DAY_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed) # (10% * ($500,000 * 3%)
         theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
         power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
         print("POWERUP !!!!! ", power_up_amo)
