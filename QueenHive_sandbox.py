@@ -2549,7 +2549,7 @@ def create_QueenOrderBee(KING, order_vars, order, ticker_time_frame, portfolio_n
                         'order_trig_buy_stop': True,
                         'order_trig_sell_stop': 'false',
                         'symbol': order['symbol'], 
-                        'order_rules': order_vars['trigbees'][trig], 
+                        'order_rules': order_vars['king_order_rules'], 
                         'trigname': trig, 'datetime': date_mark,
                         'ticker_time_frame': ticker_time_frame,
                         'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 

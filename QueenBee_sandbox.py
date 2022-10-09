@@ -922,10 +922,8 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         # Trading Model Vars
         tmodel_power_rangers = trading_model['power_rangers'] # stars
         king_order_rules = trading_model['trigbees'][trigbee] # trigbee kings_order_rules
-        if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True:
-            maker_middle = ticker_priceinfo['maker_middle']
-        else:
-            maker_middle = False
+        maker_middle = [ticker_priceinfo['maker_middle'] if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True else False][0]
+
         # Total buying power allowed
         bpower_resp = buying_Power_cc(api=api, client_args="TBD", daytrade=True)
         total_buying_power = bpower_resp['total_buying_power']
