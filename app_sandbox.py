@@ -173,7 +173,7 @@ coin_exchange = "CBSE"
 today_day = datetime.datetime.now().day
 
 acct_info = refresh_account_info(api=api)
-st.write(acct_info)
+# st.write(acct_info)
 
 def subPlot():
     st.header("Sub Plots")
@@ -212,50 +212,6 @@ def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
         else:
             return df.plot(x=x, y=y,figsize=figsize)
   
-
-def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
-    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
-    if paginationOn:
-        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
-    gb.configure_side_bar() #Add a sidebar
-    gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-    for colName in update_cols:        
-        if dropdownlst:
-            gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
-        else:
-            gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
-
-    jscode = JsCode("""
-    function(params) {
-        if (params.data.state === 'white') {
-            return {
-                'color': 'white',
-                'backgroundColor': 'red'
-            }
-        }
-    };
-    """)
-    
-    gridOptions = gb.build()
-    
-    gridOptions['getRowStyle'] = jscode
-    gridOptions['rememberGroupStateWhenNewData'] = 'true'
-
-    grid_response = AgGrid(
-        data,
-        gridOptions=gridOptions,
-        data_return_mode='AS_INPUT', 
-        update_mode=update_mode_value, 
-        fit_columns_on_grid_load=fit_columns_on_grid_load,
-        theme='blue', #Add theme color to the table
-        enable_enterprise_modules=True,
-        height=height, 
-        # width='100%',
-        reload_data=reload_data,
-        allow_unsafe_jscode=allow_unsafe_jscode
-    )
-    return grid_response
-
 
 def create_main_macd_chart(df):
     title = df.iloc[-1]['name']
@@ -728,6 +684,51 @@ def create_AppRequest_package(request_name, archive_bucket):
     'archive_bucket': archive_bucket,
     'request_timestamp': datetime.datetime.now().astimezone(est),
     }
+
+
+
+def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
+    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
+    if paginationOn:
+        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+    gb.configure_side_bar() #Add a sidebar
+    gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+    for colName in update_cols:        
+        if dropdownlst:
+            gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
+        else:
+            gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
+
+    jscode = JsCode("""
+    function(params) {
+        if (params.data.state === 'white') {
+            return {
+                'color': 'white',
+                'backgroundColor': 'red'
+            }
+        }
+    };
+    """)
+    
+    gridOptions = gb.build()
+    
+    gridOptions['getRowStyle'] = jscode
+    gridOptions['rememberGroupStateWhenNewData'] = 'true'
+
+    grid_response = AgGrid(
+        data,
+        gridOptions=gridOptions,
+        data_return_mode='AS_INPUT', 
+        update_mode=update_mode_value, 
+        fit_columns_on_grid_load=fit_columns_on_grid_load,
+        theme='blue', #Add theme color to the table
+        enable_enterprise_modules=True,
+        height=height, 
+        # width='100%',
+        reload_data=reload_data,
+        allow_unsafe_jscode=allow_unsafe_jscode
+    )
+    return grid_response
 
 
 def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):

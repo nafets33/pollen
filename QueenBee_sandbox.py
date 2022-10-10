@@ -942,8 +942,8 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
 
         # Index ETF Risk Level
         if ticker in QUEEN['heartbeat']['main_indexes'].keys():
-            if f'{"long"}{trading_model["index_long_X"]}' in  QUEEN['heartbeat']['main_indexes'][ticker].keys():
-                etf_long_tier = trading_model['index_long_X']
+            if f'{"long"}{trading_model["index_long_X"]}' in QUEEN['heartbeat']['main_indexes'][ticker].keys():
+                etf_long_tier = f'{"long"}{trading_model["index_long_X"]}'
                 ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_long_tier]
             else:
                 etf_long_tier = False
