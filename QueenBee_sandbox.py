@@ -1873,7 +1873,7 @@ def refresh_QUEEN_starTickers(QUEEN, STORY_bee):
 
     original_state = QUEEN['heartbeat']['available_tickers']
     
-    QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['lastmod']).seconds < 33]
+    QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 33]
     # create dict of allowed long term and short term of a given ticker so ticker as info for trading
     QUEEN['heartbeat']['active_tickerStars'] = {k: {'trade_type': ['long_term', 'short_term']} for k in QUEEN['heartbeat']['available_tickers']}
     ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['active_tickerStars'].keys()])
