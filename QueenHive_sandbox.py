@@ -425,6 +425,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
 
             # add to story
             df['chartdate'] = df['timestamp_est'] # add as new col
+            df['lastmod'] = datetime.datetime.now().astimezone(est) # add as new col
             df['name'] = ticker_time_frame
             story[ticker_time_frame] = df
             # ticker, _time, _frame = ticker_time_frame.split("_")
