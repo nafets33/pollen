@@ -232,6 +232,7 @@ def create_main_macd_chart(df):
     fig.update_layout(height=600, width=1500, title_text=title)
     df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
     fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
+    # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
 
     return fig
 
@@ -693,11 +694,12 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-    for colName in update_cols:        
-        if dropdownlst:
-            gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
-        else:
-            gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
+    if update_cols:
+        for colName in update_cols:        
+            if dropdownlst:
+                gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
+            else:
+                gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
 
     jscode = JsCode("""
     function(params) {
@@ -721,7 +723,7 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
         data_return_mode='AS_INPUT', 
         update_mode=update_mode_value, 
         fit_columns_on_grid_load=fit_columns_on_grid_load,
-        theme='blue', #Add theme color to the table
+        # theme='blue', #Add theme color to the table
         enable_enterprise_modules=True,
         height=height, 
         # width='100%',
@@ -743,7 +745,8 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
     reload_data=vars['reload_data'],
      height=vars['height'], update_cols=vars['update_cols'], 
      update_mode_value=vars['update_mode_value'], 
-     paginationOn=vars['paginationOn'])
+     paginationOn=vars['paginationOn'],
+     allow_unsafe_jscode=True)
     
     data = grid_response['data']
     if write_selection:
@@ -762,6 +765,41 @@ def add_trading_model(QUEEN, ticker, trading_model_universe):
         st.write(tradingmodel1)
         app_req = create_AppRequest_package(request_name='add_trading_model', archive_bucket='add_trading_model_requests')
         # QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
+
+
+def its_morphin_time_view(QUEEN, STORY_bee, ticker):
+
+    now_time = datetime.datetime.now().astimezone(est)
+    POLLENSTORY = read_pollenstory()
+    active_ttf = QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 86400]
+    
+    all_df = []
+    total_current_macd_tier = 0
+    total_current_hist_tier = 0
+    for ttf in active_ttf :
+        if ttf in POLLENSTORY.keys() and ticker in ttf.split("_")[0]:
+            df = POLLENSTORY[ttf]
+            df = df[['timestamp_est', 'chartdate', 'name', 'macd_tier', 'hist_tier', 'profits']].copy()
+            total_current_macd_tier += df.iloc[-1]['macd_tier']
+            total_current_hist_tier += df.iloc[-1]['hist_tier']
+            
+            all_df.append(df)
+    
+    st.write('macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64))
+    st.write('hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64))
+
+    # for df_p in all_df:
+    #     fig = df_plotchart(title=df_p.iloc[-1]['name'], df=df_p, y='profits', x=False, figsize=(14,7), formatme=False)
+    #     st.write(fig)
+        # graph
+    
+    return True
+
+
+
+
+
+
 
 # """ if "__name__" == "__main__": """
 
@@ -820,6 +858,9 @@ if option == 'charts':
 
     else:
         selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+        
+        its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+        
         # st.write(selections[0])
         ticker_time_frame = selections[0]
         df = POLLENSTORY[ticker_time_frame].copy()
@@ -828,13 +869,16 @@ if option == 'charts':
         if day_only_option == 'yes':
             df_day = df['timestamp_est'].iloc[-1]
             df['date'] = df['timestamp_est'] # test
-            df = df.set_index('timestamp_est', drop=False) # test
+            # df = df.set_index('timestamp_est', drop=False) # test
             # between certian times
             # df_t = df.between_time('9:30', '12:00')
-            df = df[(df.index.day == df_day.day) & 
-                    (df.index.month == df_day.month) & 
-                    (df.index.year == df_day.year)
-                ].copy() # remove other days       
+            df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+            # df = df[(df['timestamp_est'].day == df_day.day) & 
+            #         (df['timestamp_est'].month == df_day.month) & 
+            #         (df['timestamp_est'].year == df_day.year)
+            #     ].copy() # remove other days
+            df = df_today
 
         if fullstory_option == 'yes':
             df_write = df.astype(str)
@@ -894,19 +938,21 @@ if option == 'queen':
     tickers_avail_op = list(tickers_avail)
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
-
+    ticker = ticker_option
+    
     option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
 
     return_total_profits(QUEEN=QUEEN)
 
-    command_conscience_option = st.sidebar.selectbox("command conscience", ('yes', 'no'), index=["yes"].index("yes"))
-    orders_table = st.sidebar.selectbox("orders_table", ('no', 'yes'), index=["no"].index("no"))
+    command_conscience_option = st.sidebar.selectbox("command conscience", ['yes', 'no'], index=["yes"].index("yes"))
+    orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
     today_day = datetime.datetime.now().day
-    with col22:
-        st.write("current errors")
-    with col22:
-        st.write(QUEEN["errors"])
-
+    # with col22:
+    #     st.write("current errors")
+    # with col22:
+    #     st.write(QUEEN["errors"])
+    
+    
     if command_conscience_option == 'yes':
         ORDERS = QUEEN['queen_orders']
         now_time = datetime.datetime.now().astimezone(est)
@@ -959,10 +1005,11 @@ if option == 'queen':
         # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
 
         # View Stars
+        its_morphin_time_view(QUEEN, STORY_bee, ticker)
         st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
         st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
-        # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df_agg'], width=2000) 
-
+        ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
+        default=True, add_vars={'update_cols': False}, write_selection=False)
         # View Star and Waves
         ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}

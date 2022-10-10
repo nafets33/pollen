@@ -735,7 +735,7 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
 
             PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
             
-            msg = {'execute order()': {'msg': f'{"order submitted"}{" : at : "}{return_timestamp_string()}', 'ticker_time_frame': ticker_time_frame, 'trig': trig, 'crypto': crypto, 'wave_amo': wave_amo}}
+            msg = {'execute order()': {'msg': f'{"order submitted"}{" : at : "}{return_timestamp_string()}', 'ticker': ticker, 'ticker_time_frame': ticker_time_frame, 'trig': trig, 'crypto': crypto, 'wave_amo': wave_amo}}
             logging.info(msg)
             print(msg)
             queens_first_go = 1
@@ -942,17 +942,18 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
 
         # Index ETF Risk Level
         if ticker in QUEEN['heartbeat']['main_indexes'].keys():
-            if f'{"long"}{trading_model["index_long_X"]}' in QUEEN['heartbeat']['main_indexes'][ticker].keys():
-                etf_long_tier = f'{"long"}{trading_model["index_long_X"]}'
-                ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_long_tier]
-            else:
-                etf_long_tier = False
-            
-            if f'{"inverse"}{trading_model["index_inverse_X"]}' in  QUEEN['heartbeat']['main_indexes'][ticker].keys():
-                etf_inverse_tier = f'{"inverse"}{trading_model["index_inverse_X"]}'
-                ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_inverse_tier]
-            else:
-                etf_inverse_tier = False        
+            if 'buy' in trigbee:
+                if f'{"long"}{trading_model["index_long_X"]}' in QUEEN['heartbeat']['main_indexes'][ticker].keys():
+                    etf_long_tier = f'{"long"}{trading_model["index_long_X"]}'
+                    ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_long_tier]
+                else:
+                    etf_long_tier = False
+            if 'sell' in trigbee:
+                if f'{"inverse"}{trading_model["index_inverse_X"]}' in  QUEEN['heartbeat']['main_indexes'][ticker].keys():
+                    etf_inverse_tier = f'{"inverse"}{trading_model["index_inverse_X"]}'
+                    ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_inverse_tier]
+                else:
+                    etf_inverse_tier = False
 
         # how many trades have we completed today? whats our total profit loss with wave trades
         # should you override your original order rules?

@@ -3138,7 +3138,7 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     # df['hist_ranger'] = df['current_hist_tier'].apply(lambda x: power_ranger_mapping(x))
 
 
-    return {'df': df, 'df_agg': df_agg}
+    return {'df': df, 'df_agg': df_agg, 'current_wave': current_wave}
 
 
 def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False):
@@ -3371,6 +3371,10 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
         print("My Queen Sandbox")
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
+
+
+
+
 
 
 
