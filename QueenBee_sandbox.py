@@ -969,7 +969,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 kings_blessing = True
                 order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
-            if trig_action:
+            if type(trig_action) != bool:
                 # print("evalatue if there is another trade to make on top of current wave")
                 trig_action_trades = trig_action
                 now_time = datetime.datetime.now().astimezone(est)
@@ -996,7 +996,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 kings_blessing = True
                 order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
 
-            if trig_action:
+            if type(trig_action) != bool:
                 trig_action_trades = trig_action
                 now_time = datetime.datetime.now().astimezone(est)
                 trig_action_trades.iloc[-1]['datetime']
