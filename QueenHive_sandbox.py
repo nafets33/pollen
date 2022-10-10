@@ -2689,7 +2689,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules}
-            for trigbee, order_rules in return_dict['trigbees'].items():
+            for trigbee, order_rules in return_dict[star]['trigbees'].items():
                 return_dict[star]['trigbees'][trigbee]['doubledown_storylength'] = star_ddown_duration[star]
 
             star = '5Minute_5Day'
@@ -2699,7 +2699,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules}
-            for trigbee, order_rules in return_dict['trigbees'].items():
+            for trigbee, order_rules in return_dict[star]['trigbees'].items():
                 return_dict[star]['trigbees'][trigbee]['doubledown_storylength'] = star_doubledown_timeduration[star]
 
 
@@ -2710,7 +2710,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules}
-            for trigbee, order_rules in return_dict['trigbees'].items():
+            for trigbee, order_rules in return_dict[star]['trigbees'].items():
                 return_dict[star]['trigbees'][trigbee]['doubledown_storylength'] = star_doubledown_timeduration[star]
             
             
@@ -2721,7 +2721,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules}
-            for trigbee, order_rules in return_dict['trigbees'].items():
+            for trigbee, order_rules in return_dict[star]['trigbees'].items():
                 return_dict[star]['trigbees'][trigbee]['doubledown_storylength'] = star_doubledown_timeduration[star]
 
 
@@ -2732,7 +2732,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules}
-            for trigbee, order_rules in return_dict['trigbees'].items():
+            for trigbee, order_rules in return_dict[star]['trigbees'].items():
                 return_dict[star]['trigbees'][trigbee]['doubledown_storylength'] = star_doubledown_timeduration[star]
             
             star = '1Day_1Year'
@@ -2742,7 +2742,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules}
-            for trigbee, order_rules in return_dict['trigbees'].items():
+            for trigbee, order_rules in return_dict[star]['trigbees'].items():
                 return_dict[star]['trigbees'][trigbee]['doubledown_storylength'] = star_doubledown_timeduration[star]
             
             
