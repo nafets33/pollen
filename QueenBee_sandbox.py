@@ -937,7 +937,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         client_total_DAY_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed) # (10% * ($500,000 * 3%)
         theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
         power_up_amo = its_morphin_time(QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
-        print("POWERUP !!!!! ", power_up_amo)
+        # print("POWERUP !!!!! ", power_up_amo)
         wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
 
         # Index ETF Risk Level
@@ -1361,7 +1361,7 @@ def return_snap_priceinfo(api, ticker, crypto, exclude_conditions=exclude_condit
         conditions = snap.latest_quote.conditions
         c=0
         while True:
-            print(conditions)
+            # print(conditions)
             valid = [j for j in conditions if j in exclude_conditions]
             if len(valid) == 0 or c > 10:
                 break

@@ -1309,9 +1309,11 @@ if option == 'signal':
         wave_button_sel = st.selectbox("Waves", ["buy_cross-0", "sell_cross-0"])
         initiate_waveup = st.button("Send Wave")
         # pollen = return_pollen()
-        ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
-        ticker_time_frame = [i for i in ticker_time_frame]
-        ticker_time_frame.sort()
+        # ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
+        ticker_time_frame = QUEEN['heartbeat']['available_tickers']
+
+        # ticker_time_frame = [i for i in ticker_time_frame]
+        # ticker_time_frame.sort()
         ticker_wave_option = st.sidebar.selectbox("Tickers", ticker_time_frame, index=ticker_time_frame.index(["SPY_1Minute_1Day" if "SPY_1Minute_1Day" in ticker_time_frame else ticker_time_frame[0]][0]))
 
         wave_trigger = {ticker_wave_option: [wave_button_sel]}
