@@ -336,9 +336,9 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             # except Exception as e:
             #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
             #     logging.error(msg)
-            
+
             time_state = df['timestamp_est'].iloc[-1] # current time
-            STORY_bee[ticker_time_frame]['story']['time_state'] = time_state
+            STORY_bee[ticker_time_frame]['story']['time_state'] = datetime.datetime.now().astimezone(est)
 
             # devation from vwap
             df['vwap_deviation'] = df['close'] - df['vwap_original']
@@ -2503,14 +2503,62 @@ def KINGME(chart_times=False):
     return return_dict
 
 
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin):
+    order_vars = {}
+    if order_side == 'sell':
+        if maker_middle:
+            order_vars['order_type'] = 'limit'
+            order_vars['limit_price'] = maker_middle # 10000
+        else:
+            order_vars['order_type'] = 'market'
+            order_vars['limit_price'] = False
+        
 
-def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+        order_vars['origin_wave'] = origin_wave
+        order_vars['power_up'] = power_up_rangers
+        order_vars['wave_amo'] = wave_amo
+        order_vars['order_side'] = order_side
+        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+        order_vars['power_up_rangers'] = power_up_rangers
+        order_vars['king_order_rules'] = king_order_rules
+        order_vars['trading_model'] = trading_model
+        
+        
+        return order_vars
+    
+    elif order_side == 'buy':
+        if maker_middle:
+            order_vars['order_type'] = 'limit'
+            order_vars['limit_price'] = maker_middle # 10000
+        else:
+            order_vars['order_type'] = 'market'
+            order_vars['limit_price'] = False
+        
+        order_vars['origin_wave'] = origin_wave
+        order_vars['power_up'] = sum(power_up_rangers.values())
+        order_vars['wave_amo'] = wave_amo
+        order_vars['order_side'] = order_side
+        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+        order_vars['power_up_rangers'] = power_up_rangers
+        order_vars['king_order_rules'] = king_order_rules
+        order_vars['trading_model'] = trading_model
+        
+        return order_vars
+
+    else:
+        print("break in program")
+        logging_log_message(log_type='error', msg='break in program order vars queen order items')
+        return False
+
+
+def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
     date_mark = datetime.datetime.now().astimezone(est)
     # allowed_col = ["queen_order_state", ]
     if queen_init:
-        print("Queen Template Initalized")
+        # print("Queen Template Initalized")
         logging_log_message(msg='QueenHive Queen Template Initalized')
-        running_order = {'queen_order_state': 'init',
+        running_order = {'trading_model': trading_model,
+                        'queen_order_state': 'init',
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
                         'order_trig_sell_stop': 'false',
@@ -2529,30 +2577,38 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'filled_qty': 0,
                         'qty_available': 0,
                         'filled_avg_price': 0,
-                        'price_time_of_request': 'na',
-                        'bid': 'na',
-                        'ask': 'na',
+                        'price_time_of_request': 0,
+                        'bid': 0,
+                        'ask': 0,
                         'honey_gauge': deque([], 89),
                         'macd_gauge': deque([], 89),
-                        '$honey': 'na',
+                        '$honey': 0,
                         'origin_wave': {},
                         'assigned_wave': {},
                         'sell_reason': {},
                         'power_up': {},
+                        'power_up_rangers': 0,
+                        'honey_time_in_profit': {},
                         } 
-    elif order['side'] == 'buy':
+    elif order['side'] == 'buy' or order['side'] == 'sell':
         # print("create buy running order")
-        running_order = {'queen_order_state': 'submitted',
+        running_order = {'trading_model': trading_model,
+                        'queen_order_state': 'submitted',
                         'side': order['side'],
                         'order_trig_buy_stop': True,
                         'order_trig_sell_stop': 'false',
                         'symbol': order['symbol'], 
-                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
+                        'order_rules': order_vars['king_order_rules'],
+                        'origin_wave': {'origin_wave': order_vars['origin_wave']},
+                        'power_up': order_vars['power_up'],
+                        'power_up_rangers': order_vars['power_up_rangers'], 
+                        'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
+
                         'trigname': trig, 'datetime': date_mark,
                         'ticker_time_frame': ticker_time_frame,
-                        'ticker_time_frame_origin': ticker_time_frame, 
                         'status_q': status_q,
                         'portfolio_name': portfolio_name,
+
                         'exit_order_link': exit_order_link, 
                         'client_order_id': order['client_order_id'],
                         'system_recon': False,
@@ -2565,43 +2621,9 @@ def create_QueenOrderBee(KING, order, ticker_time_frame, portfolio_name, status_
                         'ask': priceinfo['ask'],
                         'honey_gauge': deque([], 89),
                         'macd_gauge': deque([], 89),
-                        '$honey': 'na',
-                        'origin_wave': {},
+                        '$honey': 0,
                         'assigned_wave': {},
                         'sell_reason': {},
-                        'power_up': {},
-                        'honey_time_in_profit': {},
-                        }
-    elif order['side'] == 'sell':
-        # print("create sell order")
-        running_order = {'queen_order_state': 'submitted',
-                        'side': order['side'],
-                        'order_trig_buy_stop': True,
-                        'order_trig_sell_stop': 'true',
-                        'symbol': order['symbol'], 
-                        'order_rules': KING["kings_order_rules"]["knight_bees"][trig], 
-                        'trigname': trig, 'datetime': date_mark,
-                        'ticker_time_frame': ticker_time_frame,
-                        'ticker_time_frame_origin': ticker_time_frame, 
-                        'status_q': status_q,
-                        'portfolio_name': portfolio_name,
-                        'exit_order_link': exit_order_link, 
-                        'client_order_id': order['client_order_id'],
-                        'system_recon': False,
-                        'req_qty': order['qty'],
-                        'filled_qty': order['filled_qty'],
-                        'qty_available': order['filled_qty'],
-                        'filled_avg_price': order['filled_avg_price'],
-                        'price_time_of_request': priceinfo['price'],
-                        'bid': priceinfo['bid'],
-                        'ask': priceinfo['ask'],
-                        'honey_gauge': deque([], 89),
-                        'macd_gauge': deque([], 89),
-                        '$honey': 'na',
-                        'origin_wave': {},
-                        'assigned_wave': {},
-                        'sell_reason': {},
-                        'power_up': {},
                         'honey_time_in_profit': {},
                         }
 
@@ -2612,11 +2634,12 @@ def generate_TradingModel(ticker='SPY', stars=stars):
     
     def star_trading_model_vars(stars=stars):
         
-        def kings_order_rules(status, trade_using_limits, max_profit_waveDeviation, timeduration,take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+        def kings_order_rules(status, doubledown_storylength, trade_using_limits, max_profit_waveDeviation, 
+        timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
             return {
             'status': status,
             'trade_using_limits': trade_using_limits,
-            # 'total_budget': total_budget,
+            'doubledown_storylength': doubledown_storylength,
             'max_profit_waveDeviation': max_profit_waveDeviation,
             'timeduration': timeduration,
             'take_profit': take_profit,
@@ -2625,107 +2648,132 @@ def generate_TradingModel(ticker='SPY', stars=stars):
             'stagger_profits': stagger_profits,
             'scalp_profits': scalp_profits}
 
-        default = kings_order_rules(
-        status='active', 
-        trade_using_limits=False, 
-        # total_budget=100,
-        max_profit_waveDeviation=1, 
-        timeduration=33,
-        take_profit=.005 , 
-        sellout=-.0089, 
-        sell_trigbee_trigger=True, 
-        stagger_profits=False, 
-        scalp_profits=True)
+        def star_kings_order_rules_mapping(trigbees):
+            star_kings_order_rules_dict = {}
+            star_kings_order_rules_dict["1Minute_1Day"] = {}
+            star_kings_order_rules_dict["5Minute_5Day"] = {}
+            star_kings_order_rules_dict["30Minute_1Month"] = {}
+            star_kings_order_rules_dict["1Hour_3Month"] = {}
+            star_kings_order_rules_dict["2Hour_6Month"] = {}
+            star_kings_order_rules_dict["1Day_1Year"] = {}
+
+            for trigbee in trigbees:
+                if trigbee == 'buy_cross-0':
+                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+
+                elif trigbee == 'sell_cross-0':
+                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+
+                elif trigbee == 'ready_buy_cross':
+                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+
+            return star_kings_order_rules_dict
+
+        def star_vars_mapping(trigbees, stars=stars):
+            return_dict = {}
+            trigbees_king_order_rules = star_kings_order_rules_mapping(trigbees=trigbees)
+
+            star = '1Minute_1Day'
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+                                    'total_budget': 100,
+                                    'buyingpower_allocation_LongTerm': .2,
+                                    'buyingpower_allocation_ShortTerm': .8,
+                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'trigbees': trigbees_king_order_rules[star], 
+            }
+
+            star = '5Minute_5Day'
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+                                    'total_budget': 100,
+                                    'buyingpower_allocation_LongTerm': .2,
+                                    'buyingpower_allocation_ShortTerm': .8,
+                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'trigbees': trigbees_king_order_rules[star]}
+
+
+
+            star = '30Minute_1Month'
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+                                    'total_budget': 100,
+                                    'buyingpower_allocation_LongTerm': .2,
+                                    'buyingpower_allocation_ShortTerm': .8,
+                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'trigbees': trigbees_king_order_rules[star]}
+
+            
+            
+            star = '1Hour_3Month'
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+                                    'total_budget': 100,
+                                    'buyingpower_allocation_LongTerm': .2,
+                                    'buyingpower_allocation_ShortTerm': .8,
+                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'trigbees': trigbees_king_order_rules[star]}
+
+
+
+            star = '2Hour_6Month'
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+                                    'total_budget': 100,
+                                    'buyingpower_allocation_LongTerm': .2,
+                                    'buyingpower_allocation_ShortTerm': .8,
+                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'trigbees': trigbees_king_order_rules[star]}
+
+            
+            star = '1Day_1Year'
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+                                    'total_budget': 100,
+                                    'buyingpower_allocation_LongTerm': .2,
+                                    'buyingpower_allocation_ShortTerm': .8,
+                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'trigbees': trigbees_king_order_rules[star]}
+
+            
+            
+            return return_dict
+
+        def star_vars(star, star_vars_mapping):
+            
+            return {'star': star,
+            'status': star_vars_mapping[star]['status'],
+            'trade_using_limits': star_vars_mapping[star]['trade_using_limits'],
+            'total_budget': star_vars_mapping[star]['total_budget'],
+            'buyingpower_allocation_LongTerm': star_vars_mapping[star]['buyingpower_allocation_LongTerm'],
+            'buyingpower_allocation_ShortTerm': star_vars_mapping[star]['buyingpower_allocation_ShortTerm'],
+            'power_rangers': star_vars_mapping[star]['power_rangers'],
+            'trigbees': star_vars_mapping[star]['trigbees']}
         
-        return {
-            "1Minute_1Day": {
-            'status': 'active',
-            'trade_using_limits': False,
-            'total_budget': 100,
-            'buyingpower_allocation_LongTerm': .2,
-            'buyingpower_allocation_ShortTerm': .8,
-            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-            'trigbees': {'buy_cross-0': default, 
-                        'sell_cross-0': default,
-                        'ready_buy_cross': default,
-                },
+        # default_king_order_rules = kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
 
-                    },
-            "5Minute_5Day": {
-            'status': 'active',
-            'trade_using_limits': False,
-            'total_budget': 100,
-            'buyingpower_allocation_LongTerm': .2,
-            'buyingpower_allocation_ShortTerm': .8,
-            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-            'trigbees': {'buy_cross-0': default, 
-                        'sell_cross-0': default, 
-                        'ready_buy_cross': default,
-                },
-
-                    },
-            "30Minute_1Month": {
-            'status': 'active',
-            'trade_using_limits': False,
-            'total_budget': 100,
-            'buyingpower_allocation_LongTerm': .2,
-            'buyingpower_allocation_ShortTerm': .8,
-            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-            'trigbees': {'buy_cross-0': default, 
-                        'sell_cross-0': default, 
-                        'ready_buy_cross': default,
-                },
-
-                    },
-            "1Hour_3Month": {
-            'status': 'active',
-            'trade_using_limits': False,
-            'total_budget': 100,
-            'buyingpower_allocation_LongTerm': .2,
-            'buyingpower_allocation_ShortTerm': .8,
-            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-            'trigbees': {'buy_cross-0': default, 
-                        'sell_cross-0': default, 
-                        'ready_buy_cross': default,
-                },
-
-                    },
-            "2Hour_6Month": {
-            'status': 'active',
-            'trade_using_limits': False,
-            'total_budget': 100,
-            'buyingpower_allocation_LongTerm': .2,
-            'buyingpower_allocation_ShortTerm': .8,
-            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-            'trigbees': {'buy_cross-0': default, 
-                        'sell_cross-0': default, 
-                        'ready_buy_cross': default,
-                },
-
-                    },
-            "1Day_1Year": {
-            'status': 'active',
-            'trade_using_limits': False,
-            'total_budget': 100,
-            'buyingpower_allocation_LongTerm': .2,
-            'buyingpower_allocation_ShortTerm': .8,
-            'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-            # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-            'trigbees': {'buy_cross-0': default, 
-                        'sell_cross-0': default, 
-                        'ready_buy_cross': default
-                },
-
-                    },
-        }
+        all_stars = stars().keys()
+        trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+        star_vars_mapping_dict = star_vars_mapping(trigbees=trigbees, stars=stars)
+        
+        return_dict = {}
+        for star in all_stars:
+            return_dict[star] = star_vars(star=star, star_vars_mapping=star_vars_mapping_dict)
+        
+        return return_dict
 
 
-    def model_vars(star, stars_vars):
+
+    def model_vars(trading_model_name, star, stars_vars):
         return {'status': stars_vars[star]['status'], 
                 'buyingpower_allocation_LongTerm': stars_vars[star]['buyingpower_allocation_LongTerm'], 
                 'buyingpower_allocation_ShortTerm': stars_vars[star]['buyingpower_allocation_ShortTerm'], 
@@ -2733,12 +2781,14 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                 'trade_using_limits': stars_vars[star]['trade_using_limits'],
                 'total_budget': stars_vars[star]['total_budget'],
                 'trigbees': stars_vars[star]['trigbees'],
-                'index_reverse_X': '1X',
-                }
+                'index_inverse_X': '1X',
+                'index_long_X': '1X',
+                'trading_model_name': trading_model_name,
+    }
     
     stars_vars = star_trading_model_vars()
     tradingmodel1 = {ticker: 
-        {star: model_vars(star, stars_vars=stars_vars) for star in stars().keys()}
+        {star: model_vars(trading_model_name='tradingmodel1', star=star, stars_vars=stars_vars) for star in stars().keys()}
     }
 
     return {'tradingmodel1': tradingmodel1}
@@ -2751,12 +2801,12 @@ def return_queen_controls(stars=stars):
             # 'app_order_requests': [],
             # 'orders': [],
             'last_read_app': datetime.datetime.now(),
-            'reset_stars': False,
+            # 'reset_stars': False,
             'stars': stars(),
             # 'stars_allocation':{k: 1/num_of_stars for k in stars()},
             # 'symbols_stars_allocRules': {'SPY': {k: {'status': 'active', 'allocation': 1/num_of_stars} for k in stars()}},
             'symbols_stars_TradingModel': generate_TradingModel(ticker='SPY', stars=stars)['tradingmodel1'],
-            'reset_power_rangers': False,
+            # 'reset_power_rangers': False,
             'power_rangers': init_PowerRangers(),
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             'buying_powers': [{'portfolio_name': 'Jq', 'total_dayTrade_allocation': .8, 'total_longTrade_allocation': .2}],
@@ -2786,7 +2836,7 @@ def init_QUEEN(queens_chess_piece):
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(KING=KING, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False, queen_init=True)],
+        'queen_orders': [create_QueenOrderBee(trading_model='false', KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
@@ -3508,3 +3558,90 @@ def theme_calculator(POLLENSTORY, chart_times):
 #         QUEEN['errors'] = {k:v for (k,v) in QUEEN['errors'].items() if k not in clean_errors}
 #     return True
 
+
+
+
+        # return {
+        #     "1Minute_1Day": {
+        #     'status': 'active',
+        #     'trade_using_limits': False,
+        #     'total_budget': 100,
+        #     'buyingpower_allocation_LongTerm': .2,
+        #     'buyingpower_allocation_ShortTerm': .8,
+        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        #     'trigbees': {'buy_cross-0': default, 
+        #                 'sell_cross-0': default,
+        #                 'ready_buy_cross': default,},
+
+        # },
+        #     "5Minute_5Day": {
+        #     'status': 'active',
+        #     'trade_using_limits': False,
+        #     'total_budget': 100,
+        #     'buyingpower_allocation_LongTerm': .2,
+        #     'buyingpower_allocation_ShortTerm': .8,
+        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        #     'trigbees': {'buy_cross-0': default, 
+        #                 'sell_cross-0': default, 
+        #                 'ready_buy_cross': default,
+        #         },
+
+        #             },
+        #     "30Minute_1Month": {
+        #     'status': 'active',
+        #     'trade_using_limits': False,
+        #     'total_budget': 100,
+        #     'buyingpower_allocation_LongTerm': .2,
+        #     'buyingpower_allocation_ShortTerm': .8,
+        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        #     'trigbees': {'buy_cross-0': default, 
+        #                 'sell_cross-0': default, 
+        #                 'ready_buy_cross': default,
+        #         },
+
+        #             },
+        #     "1Hour_3Month": {
+        #     'status': 'active',
+        #     'trade_using_limits': False,
+        #     'total_budget': 100,
+        #     'buyingpower_allocation_LongTerm': .2,
+        #     'buyingpower_allocation_ShortTerm': .8,
+        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        #     'trigbees': {'buy_cross-0': default, 
+        #                 'sell_cross-0': default, 
+        #                 'ready_buy_cross': default,
+        #         },
+
+        #             },
+        #     "2Hour_6Month": {
+        #     'status': 'active',
+        #     'trade_using_limits': False,
+        #     'total_budget': 100,
+        #     'buyingpower_allocation_LongTerm': .2,
+        #     'buyingpower_allocation_ShortTerm': .8,
+        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        #     'trigbees': {'buy_cross-0': default, 
+        #                 'sell_cross-0': default, 
+        #                 'ready_buy_cross': default,
+        #         },
+
+        #             },
+        #     "1Day_1Year": {
+        #     'status': 'active',
+        #     'trade_using_limits': False,
+        #     'total_budget': 100,
+        #     'buyingpower_allocation_LongTerm': .2,
+        #     'buyingpower_allocation_ShortTerm': .8,
+        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
+        #     'trigbees': {'buy_cross-0': default, 
+        #                 'sell_cross-0': default, 
+        #                 'ready_buy_cross': default
+        #         },
+
+        #             },
+        # }
