@@ -1818,7 +1818,8 @@ def queen_orders_main(portfolio, APP_requests):
                         power_up_rangers=False, 
                         ticker_time_frame_origin=ticker_time_frame)
                         
-                        process_order_submission(order=send_close_order, 
+                        process_order_submission(trading_model=False,
+                        order=send_close_order, 
                         order_vars=order_vars, 
                         trig=trigname, 
                         exit_order_link=runorder_client_order_id, 
