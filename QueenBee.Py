@@ -973,7 +973,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 
                 time_delta = now_time - trig_action_trades.iloc[-1]['datetime']
 
-                if time_delta.seconds > king_order_rules['doubledown_storylength']:
+                if time_delta.seconds >= king_order_rules['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
                     order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
@@ -999,7 +999,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
                 
                 time_delta = now_time - trig_action_trades.iloc[-1]['datetime']
 
-                if time_delta.seconds > king_order_rules:
+                if time_delta.seconds >= king_order_rules['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
                     order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
