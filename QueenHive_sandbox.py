@@ -2503,7 +2503,7 @@ def KINGME(chart_times=False):
     return return_dict
 
 
-def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin):
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}):
     order_vars = {}
     if order_side == 'sell':
         if maker_middle:
@@ -2512,8 +2512,6 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         else:
             order_vars['order_type'] = 'market'
             order_vars['limit_price'] = False
-        
-
         order_vars['origin_wave'] = origin_wave
         order_vars['power_up'] = power_up_rangers
         order_vars['wave_amo'] = wave_amo
@@ -2522,7 +2520,9 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['power_up_rangers'] = power_up_rangers
         order_vars['king_order_rules'] = king_order_rules
         order_vars['trading_model'] = trading_model
-        
+        order_vars['double_down_trade'] = double_down_trade
+        order_vars['sell_reason'] = sell_reason
+
         
         return order_vars
     
@@ -2542,6 +2542,8 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['power_up_rangers'] = power_up_rangers
         order_vars['king_order_rules'] = king_order_rules
         order_vars['trading_model'] = trading_model
+        order_vars['double_down_trade'] = double_down_trade
+        order_vars['sell_reason'] = False
         
         return order_vars
 
@@ -2558,6 +2560,7 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
         # print("Queen Template Initalized")
         logging_log_message(msg='QueenHive Queen Template Initalized')
         running_order = {'trading_model': trading_model,
+                        'double_down_trade': False,
                         'queen_order_state': 'init',
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
@@ -2593,6 +2596,7 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
     elif order['side'] == 'buy' or order['side'] == 'sell':
         # print("create buy running order")
         running_order = {'trading_model': trading_model,
+                        'double_down_trade': order_vars['double_down_trade'],
                         'queen_order_state': 'submitted',
                         'side': order['side'],
                         'order_trig_buy_stop': True,
@@ -2623,7 +2627,7 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'macd_gauge': deque([], 89),
                         '$honey': 0,
                         'assigned_wave': {},
-                        'sell_reason': {},
+                        'sell_reason': order_vars['sell_reason'],
                         'honey_time_in_profit': {},
                         }
 
@@ -2765,9 +2769,7 @@ def generate_TradingModel(ticker='SPY', stars=stars):
         trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
         star_vars_mapping_dict = star_vars_mapping(trigbees=trigbees, stars=stars)
         
-        return_dict = {}
-        for star in all_stars:
-            return_dict[star] = star_vars(star=star, star_vars_mapping=star_vars_mapping_dict)
+        return_dict = {star: star_vars(star=star, star_vars_mapping=star_vars_mapping_dict) for star in all_stars}
         
         return return_dict
 
@@ -3244,32 +3246,6 @@ def init_PowerRangers(ranger_dimensions=False):
         trigbees = ['buy_wave', 'sell_wave']
         theme_list = ['nuetral', 'strong']
         colors = ['red', 'blue', 'pink', 'yellow', 'white', 'green', 'orange', 'purple', 'black']
-        # bee_ranger_tiers = 9
-        
-        # ranger_init = {
-        # 'buy_wave': {'nuetral': 
-        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-        #                                 'strong': 
-        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-        #                             },
-        #             'sell_wave': {'nuetral': 
-        #                                 {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-        #                             'strong': 
-        #                                 {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                        
-        #         },
-        # 'buy_wave': {'nuetral': 
-        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-        #                                 'strong': 
-        #                                     {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .01, 'green': .01, 'orange': .01, 'purple': .01, 'black': .001},
-        #                             },
-        #             'sell_wave': {'nuetral': 
-        #                                 {'red': .001, 'blue': .001, 'pink': .01, 'yellow': .01, 'white': .03, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-        #                             'strong': 
-        #                                 {'red': .05, 'blue': .04, 'pink': .025, 'yellow': .01, 'white': .05, 'green': .01, 'orange': .01, 'purple': .01, 'black': .01},
-                                        
-        #         },
-        # }
 
         ## FEAT REQUEST: adjust upstream to include universe
         ranger_init = {
@@ -3296,19 +3272,6 @@ def init_PowerRangers(ranger_dimensions=False):
                                         }
                 },
         }
-
-    # # ranger_init = wave_type_ranger['mac']
-    # r_dict = {}
-    # for star in stars:
-    #     r_dict[star] = {}
-    #     # for wave_type in wave_types:
-    #     #     r_dict[star][wave_type] = {}
-    #     for trigbee in trigbees:
-    #         r_dict[star][trigbee] = {}
-    #         for theme in theme_list:
-    #             r_dict[star][trigbee][theme] = {}
-    #             for color in colors:
-    #                 r_dict[star][trigbee][theme][color] = ranger_init[trigbee][theme][color]
 
     r_dict = {}
     for star in stars:

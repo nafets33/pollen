@@ -834,6 +834,10 @@ st.sidebar.write("<<<('')>>>")
 # st.header(option)
 
 
+colors = QUEEN['queen_controls']['power_rangers']['1Minute_1Day']['mac_ranger']['buy_wave']['nuetral']
+st.write(colors)
+
+
 if option == 'charts':
     # pollen = return_pollen()
     # run_charts(POLLENSTORY = POLLENSTORY)

@@ -628,7 +628,7 @@ def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
             (active_orders['ticker_time_frame_origin'] == ticker_time_frame), 1, 0)
         trigbee_orders =  active_orders[active_orders['order_exits'] == 1].copy()
         if len(trigbee_orders) > 0:
-            print('trig in action ',  len(active_orders))
+            print('trig in action ',  len(trigbee_orders))
             return trigbee_orders
         else:
             return False
@@ -969,15 +969,18 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
             if type(trig_action) != bool:
                 # print("evalatue if there is another trade to make on top of current wave")
                 trig_action_trades = trig_action
+                if len(trig_action_trades) >= 2:
+                    print("won't allow more then 2 double down trades")
+                    return {'kings_blessing': False}
                 now_time = datetime.datetime.now().astimezone(est)
                 trig_action_trades.iloc[-1]['datetime']
                 
                 time_delta = now_time - trig_action_trades.iloc[-1]['datetime']
 
-                if time_delta.seconds >= king_order_rules['doubledown_storylength']:
+                if time_delta.seconds > king_order_rules['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
-                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, double_down_trade=True)
                     return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
                 else: 
                     kings_blessing = False
@@ -995,15 +998,18 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
 
             if type(trig_action) != bool:
                 trig_action_trades = trig_action
+                if len(trig_action_trades) >= 2:
+                    print("won't allow more then 2 double down trades")
+                    return {'kings_blessing': False}
                 now_time = datetime.datetime.now().astimezone(est)
                 trig_action_trades.iloc[-1]['datetime']
                 
                 time_delta = now_time - trig_action_trades.iloc[-1]['datetime']
 
-                if time_delta.seconds >= king_order_rules['doubledown_storylength']:
+                if time_delta.seconds > king_order_rules['doubledown_storylength']:
                     print("Trig In Action Double Down Trade")
                     kings_blessing = True
-                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame)
+                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, double_down_trade=True)
                     return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
                 else: 
                     return {'kings_blessing': False}
@@ -1179,6 +1185,7 @@ def order_past_duration(queen_order):
     qorder_time = queen_order['datetime'].astimezone(est)
     duration_rule = queen_order['order_rules']['timeduration']
     order_time_delta = nowtime - qorder_time
+    # order_time_delta.total_seconds()
     # duration_divide_time = {'1Minute': 60, "5Minute": }
     if "1Minute" in queen_order['ticker_time_frame']:
         if (order_time_delta.seconds / 60) > duration_rule:
@@ -1784,8 +1791,12 @@ def queen_orders_main(portfolio, APP_requests):
                 
                 re_eval_order = king_Evaluate_QueenOrder(run_order=run_order, current_profit_loss=current_profit_loss, portfolio=portfolio)
                 if re_eval_order['bee_sell']:
-                    # VALIDATE BEE ORDER check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
-                    QUEEN['queen_orders'][idx]['sell_reason'] = re_eval_order['sell_reason']
+                    """ 
+                    VALIDATE BEE ORDER check if there are enough shares in portfolio 
+                    IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
+                    """
+                    # update buy order collective sell reason?
+                    
                     run_order = validate_portfolio_with_RUNNING(ticker=ticker, run_index=idx, run_order=run_order, portfolio=portfolio)
                     if run_order['queen_order_state'] == "error":
                         continue
@@ -1796,17 +1807,19 @@ def queen_orders_main(portfolio, APP_requests):
                     sell_qty = float(re_eval_order['sell_qty']) # float(order_obj['filled_qty'])
                     q_side = re_eval_order['side'] # 'sell' Unless it short then it will be a 'buy'
                     q_type = re_eval_order['type'] # 'market'
+                    sell_reason = re_eval_order['sell_reason']
 
                     sell_client_order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trigname, db_root=db_root, sellside_client_order_id=runorder_client_order_id)
-                    trading_model = trading_model
                     maker_middle = [priceinfo['maker_middle'] if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True else False][0]
 
-
+                    # Validate Order
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=idx)
                     
+                    # order_vars
                     sell_qty = send_order_val['qty_correction']
                     send_close_order = submit_order(api=api, side=q_side, symbol=ticker, qty=sell_qty, type=q_type, client_order_id=sell_client_order_id) 
                     send_close_order = vars(send_close_order)['_raw']
+                    
                     if route_order_based_on_status(order_status=send_close_order['status']):
                         print("Did you bring me some Honey?")
                         # Order Vars
@@ -1817,7 +1830,9 @@ def queen_orders_main(portfolio, APP_requests):
                         maker_middle=maker_middle, 
                         origin_wave=False, 
                         power_up_rangers=False, 
-                        ticker_time_frame_origin=ticker_time_frame)
+                        ticker_time_frame_origin=ticker_time_frame,
+                        double_down_trade=False,
+                        sell_reason=sell_reason,)
                         
                         process_order_submission(trading_model=False,
                         order=send_close_order, 
@@ -1826,7 +1841,10 @@ def queen_orders_main(portfolio, APP_requests):
                         exit_order_link=runorder_client_order_id, 
                         ticker_time_frame=ticker_time_frame, 
                         priceinfo=priceinfo)
+                        
+                        # update origin RUN Order
                         QUEEN['queen_orders'][idx]['order_trig_sell_stop'] = 'true'
+                        QUEEN['queen_orders'][idx]['sell_reason'].update({'sell_reason': sell_reason, 'sell_client_order_id': sell_client_order_id})
 
                         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
 
