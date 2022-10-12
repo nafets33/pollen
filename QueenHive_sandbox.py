@@ -2396,20 +2396,6 @@ def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'w
             pollen_themes[theme][star] = {}
             for wave_c in waves_cycles:
                 pollen_themes[theme][star][wave_c] = {wave_period: n for (wave_period, n) in wave_periods.items()}
-            
-            # pollen_themes[theme][star] = {
-            #         'name': star, 
-            #         'waveup' : {'morning_9-11': .01,
-            #                 'lunch_11-2': .01,
-            #                 'afternoon_2-4': .01,
-            #                 'Day': .01,
-            #                 },
-            #         'wavedown' : {'morning_9-11': .01,
-            #                     'lunch_11-2': .01,
-            #                     'afternoon_2-4': .01,
-            #                     'Day': .01,
-            #                 }
-            #     }
      
     return pollen_themes
 
@@ -2634,7 +2620,7 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
     return running_order
 
 
-def generate_TradingModel(ticker='SPY', stars=stars):
+def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trading_model_name='tradingmodel1', status='active', portforlio_weight_ask=.01):
     
     def star_trading_model_vars(stars=stars):
         
@@ -2774,7 +2760,6 @@ def generate_TradingModel(ticker='SPY', stars=stars):
         return return_dict
 
 
-
     def model_vars(trading_model_name, star, stars_vars):
         return {'status': stars_vars[star]['status'], 
                 'buyingpower_allocation_LongTerm': stars_vars[star]['buyingpower_allocation_LongTerm'], 
@@ -2788,31 +2773,108 @@ def generate_TradingModel(ticker='SPY', stars=stars):
                 'trading_model_name': trading_model_name,
     }
     
+    def tradingmodel_vars(stars_vars, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars):
+        return {
+            ticker: 
+                {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()},
+                'ticker': ticker,
+                'status': status,
+                'portforlio_weight_ask': portforlio_weight_ask,
+                'trading_model_name': trading_model_name,
+                'portfolio_name': portfolio_name,
+        }
+
+    # Trading Model Version 1
     stars_vars = star_trading_model_vars()
-    tradingmodel1 = {ticker: 
-        {star: model_vars(trading_model_name='tradingmodel1', star=star, stars_vars=stars_vars) for star in stars().keys()}
-    }
+    tradingmodel1 = tradingmodel_vars(stars_vars=stars_vars)
 
     return {'tradingmodel1': tradingmodel1}
+
+
+def heartbeat_portfolio_revrec_template(QUEEN, portforlio_name='Jq'):
+    # buying_powers
+    # buying power item
+                
+    # adjust ticker weight with current QueenRevRec
+    # df = pd.DataFrame(QUEEN['queen_controls']['symbols_stars_TradingModel'])
+    # for ticker in df['ticker'].to_list():
+    #     if ticker not in QUEEN['queen_controls']['ticker_settings'].keys():
+    #         add_ticker_settings = generate_queen_ticker_settings(portforlio_name='Jq', ticker=ticker, portforlio_weight=.1, day_theme_throttle=.75, long_theme_throttle=.55)
+    #         reduce_tickers = add_ticker_settings['portforlio_weight'] / sum(np.where(df['status'] == 'active',1 ,0))
+    #         df['new_weight'] = df['portforlio_weight'] - reduce_tickers
+    # df = pd.DataFrame(QUEEN['queen_controls']['ticker_settings'].items())
+    # df = df.T
+    # headers = df.iloc[0].values
+    # df.columns = headers
+    # df.drop(index=0, axis=0, inplace=True)
+    # for ticker, tradingmodel in QUEEN['queen_controls']['symbols_stars_TradingModel'].items():
+    #     if ticker not in df['ticker'].tolist():
+    #         add_ticker_settings = generate_queen_ticker_settings(portforlio_name='Jq', status='active', ticker=ticker, portforlio_weight=.1, day_theme_throttle=.75, long_theme_throttle=.55)
+    #         reduce_tickers = add_ticker_settings['portforlio_weight'] / sum(np.where(df['status'] == 'active',1 ,0))
+    #         df['portforlio_weight'] = df['portforlio_weight'] - reduce_tickers
+    #         QUEEN['queen_controls']['ticker_settings'] = df.T.to_dict()[0]
+    #         QUEEN['queen_controls']['ticker_settings'].update(add_ticker_settings)
+
+    # for ticker, tradingmodel in QUEEN['queen_controls']['symbols_stars_TradingModel'].items():
+    #     if ticker not in QUEEN['queen_controls']['ticker_settings'].keys():
+    #         add_ticker_settings = generate_queen_ticker_settings(portforlio_name='Jq', status='active', ticker=ticker, portforlio_weight=.1, day_theme_throttle=.75, long_theme_throttle=.55)
+    #         reduce_tickers = add_ticker_settings['portforlio_weight'] / len([i for k, i in QUEEN['queen_controls']['ticker_settings'].items() if i['status']=='active'])
+    #         for ticker2 in QUEEN['queen_controls']['ticker_settings'].keys()
+    #             if QUEEN['queen_controls']['ticker_settings'][ticker2]['portforlio_weight'] > reduce_tickers:
+    #                 QUEEN['queen_controls']['ticker_settings'][ticker2]['portforlio_weight'] = QUEEN['queen_controls']['ticker_settings'][ticker2]['portforlio_weight'] - reduce_tickers
+            
+    #         QUEEN['queen_controls']['ticker_settings'] = {df.T.to_dict()[0]}
+    #         QUEEN['queen_controls']['ticker_settings'].update(add_ticker_settings)
+
+    # rebalance based on total budget???          
+    
+    # for ticker in settings check for new models and if they are active, ReAllocate weight and return star powers
+    
+    return True
+
+
+def generate_queen_buying_powers_settings(portfolio_name='Jq', total_dayTrade_allocation=.5, total_longTrade_allocation=.5):
+    return {portfolio_name: {
+    'portfolio_name': portfolio_name,
+    'total_dayTrade_allocation': total_dayTrade_allocation,
+    'total_longTrade_allocation': total_longTrade_allocation,}
+    }
+
+
+def generate_queen_ticker_settings(ticker='SPY', status='active', portforlio_name='Jq', portforlio_weight=1, day_theme_throttle=.33, long_theme_throttle=.33):
+    return {
+    portforlio_name: {
+    'portforlio_name': portforlio_name,
+    'ticker': ticker,
+    'status': status,
+    'portforlio_weight': portforlio_weight,
+    'day_theme_throttle': day_theme_throttle,
+    'long_theme_throttle': long_theme_throttle,}
+    }
+
+
+# def theme_throttle():
+#     return_dict = {f'{num}{"X"}': num * .01 for num in range(1, 100)}
+    
+#     return return_dict
 
 
 def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
     queen_controls_dict = { 
             'theme': 'nuetral',
-            # 'app_order_requests': [],
-            # 'orders': [],
             'last_read_app': datetime.datetime.now(),
-            # 'reset_stars': False,
             'stars': stars(),
-            # 'stars_allocation':{k: 1/num_of_stars for k in stars()},
-            # 'symbols_stars_allocRules': {'SPY': {k: {'status': 'active', 'allocation': 1/num_of_stars} for k in stars()}},
-            'symbols_stars_TradingModel': generate_TradingModel(ticker='SPY', stars=stars)['tradingmodel1'],
-            # 'reset_power_rangers': False,
+            'ticker_settings': generate_queen_ticker_settings(),
+            'buying_powers': generate_queen_buying_powers_settings(),
+
+            # Trading Model and Child Components Worker Bee Controls
+            'symbols_stars_TradingModel': generate_TradingModel()['tradingmodel1'],
             'power_rangers': init_PowerRangers(),
-            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-            'buying_powers': [{'portfolio_name': 'Jq', 'total_dayTrade_allocation': .8, 'total_longTrade_allocation': .2}],
             'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
+
+            # Worker Bees UPDATE TO PER TICKER on Ticker Settings
+            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             'macd_worlds' : {
                 'crypto': 
                     {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
@@ -2822,9 +2884,7 @@ def return_queen_controls(stars=stars):
                     {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
                     'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
                 },
-            'star_time_settings': {star_time: {'max_dayTrade_of_dayAlloc': .7, 'max_longTrade_of_longAlloc': .5} for star_time in stars().keys()
-                                },
-            'ticker_settings': {'SPY': {'max_day': .7, 'max_long': .5}},
+
     
     }
     return queen_controls_dict

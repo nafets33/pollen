@@ -63,7 +63,7 @@ else:
     prod = False
 
 if prod:
-    from QueenHive import order_vars__queen_order_items, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 else:
     from QueenHive_sandbox import order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, read_csv_db, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 
@@ -628,7 +628,7 @@ def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
             (active_orders['ticker_time_frame_origin'] == ticker_time_frame), 1, 0)
         trigbee_orders =  active_orders[active_orders['order_exits'] == 1].copy()
         if len(trigbee_orders) > 0:
-            print('trig in action ',  len(trigbee_orders))
+            # print('trig in action ',  len(trigbee_orders))
             return trigbee_orders
         else:
             return False
@@ -654,7 +654,6 @@ def add_app_wave_trigger(all_current_triggers, ticker, app_wave_trig_req):
 
 def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, run_order_idx=False, crypto=False):
     try:
-        # print(ticker_time_frame)
         logging.info({'ex_order()': ticker_time_frame})
 
         trading_model = king_resp['order_vars']
@@ -675,76 +674,83 @@ def execute_order(QUEEN, king_resp, ticker, ticker_time_frame, trig, portfolio, 
             limit_price = king_resp['order_vars']['limit_price']
             trading_model = king_resp['order_vars']['trading_model']
         
-        # flag crypto
-        if crypto:
-            snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-            crypto = True
-        else:
-            snap = api.get_snapshot(ticker)
-            crypto = False
+        if type == 'buy':
         
-        # get latest pricing
-        current_price = snap.latest_trade.price
-        current_bid = snap.latest_quote.bid_price
-        current_ask = snap.latest_quote.ask_price
-        priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
-        
-        # Adjust for Crypto
-        if crypto:
-            qty_order = float(round(wave_amo / current_price, 4))
-        else:
-            qty_order = float(round(wave_amo / current_price, 0))
-
-        
-        if limit_price:
-            limit_price = limit_price
-        else:
-            limit_price = False
-
-
-        # validate app order
-        def validate_app_order():
-            pass
-        
-        
-        # return num of trig for client_order_id
-        order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
-
-        send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
-        qty_order = send_order_val['qty_correction'] # same return unless more validation done here
-
-        # ORDER TYPES Enter the Market
-        if type == 'market':
-            order_submit = submit_order(api=api, symbol=ticker, type=type, qty=qty_order, side=side, client_order_id=order_id) # buy
-        elif type == 'limit':
-            order_submit = submit_order(api=api, symbol=ticker, type=type, qty=qty_order, side=side, client_order_id=order_id, limit_price=limit_price) # buy
-        
-        logging.info("order submit")
-        order = vars(order_submit)['_raw']
-        # print(order['status'])
-
-        # Confirm order went through, end process and write results
-        if route_order_based_on_status(order_status=order['status']):
+            # flag crypto
+            if crypto:
+                snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+                crypto = True
+            else:
+                snap = api.get_snapshot(ticker)
+                crypto = False
             
-            process_order_submission(trading_model=trading_model, 
-            order=order, 
-            order_vars=king_resp['order_vars'], 
-            trig=trig, 
-            ticker_time_frame=ticker_time_frame, 
-            priceinfo=priceinfo)
-
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            # get latest pricing
+            current_price = snap.latest_trade.price
+            current_bid = snap.latest_quote.bid_price
+            current_ask = snap.latest_quote.ask_price
+            priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
             
-            msg = {'execute order()': {'msg': f'{"order submitted"}{" : at : "}{return_timestamp_string()}', 'ticker': ticker, 'ticker_time_frame': ticker_time_frame, 'trig': trig, 'crypto': crypto, 'wave_amo': wave_amo}}
-            logging.info(msg)
-            print(msg)
-            queens_first_go = 1
-            return{'executed': True, 'msg': msg}
+            # Adjust for Crypto
+            if crypto:
+                qty_order = float(round(wave_amo / current_price, 4))
+            else:
+                qty_order = float(round(wave_amo / current_price, 0))
+
+            
+            if limit_price:
+                limit_price = limit_price
+            else:
+                limit_price = False
+
+
+            # validate app order
+            def validate_app_order():
+                pass
+            
+            
+            # return num of trig for client_order_id
+            order_id = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
+
+            send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
+            qty_order = send_order_val['qty_correction'] # same return unless more validation done here
+
+            # ORDER TYPES Enter the Market
+            if type == 'market':
+                order_submit = submit_order(api=api, symbol=ticker, type=type, qty=qty_order, side=side, client_order_id=order_id) # buy
+            elif type == 'limit':
+                order_submit = submit_order(api=api, symbol=ticker, type=type, qty=qty_order, side=side, client_order_id=order_id, limit_price=limit_price) # buy
+            
+            logging.info("order submit")
+            order = vars(order_submit)['_raw']
+            # print(order['status'])
+
+            # Confirm order went through, end process and write results
+            if route_order_based_on_status(order_status=order['status']):
+                
+                process_order_submission(trading_model=trading_model, 
+                order=order, 
+                order_vars=king_resp['order_vars'], 
+                trig=trig, 
+                ticker_time_frame=ticker_time_frame, 
+                priceinfo=priceinfo)
+
+                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                
+                msg = {'execute order()': {'msg': f'{"order submitted"}{" : at : "}{return_timestamp_string()}', 'ticker': ticker, 'ticker_time_frame': ticker_time_frame, 'trig': trig, 'crypto': crypto, 'wave_amo': wave_amo}}
+                logging.info(msg)
+                print(msg)
+                queens_first_go = 1
+                return{'executed': True, 'msg': msg}
+            else:
+                msg = ("error order not accepted", order)
+                print(msg)
+                logging.error(msg)
+                return{'executed': False, 'msg': msg}
+        elif type == 'sell':
+            print('sell')
         else:
-            msg = ("error order not accepted", order)
-            print(msg)
-            logging.error(msg)
-            return{'executed': False, 'msg': msg}
+            print('new type Critical ERROR')
+    
     except Exception as e:
         print(e, print_line_of_error())
         print(ticker_time_frame)
@@ -1031,12 +1037,12 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         print("logme")
 
 
-def add_trading_model(QUEEN, ticker, model='tradingmodel1'):
+def add_trading_model(QUEEN, ticker, model='tradingmodel1', status='active'):
     trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
     if ticker not in trading_models.keys():
         print("Ticker Missing Trading Model Adding Default Model1")
         logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
-        tradingmodel1 = generate_TradingModel(ticker=ticker)[model]
+        tradingmodel1 = generate_TradingModel(ticker=ticker, status=status)[model]
         QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
 
@@ -1843,8 +1849,11 @@ def queen_orders_main(portfolio, APP_requests):
                         priceinfo=priceinfo)
                         
                         # update origin RUN Order
-                        QUEEN['queen_orders'][idx]['order_trig_sell_stop'] = 'true'
-                        QUEEN['queen_orders'][idx]['sell_reason'].update({'sell_reason': sell_reason, 'sell_client_order_id': sell_client_order_id})
+                        try:
+                            QUEEN['queen_orders'][idx]['order_trig_sell_stop'] = 'true'
+                            QUEEN['queen_orders'][idx]['sell_reason'].update({'sell_reason': sell_reason, 'sell_client_order_id': sell_client_order_id})
+                        except Exception as e:
+                            print("error in updating Origin Run Order: er: ", e, print_line_of_error())
 
                         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
 
