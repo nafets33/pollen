@@ -1671,7 +1671,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
 
 
         # gather run_order Vars
-        ticker = run_order['symbol']
+        ticker_runorder = run_order['symbol']
         trigname = run_order['trigname']
         runorder_client_order_id = run_order['client_order_id']
         take_profit = run_order['order_rules']['take_profit'] #  {'order_rules': order_rules, 'trigname': trig, 'order': order, 'datetime': date_mark, 'status_q': False, 'exit_order': False}                                    
@@ -1684,7 +1684,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         origin_wave = run_order['origin_wave']
         time_in_trade = datetime.datetime.now().astimezone(est) - entered_trade_time
         
-        priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto)
+        priceinfo = return_snap_priceinfo(api=api, ticker=ticker_runorder, crypto=crypto)
 
         sell_order = False # #### >>> convince me to sell  $$
         
@@ -1719,7 +1719,6 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigname]
         current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
         ticker, tframe, tperiod = ticker_time_frame.split("_")
-
 
 
         # Market closed do NOT Sell
@@ -1774,7 +1773,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         # global limit type order type
         if str(trading_model['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
-        elif str(trading_model[ticker][tframe]['trade_using_limits']).lower() == 'true':
+        elif str(trading_model[tframe]['trade_using_limits']).lower() == 'true':
             order_type = 'limit'        
         
         
