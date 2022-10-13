@@ -1673,7 +1673,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         ticker_time_frame = run_order['ticker_time_frame']
         ticker_time_frame_origin = run_order['ticker_time_frame_origin']
         entered_trade_time = run_order['datetime'].astimezone(est)
-        origin_wave = run_order['origin_wave']
+        origin_wave = run_order['origin_wave']['origin_wave']
         time_in_trade = datetime.datetime.now().astimezone(est) - entered_trade_time
         
         priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto)
@@ -1684,10 +1684,10 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         honey_gauge = honeyGauge_metric(run_order)
 
         # does current wave differ from origin wave?
-        wave_n = [origin_wave['wave_n'] if len(run_order['origin_wave']) > 0 else False][0]
+        wave_n = [origin_wave['wave_n'] if len(origin_wave) > 0 else False][0]
         if wave_n:
             storybee_origin_wave = STORY_bee[ticker_time_frame]['waves'][trigname][wave_n]
-            if storybee_origin_wave['trigbee'] != origin_wave['trigbee']:
+            if storybee_origin_wave['trigbee'] != trigname:
                 run_order_wave_changed = True
             else:
                 run_order_wave_changed = False
