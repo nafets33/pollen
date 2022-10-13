@@ -2462,7 +2462,7 @@ def KINGME(chart_times=False):
     return return_dict
 
 
-def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false', qty_available_running_close_adjustment='false'):
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false', qty_available_running_close_adjustment='false', wave_at_creation={}):
     order_vars = {}
     if order_side == 'sell':
         if maker_middle:
@@ -2486,6 +2486,8 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['sell_reason'] = sell_reason
         order_vars['running_close_legs'] = running_close_legs
         order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
+        order_vars['wave_at_creation'] = wave_at_creation
+
     
         return order_vars
     
@@ -2511,6 +2513,7 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['sell_reason'] = False
         order_vars['running_close_legs'] = running_close_legs
         order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
+        order_vars['wave_at_creation'] = wave_at_creation
         
         return order_vars
 
@@ -2559,6 +2562,7 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         '$honey': 0,
                         'origin_wave': {},
                         'assigned_wave': {},
+                        'wave_at_creation': {},
                         'sell_reason': {},
                         'power_up': {},
                         'power_up_rangers': 0,
@@ -2577,7 +2581,9 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'running_close_legs': 'false',
                         'symbol': order['symbol'], 
                         'order_rules': order_vars['king_order_rules'],
-                        'origin_wave': {'origin_wave': order_vars['origin_wave']},
+                        'origin_wave': order_vars['origin_wave'],
+                        'wave_at_creation': order_vars['wave_at_creation'],
+                        'assigned_wave': {},
                         'power_up': order_vars['power_up'],
                         'power_up_rangers': order_vars['power_up_rangers'], 
                         'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
@@ -2602,7 +2608,6 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'honey_gauge': deque([], 89),
                         'macd_gauge': deque([], 89),
                         '$honey': 0,
-                        'assigned_wave': {},
                         'sell_reason': order_vars['sell_reason'],
                         'honey_time_in_profit': {},
                         }
