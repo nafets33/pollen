@@ -1902,8 +1902,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
                 sell_reason=sell_reason)
             
             else:
-                print("error trigname not recongized")
-                logging_log_message(log_type='error', msg='error trigname not recongized')
+                pass
             
             
             # elif the 3 wisemen pointing to sell or re-chunk profits
@@ -2027,9 +2026,7 @@ def queen_orders_main(portfolio, APP_requests):
                         crypto=qo_crypto)
 
                     else:
-                        msg = {"order_management()" : ("client_order_id", run_order['client_order_id'])}
-                        print(msg)
-                        logging.error(msg)
+                        pass
             except Exception as e:
                 print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
                 log_error_dict = logging_log_message(log_type='error', msg='Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
