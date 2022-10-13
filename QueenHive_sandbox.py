@@ -2549,6 +2549,7 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'req_qty': 0,
                         'filled_qty': 0,
                         'qty_available': 0,
+                        'qty_available_running_close_adjustment': order_vars['qty_available_running_close_adjustment'],
                         'filled_avg_price': 0,
                         'price_time_of_request': 0,
                         'bid': 0,
@@ -2592,6 +2593,8 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'req_qty': order['qty'],
                         'filled_qty': order['filled_qty'],
                         'qty_available': order['filled_qty'],
+                        'qty_available_running_close_adjustment': order_vars['qty_available_running_close_adjustment'],
+
                         'filled_avg_price': order['filled_avg_price'],
                         'price_time_of_request': priceinfo['price'],
                         'bid': priceinfo['bid'],
