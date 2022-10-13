@@ -850,10 +850,12 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']  # df
     current_wave = df_waves_story.iloc[-1]
     
-    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
+    # token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
+    token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
     current_buywave = token_df.iloc[-1]
 
-    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
+    # token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
+    token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
     current_sellwave = token_df.iloc[-1]
 
     d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave }

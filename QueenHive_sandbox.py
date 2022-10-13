@@ -1014,7 +1014,7 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
     df_waves['wave_n'] = df_waves.index
     df_waves['length'] = df_waves['wave_n'].apply(lambda x: macd_cross_WaveLength(df_waves, x))
     df_waves['profits'] = df_waves['wave_n'].apply(lambda x: profit_loss(df_waves, x))
-    df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
+    # df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
     df_waves['active_wave'] = np.where(df_waves['wave_n'] == df_waves['wave_n'].iloc[-1], 'active', 'not_active')
     df_waves['wave_blocktime'] = df_waves['wave_n'].apply(lambda x: macd_cross_WaveBlocktime(df_waves, x))
 
@@ -1031,13 +1031,13 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
     index_wave_series = dict(zip(df_waves['story_index'], df_waves['profits']))
     df['profits'] = df['story_index'].map(index_wave_series).fillna("0")
 
-    index_wave_series = dict(zip(df_waves['story_index'], df_waves['story_index_in_profit']))
-    df['story_index_in_profit'] = df['story_index'].map(index_wave_series).fillna("0")
+    # index_wave_series = dict(zip(df_waves['story_index'], df_waves['story_index_in_profit']))
+    # df['story_index_in_profit'] = df['story_index'].map(index_wave_series).fillna("0")
 
     index_wave_series = dict(zip(df_waves['story_index'], df_waves['active_wave']))
     df['active_wave'] = df['story_index'].map(index_wave_series).fillna("0")
 
-    df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits', 'story_index_in_profit', 'active_wave',]]
+    df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits', 'active_wave',]]
     
     return {'df': df, 'df_waves': df_waves}
 
