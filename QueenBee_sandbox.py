@@ -1774,11 +1774,13 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         # global limit type order type
         if str(trading_model['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
+            limit_price = priceinfo['maker_middle']
         elif str(run_order['order_rules']['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
+            limit_price = priceinfo['maker_middle']
         else:
             order_type = 'market'        
-        
+
         
         """ WaterFall sellout chain """
         def waterfall_sellout_chain(order_type, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed):
