@@ -886,6 +886,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
             'wave_start_time': wave_starttime,
             'wave_end_time': wave_endtime,
             'trigbee': trigger,
+            'wave_id': f'{trigger}{wave_blocktime}{wave_starttime}'
             })
             
             wave_height_value = max(df_waveslice[wave_col_name].values)

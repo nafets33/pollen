@@ -850,13 +850,13 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']  # df
     current_wave = df_waves_story.iloc[-1]
     
-    # token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
-    token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
-    current_buywave = token_df.iloc[-1]
+    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
+    # token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
+    current_buywave = token_df.iloc[0]
 
-    # token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
-    token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
-    current_sellwave = token_df.iloc[-1]
+    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
+    # token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
+    current_sellwave = token_df.iloc[0]
 
     d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave }
     # trigbees = set(df_waves_story['macd_cross'])
@@ -1687,14 +1687,14 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
         honey_gauge = honeyGauge_metric(run_order)
 
-        # does current wave differ from origin wave?
-        wave_n = [origin_wave['wave_n'] if len(origin_wave) > 0 else False][0]
-        if wave_n:
-            storybee_origin_wave = STORY_bee[ticker_time_frame]['waves'][trigname][wave_n]
-            if storybee_origin_wave['trigbee'] != trigname:
-                run_order_wave_changed = True
-            else:
-                run_order_wave_changed = False
+        # # does current wave differ from origin wave?
+        # wave_n = [origin_wave['wave_n'] if len(origin_wave) > 0 else False][0]
+        # if wave_n:
+        #     storybee_origin_wave = STORY_bee[ticker_time_frame]['waves'][trigname][wave_n]
+        #     if storybee_origin_wave['trigbee'] != trigname:
+        #         run_order_wave_changed = True
+        #     else:
+        #         run_order_wave_changed = False
         
 
         # handle not in Story default to SPY
@@ -1709,7 +1709,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         current_macd = ttframe_story['macd_state']
         current_macd_time = int(current_macd.split("-")[-1])
         
-        # Waves
+        # Bishop Waves
         current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigname]
         current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
