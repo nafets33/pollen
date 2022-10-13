@@ -1774,7 +1774,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         # global limit type order type
         if str(trading_model['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
-        elif str(trading_model[star]['trade_using_limits']).lower() == 'true':
+        elif str(run_order['order_rules']['trade_using_limits']).lower() == 'true':
             order_type = 'limit'        
         
         
