@@ -921,7 +921,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
     return MACDWAVE_story
 
 
-def return_waves_measurements(df, trigbees, ticker_time_frame):
+def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']):
     # POLLENSTORY = read_pollenstory()
     # df = POLLENSTORY["SPY_1Minute_1Day"]
     # wave_trigger_list = ["macd_cross"]
@@ -1009,13 +1009,13 @@ def return_waves_measurements(df, trigbees, ticker_time_frame):
                     time_to_max_profit = 0
                     # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
 
-
     # set wave num
-    trigbees = ['buy_cross-0', 'sell_cross-0']
     df_waves = df[df['macd_cross'].isin(trigbees)].copy().reset_index()
     df_waves['wave_n'] = df_waves.index
     df_waves['length'] = df_waves['wave_n'].apply(lambda x: macd_cross_WaveLength(df_waves, x))
     df_waves['profits'] = df_waves['wave_n'].apply(lambda x: profit_loss(df_waves, x))
+    df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
+    df_waves['active_wave'] = np.where(df_waves['wave_n'] == df_waves['wave_n'].iloc[-1], 'active', 'not_active')
     df_waves['wave_blocktime'] = df_waves['wave_n'].apply(lambda x: macd_cross_WaveBlocktime(df_waves, x))
 
 
@@ -1031,47 +1031,18 @@ def return_waves_measurements(df, trigbees, ticker_time_frame):
     index_wave_series = dict(zip(df_waves['story_index'], df_waves['profits']))
     df['profits'] = df['story_index'].map(index_wave_series).fillna("0")
 
-    df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits']]
+    index_wave_series = dict(zip(df_waves['story_index'], df_waves['story_index_in_profit']))
+    df['story_index_in_profit'] = df['story_index'].map(index_wave_series).fillna("0")
+
+    index_wave_series = dict(zip(df_waves['story_index'], df_waves['active_wave']))
+    df['active_wave'] = df['story_index'].map(index_wave_series).fillna("0")
+
+    df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits', 'story_index_in_profit', 'active_wave',]]
     
     return {'df': df, 'df_waves': df_waves}
 
-# def macd_wave_length_story(df_waves):
-#     # fix holidays and weekends
-#     d_wave_lengths = {}
-#     l_waves = df_waves['macd_wave_n'].tolist()
-#     last_wave = max(l_waves)
-#     for wave_n in l_waves:
-#         try:
-#             if wave_n == last_wave:
-#                 d_wave_lengths[wave_n] = 'NULL'
-#             else:
-#                 wave_distance = df_waves.iloc[wave_n]['wave_start_time'] - df_waves.iloc[wave_n + 1]['wave_start_time']
-#                 # wave_distance = df_waves.iloc[wave_n]['story_index'] - df_waves.iloc[wave_n + 1]['story_index'] 
-#                 d_wave_lengths[wave_n] = wave_distance
-#         except Exception as e:
-#             print(wave_n, e)
-#     df_waves['macd_wave_length'] = df_waves['macd_wave_n'].map(d_wave_lengths)
-
-#     return df_waves
-
-#     # make conculsions: morning had X# of waves, Y# was profitable, big_waves_occured
-#     # bee_89 = MACDWAVE_story["buy_cross-0"]
-#     # for wave in bee_89:
-#     # gather current avg waves
-
-#     return MACDWAVE_story
 
 
-# def split_today_vs_prior(df):
-#     df_day = df['timestamp_est'].iloc[-1]
-#     df = df.copy()
-#     df = df.set_index('timestamp_est', drop=True) # test
-#     df_prior = df[~(df.index.day == df_day.day)].copy()
-    
-#     df_today = df[(df.index.day == df_day.day)].copy()
-#     df_today = df_today.reset_index()
-#     df_prior = df_prior.reset_index()
-#     return {'df_today': df_today, 'df_prior': df_prior}
 
 def split_today_vs_prior(df, other_timestamp=False):
     if other_timestamp:
@@ -1401,7 +1372,7 @@ def submit_order(api, symbol, qty, side, type, limit_price=False, client_order_i
             time_in_force=time_in_force,
             client_order_id=client_order_id
             )
-    if type == 'limit':
+    elif type == 'limit':
         order = api.submit_order(
             symbol=symbol,
             qty=qty,
@@ -1411,6 +1382,8 @@ def submit_order(api, symbol, qty, side, type, limit_price=False, client_order_i
             client_order_id=client_order_id,
             limit_price=limit_price,
             )
+    else:
+        return False
     
     return order
 
@@ -2489,15 +2462,18 @@ def KINGME(chart_times=False):
     return return_dict
 
 
-def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}):
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false'):
     order_vars = {}
     if order_side == 'sell':
         if maker_middle:
             order_vars['order_type'] = 'limit'
             order_vars['limit_price'] = maker_middle # 10000
+            order_vars['order_trig_sell_stop_limit'] = 'true'
         else:
             order_vars['order_type'] = 'market'
             order_vars['limit_price'] = False
+            order_vars['order_trig_sell_stop_limit'] = 'false'
+        
         order_vars['origin_wave'] = origin_wave
         order_vars['power_up'] = power_up_rangers
         order_vars['wave_amo'] = wave_amo
@@ -2508,6 +2484,7 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['trading_model'] = trading_model
         order_vars['double_down_trade'] = double_down_trade
         order_vars['sell_reason'] = sell_reason
+        order_vars['running_close_legs'] = running_close_legs
 
         
         return order_vars
@@ -2516,9 +2493,11 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         if maker_middle:
             order_vars['order_type'] = 'limit'
             order_vars['limit_price'] = maker_middle # 10000
+            order_vars['order_trig_sell_stop_limit'] = 'true'
         else:
             order_vars['order_type'] = 'market'
             order_vars['limit_price'] = False
+            order_vars['order_trig_sell_stop_limit'] = 'false'
         
         order_vars['origin_wave'] = origin_wave
         order_vars['power_up'] = sum(power_up_rangers.values())
@@ -2530,6 +2509,7 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['trading_model'] = trading_model
         order_vars['double_down_trade'] = double_down_trade
         order_vars['sell_reason'] = False
+        order_vars['running_close_legs'] = running_close_legs
         
         return order_vars
 
@@ -2551,6 +2531,9 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'side': 'init',
                         'order_trig_buy_stop': 'false',
                         'order_trig_sell_stop': 'false',
+                        'order_trig_sell_stop_limit': 'false',
+                        'limit_price': 'false',
+                        'running_close_legs': 'false',
                         'symbol': 'init', 
                         'order_rules': KING["kings_order_rules"]["knight_bees"]['init'], 
                         'trigname': trig, 
@@ -2587,6 +2570,9 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                         'side': order['side'],
                         'order_trig_buy_stop': True,
                         'order_trig_sell_stop': 'false',
+                        'order_trig_sell_stop_limit': order_vars['order_trig_sell_stop_limit'],
+                        'limit_price': order_vars['limit_price'],
+                        'running_close_legs': 'false',
                         'symbol': order['symbol'], 
                         'order_rules': order_vars['king_order_rules'],
                         'origin_wave': {'origin_wave': order_vars['origin_wave']},
@@ -2625,7 +2611,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
     def star_trading_model_vars(stars=stars):
         
         def kings_order_rules(status, doubledown_storylength, trade_using_limits, max_profit_waveDeviation, 
-        timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits):
+        timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers):
             return {
             'status': status,
             'trade_using_limits': trade_using_limits,
@@ -2636,7 +2622,9 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
             'sellout': sellout,
             'sell_trigbee_trigger': sell_trigbee_trigger,
             'stagger_profits': stagger_profits,
-            'scalp_profits': scalp_profits}
+            'scalp_profits': scalp_profits,
+            'scalp_profits_timeduration': scalp_profits_timeduration,
+            'stagger_profits_tiers': stagger_profits_tiers,}
 
         def star_kings_order_rules_mapping(trigbees):
             star_kings_order_rules_dict = {}
@@ -2649,28 +2637,28 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
 
             for trigbee in trigbees:
                 if trigbee == 'buy_cross-0':
-                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
 
                 elif trigbee == 'sell_cross-0':
-                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
-                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False)
+                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
 
                 elif trigbee == 'ready_buy_cross':
-                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
-                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
-                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
-                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
-                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
-                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
+                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
 
             return star_kings_order_rules_dict
 

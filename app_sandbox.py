@@ -1082,21 +1082,20 @@ if option == 'queen':
             st.write(datetime.datetime.now().astimezone(est), 'EST')
             st.dataframe(df)
 
-            # Top Winners
-            buzzz_linebreak()
-            df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
-            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
-            df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
-            df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
-            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
-            st.write('top buy waves', df_bestwaves)
-            st.write('top sell waves', df_bestwaves_sell)
-            st.write('top day buy waves', df_day_bestwaves)
-            st.write('top day buy/sell waves', df_best_buy__sell__waves)
+            # # Top Winners
+            # buzzz_linebreak()
+            # df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
+            # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
+            # df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
+            # df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
+            # st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            # st.write('top buy waves', df_bestwaves)
+            # st.write('top sell waves', df_bestwaves_sell)
+            # st.write('top day buy waves', df_day_bestwaves)
+            # st.write('top day buy/sell waves', df_best_buy__sell__waves)
+            # buzzz_linebreak()
 
-            buzzz_linebreak()
-
-            # Today Wave Up
+            # Today df_today
             buzzz_linebreak()
             st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
             df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
@@ -1105,12 +1104,12 @@ if option == 'queen':
             st.dataframe(df)
             buzzz_linebreak()
 
-            # WaveDown
-            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
-            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
-            df = df.astype(str)
-            st.write(datetime.datetime.now().astimezone(est), 'EST')
-            st.dataframe(df)
+            # # WaveDown
+            # st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
+            # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
+            # df = df.astype(str)
+            # st.write(datetime.datetime.now().astimezone(est), 'EST')
+            # st.dataframe(df)
             
             # view details
             st.write("VIEW TRANSPOSE")
