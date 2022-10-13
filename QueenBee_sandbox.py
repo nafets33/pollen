@@ -1639,6 +1639,8 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx):
 
 def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portfolio, crypto_currency_symbols=crypto_currency_symbols):
     try:
+        
+        portfolio = return_alpc_portolio(api)['portfolio']
 
         if str(run_order['order_trig_sell_stop']).lower() == 'true':
             # logging.info({"sell in progress": run_order['symbol']})
@@ -1658,14 +1660,10 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         else:
             crypto = False
 
-        priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto)
-        
-        portfolio = return_alpc_portolio(api)['portfolio']
 
-        sell_order = False # #### >>> convince me to sell  $$
 
         # gather run_order Vars
-        rn_order_symbol = run_order['symbol']
+        ticker = run_order['symbol']
         trigname = run_order['trigname']
         runorder_client_order_id = run_order['client_order_id']
         take_profit = run_order['order_rules']['take_profit'] #  {'order_rules': order_rules, 'trigname': trig, 'order': order, 'datetime': date_mark, 'status_q': False, 'exit_order': False}                                    
@@ -1677,6 +1675,11 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         entered_trade_time = run_order['datetime'].astimezone(est)
         origin_wave = run_order['origin_wave']
         time_in_trade = datetime.datetime.now().astimezone(est) - entered_trade_time
+        
+        priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto)
+
+        sell_order = False # #### >>> convince me to sell  $$
+        
         macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
         honey_gauge = honeyGauge_metric(run_order)
 
