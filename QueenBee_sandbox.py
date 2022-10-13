@@ -847,16 +847,20 @@ def last_2_trades(): # change to pull from alpaca and join in by client_order_id
 
 def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy/sell cross
     """ Waves: Current Wave, answer questions about proir waves """
-    df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']  # df
-    current_wave = df_waves_story.iloc[-1]
+    # df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']  # df
+    # current_wave = df_waves_story.iloc[-1]
     
     token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
-    # token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
     current_buywave = token_df.iloc[0]
 
     token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
-    # token_df = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].T
     current_sellwave = token_df.iloc[0]
+
+    if current_buywave['wave_start_time'] > current_sellwave['wave_start_time']:
+        current_wave = current_buywave
+    else:
+        current_wave = current_sellwave
+
 
     d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave }
     # trigbees = set(df_waves_story['macd_cross'])
@@ -1687,6 +1691,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
         honey_gauge = honeyGauge_metric(run_order)
 
+        run_order_wave_changed = False
         # # does current wave differ from origin wave?
         # wave_n = [origin_wave['wave_n'] if len(origin_wave) > 0 else False][0]
         # if wave_n:

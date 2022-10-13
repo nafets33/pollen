@@ -882,7 +882,6 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 
             MACDWAVE_story[trigger][wave_n].update({'length': row_2 - row_1, 
             'wave_blocktime' : wave_blocktime,
-            # 'wave_times': ( wave_starttime, wave_endtime ),
             'wave_start_time': wave_starttime,
             'wave_end_time': wave_endtime,
             'trigbee': trigger,
