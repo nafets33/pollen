@@ -1,26 +1,35 @@
 # QueenBee
 import logging
+import time
+import os
+import pandas as pd
+import numpy as np
+import sys
+from dotenv import load_dotenv
+import sys
+import datetime
+import pytz
+import ipdb
+import shutil
+import argparse
+# import pandas_ta as ta
+
+# import threading
+# import alpaca_trade_api as tradeapi
+# import asyncio
+# from alpaca_trade_api.rest import TimeFrame, URL
+# from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 # from enum import Enum
 # from operator import sub
 # from queue import Queue
 # from signal import signal
 # from symtable import Symbol
-import time
-# import alpaca_trade_api as tradeapi
-# import asyncio
-import os
-import pandas as pd
-import numpy as np
-# import pandas_ta as ta
-import sys
-# from alpaca_trade_api.rest import TimeFrame, URL
-# from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
-from dotenv import load_dotenv
-# import threading
-import sys
-import datetime
-# from datetime import date, timedelta
-import pytz
+# from scipy.stats import linregress
+# from scipy import stats
+# import hashlib
+# import json
+# from collections import deque
+# import tempfile
 # from typing import Callable
 # import random
 # import collections
@@ -29,15 +38,6 @@ import pytz
 # from stocksymbol import StockSymbol
 # import requests
 # from collections import defaultdict
-import ipdb
-# import tempfile
-import shutil
-# from scipy.stats import linregress
-# from scipy import stats
-# import hashlib
-# import json
-# from collections import deque
-import argparse
 
 
 # if prior day abs(change) > 1 ignore ticker for the day! 
