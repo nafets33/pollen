@@ -1706,6 +1706,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
         ticker, tframe, tperiod = ticker_time_frame_origin.split("_")
+        star = f'{tframe}{"_"}{tperiod}'
 
         # Stars in Heaven
         stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df']
@@ -1743,7 +1744,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
 
         # Wave distance to Max Profit
         ttframe_take_max_profit = run_order['order_rules']['max_profit_waveDeviation']
-        ttframe_take_max_profit_global = QUEEN['queen_controls']['max_profit_waveDeviation'][f'{tframe}{"_"}{tperiod}']
+        ttframe_take_max_profit_global = QUEEN['queen_controls']['max_profit_waveDeviation'][star]
         wave_past_max_profit = float(ttframe_take_max_profit) >= current_wave_maxprofit_stat # max profits exceed setting
         
         # App Requests
@@ -1773,7 +1774,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         # global limit type order type
         if str(trading_model['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
-        elif str(trading_model[tframe]['trade_using_limits']).lower() == 'true':
+        elif str(trading_model[star]['trade_using_limits']).lower() == 'true':
             order_type = 'limit'        
         
         
