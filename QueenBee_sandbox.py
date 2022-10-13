@@ -1705,9 +1705,10 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         # handle not in Story default to SPY
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
-        
+        ticker, tframe, tperiod = ticker_time_frame_origin.split("_")
+
         # Stars in Heaven
-        stars_df = story_view(STORY_bee=STORY_bee, ticker=run_order['symbol'])['df']
+        stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df']
 
         # POLLEN STORY
         ttframe_story = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame_origin]['story']
@@ -1718,7 +1719,6 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigname]
         current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
-        ticker, tframe, tperiod = ticker_time_frame.split("_")
 
 
         # Market closed do NOT Sell
