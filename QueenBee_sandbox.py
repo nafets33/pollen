@@ -1640,10 +1640,14 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx):
 def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portfolio, crypto_currency_symbols=crypto_currency_symbols):
     try:
 
-        if str(run_order['order_trig_sell_stop']).lower() == 'true' or float(run_order['qty_available_running_close_adjustment']) == 0: ### consider remaining qty
+        if str(run_order['order_trig_sell_stop']).lower() == 'true':
             # logging.info({"sell in progress": run_order['symbol']})
-            print("sell in progress")
+            print("all shares are running_close")
             return {'bee_sell': False}
+        if type(run_order['qty_available_running_close_adjustment']) == int or type(run_order['qty_available_running_close_adjustment']) == float:
+            if float(run_order['qty_available_running_close_adjustment']) == 0: ### consider remaining qty
+                print("all shares are running_close")
+                return {'bee_sell': False}
 
         # """ all scenarios if run_order should be closed out """
         now_datetime = datetime.datetime.now().astimezone(est)
@@ -1763,8 +1767,7 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         
         
         """ WaterFall sellout chain """
-        def waterfall_sellout_chain(order_type, sell_trigbee_trigger, 
-        stagger_profits, scalp_profits, run_order_wave_changed):
+        def waterfall_sellout_chain(order_type, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed):
             if sell_trigbee_trigger:
                 if run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 500 and macd_gauge['metrics']['sell_cross-0'][24]['avg'] > .5 and macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
                     print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
