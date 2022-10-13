@@ -1775,7 +1775,9 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
         if str(trading_model['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
         elif str(run_order['order_rules']['trade_using_limits']).lower() == 'true':
-            order_type = 'limit'        
+            order_type = 'limit'
+        else:
+            order_type = 'market'        
         
         
         """ WaterFall sellout chain """
