@@ -1779,7 +1779,8 @@ def king_bishops_QueenOrder(trading_model, run_order, current_profit_loss, portf
             order_type = 'limit'
             limit_price = priceinfo['maker_middle']
         else:
-            order_type = 'market'        
+            order_type = 'market'
+            limit_price = 'limit_price'
 
         
         """ WaterFall sellout chain """
