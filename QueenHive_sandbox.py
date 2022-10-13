@@ -2462,7 +2462,7 @@ def KINGME(chart_times=False):
     return return_dict
 
 
-def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false'):
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false', qty_available_running_close_adjustment='false'):
     order_vars = {}
     if order_side == 'sell':
         if maker_middle:
@@ -2485,8 +2485,8 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['double_down_trade'] = double_down_trade
         order_vars['sell_reason'] = sell_reason
         order_vars['running_close_legs'] = running_close_legs
-
-        
+        order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
+    
         return order_vars
     
     elif order_side == 'buy':
@@ -2510,6 +2510,7 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['double_down_trade'] = double_down_trade
         order_vars['sell_reason'] = False
         order_vars['running_close_legs'] = running_close_legs
+        order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
         
         return order_vars
 

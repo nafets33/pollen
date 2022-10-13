@@ -775,8 +775,11 @@ def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, 
                 # update Origin RUN Order
                 try:
                     if type(limit_price) == bool:
+                        #Market Order
                         QUEEN['queen_orders'][run_order_idx]['order_trig_sell_stop'] = 'true'
+                        QUEEN['queen_orders'][run_order_idx]['qty_available_running_close_adjustment'] = 'false'
                     else:
+                        # Limit Order
                         QUEEN['queen_orders'][run_order_idx]['order_trig_sell_stop_limit'] = 'true'
                         # return all linking orders
                         origin_closing_orders_df = return_closing_orders_df(exit_order_link=QUEEN['queen_orders'][run_order_idx]['client_order_id'])
