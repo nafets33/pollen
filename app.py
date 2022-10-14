@@ -232,6 +232,7 @@ def create_main_macd_chart(df):
     fig.update_layout(height=600, width=1500, title_text=title)
     df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
     fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
+    # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
 
     return fig
 
@@ -693,11 +694,12 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-    for colName in update_cols:        
-        if dropdownlst:
-            gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
-        else:
-            gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
+    if update_cols:
+        for colName in update_cols:        
+            if dropdownlst:
+                gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
+            else:
+                gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
 
     jscode = JsCode("""
     function(params) {
@@ -721,7 +723,7 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
         data_return_mode='AS_INPUT', 
         update_mode=update_mode_value, 
         fit_columns_on_grid_load=fit_columns_on_grid_load,
-        theme='blue', #Add theme color to the table
+        # theme='blue', #Add theme color to the table
         enable_enterprise_modules=True,
         height=height, 
         # width='100%',
@@ -743,15 +745,15 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
     reload_data=vars['reload_data'],
      height=vars['height'], update_cols=vars['update_cols'], 
      update_mode_value=vars['update_mode_value'], 
-     paginationOn=vars['paginationOn'])
+     paginationOn=vars['paginationOn'],
+     allow_unsafe_jscode=True)
     
     data = grid_response['data']
     if write_selection:
         selected = grid_response['selected_rows'] 
         df_sel = pd.DataFrame(selected)
         st.write(df_sel)
-
-    return df_sel
+        return df_sel
 
 
 def add_trading_model(QUEEN, ticker, trading_model_universe):
@@ -762,6 +764,41 @@ def add_trading_model(QUEEN, ticker, trading_model_universe):
         st.write(tradingmodel1)
         app_req = create_AppRequest_package(request_name='add_trading_model', archive_bucket='add_trading_model_requests')
         # QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
+
+
+def its_morphin_time_view(QUEEN, STORY_bee, ticker):
+
+    now_time = datetime.datetime.now().astimezone(est)
+    POLLENSTORY = read_pollenstory()
+    active_ttf = QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 86400]
+    
+    all_df = []
+    total_current_macd_tier = 0
+    total_current_hist_tier = 0
+    for ttf in active_ttf :
+        if ttf in POLLENSTORY.keys() and ticker in ttf.split("_")[0]:
+            df = POLLENSTORY[ttf]
+            df = df[['timestamp_est', 'chartdate', 'name', 'macd_tier', 'hist_tier', 'profits']].copy()
+            total_current_macd_tier += df.iloc[-1]['macd_tier']
+            total_current_hist_tier += df.iloc[-1]['hist_tier']
+            
+            all_df.append(df)
+    
+    st.write('macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64))
+    st.write('hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64))
+
+    # for df_p in all_df:
+    #     fig = df_plotchart(title=df_p.iloc[-1]['name'], df=df_p, y='profits', x=False, figsize=(14,7), formatme=False)
+    #     st.write(fig)
+        # graph
+    
+    return True
+
+
+
+
+
+
 
 # """ if "__name__" == "__main__": """
 
@@ -796,6 +833,10 @@ st.sidebar.write("<<<('')>>>")
 # st.header(option)
 
 
+colors = QUEEN['queen_controls']['power_rangers']['1Minute_1Day']['mac_ranger']['buy_wave']['nuetral']
+# st.write(colors)
+
+
 if option == 'charts':
     # pollen = return_pollen()
     # run_charts(POLLENSTORY = POLLENSTORY)
@@ -820,6 +861,9 @@ if option == 'charts':
 
     else:
         selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+        
+        its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+        
         # st.write(selections[0])
         ticker_time_frame = selections[0]
         df = POLLENSTORY[ticker_time_frame].copy()
@@ -828,13 +872,16 @@ if option == 'charts':
         if day_only_option == 'yes':
             df_day = df['timestamp_est'].iloc[-1]
             df['date'] = df['timestamp_est'] # test
-            df = df.set_index('timestamp_est', drop=False) # test
+            # df = df.set_index('timestamp_est', drop=False) # test
             # between certian times
             # df_t = df.between_time('9:30', '12:00')
-            df = df[(df.index.day == df_day.day) & 
-                    (df.index.month == df_day.month) & 
-                    (df.index.year == df_day.year)
-                ].copy() # remove other days       
+            df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+            # df = df[(df['timestamp_est'].day == df_day.day) & 
+            #         (df['timestamp_est'].month == df_day.month) & 
+            #         (df['timestamp_est'].year == df_day.year)
+            #     ].copy() # remove other days
+            df = df_today
 
         if fullstory_option == 'yes':
             df_write = df.astype(str)
@@ -894,19 +941,21 @@ if option == 'queen':
     tickers_avail_op = list(tickers_avail)
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
-
+    ticker = ticker_option
+    
     option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
 
     return_total_profits(QUEEN=QUEEN)
 
-    command_conscience_option = st.sidebar.selectbox("command conscience", ('yes', 'no'), index=["yes"].index("yes"))
-    orders_table = st.sidebar.selectbox("orders_table", ('no', 'yes'), index=["no"].index("no"))
+    command_conscience_option = st.sidebar.selectbox("command conscience", ['yes', 'no'], index=["yes"].index("yes"))
+    orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
     today_day = datetime.datetime.now().day
-    with col22:
-        st.write("current errors")
-    with col22:
-        st.write(QUEEN["errors"])
-
+    # with col22:
+    #     st.write("current errors")
+    # with col22:
+    #     st.write(QUEEN["errors"])
+    
+    
     if command_conscience_option == 'yes':
         ORDERS = QUEEN['queen_orders']
         now_time = datetime.datetime.now().astimezone(est)
@@ -926,11 +975,13 @@ if option == 'queen':
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
         st.markdown(new_title, unsafe_allow_html=True)
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='error', return_all_cols=True)['df']
+        error_orders = error_orders.astype(str)
         st.dataframe(error_orders)
 
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
         st.markdown(new_title, unsafe_allow_html=True)
         submitted_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
+        submitted_orders = submitted_orders.astype(str)
         st.dataframe(submitted_orders)
         
         new_title = '<p style="font-family:sans-serif; color:Green; font-size: 25px;">RUNNING</p>'
@@ -959,10 +1010,11 @@ if option == 'queen':
         # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
 
         # View Stars
+        its_morphin_time_view(QUEEN, STORY_bee, ticker)
         st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
         st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
-        # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df_agg'], width=2000) 
-
+        ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
+        default=True, add_vars={'update_cols': False}, write_selection=False)
         # View Star and Waves
         ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
@@ -1031,21 +1083,20 @@ if option == 'queen':
             st.write(datetime.datetime.now().astimezone(est), 'EST')
             st.dataframe(df)
 
-            # Top Winners
-            buzzz_linebreak()
-            df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
-            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
-            df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
-            df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
-            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
-            st.write('top buy waves', df_bestwaves)
-            st.write('top sell waves', df_bestwaves_sell)
-            st.write('top day buy waves', df_day_bestwaves)
-            st.write('top day buy/sell waves', df_best_buy__sell__waves)
+            # # Top Winners
+            # buzzz_linebreak()
+            # df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
+            # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
+            # df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
+            # df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
+            # st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            # st.write('top buy waves', df_bestwaves)
+            # st.write('top sell waves', df_bestwaves_sell)
+            # st.write('top day buy waves', df_day_bestwaves)
+            # st.write('top day buy/sell waves', df_best_buy__sell__waves)
+            # buzzz_linebreak()
 
-            buzzz_linebreak()
-
-            # Today Wave Up
+            # Today df_today
             buzzz_linebreak()
             st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
             df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
@@ -1054,12 +1105,12 @@ if option == 'queen':
             st.dataframe(df)
             buzzz_linebreak()
 
-            # WaveDown
-            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
-            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
-            df = df.astype(str)
-            st.write(datetime.datetime.now().astimezone(est), 'EST')
-            st.dataframe(df)
+            # # WaveDown
+            # st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
+            # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
+            # df = df.astype(str)
+            # st.write(datetime.datetime.now().astimezone(est), 'EST')
+            # st.dataframe(df)
             
             # view details
             st.write("VIEW TRANSPOSE")
@@ -1156,7 +1207,7 @@ if option == 'signal':
                 latest_queen_order = pd.DataFrame()
                 orders_present = False
             else:
-                latest_queen_order = [QUEEN['queen_orders'][-1]] # latest
+                latest_queen_order = QUEEN['queen_orders'][-1] # latest
                 orders_present = True
         else:
             if len(QUEEN['queen_orders']) == 0:
@@ -1165,7 +1216,7 @@ if option == 'signal':
             else:
                 # latest_queen_order = [i for i in QUEEN['queen_orders']] # latest
                 # latest_queen_order = [latest_queen_order[-1]]
-                latest_queen_order = QUEEN['queen_orders'][-1]
+                latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'error'][0]
                 orders_present = True
         if orders_present:
             # latest_queen_order_error = [i for i in QUEEN['queen_orders'] if i['queen_order_status'] == 'error'] # latest
@@ -1176,7 +1227,7 @@ if option == 'signal':
             all_orders = pd.DataFrame(QUEEN['queen_orders'])
             last3 = all_orders.iloc[-3:].astype(str)
             st.write(last3)
-            c_order_input = st.text_input("client_order_id", latest_queen_order[0]['client_order_id'])
+            c_order_input = st.text_input("client_order_id", latest_queen_order['client_order_id'])
             q_order = {k: i for k, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_input}
             idx = list(q_order.keys())[0]
             latest_queen_order = [QUEEN['queen_orders'][idx]] # latest

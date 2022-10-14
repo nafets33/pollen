@@ -24,7 +24,7 @@ from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
-import talib
+# import talib
 from scipy import stats
 import shutil
 
