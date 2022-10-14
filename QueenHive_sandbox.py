@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 from enum import Enum
 import time
+from turtle import rt
 import alpaca_trade_api as tradeapi
 # import asyncio
 import os
@@ -195,29 +196,34 @@ def read_queensmind(prod): # return active story workers
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
     # return beeworkers data
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))['castle']
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))['bishop']
-    # knight = ReadPickleData(pickle_file=os.path.join(db_root, 'knight.pkl'))
-    STORY_bee = {**bishop['conscience']['STORY_bee'], **castle['conscience']['STORY_bee']}
-    KNIGHTSWORD = {**bishop['conscience']['KNIGHTSWORD'], **castle['conscience']['KNIGHTSWORD']}
-    ANGEL_bee = {**bishop['conscience']['ANGEL_bee'], **castle['conscience']['ANGEL_bee']}
-    
-    if os.path.exists(os.path.join(db_root, 'castle_coin.pkl')):
-        castle_coin = ReadPickleData(pickle_file=os.path.join(db_root, 'castle_coin.pkl'))['castle_coin']
-        STORY_bee = {**STORY_bee, **castle_coin['conscience']['STORY_bee']}
-        KNIGHTSWORD = {**KNIGHTSWORD, **castle_coin['conscience']['KNIGHTSWORD']}
-        ANGEL_bee = {**ANGEL_bee, **castle_coin['conscience']['ANGEL_bee']}
+    dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl']
+    STORY_bee = {}
+    KNIGHTSWORD = {}
+    ANGEL_bee = {}
+    dbs_ = {}
+    for db in dbs:
+        if os.path.exists(os.path.join(db_root, db)):
+            db_name = db.split(".pkl")[0]
+            chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
+            STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
+            KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
+            ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
+            dbs_[db_name] = chess_piece
+            db_run = True
+        else:
+            db_run = False
+        
+    if db_run:
+        QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
+        QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
+        QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
+        return {'queen': QUEEN, 
+        'STORY_bee': STORY_bee, 'KNIGHTSWORD': KNIGHTSWORD, 'ANGEL_bee': ANGEL_bee, 
+        'dbs_': dbs_}
+    elif QUEEN:
+        return {'queen': QUEEN}
     else:
-        castle_coin = False
-
-    QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
-    QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
-    QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
-    # QUEEN['queen']['conscience']['SPEEDY_bee'] = castle['conscience']['SPEEDY_bee']
-
-    return {'queen': QUEEN, 
-    'bishop': bishop, 'castle': castle, 
-    'STORY_bee': STORY_bee, 'KNIGHTSWORD': KNIGHTSWORD, 'ANGEL_bee': ANGEL_bee, 'castle_coin': castle_coin}
+        return False
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
@@ -1549,18 +1555,26 @@ def PickleData(pickle_file, data_to_store):
                 db[k] = v
             db['last_modified'] = p_timestamp
             pickle.dump(db, dbfile)
+        
+        with open(pickle_file, 'wb+') as dbfile:
+            for k, v in data_to_store.items(): 
+                db[k] = v
+            db['last_modified'] = p_timestamp
+            pickle.dump(db, dbfile)
 
-        try:
-            os.rename(pickle_file_temp, pickle_file)
-        except Exception as e:
-            logging.critical(("Not able to Rename Pickle File Trying again: err: ", e))
-            for attempt in range(5):
-                time.sleep(1)
-                try:
-                    os.rename(pickle_file_temp, pickle_file)
-                except Exception as e:
-                    print(attempt, e)
-                    sys.exit()        
+        #remove temp
+
+        # try:
+        #     os.rename(pickle_file_temp, pickle_file)
+        # except Exception as e:
+        #     logging.critical(("Not able to Rename Pickle File Trying again: err: ", e))
+        #     for attempt in range(5):
+        #         time.sleep(1)
+        #         try:
+        #             os.rename(pickle_file_temp, pickle_file)
+        #         except Exception as e:
+        #             print('myerror', attempt, e)
+        #             sys.exit()        
         return True
 
 
@@ -2462,7 +2476,7 @@ def KINGME(chart_times=False):
     return return_dict
 
 
-def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false', qty_available_running_close_adjustment='false', wave_at_creation={}):
+def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false', qty_available_running_close_adjustment='false', wave_at_creation={}, sell_qty='false'):
     order_vars = {}
     if order_side == 'sell':
         if maker_middle:
@@ -2487,8 +2501,8 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['running_close_legs'] = running_close_legs
         order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
         order_vars['wave_at_creation'] = wave_at_creation
+        order_vars['sell_qty'] = sell_qty
 
-    
         return order_vars
     
     elif order_side == 'buy':
@@ -2510,10 +2524,11 @@ def order_vars__queen_order_items(trading_model, king_order_rules, order_side, w
         order_vars['king_order_rules'] = king_order_rules
         order_vars['trading_model'] = trading_model
         order_vars['double_down_trade'] = double_down_trade
-        order_vars['sell_reason'] = False
+        order_vars['sell_reason'] = sell_reason
         order_vars['running_close_legs'] = running_close_legs
         order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
         order_vars['wave_at_creation'] = wave_at_creation
+        order_vars['sell_qty'] = sell_qty
         
         return order_vars
 

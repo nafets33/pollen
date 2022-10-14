@@ -753,8 +753,7 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
         selected = grid_response['selected_rows'] 
         df_sel = pd.DataFrame(selected)
         st.write(df_sel)
-
-    return df_sel
+        return df_sel
 
 
 def add_trading_model(QUEEN, ticker, trading_model_universe):
@@ -835,7 +834,7 @@ st.sidebar.write("<<<('')>>>")
 
 
 colors = QUEEN['queen_controls']['power_rangers']['1Minute_1Day']['mac_ranger']['buy_wave']['nuetral']
-st.write(colors)
+# st.write(colors)
 
 
 if option == 'charts':
@@ -976,11 +975,13 @@ if option == 'queen':
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
         st.markdown(new_title, unsafe_allow_html=True)
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='error', return_all_cols=True)['df']
+        error_orders = error_orders.astype(str)
         st.dataframe(error_orders)
 
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
         st.markdown(new_title, unsafe_allow_html=True)
         submitted_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
+        submitted_orders = submitted_orders.astype(str)
         st.dataframe(submitted_orders)
         
         new_title = '<p style="font-family:sans-serif; color:Green; font-size: 25px;">RUNNING</p>'
@@ -1206,7 +1207,7 @@ if option == 'signal':
                 latest_queen_order = pd.DataFrame()
                 orders_present = False
             else:
-                latest_queen_order = [QUEEN['queen_orders'][-1]] # latest
+                latest_queen_order = QUEEN['queen_orders'][-1] # latest
                 orders_present = True
         else:
             if len(QUEEN['queen_orders']) == 0:
@@ -1215,7 +1216,7 @@ if option == 'signal':
             else:
                 # latest_queen_order = [i for i in QUEEN['queen_orders']] # latest
                 # latest_queen_order = [latest_queen_order[-1]]
-                latest_queen_order = QUEEN['queen_orders'][-1]
+                latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'error'][0]
                 orders_present = True
         if orders_present:
             # latest_queen_order_error = [i for i in QUEEN['queen_orders'] if i['queen_order_status'] == 'error'] # latest
@@ -1226,7 +1227,7 @@ if option == 'signal':
             all_orders = pd.DataFrame(QUEEN['queen_orders'])
             last3 = all_orders.iloc[-3:].astype(str)
             st.write(last3)
-            c_order_input = st.text_input("client_order_id", latest_queen_order[0]['client_order_id'])
+            c_order_input = st.text_input("client_order_id", latest_queen_order['client_order_id'])
             q_order = {k: i for k, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_input}
             idx = list(q_order.keys())[0]
             latest_queen_order = [QUEEN['queen_orders'][idx]] # latest
