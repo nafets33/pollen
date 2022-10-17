@@ -251,10 +251,6 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             s_ttfame_func_check = datetime.datetime.now().astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
 
-            # if ticker_time_frame == 'QQQ_1Hour_3Month':
-            #     ipdb
-                # continue
-
             ANGEL_bee[ticker_time_frame] = {}
             STORY_bee[ticker_time_frame] = {'story': {}}
             
@@ -278,7 +274,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             s_timetoken = datetime.datetime.now().astimezone(est)
             # mac cross
             df = mark_macd_signal_cross(df=df)
-            resp = knight_sight(df=df)
+            resp = knights_triggerbees(df=df)
             df = resp['df']
             knights_word = resp['bee_triggers']
             # how long does trigger stay profitable?
@@ -456,7 +452,7 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         print(ticker_time_frame)
         
 
-def knight_sight(df): # adds all triggers to dataframe
+def knights_triggerbees(df): # adds all triggers to dataframe
     # ticker_time_frame = df['name'].iloc[-1] #TEST
     # trigger_dict = {ticker_time_frame: {}}  #TEST
     
@@ -675,7 +671,6 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
                             cross_list.append(f'{"sell_hold"}{"-"}{c}')
                             # wave_mark_list.append(0)
                     else:
-                        # ipdb.set_trace()
                         cross_list.append(f'{"init_hold"}{"-"}{0}')
                         # wave_mark_list.append(0)
             else:
@@ -694,7 +689,6 @@ def assign_tier_num(num_value,  td):
     length_td = len(td)
     max_num_value = td[length_td-1][1]
     for k, v in td.items():
-        # ipdb.set_trace()
         num_value = float(num_value)
         if num_value > 0 and num_value > v[0] and num_value < v[1]:
             # print(k, num_value)
@@ -891,7 +885,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
             'wave_start_time': wave_starttime,
             'wave_end_time': wave_endtime,
             'trigbee': trigger,
-            'wave_id': f'{trigger}{wave_blocktime}{wave_starttime}'
+            'wave_id': f'{trigger}{"_"}{wave_blocktime}{"_"}{wave_starttime}'
             })
             
             wave_height_value = max(df_waveslice[wave_col_name].values)
@@ -980,7 +974,6 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
             elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
                 return 'afternoon_2-4'
             else:
-                # ipdb.set_trace()
                 return 'afterhours'
 
     ### Needs a little extra Love >> index max profit, count length, add to df_waves and df >> ensure max profit is correct as 2 rows could share same value
@@ -1046,8 +1039,6 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
     df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits', 'active_wave',]]
     
     return {'df': df, 'df_waves': df_waves}
-
-
 
 
 def split_today_vs_prior(df, other_timestamp=False):
@@ -1578,28 +1569,6 @@ def PickleData(pickle_file, data_to_store):
         return True
 
 
-# def PickleData(pickle_file, data_to_store): 
-#     # initializing data to be stored in db
-#     p_timestamp = {'file_creation': datetime.datetime.now()} 
-#     if os.path.exists(pickle_file) == False:
-#         with open(pickle_file, 'wb+') as dbfile:
-#             print("init", pickle_file)
-#             db = {} 
-#             db['jp_timestamp'] = p_timestamp 
-#             pickle.dump(db, dbfile)                   
-
-#     if data_to_store:
-#         p_timestamp = {'last_modified': datetime.datetime.now()}
-#         db = {}
-#         with open(pickle_file, 'wb+') as dbfile:
-#             for k, v in data_to_store.items(): 
-#                 db[k] = v
-#             db['last_modified'] = p_timestamp 
-#             pickle.dump(db, dbfile)                   
-        
-#         return True
-
-
 def ReadPickleData(pickle_file, db_init_dict=False): 
     p_timestamp = {'file_creation': datetime.datetime.now()} 
     if os.path.exists(pickle_file) == False:
@@ -1818,18 +1787,6 @@ def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     return dt
 
 
-def wait_for_market_open():
-    clock = api.get_clock()
-    if not clock.is_open:
-        time_to_open = (clock.next_open - clock.timestamp).total_seconds()
-        time.sleep(round(time_to_open))
-
-
-def time_to_market_close():
-    clock = api.get_clock()
-    return (clock.next_close - clock.timestamp).total_seconds()
-
-
 def read_wiki_index():
     table=pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
     df = table[0]
@@ -1867,7 +1824,7 @@ def return_macd(df_main, fast, slow, smooth):
 
 def return_VWAP(df, window=3):
     # VWAP
-    df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=15, fillna=True).volume_weighted_average_price()
+    df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=window, fillna=True).volume_weighted_average_price()
     return df
 
 
@@ -2369,13 +2326,13 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
         return chart_times
     
 
-def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'wavedown'], wave_periods={'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}):
+def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'wavedown'], wave_periods={'premarket': .01, 'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'afterhours': .01, 'Day': .01}):
     ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     # themes = ['nuetral', 'strong']
     # waves_cycles = ['waveup', 'wavedown']
     # wave_periods = {'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}
     
-    star_times = KING['stars']
+    star_times = KING['star_times']
     pollen_themes = {}
     for theme in themes:
         pollen_themes[theme] = {}
@@ -2387,260 +2344,31 @@ def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'w
     return pollen_themes
 
 
-def KINGME(chart_times=False):
+def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     return_dict = {}
 
-    if chart_times:
-        return_dict['stars'] = stars(chart_times)
-    else:
-        return_dict['stars'] = stars()
+    trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+    waveBlocktimes = ['premarket', 'morning_9-11', 'lunch_11-2', 'afternoon_2-4', 'afterhours', 'Day']
 
-    order_rule_types = ['queen_gen']
-    
-    kings_order_rules = {'knight_bees': 
-                                    {
-    'queen_gen': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                },
-    'init': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                    },
-    'app': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                },
-    'buy_cross-0': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                },
-    'sell_cross-0': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                },
-    'ready_buy_cross': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                },
-    'ready_sell_cross': {'max_profit_waveDeviation': 1, 
-                'timeduration': 33, 
-                'take_profit': .005,
-                'sellout': -.0089,
-                'sell_trigbee_trigger': 'true',
-                'stagger_profits': 'false',
-                'scalp_profits': 'true',
-                'profit_gradiant': 1,
-                },
-                                    }
-    }
-    
-    
-    def tradingModel_kings_order_rules():
-        
-        return True
-    
     # add order rules
-    return_dict['kings_order_rules'] = kings_order_rules
+    return_dict['star_times'] = stars()
+    return_dict['waveBlocktimes'] = waveBlocktimes
+    return_dict['trigbees'] = trigbees
     
     return return_dict
-
-
-def order_vars__queen_order_items(trading_model, king_order_rules, order_side, wave_amo, maker_middle, origin_wave, power_up_rangers, ticker_time_frame_origin, double_down_trade=False, sell_reason={}, running_close_legs='false', qty_available_running_close_adjustment='false', wave_at_creation={}, sell_qty='false'):
-    order_vars = {}
-    if order_side == 'sell':
-        if maker_middle:
-            order_vars['order_type'] = 'limit'
-            order_vars['limit_price'] = maker_middle # 10000
-            order_vars['order_trig_sell_stop_limit'] = 'true'
-        else:
-            order_vars['order_type'] = 'market'
-            order_vars['limit_price'] = False
-            order_vars['order_trig_sell_stop_limit'] = 'false'
-        
-        order_vars['origin_wave'] = origin_wave
-        order_vars['power_up'] = power_up_rangers
-        order_vars['wave_amo'] = wave_amo
-        order_vars['order_side'] = order_side
-        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
-        order_vars['power_up_rangers'] = power_up_rangers
-        order_vars['king_order_rules'] = king_order_rules
-        order_vars['trading_model'] = trading_model
-        order_vars['double_down_trade'] = double_down_trade
-        order_vars['sell_reason'] = sell_reason
-        order_vars['running_close_legs'] = running_close_legs
-        order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
-        order_vars['wave_at_creation'] = wave_at_creation
-        order_vars['sell_qty'] = sell_qty
-
-        return order_vars
-    
-    elif order_side == 'buy':
-        if maker_middle:
-            order_vars['order_type'] = 'limit'
-            order_vars['limit_price'] = maker_middle # 10000
-            order_vars['order_trig_sell_stop_limit'] = 'true'
-        else:
-            order_vars['order_type'] = 'market'
-            order_vars['limit_price'] = False
-            order_vars['order_trig_sell_stop_limit'] = 'false'
-        
-        order_vars['origin_wave'] = origin_wave
-        order_vars['power_up'] = sum(power_up_rangers.values())
-        order_vars['wave_amo'] = wave_amo
-        order_vars['order_side'] = order_side
-        order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
-        order_vars['power_up_rangers'] = power_up_rangers
-        order_vars['king_order_rules'] = king_order_rules
-        order_vars['trading_model'] = trading_model
-        order_vars['double_down_trade'] = double_down_trade
-        order_vars['sell_reason'] = sell_reason
-        order_vars['running_close_legs'] = running_close_legs
-        order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
-        order_vars['wave_at_creation'] = wave_at_creation
-        order_vars['sell_qty'] = sell_qty
-        
-        return order_vars
-
-    else:
-        print("break in program")
-        logging_log_message(log_type='error', msg='break in program order vars queen order items')
-        return False
-
-
-def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
-    date_mark = datetime.datetime.now().astimezone(est)
-    # allowed_col = ["queen_order_state", ]
-    if queen_init:
-        # print("Queen Template Initalized")
-        logging_log_message(msg='QueenHive Queen Template Initalized')
-        running_order = {'trading_model': trading_model,
-                        'double_down_trade': False,
-                        'queen_order_state': 'init',
-                        'side': 'init',
-                        'order_trig_buy_stop': 'false',
-                        'order_trig_sell_stop': 'false',
-                        'order_trig_sell_stop_limit': 'false',
-                        'limit_price': 'false',
-                        'running_close_legs': 'false',
-                        'symbol': 'init', 
-                        'order_rules': KING["kings_order_rules"]["knight_bees"]['init'], 
-                        'trigname': trig, 
-                        'datetime': date_mark,
-                        'ticker_time_frame': 'init_init_init',
-                        'ticker_time_frame_origin': 'init_init_init',
-                        'status_q': 'init',
-                        'portfolio_name': 'init',
-                        'exit_order_link': 'init', 
-                        'client_order_id': 'init',
-                        'system_recon': True,
-                        'req_qty': 0,
-                        'filled_qty': 0,
-                        'qty_available': 0,
-                        'qty_available_running_close_adjustment': 'false',
-                        'filled_avg_price': 0,
-                        'price_time_of_request': 0,
-                        'bid': 0,
-                        'ask': 0,
-                        'honey_gauge': deque([], 89),
-                        'macd_gauge': deque([], 89),
-                        '$honey': 0,
-                        'origin_wave': {},
-                        'assigned_wave': {},
-                        'wave_at_creation': {},
-                        'sell_reason': {},
-                        'power_up': {},
-                        'power_up_rangers': 0,
-                        'honey_time_in_profit': {},
-                        } 
-    elif order['side'] == 'buy' or order['side'] == 'sell':
-        # print("create buy running order")
-        running_order = {'trading_model': trading_model,
-                        'double_down_trade': order_vars['double_down_trade'],
-                        'queen_order_state': 'submitted',
-                        'side': order['side'],
-                        'order_trig_buy_stop': True,
-                        'order_trig_sell_stop': 'false',
-                        'order_trig_sell_stop_limit': order_vars['order_trig_sell_stop_limit'],
-                        'limit_price': order_vars['limit_price'],
-                        'running_close_legs': 'false',
-                        'symbol': order['symbol'], 
-                        'order_rules': order_vars['king_order_rules'],
-                        'origin_wave': order_vars['origin_wave'],
-                        'wave_at_creation': order_vars['wave_at_creation'],
-                        'assigned_wave': {},
-                        'power_up': order_vars['power_up'],
-                        'power_up_rangers': order_vars['power_up_rangers'], 
-                        'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'], 
-
-                        'trigname': trig, 'datetime': date_mark,
-                        'ticker_time_frame': ticker_time_frame,
-                        'status_q': status_q,
-                        'portfolio_name': portfolio_name,
-
-                        'exit_order_link': exit_order_link, 
-                        'client_order_id': order['client_order_id'],
-                        'system_recon': False,
-                        'req_qty': order['qty'],
-                        'filled_qty': order['filled_qty'],
-                        'qty_available': order['filled_qty'],
-                        'qty_available_running_close_adjustment': order_vars['qty_available_running_close_adjustment'],
-
-                        'filled_avg_price': order['filled_avg_price'],
-                        'price_time_of_request': priceinfo['price'],
-                        'bid': priceinfo['bid'],
-                        'ask': priceinfo['ask'],
-                        'honey_gauge': deque([], 89),
-                        'macd_gauge': deque([], 89),
-                        '$honey': 0,
-                        'sell_reason': order_vars['sell_reason'],
-                        'honey_time_in_profit': {},
-                        }
-
-    return running_order
 
 
 def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trading_model_name='tradingmodel1', status='active', portforlio_weight_ask=.01):
     
     def star_trading_model_vars(stars=stars):
         
-        def kings_order_rules(status, doubledown_storylength, trade_using_limits, max_profit_waveDeviation, 
-        timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers):
+        def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers):
             return {
             'status': status,
             'trade_using_limits': trade_using_limits,
-            'doubledown_storylength': doubledown_storylength,
+            'doubledown_timeduration': doubledown_timeduration,
             'max_profit_waveDeviation': max_profit_waveDeviation,
+            'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
             'timeduration': timeduration,
             'take_profit': take_profit,
             'sellout': sellout,
@@ -2650,96 +2378,85 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
             'scalp_profits_timeduration': scalp_profits_timeduration,
             'stagger_profits_tiers': stagger_profits_tiers,}
 
-        def star_kings_order_rules_mapping(trigbees):
+
+        def star__DEFAULT_kings_order_rules_mapping(stars=stars):
+            return {
+                '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '5Minute_5Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '30Minute_1Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Hour_3Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '2Hour_6Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Day_1Year': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            }
+
+        # def waveBlocktime_specific_DEFAULT_rules(waveBlocktimes):
+        #     return {'premarket': {'status': 'not_active'}}
+
+        def trigbees__DEFAULT_keys():
+            return {'buy_cross-0': {'status': 'active', 'trade_using_limits': False, 'sell_trigbee_trigger': True, 'stagger_profits': False, 'scalp_profits': False, 'stagger_profits_tiers': 1},
+            'sell_cross-0': {'status': 'active', 'trade_using_limits': False, 'sell_trigbee_trigger': True, 'stagger_profits': False, 'scalp_profits': False, 'stagger_profits_tiers': 1},
+            'ready_buy_cross': {'status': 'active', 'trade_using_limits': False, 'sell_trigbee_trigger': True, 'stagger_profits': False, 'scalp_profits': False, 'stagger_profits_tiers': 1},
+            }
+
+        def star_kings_order_rules_mapping(stars, trigbees, waveBlocktimes, star__DEFAULT_kings_order_rules_mapping=star__DEFAULT_kings_order_rules_mapping, trigbees__DEFAULT_keys=trigbees__DEFAULT_keys): # --> returns star_trigbee_king_order_rules
             star_kings_order_rules_dict = {}
-            star_kings_order_rules_dict["1Minute_1Day"] = {}
-            star_kings_order_rules_dict["5Minute_5Day"] = {}
-            star_kings_order_rules_dict["30Minute_1Month"] = {}
-            star_kings_order_rules_dict["1Hour_3Month"] = {}
-            star_kings_order_rules_dict["2Hour_6Month"] = {}
-            star_kings_order_rules_dict["1Day_1Year"] = {}
+            star_default_rules = star__DEFAULT_kings_order_rules_mapping()
+            trigbee__default_settings = trigbees__DEFAULT_keys()
 
-            for trigbee in trigbees:
-                if trigbee == 'buy_cross-0':
-                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-
-                elif trigbee == 'sell_cross-0':
-                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-
-                elif trigbee == 'ready_buy_cross':
-                    star_kings_order_rules_dict["1Minute_1Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["5Minute_5Day"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=300, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["30Minute_1Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=1800, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["1Hour_3Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=3600, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["2Hour_6Month"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=7200, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
-                    star_kings_order_rules_dict["1Day_1Year"][trigbee] =  kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=86400, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1)
+            for star in stars().keys():
+                star_kings_order_rules_dict[star] = {}
+                for trigbee in trigbees:
+                    star_kings_order_rules_dict[star][trigbee] = trigbee__default_settings[trigbee]
+                    for blocktime in waveBlocktimes:
+                        star_kings_order_rules_dict[star][trigbee][blocktime] = star_default_rules[star]
 
             return star_kings_order_rules_dict
 
-        def star_vars_mapping(trigbees, stars=stars):
+        
+        def star_vars_mapping(trigbees, waveBlocktimes, stars=stars, star_kings_order_rules_mapping=star_kings_order_rules_mapping):
             return_dict = {}
-            trigbees_king_order_rules = star_kings_order_rules_mapping(trigbees=trigbees)
+            trigbees_king_order_rules = star_kings_order_rules_mapping(stars=stars, trigbees=trigbees, waveBlocktimes=waveBlocktimes)
+            star_default_rules = star__DEFAULT_kings_order_rules_mapping()
 
             star = '1Minute_1Day'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules[star], 
             }
-
             star = '5Minute_5Day'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'], 
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules[star]}
-
-
-
             star = '30Minute_1Month'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules[star]}
 
-            
-            
             star = '1Hour_3Month'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules[star]}
-
-
-
             star = '2Hour_6Month'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
                                     'trigbees': trigbees_king_order_rules[star]}
-
-            
             star = '1Day_1Year'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False,
+            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
@@ -2750,6 +2467,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
             
             return return_dict
 
+        
         def star_vars(star, star_vars_mapping):
             
             return {'star': star,
@@ -2761,11 +2479,11 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
             'power_rangers': star_vars_mapping[star]['power_rangers'],
             'trigbees': star_vars_mapping[star]['trigbees']}
         
-        # default_king_order_rules = kings_order_rules(status='active', trade_using_limits=False, doubledown_storylength=60, max_profit_waveDeviation=1, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True)
-
+        # Get Stars Trigbees and Blocktimes to create kings order rules
         all_stars = stars().keys()
         trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
-        star_vars_mapping_dict = star_vars_mapping(trigbees=trigbees, stars=stars)
+        waveBlocktimes = ['premarket', 'morning_9-11', 'lunch_11-2', 'afternoon_2-4', 'afterhours', 'Day']
+        star_vars_mapping_dict = star_vars_mapping(trigbees=trigbees, waveBlocktimes=waveBlocktimes, stars=stars)
         
         return_dict = {star: star_vars(star=star, star_vars_mapping=star_vars_mapping_dict) for star in all_stars}
         
@@ -2785,6 +2503,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
                 'trading_model_name': trading_model_name,
     }
     
+    
     def tradingmodel_vars(stars_vars, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars):
         return {
             ticker: 
@@ -2794,13 +2513,158 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
                 'portforlio_weight_ask': portforlio_weight_ask,
                 'trading_model_name': trading_model_name,
                 'portfolio_name': portfolio_name,
+                'premarket': False,
+                'afterhours': False,
+
+
         }
+
 
     # Trading Model Version 1
     stars_vars = star_trading_model_vars()
     tradingmodel1 = tradingmodel_vars(stars_vars=stars_vars)
 
     return {'tradingmodel1': tradingmodel1}
+
+
+#### QUEENBEE ####
+
+def order_vars__queen_order_items(order_side=False, trading_model=False, king_order_rules=False, wave_amo=False, maker_middle=False, origin_wave=False, power_up_rangers=False, ticker_time_frame_origin=False, double_down_trade=False, sell_reason={}, running_close_legs=False, qty_available_running_close_adjustment=False, wave_at_creation={}, sell_qty=False, first_sell=False, time_intrade=False):
+    if order_side:
+        order_vars = {}
+        if order_side == 'sell':
+            if maker_middle:
+                order_vars['order_type'] = 'limit'
+                order_vars['limit_price'] = maker_middle # 10000
+                order_vars['order_trig_sell_stop_limit'] = True
+            else:
+                order_vars['order_type'] = 'market'
+                order_vars['limit_price'] = False
+                order_vars['order_trig_sell_stop_limit'] = False
+            
+            order_vars['origin_wave'] = origin_wave
+            order_vars['power_up'] = power_up_rangers
+            order_vars['wave_amo'] = wave_amo
+            order_vars['order_side'] = order_side
+            order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+            order_vars['power_up_rangers'] = power_up_rangers
+            order_vars['king_order_rules'] = king_order_rules
+            order_vars['trading_model'] = trading_model
+            order_vars['double_down_trade'] = double_down_trade
+            order_vars['sell_reason'] = sell_reason
+            order_vars['running_close_legs'] = running_close_legs
+            order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
+            order_vars['wave_at_creation'] = wave_at_creation
+            order_vars['sell_qty'] = sell_qty
+            order_vars['first_sell'] = first_sell
+            order_vars['time_intrade'] = time_intrade
+
+            
+
+            return order_vars
+        
+        elif order_side == 'buy':
+            if maker_middle:
+                order_vars['order_type'] = 'limit'
+                order_vars['limit_price'] = maker_middle # 10000
+                order_vars['order_trig_sell_stop_limit'] = True
+            else:
+                order_vars['order_type'] = 'market'
+                order_vars['limit_price'] = False
+                order_vars['order_trig_sell_stop_limit'] = False
+            
+            order_vars['origin_wave'] = origin_wave
+            order_vars['power_up'] = sum(power_up_rangers.values())
+            order_vars['wave_amo'] = wave_amo
+            order_vars['order_side'] = order_side
+            order_vars['ticker_time_frame_origin'] = ticker_time_frame_origin
+            order_vars['power_up_rangers'] = power_up_rangers
+            order_vars['king_order_rules'] = king_order_rules
+            order_vars['trading_model'] = trading_model
+            order_vars['double_down_trade'] = double_down_trade
+            order_vars['sell_reason'] = sell_reason
+            order_vars['running_close_legs'] = running_close_legs
+            order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
+            order_vars['wave_at_creation'] = wave_at_creation
+            order_vars['sell_qty'] = sell_qty
+            order_vars['first_sell'] = first_sell
+            order_vars['time_intrade'] = time_intrade
+
+            
+            return order_vars
+
+        else:
+            print("break in program")
+            logging_log_message(log_type='error', msg='break in program order vars queen order items')
+            return False
+    else:
+        print("break in program")
+        logging_log_message(log_type='error', msg='break in program order vars queen order items')
+        return False
+
+
+def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+    
+    def gen_queen_order(trading_model=trading_model, double_down_trade=False, queen_order_state=False, side=False, order_trig_buy_stop=False, order_trig_sell_stop=False, order_trig_sell_stop_limit=False, limit_price=False, running_close_legs=False, symbol=False, order_rules=False, origin_wave=False, wave_at_creation=False, assigned_wave=False, power_up=False, power_up_rangers=False, ticker_time_frame_origin=False, wave_amo=False, trigname=trig, ticker_time_frame=ticker_time_frame, status_q=status_q, portfolio_name=portfolio_name, exit_order_link=exit_order_link, client_order_id=False, system_recon=False, req_qty=False, filled_qty=False, qty_available=False, qty_available_running_close_adjustment=False, filled_avg_price=False, price_time_of_request=False, bid=False, ask=False, honey_gauge=False, macd_gauge=False, honey_money=False, sell_reason=False, honey_time_in_profit=False, order=order, order_vars=order_vars, priceinfo=priceinfo, queen_init=False):
+        date_mark = datetime.datetime.now().astimezone(est)
+        if queen_init:
+            return {name: 'init' for name in gen_queen_order.__code__.co_varnames if name not in ['order', 'order_vars', 'priceinfo']}
+        else:
+            return {'trading_model': trading_model,
+                    'double_down_trade': order_vars['double_down_trade'],
+                    'queen_order_state': 'submitted',
+                    'side': order['side'],
+                    'order_trig_buy_stop': True,
+                    'order_trig_sell_stop': False,
+                    'order_trig_sell_stop_limit': order_vars['order_trig_sell_stop_limit'],
+                    'limit_price': order_vars['limit_price'],
+                    'running_close_legs': False,
+                    'symbol': order['symbol'], 
+                    'order_rules': order_vars['king_order_rules'],
+                    'origin_wave': order_vars['origin_wave'],
+                    'wave_at_creation': order_vars['wave_at_creation'],
+                    'assigned_wave': {},
+                    'power_up': order_vars['power_up'],
+                    'power_up_rangers': order_vars['power_up_rangers'], 
+                    'ticker_time_frame_origin': order_vars['ticker_time_frame_origin'],
+                    'wave_amo': order_vars['wave_amo'],
+
+                    'trigname': trig, 
+                    'datetime': date_mark,
+                    'ticker_time_frame': ticker_time_frame,
+                    'status_q': status_q,
+                    'portfolio_name': portfolio_name,
+
+                    'exit_order_link': exit_order_link, 
+                    'client_order_id': order['client_order_id'],
+                    'system_recon': False,
+                    'order': 'alpaca',
+                    'req_qty': order['qty'],
+                    'filled_qty': order['filled_qty'],
+                    'qty_available': order['filled_qty'],
+                    'qty_available_running_close_adjustment': order_vars['qty_available_running_close_adjustment'],
+
+                    'filled_avg_price': order['filled_avg_price'],
+                    'price_time_of_request': priceinfo['price'],
+                    'bid': priceinfo['bid'],
+                    'ask': priceinfo['ask'],
+                    'honey_gauge': deque([], 89),
+                    'macd_gauge': deque([], 89),
+                    '$honey': 0,
+                    'sell_reason': order_vars['sell_reason'],
+                    'honey_time_in_profit': {},
+                    'priceinfo': 'NA',
+                    }
+    
+    if queen_init:
+        # print("Queen Template Initalized")
+        logging_log_message(msg='QueenHive Queen Template Initalized')
+        running_order = gen_queen_order(queen_init=True) 
+    elif order['side'] == 'buy' or order['side'] == 'sell':
+        # print("create buy running order")
+        running_order = gen_queen_order()
+
+    return running_order
 
 
 def heartbeat_portfolio_revrec_template(QUEEN, portforlio_name='Jq'):
@@ -2910,7 +2774,7 @@ def init_QUEEN(queens_chess_piece):
         'source': "na",
         'last_modified': datetime.datetime.now(),
         'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(trading_model='false', KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
+        'queen_orders': [create_QueenOrderBee(trading_model=False, KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
@@ -2966,10 +2830,10 @@ def init_QUEEN_App():
     'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),
     'knight_bees_kings_rules': [],
     'knight_bees_kings_rules_requests': [],
-    'queen_controls_reset': 'false', 
+    'queen_controls_reset': False, 
     'queen_controls': [],
     'queen_controls_requests': [],
-    'queen_contorls_lastupdate': 'false', 
+    'queen_contorls_lastupdate': False, 
     'del_QUEEN_object': [],
     'del_QUEEN_object_requests': [],
     'last_app_update': datetime.datetime.now(), ## Update Time Zone... Low Priority
@@ -2978,7 +2842,7 @@ def init_QUEEN_App():
     'savedstars': [],
     'misc_bucket': [],
     'source': 'na',
-    'stop_queen' : 'false',
+    'stop_queen' : False,
     }
     return app
 
@@ -3073,7 +2937,6 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
 
         # # show today only
         df_today_return = pd.DataFrame()
-        # ipdb.set_trace()
         df_today = split_today_vs_prior(df=df, other_timestamp='wave_start_time')['df_today']
         df_day_bestwaves = return_Best_Waves(df=df_today, top=3)
         groups = df_today.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()

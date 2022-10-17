@@ -1,4 +1,5 @@
 from asyncore import poll
+from cProfile import run
 from turtle import width
 import pandas as pd
 # import plotly.express as px  # pip install plotly-express
@@ -100,6 +101,12 @@ bee_power_image = os.path.join(jpg_root, 'power.jpg')
 
 queens_chess_piece = os.path.basename(__file__)
 log_dir = dst = os.path.join(db_root, 'logs')
+
+# host buttons in dictinory!!!
+# d = ['a', 'b', 'c']
+# d2 = {i: st.button(i, key=i) for i in d}
+# if d2['a']:
+#     st.write('kewl')
 
 
 def init_logging(queens_chess_piece, db_root):
@@ -495,9 +502,26 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         star_avail = list(QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
         star_option_qc = st.selectbox("Select Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
 
+        kor_option_mapping = {
+        'status': 'checkbox',
+        'trade_using_limits': 'checkbox',
+        'doubledown_timeduration': 'number',
+        'max_profit_waveDeviation': 'number',
+        'max_profit_waveDeviation_timeduration': 'number',
+        'timeduration': 'number',
+        'take_profit': 'number',
+        'sellout': 'number',
+        'sell_trigbee_trigger': 'checkbox',
+        'stagger_profits': 'checkbox',
+        'scalp_profits': 'checkbox',
+        'scalp_profits_timeduration': 'number',
+        'stagger_profits_tiers': 'number',}
+
+
         with st.form('trading model form'):
             trading_model_dict = QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc]
             trigbees = trading_model_dict['trigbees']
+            trigbees_update = {}
             for k, v in QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc].items():
 
                 if k == 'status':
@@ -517,44 +541,59 @@ def update_QueenControls(APP_requests, control_option, theme_list):
                     buyingpower_allocation_ShortTerm = st.number_input(label=k, value=float(v))
                 elif k == 'trigbees':
                     st.write(k, v)
-                    if 'buy_cross-0' in v.keys():
-                        st.write('buy_cross-0')
-                        op_trigbee_bc = st.checkbox('status_bc', value=True)
-                        op_trigbee_max_profit_waveDeviation_bc = st.number_input(label='max_profit_waveDeviation_bc', value=int(v['buy_cross-0']['max_profit_waveDeviation']))
-                        op_trigbee_timeduration_bc = st.number_input(label='timeduration_bc', value=int(v['buy_cross-0']['timeduration']))
-                        op_trigbee_take_profit_bc = st.number_input(label='take_profit_bc', value=float(v['buy_cross-0']['take_profit']))
-                        op_trigbee_sellout_bc = st.number_input(label='sellout_bc', value=float(v['buy_cross-0']['sellout']))
-                        op_trigbee_sell_trigbee_trigger_bc = st.checkbox('sell_trigbee_trigger_bc', value=v['buy_cross-0']['sell_trigbee_trigger'])
-                        op_stagger_profits_bc = st.checkbox('stagger_profits_bc', value=v['buy_cross-0']['stagger_profits'])
-                        op_scalp_profits_bc = st.checkbox('scalp_profits_bc', value=v['buy_cross-0']['scalp_profits'])
+                    
+                    for trig in trigbees:
+                        trigbees_update[trig] = trigbees[trig]
+                        for blocktime in KING['waveBlocktimes']:
+                            trigbees_update[trig][blocktime] = trigbees[trig][blocktime]
+                            king_order_rules = v[trig][blocktime]
+                            for kor_option, kor_v in king_order_rules.items():
+                                st_func = kor_option_mapping[kor_option]
+                                if st_func == 'checckbox':
+                                    trigbees_update[f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}'] = st.checkbox(label=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}', value=kor_v, key=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}')
+                                elif st_func == 'number':
+                                    trigbees_update[f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}'] = st.number_input(label=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}', value=kor_v, key=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}')
+                                else:
+                                    print('missing')
+                                    st.write("missing")
+                    
+                    # if 'buy_cross-0' in v.keys():
+                    #     st.write('buy_cross-0')
+                    #     op_trigbee_bc = st.checkbox('status_bc', value=True)
+                    #     op_trigbee_max_profit_waveDeviation_bc = st.number_input(label='max_profit_waveDeviation_bc', value=int(v['buy_cross-0']['max_profit_waveDeviation']))
+                    #     op_trigbee_timeduration_bc = st.number_input(label='timeduration_bc', value=int(v['buy_cross-0']['timeduration']))
+                    #     op_trigbee_take_profit_bc = st.number_input(label='take_profit_bc', value=float(v['buy_cross-0']['take_profit']))
+                    #     op_trigbee_sellout_bc = st.number_input(label='sellout_bc', value=float(v['buy_cross-0']['sellout']))
+                    #     op_trigbee_sell_trigbee_trigger_bc = st.checkbox('sell_trigbee_trigger_bc', value=v['buy_cross-0']['sell_trigbee_trigger'])
+                    #     op_stagger_profits_bc = st.checkbox('stagger_profits_bc', value=v['buy_cross-0']['stagger_profits'])
+                    #     op_scalp_profits_bc = st.checkbox('scalp_profits_bc', value=v['buy_cross-0']['scalp_profits'])
 
-                    if 'sell_cross-0' in v.keys():
-                        st.write('sell_cross-0')
-                        op_trigbee_sc = st.checkbox('status_sc', value=True)
-                        op_trigbee_max_profit_waveDeviation_sc = st.number_input(label='max_profit_waveDeviation_sc', value=int(v['sell_cross-0']['max_profit_waveDeviation']))
-                        op_trigbee_timeduration_sc = st.number_input(label='timeduration_sc', value=float(v['sell_cross-0']['timeduration']))
-                        op_trigbee_take_profit_sc = st.number_input(label='take_profit_sc', value=float(v['sell_cross-0']['take_profit']))
-                        op_trigbee_sellout_sc = st.number_input(label='sellout_sc', value=float(v['sell_cross-0']['sellout']))
-                        op_trigbee_sell_trigbee_trigger_sc = st.checkbox('sell_trigbee_trigger_sc', value=v['sell_cross-0']['sell_trigbee_trigger'])
-                        op_stagger_profits_sc = st.checkbox('stagger_profits_sc', value=v['sell_cross-0']['stagger_profits'])
-                        op_scalp_profits_sc = st.checkbox('scalp_profits_sc', value=v['sell_cross-0']['scalp_profits'])
+                    # if 'sell_cross-0' in v.keys():
+                    #     st.write('sell_cross-0')
+                    #     op_trigbee_sc = st.checkbox('status_sc', value=True)
+                    #     op_trigbee_max_profit_waveDeviation_sc = st.number_input(label='max_profit_waveDeviation_sc', value=int(v['sell_cross-0']['max_profit_waveDeviation']))
+                    #     op_trigbee_timeduration_sc = st.number_input(label='timeduration_sc', value=float(v['sell_cross-0']['timeduration']))
+                    #     op_trigbee_take_profit_sc = st.number_input(label='take_profit_sc', value=float(v['sell_cross-0']['take_profit']))
+                    #     op_trigbee_sellout_sc = st.number_input(label='sellout_sc', value=float(v['sell_cross-0']['sellout']))
+                    #     op_trigbee_sell_trigbee_trigger_sc = st.checkbox('sell_trigbee_trigger_sc', value=v['sell_cross-0']['sell_trigbee_trigger'])
+                    #     op_stagger_profits_sc = st.checkbox('stagger_profits_sc', value=v['sell_cross-0']['stagger_profits'])
+                    #     op_scalp_profits_sc = st.checkbox('scalp_profits_sc', value=v['sell_cross-0']['scalp_profits'])
 
-                    if 'ready_buy_cross' in v.keys():
-                        st.write('ready_buy_cross')
-                        op_trigbee_rb = st.checkbox('status_rb', value=True)
-                        op_trigbee_max_profit_waveDeviation_rb = st.number_input(label='max_profit_waveDeviation_rb', value=int(v['ready_buy_cross']['max_profit_waveDeviation']))
-                        op_trigbee_timeduration_rb = st.number_input(label='timeduration_rb', value=int(v['ready_buy_cross']['timeduration']))
-                        op_trigbee_take_profit_rb = st.number_input(label='take_profit_rb', value=float(v['ready_buy_cross']['take_profit']))
-                        op_trigbee_sellout_rb = st.number_input(label='sellout_rb', value=float(v['ready_buy_cross']['sellout']))
-                        op_trigbee_sell_trigbee_trigger_rb = st.checkbox('sell_trigbee_trigger_rb', value=v['ready_buy_cross']['sell_trigbee_trigger'])
-                        op_stagger_profits_rb = st.checkbox('stagger_profits_rb', value=v['ready_buy_cross']['stagger_profits'])
-                        op_scalp_profits_rb = st.checkbox('scalp_profits_rb', value=v['ready_buy_cross']['scalp_profits'])
+                    # if 'ready_buy_cross' in v.keys():
+                    #     st.write('ready_buy_cross')
+                    #     op_trigbee_rb = st.checkbox('status_rb', value=True)
+                    #     op_trigbee_max_profit_waveDeviation_rb = st.number_input(label='max_profit_waveDeviation_rb', value=int(v['ready_buy_cross']['max_profit_waveDeviation']))
+                    #     op_trigbee_timeduration_rb = st.number_input(label='timeduration_rb', value=int(v['ready_buy_cross']['timeduration']))
+                    #     op_trigbee_take_profit_rb = st.number_input(label='take_profit_rb', value=float(v['ready_buy_cross']['take_profit']))
+                    #     op_trigbee_sellout_rb = st.number_input(label='sellout_rb', value=float(v['ready_buy_cross']['sellout']))
+                    #     op_trigbee_sell_trigbee_trigger_rb = st.checkbox('sell_trigbee_trigger_rb', value=v['ready_buy_cross']['sell_trigbee_trigger'])
+                    #     op_stagger_profits_rb = st.checkbox('stagger_profits_rb', value=v['ready_buy_cross']['stagger_profits'])
+                    #     op_scalp_profits_rb = st.checkbox('scalp_profits_rb', value=v['ready_buy_cross']['scalp_profits'])
 
                 elif k == 'trigbees_kings_order_rules':
                     st.write(k, v)
                 elif k == 'power_rangers':
                     st.write("active stars", k, v)
-                    # all_stars = stars()
 
                     df = pd.DataFrame(v.items())
                     df = df.rename(columns={0: 'star', 1: 'status'})
@@ -583,35 +622,37 @@ def update_QueenControls(APP_requests, control_option, theme_list):
                 trading_model_dict['buyingpower_allocation_ShortTerm'] = buyingpower_allocation_ShortTerm
                 trading_model_dict['total_budget'] = total_budget
 
-                if 'buy_cross-0' in trading_model_dict['trigbees'].keys():
-                    trigbees['buy_cross-0']['status'] = op_trigbee_bc
-                    trigbees['buy_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_bc
-                    trigbees['buy_cross-0']['timeduration'] = op_trigbee_timeduration_bc
-                    trigbees['buy_cross-0']['take_profit'] = op_trigbee_take_profit_bc
-                    trigbees['buy_cross-0']['sellout'] = op_trigbee_sellout_bc
-                    trigbees['buy_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_bc
-                    trigbees['buy_cross-0']['stagger_profits'] = op_stagger_profits_bc
-                    trigbees['buy_cross-0']['scalp_profits']= op_scalp_profits_bc
-                if 'sell_cross-0' in trading_model_dict['trigbees'].keys():
-                    trigbees['sell_cross-0']['status'] = op_trigbee_sc
-                    trigbees['sell_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_sc
-                    trigbees['sell_cross-0']['timeduration'] = op_trigbee_timeduration_sc
-                    trigbees['sell_cross-0']['take_profit'] = op_trigbee_take_profit_sc
-                    trigbees['sell_cross-0']['sellout'] = op_trigbee_sellout_sc
-                    trigbees['sell_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_sc
-                    trigbees['sell_cross-0']['stagger_profits'] = op_stagger_profits_sc
-                    trigbees['sell_cross-0']['scalp_profits']= op_scalp_profits_sc
-                if 'ready_buy_cross' in trading_model_dict['trigbees'].keys():
-                    trigbees['ready_buy_cross']['status'] = op_trigbee_rb
-                    trigbees['ready_buy_cross']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_rb
-                    trigbees['ready_buy_cross']['timeduration'] = op_trigbee_timeduration_rb
-                    trigbees['ready_buy_cross']['take_profit'] = op_trigbee_take_profit_rb
-                    trigbees['ready_buy_cross']['sellout'] = op_trigbee_sellout_rb
-                    trigbees['ready_buy_cross']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_rb
-                    trigbees['ready_buy_cross']['stagger_profits'] = op_stagger_profits_rb
-                    trigbees['ready_buy_cross']['scalp_profits']= op_scalp_profits_rb
+
+
+                # if 'buy_cross-0' in trading_model_dict['trigbees'].keys():
+                #     trigbees['buy_cross-0']['status'] = op_trigbee_bc
+                #     trigbees['buy_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_bc
+                #     trigbees['buy_cross-0']['timeduration'] = op_trigbee_timeduration_bc
+                #     trigbees['buy_cross-0']['take_profit'] = op_trigbee_take_profit_bc
+                #     trigbees['buy_cross-0']['sellout'] = op_trigbee_sellout_bc
+                #     trigbees['buy_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_bc
+                #     trigbees['buy_cross-0']['stagger_profits'] = op_stagger_profits_bc
+                #     trigbees['buy_cross-0']['scalp_profits']= op_scalp_profits_bc
+                # if 'sell_cross-0' in trading_model_dict['trigbees'].keys():
+                #     trigbees['sell_cross-0']['status'] = op_trigbee_sc
+                #     trigbees['sell_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_sc
+                #     trigbees['sell_cross-0']['timeduration'] = op_trigbee_timeduration_sc
+                #     trigbees['sell_cross-0']['take_profit'] = op_trigbee_take_profit_sc
+                #     trigbees['sell_cross-0']['sellout'] = op_trigbee_sellout_sc
+                #     trigbees['sell_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_sc
+                #     trigbees['sell_cross-0']['stagger_profits'] = op_stagger_profits_sc
+                #     trigbees['sell_cross-0']['scalp_profits']= op_scalp_profits_sc
+                # if 'ready_buy_cross' in trading_model_dict['trigbees'].keys():
+                #     trigbees['ready_buy_cross']['status'] = op_trigbee_rb
+                #     trigbees['ready_buy_cross']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_rb
+                #     trigbees['ready_buy_cross']['timeduration'] = op_trigbee_timeduration_rb
+                #     trigbees['ready_buy_cross']['take_profit'] = op_trigbee_take_profit_rb
+                #     trigbees['ready_buy_cross']['sellout'] = op_trigbee_sellout_rb
+                #     trigbees['ready_buy_cross']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_rb
+                #     trigbees['ready_buy_cross']['stagger_profits'] = op_stagger_profits_rb
+                #     trigbees['ready_buy_cross']['scalp_profits']= op_scalp_profits_rb
                 
-                trading_model_dict['trigbees'] = trigbees
+                trading_model_dict['trigbees'] = trigbees_update
                 
                 if len(df_sel) > 0:
                     star_original_dict = dict(zip(df['star'], df['status']))
@@ -815,7 +856,6 @@ else:
 
 
 KING = KINGME()
-# stars = KING['stars']
 pollen_theme = pollen_themes(KING=KING)
 
 
@@ -934,8 +974,7 @@ if option == 'charts':
 
 if option == 'queen':
     col11, col22 = st.columns(2)
-    with col11:
-        stop_queenbee(APP_requests)
+    
     tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
     tickers_avail.update({"all"})
     tickers_avail_op = list(tickers_avail)
@@ -969,36 +1008,40 @@ if option == 'queen':
             st.write(df)
 
         col1_a, col2_b, = st.columns(2)
-        
-        st.write('orders')
 
-        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
-        st.markdown(new_title, unsafe_allow_html=True)
+        def markDOWN_Text(align='center', color='Black', fontsize='33', text='Hello There'):
+            st.markdown('<p style="text-align: {}; font-family:sans-serif; color:{}; font-size: {}px;">{}</p>'.format(align, color, fontsize, text), unsafe_allow_html=True)
+            return True
+        
+        markDOWN_Text(align='center', color='Black', fontsize='33', text='Order Flow')
+
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='error', return_all_cols=True)['df']
         error_orders = error_orders.astype(str)
-        st.dataframe(error_orders)
+        if len(error_orders)> 0:
+            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
+            st.markdown(new_title, unsafe_allow_html=True)
+            st.dataframe(error_orders)
 
-        new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
-        st.markdown(new_title, unsafe_allow_html=True)
+
         submitted_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
         submitted_orders = submitted_orders.astype(str)
-        st.dataframe(submitted_orders)
-        
-        new_title = '<p style="font-family:sans-serif; color:Green; font-size: 25px;">RUNNING</p>'
-        st.markdown(new_title, unsafe_allow_html=True)
-        run_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running', return_all_cols=True)['df']
-        st.dataframe(run_orders)
-
-        new_title = '<p style="font-family:sans-serif; color:Green; font-size: 25px;">RUNNING CLOSE</p>'
-        st.markdown(new_title, unsafe_allow_html=True)
-        runclose_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running_close')['df']
-        st.dataframe(runclose_orders)
-
- 
-        with col2_b:
-            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">memory</p>'
+        if len(submitted_orders)> 0:
+            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
             st.markdown(new_title, unsafe_allow_html=True)
+            st.dataframe(submitted_orders)
         
+        
+        run_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running', return_all_cols=True)['df']
+        if len(run_orders) > 0:
+            markDOWN_Text(align='center', color='Green', fontsize='23', text='RUNNING')
+            st.dataframe(run_orders)
+
+
+        runclose_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running_close')['df']
+        if len(runclose_orders) > 0:
+            markDOWN_Text(align='center', color='Green', fontsize='23', text='RUNNING TO CLOSE')
+            st.dataframe(runclose_orders)
+
 
     if orders_table == 'yes':
         # main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
@@ -1251,8 +1294,10 @@ if option == 'signal':
             # st.write(ttframe.iloc[0]['main'])
             selected = grid_response['selected_rows'] 
             df_sel = pd.DataFrame(selected)
-            st.write(df_sel)
+ 
             if len(df_sel) > 0:
+                df_sel = df_sel.astype(str)
+                st.write(df_sel)
                 up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
                 up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
                 update_dict = {c_order_input: up_values}
@@ -1455,4 +1500,7 @@ if option == 'signal':
 
 if option == 'app':
     st.write(APP_requests['queen_controls_reset'])
+
+with st.sidebar:
+    stop_queenbee(APP_requests)
 ##### END ####
