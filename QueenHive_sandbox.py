@@ -1758,24 +1758,28 @@ def update_csv_db(df_to_add, tablename, append, update=False, replace=False, ext
             new_df.to_csv(table_path, index=False, encoding='utf8')      
 
 
-def convert_todatetime_string(date_string):
-    # In [94]: date_string
-    # Out[94]: '2022-03-11T19:41:50.649448Z'
-    # In [101]: date_string[:19]
-    # Out[101]: '2022-03-11T19:41:50'
-    return datetime.datetime.fromisoformat(date_string[:19])
+# def convert_todatetime_string(date_string):
+#     # In [94]: date_string
+#     # Out[94]: '2022-03-11T19:41:50.649448Z'
+#     # In [101]: date_string[:19]
+#     # Out[101]: '2022-03-11T19:41:50'
+#     t1 = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.%fZ').astimezone(est)
+#     return datetime.datetime.fromisoformat(t[:19])
 
 
-def convert_Todatetime_return_est_stringtime(date_string):
+def datestr_UTC_to_EST(date_string, return_string=False):
     # In [94]: date_string
     # Out[94]: '2022-03-11T19:41:50.649448Z'
     # In [101]: date_string[:19]
     # Out[101]: '2022-03-11T19:41:50'
     d = datetime.datetime.fromisoformat(date_string[:19])
-    d = datetime.datetime.fromisoformat(v[:19])
     j = d.replace(tzinfo=datetime.timezone.utc)
     fmt = '%Y-%m-%dT%H:%M:%S'
-    est_date = j.astimezone(pytz.timezone('US/Eastern')).strftime(fmt)
+    if return_string:
+        est_date = j.astimezone(pytz.timezone('US/Eastern')).strftime(fmt)
+    else:
+        est_date = j.astimezone(pytz.timezone('US/Eastern'))
+    
     return est_date
 
 
@@ -2358,7 +2362,7 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     return return_dict
 
 
-def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trading_model_name='tradingmodel1', status='active', portforlio_weight_ask=.01):
+def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='tradingmodel1', status='active', portforlio_weight_ask=.01):
     
     def star_trading_model_vars(stars=stars):
         
@@ -2383,10 +2387,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
             return {
                 '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
                 '5Minute_5Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '30Minute_1Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '1Hour_3Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '2Hour_6Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '1Day_1Year': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '30Minute_1Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=30, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Hour_3Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '2Hour_6Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=120, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Day_1Year': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
             }
 
         # def waveBlocktime_specific_DEFAULT_rules(waveBlocktimes):
@@ -2504,21 +2508,44 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, tradin
     }
     
     
-    def tradingmodel_vars(stars_vars, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars):
-        return {
-            ticker: 
-                {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()},
-                'ticker': ticker,
+    def tradingmodel_vars(stars_vars, trigbees=trigbees, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars):
+        afterhours = [True if ticker in crypto_currency_symbols else False][0]
+        afternoon = [True if ticker in crypto_currency_symbols else True][0]
+        lunch = [True if ticker in crypto_currency_symbols else True][0]
+        morning = [True if ticker in crypto_currency_symbols else True][0]
+        premarket = [True if ticker in crypto_currency_symbols else False][0]
+        Day = [True if ticker in crypto_currency_symbols else False][0]
+        allow_for_margin = [False if ticker in crypto_currency_symbols else True][0]
+        etf_X_direction = ['1X', '2X', '3X']
+        trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+
+        ticker_vars = {'QueenBeeTrader': 'Jq',
                 'status': status,
+                'buyingpower_allocation_LongTerm': .2,
+                'buyingpower_allocation_ShortTerm': .8,
+                'index_long_X': '1X',
+                'index_inverse_X': '1X',
                 'portforlio_weight_ask': portforlio_weight_ask,
+                'total_budget': 0,
+                'max_single_trade_amount': 100000,
+                'allow_for_margin': allow_for_margin, 
+                'buy_ONLY_by_accept_from_QueenBeeTrader': False,
                 'trading_model_name': trading_model_name,
                 'portfolio_name': portfolio_name,
-                'premarket': False,
-                'afterhours': False,
+                'trigbees': trigbees,
+                'premarket': premarket,
+                'afterhours': afterhours,
+                'morning_9-11': morning,
+                'lunch_11-2': lunch,
+                'afternoon_2-4': afternoon,
+                'afterhours': afterhours,
+                'Day': Day,}
 
-
-        }
-
+        model1 = {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
+        model1.update(ticker_vars)
+        star_model = {ticker: model1}
+        
+        return star_model
 
     # Trading Model Version 1
     stars_vars = star_trading_model_vars()
@@ -2617,8 +2644,10 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                     'order_trig_buy_stop': True,
                     'order_trig_sell_stop': False,
                     'order_trig_sell_stop_limit': order_vars['order_trig_sell_stop_limit'],
+                    'req_limit_price': order_vars['limit_price'],
                     'limit_price': order_vars['limit_price'],
                     'running_close_legs': False,
+                    'ticker': order['symbol'],
                     'symbol': order['symbol'], 
                     'order_rules': order_vars['king_order_rules'],
                     'origin_wave': order_vars['origin_wave'],

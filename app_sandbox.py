@@ -313,15 +313,13 @@ def create_wave_chart_all(df, wave_col):
 def return_total_profits(QUEEN):
     
     ORDERS = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'completed' and i['side'] == 'sell']
-    c_1, c_2 = st.columns(2)
     
     if ORDERS:
         df = pd.DataFrame(ORDERS)
         tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
         
-        with c_1:
-            st.write("Total Profit Loss")
-            st.write(tic_group_df)
+        st.write("Total Profit Loss")
+        st.write(tic_group_df)
 
 
         now_ = datetime.datetime.now()
@@ -329,9 +327,8 @@ def return_total_profits(QUEEN):
         if orders_today:
             df = pd.DataFrame(orders_today)
             tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
-            with c_2:
-                st.write("Today Profit Loss")
-                st.write(tic_group_df)
+            st.write("Today Profit Loss")
+            st.write(tic_group_df)
 
 
 def pollenstory_view(POLLENSTORY):
@@ -836,9 +833,17 @@ def its_morphin_time_view(QUEEN, STORY_bee, ticker):
     return True
 
 
+def mark_down_text(align='center', color='Black', fontsize='33', text='Hello There'):
+    st.markdown('<p style="text-align: {}; font-family:sans-serif; color:{}; font-size: {}px;">{}</p>'.format(align, color, fontsize, text), unsafe_allow_html=True)
+    return True
 
+def page_line_seperator(height='5', border='none', color='#333'):
+    st.markdown("""<hr style="height:{}px;border:{};color:#333;background-color:{};" /> """.format(height, color), unsafe_allow_html=True)
+    return True
 
-
+def write_flying_bee(width="45", height="45", frameBorder="0"):
+    st.markdown('<iframe src="https://giphy.com/embed/ksE4eFvxZM3oyaFEVo" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/bee-traveling-flying-into-next-week-like-ksE4eFvxZM3oyaFEVo"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
+    return True
 
 
 # """ if "__name__" == "__main__": """
@@ -973,27 +978,24 @@ if option == 'charts':
 
 
 if option == 'queen':
-    col11, col22 = st.columns(2)
-    
+    col11, col22, col33 = st.columns(3)
+    # Global Vars
     tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
     tickers_avail.update({"all"})
     tickers_avail_op = list(tickers_avail)
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
-    st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
     ticker = ticker_option
     
     option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
 
-    return_total_profits(QUEEN=QUEEN)
-
     command_conscience_option = st.sidebar.selectbox("command conscience", ['yes', 'no'], index=["yes"].index("yes"))
     orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
     today_day = datetime.datetime.now().day
-    # with col22:
-    #     st.write("current errors")
-    # with col22:
-    #     st.write(QUEEN["errors"])
-    
+
+    with col11:
+        mark_down_text(align='Left', fontsize='64', text=ticker_option)
+    with col22:
+        return_total_profits(QUEEN=QUEEN)
     
     if command_conscience_option == 'yes':
         ORDERS = QUEEN['queen_orders']
@@ -1006,14 +1008,11 @@ if option == 'queen':
             df = df.rename(columns={0: 'ttf', 1: 'trig'})
             df = df.sort_values('ttf')
             st.write(df)
+            write_flying_bee()
+        else:
+            st.write("no trigbees avail")
 
-        col1_a, col2_b, = st.columns(2)
-
-        def markDOWN_Text(align='center', color='Black', fontsize='33', text='Hello There'):
-            st.markdown('<p style="text-align: {}; font-family:sans-serif; color:{}; font-size: {}px;">{}</p>'.format(align, color, fontsize, text), unsafe_allow_html=True)
-            return True
-        
-        markDOWN_Text(align='center', color='Black', fontsize='33', text='Order Flow')
+        mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
 
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='error', return_all_cols=True)['df']
         error_orders = error_orders.astype(str)
@@ -1029,17 +1028,24 @@ if option == 'queen':
             new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
             st.markdown(new_title, unsafe_allow_html=True)
             st.dataframe(submitted_orders)
+
+        pending = queen_orders_view(QUEEN=QUEEN, queen_order_state='pending')['df']
+        pending = pending.astype(str)
+        if len(pending)> 0:
+            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">PENDING</p>'
+            st.markdown(new_title, unsafe_allow_html=True)
+            st.dataframe(pending)
         
         
         run_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running', return_all_cols=True)['df']
         if len(run_orders) > 0:
-            markDOWN_Text(align='center', color='Green', fontsize='23', text='RUNNING')
+            mark_down_text(align='center', color='Green', fontsize='23', text='RUNNING')
             st.dataframe(run_orders)
 
 
         runclose_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running_close')['df']
         if len(runclose_orders) > 0:
-            markDOWN_Text(align='center', color='Green', fontsize='23', text='RUNNING TO CLOSE')
+            mark_down_text(align='center', color='Green', fontsize='23', text='RUNNING TO CLOSE')
             st.dataframe(runclose_orders)
 
 
@@ -1051,29 +1057,32 @@ if option == 'queen':
     st.write("QUEENS Collective CONSCIENCE")
     if ticker_option != 'all':
         # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
-
+        with col11:
+            write_flying_bee(width=100, height=100)
+        # with col33:
+        #     write_flying_bee(width=100, height=100)
         # View Stars
         its_morphin_time_view(QUEEN, STORY_bee, ticker)
         st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
-        st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
+        # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
         ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
         default=True, add_vars={'update_cols': False}, write_selection=False)
         # View Star and Waves
         ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
         # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
 
-        # Analyze Waves
-        st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
-        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df']) 
-        df = df.astype(str)
-        st.write(df)
+        # # Analyze Waves
+        # st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
+        # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df']) 
+        # df = df.astype(str)
+        # st.write(df)
 
-        # Summary of all ticker_time_frames
-        st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
-        st.markdown(new_title, unsafe_allow_html=True)
-        df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
-        df = df.astype(str)
-        st.write(df)
+        # # Summary of all ticker_time_frames
+        # st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
+        # st.markdown(new_title, unsafe_allow_html=True)
+        # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
+        # df = df.astype(str)
+        # st.write(df)
         
         st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
         dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
@@ -1081,25 +1090,40 @@ if option == 'queen':
         for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
             ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
             buys = [data[trigbee] for k, data in ticker_selection.items()]
-            df_buys = pd.concat(buys, axis=0)
-            col_view = ['ticker_time_frame'] + [i for i in df_buys.columns if i not in 'ticker_time_frame']
-            df_buys = df_buys[col_view]
-            # st.write(trigbee)
+            df_trigbee_waves = pd.concat(buys, axis=0)
+            col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
+            df_trigbee_waves = df_trigbee_waves[col_view]
             if 'buy' in trigbee:
-                st.markdown('<div style="text-align: center;color:Green; font-size: 23px;">{}{}</div>'.format("trigbee : ", trigbee), unsafe_allow_html=True)
-            else:
-                st.markdown('<div style="text-align: center;color:Red; font-size: 23px;">{}{}</div>'.format("trigbee : ", trigbee), unsafe_allow_html=True)
-            # df_buys["maxprofit"] = df_buys['maxprofit'].map("{:.2f}".format)
-            st.dataframe(df_buys)
+                st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+                st.markdown('<div style="text-align: center;color:Green; font-size: 33px;">{}{}</div>'.format("Trigbee : ", trigbee), unsafe_allow_html=True)
 
-            # Top Winners 
-            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_buys['ticker_time_frame'].iloc[-1])['df_bestwaves']
-            st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            else:
+                st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+                st.markdown('<div style="text-align: center;color:Red; font-size: 33px;">{}{}</div>'.format("Trigbee : ", trigbee), unsafe_allow_html=True)
+
+            # df_trigbee_waves["maxprofit"] = df_trigbee_waves['maxprofit'].map("{:.2f}".format)
+            # total winners total loser, total maxprofit
+            t_winners = sum(df_trigbee_waves['winners_n'].apply(lambda x: int(x)))
+            t_losers = sum(df_trigbee_waves['losers_n'].apply(lambda x: int(x)))
+            # t_maxprofit = round(sum(df_trigbee_waves['sum_maxprofit'].apply(lambda x: float(x))),2)
+            total_waves = t_winners + t_losers
+            win_pct = 100 * round(t_winners / total_waves, 2)
+            
+            title = f'{"Total Winners "}{t_winners}{" ::: Total Losers"}{t_losers}{" ::: won "}{win_pct}{"%"}'
+            mark_down_text(align='left', color='Green', fontsize='23', text=title)
+            
+            # Top Winners Header
+            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
+            st.markdown('<div style="text-center: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
             st.dataframe(df_bestwaves)
+            # Data
+            st.dataframe(df_trigbee_waves)
+
+
 
         # ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
         # buys = [data['buy_cross-0'] for k, data in ticker_selection.items()]
-        # df_buys = pd.concat(buys, axis=0)
+        # df_trigbee_waves = pd.concat(buys, axis=0)
 
         
         # [st.write(k, v) for k,v in v.items()]
@@ -1120,7 +1144,7 @@ if option == 'queen':
         for ttframe, knowledge in ticker_storys.items():
             # with st.form(str(ttframe)):
             # WaveUp
-            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
+            st.markdown('<div style="text-align: left;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
             df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
             df = df.astype(str)
             st.write(datetime.datetime.now().astimezone(est), 'EST')
@@ -1141,7 +1165,7 @@ if option == 'queen':
 
             # Today df_today
             buzzz_linebreak()
-            st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
+            st.markdown('<div style="text-align: left;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
             df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
             df = df.astype(str)
             st.write(datetime.datetime.now().astimezone(est), 'EST')
@@ -1155,10 +1179,10 @@ if option == 'queen':
             # st.write(datetime.datetime.now().astimezone(est), 'EST')
             # st.dataframe(df)
             
-            # view details
-            st.write("VIEW TRANSPOSE")
-            df = df.T
-            st.dataframe(df)
+            # # view details
+            # st.write("VIEW TRANSPOSE")
+            # df = df.T
+            # st.dataframe(df)
             # agg_view = pd.DataFrame(agg_view)
             # agg_view = agg_view.astype(str)
             # st.dataframe(agg_view)

@@ -806,6 +806,7 @@ if prod:
     WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
 else:
     WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+
 WORKER_QUEEN['source'] = PB_QUEEN_Pickle
 MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
 master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']
