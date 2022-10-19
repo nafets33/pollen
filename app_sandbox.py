@@ -36,9 +36,9 @@ from collections import defaultdict
 import ipdb
 import tempfile
 import shutil
-from scipy.stats import linregress
-from scipy import stats
-import math
+# from scipy.stats import linregress
+# from scipy import stats
+# import math
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 from PIL import Image
