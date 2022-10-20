@@ -2362,14 +2362,15 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     return return_dict
 
 
-def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='tradingmodel1', status='active', portforlio_weight_ask=.01):
+def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
     
     def star_trading_model_vars(stars=stars):
         
-        def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers):
+        def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1):
             return {
             'status': status,
             'trade_using_limits': trade_using_limits,
+            'limitprice_decay_timeduration': limitprice_decay_timeduration,
             'doubledown_timeduration': doubledown_timeduration,
             'max_profit_waveDeviation': max_profit_waveDeviation,
             'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
@@ -2549,14 +2550,14 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
 
     # Trading Model Version 1
     stars_vars = star_trading_model_vars()
-    tradingmodel1 = tradingmodel_vars(stars_vars=stars_vars)
+    macd_model = tradingmodel_vars(stars_vars=stars_vars)
 
-    return {'tradingmodel1': tradingmodel1}
+    return {'MACD': macd_model}
 
 
 #### QUEENBEE ####
 
-def order_vars__queen_order_items(order_side=False, trading_model=False, king_order_rules=False, wave_amo=False, maker_middle=False, origin_wave=False, power_up_rangers=False, ticker_time_frame_origin=False, double_down_trade=False, sell_reason={}, running_close_legs=False, qty_available_running_close_adjustment=False, wave_at_creation={}, sell_qty=False, first_sell=False, time_intrade=False):
+def order_vars__queen_order_items(order_side=False, trading_model=False, king_order_rules=False, wave_amo=False, maker_middle=False, origin_wave=False, power_up_rangers=False, ticker_time_frame_origin=False, double_down_trade=False, sell_reason={}, running_close_legs=False, wave_at_creation={}, sell_qty=False, first_sell=False, time_intrade=False, updated_at=False):
     if order_side:
         order_vars = {}
         if order_side == 'sell':
@@ -2580,12 +2581,11 @@ def order_vars__queen_order_items(order_side=False, trading_model=False, king_or
             order_vars['double_down_trade'] = double_down_trade
             order_vars['sell_reason'] = sell_reason
             order_vars['running_close_legs'] = running_close_legs
-            order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
             order_vars['wave_at_creation'] = wave_at_creation
             order_vars['sell_qty'] = sell_qty
             order_vars['first_sell'] = first_sell
             order_vars['time_intrade'] = time_intrade
-
+            order_vars['updated_at'] = updated_at
             
 
             return order_vars
@@ -2611,13 +2611,12 @@ def order_vars__queen_order_items(order_side=False, trading_model=False, king_or
             order_vars['double_down_trade'] = double_down_trade
             order_vars['sell_reason'] = sell_reason
             order_vars['running_close_legs'] = running_close_legs
-            order_vars['qty_available_running_close_adjustment'] = qty_available_running_close_adjustment
             order_vars['wave_at_creation'] = wave_at_creation
             order_vars['sell_qty'] = sell_qty
             order_vars['first_sell'] = first_sell
             order_vars['time_intrade'] = time_intrade
+            order_vars['updated_at'] = updated_at
 
-            
             return order_vars
 
         else:
@@ -2632,7 +2631,7 @@ def order_vars__queen_order_items(order_side=False, trading_model=False, king_or
 
 def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
     
-    def gen_queen_order(trading_model=trading_model, double_down_trade=False, queen_order_state=False, side=False, order_trig_buy_stop=False, order_trig_sell_stop=False, order_trig_sell_stop_limit=False, limit_price=False, running_close_legs=False, symbol=False, order_rules=False, origin_wave=False, wave_at_creation=False, assigned_wave=False, power_up=False, power_up_rangers=False, ticker_time_frame_origin=False, wave_amo=False, trigname=trig, ticker_time_frame=ticker_time_frame, status_q=status_q, portfolio_name=portfolio_name, exit_order_link=exit_order_link, client_order_id=False, system_recon=False, req_qty=False, filled_qty=False, qty_available=False, qty_available_running_close_adjustment=False, filled_avg_price=False, price_time_of_request=False, bid=False, ask=False, honey_gauge=False, macd_gauge=False, honey_money=False, sell_reason=False, honey_time_in_profit=False, order=order, order_vars=order_vars, priceinfo=priceinfo, queen_init=False):
+    def gen_queen_order(trading_model=trading_model, double_down_trade=False, queen_order_state=False, side=False, order_trig_buy_stop=False, order_trig_sell_stop=False, order_trig_sell_stop_limit=False, limit_price=False, running_close_legs=False, symbol=False, order_rules=False, origin_wave=False, wave_at_creation=False, assigned_wave=False, power_up=False, power_up_rangers=False, ticker_time_frame_origin=False, wave_amo=False, trigname=trig, ticker_time_frame=ticker_time_frame, status_q=status_q, portfolio_name=portfolio_name, exit_order_link=exit_order_link, client_order_id=False, system_recon=False, req_qty=False, filled_qty=False, qty_available=0, filled_avg_price=False, price_time_of_request=False, bid=False, ask=False, honey_gauge=False, macd_gauge=False, honey_money=False, sell_reason=False, honey_time_in_profit=False, order=order, order_vars=order_vars, priceinfo=priceinfo, queen_init=False):
         date_mark = datetime.datetime.now().astimezone(est)
         if queen_init:
             return {name: 'init' for name in gen_queen_order.__code__.co_varnames if name not in ['order', 'order_vars', 'priceinfo']}
@@ -2669,9 +2668,9 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                     'system_recon': False,
                     'order': 'alpaca',
                     'req_qty': order['qty'],
+                    'qty': order['qty'],
                     'filled_qty': order['filled_qty'],
                     'qty_available': order['filled_qty'],
-                    'qty_available_running_close_adjustment': order_vars['qty_available_running_close_adjustment'],
 
                     'filled_avg_price': order['filled_avg_price'],
                     'price_time_of_request': priceinfo['price'],
@@ -2682,7 +2681,6 @@ def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_fra
                     '$honey': 0,
                     'sell_reason': order_vars['sell_reason'],
                     'honey_time_in_profit': {},
-                    'priceinfo': 'NA',
                     }
     
     if queen_init:
@@ -2774,7 +2772,7 @@ def return_queen_controls(stars=stars):
             'buying_powers': generate_queen_buying_powers_settings(),
 
             # Trading Model and Child Components Worker Bee Controls
-            'symbols_stars_TradingModel': generate_TradingModel()['tradingmodel1'],
+            'symbols_stars_TradingModel': generate_TradingModel()['MACD'],
             'power_rangers': init_PowerRangers(),
             'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
 

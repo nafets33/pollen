@@ -66,7 +66,16 @@ if prod:
 else:
     from QueenHive_sandbox import refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
 
+# ###### GLOBAL # ######
+ARCHIVE_queenorder = 'archived_bee'
+active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'running_open']
+active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+closing_queen_orders = ['running_close', 'completed']
+RUNNING_Orders = ['running', 'running_close', 'running_open']
 
+# crypto
+crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+coin_exchange = "CBSE"
 
 
 main_root = os.getcwd()
@@ -872,7 +881,7 @@ KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
 ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 
-option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
+# option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
 option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory', 'app'))
 st.sidebar.write("<<<('')>>>")
 # st.header(option)
@@ -972,9 +981,9 @@ if option == 'charts':
             # waves = STORY_bee[ticker_time_frame]['waves']
             # st.write(waves)
         
-        if option3 == "Yes":
-            time.sleep(10)
-            st.experimental_rerun()
+        # if option3 == "Yes":
+            # time.sleep(10)
+            # st.experimental_rerun()
 
 
 if option == 'queen':
@@ -1008,7 +1017,7 @@ if option == 'queen':
             df = df.rename(columns={0: 'ttf', 1: 'trig'})
             df = df.sort_values('ttf')
             st.write(df)
-            write_flying_bee()
+            g = {write_flying_bee() for i in range(len(df))}
         else:
             st.write("no trigbees avail")
 
@@ -1022,31 +1031,46 @@ if option == 'queen':
             st.dataframe(error_orders)
 
 
-        submitted_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
-        submitted_orders = submitted_orders.astype(str)
-        if len(submitted_orders)> 0:
-            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
-            st.markdown(new_title, unsafe_allow_html=True)
-            st.dataframe(submitted_orders)
+        # submitted_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
+        # submitted_orders = submitted_orders.astype(str)
+        # if len(submitted_orders)> 0:
+        #     new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">SUBMITTED</p>'
+        #     st.markdown(new_title, unsafe_allow_html=True)
+        #     st.dataframe(submitted_orders)
 
-        pending = queen_orders_view(QUEEN=QUEEN, queen_order_state='pending')['df']
-        pending = pending.astype(str)
-        if len(pending)> 0:
-            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">PENDING</p>'
-            st.markdown(new_title, unsafe_allow_html=True)
-            st.dataframe(pending)
+        # pending = queen_orders_view(QUEEN=QUEEN, queen_order_state='pending')['df']
+        # pending = pending.astype(str)
+        # if len(pending)> 0:
+        #     new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">PENDING</p>'
+        #     st.markdown(new_title, unsafe_allow_html=True)
+        #     st.dataframe(pending)
         
         
-        run_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running', return_all_cols=True)['df']
-        if len(run_orders) > 0:
-            mark_down_text(align='center', color='Green', fontsize='23', text='RUNNING')
-            st.dataframe(run_orders)
+        # run_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running', return_all_cols=True)['df']
+        # if len(run_orders) > 0:
+        #     mark_down_text(align='center', color='Green', fontsize='23', text='RUNNING')
+        #     st.dataframe(run_orders)
 
 
-        runclose_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running_close')['df']
-        if len(runclose_orders) > 0:
-            mark_down_text(align='center', color='Green', fontsize='23', text='RUNNING TO CLOSE')
-            st.dataframe(runclose_orders)
+        # runclose_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='running_close')['df']
+        # if len(runclose_orders) > 0:
+        #     mark_down_text(align='center', color='Green', fontsize='23', text='RUNNING TO CLOSE')
+        #     st.dataframe(runclose_orders)
+
+        # df = queen_orders_view(QUEEN=QUEEN, queen_order_state='submitted')['df']
+        # if len(df) > 0:
+        #     mark_down_text(align='center', color='Green', fontsize='23', text='submitted')
+        #     st.dataframe(df)
+        # df = queen_orders_view(QUEEN=QUEEN, queen_order_state='accepted')['df']
+        # if len(df) > 0:
+        #     mark_down_text(align='center', color='Green', fontsize='23', text='accepted')
+        #     st.dataframe(df)
+        
+        for order_state in active_queen_order_states:
+            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=order_state, return_all_cols=True)['df']
+            if len(df) > 0:
+                mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                st.dataframe(df)
 
 
     if orders_table == 'yes':
@@ -1109,7 +1133,7 @@ if option == 'queen':
             total_waves = t_winners + t_losers
             win_pct = 100 * round(t_winners / total_waves, 2)
             
-            title = f'{"Total Winners "}{t_winners}{" ::: Total Losers"}{t_losers}{" ::: won "}{win_pct}{"%"}'
+            title = f'{"Total Winners "}{t_winners}{" ::: Total Losers "}{t_losers}{" ::: won "}{win_pct}{"%"}'
             mark_down_text(align='left', color='Green', fontsize='23', text=title)
             
             # Top Winners Header
@@ -1225,9 +1249,9 @@ if option == 'queen':
     orders_today = orders_today.astype(str)
     st.write(orders_today)
 
-    if option3 == "Yes":
-        time.sleep(10)
-        st.experimental_rerun()
+    # if option3 == "Yes":
+        # time.sleep(10)
+        # st.experimental_rerun()
 
 
 if option == 'signal':
@@ -1267,83 +1291,77 @@ if option == 'signal':
 
 
     if save_signals == 'QueenOrders':
+        def return_queen_order(client_order_id):
+            return {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == client_order_id}
+
         # Update run order
+        all_orders = pd.DataFrame(QUEEN['queen_orders'])
+        active_orders = all_orders[all_orders['queen_order_state'].isin(active_order_state_list)].copy()
         show_errors_option = st.selectbox('show last error', ['no', 'yes'], index=['no'].index('no'))
-        if show_errors_option == 'no':
-            if len(QUEEN['queen_orders']) == 0:
-                latest_queen_order = pd.DataFrame()
-                orders_present = False
-            else:
-                latest_queen_order = QUEEN['queen_orders'][-1] # latest
-                orders_present = True
+        c_order_input_list = st.multiselect("active client_order_id", active_orders['client_order_id'].to_list(), default=active_orders.iloc[-1]['client_order_id'])
+        
+        c_order_input = [c_order_input_list[0] if len(c_order_input_list) > 0 else all_orders.iloc[-1]['client_order_id'] ][0]
+
+        # if show_errors_option == 'yes':
+        if show_errors_option == 'yes':
+            latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'error'].copy()
+            latest_queen_order = [latest_queen_order[-1]]
         else:
-            if len(QUEEN['queen_orders']) == 0:
-                latest_queen_order = pd.DataFrame()
-                orders_present = False
-            else:
-                # latest_queen_order = [i for i in QUEEN['queen_orders']] # latest
-                # latest_queen_order = [latest_queen_order[-1]]
-                latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'error'][0]
-                orders_present = True
-        if orders_present:
-            # latest_queen_order_error = [i for i in QUEEN['queen_orders'] if i['queen_order_status'] == 'error'] # latest
-            # if latest_queen_order_error:
-                # st.write(pd.DataFrame())
-            # last_n_trades = pd.DataFrame([QUEEN['queen_orders'][-1], QUEEN['queen_orders'][-2], QUEEN['queen_orders'][-3]])
-            # st.write(last_n_trades)
-            all_orders = pd.DataFrame(QUEEN['queen_orders'])
+            latest_queen_order = active_orders.tail(1)
             last3 = all_orders.iloc[-3:].astype(str)
             st.write(last3)
-            c_order_input = st.text_input("client_order_id", latest_queen_order['client_order_id'])
             q_order = {k: i for k, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_input}
             idx = list(q_order.keys())[0]
             latest_queen_order = [QUEEN['queen_orders'][idx]] # latest
-            
-            # q_order = [i for i in QUEEN['queen_orders'] if i['client_order_id'] == c_order_input]
-            st.write("current queen order requests")
+
+        # q_order = [i for i in QUEEN['queen_orders'] if i['client_order_id'] == c_order_input]
+        # return_queen_order()
+        st.write("current queen order requests")
+        data = ReadPickleData(pickle_file=PB_App_Pickle)
+        st.write(data['update_queen_order'])
+        
+        df = pd.DataFrame(latest_queen_order)
+        df = df.T.reset_index()
+        df = df.astype(str)
+        df = df.rename(columns={0: 'main'})
+
+        # df = latest_queen_order.astype(str)
+
+        
+        grid_response = build_AGgrid_df(data=df, reload_data=False, update_cols=['update_column'], height=933)
+        data = grid_response['data']
+        # st.write(data)
+        ttframe = data[data['index'] == 'ticker_time_frame'].copy()
+        ttframe = ttframe.iloc[0]['main']
+        # st.write(ttframe.iloc[0]['main'])
+        selected = grid_response['selected_rows'] 
+        df_sel = pd.DataFrame(selected)
+
+        if len(df_sel) > 0:
+            df_sel = df_sel.astype(str)
+            st.write(df_sel)
+            up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
+            up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
+            update_dict = {latest_queen_order[0]["client_order_id"]: up_values}
+            st.session_state['update'] = update_dict
+            st.session_state['ttframe_update'] = ttframe
+
+        save_button_runorder = st.button("Save RunOrderUpdate")
+        if save_button_runorder:
+            # st.write(st.session_state['update'])
+            update_sstate = st.session_state['update']
+            update_ttframe = st.session_state['ttframe_update']
+            order_dict = {'system': 'app',
+            'queen_order_update_package': update_sstate,
+            'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}',
+            'ticker_time_frame': update_ttframe,
+            }
+            # st.write(order_dict)
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            data['update_queen_order'].append(order_dict)
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
             data = ReadPickleData(pickle_file=PB_App_Pickle)
             st.write(data['update_queen_order'])
-            
-            df = pd.DataFrame(latest_queen_order)
-            df = df.T.reset_index()
-            df = df.astype(str)
-            # for col in df.columns:
-            #     df[col] = df[col].astype(str)
-            df = df.rename(columns={0: 'main'})
-            grid_response = build_AGgrid_df(data=df, reload_data=False, update_cols=['update_column'])
-            data = grid_response['data']
-            # st.write(data)
-            ttframe = data[data['index'] == 'ticker_time_frame'].copy()
-            ttframe = ttframe.iloc[0]['main']
-            # st.write(ttframe.iloc[0]['main'])
-            selected = grid_response['selected_rows'] 
-            df_sel = pd.DataFrame(selected)
- 
-            if len(df_sel) > 0:
-                df_sel = df_sel.astype(str)
-                st.write(df_sel)
-                up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
-                up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
-                update_dict = {c_order_input: up_values}
-                st.session_state['update'] = update_dict
-                st.session_state['ttframe_update'] = ttframe
-
-            save_button_runorder = st.button("Save RunOrderUpdate")
-            if save_button_runorder:
-                # st.write(st.session_state['update'])
-                update_sstate = st.session_state['update']
-                update_ttframe = st.session_state['ttframe_update']
-                order_dict = {'system': 'app',
-                'queen_order_update_package': update_sstate,
-                'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}',
-                'ticker_time_frame': update_ttframe,
-                }
-                # st.write(order_dict)
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                data['update_queen_order'].append(order_dict)
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                st.write(data['update_queen_order'])
                 
    
     if save_signals == 'orders':

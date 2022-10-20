@@ -38,13 +38,22 @@ import json
 from collections import deque
 from QueenHive import init_pollen_dbs, read_queensmind, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
 from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
-
+import argparse
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
 
 # script arguments
-queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
+def createParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default="castle")
+    parser.add_argument ('-prod', default=True)
+    return parser
+
+# script arguments
+parser = createParser()
+namespace = parser.parse_args()
+queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
