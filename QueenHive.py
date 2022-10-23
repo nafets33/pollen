@@ -189,11 +189,12 @@ def read_pollenstory(): # return combined dataframes
 
 
 def read_queensmind(prod): # return active story workers
-    
     if prod:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+        ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders_.pkl'))
     else:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+        ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders__sandbox.pkl'))
 
     # return beeworkers data
     dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl']
@@ -214,12 +215,14 @@ def read_queensmind(prod): # return active story workers
             db_run = False
         
     if db_run:
+        """Fill Queen with bees and orders"""
         QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
         QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
         QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
+        QUEEN['queen_orders'] = ORDERS['queen_orders']
         return {'queen': QUEEN, 
         'STORY_bee': STORY_bee, 'KNIGHTSWORD': KNIGHTSWORD, 'ANGEL_bee': ANGEL_bee, 
-        'dbs_': dbs_}
+        'dbs_': dbs_, 'ORDERS': ORDERS}
     elif QUEEN:
         return {'queen': QUEEN}
     else:
@@ -393,20 +396,20 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
                 theme_df = df.copy()
                 theme_df = split_today_vs_prior(df=theme_df) # remove prior day
                 theme_today_df = theme_df['df_today']
-                theme_prior_df = theme_df['df_prior']
+                # theme_prior_df = theme_df['df_prior']
                 
                 # we want...last vs currnet close prices, && Height+length of wave
                 current_price = theme_today_df.iloc[-1]['close']
                 open_price = theme_today_df.iloc[0]['close'] # change to timestamp lookup
-                yesterday_close = theme_prior_df.iloc[-1]['close'] # change to timestamp lookup
+                # yesterday_close = theme_prior_df.iloc[-1]['close'] # change to timestamp lookup
                 
                 STORY_bee[ticker_time_frame]['story']['current_from_open'] = (current_price - open_price) / current_price
 
-                # Current from Yesterdays Close
-                STORY_bee[ticker_time_frame]['story']['current_from_yesterday_close'] = (current_price - yesterday_close) / current_price
+                # # Current from Yesterdays Close
+                # STORY_bee[ticker_time_frame]['story']['current_from_yesterday_close'] = (current_price - yesterday_close) / current_price
 
-                # how did day start ## this could be moved to queen and calculated once only
-                STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
+                # # how did day start ## this could be moved to queen and calculated once only
+                # STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
 
                 e_timetoken = datetime.datetime.now().astimezone(est)
                 slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
@@ -1076,7 +1079,7 @@ def return_degree_angle(x, y): #
     return degree
 
 ### BARS
-def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False):
+def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now()
         error_dict = {}
@@ -1097,14 +1100,16 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
                 else:
                     start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
 
-            # symbol_n_days = trading_days_df.query('date < @current_day').tail(ndays).tail(1)
-            symbol_data = api.get_bars(symbol, timeframe=timeframe,
+            if crypto:
+                symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
+                                            start=start_date,
+                                            end=end_date,
+                                            exchanges=exchange).df
+            else:
+                symbol_data = api.get_bars(symbol, timeframe=timeframe,
                                         start=start_date,
                                         end=end_date, 
                                         adjustment='all').df
-
-            # e_fetch = datetime.datetime.now()
-            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
             if len(symbol_data) == 0:
                 error_dict[symbol] = {'msg': 'no data returned', 'time': time}
                 return [False, error_dict]
@@ -1136,13 +1141,17 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         e = datetime.datetime.now()
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
+        if ndays == 1:
+            market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+
+
         return [True, symbol_data, market_hours_data, after_hours_data]
     # handle error
     except Exception as e:
         print("sending email of error", e)
 # r = return_bars(symbol='SPY', timeframe='1Minute', ndays=0, trading_days_df=trading_days_df)
 
-def return_bars_list(ticker_list, chart_times):
+def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now()
         # ticker_list = ['SPY', 'QQQ']
@@ -1156,23 +1165,23 @@ def return_bars_list(ticker_list, chart_times):
 
         try:
             for charttime, ndays in chart_times.items():
-                timeframe=charttime.split("_")[0] # '1Minute_1Day'
-                # if timeframe.lower() == '1minute':
-                #     start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d") # get yesterdays trades as well
-                # else:
-                #     start_date = datetime.datetime.now().strftime("%Y-%m-%d")
-                
+                timeframe = charttime.split("_")[0] # '1Minute_1Day'
 
                 trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
                 start_date = trading_days_df_.tail(ndays).head(1).date
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-
-                # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
                 end_date = datetime.datetime.now().strftime("%Y-%m-%d")
-                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+
+            if crypto:
+                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
                                             end=end_date,
-                                            adjustment='all').df
+                                            exchanges=exchange).df
+            else:
+                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
+                                        adjustment='all').df
                 
                 # set index to EST time
                 symbol_data['index_timestamp'] = symbol_data.index
@@ -1180,13 +1189,13 @@ def return_bars_list(ticker_list, chart_times):
                 del symbol_data['index_timestamp']
                 # symbol_data['timestamp'] = symbol_data['timestamp_est']
                 symbol_data = symbol_data.reset_index(drop=True)
-                # symbol_data = symbol_data.set_index('timestamp')
-                # del symbol_data['timestamp']
-                # symbol_data['timestamp_est'] = symbol_data.index
+                if ndays == 1:
+                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+
                 return_dict[charttime] = symbol_data
 
-            # e_fetch = datetime.datetime.now()
-            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+
+
             if len(symbol_data) == 0:
                 error_dict[ticker_list] = {'msg': 'no data returned', 'time': time}
                 return [False, error_dict]
@@ -1195,9 +1204,9 @@ def return_bars_list(ticker_list, chart_times):
             error_dict[ticker_list] = e      
 
         e = datetime.datetime.now()
-        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
-        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
-        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        
+
+        
         return [True, return_dict]
     # handle error
     except Exception as e:
@@ -1409,7 +1418,9 @@ def refresh_account_info(api):
             #     'trading_blocked': False, 'transfers_blocked': False})
             """
             info = api.get_account()
-            return [info, 
+            return {
+                'info': info, 
+                'info_converted': 
                 {'account_number': info.account_number,
                 'accrued_fees': float(info.accrued_fees),
                 'buying_power': float(info.buying_power),
@@ -1418,7 +1429,7 @@ def refresh_account_info(api):
                 'last_equity': float(info.last_equity),
                 'portfolio_value': float(info.portfolio_value)
                 }
-                ]
+            }
 
 
 def init_index_ticker(index_list, db_root, init=True):
@@ -1527,56 +1538,31 @@ def init_logging(queens_chess_piece, db_root):
 
 
 def PickleData(pickle_file, data_to_store):
-    # initializing data to be stored in db
-    p_timestamp = {'file_creation': datetime.datetime.now()} 
-    if os.path.exists(pickle_file) == False:
-        with open(pickle_file, 'wb+') as dbfile:
-            print("init", pickle_file)
-            db = {} 
-            db['jp_timestamp'] = p_timestamp
-            pickle.dump(db, dbfile)                   
 
-    if data_to_store:
-        p_timestamp = {'last_modified': datetime.datetime.now()}
-        db = {}
-        root, name = os.path.split(pickle_file)
-        pickle_file_temp = os.path.join(root, ("temp" + name))
-        with open(pickle_file_temp, 'wb+') as dbfile:
-            for k, v in data_to_store.items(): 
-                db[k] = v
-            db['last_modified'] = p_timestamp
-            pickle.dump(db, dbfile)
-        
-        with open(pickle_file, 'wb+') as dbfile:
-            for k, v in data_to_store.items(): 
-                db[k] = v
-            db['last_modified'] = p_timestamp
-            pickle.dump(db, dbfile)
-
-        #remove temp
-
-        # try:
-        #     os.rename(pickle_file_temp, pickle_file)
-        # except Exception as e:
-        #     logging.critical(("Not able to Rename Pickle File Trying again: err: ", e))
-        #     for attempt in range(5):
-        #         time.sleep(1)
-        #         try:
-        #             os.rename(pickle_file_temp, pickle_file)
-        #         except Exception as e:
-        #             print('myerror', attempt, e)
-        #             sys.exit()        
-        return True
+    p_timestamp = {'pq_last_modified': datetime.datetime.now()}
+    root, name = os.path.split(pickle_file)
+    pickle_file_temp = os.path.join(root, ("temp" + name))
+    with open(pickle_file_temp, 'wb+') as dbfile:
+        db = {k: v for (k,v) in data_to_store.items()}
+        db['pq_last_modified'] = p_timestamp
+        pickle.dump(db, dbfile)
+    
+    with open(pickle_file, 'wb+') as dbfile:
+        db = {k: v for (k,v) in data_to_store.items()}
+        db['pq_last_modified'] = p_timestamp
+        pickle.dump(db, dbfile)
+     
+    return True
 
 
 def ReadPickleData(pickle_file, db_init_dict=False): 
-    p_timestamp = {'file_creation': datetime.datetime.now()} 
-    if os.path.exists(pickle_file) == False:
-        with open(pickle_file, 'wb+') as dbfile:
-            print("init", pickle_file)
-            db = {} 
-            db['jp_timestamp'] = p_timestamp 
-            pickle.dump(db, dbfile) 
+    # p_timestamp = {'file_creation': datetime.datetime.now()} 
+    # if os.path.exists(pickle_file) == False:
+    #     with open(pickle_file, 'wb+') as dbfile:
+    #         print("init", pickle_file)
+    #         db = {} 
+    #         db['jp_timestamp'] = p_timestamp 
+    #         pickle.dump(db, dbfile) 
     # for reading also binary mode is important try 3 times
     try:
         with open(pickle_file, "rb") as f:
@@ -1595,8 +1581,8 @@ def timestamp_string(format="%m-%d-%Y %I.%M%p"):
     return datetime.datetime.now().strftime(format)
 
 
-def return_timestamp_string(format='%Y-%m-%d %H-%M-%S %p'):
-    return datetime.datetime.now().strftime(format)
+def return_timestamp_string(format='%Y-%m-%d %H-%M-%S %p {}'.format(est), tz=est):
+    return datetime.datetime.now(tz).strftime(format)
 
 
 def print_line_of_error():
@@ -1826,18 +1812,42 @@ def return_macd(df_main, fast, slow, smooth):
 #     )
 #     return df
 
-def return_VWAP(df, window=3):
-    # VWAP
-    df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=window, fillna=True).volume_weighted_average_price()
-    return df
+# def return_VWAP(df, window=3):
+#     # VWAP
+#     df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=window, fillna=True).volume_weighted_average_price()
+#     return df
+
+def return_VWAP(df):
+    # Put high, low, close, and volume into a 'calculation dataframe'
+    # vwap_df = df[['high', 'low', 'close', 'volume']].copy()
+    # if '1Minute' in df.iloc[-1]['name']
+    
+    vwap_df = df
+    # 1 Calculate the Typical Price for the period. (High + Low + Close)/3)
+    vwap_df['typical_price'] = (vwap_df.high + vwap_df.low + vwap_df.close) / 3
+    # 2 Multiply the Typical Price by the period Volume. (Typical Price x Volume)
+    vwap_df['price_volume'] = (vwap_df.typical_price * vwap_df.volume)
+    # 3 Create a Cumulative Total of Typical Price. Cumulative(Typical Price x Volume)
+    vwap_df['cum_price_volume'] = vwap_df.expanding().price_volume.sum()
+    # 4 Create a Cumulative Total of Volume. Cumulative(Volume)
+    vwap_df['cum_volume'] = vwap_df.expanding().volume.sum()
+    # 5 Divide the Cumulative Totals. VWAP = Cumulative(Typical Price x Volume) / Cumulative(Volume)
+    vwap_df['vwap'] = vwap_df.cum_price_volume / vwap_df.cum_volume
+
+    del vwap_df['typical_price']
+    del vwap_df['cum_price_volume']
+    del vwap_df['cum_volume']
+
+    return vwap_df
 
 
-def vwap(df):
-    q = df.volume.values
-    p = df.close.values
-    df.assign(vwap=(p * q).cumsum() / q.cumsum())
-    df = df.groupby(df['timestamp_est'], group_keys=False).apply(vwap).fillna(0)
-    return df
+
+# def vwap(df):
+#     q = df.volume.values
+#     p = df.close.values
+#     df.assign(vwap=(p * q).cumsum() / q.cumsum())
+#     df = df.groupby(df['timestamp_est'], group_keys=False).apply(vwap).fillna(0)
+#     return df
 
 
 def return_RSI(df, length):
@@ -2328,13 +2338,39 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
         "1Hour_3Month": 48, "2Hour_6Month": 72, 
         "1Day_1Year": 250}
         return chart_times
-    
+
+def return_star_alloc(star_settings, stars=stars):
+    if star_settings:
+        star_settings = star_settings
+    else:
+        star_settings = {
+                '1Minute_1Day': 1,
+                '5Minute_5Day': 1,
+                '30Minute_1Month': 1,
+                '1Hour_3Month': 1,
+                '2Hour_6Month': 1,
+                '1Day_1Year': 1,
+        }
+
+    total_settings = sum(star_settings.values())
+    star_alloc = {k: i/total_settings for (k,i) in star_settings.items()}
+
+    default = {star: star_alloc[star] for star in stars().keys()}
+
+    return {'default': default}
+
+
+def return_portfolio_ticker_allocation():
+    pass
+
 
 def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'wavedown'], wave_periods={'premarket': .01, 'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'afterhours': .01, 'Day': .01}):
     ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     # themes = ['nuetral', 'strong']
     # waves_cycles = ['waveup', 'wavedown']
     # wave_periods = {'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}
+
+
     
     star_times = KING['star_times']
     pollen_themes = {}
@@ -2629,7 +2665,7 @@ def order_vars__queen_order_items(order_side=False, trading_model=False, king_or
         return False
 
 
-def create_QueenOrderBee(trading_model, KING, order_vars, order, ticker_time_frame, portfolio_name, status_q, trig, exit_order_link, priceinfo, queen_init=False): # Create Running Order
+def create_QueenOrderBee(trading_model='init', KING='init', ticker_time_frame='init', portfolio_name='init', status_q='init', trig='init', exit_order_link='init', order_vars={}, order={}, priceinfo={}, queen_init=False): # Create Running Order
     
     def gen_queen_order(trading_model=trading_model, double_down_trade=False, queen_order_state=False, side=False, order_trig_buy_stop=False, order_trig_sell_stop=False, order_trig_sell_stop_limit=False, limit_price=False, running_close_legs=False, symbol=False, order_rules=False, origin_wave=False, wave_at_creation=False, assigned_wave=False, power_up=False, power_up_rangers=False, ticker_time_frame_origin=False, wave_amo=False, trigname=trig, ticker_time_frame=ticker_time_frame, status_q=status_q, portfolio_name=portfolio_name, exit_order_link=exit_order_link, client_order_id=False, system_recon=False, req_qty=False, filled_qty=False, qty_available=0, filled_avg_price=False, price_time_of_request=False, bid=False, ask=False, honey_gauge=False, macd_gauge=False, honey_money=False, sell_reason=False, honey_time_in_profit=False, order=order, order_vars=order_vars, priceinfo=priceinfo, queen_init=False):
         date_mark = datetime.datetime.now().astimezone(est)
@@ -2760,6 +2796,16 @@ def generate_queen_ticker_settings(ticker='SPY', status='active', portforlio_nam
 #     return_dict = {f'{num}{"X"}': num * .01 for num in range(1, 100)}
     
 #     return return_dict
+def createParser_QUEEN(prod):
+    if prod:
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-qcp', default="queen")
+        parser.add_argument ('-prod', default='true')
+    else:
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-qcp', default="queen")
+        parser.add_argument ('-prod', default='false')
+    return parser
 
 
 def return_queen_controls(stars=stars):
@@ -2796,10 +2842,12 @@ def return_queen_controls(stars=stars):
 def init_QUEEN(queens_chess_piece):
     KING = KINGME()
     num_of_stars = len(stars())
+    
     QUEEN = { # The Queens Mind
+        'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
         'prod': "",
         'source': "na",
-        'last_modified': datetime.datetime.now(),
+        'last_modified': datetime.datetime.now(est),
         'command_conscience': {},
         'queen_orders': [create_QueenOrderBee(trading_model=False, KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
@@ -2811,10 +2859,10 @@ def init_QUEEN(queens_chess_piece):
                         'tickers': ['SPY'],
                         'stars': stars(),},
             'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['META', 'GOOG', 'HD'],
+                        'tickers': ['META', 'GOOG', 'AAPL', 'TSLA'],
                         'stars': stars(),},
             'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['META', 'GOOG', 'HD'],
+                        'tickers': ['META', 'GOOG', 'AAPL'],
                         'stars': stars(),},
             'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
                         'tickers': ['BTCUSD', 'ETHUSD'],
@@ -2839,6 +2887,8 @@ def init_QUEEN(queens_chess_piece):
         'last_modified' : datetime.datetime.now(),
         }
     }
+    
+    
     return QUEEN
 
 
@@ -3062,30 +3112,35 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     return_agg_view = []
     for ttframe, conscience in ttframe__items.items():
         queen_return = {'star': ttframe}
-
-        trigbees = ['buy_cross-0', 'sell_cross-0']
-
-        buys = conscience['waves']['buy_cross-0']
-        # max profit
-
+        ttf_waves = {}
+        trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+        for trig in trigbees:
+            if trig in conscience['waves'].keys():
+                last_buy_wave = [v for (k,v) in conscience['waves'][trig].items() if str((len(conscience['waves'][trig].keys()) - 1)) == str(k)][0]
+                ttf_waves[trig] = last_buy_wave
 
         story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
+        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
+        
         last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str((len(conscience['waves']['buy_cross-0'].keys()) - 1)) == str(k)][0]
         last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str((len(conscience['waves']['sell_cross-0'].keys()) - 1)) == str(k)][0]
-        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
+        # last_ready_buy_wave = [v for (k,v) in conscience['waves']['ready_buy_cross'].items() if str((len(conscience['waves']['ready_buy_cross'].keys()) - 1)) == str(k)][0]
 
-        all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
-        all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
+        # all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
+        # all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
 
         # ALL waves groups
         trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
         return_agg_view.append(trigbee_waves_analzyed)
+
 
         # Current Wave View
         if 'buy' in story['macd_state']:
             current_wave = last_buy_wave
         else:
             current_wave = last_sell_wave
+        
+        wave_times = {k: i['wave_start_time'] for k,i in ttf_waves.items()}
         
         current_wave_view = {k: v for (k,v) in current_wave.items() if k in wave_view}
         obj_return = {**story, **current_wave_view}
@@ -3097,6 +3152,8 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     
     df =  pd.DataFrame(return_view)
     df_agg = pd.DataFrame(return_agg_view)
+
+    trigbees_waves = {}
     # map in ranger color
     # df['mac_ranger'] = df['current_mac_tier'].apply(lambda x: power_ranger_mapping(x))
     # df['hist_ranger'] = df['current_hist_tier'].apply(lambda x: power_ranger_mapping(x))
@@ -3111,8 +3168,8 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
     else:
         col_view = ['trigname', 'ticker_time_frame', 'filled_avg_price', 'cost_basis', 'honey', '$honey', 'profit_loss', 'status_q', 'client_order_id', 'queen_order_state']
     if len(QUEEN['queen_orders']) > 0:
-        orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == queen_order_state]
-        df = pd.DataFrame(orders)
+        all_orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == queen_order_state]
+        df = pd.DataFrame(all_orders)
         # df = df.astype(str)
         if len(df) > 0:
             # df["honey"] = df["honey"] * 100
@@ -3250,52 +3307,58 @@ def init_PowerRangers(ranger_dimensions=False):
     return r_dict
 
 
+def init_queen_orders(pickle_file):
+    db = {}
+    db['queen_orders'] = [create_QueenOrderBee(queen_init=True)]
+    PickleData(pickle_file=pickle_file, data_to_store=db)
+    print("Order init")
+    logging_log_message(msg='Orders init')
+
+
 def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
-    
     if prod:
+        print("My Queen Production")
         api = api
-        main_orders_file = os.path.join(db_root, 'main_orders.csv')
+        # main_orders_file = os.path.join(db_root, 'main_orders.csv')
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
-
-
-        if 'queen' in queens_chess_piece:
-            if os.path.exists(PB_QUEEN_Pickle) == False:
-                QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
-                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-                print("You Need a Queen")
-                logging.info(("queen created", timestamp_string()))
-            # sys.exit()
-            if os.path.exists(PB_App_Pickle) == False:
-                init_app(pickle_file=PB_App_Pickle)
-            # if os.path.exists(PB_Orders_Pickle) == False:
-            #     init_app(pickle_file=PB_Orders_Pickle)
-        print("My Queen Production")
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
     else:
+        print("My Queen Sandbox")
         api = api_paper
-        main_orders_file = os.path.join(db_root, 'main_orders_sandbox.csv')
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
 
-        if 'queen' in queens_chess_piece:
-            if os.path.exists(PB_QUEEN_Pickle) == False:
-                QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
-                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-                print("You Need a Queen__sandbox")
-                logging.info(("queen created", timestamp_string()))
-                # sys.exit()
-            
-            if os.path.exists(PB_App_Pickle) == False:
-                init_app(pickle_file=PB_App_Pickle)
-            
-            # if os.path.exists(PB_Orders_Pickle) == False:
-            #     init_app(pickle_file=PB_Orders_Pickle)
-        print("My Queen Sandbox")
+    if 'queen' in queens_chess_piece:
+        # List by Necessity
+        if os.path.exists(PB_queen_Archives_Pickle) == False:
+            queens_archived = {'queens': [{'queen_id': 0}]}
+            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+
+        if os.path.exists(PB_QUEEN_Pickle) == False:
+            print("You Need a Queen")
+            queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
+            l = len(queens_archived['queens'])
+            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+            QUEEN['id'] = f'{"V1"}{"__"}{l}'
+            queens_archived['queens'].append({'queen_id': QUEEN['id']})
+            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            logging.info(("queen created", timestamp_string()))
+        
+        if os.path.exists(PB_App_Pickle) == False:
+            init_app(pickle_file=PB_App_Pickle)
+        
+        if os.path.exists(PB_Orders_Pickle) == False:
+            init_queen_orders(pickle_file=PB_Orders_Pickle)
+
     
-    return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle}
+    return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle, 'PB_Orders_Pickle': PB_Orders_Pickle, 'PB_queen_Archives_Pickle': PB_queen_Archives_Pickle}
 
 
 
@@ -3325,252 +3388,3 @@ def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.l
 
     print("cum.slope", sum([v for k,v in slope_dict.items()]))
     return {'speedybee': speedybee_dict}
-
-
-
-
-def theme_calculator(POLLENSTORY, chart_times):
-    # ticker = 'SPY' # test
-    # chart_times = {
-    #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-    #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
-    #     "1Day_1Year": 250}
-    # return all prior 5 days close and compare to current, return angle of the different periods
-
-    theme = {'castle': {},
-            'sub_indexes': {},
-            'big_players': {}
-                }
-    tickers = set([i.split("_")[0] for i in POLLENSTORY.keys()])
-    all_tframes = chart_times.keys()
-    for ticker in tickers:
-        theme[ticker] = {}
-        for tframe in all_tframes:
-            story={}
-            # theme[ticker][] = {}
-            theme_df = POLLENSTORY[f'{ticker}{"_"}{tframe}'].copy()
-
-            if tframe == "1Minute_1Day":
-                theme_df = split_today_vs_prior(df=theme_df) # remove prior day
-                theme_today_df = theme_df['df_today']
-                theme_prior_df = theme_df['df_prior']                
-                
-                # we want...last vs currnet close prices, && Height+length of wave
-
-                # current from open price
-                open_price = theme_today_df.iloc[0]['close']
-                current_price = theme_today_df.iloc[-1]['close']
-                delta_pct = (current_price - open_price) / current_price
-                story['current_from_open'] = delta_pct
-                # current day slope
-                slope, intercept, r_value, p_value, std_err = stats.linregress(theme_today_df.index, theme_today_df['close'])
-                story['slope'] = slope
-                
-                # how did day start
-                last_price = theme_prior_df.iloc[-1]['close']
-                delta_pct = (open_price - last_price) / open_price
-                story['open_start'] = delta_pct
-                
-                
-                
-                theme[ticker][tframe] = story
-    
-    return theme
-
-
-
-
-
-
-
-
-
-
-# def liquidate_position(api, ticker, side, type, client_order_id): # TBD
-#     client_order_id = f'{ticker}{"_"}{side}{"_"}{datetime.datetime.now().isoformat()}'
-#     p = api.get_position(ticker)
-#     p_qty = p.qty
-#     p_side = p.side
-#     if type ==  'market':
-#         order = submit_order(api=api, side=side, symbol=ticker, qty=p_qty, type=type, client_order_id=client_order_id)
-#     else:
-#         print("make this a limit order")
-#     return order
-
-
-# def reconcile_portfolio(portfolio_name='Jq'):  # IF MISSING FROM RUNNING ADD
-#     # If Ticker in portfolio but not in RUNNING !!!!!! Need to consider changing to qty_available from pending close orders
-#     # portfolio_holdings = {k : v['qty_available'] for (k,v) in portfolio.items()}
-#     # portfolio_holdings = {k : v['qty'] for (k,v) in portfolio.items()} 
-#     portfolio = return_alpc_portolio(api)['portfolio']
-#     running_orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] in ['running', 'submitted', 'running_close']]
-
-#     # return running_orders in df    
-#     running_portfolio = return_dfshaped_orders(running_orders=running_orders)
-#     clean_errors = []
-#     for symbol in portfolio:
-#         for sy in QUEEN['errors'].keys():
-#             if sy not in portfolio.keys():
-#                 clean_errors.append(sy)
-#         if len(running_portfolio) > 0:
-#             if symbol not in running_portfolio['symbol'].values:
-#                 msg = {"reconcile portfolio()": f'{symbol}{": was missing added to RUNNING"}'}
-#                 print(msg)
-#                 logging.error(msg)
-                
-#                 # # create a system gen. running order with portfolio info
-#                 # filled_qty = float(portfolio[symbol]["qty"])
-#                 # filled_avg_price = portfolio[symbol]["avg_entry_price"]
-#                 # side = portfolio[symbol]["side"]
-#                 # req_qty = portfolio[symbol]["qty"]
-#                 # system_recon = {'req_qty': req_qty, 'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': side}
-#                 # ticker_time_frame = f'{"symbol"}{"_queen_gen"}'
-#                 # trig = 'buy_cross-0'
-#                 # order = {'symbol': symbol, 'side': False, "id": "pollen_recon", 'client_order_id': generate_client_order_id(QUEEN=QUEEN,ticker=symbol, trig=trig)}
-                
-#                 # order_process = process_order_submission(prod=prod, order=order, trig=trig, tablename='main_orders', ticker_time_frame=ticker_time_frame, system_recon=system_recon)
-#                 # QUEEN['queen_orders'].append(order_process['sending_order'])
-#                 # QUEEN['command_conscience']['memory']['trigger_stopped'].append(order_process['trig_stop_info'])
-#             else: # symbol is in running check our totals
-#                 total_running_ticker_qty = float(running_portfolio[running_portfolio['symbol']==symbol].iloc[0]['filled_qty'])
-#                 total_portfolio_ticker_qty = float(portfolio[symbol]["qty"])
-#                 # !!! check in running_close to see if you have an open order to match qty !!!
-#                 if total_running_ticker_qty != total_portfolio_ticker_qty:
-#                     # print(symbol, ": qty does not match, adjust running order to fix")
-#                     QUEEN["errors"].update({symbol: {'msg': "recon portfolio qty does not match!", 'root': "reconcile portfolio"}})
-#                     # run_order_ = {idx: i for (idx, i) in enumerate(QUEEN["command_conscience"]["orders"]["requests"]) if i['queen_order_state'] == 'running' and i['symbol']==symbol}
-#                     # if run_order_:
-#                     #     if total_portfolio_ticker_qty < 0 : # short
-#                     #         print("NEED TO UPDATE")
-#                     #     else:
-#                     #         qty_correction = total_running_ticker_qty - abs(total_portfolio_ticker_qty - total_running_ticker_qty)
-#                     #         QUEEN["command_conscience"]["orders"]["requests"][list(run_order_.keys())[0]]['filled_qty'] = total_portfolio_ticker_qty
-#                     #         QUEEN["command_conscience"]["orders"]["requests"][list(run_order_.keys())[0]]['status_q'] = True
-                    
-#                     # # update any running order
-#                     # if total_running_ticker_qty > total_portfolio_ticker_qty: # if T_run > portfolio 
-#                     #     qty_correction = total_portfolio_ticker_qty - (total_running_ticker_qty - total_portfolio_ticker_qty)
-#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['filled_qty'] = qty_correction
-#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['status_q'] = True
-#                     # else:
-#                     #     if total_portfolio_ticker_qty < 0: # short
-#                     #         qty_correction = (total_running_ticker_qty-total_portfolio_ticker_qty)
-#                     #     else:
-#                     #         qty_correction = total_running_ticker_qty + (total_portfolio_ticker_qty- total_running_ticker_qty)
-                        
-#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['filled_qty'] = qty_correction
-#                     #     QUEEN["command_conscience"]["orders"]["running"][0]['status_q'] = True
-#                 else:
-#                     if symbol in QUEEN["errors"].keys():
-#                         clean_errors.append(symbol)
-
-#         else:
-#             msg = {"reconcile portfolio()": f'{symbol}{": was missing added to RUNNING"}'}
-#             print(msg)
-#             logging.error(msg)
-            
-#             # create a system gen. running order with portfolio info
-#             filled_qty = float(portfolio[symbol]["qty_available"])
-#             filled_avg_price = float(portfolio[symbol]["avg_entry_price"])
-#             side = portfolio[symbol]["side"]
-#             req_qty = float(portfolio[symbol]["qty_available"])
-#             system_recon = {'req_qty': req_qty, 'filled_qty': filled_qty, 'filled_avg_price': filled_avg_price, 'side': 'buy'}
-#             ticker_time_frame = f'{"symbol"}{"_1Minute_1Day"}'
-#             trig = 'queen_gen'
-#             order = {'symbol': symbol, 'side': False, "id": "pollen_recon", 'client_order_id': generate_client_order_id(QUEEN=QUEEN,ticker=symbol, trig=trig)}
-            
-#             order_process = process_order_submission(prod=prod, order=order, trig=trig, tablename='main_orders', ticker_time_frame=False, system_recon=system_recon)
-#             order_process['sending_order']['queen_order_state'] = 'running'
-#             QUEEN['queen_orders'].append(order_process['sending_order'])
-    
-#     if clean_errors:
-#         QUEEN['errors'] = {k:v for (k,v) in QUEEN['errors'].items() if k not in clean_errors}
-#     return True
-
-
-
-
-        # return {
-        #     "1Minute_1Day": {
-        #     'status': 'active',
-        #     'trade_using_limits': False,
-        #     'total_budget': 100,
-        #     'buyingpower_allocation_LongTerm': .2,
-        #     'buyingpower_allocation_ShortTerm': .8,
-        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-        #     'trigbees': {'buy_cross-0': default, 
-        #                 'sell_cross-0': default,
-        #                 'ready_buy_cross': default,},
-
-        # },
-        #     "5Minute_5Day": {
-        #     'status': 'active',
-        #     'trade_using_limits': False,
-        #     'total_budget': 100,
-        #     'buyingpower_allocation_LongTerm': .2,
-        #     'buyingpower_allocation_ShortTerm': .8,
-        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-        #     'trigbees': {'buy_cross-0': default, 
-        #                 'sell_cross-0': default, 
-        #                 'ready_buy_cross': default,
-        #         },
-
-        #             },
-        #     "30Minute_1Month": {
-        #     'status': 'active',
-        #     'trade_using_limits': False,
-        #     'total_budget': 100,
-        #     'buyingpower_allocation_LongTerm': .2,
-        #     'buyingpower_allocation_ShortTerm': .8,
-        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-        #     'trigbees': {'buy_cross-0': default, 
-        #                 'sell_cross-0': default, 
-        #                 'ready_buy_cross': default,
-        #         },
-
-        #             },
-        #     "1Hour_3Month": {
-        #     'status': 'active',
-        #     'trade_using_limits': False,
-        #     'total_budget': 100,
-        #     'buyingpower_allocation_LongTerm': .2,
-        #     'buyingpower_allocation_ShortTerm': .8,
-        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-        #     'trigbees': {'buy_cross-0': default, 
-        #                 'sell_cross-0': default, 
-        #                 'ready_buy_cross': default,
-        #         },
-
-        #             },
-        #     "2Hour_6Month": {
-        #     'status': 'active',
-        #     'trade_using_limits': False,
-        #     'total_budget': 100,
-        #     'buyingpower_allocation_LongTerm': .2,
-        #     'buyingpower_allocation_ShortTerm': .8,
-        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-        #     'trigbees': {'buy_cross-0': default, 
-        #                 'sell_cross-0': default, 
-        #                 'ready_buy_cross': default,
-        #         },
-
-        #             },
-        #     "1Day_1Year": {
-        #     'status': 'active',
-        #     'trade_using_limits': False,
-        #     'total_budget': 100,
-        #     'buyingpower_allocation_LongTerm': .2,
-        #     'buyingpower_allocation_ShortTerm': .8,
-        #     'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
-        #     # 'trigbees': {'buy_cross-0': 'active', 'sell_cross-0': 'active', 'ready_buy_cross': 'active'},
-        #     'trigbees': {'buy_cross-0': default, 
-        #                 'sell_cross-0': default, 
-        #                 'ready_buy_cross': default
-        #         },
-
-        #             },
-        # }

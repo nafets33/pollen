@@ -186,7 +186,8 @@ def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_inp
         del symbol_data['index_timestamp']
         symbol_data = symbol_data.reset_index()
         symbol_data['symbol'] = symbol       
-
+        if ndays == 1:
+            symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
         e = datetime.datetime.now()
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         # 0:00:00.310582: 2022-03-21 14:44 to return day 0
@@ -231,9 +232,9 @@ def return_bars_list(ticker_list, chart_times, exchange):
                 del symbol_data['index_timestamp']
                 # symbol_data['timestamp'] = symbol_data['timestamp_est']
                 symbol_data = symbol_data.reset_index(drop=True)
-                # symbol_data = symbol_data.set_index('timestamp')
-                # del symbol_data['timestamp']
-                # symbol_data['timestamp_est'] = symbol_data.index
+                if ndays == 1:
+                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                
                 return_dict[charttime] = symbol_data
 
             # e_fetch = datetime.datetime.now()
