@@ -2510,7 +2510,6 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
 
         
         def star_vars(star, star_vars_mapping):
-            
             return {'star': star,
             'status': star_vars_mapping[star]['status'],
             'trade_using_limits': star_vars_mapping[star]['trade_using_limits'],
@@ -2545,7 +2544,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
     }
     
     
-    def tradingmodel_vars(stars_vars, trigbees=trigbees, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars):
+    def tradingmodel_vars(stars_vars, trigbees=trigbees, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars, portfolio_name=portfolio_name):
         afterhours = [True if ticker in crypto_currency_symbols else False][0]
         afternoon = [True if ticker in crypto_currency_symbols else True][0]
         lunch = [True if ticker in crypto_currency_symbols else True][0]
@@ -2556,7 +2555,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         etf_X_direction = ['1X', '2X', '3X']
         trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
 
-        ticker_vars = {'QueenBeeTrader': 'Jq',
+        model1 = {'QueenBeeTrader': 'Jq',
                 'status': status,
                 'buyingpower_allocation_LongTerm': .2,
                 'buyingpower_allocation_ShortTerm': .8,
@@ -2569,17 +2568,19 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                 'buy_ONLY_by_accept_from_QueenBeeTrader': False,
                 'trading_model_name': trading_model_name,
                 'portfolio_name': portfolio_name,
-                'trigbees': trigbees,
+                'trigbees': {k: 'active' for k in trigbees},
                 'premarket': premarket,
                 'afterhours': afterhours,
                 'morning_9-11': morning,
                 'lunch_11-2': lunch,
                 'afternoon_2-4': afternoon,
                 'afterhours': afterhours,
-                'Day': Day,}
+                'Day': Day,
+                'power_rangers': {k: 'active' for k in stars().keys()},
+                'stars_kings_order_rules': {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
+        }
 
-        model1 = {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
-        model1.update(ticker_vars)
+
         star_model = {ticker: model1}
         
         return star_model

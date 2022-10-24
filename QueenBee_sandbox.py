@@ -651,6 +651,16 @@ def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, 
     try:
         logging.info({'ex_order()': ticker_time_frame})
 
+        # flag crypto
+        if crypto:
+            snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+            crypto = True
+        else:
+            snap = api.get_snapshot(ticker)
+            qty_order = float(round(wave_amo / current_price, 0))
+            crypto = False
+
+
         if king_resp:
             side = 'buy'
             # if app order get order vars its way
@@ -672,26 +682,27 @@ def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, 
             if side == 'buy':
                 limit_price = [limit_price if limit_price != False else False][0]
 
-                # flag crypto
-                if crypto:
-                    if limit_price:
-                        limit_price = round(limit_price)
-                    
-                    snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-                    qty_order = float(round(wave_amo / current_price, 4))
-                    crypto = True
-                else:
-                    if limit_price:
-                        limit_price = round(limit_price, 2)
-                    snap = api.get_snapshot(ticker)
-                    qty_order = float(round(wave_amo / current_price, 0))
-                    crypto = False
-                
                 # get latest pricing
                 current_price = snap.latest_trade.price
                 current_bid = snap.latest_quote.bid_price
                 current_ask = snap.latest_quote.ask_price
                 priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
+
+                # flag crypto
+                if crypto:
+                    if limit_price:
+                        limit_price = round(limit_price)
+    
+                    qty_order = float(round(wave_amo / current_price, 4))
+                    crypto = True
+                else:
+                    if limit_price:
+                        limit_price = round(limit_price, 2)
+
+                    qty_order = float(round(wave_amo / current_price, 0))
+                    crypto = False
+                
+
 
 
                 # validate app order
@@ -763,15 +774,10 @@ def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, 
                 if crypto:
                     if limit_price:
                         limit_price = round(limit_price)
-                    
-                    snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-                    qty_order = float(round(wave_amo / current_price, 4))
                     crypto = True
                 else:
                     if limit_price:
-                        limit_price = round(limit_price, 2)
-                    snap = api.get_snapshot(ticker)
-                    qty_order = float(round(wave_amo / current_price, 0))
+                        limit_price = round(limit_price, 2)                    
                     crypto = False
                 
                 send_close_order = submit_order(api=api, side=q_side, symbol=ticker, qty=sell_qty, type=q_type, client_order_id=client_order_id__gen, limit_price=limit_price) 
@@ -966,7 +972,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
             """ Power Up """ # for every models stars, return stars value by its tier color
             power_up = {ranger: 0 for ranger in power_rangers_universe}
             for star, v in tmodel_power_rangers.items(): # 1m 5m, 3M
-                if v == 'active':
+                if v == 'active' or v == True:
                     for ranger in power_rangers_universe:
                         PowerRangerColor = stars_colors_d[ranger][f'{ticker_token}{star}'] # COLOR
                         power_up[ranger] += float(QUEEN['queen_controls']['power_rangers'][star][ranger][wave_type][theme][PowerRangerColor]) # star-buywave-theme
@@ -998,9 +1004,12 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         current_wave_amo = pollen_theme_dict[theme][star_time][trigbee_wave_direction][current_wave_blocktime]
         
         # Trading Model Vars
-        tmodel_power_rangers = trading_model['power_rangers'] # stars
-        king_order_rules = trading_model['trigbees'][trigbee][current_wave_blocktime] # trigbee kings_order_rules
+        # tmodel_power_rangers = trading_model['power_rangers'] # stars
+        tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time][trigbee]['power_rangers']
+        # king_order_rules = trading_model['trigbees'][trigbee][current_wave_blocktime] # trigbee kings_order_rules
+        king_order_rules = trading_model['stars_kings_order_rules'][star_time][trigbee][current_wave_blocktime]
         maker_middle = [ticker_priceinfo['maker_middle'] if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True else False][0]
+
 
         # Total buying power allowed
         bpower_resp = buying_Power_cc(api=api, client_args="TBD", daytrade=True)
@@ -1034,12 +1043,16 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         # how many trades have we completed today? whats our total profit loss with wave trades
         # should you override your original order rules?
         
-        def waterfall_knight_buy_chain(trigbees, trading_model):
-            
-            
-            return False
+
+        """
+        # def waterfall_knight_buy_chain(trigbees, trading_model):
+        #     return False
+        """
+        if trigbee not in trading_model['trigbees']: 
+            print("Error New Trig not in Queens Mind: ", trigbee )
+            return {'kings_blessing': False}
         
-        if trigbee == 'buy_cross-0':
+        elif trigbee == 'buy_cross-0':
             if crypto:
                 kings_blessing = True
                 order_vars = order_vars__queen_order_items(trading_model=trading_model,king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
@@ -1099,15 +1112,41 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
 
             return {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
 
+        elif trigbee == 'ready_buy_cross':
+            if crypto:
+                kings_blessing = True
+                order_vars = order_vars__queen_order_items(trading_model=trading_model,king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
+            else:
+                kings_blessing = True
+                order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
+
+            if type(trig_action) != bool:
+                # print("evalatue if there is another trade to make on top of current wave")
+                if len(trig_action) >= 2:
+                    # print("won't allow more then 2 double down trades")
+                    return {'kings_blessing': False}
+                else:
+                    now_time = datetime.datetime.now().astimezone(est)
+                    trig_action.iloc[-1]['datetime']
+                    
+                    time_delta = now_time - trig_action.iloc[-1]['datetime']
+
+                if time_delta.seconds > king_order_rules['doubledown_timeduration']:
+                    print("Trig In Action Double Down Trade")
+                    kings_blessing = True
+                    order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, double_down_trade=True, wave_at_creation=current_macd_cross__wave)
+                    return  {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
+                else: 
+                    kings_blessing = False
+            
+            if kings_blessing:
+                return {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}
+            else:
+                return {'kings_blessing': False}
         
         else:
             print("Error New Trig not in Queens Mind: ", trigbee )
             return {'kings_blessing': False}
-
-
-        # kings_blessing = kings_Blessing(ticker=ticker, trigbee=trigbee, current_wave=current_wave, trig_action=trig_action, total_buying_power=total_buying_power, app_portfolio_day_trade_allowed=app_portfolio_day_trade_allowed, client_total_LONG_trade_amt_allowed=client_total_LONG_trade_amt_allowed, pollen_theme_dict=pollen_theme_dict)
-
-        # return {'kings_blessing': kings_blessing, 'order_vars': order_vars}
 
     except Exception as e:
         print(e, print_line_of_error(), ticker_time_frame)
@@ -1142,36 +1181,24 @@ def command_conscience(api, QUEEN, APP_requests):
 
         # cycle through stories  # The Golden Ticket    
         for ticker in active_tickers:
-            
-            # # """ # Accept Ticker """
-            # if ticker not in active_tickers:
-            #     continue ##### break loop
-            
+            # Ensure Trading Model
             add_trading_model(QUEEN=QUEEN, ticker=ticker, model='MACD')
-            
-            # crypto
-            if ticker in crypto_currency_symbols:
-                crypto = True
-            else:
-                crypto = False
-
+            crypto = [True if ticker in crypto_currency_symbols else False][0]
+            # Check Mrk Hours
             mkhrs = return_market_hours(api_cal=trading_days, crypto=crypto)
             if mkhrs == 'open':
                 val_pass = True
             else:
                 continue # break loop
 
-            """ hunt """
-
+            """ the hunt """
             ticker_storys = {k:v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
             all_current_triggers = {k:v['story']['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['story']['alltriggers_current_state']) > 0}
             all_current_triggers = add_app_wave_trigger(all_current_triggers=all_current_triggers, ticker=ticker, app_wave_trig_req=app_wave_trig_req)        
-            # all_current_triggers.update({'SPY_1Minute_1Day': ['buy_cross-0']}) # test
             # Return Scenario based trades
-
+            
             if all_current_triggers:
                 try:
-
                     # enabled stars
                     # QUEEN['heartbeat']
 
@@ -1180,18 +1207,19 @@ def command_conscience(api, QUEEN, APP_requests):
                         ticker, tframe, frame = ticker_time_frame.split("_")
                         frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
                         
-                        # validation trading model
-                        if ticker not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
-                            print("error defaulting to SPY Model")
-                            logging.error(("error TICKER not in trading models ", ticker))
-                            trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel']['SPY'][frame_block]
-                        elif frame_block not in QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker].keys():
-                            print("error defaulting to 1Minute Star Ranger")
-                            logging.error(("error STAR not in trading models ", ticker))
-                            trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel']['SPY']['1Minute_1Day']
-                        else:
-                            trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][frame_block]
-
+                        # # validation trading model
+                        # if ticker not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
+                        #     print("error defaulting to SPY Model")
+                        #     logging.error(("error TICKER not in trading models ", ticker))
+                        #     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel']['SPY'][frame_block]
+                        # elif frame_block not in QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker].keys():
+                        #     print("error defaulting to 1Minute Star Ranger")
+                        #     logging.error(("error STAR not in trading models ", ticker))
+                        #     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel']['SPY']['1Minute_1Day']
+                        # else:
+                        #     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][frame_block]
+                        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
+                        
                         if str(trading_model['status']) not in ['active']:
                             print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                             continue
@@ -1199,7 +1227,7 @@ def command_conscience(api, QUEEN, APP_requests):
                         # cycle through triggers and pass buy first logic for buy
                         # trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
                         for trig in avail_trigs:
-                            if trig in trading_model['trigbees'].keys() or trig not in available_triggerbees:
+                            if trig in trading_model['trigbees'].keys():
                                 if str(trading_model['trigbees'][trig]['status']) != 'active':
                                     print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                                     continue

@@ -82,8 +82,8 @@ coin_exchange = "CBSE"
 # /home/stapinski89/pollen/pollen/db
 
 main_root = os.getcwd()
-# db_root = os.path.join(main_root, 'db')
-db_root = '/home/stapinski89/pollen/pollen/db/' # linix
+db_root = os.path.join(main_root, 'db')
+# db_root = '/home/stapinski89/pollen/pollen/db/' # linix
 # db_app_root = os.path.join(db_root, 'app')
 jpg_root = os.path.join(main_root, 'misc')
 
@@ -184,9 +184,9 @@ api_paper = keys_paper[0]['api']
 
 # Client Tickers
 src_root, db_dirname = os.path.split(db_root)
-client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
-df_client = pd.read_csv(client_ticker_file, dtype=str)
-client_symbols = df_client.tickers.to_list()
+# client_ticker_file = os.path.join(src_root, 'client_tickers.csv')
+# df_client = pd.read_csv(client_ticker_file, dtype=str)
+# client_symbols = df_client.tickers.to_list()
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD']
 coin_exchange = "CBSE"
 
