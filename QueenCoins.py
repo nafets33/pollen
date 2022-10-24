@@ -27,7 +27,7 @@ import pickle
 from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
-from collections import defaultdict
+from collections import defaultdict, deque
 import ipdb
 import tempfile
 import shutil
@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from QueenHiveCoin import speedybee,  return_bars_list, return_bars
-from QueenHive import pollen_story, return_api_keys, pickle_chesspiece, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
+from QueenHive import pollen_story, init_pollen_dbs, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
@@ -140,6 +140,122 @@ current_year = datetime.datetime.now().year
 
 
 ####<>///<>///<>///<>///<>/// ALL FUNCTIONS NECTOR ####<>///<>///<>///<>///<>///
+### BARS
+def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_input=False):
+    try:
+        s = datetime.datetime.now()
+        error_dict = {}
+        # ndays = 0 # today 1=yesterday...  # TEST
+        # timeframe = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
+        # symbol = 'BTCUSD'  # TEST
+
+        try:
+            # Fetch bars for prior ndays and then add on today
+            # s_fetch = datetime.datetime.now()
+            if edate_input != False:
+                end_date = edate_input
+            else:
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+            if sdate_input != False:
+                start_date = sdate_input
+            else:
+                if ndays == 0:
+                    start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                else:
+                    start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+
+            # start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+            symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
+                                        exchanges=exchange).df
+
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[symbol] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[symbol] = e   
+
+        # set index to EST time
+        symbol_data['index_timestamp'] = symbol_data.index
+        symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+        del symbol_data['index_timestamp']
+        symbol_data = symbol_data.reset_index()
+        symbol_data['symbol'] = symbol       
+        if ndays == 1:
+            symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        return {'resp': True, "df": symbol_data}
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+# r = return_bars(symbol='BTCUSD', timeframe='1Minute', ndays=0, exchange="CBSE")
+
+def return_bars_list(ticker_list, chart_times, exchange):
+    try:
+        s = datetime.datetime.now()
+        # ticker_list = ['BTCUSD', 'ETHUSD']
+        # chart_times = {
+        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
+        #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
+        #     "1Day_1Year": 250
+        #     }
+        return_dict = {}
+        error_dict = {}
+
+        try:
+            for charttime, ndays in chart_times.items():
+                timeframe=charttime.split("_")[0] # '1Minute_1Day'
+                # if timeframe.lower() == '1minute':
+                    # start_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d") # get yesterdays trades as well
+                # else:
+                #     start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+
+                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
+                                            start=start_date,
+                                            end=end_date,
+                                            exchanges=exchange).df
+                
+                # set index to EST time
+                symbol_data['index_timestamp'] = symbol_data.index
+                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+                del symbol_data['index_timestamp']
+                # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                symbol_data = symbol_data.reset_index(drop=True)
+                if ndays == 1:
+                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                
+                return_dict[charttime] = symbol_data
+
+            # e_fetch = datetime.datetime.now()
+            # print('symbol fetch', str((e_fetch - s_fetch)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            if len(symbol_data) == 0:
+                error_dict[ticker_list] = {'msg': 'no data returned', 'time': time}
+                return [False, error_dict]
+        except Exception as e:
+            # print(" log info")
+            error_dict[ticker_list] = e      
+
+        e = datetime.datetime.now()
+        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        # 0:00:00.310582: 2022-03-21 14:44 to return day 0
+        # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
+        return {'resp': True, 'return': return_dict}
+    # handle error
+    except Exception as e:
+        print("sending email of error", e)
+        return [False, e]
+# r = return_bars_list(ticker_list, chart_times)
 
 
 def return_getbars_WithIndicators(bars_data, MACD):
@@ -486,10 +602,10 @@ if queens_chess_piece == 'castle_coin':
 
 
 """ Initiate your Charts with Indicators """
-def initiate_ttframe_charts(queens_chess_piece):
+def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD_settings):
     s_mainbeetime = datetime.datetime.now()
     if queens_chess_piece.lower() == 'castle_coin':    # >>> Initiate your Charts
-        res = Return_Init_ChartData(ticker_list=client_symbols_castle, chart_times=chart_times_castle)
+        res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
         errors = res['errors']
         if errors:
             msg = ("Return_Init_ChartData Failed", "--", errors)
@@ -500,7 +616,7 @@ def initiate_ttframe_charts(queens_chess_piece):
         # add snapshot to initial chartdata -1
         df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_init, init=True)
         # give it all to the QUEEN put directkly in function
-        pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_12_26_9)
+        pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_settings)
         QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
         QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
     
@@ -510,9 +626,34 @@ def initiate_ttframe_charts(queens_chess_piece):
         logging.info(msg)
         print(msg)
 
+
+init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
+PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+# PB_App_Pickle = init_pollen['PB_App_Pickle']
+
+if os.path.exists(PB_QUEEN_Pickle) == False:
+    print("WorkerBee Needs a Queen")
+    # sys.exit()
+    PickleData(PB_QUEEN_Pickle, data_to_store=False)
+# Pollen QUEEN
+if prod:
+    WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+else:
+    WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+WORKER_QUEEN['source'] = PB_QUEEN_Pickle
+MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
+master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']
+MACD_settings = WORKER_QUEEN['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
+star_times = WORKER_QUEEN['workerbees'][queens_chess_piece]['stars']
+
+
 try:
-    initiate_ttframe_charts(queens_chess_piece) # only Initiates if Castle or Bishop
+    initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings)
     workerbee_run_times = []
+    speed_gauges = {
+        f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+        for tic in master_tickers for star_ in star_times.keys()}
+
     while True:
         if queens_chess_piece.lower() in ['castle_coin']: # create the story
             s = datetime.datetime.now()
@@ -522,7 +663,7 @@ try:
                 break
             
             # main 
-            pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
+            pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
             QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
             QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
             
@@ -534,16 +675,22 @@ try:
             # add all charts
             QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
 
+
+            # for each star append last macd state
+            for ticker_time_frame, i in STORY_bee.items():
+                speed_gauges[ticker_time_frame]['macd_gauge'].append(i['story']['macd_state'])
+                speed_gauges[ticker_time_frame]['price_gauge'].append(i['story']['last_close_price'])
+                STORY_bee[ticker_time_frame]['story']['macd_gauge'] = speed_gauges[ticker_time_frame]['macd_gauge']
+                STORY_bee[ticker_time_frame]['story']['price_gauge'] = speed_gauges[ticker_time_frame]['price_gauge']
+            SPEEDY_bee = speed_gauges
+
             # populate conscience
             QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
             QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
             QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
             
-            # # speedybee to get past 30 second tics from major stocks with highest weight for SPY / QQQ
-            # if queens_chess_piece == 'castle':
-            #     speedybee_resp = speedybee(QUEEN, queens_chess_piece, ticker_list=client_market_movers)
-            #     QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_resp['speedybee']
+
             
             # God Save The QUEEN
             if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
@@ -554,9 +701,9 @@ try:
 
             e = datetime.datetime.now()
             cycle_run_time = (e-s)
-            if cycle_run_time.seconds > 8:
+            if cycle_run_time.seconds > 15:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info({"cycle_time > 8 seconds": str(cycle_run_time.seconds)})
+                logging.info({"cycle_time > 15 seconds": str(cycle_run_time.seconds)})
             workerbee_run_times.append(cycle_run_time)
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
             print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
@@ -567,6 +714,5 @@ except Exception as errbuz:
     log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
     print(log_msg)
     logging.critical(log_msg)
-    pickle_chesspiece(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

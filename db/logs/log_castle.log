@@ -1,0 +1,961 @@
+07/11/2022 10:08:28 AM:root:INFO: Buzz Buzz Where My Honey
+07/11/2022 10:08:28 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/11/2022 10:08:39 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:11.094108', 'datetime': '2022-07-11_10:08:39_AM'}
+07/11/2022 10:35:59 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/11/2022 12:36:55 PM:root:INFO: Buzz Buzz Where My Honey
+07/11/2022 12:36:55 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/11/2022 12:36:58 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.611042', 'datetime': '2022-07-11_12:36:58_PM'}
+07/11/2022 04:01:03 PM:root:INFO: Happy Bee Day End
+07/12/2022 12:07:51 PM:root:INFO: Buzz Buzz Where My Honey
+07/12/2022 12:07:51 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/12/2022 12:07:55 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.080921', 'datetime': '2022-07-12_12:07:55_PM'}
+07/12/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+07/13/2022 10:51:35 AM:root:INFO: Buzz Buzz Where My Honey
+07/13/2022 10:51:35 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/13/2022 10:51:38 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.450837', 'datetime': '2022-07-13_10:51:38_AM'}
+07/13/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+07/14/2022 11:41:00 AM:root:INFO: Buzz Buzz Where My Honey
+07/14/2022 11:41:00 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/14/2022 11:41:04 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.159255', 'datetime': '2022-07-14_11:41:04_AM'}
+07/14/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+07/15/2022 10:46:33 AM:root:INFO: Buzz Buzz Where My Honey
+07/15/2022 10:46:33 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/15/2022 10:46:36 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.791285', 'datetime': '2022-07-15_10:46:36_AM'}
+07/15/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+07/18/2022 09:40:24 AM:root:INFO: Buzz Buzz Where My Honey
+07/18/2022 09:40:24 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/18/2022 09:40:28 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.731349', 'datetime': '2022-07-18_09:40:28_AM'}
+07/18/2022 10:29:44 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/18/2022 10:37:30 AM:root:INFO: Buzz Buzz Where My Honey
+07/18/2022 10:37:30 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/18/2022 10:37:33 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.506897', 'datetime': '2022-07-18_10:37:33_AM'}
+07/18/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+07/19/2022 09:56:22 AM:root:INFO: Buzz Buzz Where My Honey
+07/19/2022 09:56:22 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/19/2022 09:56:26 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.859369', 'datetime': '2022-07-19_09:56:26_AM'}
+07/19/2022 11:44:53 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/19/2022 02:31:17 PM:root:INFO: Buzz Buzz Where My Honey
+07/19/2022 02:31:17 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/19/2022 02:31:21 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.791554', 'datetime': '2022-07-19_14:31:21_PM'}
+07/19/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+07/20/2022 09:46:25 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 09:46:25 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 09:46:28 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.510665', 'datetime': '2022-07-20_09:46:28_AM'}
+07/20/2022 09:46:30 AM:root:CRITICAL: (AttributeError("'list' object has no attribute 'apend'"), '--', None, '--', 'macd_cross')
+07/20/2022 09:46:30 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 09:51:44 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 09:51:44 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 09:51:48 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.659616', 'datetime': '2022-07-20_09:51:48_AM'}
+07/20/2022 09:51:49 AM:root:CRITICAL: (AttributeError("'list' object has no attribute 'apend'"), '--', None, '--', 'macd_cross')
+07/20/2022 09:51:49 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 10:04:06 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:04:06 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 10:04:12 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:06.217825', 'datetime': '2022-07-20_10:04:12_AM'}
+07/20/2022 10:04:18 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+07/20/2022 10:04:18 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+07/20/2022 10:04:18 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpb6novbir'
+07/20/2022 10:04:18 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+07/20/2022 10:04:18 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+07/20/2022 10:04:18 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmps2i9dnmx'
+07/20/2022 10:04:37 AM:root:CRITICAL: (AttributeError("'list' object has no attribute 'apend'"), '--', None, '--', 'macd_cross')
+07/20/2022 10:06:21 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 10:06:28 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:06:28 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 10:06:31 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.766915', 'datetime': '2022-07-20_10:06:31_AM'}
+07/20/2022 10:06:40 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+07/20/2022 10:06:40 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+07/20/2022 10:06:40 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpijhjxsvh'
+07/20/2022 10:06:40 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+07/20/2022 10:06:40 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+07/20/2022 10:06:40 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmp8s9_3lo_'
+07/20/2022 10:07:05 AM:root:CRITICAL: (AttributeError("'list' object has no attribute 'apend'"), '--', None, '--', 'macd_cross')
+07/20/2022 10:08:36 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 10:10:47 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:10:47 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 10:10:51 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.016498', 'datetime': '2022-07-20_10:10:51_AM'}
+07/20/2022 10:12:46 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:12:46 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 10:12:51 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.730660', 'datetime': '2022-07-20_10:12:51_AM'}
+07/20/2022 10:12:51 AM:root:CRITICAL: (AttributeError("'list' object has no attribute 'apend'"), '--', None, '--', 'macd_cross')
+07/20/2022 10:12:51 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 10:14:36 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:14:36 AM:root:INFO: (['SPY', 'QQQ'], {'1Hour_3Month': 48})
+07/20/2022 10:14:37 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:01.100626', 'datetime': '2022-07-20_10:14:37_AM'}
+07/20/2022 10:14:37 AM:root:CRITICAL: (AttributeError("'list' object has no attribute 'apend'"), '--', None, '--', 'macd_cross')
+07/20/2022 10:14:37 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 10:15:14 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:15:14 AM:root:INFO: (['SPY', 'QQQ'], {'1Hour_3Month': 48})
+07/20/2022 10:15:16 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:01.346678', 'datetime': '2022-07-20_10:15:16_AM'}
+07/20/2022 10:15:18 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+07/20/2022 10:15:18 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+07/20/2022 10:15:18 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmp3_dp5eug'
+07/20/2022 10:15:18 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+07/20/2022 10:15:18 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+07/20/2022 10:15:18 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmp_3jhx6nd'
+07/20/2022 10:18:43 AM:root:CRITICAL: (BdbQuit(), '--', None, '--', 'macd_cross')
+07/20/2022 10:18:43 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/20/2022 10:19:23 AM:root:INFO: Buzz Buzz Where My Honey
+07/20/2022 10:19:23 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/20/2022 10:19:27 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.571952', 'datetime': '2022-07-20_10:19:27_AM'}
+07/20/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+07/21/2022 09:35:34 AM:root:INFO: Buzz Buzz Where My Honey
+07/21/2022 09:35:34 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/21/2022 09:35:38 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.797439', 'datetime': '2022-07-21_09:35:38_AM'}
+07/21/2022 12:19:23 PM:root:INFO: Buzz Buzz Where My Honey
+07/21/2022 12:19:23 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/21/2022 12:19:27 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.423304', 'datetime': '2022-07-21_12:19:27_PM'}
+07/21/2022 12:28:13 PM:root:INFO: ('cycle_time > 5 seconds', '15.77')
+07/21/2022 12:28:49 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/21/2022 12:30:51 PM:root:INFO: Buzz Buzz Where My Honey
+07/21/2022 12:30:51 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/21/2022 12:30:55 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.281313', 'datetime': '2022-07-21_12:30:55_PM'}
+07/21/2022 01:46:36 PM:root:INFO: ('cycle_time > 5 seconds', '6.83')
+07/21/2022 01:52:19 PM:root:INFO: ('cycle_time > 5 seconds', '6.43')
+07/21/2022 03:51:02 PM:root:INFO: ('cycle_time > 5 seconds', '6.19')
+07/21/2022 03:55:48 PM:root:INFO: ('cycle_time > 5 seconds', '6.26')
+07/21/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+07/22/2022 09:43:41 AM:root:INFO: Buzz Buzz Where My Honey
+07/22/2022 09:43:41 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/22/2022 09:43:44 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.240295', 'datetime': '2022-07-22_09:43:44_AM'}
+07/22/2022 10:23:37 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/22/2022 10:43:53 AM:root:INFO: Buzz Buzz Where My Honey
+07/22/2022 10:43:53 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/22/2022 10:43:57 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.562709', 'datetime': '2022-07-22_10:43:57_AM'}
+07/22/2022 11:11:50 AM:root:INFO: ('cycle_time > 5 seconds', '6.65')
+07/22/2022 11:15:56 AM:root:INFO: ('cycle_time > 5 seconds', '6.83')
+07/22/2022 11:39:23 AM:root:INFO: ('cycle_time > 5 seconds', '6.94')
+07/22/2022 11:39:36 AM:root:INFO: ('cycle_time > 5 seconds', '6.28')
+07/22/2022 11:49:21 AM:root:INFO: ('cycle_time > 5 seconds', '6.21')
+07/22/2022 12:04:25 PM:root:INFO: ('cycle_time > 5 seconds', '8.78')
+07/22/2022 12:07:42 PM:root:INFO: ('cycle_time > 5 seconds', '11.57')
+07/22/2022 12:07:51 PM:root:INFO: ('cycle_time > 5 seconds', '8.21')
+07/22/2022 12:07:57 PM:root:INFO: ('cycle_time > 5 seconds', '6.33')
+07/22/2022 12:08:04 PM:root:INFO: ('cycle_time > 5 seconds', '6.65')
+07/22/2022 12:08:48 PM:root:INFO: ('cycle_time > 5 seconds', '8.18')
+07/22/2022 12:09:20 PM:root:INFO: ('cycle_time > 5 seconds', '6.56')
+07/22/2022 12:09:42 PM:root:INFO: ('cycle_time > 5 seconds', '7.12')
+07/22/2022 12:13:29 PM:root:INFO: ('cycle_time > 5 seconds', '7.50')
+07/22/2022 12:13:54 PM:root:INFO: ('cycle_time > 5 seconds', '6.62')
+07/22/2022 12:14:40 PM:root:INFO: ('cycle_time > 5 seconds', '6.40')
+07/22/2022 12:19:38 PM:root:INFO: ('cycle_time > 5 seconds', '6.11')
+07/22/2022 12:28:31 PM:root:INFO: ('cycle_time > 5 seconds', '6.99')
+07/22/2022 12:29:01 PM:root:INFO: ('cycle_time > 5 seconds', '9.84')
+07/22/2022 12:29:29 PM:root:INFO: ('cycle_time > 5 seconds', '13.55')
+07/22/2022 12:29:40 PM:root:INFO: ('cycle_time > 5 seconds', '6.13')
+07/22/2022 12:29:50 PM:root:INFO: ('cycle_time > 5 seconds', '6.26')
+07/22/2022 12:30:11 PM:root:INFO: ('cycle_time > 5 seconds', '6.17')
+07/22/2022 12:35:37 PM:root:INFO: ('cycle_time > 5 seconds', '6.38')
+07/22/2022 12:37:29 PM:root:INFO: ('cycle_time > 5 seconds', '18.73')
+07/22/2022 12:38:22 PM:root:INFO: ('cycle_time > 5 seconds', '6.80')
+07/22/2022 12:39:07 PM:root:INFO: ('cycle_time > 5 seconds', '6.37')
+07/22/2022 12:39:14 PM:root:INFO: ('cycle_time > 5 seconds', '7.47')
+07/22/2022 12:39:38 PM:root:INFO: ('cycle_time > 5 seconds', '7.18')
+07/22/2022 12:39:45 PM:root:INFO: ('cycle_time > 5 seconds', '6.94')
+07/22/2022 12:39:55 PM:root:INFO: ('cycle_time > 5 seconds', '10.11')
+07/22/2022 12:40:12 PM:root:INFO: ('cycle_time > 5 seconds', '6.17')
+07/22/2022 12:40:19 PM:root:INFO: ('cycle_time > 5 seconds', '6.42')
+07/22/2022 12:40:29 PM:root:INFO: ('cycle_time > 5 seconds', '10.77')
+07/22/2022 12:40:36 PM:root:INFO: ('cycle_time > 5 seconds', '6.53')
+07/22/2022 12:41:47 PM:root:INFO: ('cycle_time > 5 seconds', '6.52')
+07/22/2022 02:10:07 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+07/22/2022 02:10:50 PM:root:INFO: Buzz Buzz Where My Honey
+07/22/2022 02:10:50 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/22/2022 02:10:54 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.975457', 'datetime': '2022-07-22_14:10:54_PM'}
+07/22/2022 02:12:23 PM:root:INFO: Buzz Buzz Where My Honey
+07/22/2022 02:12:23 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/22/2022 02:12:27 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.961690', 'datetime': '2022-07-22_14:12:27_PM'}
+07/22/2022 03:56:26 PM:root:INFO: ('cycle_time > 5 seconds', '10.14')
+07/22/2022 03:56:34 PM:root:INFO: ('cycle_time > 5 seconds', '8.15')
+07/22/2022 03:58:20 PM:root:INFO: ('cycle_time > 5 seconds', '6.98')
+07/22/2022 03:58:37 PM:root:INFO: ('cycle_time > 5 seconds', '9.77')
+07/22/2022 03:58:44 PM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+07/22/2022 03:58:55 PM:root:INFO: ('cycle_time > 5 seconds', '6.71')
+07/22/2022 03:59:05 PM:root:INFO: ('cycle_time > 5 seconds', '10.27')
+07/22/2022 03:59:12 PM:root:INFO: ('cycle_time > 5 seconds', '6.25')
+07/22/2022 03:59:44 PM:root:INFO: ('cycle_time > 5 seconds', '6.32')
+07/22/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+07/25/2022 10:27:25 AM:root:INFO: Buzz Buzz Where My Honey
+07/25/2022 10:27:25 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/25/2022 10:27:30 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.645581', 'datetime': '2022-07-25_10:27:30_AM'}
+07/25/2022 10:42:55 AM:root:INFO: ('cycle_time > 5 seconds', '7.19')
+07/25/2022 10:43:03 AM:root:INFO: ('cycle_time > 5 seconds', '7.69')
+07/25/2022 10:45:51 AM:root:INFO: ('cycle_time > 5 seconds', '6.58')
+07/25/2022 10:47:22 AM:root:INFO: ('cycle_time > 5 seconds', '6.12')
+07/25/2022 12:35:33 PM:root:INFO: ('cycle_time > 5 seconds', '6.72')
+07/25/2022 12:35:40 PM:root:INFO: ('cycle_time > 5 seconds', '6.57')
+07/25/2022 01:09:48 PM:root:INFO: ('cycle_time > 5 seconds', '6.49')
+07/25/2022 01:24:45 PM:root:INFO: ('cycle_time > 5 seconds', '6.19')
+07/25/2022 01:25:41 PM:root:INFO: ('cycle_time > 5 seconds', '6.10')
+07/25/2022 01:29:07 PM:root:INFO: ('cycle_time > 5 seconds', '6.22')
+07/25/2022 01:29:13 PM:root:INFO: ('cycle_time > 5 seconds', '6.44')
+07/25/2022 01:44:44 PM:root:INFO: ('cycle_time > 5 seconds', '6.85')
+07/25/2022 01:48:29 PM:root:INFO: ('cycle_time > 5 seconds', '6.23')
+07/25/2022 01:48:57 PM:root:INFO: ('cycle_time > 5 seconds', '6.96')
+07/25/2022 02:07:10 PM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+07/25/2022 02:38:31 PM:root:INFO: ('cycle_time > 5 seconds', '9.34')
+07/25/2022 02:38:46 PM:root:INFO: ('cycle_time > 5 seconds', '7.97')
+07/25/2022 02:38:53 PM:root:INFO: ('cycle_time > 5 seconds', '7.43')
+07/25/2022 02:39:20 PM:root:INFO: ('cycle_time > 5 seconds', '6.68')
+07/25/2022 02:39:37 PM:root:INFO: ('cycle_time > 5 seconds', '12.50')
+07/25/2022 02:42:26 PM:root:INFO: ('cycle_time > 5 seconds', '7.66')
+07/25/2022 02:45:59 PM:root:INFO: ('cycle_time > 5 seconds', '6.23')
+07/25/2022 03:01:58 PM:root:INFO: ('cycle_time > 5 seconds', '6.21')
+07/25/2022 03:03:07 PM:root:INFO: ('cycle_time > 5 seconds', '6.30')
+07/25/2022 03:06:55 PM:root:INFO: ('cycle_time > 5 seconds', '6.76')
+07/25/2022 03:07:09 PM:root:INFO: ('cycle_time > 5 seconds', '6.48')
+07/25/2022 03:08:57 PM:root:INFO: ('cycle_time > 5 seconds', '6.66')
+07/25/2022 03:16:59 PM:root:INFO: ('cycle_time > 5 seconds', '6.31')
+07/25/2022 03:29:20 PM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+07/25/2022 03:34:34 PM:root:INFO: ('cycle_time > 5 seconds', '6.37')
+07/25/2022 03:34:52 PM:root:INFO: ('cycle_time > 5 seconds', '6.82')
+07/25/2022 03:36:02 PM:root:INFO: ('cycle_time > 5 seconds', '6.11')
+07/25/2022 03:37:38 PM:root:INFO: ('cycle_time > 5 seconds', '6.24')
+07/25/2022 03:39:01 PM:root:INFO: ('cycle_time > 5 seconds', '6.76')
+07/25/2022 03:40:59 PM:root:INFO: ('cycle_time > 5 seconds', '8.16')
+07/25/2022 03:44:21 PM:root:INFO: ('cycle_time > 5 seconds', '6.46')
+07/25/2022 03:44:48 PM:root:INFO: ('cycle_time > 5 seconds', '6.47')
+07/25/2022 03:44:55 PM:root:INFO: ('cycle_time > 5 seconds', '6.57')
+07/25/2022 03:46:19 PM:root:INFO: ('cycle_time > 5 seconds', '6.24')
+07/25/2022 03:48:13 PM:root:INFO: ('cycle_time > 5 seconds', '8.91')
+07/25/2022 03:49:11 PM:root:INFO: ('cycle_time > 5 seconds', '7.17')
+07/25/2022 03:49:42 PM:root:INFO: ('cycle_time > 5 seconds', '10.45')
+07/25/2022 04:01:03 PM:root:INFO: Happy Bee Day End
+07/26/2022 10:44:16 AM:root:INFO: Buzz Buzz Where My Honey
+07/26/2022 10:44:16 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/26/2022 10:44:21 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.951905', 'datetime': '2022-07-26_10:44:21_AM'}
+07/26/2022 10:49:35 AM:root:INFO: ('cycle_time > 5 seconds', '10.43')
+07/26/2022 11:56:58 AM:root:INFO: ('cycle_time > 5 seconds', '9.29')
+07/26/2022 01:40:47 PM:root:INFO: ('cycle_time > 5 seconds', '10.70')
+07/26/2022 01:52:08 PM:root:INFO: ('cycle_time > 5 seconds', '9.21')
+07/26/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+07/27/2022 09:40:17 AM:root:INFO: Buzz Buzz Where My Honey
+07/27/2022 09:40:17 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/27/2022 09:40:21 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.175507', 'datetime': '2022-07-27_09:40:21_AM'}
+07/27/2022 10:52:21 AM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+07/27/2022 12:20:13 PM:root:INFO: ('cycle_time > 5 seconds', '8.66')
+07/27/2022 12:20:19 PM:root:INFO: ('cycle_time > 5 seconds', '6.10')
+07/27/2022 01:55:09 PM:root:INFO: ('cycle_time > 5 seconds', '7.40')
+07/27/2022 02:14:34 PM:root:INFO: ('cycle_time > 5 seconds', '6.40')
+07/27/2022 02:20:56 PM:root:INFO: ('cycle_time > 5 seconds', '6.56')
+07/27/2022 02:22:24 PM:root:INFO: ('cycle_time > 5 seconds', '6.46')
+07/27/2022 02:27:00 PM:root:INFO: ('cycle_time > 5 seconds', '8.91')
+07/27/2022 02:27:08 PM:root:INFO: ('cycle_time > 5 seconds', '7.79')
+07/27/2022 02:32:32 PM:root:INFO: ('cycle_time > 5 seconds', '7.33')
+07/27/2022 02:33:35 PM:root:INFO: ('cycle_time > 5 seconds', '7.80')
+07/27/2022 02:33:46 PM:root:INFO: ('cycle_time > 5 seconds', '6.36')
+07/27/2022 02:34:09 PM:root:INFO: ('cycle_time > 5 seconds', '6.44')
+07/27/2022 02:34:38 PM:root:INFO: ('cycle_time > 5 seconds', '6.83')
+07/27/2022 02:37:05 PM:root:INFO: ('cycle_time > 5 seconds', '6.16')
+07/27/2022 02:42:27 PM:root:INFO: ('cycle_time > 5 seconds', '6.32')
+07/27/2022 02:46:08 PM:root:INFO: ('cycle_time > 5 seconds', '6.69')
+07/27/2022 02:49:42 PM:root:INFO: ('cycle_time > 5 seconds', '8.11')
+07/27/2022 02:57:58 PM:root:INFO: ('cycle_time > 5 seconds', '9.17')
+07/27/2022 02:59:43 PM:root:INFO: ('cycle_time > 5 seconds', '6.31')
+07/27/2022 03:01:39 PM:root:INFO: ('cycle_time > 5 seconds', '6.42')
+07/27/2022 03:02:23 PM:root:INFO: ('cycle_time > 5 seconds', '6.26')
+07/27/2022 03:04:43 PM:root:INFO: ('cycle_time > 5 seconds', '6.18')
+07/27/2022 03:05:10 PM:root:INFO: ('cycle_time > 5 seconds', '6.61')
+07/27/2022 03:08:18 PM:root:INFO: ('cycle_time > 5 seconds', '9.86')
+07/27/2022 03:08:35 PM:root:INFO: ('cycle_time > 5 seconds', '6.40')
+07/27/2022 03:09:12 PM:root:INFO: ('cycle_time > 5 seconds', '6.48')
+07/27/2022 03:12:49 PM:root:INFO: ('cycle_time > 5 seconds', '8.89')
+07/27/2022 03:13:17 PM:root:INFO: ('cycle_time > 5 seconds', '10.48')
+07/27/2022 03:15:28 PM:root:INFO: ('cycle_time > 5 seconds', '8.24')
+07/27/2022 03:16:25 PM:root:INFO: ('cycle_time > 5 seconds', '6.46')
+07/27/2022 03:17:38 PM:root:INFO: ('cycle_time > 5 seconds', '8.84')
+07/27/2022 03:17:49 PM:root:INFO: ('cycle_time > 5 seconds', '7.15')
+07/27/2022 03:18:37 PM:root:INFO: ('cycle_time > 5 seconds', '6.17')
+07/27/2022 03:19:02 PM:root:INFO: ('cycle_time > 5 seconds', '7.42')
+07/27/2022 03:19:13 PM:root:INFO: ('cycle_time > 5 seconds', '6.22')
+07/27/2022 03:20:36 PM:root:INFO: ('cycle_time > 5 seconds', '8.27')
+07/27/2022 03:20:52 PM:root:INFO: ('cycle_time > 5 seconds', '6.82')
+07/27/2022 03:20:58 PM:root:INFO: ('cycle_time > 5 seconds', '6.28')
+07/27/2022 03:23:14 PM:root:INFO: ('cycle_time > 5 seconds', '10.55')
+07/27/2022 03:29:22 PM:root:INFO: ('cycle_time > 5 seconds', '7.91')
+07/27/2022 03:29:39 PM:root:INFO: ('cycle_time > 5 seconds', '6.51')
+07/27/2022 03:31:48 PM:root:INFO: ('cycle_time > 5 seconds', '6.28')
+07/27/2022 03:33:54 PM:root:INFO: ('cycle_time > 5 seconds', '10.47')
+07/27/2022 03:34:12 PM:root:INFO: ('cycle_time > 5 seconds', '7.92')
+07/27/2022 03:34:23 PM:root:INFO: ('cycle_time > 5 seconds', '6.44')
+07/27/2022 03:34:30 PM:root:INFO: ('cycle_time > 5 seconds', '6.57')
+07/27/2022 03:34:48 PM:root:INFO: ('cycle_time > 5 seconds', '6.54')
+07/27/2022 03:35:22 PM:root:INFO: ('cycle_time > 5 seconds', '7.74')
+07/27/2022 03:35:28 PM:root:INFO: ('cycle_time > 5 seconds', '6.35')
+07/27/2022 03:35:36 PM:root:INFO: ('cycle_time > 5 seconds', '7.93')
+07/27/2022 03:37:09 PM:root:INFO: ('cycle_time > 5 seconds', '12.59')
+07/27/2022 03:37:29 PM:root:INFO: ('cycle_time > 5 seconds', '8.86')
+07/27/2022 03:37:50 PM:root:INFO: ('cycle_time > 5 seconds', '6.28')
+07/27/2022 03:38:04 PM:root:INFO: ('cycle_time > 5 seconds', '6.35')
+07/27/2022 03:38:24 PM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+07/27/2022 03:39:18 PM:root:INFO: ('cycle_time > 5 seconds', '7.76')
+07/27/2022 03:39:25 PM:root:INFO: ('cycle_time > 5 seconds', '7.17')
+07/27/2022 03:39:33 PM:root:INFO: ('cycle_time > 5 seconds', '7.17')
+07/27/2022 03:40:13 PM:root:INFO: ('cycle_time > 5 seconds', '6.77')
+07/27/2022 03:40:32 PM:root:INFO: ('cycle_time > 5 seconds', '6.67')
+07/27/2022 03:41:03 PM:root:INFO: ('cycle_time > 5 seconds', '6.59')
+07/27/2022 03:41:10 PM:root:INFO: ('cycle_time > 5 seconds', '6.97')
+07/27/2022 03:42:35 PM:root:INFO: ('cycle_time > 5 seconds', '7.62')
+07/27/2022 03:42:41 PM:root:INFO: ('cycle_time > 5 seconds', '6.42')
+07/27/2022 03:42:53 PM:root:INFO: ('cycle_time > 5 seconds', '7.50')
+07/27/2022 03:44:06 PM:root:INFO: ('cycle_time > 5 seconds', '9.84')
+07/27/2022 03:44:15 PM:root:INFO: ('cycle_time > 5 seconds', '8.70')
+07/27/2022 03:44:35 PM:root:INFO: ('cycle_time > 5 seconds', '6.49')
+07/27/2022 03:45:03 PM:root:INFO: ('cycle_time > 5 seconds', '10.98')
+07/27/2022 03:45:22 PM:root:INFO: ('cycle_time > 5 seconds', '9.92')
+07/27/2022 03:45:51 PM:root:INFO: ('cycle_time > 5 seconds', '11.15')
+07/27/2022 03:45:57 PM:root:INFO: ('cycle_time > 5 seconds', '6.28')
+07/27/2022 03:46:04 PM:root:INFO: ('cycle_time > 5 seconds', '6.27')
+07/27/2022 03:47:41 PM:root:INFO: ('cycle_time > 5 seconds', '6.24')
+07/27/2022 03:48:10 PM:root:INFO: ('cycle_time > 5 seconds', '6.25')
+07/27/2022 03:48:39 PM:root:INFO: ('cycle_time > 5 seconds', '6.51')
+07/27/2022 03:49:13 PM:root:INFO: ('cycle_time > 5 seconds', '7.17')
+07/27/2022 03:49:51 PM:root:INFO: ('cycle_time > 5 seconds', '6.44')
+07/27/2022 03:51:17 PM:root:INFO: ('cycle_time > 5 seconds', '6.11')
+07/27/2022 03:52:14 PM:root:INFO: ('cycle_time > 5 seconds', '6.30')
+07/27/2022 03:53:39 PM:root:INFO: ('cycle_time > 5 seconds', '7.37')
+07/27/2022 03:53:45 PM:root:INFO: ('cycle_time > 5 seconds', '6.97')
+07/27/2022 03:53:56 PM:root:INFO: ('cycle_time > 5 seconds', '6.17')
+07/27/2022 03:54:25 PM:root:INFO: ('cycle_time > 5 seconds', '7.11')
+07/27/2022 03:55:40 PM:root:INFO: ('cycle_time > 5 seconds', '7.30')
+07/27/2022 03:56:37 PM:root:INFO: ('cycle_time > 5 seconds', '6.27')
+07/27/2022 03:57:09 PM:root:INFO: ('cycle_time > 5 seconds', '6.13')
+07/27/2022 03:59:11 PM:root:INFO: ('cycle_time > 5 seconds', '6.50')
+07/27/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+07/28/2022 10:25:45 AM:root:INFO: Buzz Buzz Where My Honey
+07/28/2022 10:25:45 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/28/2022 10:25:49 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.447114', 'datetime': '2022-07-28_10:25:49_AM'}
+07/28/2022 11:11:00 AM:root:INFO: ('cycle_time > 5 seconds', '11.71')
+07/28/2022 11:19:27 AM:root:INFO: ('cycle_time > 5 seconds', '8.87')
+07/28/2022 11:19:35 AM:root:INFO: ('cycle_time > 5 seconds', '7.95')
+07/28/2022 01:03:15 PM:root:INFO: ('cycle_time > 5 seconds', '6.34')
+07/28/2022 01:03:23 PM:root:INFO: ('cycle_time > 5 seconds', '8.56')
+07/28/2022 01:03:31 PM:root:INFO: ('cycle_time > 5 seconds', '7.60')
+07/28/2022 01:04:14 PM:root:INFO: ('cycle_time > 5 seconds', '7.73')
+07/28/2022 01:15:05 PM:root:INFO: ('cycle_time > 5 seconds', '6.16')
+07/28/2022 01:15:18 PM:root:INFO: ('cycle_time > 5 seconds', '7.36')
+07/28/2022 01:20:49 PM:root:INFO: ('cycle_time > 5 seconds', '6.18')
+07/28/2022 01:21:47 PM:root:INFO: ('cycle_time > 5 seconds', '9.85')
+07/28/2022 03:21:48 PM:root:INFO: ('cycle_time > 5 seconds', '11.51')
+07/28/2022 03:22:23 PM:root:INFO: Buzz Buzz Where My Honey
+07/28/2022 03:22:23 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/28/2022 03:22:27 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.085920', 'datetime': '2022-07-28_15:22:27_PM'}
+07/29/2022 09:42:26 AM:root:INFO: Buzz Buzz Where My Honey
+07/29/2022 09:42:26 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+07/29/2022 09:42:30 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.653519', 'datetime': '2022-07-29_09:42:30_AM'}
+07/29/2022 09:44:33 AM:root:INFO: ('cycle_time > 5 seconds', '6.27')
+07/29/2022 01:00:35 PM:root:INFO: ('cycle_time > 5 seconds', '7.71')
+07/29/2022 02:35:45 PM:root:INFO: ('cycle_time > 5 seconds', '6.51')
+07/29/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/01/2022 11:45:28 AM:root:INFO: Buzz Buzz Where My Honey
+08/01/2022 11:45:28 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/01/2022 11:45:32 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.106634', 'datetime': '2022-08-01_11:45:32_AM'}
+08/01/2022 11:45:33 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/01/2022 11:46:20 AM:root:INFO: Buzz Buzz Where My Honey
+08/01/2022 11:46:20 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/01/2022 11:46:23 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.566996', 'datetime': '2022-08-01_11:46:23_AM'}
+08/01/2022 12:17:42 PM:root:INFO: Buzz Buzz Where My Honey
+08/01/2022 12:17:42 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/01/2022 12:17:46 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.598449', 'datetime': '2022-08-01_12:17:46_PM'}
+08/01/2022 12:22:05 PM:root:INFO: Buzz Buzz Where My Honey
+08/01/2022 12:22:05 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/01/2022 12:22:09 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.283950', 'datetime': '2022-08-01_12:22:09_PM'}
+08/01/2022 12:22:10 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/01/2022 12:26:05 PM:root:INFO: Buzz Buzz Where My Honey
+08/01/2022 12:26:05 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/01/2022 12:26:09 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.004065', 'datetime': '2022-08-01_12:26:09_PM'}
+08/01/2022 12:26:10 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/01/2022 12:27:05 PM:root:INFO: Buzz Buzz Where My Honey
+08/01/2022 12:27:05 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/01/2022 12:27:09 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.855231', 'datetime': '2022-08-01_12:27:09_PM'}
+08/01/2022 02:39:20 PM:root:INFO: ('cycle_time > 5 seconds', '6.59')
+08/01/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+08/02/2022 10:38:14 AM:root:INFO: Buzz Buzz Where My Honey
+08/02/2022 10:38:14 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/02/2022 10:38:18 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.475492', 'datetime': '2022-08-02_10:38:18_AM'}
+08/02/2022 10:44:55 AM:root:INFO: ('cycle_time > 5 seconds', '6.67')
+08/02/2022 10:45:34 AM:root:INFO: ('cycle_time > 5 seconds', '7.59')
+08/02/2022 10:46:00 AM:root:INFO: ('cycle_time > 5 seconds', '6.54')
+08/02/2022 10:50:31 AM:root:INFO: ('cycle_time > 5 seconds', '7.95')
+08/02/2022 10:52:31 AM:root:INFO: ('cycle_time > 5 seconds', '6.90')
+08/02/2022 12:16:07 PM:root:INFO: ('cycle_time > 5 seconds', '8.66')
+08/02/2022 12:53:14 PM:root:INFO: ('cycle_time > 5 seconds', '9.80')
+08/02/2022 01:24:14 PM:root:INFO: ('cycle_time > 5 seconds', '16.77')
+08/02/2022 01:24:27 PM:root:INFO: ('cycle_time > 5 seconds', '10.50')
+08/02/2022 02:25:40 PM:root:INFO: ('cycle_time > 5 seconds', '6.48')
+08/02/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/03/2022 09:36:53 AM:root:INFO: Buzz Buzz Where My Honey
+08/03/2022 09:36:53 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/03/2022 09:36:57 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.189400', 'datetime': '2022-08-03_09:36:57_AM'}
+08/03/2022 10:28:59 AM:root:INFO: ('cycle_time > 5 seconds', '6.82')
+08/03/2022 11:09:12 AM:root:INFO: ('cycle_time > 5 seconds', '6.11')
+08/03/2022 11:59:30 AM:root:INFO: ('cycle_time > 5 seconds', '6.17')
+08/03/2022 12:04:11 PM:root:INFO: ('cycle_time > 5 seconds', '9.11')
+08/03/2022 12:20:33 PM:root:INFO: ('cycle_time > 5 seconds', '6.71')
+08/03/2022 01:01:29 PM:root:INFO: ('cycle_time > 5 seconds', '7.24')
+08/03/2022 02:26:33 PM:root:INFO: ('cycle_time > 5 seconds', '6.20')
+08/03/2022 02:30:14 PM:root:INFO: ('cycle_time > 5 seconds', '6.26')
+08/03/2022 02:44:31 PM:root:INFO: ('cycle_time > 5 seconds', '8.19')
+08/03/2022 03:02:57 PM:root:INFO: ('cycle_time > 5 seconds', '10.38')
+08/03/2022 03:03:03 PM:root:INFO: ('cycle_time > 5 seconds', '6.36')
+08/03/2022 03:03:38 PM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+08/03/2022 03:16:26 PM:root:INFO: ('cycle_time > 5 seconds', '6.20')
+08/03/2022 03:16:56 PM:root:INFO: ('cycle_time > 5 seconds', '7.12')
+08/03/2022 03:34:32 PM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+08/03/2022 03:34:38 PM:root:INFO: ('cycle_time > 5 seconds', '6.22')
+08/03/2022 03:34:45 PM:root:INFO: ('cycle_time > 5 seconds', '6.39')
+08/03/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/04/2022 10:52:20 AM:root:INFO: Buzz Buzz Where My Honey
+08/04/2022 10:52:20 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/04/2022 10:52:25 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.712031', 'datetime': '2022-08-04_10:52:25_AM'}
+08/04/2022 10:56:21 AM:root:INFO: ('cycle_time > 5 seconds', '9.31')
+08/04/2022 10:56:27 AM:root:INFO: ('cycle_time > 5 seconds', '6.44')
+08/04/2022 10:56:34 AM:root:INFO: ('cycle_time > 5 seconds', '6.40')
+08/04/2022 11:16:04 AM:root:INFO: ('cycle_time > 5 seconds', '6.14')
+08/04/2022 12:03:00 PM:root:INFO: ('cycle_time > 5 seconds', '6.86')
+08/04/2022 12:40:45 PM:root:INFO: ('cycle_time > 5 seconds', '9.45')
+08/04/2022 12:40:52 PM:root:INFO: ('cycle_time > 5 seconds', '7.85')
+08/04/2022 12:41:04 PM:root:INFO: ('cycle_time > 5 seconds', '7.30')
+08/04/2022 01:41:58 PM:root:INFO: Buzz Buzz Where My Honey
+08/04/2022 01:41:58 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/04/2022 01:42:03 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.756717', 'datetime': '2022-08-04_13:42:03_PM'}
+08/04/2022 01:42:35 PM:root:INFO: ('cycle_time > 5 seconds', '7.40')
+08/04/2022 01:42:50 PM:root:INFO: ('cycle_time > 5 seconds', '10.76')
+08/04/2022 01:49:03 PM:root:INFO: ('cycle_time > 5 seconds', '7.92')
+08/04/2022 01:49:13 PM:root:INFO: ('cycle_time > 5 seconds', '9.55')
+08/04/2022 01:49:20 PM:root:INFO: ('cycle_time > 5 seconds', '7.73')
+08/04/2022 01:49:28 PM:root:INFO: ('cycle_time > 5 seconds', '8.28')
+08/04/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+08/05/2022 12:16:00 PM:root:INFO: Buzz Buzz Where My Honey
+08/05/2022 12:16:00 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/05/2022 12:16:04 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.489968', 'datetime': '2022-08-05_12:16:04_PM'}
+08/05/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/10/2022 12:21:34 PM:root:INFO: Buzz Buzz Where My Honey
+08/10/2022 12:21:34 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/10/2022 12:21:38 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.071657', 'datetime': '2022-08-10_12:21:38_PM'}
+08/10/2022 03:10:52 PM:root:INFO: ('cycle_time > 5 seconds', '8.12')
+08/10/2022 03:11:00 PM:root:INFO: ('cycle_time > 5 seconds', '8.92')
+08/10/2022 03:11:09 PM:root:INFO: ('cycle_time > 5 seconds', '8.20')
+08/10/2022 03:23:05 PM:root:INFO: ('cycle_time > 5 seconds', '716.52')
+08/10/2022 03:53:53 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/11/2022 11:12:53 AM:root:INFO: Buzz Buzz Where My Honey
+08/11/2022 11:12:53 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/11/2022 11:12:58 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.288463', 'datetime': '2022-08-11_11:12:58_AM'}
+08/11/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/12/2022 02:37:10 PM:root:INFO: Buzz Buzz Where My Honey
+08/12/2022 02:37:10 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/12/2022 02:37:14 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.117001', 'datetime': '2022-08-12_14:37:14_PM'}
+08/12/2022 02:42:09 PM:root:INFO: ('cycle_time > 5 seconds', '7.90')
+08/12/2022 03:59:22 PM:root:INFO: ('cycle_time > 5 seconds', '8.23')
+08/12/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+08/15/2022 10:45:08 AM:root:INFO: Buzz Buzz Where My Honey
+08/15/2022 10:45:08 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/15/2022 10:45:11 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.636236', 'datetime': '2022-08-15_10:45:11_AM'}
+08/15/2022 10:59:14 AM:root:INFO: ('cycle_time > 5 seconds', '7.88')
+08/15/2022 10:59:23 AM:root:INFO: ('cycle_time > 5 seconds', '8.56')
+08/15/2022 12:14:13 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/15/2022 02:57:51 PM:root:INFO: Buzz Buzz Where My Honey
+08/15/2022 02:57:51 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/15/2022 02:57:58 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:06.919056', 'datetime': '2022-08-15_14:57:58_PM'}
+08/15/2022 03:39:59 PM:root:INFO: ('cycle_time > 5 seconds', '8.90')
+08/15/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+08/16/2022 09:40:34 AM:root:INFO: Buzz Buzz Where My Honey
+08/16/2022 09:40:34 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/16/2022 09:40:38 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.938117', 'datetime': '2022-08-16_09:40:38_AM'}
+08/16/2022 11:11:27 AM:root:INFO: ('cycle_time > 5 seconds', '6.80')
+08/16/2022 01:00:59 PM:root:INFO: ('cycle_time > 5 seconds', '47.86')
+08/16/2022 01:01:17 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/16/2022 03:12:43 PM:root:INFO: Buzz Buzz Where My Honey
+08/16/2022 03:12:43 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/16/2022 03:12:46 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.776202', 'datetime': '2022-08-16_15:12:46_PM'}
+08/16/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+08/17/2022 09:41:22 AM:root:INFO: Buzz Buzz Where My Honey
+08/17/2022 09:41:22 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/17/2022 09:41:26 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.501387', 'datetime': '2022-08-17_09:41:26_AM'}
+08/17/2022 09:45:17 AM:root:INFO: ('cycle_time > 5 seconds', '7.63')
+08/17/2022 09:46:14 AM:root:INFO: ('cycle_time > 5 seconds', '10.45')
+08/17/2022 09:52:29 AM:root:INFO: ('cycle_time > 5 seconds', '9.57')
+08/17/2022 09:52:39 AM:root:INFO: ('cycle_time > 5 seconds', '9.53')
+08/17/2022 09:52:45 AM:root:INFO: ('cycle_time > 5 seconds', '6.12')
+08/17/2022 09:53:17 AM:root:INFO: ('cycle_time > 5 seconds', '9.42')
+08/17/2022 09:55:11 AM:root:INFO: ('cycle_time > 5 seconds', '9.15')
+08/17/2022 10:00:09 AM:root:INFO: ('cycle_time > 5 seconds', '8.23')
+08/17/2022 10:00:20 AM:root:INFO: ('cycle_time > 5 seconds', '11.12')
+08/17/2022 10:00:59 AM:root:INFO: ('cycle_time > 5 seconds', '6.78')
+08/17/2022 10:01:19 AM:root:INFO: ('cycle_time > 5 seconds', '14.38')
+08/17/2022 10:02:08 AM:root:INFO: ('cycle_time > 5 seconds', '6.76')
+08/17/2022 10:03:37 AM:root:INFO: ('cycle_time > 5 seconds', '8.21')
+08/17/2022 10:04:07 AM:root:INFO: ('cycle_time > 5 seconds', '6.98')
+08/17/2022 10:05:07 AM:root:INFO: ('cycle_time > 5 seconds', '6.45')
+08/17/2022 10:06:04 AM:root:INFO: ('cycle_time > 5 seconds', '6.99')
+08/17/2022 10:09:09 AM:root:INFO: ('cycle_time > 5 seconds', '6.89')
+08/17/2022 10:11:13 AM:root:INFO: ('cycle_time > 5 seconds', '10.10')
+08/17/2022 10:12:11 AM:root:INFO: ('cycle_time > 5 seconds', '7.33')
+08/17/2022 10:16:09 AM:root:INFO: ('cycle_time > 5 seconds', '7.64')
+08/17/2022 10:21:08 AM:root:INFO: ('cycle_time > 5 seconds', '6.52')
+08/17/2022 10:26:12 AM:root:INFO: ('cycle_time > 5 seconds', '11.18')
+08/17/2022 10:50:09 AM:root:INFO: ('cycle_time > 5 seconds', '7.69')
+08/17/2022 10:50:41 AM:root:INFO: ('cycle_time > 5 seconds', '9.54')
+08/17/2022 10:55:04 AM:root:INFO: ('cycle_time > 5 seconds', '8.34')
+08/17/2022 10:55:12 AM:root:INFO: ('cycle_time > 5 seconds', '7.87')
+08/17/2022 10:55:32 AM:root:INFO: ('cycle_time > 5 seconds', '6.94')
+08/17/2022 10:55:38 AM:root:INFO: ('cycle_time > 5 seconds', '6.13')
+08/17/2022 10:55:53 AM:root:INFO: ('cycle_time > 5 seconds', '6.46')
+08/17/2022 10:56:00 AM:root:INFO: ('cycle_time > 5 seconds', '6.33')
+08/17/2022 10:57:35 AM:root:INFO: ('cycle_time > 5 seconds', '6.27')
+08/17/2022 10:58:37 AM:root:INFO: ('cycle_time > 5 seconds', '6.31')
+08/17/2022 10:59:38 AM:root:INFO: ('cycle_time > 5 seconds', '8.21')
+08/17/2022 11:00:12 AM:root:INFO: ('cycle_time > 5 seconds', '7.97')
+08/17/2022 11:05:11 AM:root:INFO: ('cycle_time > 5 seconds', '8.24')
+08/17/2022 11:32:03 AM:root:INFO: ('cycle_time > 5 seconds', '8.87')
+08/17/2022 11:32:51 AM:root:INFO: ('cycle_time > 5 seconds', '6.18')
+08/17/2022 11:34:08 AM:root:INFO: ('cycle_time > 5 seconds', '6.26')
+08/17/2022 12:25:07 PM:root:INFO: ('cycle_time > 5 seconds', '7.13')
+08/17/2022 12:31:13 PM:root:INFO: ('cycle_time > 5 seconds', '9.60')
+08/17/2022 12:33:51 PM:root:INFO: ('cycle_time > 5 seconds', '7.48')
+08/17/2022 12:34:12 PM:root:INFO: ('cycle_time > 5 seconds', '10.44')
+08/17/2022 12:38:03 PM:root:INFO: ('cycle_time > 5 seconds', '224.13')
+08/17/2022 12:38:49 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/17/2022 02:08:59 PM:root:INFO: Buzz Buzz Where My Honey
+08/17/2022 02:08:59 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/17/2022 02:09:04 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:05.428620', 'datetime': '2022-08-17_14:09:04_PM'}
+08/17/2022 02:19:23 PM:root:INFO: ('cycle_time > 5 seconds', '26.30')
+08/17/2022 02:19:24 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/17/2022 03:25:10 PM:root:INFO: Buzz Buzz Where My Honey
+08/17/2022 03:25:10 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/17/2022 03:25:15 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.236478', 'datetime': '2022-08-17_15:25:15_PM'}
+08/17/2022 03:56:10 PM:root:INFO: ('cycle_time > 5 seconds', '7.65')
+08/17/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+08/18/2022 12:18:22 PM:root:INFO: Buzz Buzz Where My Honey
+08/18/2022 12:18:22 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/18/2022 12:18:27 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.831098', 'datetime': '2022-08-18_12:18:27_PM'}
+08/18/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+08/19/2022 11:05:40 AM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 11:05:40 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 11:05:44 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.799969', 'datetime': '2022-08-19_11:05:44_AM'}
+08/19/2022 11:45:03 AM:root:INFO: ('cycle_time > 5 seconds', '6.77')
+08/19/2022 11:46:16 AM:root:INFO: ('cycle_time > 5 seconds', '6.48')
+08/19/2022 11:46:31 AM:root:INFO: ('cycle_time > 5 seconds', '6.33')
+08/19/2022 01:09:31 PM:root:INFO: ('cycle_time > 5 seconds', '6.24')
+08/19/2022 01:26:15 PM:root:INFO: ('cycle_time > 5 seconds', '6.29')
+08/19/2022 01:39:57 PM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 01:39:57 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 01:40:02 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.156972', 'datetime': '2022-08-19_13:40:02_PM'}
+08/19/2022 03:23:03 PM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 03:23:03 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 03:23:07 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.287025', 'datetime': '2022-08-19_15:23:07_PM'}
+08/19/2022 03:25:59 PM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 03:25:59 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 03:26:04 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.519711', 'datetime': '2022-08-19_15:26:04_PM'}
+08/19/2022 03:30:25 PM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 03:30:25 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 03:30:29 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.827278', 'datetime': '2022-08-19_15:30:29_PM'}
+08/19/2022 03:30:46 PM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+08/19/2022 03:30:46 PM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+08/19/2022 03:30:46 PM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpu97_8mhn'
+08/19/2022 03:30:46 PM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+08/19/2022 03:30:46 PM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+08/19/2022 03:30:46 PM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpf7hlkkrx'
+08/19/2022 03:35:52 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/19/2022 03:35:59 PM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 03:35:59 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 03:36:04 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.331973', 'datetime': '2022-08-19_15:36:04_PM'}
+08/19/2022 03:36:07 PM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+08/19/2022 03:36:07 PM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+08/19/2022 03:36:07 PM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmppi7v3sy_'
+08/19/2022 03:36:07 PM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+08/19/2022 03:36:07 PM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+08/19/2022 03:36:07 PM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpqo6nk17s'
+08/19/2022 03:36:19 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/19/2022 03:36:26 PM:root:INFO: Buzz Buzz Where My Honey
+08/19/2022 03:36:26 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/19/2022 03:36:31 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.697840', 'datetime': '2022-08-19_15:36:31_PM'}
+08/19/2022 04:01:03 PM:root:INFO: Happy Bee Day End
+08/22/2022 10:45:36 AM:root:INFO: Buzz Buzz Where My Honey
+08/22/2022 10:45:36 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/22/2022 10:45:45 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:08.616511', 'datetime': '2022-08-22_10:45:45_AM'}
+08/22/2022 12:55:15 PM:root:INFO: Buzz Buzz Where My Honey
+08/22/2022 12:55:15 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/22/2022 12:55:18 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.431907', 'datetime': '2022-08-22_12:55:18_PM'}
+08/22/2022 01:25:40 PM:root:INFO: Buzz Buzz Where My Honey
+08/22/2022 01:25:40 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/22/2022 01:25:44 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.211511', 'datetime': '2022-08-22_13:25:44_PM'}
+08/22/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+08/23/2022 10:35:02 AM:root:INFO: Buzz Buzz Where My Honey
+08/23/2022 10:35:02 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/23/2022 10:35:07 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:05.130424', 'datetime': '2022-08-23_10:35:07_AM'}
+08/23/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/24/2022 10:00:26 AM:root:INFO: Buzz Buzz Where My Honey
+08/24/2022 10:00:26 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/24/2022 10:00:34 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:07.969820', 'datetime': '2022-08-24_10:00:34_AM'}
+08/24/2022 12:44:16 PM:root:INFO: ('cycle_time > 20 seconds', '37.84')
+08/24/2022 12:44:38 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/24/2022 12:49:30 PM:root:INFO: Buzz Buzz Where My Honey
+08/24/2022 12:49:30 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/24/2022 12:49:35 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.438700', 'datetime': '2022-08-24_12:49:35_PM'}
+08/24/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+08/25/2022 09:50:34 AM:root:INFO: Buzz Buzz Where My Honey
+08/25/2022 09:50:34 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/25/2022 09:50:38 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:03.812196', 'datetime': '2022-08-25_09:50:38_AM'}
+08/25/2022 11:01:27 AM:root:INFO: ('cycle_time > 20 seconds', '22.61')
+08/25/2022 12:46:43 PM:root:INFO: ('cycle_time > 20 seconds', '28.73')
+08/25/2022 12:47:05 PM:root:INFO: Buzz Buzz Where My Honey
+08/25/2022 12:47:05 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/25/2022 12:47:12 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:07.623838', 'datetime': '2022-08-25_12:47:12_PM'}
+08/25/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+08/26/2022 09:36:23 AM:root:INFO: Buzz Buzz Where My Honey
+08/26/2022 09:36:23 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/26/2022 09:36:27 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:04.650827', 'datetime': '2022-08-26_09:36:27_AM'}
+08/26/2022 10:33:01 AM:root:INFO: ('cycle_time > 20 seconds', '43.96')
+08/26/2022 10:46:11 AM:root:INFO: ('cycle_time > 20 seconds', '764.77')
+08/26/2022 10:46:30 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/26/2022 10:48:44 AM:root:INFO: Buzz Buzz Where My Honey
+08/26/2022 10:48:44 AM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/26/2022 10:48:50 AM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:05.533020', 'datetime': '2022-08-26_10:48:50_AM'}
+08/26/2022 11:14:48 AM:root:INFO: ('cycle_time > 20 seconds', '27.37')
+08/26/2022 11:16:46 AM:root:INFO: ('cycle_time > 20 seconds', '58.73')
+08/26/2022 11:44:17 AM:root:INFO: ('cycle_time > 20 seconds', '22.45')
+08/26/2022 11:44:36 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/26/2022 12:22:23 PM:root:INFO: Buzz Buzz Where My Honey
+08/26/2022 12:22:23 PM:root:INFO: (['SPY', 'QQQ'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/26/2022 12:22:33 PM:root:INFO: {'castle': 'initiate_ttframe_charts', 'block_timeit': '0:00:09.651411', 'datetime': '2022-08-26_12:22:33_PM'}
+08/26/2022 12:29:03 PM:root:INFO: ('cycle_time > 20 seconds', '21.61')
+08/26/2022 04:01:03 PM:root:INFO: Happy Bee Day End
+08/29/2022 09:33:57 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 09:35:48 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:20:42 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:20:42 AM:root:INFO: (['SPY'], {'1Minute_1Day': 0, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 10:20:45 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.272361', 'datetime': '2022-08-29_10:20:45_AM'}
+08/29/2022 10:20:46 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/29/2022 10:21:36 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:21:37 AM:root:INFO: (['SPY'], {'1Minute_1Day': 0, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 10:21:40 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.130418', 'datetime': '2022-08-29_10:21:40_AM'}
+08/29/2022 10:21:41 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/29/2022 10:24:39 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:24:39 AM:root:INFO: (['SPY'], {'1Minute_1Day': 0, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 10:24:42 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.539566', 'datetime': '2022-08-29_10:24:42_AM'}
+08/29/2022 10:24:48 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+08/29/2022 10:24:48 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+08/29/2022 10:24:48 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmp2us1x8uf'
+08/29/2022 10:24:48 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+08/29/2022 10:24:48 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+08/29/2022 10:24:48 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpga9z9v2d'
+08/29/2022 10:28:15 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/29/2022 10:30:48 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:30:48 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 10:30:51 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.387167', 'datetime': '2022-08-29_10:30:51_AM'}
+08/29/2022 10:32:51 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/29/2022 10:34:40 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:34:40 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 10:34:43 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.406903', 'datetime': '2022-08-29_10:34:43_AM'}
+08/29/2022 10:39:55 AM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 10:39:55 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 10:39:57 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.911341', 'datetime': '2022-08-29_10:39:57_AM'}
+08/29/2022 01:37:10 PM:root:INFO: ('cycle_time > 20 seconds', '23.59')
+08/29/2022 02:30:42 PM:root:INFO: ('cycle_time > 20 seconds', '2034.88')
+08/29/2022 02:31:16 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/29/2022 02:31:32 PM:root:INFO: Buzz Buzz Where My Honey
+08/29/2022 02:31:32 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/29/2022 02:31:37 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:05.332678', 'datetime': '2022-08-29_14:31:37_PM'}
+08/29/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+08/30/2022 09:36:08 AM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 09:36:08 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 09:36:11 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.247097', 'datetime': '2022-08-30_09:36:11_AM'}
+08/30/2022 10:27:27 AM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 10:27:27 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 10:27:29 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.442770', 'datetime': '2022-08-30_10:27:29_AM'}
+08/30/2022 10:30:43 AM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 10:30:43 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 10:30:45 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.995870', 'datetime': '2022-08-30_10:30:45_AM'}
+08/30/2022 10:42:21 AM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 10:42:21 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 10:42:27 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:05.433496', 'datetime': '2022-08-30_10:42:27_AM'}
+08/30/2022 11:06:08 AM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 11:06:08 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 11:06:11 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.068814', 'datetime': '2022-08-30_11:06:11_AM'}
+08/30/2022 11:06:12 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/30/2022 11:06:50 AM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 11:06:50 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 11:06:53 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.793751', 'datetime': '2022-08-30_11:06:53_AM'}
+08/30/2022 12:22:00 PM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 12:22:00 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 12:22:02 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.953554', 'datetime': '2022-08-30_12:22:02_PM'}
+08/30/2022 12:22:03 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+08/30/2022 12:23:14 PM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 12:23:14 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 12:23:17 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.065896', 'datetime': '2022-08-30_12:23:17_PM'}
+08/30/2022 02:14:16 PM:root:INFO: Buzz Buzz Where My Honey
+08/30/2022 02:14:16 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/30/2022 02:14:18 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.318550', 'datetime': '2022-08-30_14:14:18_PM'}
+08/30/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+08/31/2022 09:32:55 AM:root:INFO: Buzz Buzz Where My Honey
+08/31/2022 09:32:55 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+08/31/2022 09:32:57 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.902588', 'datetime': '2022-08-31_09:32:57_AM'}
+08/31/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/01/2022 09:33:49 AM:root:INFO: Buzz Buzz Where My Honey
+09/01/2022 09:33:49 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/01/2022 09:33:51 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.675732', 'datetime': '2022-09-01_09:33:51_AM'}
+09/01/2022 12:44:26 PM:root:INFO: Buzz Buzz Where My Honey
+09/01/2022 12:44:26 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/01/2022 12:44:29 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.546362', 'datetime': '2022-09-01_12:44:29_PM'}
+09/01/2022 12:46:41 PM:root:INFO: Buzz Buzz Where My Honey
+09/01/2022 12:46:41 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/01/2022 12:46:44 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.116471', 'datetime': '2022-09-01_12:46:44_PM'}
+09/01/2022 01:01:44 PM:root:INFO: Buzz Buzz Where My Honey
+09/01/2022 01:01:44 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/01/2022 01:01:47 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.195653', 'datetime': '2022-09-01_13:01:47_PM'}
+09/01/2022 01:01:47 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/01/2022 01:03:29 PM:root:INFO: Buzz Buzz Where My Honey
+09/01/2022 01:03:30 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/01/2022 01:03:32 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.432214', 'datetime': '2022-09-01_13:03:32_PM'}
+09/01/2022 01:15:06 PM:root:INFO: Buzz Buzz Where My Honey
+09/01/2022 01:15:06 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/01/2022 01:15:08 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.995711', 'datetime': '2022-09-01_13:15:08_PM'}
+09/01/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+09/02/2022 09:39:01 AM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 09:39:01 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 09:39:04 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.167248', 'datetime': '2022-09-02_09:39:04_AM'}
+09/02/2022 01:19:10 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:19:10 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:19:12 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.913356', 'datetime': '2022-09-02_13:19:12_PM'}
+09/02/2022 01:19:14 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/02/2022 01:19:28 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:19:28 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:19:30 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.955842', 'datetime': '2022-09-02_13:19:30_PM'}
+09/02/2022 01:19:32 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/02/2022 01:19:38 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:19:38 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:19:40 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.022472', 'datetime': '2022-09-02_13:19:40_PM'}
+09/02/2022 01:40:16 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:40:16 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:40:18 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.165808', 'datetime': '2022-09-02_13:40:18_PM'}
+09/02/2022 01:42:06 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:42:07 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:42:09 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.036443', 'datetime': '2022-09-02_13:42:09_PM'}
+09/02/2022 01:52:05 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:52:05 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:52:07 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.249110', 'datetime': '2022-09-02_13:52:07_PM'}
+09/02/2022 01:52:10 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/02/2022 01:53:00 PM:root:INFO: Buzz Buzz Where My Honey
+09/02/2022 01:53:00 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/02/2022 01:53:03 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.434919', 'datetime': '2022-09-02_13:53:03_PM'}
+09/02/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+09/06/2022 09:46:21 AM:root:INFO: Buzz Buzz Where My Honey
+09/06/2022 09:46:21 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/06/2022 09:46:23 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.000508', 'datetime': '2022-09-06_09:46:23_AM'}
+09/06/2022 10:57:25 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/06/2022 10:58:56 AM:root:INFO: Buzz Buzz Where My Honey
+09/06/2022 10:58:56 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/06/2022 10:58:58 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.474458', 'datetime': '2022-09-06_10:58:58_AM'}
+09/06/2022 11:13:12 AM:root:INFO: Buzz Buzz Where My Honey
+09/06/2022 11:13:12 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/06/2022 11:13:14 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.902377', 'datetime': '2022-09-06_11:13:14_AM'}
+09/06/2022 03:50:22 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/07/2022 09:33:16 AM:root:INFO: Buzz Buzz Where My Honey
+09/07/2022 09:33:17 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/07/2022 09:33:19 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.190863', 'datetime': '2022-09-07_09:33:19_AM'}
+09/07/2022 10:50:29 AM:root:INFO: ('cycle_time > 20 seconds', '26.63')
+09/07/2022 11:08:02 AM:root:INFO: Buzz Buzz Where My Honey
+09/07/2022 11:08:02 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/07/2022 11:08:04 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.914603', 'datetime': '2022-09-07_11:08:04_AM'}
+09/07/2022 11:08:43 AM:root:INFO: Buzz Buzz Where My Honey
+09/07/2022 11:08:43 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/07/2022 11:08:45 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.734021', 'datetime': '2022-09-07_11:08:45_AM'}
+09/07/2022 11:08:54 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+09/07/2022 11:08:54 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+09/07/2022 11:08:54 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpwkcnom7f'
+09/07/2022 11:08:54 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+09/07/2022 11:08:54 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+09/07/2022 11:08:54 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpmxxdmr45'
+09/07/2022 11:11:06 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/07/2022 11:11:12 AM:root:INFO: Buzz Buzz Where My Honey
+09/07/2022 11:11:12 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/07/2022 11:11:16 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:04.244083', 'datetime': '2022-09-07_11:11:16_AM'}
+09/07/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/08/2022 09:31:33 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 09:31:34 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 09:31:37 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.312532', 'datetime': '2022-09-08_09:31:37_AM'}
+09/08/2022 09:31:37 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/08/2022 09:32:02 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 09:32:02 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 09:32:05 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.753798', 'datetime': '2022-09-08_09:32:05_AM'}
+09/08/2022 09:32:06 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/08/2022 09:32:31 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 09:32:31 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 09:32:33 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.795798', 'datetime': '2022-09-08_09:32:33_AM'}
+09/08/2022 09:34:43 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 09:34:43 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 09:34:45 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.995976', 'datetime': '2022-09-08_09:34:45_AM'}
+09/08/2022 09:41:12 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 09:41:12 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 09:41:14 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.065851', 'datetime': '2022-09-08_09:41:14_AM'}
+09/08/2022 10:07:34 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 10:07:34 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 10:07:37 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.674856', 'datetime': '2022-09-08_10:07:37_AM'}
+09/08/2022 10:23:06 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 10:23:06 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 10:23:08 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.962889', 'datetime': '2022-09-08_10:23:08_AM'}
+09/08/2022 10:31:03 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 10:31:03 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 10:31:06 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.882119', 'datetime': '2022-09-08_10:31:06_AM'}
+09/08/2022 10:32:31 AM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 10:32:31 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/08/2022 10:32:35 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.770541', 'datetime': '2022-09-08_10:32:35_AM'}
+09/08/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/08/2022 11:52:35 PM:root:INFO: Buzz Buzz Where My Honey
+09/08/2022 11:52:35 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/09/2022 09:34:53 AM:root:INFO: Buzz Buzz Where My Honey
+09/09/2022 09:34:54 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/09/2022 09:34:57 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.277687', 'datetime': '2022-09-09_09:34:57_AM'}
+09/09/2022 10:35:33 AM:root:INFO: Buzz Buzz Where My Honey
+09/09/2022 10:35:33 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/09/2022 10:35:35 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.265685', 'datetime': '2022-09-09_10:35:35_AM'}
+09/09/2022 04:01:02 PM:root:INFO: Happy Bee Day End
+09/12/2022 10:13:43 AM:root:INFO: Buzz Buzz Where My Honey
+09/12/2022 10:13:43 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/12/2022 10:13:45 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.161235', 'datetime': '2022-09-12_10:13:45_AM'}
+09/12/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/13/2022 02:06:38 PM:root:INFO: Buzz Buzz Where My Honey
+09/13/2022 02:06:38 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/13/2022 02:06:41 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.808902', 'datetime': '2022-09-13_14:06:41_PM'}
+09/13/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+09/14/2022 09:49:59 AM:root:INFO: Buzz Buzz Where My Honey
+09/14/2022 09:49:59 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/14/2022 09:50:05 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:05.461237', 'datetime': '2022-09-14_09:50:05_AM'}
+09/14/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+09/15/2022 10:38:34 AM:root:INFO: Buzz Buzz Where My Honey
+09/15/2022 10:38:34 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/15/2022 10:38:39 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:04.595296', 'datetime': '2022-09-15_10:38:39_AM'}
+09/15/2022 02:33:27 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/16/2022 10:45:40 AM:root:INFO: Buzz Buzz Where My Honey
+09/16/2022 10:45:41 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/16/2022 10:45:46 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:04.850624', 'datetime': '2022-09-16_10:45:46_AM'}
+09/16/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/19/2022 09:32:28 AM:root:INFO: Buzz Buzz Where My Honey
+09/19/2022 09:32:28 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/19/2022 09:32:31 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.177967', 'datetime': '2022-09-19_09:32:31_AM'}
+09/20/2022 10:32:10 AM:root:INFO: Buzz Buzz Where My Honey
+09/20/2022 10:32:10 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/20/2022 10:32:12 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.307931', 'datetime': '2022-09-20_10:32:12_AM'}
+09/20/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/21/2022 10:04:22 AM:root:INFO: Buzz Buzz Where My Honey
+09/21/2022 10:04:23 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/21/2022 10:04:26 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.838569', 'datetime': '2022-09-21_10:04:26_AM'}
+09/21/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+09/22/2022 07:49:56 AM:root:INFO: Buzz Buzz Where My Honey
+09/22/2022 07:49:57 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/22/2022 07:50:01 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:04.380003', 'datetime': '2022-09-22_07:50:01_AM'}
+09/22/2022 10:29:06 AM:root:INFO: ('cycle_time > 20 seconds', '5817.78')
+09/22/2022 10:29:11 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/22/2022 10:37:33 AM:root:INFO: Buzz Buzz Where My Honey
+09/22/2022 10:37:34 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/22/2022 10:37:34 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 10:56:30 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 10:56:30 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 10:56:30 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 10:57:21 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 10:57:21 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 10:57:21 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 10:59:04 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 10:59:11 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 10:59:39 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:00:05 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:29:56 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:29:56 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:29:56 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:33:41 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:33:41 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:33:41 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:35:08 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:35:08 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:35:11 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:03.117438', 'datetime': '2022-09-26_11:35:11_AM'}
+09/26/2022 11:35:12 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:38:22 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:38:22 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:38:24 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.112309', 'datetime': '2022-09-26_11:38:24_AM'}
+09/26/2022 11:38:24 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:39:18 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:39:18 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:39:21 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.925844', 'datetime': '2022-09-26_11:39:21_AM'}
+09/26/2022 11:39:22 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:41:11 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:41:11 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:41:14 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.763032', 'datetime': '2022-09-26_11:41:14_AM'}
+09/26/2022 11:41:15 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:42:20 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:42:20 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:42:23 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.693524', 'datetime': '2022-09-26_11:42:23_AM'}
+09/26/2022 11:42:24 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:42:45 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:42:45 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:42:47 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.927371', 'datetime': '2022-09-26_11:42:47_AM'}
+09/26/2022 11:42:47 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:43:40 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:44:25 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:46:28 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:46:28 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:46:30 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.562398', 'datetime': '2022-09-26_11:46:30_AM'}
+09/26/2022 11:46:31 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:47:55 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:47:57 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.482691', 'datetime': '2022-09-26_11:47:57_AM'}
+09/26/2022 11:50:23 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:50:23 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:50:25 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.701834', 'datetime': '2022-09-26_11:50:25_AM'}
+09/26/2022 11:50:29 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/Grammar.txt
+09/26/2022 11:50:29 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/Grammar3.9.9.final.0.pickle
+09/26/2022 11:50:29 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpj54zgnmr'
+09/26/2022 11:50:29 AM:blib2to3.pgen2.driver:INFO: Generating grammar tables from /Users/stefanstapinski/Jq/lib/python3.9/site-packages/blib2to3/PatternGrammar.txt
+09/26/2022 11:50:29 AM:blib2to3.pgen2.driver:INFO: Writing grammar tables to /Users/stefanstapinski/Library/Caches/black/22.1.0/PatternGrammar3.9.9.final.0.pickle
+09/26/2022 11:50:29 AM:blib2to3.pgen2.driver:INFO: Writing failed: [Errno 2] No such file or directory: '/Users/stefanstapinski/Library/Caches/black/22.1.0/tmpc_28qunh'
+09/26/2022 11:54:40 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:54:45 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:54:45 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:54:47 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.927637', 'datetime': '2022-09-26_11:54:47_AM'}
+09/26/2022 11:54:48 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 11:59:26 AM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 11:59:26 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 11:59:28 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.112578', 'datetime': '2022-09-26_11:59:28_AM'}
+09/26/2022 11:59:29 AM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/26/2022 12:04:06 PM:root:INFO: Buzz Buzz Where My Honey
+09/26/2022 12:04:06 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/26/2022 12:04:08 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.863476', 'datetime': '2022-09-26_12:04:08_PM'}
+09/26/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+09/27/2022 11:49:25 AM:root:INFO: Buzz Buzz Where My Honey
+09/27/2022 11:49:25 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/27/2022 11:49:27 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.221652', 'datetime': '2022-09-27_11:49:27_AM'}
+09/27/2022 01:25:49 PM:root:INFO: ('cycle_time > 20 seconds', '21.18')
+09/27/2022 02:09:56 PM:root:INFO: ('cycle_time > 20 seconds', '1911.90')
+09/27/2022 02:10:24 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/27/2022 03:33:59 PM:root:INFO: Buzz Buzz Where My Honey
+09/27/2022 03:33:59 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/27/2022 03:34:02 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.437129', 'datetime': '2022-09-27_15:34:02_PM'}
+09/27/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/28/2022 12:12:49 PM:root:INFO: Buzz Buzz Where My Honey
+09/28/2022 12:12:50 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/28/2022 12:12:52 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.340149', 'datetime': '2022-09-28_12:12:52_PM'}
+09/28/2022 01:16:57 PM:root:CRITICAL: {'type': 'ProgramCrash', 'lineerror': None}
+09/28/2022 01:20:34 PM:root:INFO: Buzz Buzz Where My Honey
+09/28/2022 01:20:34 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/28/2022 01:20:36 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.900373', 'datetime': '2022-09-28_13:20:36_PM'}
+09/28/2022 04:01:06 PM:root:INFO: Happy Bee Day End
+09/29/2022 10:15:24 AM:root:INFO: Buzz Buzz Where My Honey
+09/29/2022 10:15:24 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/29/2022 10:15:26 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.605213', 'datetime': '2022-09-29_10:15:26_AM'}
+09/29/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+09/30/2022 10:29:39 AM:root:INFO: Buzz Buzz Where My Honey
+09/30/2022 10:29:39 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+09/30/2022 10:29:41 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.015543', 'datetime': '2022-09-30_10:29:41_AM'}
+09/30/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+10/05/2022 01:34:36 PM:root:INFO: Buzz Buzz Where My Honey
+10/05/2022 01:34:36 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+10/05/2022 01:34:38 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.734834', 'datetime': '2022-10-05_13:34:38_PM'}
+10/05/2022 04:01:01 PM:root:INFO: Happy Bee Day End
+10/06/2022 09:30:17 AM:root:INFO: Buzz Buzz Where My Honey
+10/06/2022 09:30:18 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+10/06/2022 09:30:20 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:02.244228', 'datetime': '2022-10-06_09:30:20_AM'}
+10/06/2022 09:31:51 AM:root:INFO: Buzz Buzz Where My Honey
+10/06/2022 09:31:51 AM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+10/06/2022 09:31:53 AM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:01.640114', 'datetime': '2022-10-06_09:31:53_AM'}
+10/06/2022 04:01:00 PM:root:INFO: Happy Bee Day End
+10/07/2022 12:51:45 PM:root:INFO: Buzz Buzz Where My Honey
+10/07/2022 12:51:45 PM:root:INFO: (['SPY'], {'1Minute_1Day': 1, '5Minute_5Day': 5, '30Minute_1Month': 18, '1Hour_3Month': 48, '2Hour_6Month': 72, '1Day_1Year': 250})
+10/07/2022 12:51:50 PM:root:INFO: {'castle': 'initiate ttframe charts', 'block_timeit': '0:00:04.619319', 'datetime': '2022-10-07_12:51:50_PM'}

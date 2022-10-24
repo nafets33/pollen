@@ -24,7 +24,7 @@ from tqdm import tqdm
 from stocksymbol import StockSymbol
 import requests
 from collections import defaultdict
-import talib
+# import talib
 from scipy import stats
 import shutil
 
@@ -32,7 +32,7 @@ prod = True
 queens_chess_piece = os.path.basename(__file__)
 
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
+db_root = os.path.join(main_root, 'db_local')
 
 current_day = datetime.datetime.now().day
 current_month = datetime.datetime.now().month
