@@ -79,8 +79,11 @@ crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
 coin_exchange = "CBSE"
 
 
+# /home/stapinski89/pollen/pollen/db
+
 main_root = os.getcwd()
-db_root = os.path.join(main_root, 'db')
+# db_root = os.path.join(main_root, 'db')
+db_root = '/home/stapinski89/pollen/pollen/db/' # linix
 # db_app_root = os.path.join(db_root, 'app')
 jpg_root = os.path.join(main_root, 'misc')
 
@@ -119,7 +122,6 @@ log_dir = dst = os.path.join(db_root, 'logs')
 # d2 = {i: st.button(i, key=i) for i in d}
 # if d2['a']:
 #     st.write('kewl')
-
 
 def init_logging(queens_chess_piece, db_root):
     loglog_newfile = False
@@ -524,12 +526,39 @@ def update_QueenControls(APP_requests, control_option, theme_list):
 
     elif control_option.lower() == 'symbols_stars_tradingmodel':
         st.write("Current Model")
-        st.write(QUEEN['queen_controls'][control_option])
+        # st.write(QUEEN['queen_controls'][control_option])
         tickers_avail = list(QUEEN['queen_controls'][control_option].keys())
         ticker_option_qc = st.selectbox("Select Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
-        star_avail = list(QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
+        star_avail = list(QUEEN['queen_controls'][control_option][ticker_option_qc]['stars_kings_order_rules'].keys())
         star_option_qc = st.selectbox("Select Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
+        # Trading Model
+        trading_model = QUEEN['queen_controls'][control_option][ticker_option_qc]
+        trigbee_sel = st.selectbox("trigbees", list(trading_model['trigbees'].keys()))
+        trading_model__star = trading_model['stars_kings_order_rules'][star_option_qc]
+        # Waves change to ref tradin model
+        wave_blocks_option = st.selectbox("block time", KING['waveBlocktimes'])
 
+        st.write('QUEEN Ticker STAR model', trading_model__star.keys())
+    
+        st.write('delme', trading_model__star['trigbees'].keys())
+
+        
+        tic_options_mapping = {
+        # 'QueenBeeTrader', 'trigbees': 'checkbox',
+        'status': 'checkbox',
+        'total_budget': 'number',
+        'buyingpower_allocation_LongTerm':  'number', 'buyingpower_allocation_ShortTerm': 'number',
+        'index_long_X': 'text', 'index_inverse_X': 'text', 
+        'portforlio_weight_ask':  'number', 
+        'max_single_trade_amount':  'number', 'allow_for_margin': 'checkbox', 
+        'buy_ONLY_by_accept_from_QueenBeeTrader': 'checkbox', 
+        'trading_model_name': 'text', 'portfolio_name': 'text', 
+        'premarket': 'checkbox', 'afterhours': 'checkbox', 'morning_9-11': 'checkbox', 'lunch_11-2':'checkbox', 'afternoon_2-4': 'checkbox', 'Day': 'checkbox'}
+
+        star_trigbee_mapping = {
+            'status': 'checkbox',
+        }
+            
         kor_option_mapping = {
         'status': 'checkbox',
         'trade_using_limits': 'checkbox',
@@ -543,161 +572,125 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         'stagger_profits': 'checkbox',
         'scalp_profits': 'checkbox',
         'scalp_profits_timeduration': 'number',
-        'stagger_profits_tiers': 'number',}
+        'stagger_profits_tiers': 'number',
+        'limitprice_decay_timeduration': 'number'}
 
 
+
+
+        
         with st.form('trading model form'):
-            trading_model_dict = QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc]
-            trigbees = trading_model_dict['trigbees']
-            trigbees_update = {}
-            for k, v in QUEEN['queen_controls'][control_option][ticker_option_qc][star_option_qc].items():
+            ticker_update = {}
+            star_settings_upadte = {}
+            star__items = {}
 
-                if k == 'status':
-                    # st.write(k, v)
-                    control_status = st.selectbox("control_status", ['active', 'not_active'], index=['active', 'not_active'].index(v))
-                elif k == 'total_budget':
-                    st.write(k, v)
-                    total_budget = st.number_input(label=k, value=float(v))
-                elif k == 'trade_using_limits':
-                    # st.write(k, v)
-                    trade_using_limits = st.checkbox("trade_using_limits")
-                elif k == 'buyingpower_allocation_LongTerm':
-                    st.write(k, v)
-                    buyingpower_allocation_LongTerm = st.number_input(label=k, value=float(v))
-                elif k == 'buyingpower_allocation_ShortTerm':
-                    st.write(k, v)
-                    buyingpower_allocation_ShortTerm = st.number_input(label=k, value=float(v))
-                elif k == 'trigbees':
-                    st.write(k, v)
-                    
-                    for trig in trigbees:
-                        trigbees_update[trig] = trigbees[trig]
-                        for blocktime in KING['waveBlocktimes']:
-                            trigbees_update[trig][blocktime] = trigbees[trig][blocktime]
-                            king_order_rules = v[trig][blocktime]
-                            for kor_option, kor_v in king_order_rules.items():
-                                st_func = kor_option_mapping[kor_option]
-                                if st_func == 'checckbox':
-                                    trigbees_update[f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}'] = st.checkbox(label=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}', value=kor_v, key=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}')
-                                elif st_func == 'number':
-                                    trigbees_update[f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}'] = st.number_input(label=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}', value=kor_v, key=f'{trigbee}{"_"}{blocktime}{"_"}{kor_option}')
-                                else:
-                                    print('missing')
-                                    st.write("missing")
-                    
-                    # if 'buy_cross-0' in v.keys():
-                    #     st.write('buy_cross-0')
-                    #     op_trigbee_bc = st.checkbox('status_bc', value=True)
-                    #     op_trigbee_max_profit_waveDeviation_bc = st.number_input(label='max_profit_waveDeviation_bc', value=int(v['buy_cross-0']['max_profit_waveDeviation']))
-                    #     op_trigbee_timeduration_bc = st.number_input(label='timeduration_bc', value=int(v['buy_cross-0']['timeduration']))
-                    #     op_trigbee_take_profit_bc = st.number_input(label='take_profit_bc', value=float(v['buy_cross-0']['take_profit']))
-                    #     op_trigbee_sellout_bc = st.number_input(label='sellout_bc', value=float(v['buy_cross-0']['sellout']))
-                    #     op_trigbee_sell_trigbee_trigger_bc = st.checkbox('sell_trigbee_trigger_bc', value=v['buy_cross-0']['sell_trigbee_trigger'])
-                    #     op_stagger_profits_bc = st.checkbox('stagger_profits_bc', value=v['buy_cross-0']['stagger_profits'])
-                    #     op_scalp_profits_bc = st.checkbox('scalp_profits_bc', value=v['buy_cross-0']['scalp_profits'])
+            trigbee_update = trading_model__star['trigbees'][trigbee_sel]
+            king_order_rules_update = trading_model__star['trigbees'][trigbee_sel][wave_blocks_option]
 
-                    # if 'sell_cross-0' in v.keys():
-                    #     st.write('sell_cross-0')
-                    #     op_trigbee_sc = st.checkbox('status_sc', value=True)
-                    #     op_trigbee_max_profit_waveDeviation_sc = st.number_input(label='max_profit_waveDeviation_sc', value=int(v['sell_cross-0']['max_profit_waveDeviation']))
-                    #     op_trigbee_timeduration_sc = st.number_input(label='timeduration_sc', value=float(v['sell_cross-0']['timeduration']))
-                    #     op_trigbee_take_profit_sc = st.number_input(label='take_profit_sc', value=float(v['sell_cross-0']['take_profit']))
-                    #     op_trigbee_sellout_sc = st.number_input(label='sellout_sc', value=float(v['sell_cross-0']['sellout']))
-                    #     op_trigbee_sell_trigbee_trigger_sc = st.checkbox('sell_trigbee_trigger_sc', value=v['sell_cross-0']['sell_trigbee_trigger'])
-                    #     op_stagger_profits_sc = st.checkbox('stagger_profits_sc', value=v['sell_cross-0']['stagger_profits'])
-                    #     op_scalp_profits_sc = st.checkbox('scalp_profits_sc', value=v['sell_cross-0']['scalp_profits'])
+            with st.expander('Ticker Settings'):
+                st.write('tic level', QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
 
-                    # if 'ready_buy_cross' in v.keys():
-                    #     st.write('ready_buy_cross')
-                    #     op_trigbee_rb = st.checkbox('status_rb', value=True)
-                    #     op_trigbee_max_profit_waveDeviation_rb = st.number_input(label='max_profit_waveDeviation_rb', value=int(v['ready_buy_cross']['max_profit_waveDeviation']))
-                    #     op_trigbee_timeduration_rb = st.number_input(label='timeduration_rb', value=int(v['ready_buy_cross']['timeduration']))
-                    #     op_trigbee_take_profit_rb = st.number_input(label='take_profit_rb', value=float(v['ready_buy_cross']['take_profit']))
-                    #     op_trigbee_sellout_rb = st.number_input(label='sellout_rb', value=float(v['ready_buy_cross']['sellout']))
-                    #     op_trigbee_sell_trigbee_trigger_rb = st.checkbox('sell_trigbee_trigger_rb', value=v['ready_buy_cross']['sell_trigbee_trigger'])
-                    #     op_stagger_profits_rb = st.checkbox('stagger_profits_rb', value=v['ready_buy_cross']['stagger_profits'])
-                    #     op_scalp_profits_rb = st.checkbox('scalp_profits_rb', value=v['ready_buy_cross']['scalp_profits'])
+                mark_down_text(text='Ticker Settings')
+                # power rangers
+                for k,v in trading_model['power_rangers'].items():
+                    star__items[k] = st.checkbox(label=k, value=v, key=f'{"tic_level1"}{k}{v}')
+                # all ticker settings
+                for kor_option, kor_v in trading_model.items():
+                    if kor_option in tic_options_mapping.keys():
+                        st_func = tic_options_mapping[kor_option]
+                        if st_func == 'checkbox':
+                            ticker_update[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+                        elif st_func == 'number':
+                            ticker_update[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+                        elif st_func == 'text':
+                            ticker_update[kor_option] = st.text_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+                    else:
+                        st.write("missing ", kor_option)
+                        # ticker_update[kor_option] = kor_v
+                
+            with st.expander('Star Settings'):
+                st.write(QUEEN['queen_controls'][control_option][ticker_option_qc]['stars_kings_order_rules'][star_option_qc].keys())
 
-                elif k == 'trigbees_kings_order_rules':
-                    st.write(k, v)
-                elif k == 'power_rangers':
-                    st.write("active stars", k, v)
+                mark_down_text(text=f'{star_option_qc}{" Star Settings"}') 
+                control_status = st.selectbox("Ticker Active", ['active', 'not_active'], index=['active', 'not_active'].index(trading_model__star['status']))
+                total_budget = st.number_input(label='total_budget', value=float(trading_model__star['total_budget']))
+                trade_using_limits = st.checkbox("trade_using_limits", value=trading_model__star['trade_using_limits'])
+                buyingpower_allocation_LongTerm = st.number_input(label='buyingpower_allocation_LongTerm', value=trading_model__star['buyingpower_allocation_LongTerm'])
+                buyingpower_allocation_ShortTerm = st.number_input(label='buyingpower_allocation_ShortTerm', value=trading_model__star['buyingpower_allocation_ShortTerm'])
 
-                    df = pd.DataFrame(v.items())
-                    df = df.rename(columns={0: 'star', 1: 'status'})
+                st.write("active stars")
+                active_stars = {}
+                for k,v in trading_model__star['power_rangers'].items():
+                    active_stars[k] = st.checkbox(label=f'{k}', value=v, key=f'{"star_level2"}{k}{v}')
 
-                    
-                    # make into 1
-                    # st.write(df)
+            with st.expander(f'{"Star Trigbee Settings: "}{trigbee_sel}'):
+                
+                mark_down_text(text=f'{trigbee_sel}')
+                for kor_option, kor_v in trigbee_update.items():
+                    if kor_option in star_trigbee_mapping.keys():
+                        st_func = star_trigbee_mapping[kor_option]
+                        if st_func == 'checckbox':
+                            trigbee_update[kor_option] = st.checkbox(label=f'{trigbee_sel}{"_"}{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{kor_option}')
+                        elif st_func == 'number':
+                            trigbee_update[kor_option] = st.number_input(label=f'{trigbee_sel}{"_"}{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{kor_option}')
+                        elif st_func == 'text':
+                            trigbee_update[kor_option] = st.text_input(label=f'{trigbee_sel}{"_"}{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{kor_option}')
+                    else:
+                        print('missing')
+                        st.write("missing ", kor_option)
+                        # trigbee_update[kor_option] = kor_v
 
-                    grid_response = build_AGgrid_df(data=df, reload_data=True, update_mode_value='SELECTION_CHANGED', height=333, update_cols=['star_status'], dropdownlst=['active', 'not_active'])
-                    data = grid_response['data']
-                    selected = grid_response['selected_rows'] 
-                    df_sel = pd.DataFrame(selected)
-                    st.write(df_sel)
-                    # if len(df_sel) > 0:
-                    #     star_dict = dict(zip(df_sel['star'], df['star_status_update']))
-                    #     trading_model_dict['power_rangers'] = star_dict # 'power_rangers'
+            with st.expander(f'{"StarTrigbee WaveBlocktime KingOrderRules "}{trigbee_sel}{" >>> "}{wave_blocks_option}'):
+                mark_down_text(text=f'{trigbee_sel}{" >>> "}{wave_blocks_option}')
+                for kor_option, kor_v in king_order_rules_update.items():
+                    if kor_option in kor_option_mapping.keys():
+                        st_func = kor_option_mapping[kor_option]
+                        if st_func == 'checckbox':
+                            king_order_rules_update[kor_option] = st.checkbox(label=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                        elif st_func == 'number':
+                            king_order_rules_update[kor_option] = st.number_input(label=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                        elif st_func == 'text':
+                            king_order_rules_update[kor_option] = st.text_input(label=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                    else:
+                        print('missing')
+                        st.write("missing ", kor_option)
+                        king_order_rules_update[kor_option] = kor_v
 
-            # Create
-            
+
+            # Create App Package
             save_button_addranger = st.form_submit_button("update active star rangers")
             if save_button_addranger:
                 app_req = create_AppRequest_package(request_name='trading_models',  archive_bucket='trading_models_requests')
-                trading_model_dict['status'] = control_status
-                trading_model_dict['trade_using_limits'] = trade_using_limits
-                trading_model_dict['buyingpower_allocation_LongTerm'] = buyingpower_allocation_LongTerm
-                trading_model_dict['buyingpower_allocation_ShortTerm'] = buyingpower_allocation_ShortTerm
-                trading_model_dict['total_budget'] = total_budget
+                # Ticker Level 1
+                trading_model.update(ticker_update)
+
+                trading_model['status'] = control_status
+                trading_model['trade_using_limits'] = trade_using_limits
+                trading_model['buyingpower_allocation_LongTerm'] = buyingpower_allocation_LongTerm
+                trading_model['buyingpower_allocation_ShortTerm'] = buyingpower_allocation_ShortTerm
+                trading_model['total_budget'] = total_budget
+                trading_model['power_rangers'] = {k: v for (k,v) in active_stars.items()}
+
+                # Star Level 2
+                trading_model['stars_kings_order_rules'][star_option_qc].update(ticker_update)
+                
+                # Trigbees Level 3
+                trading_model['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel].update(trigbee_update)
+                
+                # WaveBlock Time Levle 4
+                trading_model['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel][wave_blocks_option].update(king_order_rules_update)
 
 
-
-                # if 'buy_cross-0' in trading_model_dict['trigbees'].keys():
-                #     trigbees['buy_cross-0']['status'] = op_trigbee_bc
-                #     trigbees['buy_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_bc
-                #     trigbees['buy_cross-0']['timeduration'] = op_trigbee_timeduration_bc
-                #     trigbees['buy_cross-0']['take_profit'] = op_trigbee_take_profit_bc
-                #     trigbees['buy_cross-0']['sellout'] = op_trigbee_sellout_bc
-                #     trigbees['buy_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_bc
-                #     trigbees['buy_cross-0']['stagger_profits'] = op_stagger_profits_bc
-                #     trigbees['buy_cross-0']['scalp_profits']= op_scalp_profits_bc
-                # if 'sell_cross-0' in trading_model_dict['trigbees'].keys():
-                #     trigbees['sell_cross-0']['status'] = op_trigbee_sc
-                #     trigbees['sell_cross-0']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_sc
-                #     trigbees['sell_cross-0']['timeduration'] = op_trigbee_timeduration_sc
-                #     trigbees['sell_cross-0']['take_profit'] = op_trigbee_take_profit_sc
-                #     trigbees['sell_cross-0']['sellout'] = op_trigbee_sellout_sc
-                #     trigbees['sell_cross-0']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_sc
-                #     trigbees['sell_cross-0']['stagger_profits'] = op_stagger_profits_sc
-                #     trigbees['sell_cross-0']['scalp_profits']= op_scalp_profits_sc
-                # if 'ready_buy_cross' in trading_model_dict['trigbees'].keys():
-                #     trigbees['ready_buy_cross']['status'] = op_trigbee_rb
-                #     trigbees['ready_buy_cross']['max_profit_waveDeviation'] = op_trigbee_max_profit_waveDeviation_rb
-                #     trigbees['ready_buy_cross']['timeduration'] = op_trigbee_timeduration_rb
-                #     trigbees['ready_buy_cross']['take_profit'] = op_trigbee_take_profit_rb
-                #     trigbees['ready_buy_cross']['sellout'] = op_trigbee_sellout_rb
-                #     trigbees['ready_buy_cross']['sell_trigbee_trigger'] = op_trigbee_sell_trigbee_trigger_rb
-                #     trigbees['ready_buy_cross']['stagger_profits'] = op_stagger_profits_rb
-                #     trigbees['ready_buy_cross']['scalp_profits']= op_scalp_profits_rb
-                
-                trading_model_dict['trigbees'] = trigbees_update
-                
-                if len(df_sel) > 0:
-                    star_original_dict = dict(zip(df['star'], df['status']))
-                    star_update_dict = dict(zip(df_sel['star'], df_sel['star_status_update']))
-                    star_dict = {**star_original_dict, **star_update_dict}
-                    trading_model_dict['power_rangers'] = star_dict # 'power_rangers'
-                
-                st.write(trading_model_dict)
-                app_req['trading_model_dict'] = trading_model_dict
-                APP_requests['trading_models'].append(app_req)
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                # st.write(trading_model__star)
+                # app_req['trading_model__star'] = trading_model__star
+                # APP_requests['trading_models'].append(app_req)
+                # PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
         
-                # Save
-                st.write(app_request_package)
-                APP_requests['power_rangers'].append(app_request_package)
-                APP_requests['power_rangers_lastupdate'] = datetime.datetime.now().astimezone(est)
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                # # Save
+                # st.write(app_request_package)
+                # APP_requests['power_rangers'].append(app_request_package)
+                # APP_requests['power_rangers_lastupdate'] = datetime.datetime.now().astimezone(est)
+                # PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
                 return_image_upon_save()
         
     else:
@@ -756,9 +749,7 @@ def create_AppRequest_package(request_name, archive_bucket):
     }
 
 
-
-
-def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_modules=False, fit_columns_on_grid_load=False, update_mode_value=False, return_mode_value=False, grid_height=False, enable_sidebar=False, enable_selection=False, selection_mode=False, use_checkbox=False, enable_pagination=False, paginationAutoSize=False, paginationPageSize=False):
+def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_modules=False, fit_columns_on_grid_load=False, update_mode_value=False, return_mode_value=False, grid_height=False, enable_sidebar=False, enable_selection=False, selection_mode='multiple', use_checkbox=False, enable_pagination=False, paginationAutoSize=False, paginationPageSize=False):
     #configures last row to use custom styles based on cell's value, injecting JsCode on components front end
     #Infer basic colDefs from dataframe types
     gb = GridOptionsBuilder.from_dataframe(df)
@@ -772,9 +763,9 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
     # gb.configure_column("banana", type=["numericColumn", "numberColumnFilter", "customNumericFormat"], precision=1, aggFunc='avg')
     # gb.configure_column("chocolate", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="R$", aggFunc='max')
     if js_code:
-        js_code = """
+        js_code = {'mac_ranger': """
         function(params) {
-            if (params.value == 'A') {
+            if (params.value == 'white') {
                 return {
                     'color': 'white',
                     'backgroundColor': 'darkred'
@@ -787,15 +778,18 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
             }
         };
         """
-        cellsytle_jscode = JsCode(js_code)
+        }
         for col in js_code_cols:
+            cellsytle_jscode = JsCode(js_code[col])
             gb.configure_column("group", cellStyle=cellsytle_jscode)
+
+    if enable_sidebar:
+        gb.configure_side_bar()
 
     if enable_selection:
         st.sidebar.subheader("Selection options")
-        selection_mode = st.sidebar.radio("Selection Mode", ['single','multiple'], index=1)
+        # selection_mode = st.sidebar.radio("Selection Mode", ['single','multiple'], index=1)
         
-        use_checkbox = st.sidebar.checkbox("Use check box for selection", value=True)
         if use_checkbox:
             groupSelectsChildren = st.sidebar.checkbox("Group checkbox select children", value=True)
             groupSelectsFiltered = st.sidebar.checkbox("Group checkbox includes filtered", value=True)
@@ -812,9 +806,6 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
             gb.configure_selection(selection_mode, use_checkbox=True, groupSelectsChildren=groupSelectsChildren, groupSelectsFiltered=groupSelectsFiltered)
         if ((selection_mode == 'multiple') & (not use_checkbox)):
             gb.configure_selection(selection_mode, use_checkbox=False, rowMultiSelectWithClick=rowMultiSelectWithClick, suppressRowDeselection=suppressRowDeselection)
-
-    if enable_sidebar:
-        gb.configure_side_bar()
 
     if enable_pagination:
         if paginationAutoSize:
@@ -847,7 +838,9 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
 
     df = grid_response['data']
     selected = grid_response['selected_rows']
-    selected_df = pd.DataFrame(selected).apply(pd.to_numeric, errors='coerce')
+    # selected_df = pd.DataFrame(selected).apply(pd.to_numeric, errors='coerce')
+
+    return True
 
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
@@ -1088,9 +1081,9 @@ if check_password():
 
 # if check_password():
 # if True:
-    for i in st.session_state:
-        st.write(i)
-        st.write(type(i))
+    # for i in st.session_state:
+    #     st.write(i)
+    #     st.write(type(i))
     # del st.session_state['FormSubmitter:signin-SignIn']
 
     # st.sidebar.write(write_flying_bee())
@@ -1098,6 +1091,8 @@ if check_password():
     # st.write(prod)
     if prod:
         api = api
+        # db_root = '/home/stapinski89/pollen/pollen/db/' # linix
+        # db_root = '/Users/stefanstapinski/Jq/pollen' # mac
         PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
         st.sidebar.write("""My Queen Production""")
     else:
@@ -1462,7 +1457,10 @@ if check_password():
         betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
         df_betty = pd.DataFrame(betty_bee)
         df_betty = df_betty.astype(str)
-        st.write('betty_bee', df_betty)
+        # st.write('betty_bee', df_betty)
+        write_flying_bee()
+        with st.expander('betty_bee'):
+            st.write(df_betty)
 
         st.write(APP_requests['queen_controls'])
 
@@ -1478,14 +1476,12 @@ if check_password():
 
         if save_signals == 'controls':
             theme_list = list(pollen_theme.keys())
-
+            with st.expander('Heartbeat'):
+                st.write(QUEEN['heartbeat'])
+            
             with col1:
-                st.write('Queen Controls')
-                st.write(QUEEN['queen_controls'])
                 stop_queenbee(APP_requests=APP_requests)
             with col2:
-                st.write("HeartBeat")
-                st.write(QUEEN['heartbeat'])
                 refresh_queenbee_controls(APP_requests=APP_requests)
 
             contorls = list(QUEEN['queen_controls'].keys())
