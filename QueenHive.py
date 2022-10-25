@@ -231,7 +231,7 @@ def read_queensmind(prod): # return active story workers
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
-def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
+def pollen_story(pollen_nectar, WORKER_QUEEN=False):
     # define weights in global and do multiple weights for different scenarios..
     # MACD momentum from past N times/days
     # TIME PAST SINCE LAST HIGH TO LOW to change weight & how much time passed since tier cross last high?   
@@ -253,6 +253,19 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
         for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
             s_ttfame_func_check = datetime.datetime.now().astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
+            # if WORKER_QUEEN:
+            #     if ticker in WORKER_QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
+            #         trading_model = WORKER_QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
+            #         trigbees = trading_model['trigbees'].keys()
+
+            #     else:
+            #         trading_model = False
+            #         trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+            # else:
+            #     trading_model = False
+            #     trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+            trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+
 
             ANGEL_bee[ticker_time_frame] = {}
             STORY_bee[ticker_time_frame] = {'story': {}}
@@ -292,13 +305,12 @@ def pollen_story(pollen_nectar, QUEEN, queens_chess_piece):
             #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
 
             s_timetoken = datetime.datetime.now().astimezone(est)
-            wave = return_knightbee_waves(df=df, knights_word=knights_word, ticker_time_frame=ticker_time_frame)
-            # wave_trigger_list = wave[ticker_time_frame].keys()
-            wave_trigger_list = ['buy_cross-0', 'sell_cross-0']
+            # ipdb.set_trace()
+            wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
+            
+            MACDWAVE_story = return_macd_wave_story(df=df, trigbees=trigbees, tframe=tframe)
 
-            MACDWAVE_story = return_macd_wave_story(df=df, wave_trigger_list=wave_trigger_list, tframe=tframe)
-
-            resp = return_waves_measurements(df=df, trigbees=['buy_cross-0', 'sell_cross-0'], ticker_time_frame=ticker_time_frame)
+            resp = return_waves_measurements(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
             df = resp['df']
             MACDWAVE_story['story'] = resp['df_waves']
 
@@ -772,11 +784,10 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     return df
 
 
-def return_knightbee_waves(df, knights_word, ticker_time_frame):  # adds profit wave based on trigger
+def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave based on trigger
     # df = POLLENSTORY['SPY_1Minute_1Day'] # test
     wave = {ticker_time_frame: {}}
-    # knights_word = {'ready_buy_cross': 2, 'buy_cross-0':1,}
-    for knight_trigger in knights_word.keys():
+    for knight_trigger in trigbees:
         trig_name = knight_trigger # "buy_cross-0" # test
         wave[ticker_time_frame][trig_name] = {}
         trigger_bee = df[trig_name].tolist()
@@ -810,7 +821,7 @@ def return_knightbee_waves(df, knights_word, ticker_time_frame):  # adds profit 
                     track_bees_profits[beename].update({idx: profit_loss})
                 else:
                     track_bees_profits[beename] = {idx: profit_loss}
-        # knights_word[trig_name]['wave'] = track_bees_profits
+        # trigbees[trig_name]['wave'] = track_bees_profits
         wave[ticker_time_frame][trig_name] = track_bees_profits
         # wave[ticker_time_frame]["buy_cross-0"].keys()
         # bees_wave = wave['AAPL_1Minute_1Day']["buy_cross-0"]
@@ -830,10 +841,10 @@ def return_knightbee_waves(df, knights_word, ticker_time_frame):  # adds profit 
     return wave
 
 
-def return_macd_wave_story(df, wave_trigger_list, tframe):
+def return_macd_wave_story(df, trigbees, tframe):
     # POLLENSTORY = read_pollenstory()
     # df = POLLENSTORY["SPY_1Minute_1Day"]
-    # wave_trigger_list = ["buy_cross-0", "sell_cross-0"]
+    # trigbees = ["buy_cross-0", "sell_cross-0"]
     
     # t = split_today_vs_prior(df=df)
     # df = t['df_today']
@@ -842,9 +853,9 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 
     # length and height of wave
     MACDWAVE_story = {'story': {}}
-    MACDWAVE_story.update({trig_name: {} for trig_name in wave_trigger_list})
+    MACDWAVE_story.update({trig_name: {} for trig_name in trigbees})
 
-    for trigger in wave_trigger_list:
+    for trigger in trigbees:
         wave_col_name = f'{trigger}{"__wave"}'
         wave_col_wavenumber = f'{trigger}{"__wave_number"}'
     
@@ -905,7 +916,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 
     # all_waves = []
     # all_waves_temp = []
-    # for trig_name in wave_trigger_list:
+    # for trig_name in trigbees:
     #     l_waves = list(MACDWAVE_story[trig_name].values())
     #     l_waves = [i for i in l_waves if i['wave_n'] != '0']
     #     all_waves_temp.append(l_waves)
@@ -927,7 +938,7 @@ def return_macd_wave_story(df, wave_trigger_list, tframe):
 def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']):
     # POLLENSTORY = read_pollenstory()
     # df = POLLENSTORY["SPY_1Minute_1Day"]
-    # wave_trigger_list = ["macd_cross"]
+    # trigbees = ["macd_cross"]
     # length and height of wave
 
     ticker, tframe, frame  = ticker_time_frame.split("_")
@@ -2397,29 +2408,27 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     
     return return_dict
 
+def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1):
+    return {
+    'status': status,
+    'trade_using_limits': trade_using_limits,
+    'limitprice_decay_timeduration': limitprice_decay_timeduration,
+    'doubledown_timeduration': doubledown_timeduration,
+    'max_profit_waveDeviation': max_profit_waveDeviation,
+    'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
+    'timeduration': timeduration,
+    'take_profit': take_profit,
+    'sellout': sellout,
+    'sell_trigbee_trigger': sell_trigbee_trigger,
+    'stagger_profits': stagger_profits,
+    'scalp_profits': scalp_profits,
+    'scalp_profits_timeduration': scalp_profits_timeduration,
+    'stagger_profits_tiers': stagger_profits_tiers,}
 
 def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
     
     def star_trading_model_vars(stars=stars):
         
-        def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1):
-            return {
-            'status': status,
-            'trade_using_limits': trade_using_limits,
-            'limitprice_decay_timeduration': limitprice_decay_timeduration,
-            'doubledown_timeduration': doubledown_timeduration,
-            'max_profit_waveDeviation': max_profit_waveDeviation,
-            'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
-            'timeduration': timeduration,
-            'take_profit': take_profit,
-            'sellout': sellout,
-            'sell_trigbee_trigger': sell_trigbee_trigger,
-            'stagger_profits': stagger_profits,
-            'scalp_profits': scalp_profits,
-            'scalp_profits_timeduration': scalp_profits_timeduration,
-            'stagger_profits_tiers': stagger_profits_tiers,}
-
-
         def star__DEFAULT_kings_order_rules_mapping(stars=stars):
             return {
                 '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
@@ -2434,9 +2443,9 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         #     return {'premarket': {'status': 'not_active'}}
 
         def trigbees__DEFAULT_keys():
-            return {'buy_cross-0': {'status': 'active', 'trade_using_limits': False, 'sell_trigbee_trigger': True, 'stagger_profits': False, 'scalp_profits': False, 'stagger_profits_tiers': 1},
-            'sell_cross-0': {'status': 'active', 'trade_using_limits': False, 'sell_trigbee_trigger': True, 'stagger_profits': False, 'scalp_profits': False, 'stagger_profits_tiers': 1},
-            'ready_buy_cross': {'status': 'active', 'trade_using_limits': False, 'sell_trigbee_trigger': True, 'stagger_profits': False, 'scalp_profits': False, 'stagger_profits_tiers': 1},
+            return {'buy_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            'sell_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            'ready_buy_cross': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
             }
 
         def star_kings_order_rules_mapping(stars, trigbees, waveBlocktimes, star__DEFAULT_kings_order_rules_mapping=star__DEFAULT_kings_order_rules_mapping, trigbees__DEFAULT_keys=trigbees__DEFAULT_keys): # --> returns star_trigbee_king_order_rules
@@ -2510,7 +2519,6 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
 
         
         def star_vars(star, star_vars_mapping):
-            
             return {'star': star,
             'status': star_vars_mapping[star]['status'],
             'trade_using_limits': star_vars_mapping[star]['trade_using_limits'],
@@ -2545,7 +2553,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
     }
     
     
-    def tradingmodel_vars(stars_vars, trigbees=trigbees, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars):
+    def tradingmodel_vars(stars_vars, trigbees=trigbees, ticker=ticker, trading_model_name=trading_model_name, status=status, portforlio_weight_ask=portforlio_weight_ask, stars=stars, portfolio_name=portfolio_name, kings_order_rules=kings_order_rules):
         afterhours = [True if ticker in crypto_currency_symbols else False][0]
         afternoon = [True if ticker in crypto_currency_symbols else True][0]
         lunch = [True if ticker in crypto_currency_symbols else True][0]
@@ -2556,7 +2564,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         etf_X_direction = ['1X', '2X', '3X']
         trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
 
-        ticker_vars = {'QueenBeeTrader': 'Jq',
+        model1 = {'QueenBeeTrader': 'Jq',
                 'status': status,
                 'buyingpower_allocation_LongTerm': .2,
                 'buyingpower_allocation_ShortTerm': .8,
@@ -2569,17 +2577,20 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                 'buy_ONLY_by_accept_from_QueenBeeTrader': False,
                 'trading_model_name': trading_model_name,
                 'portfolio_name': portfolio_name,
-                'trigbees': trigbees,
+                'trigbees': {k: 'active' for k in trigbees},
                 'premarket': premarket,
                 'afterhours': afterhours,
                 'morning_9-11': morning,
                 'lunch_11-2': lunch,
                 'afternoon_2-4': afternoon,
                 'afterhours': afterhours,
-                'Day': Day,}
+                'Day': Day,
+                'power_rangers': {k: 'active' for k in stars().keys()},
+                'kings_order_rules': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                'stars_kings_order_rules': {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
+        }
 
-        model1 = {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
-        model1.update(ticker_vars)
+
         star_model = {ticker: model1}
         
         return star_model
@@ -2820,8 +2831,8 @@ def return_queen_controls(stars=stars):
             # Trading Model and Child Components Worker Bee Controls
             'symbols_stars_TradingModel': generate_TradingModel()['MACD'],
             'power_rangers': init_PowerRangers(),
+            'trigbees': {'buy_cross-0': 'active', 'sell_cross-0':'active', 'ready_buy_cross':'not_active'},
             'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
-
             # Worker Bees UPDATE TO PER TICKER on Ticker Settings
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             'macd_worlds' : {
@@ -3113,11 +3124,12 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     for ttframe, conscience in ttframe__items.items():
         queen_return = {'star': ttframe}
         ttf_waves = {}
-        trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
-        for trig in trigbees:
-            if trig in conscience['waves'].keys():
-                last_buy_wave = [v for (k,v) in conscience['waves'][trig].items() if str((len(conscience['waves'][trig].keys()) - 1)) == str(k)][0]
-                ttf_waves[trig] = last_buy_wave
+        
+        # trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+        # for trig in trigbees:
+        #     if trig in conscience['waves'].keys():
+        #         last_buy_wave = [v for (k,v) in conscience['waves'][trig].items() if str((len(conscience['waves'][trig].keys()) - 1)) == str(k)][0]
+        #         ttf_waves[trig] = last_buy_wave
 
         story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
         p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
@@ -3153,10 +3165,6 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     df =  pd.DataFrame(return_view)
     df_agg = pd.DataFrame(return_agg_view)
 
-    trigbees_waves = {}
-    # map in ranger color
-    # df['mac_ranger'] = df['current_mac_tier'].apply(lambda x: power_ranger_mapping(x))
-    # df['hist_ranger'] = df['current_hist_tier'].apply(lambda x: power_ranger_mapping(x))
 
 
     return {'df': df, 'df_agg': df_agg, 'current_wave': current_wave}
