@@ -1153,7 +1153,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         if ndays == 1:
-            market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
 
 
         return [True, symbol_data, market_hours_data, after_hours_data]
@@ -1173,7 +1173,7 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
         #     }
         return_dict = {}
         error_dict = {}
-
+        print(ticker_list)
         try:
             for charttime, ndays in chart_times.items():
                 timeframe = charttime.split("_")[0] # '1Minute_1Day'
@@ -1183,27 +1183,27 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
                 end_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-            if crypto:
-                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
+                if crypto:
+                    symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
+                                                start=start_date,
+                                                end=end_date,
+                                                exchanges=exchange).df
+                else:
+                    symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
-                                            end=end_date,
-                                            exchanges=exchange).df
-            else:
-                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
-                                        start=start_date,
-                                        end=end_date, 
-                                        adjustment='all').df
-                
-                # set index to EST time
-                symbol_data['index_timestamp'] = symbol_data.index
-                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
-                del symbol_data['index_timestamp']
-                # symbol_data['timestamp'] = symbol_data['timestamp_est']
-                symbol_data = symbol_data.reset_index(drop=True)
-                if ndays == 1:
-                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                                            end=end_date, 
+                                            adjustment='all').df
+                    
+                    # set index to EST time
+                    symbol_data['index_timestamp'] = symbol_data.index
+                    symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+                    del symbol_data['index_timestamp']
+                    # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                    symbol_data = symbol_data.reset_index(drop=True)
+                    if ndays == 1:
+                        symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
 
-                return_dict[charttime] = symbol_data
+                    return_dict[charttime] = symbol_data
 
 
 

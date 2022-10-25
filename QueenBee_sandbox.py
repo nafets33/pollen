@@ -658,12 +658,8 @@ def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, 
         # flag crypto
         if crypto:
             snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-            crypto = True
         else:
             snap = api.get_snapshot(ticker)
-            qty_order = float(round(wave_amo / current_price, 0))
-            crypto = False
-
 
         if king_resp:
             side = 'buy'
@@ -1783,7 +1779,7 @@ def subconscious_update(root_name, dict_to_add):
         QUEEN['subconscious'][root_name] = dict_to_add
 
 
-def king_bishops_QueenOrder(run_order, current_profit_loss, portfolio, qo_crypto=False):
+def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portfolio, qo_crypto=False):
     """if you made it here you are running somewhere, I hope you find your way, I'll always bee here to help"""
     try:
         portfolio = return_alpc_portolio(api)['portfolio']
@@ -2041,7 +2037,9 @@ def king_bishops_QueenOrder(run_order, current_profit_loss, portfolio, qo_crypto
         #         sell_qty = abs(sell_qty)
         #         side = 'buy'
 
+
         if king_bishop['sell_order']:
+            QUEEN['queen_orders'][run_order_idx]['order_trig_sell_stop'] = True
             order_vars = order_vars__queen_order_items(order_side='sell',  
             maker_middle=king_bishop['limit_price'],
             sell_reason=king_bishop['sell_reason'], 
@@ -2082,6 +2080,9 @@ def queen_orders_main(portfolio, APP_requests):
             update_queen_order(QUEEN=QUEEN, update_package=app_req['app_request']['queen_order_update_package'])
 
         # ALL Active SUBMITTED & RUNNING & RUNNING_CLOSE
+        # df = pd.DataFrame(QUEEN['queen_orders'])
+        # df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
+        
         active_orders = {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['queen_order_state'] in active_queen_order_states}
         for idx, run_order in active_orders.items():
             try:
@@ -2120,7 +2121,7 @@ def queen_orders_main(portfolio, APP_requests):
                     resp = update_queen_order_profits(ticker=ticker, queen_order=run_order, queen_order_idx=idx)
                     current_profit_loss = resp['current_profit_loss']
                     
-                    king_eval_order = king_bishops_QueenOrder(run_order=run_order, current_profit_loss=current_profit_loss, portfolio=portfolio, qo_crypto=qo_crypto)
+                    king_eval_order = king_bishops_QueenOrder(run_order_idx=idx, run_order=run_order, current_profit_loss=current_profit_loss, portfolio=portfolio, qo_crypto=qo_crypto)
                     if king_eval_order['bee_sell']:
                         """ 
                         VALIDATE BEE ORDER check if there are enough shares in portfolio 
@@ -2290,7 +2291,7 @@ try:
         }
 
     QUEEN['heartbeat']['active_order_state_list'] = active_order_state_list
-    ticker_allowed = ['SPY', 'ETHUSD', 'BTCUSD']
+    ticker_allowed = ['SPY', 'ETHUSD', 'BTCUSD', 'META', 'GOOG', 'AAPL', 'TSLA']
 
     refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
 

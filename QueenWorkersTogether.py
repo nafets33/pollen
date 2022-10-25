@@ -1,4 +1,4 @@
-# QueenBee
+# QueenBee Workers
 import logging
 from enum import Enum
 from operator import sub
@@ -421,6 +421,8 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
         s = datetime.datetime.now()
         dfs_index_tickers = {}
         bars = return_bars_list(ticker_list, chart_times)
+        if bars[0] == False:
+            print("kill")        
         if bars[1]: # rebuild and split back to ticker_time with market hours only
             bars_dfs = bars[1]
             for timeframe, df in bars_dfs.items():
@@ -727,6 +729,7 @@ def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_time
     msg = {queens_chess_piece:'initiate ttframe charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
     logging.info(msg)
     print(msg)    
+    return QUEEN
 
 def chunk(it, size):
     it = iter(it)
@@ -775,10 +778,11 @@ star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
 
-def ticker_star_hunter_bee(QUEENBEE, queens_chess_piece):
+def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece):
     s = datetime.datetime.now()
     
     QUEEN = WORKERBEE_queens[queens_chess_piece]
+    # QUEEN = qcp_QUEEN
     PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
     MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
     master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
@@ -824,14 +828,14 @@ def ticker_star_hunter_bee(QUEENBEE, queens_chess_piece):
 
     return True
 
-# Change Log
-def return_change_log(qcp_s, QUEENBEE):
+
+def qcp_QUEENWorker__pollenstory(qcp_s, QUEENBEE, WORKERBEE_queens):
     try:
         s = datetime.datetime.now()
         async def get_changelog(session, qcp):
             async with session:
                 try:
-                    ticker_star_hunter_bee(QUEENBEE=QUEENBEE, queens_chess_piece=qcp)
+                    ticker_star_hunter_bee(WORKERBEE_queens=WORKERBEE_queens, QUEENBEE=QUEENBEE, queens_chess_piece=qcp)
                     return {qcp: ''}
                 except Exception as e:
                     print(e, qcp)
@@ -844,6 +848,7 @@ def return_change_log(qcp_s, QUEENBEE):
                 return_list = []
                 tasks = []
                 for qcp in qcp_s:
+                    print(qcp)
                     tasks.append(asyncio.ensure_future(get_changelog(session, qcp)))
                 original_pokemon = await asyncio.gather(*tasks)
                 for pokemon in original_pokemon:
@@ -856,8 +861,7 @@ def return_change_log(qcp_s, QUEENBEE):
         return x
     except Exception as e:
         print("qtf", e, print_line_of_error())
-# batch1 = urls[200:300]
-# x=return_change_log(urls=batch1)
+
 
 
 try:
@@ -876,7 +880,7 @@ try:
     # initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
     WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
     for qcp_worker in WORKERBEE_queens.keys():
-        initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
+        WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
 
     
     workerbee_run_times = []
@@ -885,7 +889,7 @@ try:
         for tic in master_tickers for star_ in star_times.keys()}
 
     while True:
-        return_change_log(qcp_s=queens_chess_pieces, QUEENBEE=QUEENBEE)
+        qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens)
 
 except Exception as errbuz:
     print(errbuz)

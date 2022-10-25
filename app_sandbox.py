@@ -985,7 +985,8 @@ def write_flying_bee(width="45", height="45", frameBorder="0"):
 
 
 # """ if "__name__" == "__main__": """
-USERS = [{'username': 'pollen', 'password': 'beebetter'}]
+USERS = [{'username': 'pollen', 'password': 'beebetter'},
+{'username': 'gues', 'password': 'bee'} ]
 
 # placeholder = st.empty()
 # isclick = placeholder.button('delete this button')
@@ -1219,6 +1220,15 @@ if check_password():
 
 
     if option == 'queen':
+
+        update_queen_controls = st.selectbox('View Ticker Trading Model', ['yes', 'no'], index=['no'].index('no'))
+        st.session_state['qc'] = update_queen_controls
+        if st.session_state['qc'] == 'yes':
+            theme_list = list(pollen_theme.keys())
+            contorls = list(QUEEN['queen_controls'].keys())
+            control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
+            update_QueenControls(APP_requests=APP_requests, control_option='symbols_stars_TradingModel', theme_list=theme_list)
+        
         col11, col22, col33 = st.columns(3)
         # Global Vars
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
@@ -1475,7 +1485,6 @@ if check_password():
 
 
         if save_signals == 'controls':
-            theme_list = list(pollen_theme.keys())
             with st.expander('Heartbeat'):
                 st.write(QUEEN['heartbeat'])
             
@@ -1484,6 +1493,7 @@ if check_password():
             with col2:
                 refresh_queenbee_controls(APP_requests=APP_requests)
 
+            theme_list = list(pollen_theme.keys())
             contorls = list(QUEEN['queen_controls'].keys())
             control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
 
