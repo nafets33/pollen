@@ -35,6 +35,11 @@ import argparse
 from collections import deque
 import ta as bta
 
+import _locale
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+
+
 queens_chess_piece = os.path.basename(__file__)
 
 prod=True

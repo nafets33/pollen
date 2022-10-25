@@ -49,6 +49,10 @@ import base64
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 import json
 import argparse
+import _locale
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+
 
 scriptname = os.path.basename(__file__)
 if 'sandbox' in scriptname:
@@ -1221,12 +1225,12 @@ if check_password():
 
     if option == 'queen':
 
-        update_queen_controls = st.selectbox('View Ticker Trading Model', ['yes', 'no'], index=['no'].index('no'))
+        update_queen_controls = st.selectbox('Show Trading Model Controls', ['yes', 'no'], index=['no'].index('no'))
         st.session_state['qc'] = update_queen_controls
         if st.session_state['qc'] == 'yes':
             theme_list = list(pollen_theme.keys())
             contorls = list(QUEEN['queen_controls'].keys())
-            control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
+            # control_option = st.selectbox('Show Trading Models', contorls, index=contorls.index('theme'))
             update_QueenControls(APP_requests=APP_requests, control_option='symbols_stars_TradingModel', theme_list=theme_list)
         
         col11, col22, col33 = st.columns(3)

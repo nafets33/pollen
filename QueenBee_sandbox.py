@@ -13,6 +13,10 @@ import pytz
 import ipdb
 import shutil
 import argparse
+import _locale
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+
 # LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
 
 # import pandas_ta as ta
