@@ -42,7 +42,7 @@ import argparse
 # import requests
 # from collections import defaultdict
 
-
+# 
 # if prior day abs(change) > 1 ignore ticker for the day! 
 from QueenHive import createParser_QUEEN
  
