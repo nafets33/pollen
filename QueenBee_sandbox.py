@@ -42,8 +42,12 @@ import argparse
 # import requests
 # from collections import defaultdict
 
-# 
-# if prior day abs(change) > 1 ignore ticker for the day! 
+
+""" ideas 
+if prior day abs(change) > 1 ignore ticker for the day!
+"""
+
+
 from QueenHive import createParser_QUEEN
  
 scriptname = os.path.basename(__file__)
@@ -774,12 +778,13 @@ def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, 
                 if crypto:
                     if limit_price:
                         limit_price = round(limit_price)
+                        sell_qty = round(sell_qty)
                     crypto = True
                 else:
                     if limit_price:
                         limit_price = round(limit_price, 2)                    
                     crypto = False
-                
+                # ipdb.set_trace()
                 send_close_order = submit_order(api=api, side=q_side, symbol=ticker, qty=sell_qty, type=q_type, client_order_id=client_order_id__gen, limit_price=limit_price) 
                 send_close_order = vars(send_close_order)['_raw']
                 
@@ -867,7 +872,11 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     # df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']  # df
     # current_wave = df_waves_story.iloc[-1]
 
-    ttf_waves = STORY_bee[ticker_time_frame]['waves']
+    # ttf_waves = STORY_bee[ticker_time_frame]['waves']
+
+    # ticker, star, frame = ticker_time_frame.split("_")
+
+    # trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
     
     token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
     current_buywave = token_df.iloc[0]
@@ -875,11 +884,9 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
     current_sellwave = token_df.iloc[0]
 
-    if 'ready_buy_cross' in ttf_waves.keys():
-        token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['ready_buy_cross']).T
-        ready_buy_cross = token_df.iloc[0]
-    else:
-        ready_buy_cross = ''
+    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['ready_buy_cross']).T
+    ready_buy_cross = token_df.iloc[0]
+
 
     if current_buywave['wave_start_time'] > current_sellwave['wave_start_time']:
         current_wave = current_buywave
@@ -1005,11 +1012,15 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         
         # Trading Model Vars
         # tmodel_power_rangers = trading_model['power_rangers'] # stars
-        tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time][trigbee]['power_rangers']
-        # king_order_rules = trading_model['trigbees'][trigbee][current_wave_blocktime] # trigbee kings_order_rules
-        king_order_rules = trading_model['stars_kings_order_rules'][star_time][trigbee][current_wave_blocktime]
-        maker_middle = [ticker_priceinfo['maker_middle'] if trading_model['trade_using_limits'] == 'true' or trading_model['trade_using_limits'] == True else False][0]
+        # trading_model__star = trading_model['stars_kings_order_rules'][star_option_qc]
+        # tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time]['trigbees'][trigbee]['power_rangers']
+        
+        # Global switch to user power rangers at ticker or portfolio level 
+        tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time]['power_rangers']
 
+        # king_order_rules = trading_model['trigbees'][trigbee][current_wave_blocktime] # trigbee kings_order_rules
+        king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][trigbee][current_wave_blocktime]
+        maker_middle = [ticker_priceinfo['maker_middle'] if trading_model['kings_order_rules']['trade_using_limits'] == 'true' or trading_model['kings_order_rules']['trade_using_limits'] == True else False][0]
 
         # Total buying power allowed
         bpower_resp = buying_Power_cc(api=api, client_args="TBD", daytrade=True)
@@ -1227,8 +1238,10 @@ def command_conscience(api, QUEEN, APP_requests):
                         # cycle through triggers and pass buy first logic for buy
                         # trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
                         for trig in avail_trigs:
+                            if trig not in available_triggerbees:
+                                continue
                             if trig in trading_model['trigbees'].keys():
-                                if str(trading_model['trigbees'][trig]['status']) != 'active':
+                                if str(trading_model['trigbees'][trig]) != 'active':
                                     print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                                     continue
                                 
@@ -1895,7 +1908,7 @@ def king_bishops_QueenOrder(run_order, current_profit_loss, portfolio, qo_crypto
         running_close_legs = False
 
         # global limit type order type
-        if str(trading_model['trade_using_limits']).lower() == 'true':
+        if str(trading_model['kings_order_rules']['trade_using_limits']).lower() == 'true':
             order_type = 'limit'
             limit_price = priceinfo['maker_middle']
         elif str(run_order['order_rules']['trade_using_limits']).lower() == 'true':
@@ -2044,6 +2057,7 @@ def king_bishops_QueenOrder(run_order, current_profit_loss, portfolio, qo_crypto
         print(e, print_line_of_error())
         log_error_dict = logging_log_message(log_type='error', msg='unable to process kings read on queen order', error=str(e), origin_func='king Evaluate QueenOrder')
         logging.error(log_error_dict)
+        ipdb.set_trace()
 
 
 def queen_orders_main(portfolio, APP_requests):
@@ -2135,6 +2149,7 @@ def queen_orders_main(portfolio, APP_requests):
                 print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
                 log_error_dict = logging_log_message(log_type='error', msg='Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
                 logging.error(log_error_dict)
+                ipdb.set_trace()
                 # archive order?
                 QUEEN['queen_orders'][idx]['queen_order_state'] = 'error'
     
@@ -2280,6 +2295,7 @@ try:
     refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
 
     available_triggerbees = ["sell_cross-0", "buy_cross-0"]
+    
     QUEEN['heartbeat']['available_triggerbees'] = available_triggerbees
     print("active trigs", available_triggerbees)
     print("active tickers", QUEEN['heartbeat']['active_tickers'])

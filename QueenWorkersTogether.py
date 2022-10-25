@@ -793,7 +793,7 @@ def ticker_star_hunter_bee(QUEENBEE, queens_chess_piece):
     QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
     QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
     
-    pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
+    pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'], WORKER_QUEEN=QUEENBEE)
     ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
     knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
     STORY_bee = pollens_honey['conscience']['STORY_bee']
@@ -870,6 +870,7 @@ try:
                 master_tickers.append(ticker)
                 queens_chess_pieces.append(qcp)
     queens_chess_pieces = list(set(queens_chess_pieces))
+    
 
 
     # initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
