@@ -990,7 +990,7 @@ def write_flying_bee(width="45", height="45", frameBorder="0"):
 
 # """ if "__name__" == "__main__": """
 USERS = [{'username': 'pollen', 'password': 'beebetter'},
-{'username': 'gues', 'password': 'bee'} ]
+{'username': 'guest', 'password': 'bee'}, {'username': 'queen', 'password': 'bee'} ]
 
 # placeholder = st.empty()
 # isclick = placeholder.button('delete this button')
