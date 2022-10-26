@@ -51,12 +51,15 @@ def createParser():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="castle")
     parser.add_argument ('-prod', default=True)
+    parser.add_argument ('-windows', default=False)
+
     return parser
 
 # script arguments
 parser = createParser()
 namespace = parser.parse_args()
 queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
+windows = namespace.windows
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -775,8 +778,8 @@ MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
 MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
 star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
-
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
+if windows:
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
 
 def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece):
     s = datetime.datetime.now()
@@ -897,5 +900,6 @@ except Exception as errbuz:
     log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
     print(log_msg)
     logging.critical(log_msg)
+    ipdb.set_trace()
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
