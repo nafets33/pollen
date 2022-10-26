@@ -257,7 +257,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
     # bars_data = return_bars(symbol, time, ndays, trading_days_df=trading_days_df)
 
     try:
-        s = datetime.datetime.now(est) #TEST
+        # s = datetime.datetime.now(est) #TEST
         bars_data['vwap_original'] = bars_data['vwap']
         # del mk_hrs_data['vwap']
         df_vwap = return_VWAP(bars_data)
@@ -267,7 +267,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
         # append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
         df_vwap_rsi_macd = return_macd(df_main=df_vwap_rsi, fast=MACD['fast'], slow=MACD['slow'], smooth=MACD['smooth'])
         df_vwap_rsi_macd_smaslope = return_sma_slope(df=df_vwap_rsi_macd, time_measure_list=[3, 6, 23, 33], y_list=['close', 'macd', 'hist'])
-        e = datetime.datetime.now(est)
+        # e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
         # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
         return [True, df_vwap_rsi_macd_smaslope]
@@ -315,9 +315,8 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
         # dfs_index_tickers['SPY_5Minute']
         return {'init_charts': dfs_index_tickers, 'errors': error_dict}
     except Exception as e:
-        print(e, print_line_of_error())
-        sys.exit()
-
+        print("eeeeeror", e, print_line_of_error())
+        ipdb.set_trace()
 
 def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
     # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild

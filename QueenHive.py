@@ -35,6 +35,14 @@ import argparse
 from collections import deque
 import ta as bta
 
+import _locale
+
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+
+est = pytz.timezone("America/New_York")
+
+
+
 queens_chess_piece = os.path.basename(__file__)
 
 prod=True
@@ -45,9 +53,9 @@ db_app_root = os.path.join(db_root, 'app')
 
 """# Dates """
 
-current_day = datetime.datetime.now().day
-current_month = datetime.datetime.now().month
-current_year = datetime.datetime.now().year
+current_day = datetime.datetime.now(est).day
+current_month = datetime.datetime.now(est).month
+current_year = datetime.datetime.now(est).year
 
 # init_logging(queens_chess_piece, db_root)
 loglog_newfile = False
@@ -70,7 +78,7 @@ if os.path.exists(log_file) == False:
 else:
     if loglog_newfile:
         # copy log file to log dir & del current log file
-        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
         dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
         shutil.copy(log_file, dst_path) # only when you want to log your log files
         os.remove(log_file)
@@ -83,7 +91,6 @@ else:
                             level=logging.INFO)
 
 
-est = pytz.timezone("America/New_York")
 
 system = 'windows' #mac, windows
 load_dotenv()
@@ -151,14 +158,14 @@ except Exception as e:
     print("offline no connection")
 
 
-current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
 
 
-start_date = datetime.datetime.now().strftime('%Y-%m-%d')
-end_date = datetime.datetime.now().strftime('%Y-%m-%d')
+start_date = datetime.datetime.now(est).strftime('%Y-%m-%d')
+end_date = datetime.datetime.now(est).strftime('%Y-%m-%d')
 
 """ Global VARS"""
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
@@ -240,7 +247,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
     # >/ create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
     # >/ what current macd tier values in comparison to max/min
     try:
-        s = datetime.datetime.now()
+        s = datetime.datetime.now(est)
         story = {}
         ANGEL_bee = {} # add to QUEENS mind
         STORY_bee = {} 
@@ -251,7 +258,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         # knight_sight_df = {}
 
         for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
-            s_ttfame_func_check = datetime.datetime.now().astimezone(est)
+            s_ttfame_func_check = datetime.datetime.now(est).astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
             # if WORKER_QUEEN:
             #     if ticker in WORKER_QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
@@ -287,7 +294,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             df['macd_singal_deviation'] = df['macd'] - df['signal']
             STORY_bee[ticker_time_frame]['story']['macd_singal_deviation'] = df.iloc[-1]['macd_singal_deviation']
 
-            s_timetoken = datetime.datetime.now().astimezone(est)
+            s_timetoken = datetime.datetime.now(est)
             # mac cross
             df = mark_macd_signal_cross(df=df)
             resp = knights_triggerbees(df=df)
@@ -297,14 +304,14 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             """for every index(timeframe) calculate profit length, bell curve
                 conclude with how well trigger is doing to then determine when next trigger will do well
             """
-            e_timetoken = datetime.datetime.now().astimezone(est)
+            e_timetoken = datetime.datetime.now(est)
             betty_bee[ticker_time_frame]['macdcross'] = (e_timetoken - s_timetoken)
             
             # MACD WAVE ~~~~~~~~~~~~~~~~~~~~~~~~ WAVES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MACD WAVE #
             # Queen to make understanding of trigger-profit waves
             #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
 
-            s_timetoken = datetime.datetime.now().astimezone(est)
+            s_timetoken = datetime.datetime.now(est)
             # ipdb.set_trace()
             wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
             
@@ -316,7 +323,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             STORY_bee[ticker_time_frame]['waves'] = MACDWAVE_story
 
-            e_timetoken = datetime.datetime.now().astimezone(est)
+            e_timetoken = datetime.datetime.now(est)
             betty_bee[ticker_time_frame]['waves'] = (e_timetoken - s_timetoken)
 
             knights_sight_word[ticker_time_frame] = knights_word
@@ -325,7 +332,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             
             # # return degree angle 0, 45, 90
             try:
-                s_timetoken = datetime.datetime.now().astimezone(est)
+                s_timetoken = datetime.datetime.now(est)
                 var_list = ['macd', 'hist', 'signal', 'close', 'rsi_ema']
                 var_timeframes = [3, 6, 8, 10, 25, 33]
                 for var in var_list:
@@ -389,7 +396,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             # count number of Macd Crosses
             # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
             s_timetoken = datetime.datetime.now().astimezone(est)
-            today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            today_df = df[df['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
             # today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
             STORY_bee[ticker_time_frame]['story']['macd_cross_count'] = {
                 'buy_cross_total_running_count': sum(np.where(df['macd_cross'] == 'buy_cross-0',1,0)),
@@ -458,7 +465,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             
             # when did macd and signal share same tier?
 
-        e = datetime.datetime.now()
+        e = datetime.datetime.now(est)
         print("pollen_story", str((e - s)))
         return {'pollen_story': story, 'conscience': {'ANGEL_bee': ANGEL_bee, 'KNIGHTSWORD': knights_sight_word, 'STORY_bee': STORY_bee  } , 'betty_bee': betty_bee}
     except Exception as e:
@@ -1060,7 +1067,7 @@ def split_today_vs_prior(df, other_timestamp=False):
         df_day = df[other_timestamp].iloc[-1]
         # df = df.set_index(other_timestamp, drop=False)
         # df_today = df[(df.index.day == df_day.day) & (df.index.month == df_day.month) & (df.index.year == df_day.year)].copy()        
-        df_today = df[df['wave_start_time'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+        df_today = df[df['wave_start_time'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
         df_prior = df[~(df['wave_start_time'].isin(df_today['wave_start_time'].to_list()))].copy()
         return {'df_today': df_today, 'df_prior': df_prior}
         # df_today = df_today.reset_index()
@@ -1069,7 +1076,7 @@ def split_today_vs_prior(df, other_timestamp=False):
         df_day = df['timestamp_est'].iloc[-1]
         # df = df.copy()
         # df = df.set_index('timestamp_est', drop=False)
-        df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+        df_today = df[df['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
         # df_today = df[(df['timestamp_est'].day == df_day.day) & (df['timestamp_est'].month == df_day.month) & (df['timestamp_est'].year == df_day.year)].copy()
         df_prior = df[~(df['story_index'].isin(df_today['story_index'].to_list()))].copy()
         
@@ -1092,7 +1099,7 @@ def return_degree_angle(x, y): #
 ### BARS
 def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
     try:
-        s = datetime.datetime.now()
+        s = datetime.datetime.now(est)
         error_dict = {}
 
         try:
@@ -1101,13 +1108,13 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
             if edate_input != False:
                 end_date = edate_input
             else:
-                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
             
             if sdate_input != False:
                 start_date = sdate_input
             else:
                 if ndays == 0:
-                    start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                    start_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
                 else:
                     start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
 
@@ -1149,7 +1156,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
             after_hours_data =  symbol_data.between_time('16:00', '9:30')
             after_hours_data = after_hours_data.reset_index()          
 
-        e = datetime.datetime.now()
+        e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         if ndays == 1:
@@ -1164,7 +1171,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
 
 def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
     try:
-        s = datetime.datetime.now()
+        s = datetime.datetime.now(est)
         # ticker_list = ['SPY', 'QQQ']
         # chart_times = {
         #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
@@ -1173,7 +1180,7 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
         #     }
         return_dict = {}
         error_dict = {}
-        print(ticker_list)
+
         try:
             for charttime, ndays in chart_times.items():
                 timeframe = charttime.split("_")[0] # '1Minute_1Day'
@@ -1181,29 +1188,29 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
                 trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
                 start_date = trading_days_df_.tail(ndays).head(1).date
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 
-                if crypto:
-                    symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
-                                                start=start_date,
-                                                end=end_date,
-                                                exchanges=exchange).df
-                else:
-                    symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+            if crypto:
+                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
-                                            end=end_date, 
-                                            adjustment='all').df
-                    
-                    # set index to EST time
-                    symbol_data['index_timestamp'] = symbol_data.index
-                    symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
-                    del symbol_data['index_timestamp']
-                    # symbol_data['timestamp'] = symbol_data['timestamp_est']
-                    symbol_data = symbol_data.reset_index(drop=True)
-                    if ndays == 1:
-                        symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                                            end=end_date,
+                                            exchanges=exchange).df
+            else:
+                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
+                                        adjustment='all').df
+                
+                # set index to EST time
+                symbol_data['index_timestamp'] = symbol_data.index
+                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
+                del symbol_data['index_timestamp']
+                # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                symbol_data = symbol_data.reset_index(drop=True)
+                if ndays == 1:
+                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
 
-                    return_dict[charttime] = symbol_data
+                return_dict[charttime] = symbol_data
 
 
 
@@ -1214,7 +1221,7 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
             # print(" log info")
             error_dict[ticker_list] = e      
 
-        e = datetime.datetime.now()
+        e = datetime.datetime.now(est)
         
 
         
@@ -1230,11 +1237,11 @@ def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=Fa
     try:
         # First get the current time
         if build_current_minute:
-            current_time = datetime.datetime.now()
+            current_time = datetime.datetime.now(est)
             current_sec = current_time.second
             if current_sec < 5:
                 time.sleep(1)
-                current_time = datetime.datetime.now()
+                current_time = datetime.datetime.now(est)
                 sec_input = current_time.second
                 min_input = 0
         else:
@@ -1470,7 +1477,7 @@ def init_index_ticker(index_list, db_root, init=True):
                 df = pd.DataFrame(index)
                 df.to_csv(os.path.join(index_ticker_db, tic_index + '.csv'), index=False, encoding='utf8')
             except Exception as e:
-                print(tic_index, e, datetime.datetime.now())
+                print(tic_index, e, datetime.datetime.now(est))
 
     # examples:
     # symbol_list_us = ss.get_symbol_list(market="US")
@@ -1532,7 +1539,7 @@ def init_logging(queens_chess_piece, db_root):
     log_file = os.path.join(log_dir, log_name)
     if loglog_newfile:
         # copy log file to log dir & del current log file
-        datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+        datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
         dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
         shutil.copy(log_file, dst_path) # only when you want to log your log files
         os.remove(log_file)
@@ -1550,7 +1557,7 @@ def init_logging(queens_chess_piece, db_root):
 
 def PickleData(pickle_file, data_to_store):
 
-    p_timestamp = {'pq_last_modified': datetime.datetime.now()}
+    p_timestamp = {'pq_last_modified': datetime.datetime.now(est)}
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
     with open(pickle_file_temp, 'wb+') as dbfile:
@@ -1588,8 +1595,8 @@ def ReadPickleData(pickle_file, db_init_dict=False):
             return False
 
 
-def timestamp_string(format="%m-%d-%Y %I.%M%p"):
-    return datetime.datetime.now().strftime(format)
+def timestamp_string(format="%m-%d-%Y %I.%M%p", tz=est):
+    return datetime.datetime.now(tz).strftime(format)
 
 
 def return_timestamp_string(format='%Y-%m-%d %H-%M-%S %p {}'.format(est), tz=est):
@@ -1602,7 +1609,7 @@ def print_line_of_error():
 
 
 def return_index_tickers(index_dir, ext):
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     # ext = '.csv'
     # index_dir = os.path.join(db_root, 'index_tickers')
 
@@ -1726,33 +1733,33 @@ def read_csv_db(db_root, tablename, ext='.csv', prod=True, init=False):
             return pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
 
 
-def update_csv_db(df_to_add, tablename, append, update=False, replace=False, ext='.csv', prod=True):
-    df_to_add['lastmodified'] = datetime.datetime.now().isoformat()
-    if prod:
-        table_path = os.path.join(db_root, f'{tablename}{ext}')
-    else:
-        table_path = os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}')
+# def update_csv_db(df_to_add, tablename, append, update=False, replace=False, ext='.csv', prod=True):
+#     df_to_add['lastmodified'] = datetime.datetime.now().isoformat()
+#     if prod:
+#         table_path = os.path.join(db_root, f'{tablename}{ext}')
+#     else:
+#         table_path = os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}')
 
-    if tablename:
-        if prod:
-            main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{ext}'), dtype=str, encoding='utf8', engine='python')
-        else:
-            main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
+#     if tablename:
+#         if prod:
+#             main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{ext}'), dtype=str, encoding='utf8', engine='python')
+#         else:
+#             main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
 
-        if append:
-            new_df = pd.concat([main_df, df_to_add], axis=0, ignore_index=True)
-            new_df.to_csv(table_path, index=False, encoding='utf8')
+#         if append:
+#             new_df = pd.concat([main_df, df_to_add], axis=0, ignore_index=True)
+#             new_df.to_csv(table_path, index=False, encoding='utf8')
         
-        if update:
-            indx = list(df_to_add.index)
-            main_df['index'] = main_df.index
-            main_df = main_df[~main_df['index'].isin(indx)]
-            new_df = pd.concat([main_df, df_to_add], axis=0)
-            new_df.to_csv(table_path, index=False, encoding='utf8')
+#         if update:
+#             indx = list(df_to_add.index)
+#             main_df['index'] = main_df.index
+#             main_df = main_df[~main_df['index'].isin(indx)]
+#             new_df = pd.concat([main_df, df_to_add], axis=0)
+#             new_df.to_csv(table_path, index=False, encoding='utf8')
         
-        if replace:
-            new_df = df_to_add
-            new_df.to_csv(table_path, index=False, encoding='utf8')      
+#         if replace:
+#             new_df = df_to_add
+#             new_df.to_csv(table_path, index=False, encoding='utf8')      
 
 
 # def convert_todatetime_string(date_string):
@@ -1929,7 +1936,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
     # bars_data = return_bars(symbol, time, ndays, trading_days_df=trading_days_df)
 
     try:
-        s = datetime.datetime.now() #TEST
+        s = datetime.datetime.now(est) #TEST
         bars_data['vwap_original'] = bars_data['vwap']
         # del mk_hrs_data['vwap']
         df_vwap = return_VWAP(bars_data)
@@ -1939,7 +1946,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
         # append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
         df_vwap_rsi_macd = return_macd(df_main=df_vwap_rsi, fast=MACD['fast'], slow=MACD['slow'], smooth=MACD['smooth'])
         df_vwap_rsi_macd_smaslope = return_sma_slope(df=df_vwap_rsi_macd, time_measure_list=[3, 6, 23, 33], y_list=['close', 'macd', 'hist'])
-        e = datetime.datetime.now()
+        e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
         # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
         return [True, df_vwap_rsi_macd_smaslope]
@@ -1959,7 +1966,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     print(msg)
 
     error_dict = {}
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     dfs_index_tickers = {}
     bars = return_bars_list(ticker_list, chart_times)
     if bars[1]: # rebuild and split back to ticker_time with market hours only
@@ -1978,8 +1985,8 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
                     df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
                     dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
     
-    e = datetime.datetime.now()
-    msg = {'function':'Return_Init_ChartData',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    e = datetime.datetime.now(est)
+    msg = {'function':'Return_Init_ChartData',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
     print(msg)
     # dfs_index_tickers['SPY_5Minute']
     return {'init_charts': dfs_index_tickers, 'errors': error_dict}
@@ -1991,7 +1998,7 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
 
     ticker, timeframe, days = ticker_time.split("_")
     error_dict = {}
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     dfs_index_tickers = {}
     try:
         # return market hours data from bars
@@ -2005,8 +2012,8 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
     except Exception as e:
         print(ticker_time, e)
     
-    e = datetime.datetime.now()
-    msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    e = datetime.datetime.now(est)
+    msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
     # print(msg)
     # dfs_index_tickers['SPY_5Minute']
     return [dfs_index_tickers, error_dict, msg]
@@ -2146,8 +2153,8 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
 
     for ticker_time, df in df_tickers_data.items():
         ticker, timeframe, days = ticker_time.split("_")
-        last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
-        now = datetime.datetime.now()
+        last = df['timestamp_est'].iloc[-2]
+        now = datetime.datetime.now(est)
         timedelta_minutes = (now - last).seconds / 60
         now_day = now.day
         last_day = last.day
@@ -2243,7 +2250,7 @@ def pollen_hunt(df_tickers_data, MACD):
     df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
     if len(df_tickers_data_rebuilt['rebuild_confirmation'].keys()) > 0:
         print(df_tickers_data_rebuilt['rebuild_confirmation'].keys())
-        print(datetime.datetime.now().strftime("%H:%M-%S"))
+        print(datetime.datetime.now(est).strftime("%H:%M-%S"))
     
     # re-add snapshot
     df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
@@ -2287,25 +2294,25 @@ def createParser():
     return parser
 
 
-def return_market_hours(api_cal, crypto):
-    trading_days = api_cal # api.get_calendar()
+def return_market_hours(trading_days, crypto):
+    # trading_days = api_cal # api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     s_iso = s.isoformat()[:10]
     mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30)
-    mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0)
+    mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30).astimezone(est)
+    mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0).astimezone(est)
     
     if str(crypto).lower() == 'true':
         return "open"
-    else:
-        if mk_open_today:
-            if s >= mk_open and s <= mk_close:
-                return "open"
-            else:
-                return "closed"
+    
+    if mk_open_today:
+        if s >= mk_open and s <= mk_close:
+            return "open"
         else:
             return "closed"
+    else:
+        return "closed"
 
 
 
@@ -2818,12 +2825,24 @@ def createParser_QUEEN(prod):
         parser.add_argument ('-prod', default='false')
     return parser
 
+def createParser_App(prod):
+    if prod:
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-qcp', default="app")
+        parser.add_argument ('-prod', default='true')
+        parser.add_argument ('-admin', default='false')
+    else:
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-qcp', default="app")
+        parser.add_argument ('-prod', default='false')
+        parser.add_argument ('-admin', default='false')
+    return parser
 
 def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
     queen_controls_dict = { 
             'theme': 'nuetral',
-            'last_read_app': datetime.datetime.now(),
+            'last_read_app': datetime.datetime.now(est),
             'stars': stars(),
             'ticker_settings': generate_queen_ticker_settings(),
             'buying_powers': generate_queen_buying_powers_settings(),
@@ -2895,7 +2914,7 @@ def init_QUEEN(queens_chess_piece):
         'pollenstory_info': {}, # Misc Info,
         'client': {},
         # 'heartbeat': {},
-        'last_modified' : datetime.datetime.now(),
+        'last_modified' : datetime.datetime.now(est),
         }
     }
     
@@ -2924,7 +2943,7 @@ def init_QUEEN_App():
     'queen_contorls_lastupdate': False, 
     'del_QUEEN_object': [],
     'del_QUEEN_object_requests': [],
-    'last_app_update': datetime.datetime.now(), ## Update Time Zone... Low Priority
+    'last_app_update': datetime.datetime.now(est), ## Update Time Zone... Low Priority
     'update_queen_order': [],
     'update_queen_order_requests': [],
     'savedstars': [],
@@ -3378,7 +3397,7 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
 def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
     ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
 
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
     resp = r['resp'] # return slope of collective tics
     speedybee_dict = {}

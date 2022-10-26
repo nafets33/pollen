@@ -65,7 +65,7 @@ else:
 log_file = os.path.join(log_dir, log_name)
 if loglog_newfile:
     # copy log file to log dir & del current log file
-    datet = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S_%p')
+    datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
     dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
     shutil.copy(log_file, dst_path) # only when you want to log your log files
     os.remove(log_file)
@@ -99,7 +99,7 @@ QUEEN = { # The Queens Mind
     'pollenstory_info': {}, # Misc Info,
     'client': {},
     # 'heartbeat': {},
-    'last_modified' : datetime.datetime.now(),
+    'last_modified' : datetime.datetime.now(est),
     }
 }
 
@@ -134,16 +134,16 @@ rest_paper = keys_paper[0]['rest']
 api_paper = keys_paper[0]['api']
 
 """# Dates """
-current_day = datetime.datetime.now().day
-current_month = datetime.datetime.now().month
-current_year = datetime.datetime.now().year
+current_day = datetime.datetime.now(est).day
+current_month = datetime.datetime.now(est).month
+current_year = datetime.datetime.now(est).year
 
 
 ####<>///<>///<>///<>///<>/// ALL FUNCTIONS NECTOR ####<>///<>///<>///<>///<>///
 ### BARS
 def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_input=False):
     try:
-        s = datetime.datetime.now()
+        s = datetime.datetime.now(est)
         error_dict = {}
         # ndays = 0 # today 1=yesterday...  # TEST
         # timeframe = "1Minute" #"1Day" # "1Min"  "5Minute" # TEST
@@ -155,15 +155,15 @@ def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_inp
             if edate_input != False:
                 end_date = edate_input
             else:
-                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
             
             if sdate_input != False:
                 start_date = sdate_input
             else:
                 if ndays == 0:
-                    start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                    start_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
                 else:
-                    start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+                    start_date = (datetime.datetime.now(est) - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
 
             # start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
             symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
@@ -187,8 +187,8 @@ def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_inp
         symbol_data = symbol_data.reset_index()
         symbol_data['symbol'] = symbol       
         if ndays == 1:
-            symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-        e = datetime.datetime.now()
+            symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+        e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         # 0:00:00.310582: 2022-03-21 14:44 to return day 0
         # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
@@ -200,7 +200,7 @@ def return_bars(symbol, timeframe, ndays, exchange, sdate_input=False, edate_inp
 
 def return_bars_list(ticker_list, chart_times, exchange):
     try:
-        s = datetime.datetime.now()
+        s = datetime.datetime.now(est)
         # ticker_list = ['BTCUSD', 'ETHUSD']
         # chart_times = {
         #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
@@ -218,9 +218,9 @@ def return_bars_list(ticker_list, chart_times, exchange):
                 # else:
                 #     start_date = datetime.datetime.now().strftime("%Y-%m-%d")
                 # start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
-                start_date = (datetime.datetime.now() - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
+                start_date = (datetime.datetime.now(est) - datetime.timedelta(days=ndays)).strftime("%Y-%m-%d") # get yesterdays trades as well
 
-                end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
                 symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
                                             end=end_date,
@@ -233,7 +233,7 @@ def return_bars_list(ticker_list, chart_times, exchange):
                 # symbol_data['timestamp'] = symbol_data['timestamp_est']
                 symbol_data = symbol_data.reset_index(drop=True)
                 if ndays == 1:
-                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
                 
                 return_dict[charttime] = symbol_data
 
@@ -246,7 +246,7 @@ def return_bars_list(ticker_list, chart_times, exchange):
             # print(" log info")
             error_dict[ticker_list] = e      
 
-        e = datetime.datetime.now()
+        e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         # 0:00:00.310582: 2022-03-21 14:44 to return day 0
         # 0:00:00.497821: 2022-03-21 14:46 to return 5 days
@@ -265,7 +265,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
     # bars_data = return_bars(symbol, time, ndays, trading_days_df=trading_days_df)
 
     try:
-        s = datetime.datetime.now() #TEST
+        s = datetime.datetime.now(est) #TEST
         bars_data['vwap_original'] = bars_data['vwap']
         # del mk_hrs_data['vwap']
         df_vwap = return_VWAP(bars_data)
@@ -275,7 +275,7 @@ def return_getbars_WithIndicators(bars_data, MACD):
         # append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
         df_vwap_rsi_macd = return_macd(df_main=df_vwap_rsi, fast=MACD['fast'], slow=MACD['slow'], smooth=MACD['smooth'])
         df_vwap_rsi_macd_smaslope = return_sma_slope(df=df_vwap_rsi_macd, time_measure_list=[3, 6, 23, 33], y_list=['close', 'macd', 'hist'])
-        e = datetime.datetime.now()
+        e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
         # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
         return [True, df_vwap_rsi_macd_smaslope]
@@ -295,7 +295,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     print(msg)
 
     error_dict = {}
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     dfs_index_tickers = {}
     bars = return_bars_list(ticker_list, chart_times, exchange='CBSE')
     if bars['resp']: # rebuild and split back to ticker_time with market hours only
@@ -316,8 +316,8 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
                     df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
                     dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
     
-    e = datetime.datetime.now()
-    msg = {'function':'Return_Init_ChartData',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    e = datetime.datetime.now(est)
+    msg = {'function':'Return_Init_ChartData',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
     print(msg)
     # dfs_index_tickers['SPY_5Minute']
     return {'init_charts': dfs_index_tickers, 'errors': error_dict}
@@ -329,7 +329,7 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
 
     ticker, timeframe, days = ticker_time.split("_")
     error_dict = {}
-    s = datetime.datetime.now()
+    s = datetime.datetime.now(est)
     dfs_index_tickers = {}
     try:
         # return market hours data from bars
@@ -344,8 +344,8 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
         print(ticker_time, e)
         print_line_of_error()
     
-    e = datetime.datetime.now()
-    msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+    e = datetime.datetime.now(est)
+    msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
     # print(msg)
     # dfs_index_tickers['SPY_5Minute']
     return [dfs_index_tickers, error_dict, msg]
@@ -452,8 +452,8 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
 
         for ticker_time, df in df_tickers_data.items():
             ticker, timeframe, days = ticker_time.split("_")
-            last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
-            now = datetime.datetime.now()
+            last = df['timestamp_est'].iloc[-2]
+            now = datetime.datetime.now(est)
             timedelta_minutes = (now - last).seconds / 60
             now_day = now.day
             last_day = last.day
@@ -553,11 +553,11 @@ def pollen_hunt(df_tickers_data, MACD):
     df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
     if len(df_tickers_data_rebuilt['rebuild_confirmation'].keys()) > 0:
         print(df_tickers_data_rebuilt['rebuild_confirmation'].keys())
-        print(datetime.datetime.now().strftime("%H:%M-%S"))
+        print(datetime.datetime.now(est).strftime("%H:%M-%S"))
     
     # re-add snapshot
     df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(est)
     # print(now)
     # t = df_tickers_data_rebuilt['BTCUSD_5Minute_5Day']
     # print(t[['timestamp_est', 'close']].tail(2))
@@ -603,7 +603,7 @@ if queens_chess_piece == 'castle_coin':
 
 """ Initiate your Charts with Indicators """
 def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD_settings):
-    s_mainbeetime = datetime.datetime.now()
+    s_mainbeetime = datetime.datetime.now(est)
     if queens_chess_piece.lower() == 'castle_coin':    # >>> Initiate your Charts
         res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
         errors = res['errors']
@@ -621,8 +621,8 @@ def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD
         QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
     
         """# mark final times and return values"""
-        e_mainbeetime = datetime.datetime.now()
-        msg = {queens_chess_piece:'initiate_ttframe_charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S_%p')}
+        e_mainbeetime = datetime.datetime.now(est)
+        msg = {queens_chess_piece:'initiate_ttframe_charts',  'block_timeit': str((e_mainbeetime - s_mainbeetime)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
         logging.info(msg)
         print(msg)
 
@@ -656,8 +656,8 @@ try:
 
     while True:
         if queens_chess_piece.lower() in ['castle_coin']: # create the story
-            s = datetime.datetime.now()
-            if s > datetime.datetime(s.year, s.month, s.day, 23):
+            s = datetime.datetime.now(est)
+            if s > datetime.datetime(s.year, s.month, s.day, 23).astimezone(est):
                 logging.info("Happy Bee Crypto Day End")
                 print("Great Job! See you Tomorrow")
                 break
@@ -699,14 +699,14 @@ try:
                 logging.critical(msg)
                 continue
 
-            e = datetime.datetime.now()
+            e = datetime.datetime.now(est)
             cycle_run_time = (e-s)
             if cycle_run_time.seconds > 15:
                 print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
                 logging.info({"cycle_time > 15 seconds": str(cycle_run_time.seconds)})
             workerbee_run_times.append(cycle_run_time)
             avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
-            print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+            print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now(est).strftime("%A,%d. %I:%M:%S%p"))
 
 except Exception as errbuz:
     print(errbuz)
