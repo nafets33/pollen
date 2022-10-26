@@ -2835,7 +2835,7 @@ def createParser_App(prod):
         parser = argparse.ArgumentParser()
         parser.add_argument ('-qcp', default="app")
         parser.add_argument ('-prod', default='false')
-        parser.add_argument ('-admin', default='true')
+        parser.add_argument ('-admin', default='false')
     return parser
 
 def return_queen_controls(stars=stars):
