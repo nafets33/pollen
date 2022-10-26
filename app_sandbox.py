@@ -767,7 +767,7 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
     # gb.configure_column("banana", type=["numericColumn", "numberColumnFilter", "customNumericFormat"], precision=1, aggFunc='avg')
     # gb.configure_column("chocolate", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="R$", aggFunc='max')
     if js_code:
-        js_code = {'mac_ranger': """
+        js_code =  """ {'mac_ranger':
         function(params) {
             if (params.value == 'white') {
                 return {
@@ -782,10 +782,10 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
             }
         };
         """
-        }
         for col in js_code_cols:
-            cellsytle_jscode = JsCode(js_code[col])
-            gb.configure_column("group", cellStyle=cellsytle_jscode)
+            # cellsytle_jscode = JsCode(js_code[col])
+            cellsytle_jscode = JsCode(js_code)
+            gb.configure_column(col, cellStyle=cellsytle_jscode)
 
     if enable_sidebar:
         gb.configure_side_bar()
@@ -898,9 +898,29 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
     if add_vars:
         for k, v in add_vars.items():
             vars[k] = v
+
+    # if 'mac_ranger' in df.columns:
+    #     cellsytle_jscode = JsCode("""
+    #     function(params) {
+    #         if (params.data.state === 'white') {
+    #             return {
+    #                 'color': 'white',
+    #                 'backgroundColor': 'red'
+    #             }
+    #         }
+    #     };
+    #     """)
+    #     gb = GridOptionsBuilder.from_dataframe(df)
+
+    #     gb.configure_grid_options(domLayout='normal')
+    #     gridOptions = gb.build()
+    #     gridOptions['getRowStyle'] = cellsytle_jscode
+    #     gridOptions['rememberGroupStateWhenNewData'] = 'true'
+    #     gb.configure_column("mac_ranger", cellStyle=cellsytle_jscode)
     
     grid_response = build_AGgrid_df(data=df, 
     reload_data=vars['reload_data'],
+    # gridOptions=gridOptions,
      height=vars['height'], update_cols=vars['update_cols'], 
      update_mode_value=vars['update_mode_value'], 
      paginationOn=vars['paginationOn'],
@@ -942,8 +962,15 @@ def its_morphin_time_view(QUEEN, STORY_bee, ticker):
             
             all_df.append(df)
     
-    st.write('macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64))
-    st.write('hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64))
+    # st.write('macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64))
+    # st.write('hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64))
+    t = 'macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64)
+    h = 'hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64)
+
+    # n = '{:,.2%}'.format(total_current_macd_tier/ 64)
+    # t = f'{"macd "}{total_current_macd_tier}{": "}{str(n)}'
+    mark_down_text(text=str(t))
+    mark_down_text(fontsize=33, text=str(h))
 
     # for df_p in all_df:
     #     fig = df_plotchart(title=df_p.iloc[-1]['name'], df=df_p, y='profits', x=False, figsize=(14,7), formatme=False)
@@ -997,6 +1024,11 @@ USERS = [{'username': 'pollen', 'password': 'beebetter'},
 # if isclick:
 #     placeholder.empty()
 
+PB_USER_pickle = os.path.join(db_root, 'queen_users.plk')
+if os.path.exists(PB_USER_pickle) == False:
+    PickleData(PB_USER_pickle, {'users': [{'signin_count': 1, 'username': 'queen', 'password': 'bee', 'date': datetime.datetime.now(est)}]})
+PB_USER = ReadPickleData(PB_USER_pickle)
+
 def check_password():
     """Returns `True` if the user had a correct password."""
 
@@ -1007,18 +1039,22 @@ def check_password():
     
         def password_entered():
             """Checks whether a password entered by the user is correct."""
-            df = pd.DataFrame(USERS)
+            df = pd.DataFrame(PB_USER['users'])
+            df['index'] = df.index
             un = st.session_state["username"]
             pw = st.session_state["password"]
             df_user = df[df['username'] == un].copy()
             correct_pw = df_user.iloc[-1]['password']
             if pw == correct_pw:
+                PB_USER['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
+                PB_USER['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
                 print("pw correct")
                 st.write("pw correct")
                 write_flying_bee()
                 st.session_state["password_correct"] = True
                 del st.session_state["password"]  # don't store username + password
                 del st.session_state["username"]
+                PickleData(PB_USER_pickle, PB_USER)
                 return True
             else:
                 st.session_state["password_correct"] = False
@@ -1301,9 +1337,11 @@ if check_password():
             # View Stars
             its_morphin_time_view(QUEEN, STORY_bee, ticker)
             st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
-            # st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
+            st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
             ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
             default=True, add_vars={'update_cols': False}, write_selection=False)
+            
+            
             # View Star and Waves
             ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
             # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
