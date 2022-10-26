@@ -234,7 +234,7 @@ if prod: # Return Ticker and Acct Info
 
 
 def close_worker(queens_chess_piece, s):
-    if s >= datetime.datetime(s.year, s.month, s.day, hour=16, minute=1):
+    if s >= datetime.datetime(s.year, s.month, s.day, hour=16, minute=1).astimezone(est):
         logging.info("Happy Bee Day End")
         print("Great Job! See you Tomorrow")
         if queens_chess_piece.lower() == 'castle':
