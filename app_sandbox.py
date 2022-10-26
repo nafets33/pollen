@@ -85,6 +85,7 @@ coin_exchange = "CBSE"
 parser = createParser_App(prod)
 namespace = parser.parse_args()
 admin = [True if namespace.admin == 'true' else False]
+print(admin)
 
 # /home/stapinski89/pollen/pollen/db
 
@@ -337,21 +338,25 @@ def return_total_profits(QUEEN):
     
     return_dict = {}
     if ORDERS:
+        # with st.form("orderss"):
         df = pd.DataFrame(ORDERS)
         tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
         return_dict['TotalProfitLoss'] = tic_group_df
         
-        st.write("Total Profit Loss")
+        # st.write("Total Profit Loss")
+        mark_down_text(fontsize='25', text="Total Profit Loss")
+        # page_line_seperator()
         st.write(tic_group_df)
 
 
-        now_ = datetime.datetime.now()
+        now_ = datetime.datetime.now(est)
         orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
         if orders_today:
             df = pd.DataFrame(orders_today)
             tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
             st.write("Today Profit Loss")
             st.write(tic_group_df)
+            # submitted = st.form_submit_button("Save")
     
     return return_dict
 
@@ -359,7 +364,8 @@ def return_total_profits(QUEEN):
 def return_buying_power(api):
     ac_info = refresh_account_info(api=api)['info_converted']
     num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
-    mark_down_text(text=num_text)
+    mark_down_text(fontsize='18', text=num_text)
+    # st.write(":heavy_minus_sign:" * 34)
 
     num_text = "last_equity: " + '${:,.2f}'.format(ac_info['last_equity'])
     mark_down_text(fontsize='15', text=num_text)
@@ -1035,7 +1041,10 @@ PB_USER = ReadPickleData(PB_USER_pickle)
 
 def check_password(admin):
     """Returns `True` if the user had a correct password."""
-    if admin:
+    # for i, k in st.session_state.items():
+    #     print(i, k)
+    if admin == True:
+        st.write('admin', admin)
         st.session_state['password_correct'] = True
         return True
 
@@ -1132,7 +1141,7 @@ if check_password(admin=admin):
     # for i in st.session_state:
     #     st.write(i)
     #     st.write(type(i))
-    # del st.session_state['FormSubmitter:signin-SignIn']
+    # del st.session_state['uubmitter:signin-SignIn']
 
     # st.sidebar.write(write_flying_bee())
     st.sidebar.write("Production: ", prod)
@@ -1265,7 +1274,8 @@ if check_password(admin=admin):
             controls = st.button("Portfolio Controls")
             
         if controls:
-            st.write("direct to control page")
+            # st.write("direct to control page")
+            mark_down_text(color='Red', text="PENDING DEV WORKING")
         
         # if st.session_state['qc'] == 'yes':
         if update_queen_controls == True:
