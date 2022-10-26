@@ -964,8 +964,8 @@ def its_morphin_time_view(QUEEN, STORY_bee, ticker):
     
     # st.write('macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64))
     # st.write('hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64))
-    t = 'macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64)
-    h = 'hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64)
+    t = 'macd', total_current_macd_tier, '{:,.2%}'.format(total_current_macd_tier/ 64)
+    h = 'hist', total_current_hist_tier,  '{:,.2%}'.format(total_current_hist_tier / 64)
 
     # n = '{:,.2%}'.format(total_current_macd_tier/ 64)
     # t = f'{"macd "}{total_current_macd_tier}{": "}{str(n)}'
@@ -1337,9 +1337,43 @@ if check_password():
             # View Stars
             its_morphin_time_view(QUEEN, STORY_bee, ticker)
             st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
-            st.dataframe(data=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], width=2000)
-            ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
-            default=True, add_vars={'update_cols': False}, write_selection=False)
+            def color_coding(row):
+                if row.mac_ranger == 'white':
+                    return ['background-color:white'] * len(row)
+                elif row.mac_ranger == 'black':
+                    return ['background-color:black'] * len(row)
+                elif row.mac_ranger == 'blue':
+                    return ['background-color:blue'] * len(row)
+                elif row.mac_ranger == 'purple':
+                    return ['background-color:purple'] * len(row)
+                elif row.mac_ranger == 'pink':
+                    return ['background-color:pink'] * len(row)
+                elif row.mac_ranger == 'red':
+                    return ['background-color:red'] * len(row)
+                elif row.mac_ranger == 'green':
+                    return ['background-color:green'] * len(row)
+                elif row.mac_ranger == 'yellow':
+                    return ['background-color:yellow'] * len(row)
+
+                
+                import seaborn as sns
+                cm = sns.light_palette("green", as_cmap=True)
+                df.style.background_gradient(cmap=cm).set_precision(2)
+
+                # return ['background-color:black'] * len(
+                #     row) if row.mac_ranger == 'white'  else ['background-color:green'] * len(row)
+            
+            df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
+            df = df.style.background_gradient(subset=["current_macd_tier", "current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
+            # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
+            # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
+            # st.dataframe(df.style.apply(color_coding, axis=1))
+            st.dataframe(df)
+            # st.markdown('<style>div[title="mac_ranger"] { color: green; } div[title="white"] { color: red; } .data:hover{ background:rgb(243 246 255)}</style>', unsafe_allow_html=True)
+
+            
+            # ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
+            # default=True, add_vars={'update_cols': False}, write_selection=False)
             
             
             # View Star and Waves
