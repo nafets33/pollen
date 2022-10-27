@@ -69,7 +69,7 @@ runOnSave = false
 # address =
 # The port where the server will listen for browser connections.
 # Default: 8501
-port = 80
+port = 8501
 # The base path for the URL where Streamlit should be served from.
 # Default: ""
 baseUrlPath = ""
@@ -101,7 +101,7 @@ gatherUsageStats = true
 # Port where users should point their browsers in order to connect to the app.
 # This is used to: - Set the correct URL for CORS and XSRF protection purposes. - Show the URL on the terminal - Open the browser
 # Default: whatever value is set in server.port.
-serverPort = 80
+serverPort = 8501
 [mapbox]
 # Configure Streamlit to use a custom Mapbox token for elements like st.pydeck_chart and st.map. To get a token for yourself, create an account at https://mapbox.com. It's free (for moderate usage levels)!
 # Default: ""

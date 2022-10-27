@@ -199,7 +199,7 @@ crypto_currency_symbols = ['BTCUSD', 'ETHUSD']
 coin_exchange = "CBSE"
 
 
-today_day = datetime.datetime.now().day
+today_day = datetime.datetime.now(est).day
 
 acct_info = refresh_account_info(api=api)
 # st.write(acct_info)
@@ -382,21 +382,6 @@ def pollenstory_view(POLLENSTORY):
 
     return True
 
-# def run_charts(POLLENSTORY = False):
-    # with st.form("my_form"):
-    #     # tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
-    #     # ticker_option = st.sidebar.selectbox("Tickersme", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
-    #     st.write("Inside the form")
-    #     slider_val = st.slider("Form slider")
-    #     checkbox_val = st.checkbox("Form checkbox")
-
-    #     # Every form must have a submit button.
-    #     submitted = st.form_submit_button("Submit")
-    #     if submitted:
-    #         st.write("slider", slider_val, "checkbox", checkbox_val)
-
-    # st.write("Outside the form")
-    return True
 
 
 def stop_queenbee(APP_requests, key='1'):
@@ -973,20 +958,16 @@ def its_morphin_time_view(QUEEN, STORY_bee, ticker):
     
     # st.write('macd', total_current_macd_tier, ': ', '{:,.2%}'.format(total_current_macd_tier/ 64))
     # st.write('hist', total_current_hist_tier, ': ', '{:,.2%}'.format(total_current_hist_tier / 64))
-    t = 'macd', total_current_macd_tier, '{:,.2%}'.format(total_current_macd_tier/ 64)
-    h = 'hist', total_current_hist_tier,  '{:,.2%}'.format(total_current_hist_tier / 64)
-
-    # n = '{:,.2%}'.format(total_current_macd_tier/ 64)
-    # t = f'{"macd "}{total_current_macd_tier}{": "}{str(n)}'
-    mark_down_text(text=str(t))
-    mark_down_text(fontsize=33, text=str(h))
-
-    # for df_p in all_df:
-    #     fig = df_plotchart(title=df_p.iloc[-1]['name'], df=df_p, y='profits', x=False, figsize=(14,7), formatme=False)
-    #     st.write(fig)
-        # graph
     
-    return True
+    # t = 'macd', total_current_macd_tier, " ", '{:,.2%}'.format(total_current_macd_tier/ 64)
+    # h = 'hist', total_current_hist_tier, " ", '{:,.2%}'.format(total_current_hist_tier / 64)
+
+    t = '{:,.2%}'.format(total_current_macd_tier/ 64)
+    h = '{:,.2%}'.format(total_current_hist_tier / 64)
+
+
+    return {'macd_tier_guage': t, 'hist_tier_guage': h}
+
 
 
 def mark_down_text(align='center', color='Black', fontsize='33', text='Hello There'):
@@ -1002,6 +983,53 @@ def write_flying_bee(width="45", height="45", frameBorder="0"):
 def buzzz_linebreak(icon=">>>", size=15):
     line_break = str([icon for i in range(size)])
     return st.write(line_break)
+
+
+def color_coding(row):
+    if row.mac_ranger == 'white':
+        return ['background-color:white'] * len(row)
+    elif row.mac_ranger == 'black':
+        return ['background-color:black'] * len(row)
+    elif row.mac_ranger == 'blue':
+        return ['background-color:blue'] * len(row)
+    elif row.mac_ranger == 'purple':
+        return ['background-color:purple'] * len(row)
+    elif row.mac_ranger == 'pink':
+        return ['background-color:pink'] * len(row)
+    elif row.mac_ranger == 'red':
+        return ['background-color:red'] * len(row)
+    elif row.mac_ranger == 'green':
+        return ['background-color:green'] * len(row)
+    elif row.mac_ranger == 'yellow':
+        return ['background-color:yellow'] * len(row)
+
+    
+    import seaborn as sns
+    cm = sns.light_palette("green", as_cmap=True)
+    df.style.background_gradient(cmap=cm).set_precision(2)
+
+
+# # Store the initial value of widgets in session state
+# if "visibility" not in st.session_state:
+#     st.session_state.visibility = "visible"
+#     st.session_state.disabled = False
+#     st.session_state.horizontal = False
+
+# col1, col2 = st.columns(2)
+
+# with col1:
+#     st.checkbox("Disable radio widget", key="disabled")
+#     st.checkbox("Orient radio options horizontally", key="horizontal")
+
+# with col2:
+#     st.radio(
+#         "Set label visibility 👇",
+#         ["visible", "hidden", "collapsed"],
+#         key="visibility",
+#         label_visibility=st.session_state.visibility,
+#         disabled=st.session_state.disabled,
+#         horizontal=st.session_state.horizontal,
+#     )
 
 # # # Show users table 
 # colms = st.columns((1, 2, 2, 1, 1))
@@ -1094,54 +1122,8 @@ def check_password(admin):
 
 if check_password(admin=admin):
 
-# def check_password():
-#     """Returns `True` if the user had a correct password."""
-#     def return_user_auth(USERS):
-#         df = pd.DataFrame(USERS)
-#         un = st.session_state["username"]
-#         pw = st.session_state["password"]
-#         df_user = df[df['username'] == un].copy()
-#         return df_user.iloc[-1]['password']
+# st.error("😕 User not known or password incorrect")
 
-#     def password_entered():
-#         """Checks whether a password entered by the user is correct."""
-#         c_pw = return_user_auth(USERS=USERS)
-#         if (
-#             st.session_state["username"] in USERS["usernames"].to_list()
-#             and st.session_state["password"]
-#             == c_pw
-#         ):
-#             st.session_state["password_correct"] = True
-#             del st.session_state["password"]  # don't store username + password
-#             del st.session_state["username"]
-#         else:
-#             st.session_state["password_correct"] = False
-
-#     if "password_correct" not in st.session_state:
-#         # First run, show inputs for username + password.
-#         st.text_input("Username", on_change=password_entered, key="username")
-#         st.text_input(
-#             "Password", type="password", on_change=password_entered, key="password"
-#         )
-#         return False
-#     elif not st.session_state["password_correct"]:
-#         # Password not correct, show input + error.
-#         st.text_input("Username", on_change=password_entered, key="username")
-#         st.text_input(
-#             "Password", type="password", on_change=password_entered, key="password"
-#         )
-#         st.error("😕 User not known or password incorrect")
-#         return False
-#     else:
-#         # Password correct.
-#         return True
-
-# if check_password():
-# if True:
-    # for i in st.session_state:
-    #     st.write(i)
-    #     st.write(type(i))
-    # del st.session_state['uubmitter:signin-SignIn']
 
     # st.sidebar.write(write_flying_bee())
     st.sidebar.write("Production: ", prod)
@@ -1171,7 +1153,7 @@ if check_password(admin=admin):
 
 
     # option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-    option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal', 'pollenstory', 'app'))
+    option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
     st.sidebar.write("<<<('')>>>")
     # st.header(option)
 
@@ -1204,7 +1186,7 @@ if check_password(admin=admin):
 
         st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-        its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
 
         pollen__story_charts(df=df)
 
@@ -1264,7 +1246,6 @@ if check_password(admin=admin):
             st.write(fig)
 
 
-
     if option == 'queen':
         cq1, cq2, cq3 = st.columns(3)
         with cq1:
@@ -1290,6 +1271,8 @@ if check_password(admin=admin):
         tickers_avail_op = list(tickers_avail)
         ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
         ticker = ticker_option
+        ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
+
         
         option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
 
@@ -1356,47 +1339,27 @@ if check_password(admin=admin):
 
         st.write("QUEENS Collective CONSCIENCE")
         if ticker_option != 'all':
-            # q = QUEEN["queen"]["conscience"]["STORY_bee"]["SPY_1Minute_1Day"]
-            # with cq1:
-            #     write_flying_bee(width=100, height=100)
-            # with cq3:
-            #     write_flying_bee(width=100, height=100)
-            # View Stars
-            its_morphin_time_view(QUEEN, STORY_bee, ticker)
-            st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
-            def color_coding(row):
-                if row.mac_ranger == 'white':
-                    return ['background-color:white'] * len(row)
-                elif row.mac_ranger == 'black':
-                    return ['background-color:black'] * len(row)
-                elif row.mac_ranger == 'blue':
-                    return ['background-color:blue'] * len(row)
-                elif row.mac_ranger == 'purple':
-                    return ['background-color:purple'] * len(row)
-                elif row.mac_ranger == 'pink':
-                    return ['background-color:pink'] * len(row)
-                elif row.mac_ranger == 'red':
-                    return ['background-color:red'] * len(row)
-                elif row.mac_ranger == 'green':
-                    return ['background-color:green'] * len(row)
-                elif row.mac_ranger == 'yellow':
-                    return ['background-color:yellow'] * len(row)
 
-                
-                import seaborn as sns
-                cm = sns.light_palette("green", as_cmap=True)
-                df.style.background_gradient(cmap=cm).set_precision(2)
+            star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+            
+            # cq1_1, cq2_2 = st.columns((1, 1))
+
+            # with cq2_2:
+
+            st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
 
                 # return ['background-color:black'] * len(
                 #     row) if row.mac_ranger == 'white'  else ['background-color:green'] * len(row)
-            
-            df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
-            df = df.style.background_gradient(subset=["current_macd_tier", "current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
-            # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
-            # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
-            # st.dataframe(df.style.apply(color_coding, axis=1))
-            st.dataframe(df)
-            # st.markdown('<style>div[title="mac_ranger"] { color: green; } div[title="white"] { color: red; } .data:hover{ background:rgb(243 246 255)}</style>', unsafe_allow_html=True)
+            with st.expander('Tickers Stars'):
+                mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
+                mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
+                df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
+                df = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+                # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
+                # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
+                # st.dataframe(df.style.apply(color_coding, axis=1))
+                st.dataframe(df)
+                # st.markdown('<style>div[title="mac_ranger"] { color: green; } div[title="white"] { color: red; } .data:hover{ background:rgb(243 246 255)}</style>', unsafe_allow_html=True)
 
             
             # ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
@@ -1404,7 +1367,6 @@ if check_password(admin=admin):
             
             
             # View Star and Waves
-            ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
             # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
 
             # # Analyze Waves
@@ -1558,10 +1520,6 @@ if check_password(admin=admin):
         orders_today = pd.DataFrame(orders_today)
         orders_today = orders_today.astype(str)
         st.write(orders_today)
-
-        # if option3 == "Yes":
-            # time.sleep(10)
-            # st.experimental_rerun()
 
 
     if option == 'signal':
@@ -1794,12 +1752,17 @@ if check_password(admin=admin):
                 st.write(data['wave_triggers'])            
 
 
-            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">BUY BUY Honey to be Made</p>'
+            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Flash Buttons</p>'
             st.markdown(new_title, unsafe_allow_html=True)
             
-            quick_buy_short = st.button("FLASH BUY SQQQ")
-            quick_buy_long = st.button("FLASH BUY TQQQ")
+            c1, c2, = st.columns(2)
+            with c1:
+                quick_buy_short = st.button("FLASH BUY SQQQ")
+            with c2:
+                quick_buy_long = st.button("FLASH BUY TQQQ")
+            
             quick_buy_BTC = st.button("FLASH BUY BTC")
+            
             quick_buy_amt = st.selectbox("FLASH BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
             
             type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
@@ -1850,9 +1813,6 @@ if check_password(admin=admin):
                     data = ReadPickleData(pickle_file=PB_App_Pickle)
                     st.write(data['buy_orders'])
 
-
-    if option == 'app':
-        st.write(APP_requests['queen_controls_reset'])
 
     # with st.sidebar:
     #     stop_queenbee(APP_requests)

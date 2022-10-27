@@ -504,13 +504,19 @@ def knights_triggerbees(df): # adds all triggers to dataframe
 
     trigger_dict = {}
     for trigger, trig_func in trigger_dict_info.items():
+        trigger_dict[trigger] = {}
         df[trigger] = trig_func(df=df)
         bee_df = df[df[trigger] == 'bee'].copy()
         if len(bee_df) > 0:
-            trigger_dict[trigger] = {}
             trigger_dict[trigger]['last_seen'] = bee_df['timestamp_est'].iloc[-1]
             if len(bee_df) > 1:
                 trigger_dict[trigger]['prior_seen'] = bee_df['timestamp_est'].iloc[-2]
+            else:
+                trigger_dict[trigger]['prior_seen'] = datetime.datetime.now(est).replace(year=1989, month=4, day=11)
+        else:
+            trigger_dict[trigger]['last_seen'] = datetime.datetime.now(est).replace(year=1989, month=4, day=11)
+            trigger_dict[trigger]['prior_seen'] = datetime.datetime.now(est).replace(year=1989, month=4, day=11)
+
     
     # # Mac is very LOW and we are in buy cross
     # trigger = 'buy_RED_tier-1_macdcross'
@@ -1102,6 +1108,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         s = datetime.datetime.now(est)
         error_dict = {}
 
+
         try:
             # Fetch bars for prior ndays and then add on today
             # s_fetch = datetime.datetime.now()
@@ -1129,6 +1136,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
                                         end=end_date, 
                                         adjustment='all').df
             if len(symbol_data) == 0:
+                print("No Data Returned for ", timeframe)
                 error_dict[symbol] = {'msg': 'no data returned', 'time': time}
                 return [False, error_dict]
         except Exception as e:
@@ -1160,8 +1168,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         if ndays == 1:
-            market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-
+            market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
         return [True, symbol_data, market_hours_data, after_hours_data]
     # handle error
@@ -1190,16 +1197,16 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
                 end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 
-            if crypto:
-                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
+                if crypto:
+                    symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
+                                                start=start_date,
+                                                end=end_date,
+                                                exchanges=exchange).df
+                else:
+                    symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
-                                            end=end_date,
-                                            exchanges=exchange).df
-            else:
-                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
-                                        start=start_date,
-                                        end=end_date, 
-                                        adjustment='all').df
+                                            end=end_date, 
+                                            adjustment='all').df
                 
                 # set index to EST time
                 symbol_data['index_timestamp'] = symbol_data.index
@@ -1208,10 +1215,9 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
                 # symbol_data['timestamp'] = symbol_data['timestamp_est']
                 symbol_data = symbol_data.reset_index(drop=True)
                 if ndays == 1:
-                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
                 return_dict[charttime] = symbol_data
-
 
 
             if len(symbol_data) == 0:

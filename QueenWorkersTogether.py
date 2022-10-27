@@ -458,7 +458,7 @@ def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i time
 
     for ticker_time, df in df_tickers_data.items():
         ticker, timeframe, days = ticker_time.split("_")
-        last = df['timestamp_est'].iloc[-2].replace(tzinfo=None)
+        last = df['timestamp_est'].iloc[-2]
         now = datetime.datetime.now(est)
         timedelta_minutes = (now - last).seconds / 60
         now_day = now.day
@@ -750,7 +750,6 @@ try:
     WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
     for qcp_worker in WORKERBEE_queens.keys():
         WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
-
     
     workerbee_run_times = []
     speed_gauges = {

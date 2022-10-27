@@ -987,7 +987,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
             return power_up
         except Exception as e:
             print("power up failed ", e)
-            return 0
+            ipdb.set_trace()
 
 
     try:
@@ -1238,6 +1238,9 @@ def command_conscience(api, QUEEN, APP_requests):
                         # cycle through triggers and pass buy first logic for buy
                         # trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
                         for trig in avail_trigs:
+                            if trig == 'sell_cross-0' and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
+                                # print("Wants to Short Stock Scenario")
+                                continue
                             if trig not in available_triggerbees:
                                 continue
                             if trig in trading_model['trigbees'].keys():
