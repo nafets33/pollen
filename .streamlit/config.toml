@@ -15,7 +15,7 @@ showWarningOnDirectExecution = true
 # Level of logging: 'error', 'warning', 'info', or 'debug'.
 # Default: 'info'
 level = "info"
-# String format for logging messages. If logger.datetimeFormat is set, logger messages will default to `%(asctime)s.%(msecs)03d %(message)s`. See [Python's documentation](https://docs.python.org/2.6/library/logging.html#formatter-objects) for available attributes.
+# String format for logging messages. If logger.datetimeFormat is set, logger messages will default to '%(asctime)s.%(msecs)03d %(message)s'. See [Python's documentation](https://docs.python.org/2.6/library/logging.html#formatter-objects) for available attributes.
 # Default: "%(asctime)s %(message)s"
 messageFormat = "%(asctime)s %(message)s"
 [client]
@@ -74,11 +74,11 @@ port = 8501
 # Default: ""
 baseUrlPath = ""
 # Enables support for Cross-Origin Request Sharing (CORS) protection, for added security.
-# Due to conflicts between CORS and XSRF, if `server.enableXsrfProtection` is on and `server.enableCORS` is off at the same time, we will prioritize `server.enableXsrfProtection`.
+# Due to conflicts between CORS and XSRF, if 'server.enableXsrfProtection' is on and 'server.enableCORS' is off at the same time, we will prioritize 'server.enableXsrfProtection'.
 # Default: true
 enableCORS = true
 # Enables support for Cross-Site Request Forgery (XSRF) protection, for added security.
-# Due to conflicts between CORS and XSRF, if `server.enableXsrfProtection` is on and `server.enableCORS` is off at the same time, we will prioritize `server.enableXsrfProtection`.
+# Due to conflicts between CORS and XSRF, if 'server.enableXsrfProtection' is on and 'server.enableCORS' is off at the same time, we will prioritize 'server.enableXsrfProtection'.
 # Default: true
 enableXsrfProtection = true
 # Max size, in megabytes, for files uploaded with the file_uploader.

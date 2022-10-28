@@ -1065,40 +1065,55 @@ USERS = [{'username': 'pollen', 'password': 'beebetter'},
 PB_USER_pickle = os.path.join(db_root, 'queen_users.plk')
 if os.path.exists(PB_USER_pickle) == False:
     PickleData(PB_USER_pickle, {'users': [{'signin_count': 1, 'username': 'queen', 'password': 'bee', 'date': datetime.datetime.now(est)}]})
-PB_USER = ReadPickleData(PB_USER_pickle)
+USERS = ReadPickleData(PB_USER_pickle)
+
+def add_user__vars(username, password, date=datetime.datetime.now(est), signin_count=1):
+    return {'signin_count': 1, 'username': username, 'password': password, 'date': date}
 
 def check_password(admin):
-    """Returns `True` if the user had a correct password."""
+    """Returns True if the user had a correct password."""
     # for i, k in st.session_state.items():
     #     print(i, k)
     if admin == True:
-        st.write('admin', admin)
+        st.sidebar.write('admin', admin)
         st.session_state['password_correct'] = True
         return True
+    else:
+        st.sidebar.write('admin', admin)
 
     if 'password_correct' in st.session_state and st.session_state['password_correct']:
         return True
-
-    with st.form('signin'):
     
+    # def proc(un_create):
+    #     if un_create in df_users['username'].tolist():
+    #         mark_down_text(fontsize=10, color='Red', text='User Name Already Taken')
+
+    # st.text_area('enter text', on_change=proc, key='text_key')
+    
+    with st.form('signin'):
+        df_users = pd.DataFrame(USERS['users'])
         def password_entered():
             """Checks whether a password entered by the user is correct."""
-            df = pd.DataFrame(PB_USER['users'])
+            df = pd.DataFrame(USERS['users'])
             df['index'] = df.index
             un = st.session_state["username"]
             pw = st.session_state["password"]
+            
             df_user = df[df['username'] == un].copy()
+            if len(df_user) == 0:
+                mark_down_text(text="No User Name Exists")
+                return False
             correct_pw = df_user.iloc[-1]['password']
             if pw == correct_pw:
-                PB_USER['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
-                PB_USER['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
+                USERS['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
+                USERS['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
                 print("pw correct")
                 st.write("pw correct")
                 write_flying_bee()
                 st.session_state["password_correct"] = True
                 del st.session_state["password"]  # don't store username + password
                 del st.session_state["username"]
-                PickleData(PB_USER_pickle, PB_USER)
+                PickleData(PB_USER_pickle, USERS)
                 return True
             else:
                 st.session_state["password_correct"] = False
@@ -1107,8 +1122,37 @@ def check_password(admin):
 
         st.text_input("Username", key="username")
         st.text_input("Password", type="password",  key="password")
-        
         signin = st.form_submit_button("SignIn")
+
+        st.write("Not a User? Join the QueensHive")
+
+        st.text_input("Create Username", key="createusername")
+        st.text_input("Create Password", type="password",  key="createpassword")
+        st.text_input("Email",  key="email")
+
+        create_user = st.form_submit_button("Join pollenq")
+        un_create = st.session_state["createusername"]
+        pw_create = st.session_state["createpassword"]
+        email_ = st.session_state["email"]
+        # st.write(un_create)
+        if un_create in df_users['username'].tolist():
+            mark_down_text(fontsize=10, color='Red', text='User Name Already Taken')
+            do_not_create = True
+        else:
+            do_not_create = False
+
+        if create_user:
+            if do_not_create:
+                mark_down_text(fontsize=8, color='Red', text='User Name Already Taken')
+                return False
+            else:        
+                USERS['users'].append(add_user__vars(username=un_create, password=pw_create))
+                PickleData(PB_USER_pickle, USERS)
+
+                del st.session_state["createusername"]
+                del st.session_state["createpassword"]
+                return False
+
         if signin:
             p = password_entered()
 
@@ -1328,6 +1372,8 @@ if check_password(admin=admin):
                 for order_state in active_queen_order_states:
                     df = queen_orders_view(QUEEN=QUEEN, queen_order_state=order_state, return_all_cols=True)['df']
                     if len(df) > 0:
+                        if order_state == 'error':
+                            continue
                         mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
                         st.dataframe(df)
 
@@ -1719,6 +1765,9 @@ if check_password(admin=admin):
             # ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
             ticker_time_frame = QUEEN['heartbeat']['available_tickers']
 
+            if len(ticker_time_frame) == 0:
+                ticker_time_frame = list(set(i for i in STORY_bee.keys()))
+
             # ticker_time_frame = [i for i in ticker_time_frame]
             # ticker_time_frame.sort()
             ticker_wave_option = st.sidebar.selectbox("Tickers", ticker_time_frame, index=ticker_time_frame.index(["SPY_1Minute_1Day" if "SPY_1Minute_1Day" in ticker_time_frame else ticker_time_frame[0]][0]))
@@ -1799,7 +1848,7 @@ if check_password(admin=admin):
                     order_dict = {'ticker': ticker,
                     'system': 'app',
                     'trig': 'app',
-                    'request_time': datetime.datetime.now(),
+                    'request_time': datetime.datetime.now(est),
                     'wave_amo': quick_buy_amt,
                     'app_seen_price': current_price,
                     'side': 'buy',
