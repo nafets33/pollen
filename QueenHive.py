@@ -312,7 +312,6 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
 
             s_timetoken = datetime.datetime.now(est)
-            # ipdb.set_trace()
             wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
             
             MACDWAVE_story = return_macd_wave_story(df=df, trigbees=trigbees, tframe=tframe)
@@ -741,9 +740,9 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     
     ticker, ftime, frame = ticker_time_frame.split("_")    
 
-    def create_tier_range(mac_world_ranges):
-        m_high = mac_world_ranges[ftime]
-        m_low = mac_world_ranges[ftime] * -1
+    def create_tier_range(m_high, m_low):
+        # m_high = mac_world_ranges[ftime]
+        # m_low = mac_world_ranges[ftime] * -1
 
         tiers_add = m_high/tiers_num
         td_high = {}
@@ -766,11 +765,15 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     # select mac_world &  # apply tiers
 
     # "MAC"
-    if ticker in crypto_currency_symbols:
-        mac_world_ranges = MACD_WORLDS['crypto']['macd']
+    if mac_world['macd_high'] == 0: # no max min exist yet (1day scenario)
+        m_high = 1
+        m_low = -1
     else:
-        mac_world_ranges = MACD_WORLDS['default']['macd']
-    tier_range = create_tier_range(mac_world_ranges=mac_world_ranges)
+        m_high = mac_world['macd_high']
+        m_low = mac_world['macd_low']
+
+
+    tier_range = create_tier_range(m_high, m_low)
     td_high = tier_range['td_high']
     td_low = tier_range['td_low']
     df['macd_tier'] = np.where( (df['macd'] > 0), 
@@ -780,12 +783,15 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     df['macd_tier'] = np.where(df['macd'] > 0, df['macd_tier'], df['macd_tier'] * -1)
 
     
-    # "Hist"
-    if ticker in crypto_currency_symbols:
-        mac_world_ranges = MACD_WORLDS['crypto']['hist']
+    # "MAC"
+    if mac_world['hist_high'] == 0: # no max min exist yet (1day scenario)
+        m_high = 1
+        m_low = -1
     else:
-        mac_world_ranges = MACD_WORLDS['default']['hist']
-    tier_range = create_tier_range(mac_world_ranges=mac_world_ranges)
+        m_high = mac_world['hist_high']
+        m_low = mac_world['hist_low']
+
+    tier_range = create_tier_range(m_high, m_low)
     td_high = tier_range['td_high']
     td_low = tier_range['td_low']
     df['hist_tier'] = np.where( (df['hist'] > 0), 
@@ -858,12 +864,6 @@ def return_macd_wave_story(df, trigbees, tframe):
     # POLLENSTORY = read_pollenstory()
     # df = POLLENSTORY["SPY_1Minute_1Day"]
     # trigbees = ["buy_cross-0", "sell_cross-0"]
-    
-    # t = split_today_vs_prior(df=df)
-    # df = t['df_today']
-    
-    # df = df
-
     # length and height of wave
     MACDWAVE_story = {'story': {}}
     MACDWAVE_story.update({trig_name: {} for trig_name in trigbees})
@@ -1068,27 +1068,18 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
     return {'df': df, 'df_waves': df_waves}
 
 
-def split_today_vs_prior(df, other_timestamp=False):
-    if other_timestamp:
-        df_day = df[other_timestamp].iloc[-1]
-        # df = df.set_index(other_timestamp, drop=False)
-        # df_today = df[(df.index.day == df_day.day) & (df.index.month == df_day.month) & (df.index.year == df_day.year)].copy()        
-        df_today = df[df['wave_start_time'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-        df_prior = df[~(df['wave_start_time'].isin(df_today['wave_start_time'].to_list()))].copy()
-        return {'df_today': df_today, 'df_prior': df_prior}
-        # df_today = df_today.reset_index()
-        # df_prior = df_prior.reset_index()
-    else:
-        df_day = df['timestamp_est'].iloc[-1]
-        # df = df.copy()
-        # df = df.set_index('timestamp_est', drop=False)
-        df_today = df[df['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-        # df_today = df[(df['timestamp_est'].day == df_day.day) & (df['timestamp_est'].month == df_day.month) & (df['timestamp_est'].year == df_day.year)].copy()
-        df_prior = df[~(df['story_index'].isin(df_today['story_index'].to_list()))].copy()
-        
-        # df_today = df_today.reset_index()
-        # df_prior = df_prior.reset_index()
-        return {'df_today': df_today, 'df_prior': df_prior}
+def split_today_vs_prior(df, timestamp='timestamp_est'):
+    df[timestamp] = pd.to_datetime(df[timestamp], errors='coerce').fillna('err')
+    err = df[df[timestamp] == 'err']
+    if len(err) > 0:
+        print('datetime conv failed')
+    
+    df = df[df[timestamp] != 'err'].copy()
+    df_today = df[df[timestamp] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+    df_prior = df[~(df[timestamp].isin(df_today[timestamp].to_list()))].copy()
+    
+    return {'df_today': df_today, 'df_prior': df_prior}
+
 
 
 def return_degree_angle(x, y): #
@@ -1103,12 +1094,10 @@ def return_degree_angle(x, y): #
     return degree
 
 ### BARS
-def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
+def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now(est)
         error_dict = {}
-
-
         try:
             # Fetch bars for prior ndays and then add on today
             # s_fetch = datetime.datetime.now()
@@ -1125,7 +1114,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
                 else:
                     start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
 
-            if crypto:
+            if exchange:
                 symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
                                             start=start_date,
                                             end=end_date,
@@ -1147,12 +1136,11 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         symbol_data['index_timestamp'] = symbol_data.index
         symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
         del symbol_data['index_timestamp']
-        # symbol_data['timestamp'] = symbol_data['timestamp_est']
-        # symbol_data = symbol_data.reset_index()
+
         symbol_data = symbol_data.set_index('timestamp_est')
-        # del symbol_data['timestamp']
-        # symbol_data['timestamp_est'] = symbol_data.index
+
         symbol_data['symbol'] = symbol
+        symbol_data['timeframe'] = timeframe
 
         # Make two dataframes one with just market hour data the other with after hour data
         if "day" in timeframe:
@@ -1167,14 +1155,15 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
-        if ndays == 1:
-            market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+        # if ndays == 1:
+        #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-        return [True, symbol_data, market_hours_data, after_hours_data]
+        # return [True, symbol_data, market_hours_data, after_hours_data]
+        return {'resp': True, "df": symbol_data, 'market_hours_data': market_hours_data, 'after_hours_data': after_hours_data}
     # handle error
     except Exception as e:
         print("sending email of error", e)
-# r = return_bars(symbol='SPY', timeframe='1Minute', ndays=0, trading_days_df=trading_days_df)
+
 
 def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
     try:
@@ -1197,7 +1186,7 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
                 end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 
-                if crypto:
+                if exchange:
                     symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
                                                 start=start_date,
                                                 end=end_date,
@@ -1212,10 +1201,10 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
                 symbol_data['index_timestamp'] = symbol_data.index
                 symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
                 del symbol_data['index_timestamp']
-                # symbol_data['timestamp'] = symbol_data['timestamp_est']
+                symbol_data['timeframe'] = timeframe
                 symbol_data = symbol_data.reset_index(drop=True)
-                if ndays == 1:
-                    symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+                # if ndays == 1:
+                #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
                 return_dict[charttime] = symbol_data
 
@@ -1231,12 +1220,13 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
         
 
         
-        return [True, return_dict]
+        # return [True, return_dict]
+        return {'resp': True, 'return': return_dict}
     # handle error
     except Exception as e:
         print("sending email of error", e)
         return [False, e]
-# r = return_bars_list(ticker_list, chart_times)
+
 
 def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
     # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
@@ -1445,7 +1435,7 @@ def refresh_account_info(api):
             return {
                 'info': info, 
                 'info_converted': 
-                {'account_number': info.account_number,
+                {
                 'accrued_fees': float(info.accrued_fees),
                 'buying_power': float(info.buying_power),
                 'cash': float(info.cash),
@@ -1707,75 +1697,6 @@ def log_script(log_file, loginfo_dict):
         df[k] = v.fillna(df[k])
 
 
-def read_csv_db(db_root, tablename, ext='.csv', prod=True, init=False):
-    orders = False
-    main_orders_cols = ['trigname', 'client_order_id', 'origin_client_order_id', 'exit_order_link', 'date', 'lastmodified', 'selfnote', 'app_requests_id', 'bulkorder_origin__client_order_id', 'portfolio_name', 'system_recon']
-
-    if init:
-        def create_csv_table(cols, db_root, tablename, ext):
-            table_path = os.path.join(db_root, tablename)
-            if os.path.exists(table_path) == False:
-                with open(table_path, 'w') as f:
-                    df = pd.DataFrame()
-                    for i in cols:
-                        df[i] = ''
-                    df.to_csv(table_path, index=True, encoding='utf8')
-                    print(table_path, "created")
-                    return True
-            else:
-                return True
-
-        tables = ['main_orders.csv', 'main_orders_sandbox.csv']
-        for t in tables:
-            if os.path.exists(os.path.join(db_root, t)):
-                pass
-            else:
-                create_csv_table(cols=main_orders_cols, db_root=db_root, tablename=t, ext='.csv')
-
-    if tablename:
-        if prod:
-            return pd.read_csv(os.path.join(db_root, f'{tablename}{ext}'), dtype=str, encoding='utf8', engine='python')
-        else:
-            return pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
-
-
-# def update_csv_db(df_to_add, tablename, append, update=False, replace=False, ext='.csv', prod=True):
-#     df_to_add['lastmodified'] = datetime.datetime.now().isoformat()
-#     if prod:
-#         table_path = os.path.join(db_root, f'{tablename}{ext}')
-#     else:
-#         table_path = os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}')
-
-#     if tablename:
-#         if prod:
-#             main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{ext}'), dtype=str, encoding='utf8', engine='python')
-#         else:
-#             main_df = pd.read_csv(os.path.join(db_root, f'{tablename}{"_sandbox"}{ext}'), dtype=str, encoding='utf8', engine='python')
-
-#         if append:
-#             new_df = pd.concat([main_df, df_to_add], axis=0, ignore_index=True)
-#             new_df.to_csv(table_path, index=False, encoding='utf8')
-        
-#         if update:
-#             indx = list(df_to_add.index)
-#             main_df['index'] = main_df.index
-#             main_df = main_df[~main_df['index'].isin(indx)]
-#             new_df = pd.concat([main_df, df_to_add], axis=0)
-#             new_df.to_csv(table_path, index=False, encoding='utf8')
-        
-#         if replace:
-#             new_df = df_to_add
-#             new_df.to_csv(table_path, index=False, encoding='utf8')      
-
-
-# def convert_todatetime_string(date_string):
-#     # In [94]: date_string
-#     # Out[94]: '2022-03-11T19:41:50.649448Z'
-#     # In [101]: date_string[:19]
-#     # Out[101]: '2022-03-11T19:41:50'
-#     t1 = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.%fZ').astimezone(est)
-#     return datetime.datetime.fromisoformat(t[:19])
-
 
 def datestr_UTC_to_EST(date_string, return_string=False):
     # In [94]: date_string
@@ -1827,40 +1748,43 @@ def return_macd(df_main, fast, slow, smooth):
     return df_main
 
 
-# def return_VWAP(df):
-#     # VWAP
-#     df = df.assign(
-#         vwap=df.eval(
-#             'wgtd = close * volume', inplace=False
-#         ).groupby(df['timestamp_est']).cumsum().eval('wgtd / volume')
-#     )
-#     return df
-
-# def return_VWAP(df, window=3):
-#     # VWAP
-#     df['vwap'] = bta.volume.VolumeWeightedAveragePrice(df["high"], df["low"], df["close"], df["volume"], window=window, fillna=True).volume_weighted_average_price()
-#     return df
-
 def return_VWAP(df):
-    # Put high, low, close, and volume into a 'calculation dataframe'
-    # vwap_df = df[['high', 'low', 'close', 'volume']].copy()
-    # if '1Minute' in df.iloc[-1]['name']
-    
-    vwap_df = df
-    # 1 Calculate the Typical Price for the period. (High + Low + Close)/3)
-    vwap_df['typical_price'] = (vwap_df.high + vwap_df.low + vwap_df.close) / 3
-    # 2 Multiply the Typical Price by the period Volume. (Typical Price x Volume)
-    vwap_df['price_volume'] = (vwap_df.typical_price * vwap_df.volume)
-    # 3 Create a Cumulative Total of Typical Price. Cumulative(Typical Price x Volume)
-    vwap_df['cum_price_volume'] = vwap_df.expanding().price_volume.sum()
-    # 4 Create a Cumulative Total of Volume. Cumulative(Volume)
-    vwap_df['cum_volume'] = vwap_df.expanding().volume.sum()
-    # 5 Divide the Cumulative Totals. VWAP = Cumulative(Typical Price x Volume) / Cumulative(Volume)
-    vwap_df['vwap'] = vwap_df.cum_price_volume / vwap_df.cum_volume
 
-    del vwap_df['typical_price']
-    del vwap_df['cum_price_volume']
-    del vwap_df['cum_volume']
+    if df.iloc[0]['timeframe'] == '1Minute':
+        d_token = split_today_vs_prior(df=df)
+        df_today = d_token['df_today']
+        df_prior = d_token['df_prior']
+
+        df_split = []
+        for df__ in [df_today, df_prior]:                
+            df__['typical_price'] = (df__.high + df__.low + df__.close) / 3 # 1 Calculate the Typical Price for the period. (High + Low + Close)/3)
+            df__['price_volume'] = (df__.typical_price * df__.volume) # 2 Multiply the Typical Price by the period Volume. (Typical Price x Volume)
+            df__['cum_price_volume'] = df__.expanding().price_volume.sum() # 3 Create a Cumulative Total of Typical Price. Cumulative(Typical Price x Volume)
+            df__['cum_volume'] = df__.expanding().volume.sum() # 4 Create a Cumulative Total of Volume. Cumulative(Volume)
+            df__['vwap'] = df__.cum_price_volume / df__.cum_volume # 5 Divide the Cumulative Totals. VWAP = Cumulative(Typical Price x Volume) / Cumulative(Volume)
+
+            del df__['typical_price']
+            del df__['cum_price_volume']
+            del df__['cum_volume']
+            df_split.append(df__)
+        
+        vwap_df = pd.concat(df_split, axis=0, join='outer')
+    else:
+        vwap_df = df
+        # 1 Calculate the Typical Price for the period. (High + Low + Close)/3)
+        vwap_df['typical_price'] = (vwap_df.high + vwap_df.low + vwap_df.close) / 3
+        # 2 Multiply the Typical Price by the period Volume. (Typical Price x Volume)
+        vwap_df['price_volume'] = (vwap_df.typical_price * vwap_df.volume)
+        # 3 Create a Cumulative Total of Typical Price. Cumulative(Typical Price x Volume)
+        vwap_df['cum_price_volume'] = vwap_df.expanding().price_volume.sum()
+        # 4 Create a Cumulative Total of Volume. Cumulative(Volume)
+        vwap_df['cum_volume'] = vwap_df.expanding().volume.sum()
+        # 5 Divide the Cumulative Totals. VWAP = Cumulative(Typical Price x Volume) / Cumulative(Volume)
+        vwap_df['vwap'] = vwap_df.cum_price_volume / vwap_df.cum_volume
+
+        del vwap_df['typical_price']
+        del vwap_df['cum_price_volume']
+        del vwap_df['cum_volume']
 
     return vwap_df
 
@@ -2407,6 +2331,7 @@ def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'w
      
     return pollen_themes
 
+# how long have I been in a tier?
 
 def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     return_dict = {}
@@ -2444,21 +2369,21 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         
         def star__DEFAULT_kings_order_rules_mapping(stars=stars):
             return {
-                '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '5Minute_5Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '30Minute_1Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=30, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '1Hour_3Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '2Hour_6Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=120, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                '1Day_1Year': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=120, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '5Minute_5Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=320, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '30Minute_1Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=30, timeduration=43800, take_profit=.05 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Hour_3Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60, timeduration=43800*3, take_profit=.05 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '2Hour_6Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=120, timeduration=43800*6, take_profit=.05 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Day_1Year': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.1 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
             }
 
         # def waveBlocktime_specific_DEFAULT_rules(waveBlocktimes):
         #     return {'premarket': {'status': 'not_active'}}
 
         def trigbees__DEFAULT_keys():
-            return {'buy_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-            'sell_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-            'ready_buy_cross': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            return {'buy_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            'sell_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            'ready_buy_cross': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
             }
 
         def star_kings_order_rules_mapping(stars, trigbees, waveBlocktimes, star__DEFAULT_kings_order_rules_mapping=star__DEFAULT_kings_order_rules_mapping, trigbees__DEFAULT_keys=trigbees__DEFAULT_keys): # --> returns star_trigbee_king_order_rules
@@ -2860,15 +2785,15 @@ def return_queen_controls(stars=stars):
             'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
             # Worker Bees UPDATE TO PER TICKER on Ticker Settings
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-            'macd_worlds' : {
-                'crypto': 
-                    {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
-                    'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
+            # 'macd_worlds' : {
+            #     'crypto': 
+            #         {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
+            #         'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
                 
-                'default': 
-                    {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
-                    'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
-                },
+            #     'default': 
+            #         {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
+            #         'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
+            #     },
 
     
     }
@@ -3050,7 +2975,7 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
 
         # # show today only
         df_today_return = pd.DataFrame()
-        df_today = split_today_vs_prior(df=df, other_timestamp='wave_start_time')['df_today']
+        df_today = split_today_vs_prior(df=df, timestamp='wave_start_time')['df_today']
         df_day_bestwaves = return_Best_Waves(df=df_today, top=3)
         groups = df_today.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
         df_today_return = groups.rename(columns={'length': 'avg_length', 'time_to_max_profit': 'avg_time_to_max_profit', 'maxprofit': 'sum_maxprofit'})
@@ -3199,13 +3124,15 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
     if cols_to_view:
         col_view = col_view
     else:
-        col_view = ['trigname', 'ticker_time_frame', 'filled_avg_price', 'cost_basis', 'honey', '$honey', 'profit_loss', 'status_q', 'client_order_id', 'queen_order_state']
+        col_view = ['datetime','symbol', 'trigname', 'ticker_time_frame', 'filled_qty', 'qty_available', 'filled_avg_price', 'cost_basis', 'wave_amo', 'honey', '$honey', 'honey_time_in_profit', 'profit_loss', 'status_q', 'client_order_id', 'origin_wave', 'wave_at_creation', 'power_up', 'sell_reason', 'exit_order_link', 'queen_order_state', 'order_rules']
     if len(QUEEN['queen_orders']) > 0:
-        all_orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == queen_order_state]
-        df = pd.DataFrame(all_orders)
-        # df = df.astype(str)
+        # all_orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'].isin(queen_order_state)]
+        df = pd.DataFrame(QUEEN['queen_orders'])
+        df = df[df['queen_order_state'].isin(queen_order_state)].copy()
+
         if len(df) > 0:
-            # df["honey"] = df["honey"] * 100
+            if 'running' in queen_order_state:
+                df = df[col_view]
             if 'profit_loss' in df.columns:
                 df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
             if "honey" in df.columns:

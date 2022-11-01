@@ -67,9 +67,9 @@ else:
 #     return parser
 
 if prod:
-    from QueenHive import createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+    from QueenHive import createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
 else:
-    from QueenHive_sandbox import createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, read_csv_db, split_today_vs_prior, check_order_status
+    from QueenHive_sandbox import createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
 
 # ###### GLOBAL # ######
 ARCHIVE_queenorder = 'archived_bee'
@@ -375,6 +375,11 @@ def return_buying_power(api):
 
     num_text = "Cash: " + '${:,.2f}'.format(ac_info['cash'])
     mark_down_text(fontsize='15', text=num_text)
+    
+    num_text = "Total Fees: " + '${:,.2f}'.format(ac_info['accrued_fees'])
+    mark_down_text(fontsize='10', text=num_text)
+    # with st.expander('acctInfo details'):
+    #     st.write(refresh_account_info(api=api)['info_converted'])
 
 
 def pollenstory_view(POLLENSTORY):
@@ -868,6 +873,7 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
     
     gridOptions['getRowStyle'] = jscode
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
+    gridOptions['enableCellTextSelection'] = 'true'
 
     grid_response = AgGrid(
         data,
@@ -928,6 +934,54 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
         return df_sel
 
 
+def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
+    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
+    if paginationOn:
+        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+    gb.configure_side_bar() #Add a sidebar
+    gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+    if update_cols:
+        for colName in update_cols:        
+            if dropdownlst:
+                gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
+            else:
+                gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
+
+    jscode = JsCode("""
+    function(params) {
+        if (params.data.state === 'white') {
+            return {
+                'color': 'white',
+                'backgroundColor': 'red'
+            }
+        }
+    };
+    """)
+    
+    gridOptions = gb.build()
+    
+    gridOptions['getRowStyle'] = jscode
+    gridOptions['rememberGroupStateWhenNewData'] = 'true'
+    gridOptions['enableCellTextSelection'] = 'true'
+
+    grid_response = AgGrid(
+        data,
+        gridOptions=gridOptions,
+        data_return_mode='AS_INPUT', 
+        update_mode=update_mode_value, 
+        fit_columns_on_grid_load=fit_columns_on_grid_load,
+        # theme='blue', #Add theme color to the table
+        enable_enterprise_modules=True,
+        height=height, 
+        # width='100%',
+        reload_data=reload_data,
+        allow_unsafe_jscode=allow_unsafe_jscode
+    )
+    return grid_response
+
+
+
+
 def add_trading_model(QUEEN, ticker, trading_model_universe):
     trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
     if ticker not in trading_models.keys():
@@ -983,6 +1037,13 @@ def write_flying_bee(width="45", height="45", frameBorder="0"):
 def buzzz_linebreak(icon=">>>", size=15):
     line_break = str([icon for i in range(size)])
     return st.write(line_break)
+
+def pollen__story_charts(df):
+    with st.expander('pollen story'):
+        df_write = df.astype(str)
+        st.dataframe(df_write)
+        pass
+        
 
 
 def color_coding(row):
@@ -1054,8 +1115,8 @@ def color_coding(row):
 
 
 # """ if "__name__" == "__main__": """
-USERS = [{'username': 'pollen', 'password': 'beebetter'},
-{'username': 'guest', 'password': 'bee'}, {'username': 'queen', 'password': 'bee'} ]
+# USERS = [{'username': 'pollen', 'password': 'beebetter'},
+# {'username': 'guest', 'password': 'bee'}, {'username': 'queen', 'password': 'bee'} ]
 
 # placeholder = st.empty()
 # isclick = placeholder.button('delete this button')
@@ -1124,34 +1185,35 @@ def check_password(admin):
         st.text_input("Password", type="password",  key="password")
         signin = st.form_submit_button("SignIn")
 
-        st.write("Not a User? Join the QueensHive")
+        with st.expander('Want your own Trading Bot? >>> Join pollenq'):
+            st.write("Not a User? Join the QueensHive")
 
-        st.text_input("Create Username", key="createusername")
-        st.text_input("Create Password", type="password",  key="createpassword")
-        st.text_input("Email",  key="email")
+            st.text_input("Create Username", key="createusername")
+            st.text_input("Create Password", type="password",  key="createpassword")
+            st.text_input("Email",  key="email")
 
-        create_user = st.form_submit_button("Join pollenq")
-        un_create = st.session_state["createusername"]
-        pw_create = st.session_state["createpassword"]
-        email_ = st.session_state["email"]
-        # st.write(un_create)
-        if un_create in df_users['username'].tolist():
-            mark_down_text(fontsize=10, color='Red', text='User Name Already Taken')
-            do_not_create = True
-        else:
-            do_not_create = False
+            create_user = st.form_submit_button("Join pollenq")
+            un_create = st.session_state["createusername"]
+            pw_create = st.session_state["createpassword"]
+            email_ = st.session_state["email"]
+            # st.write(un_create)
+            if un_create in df_users['username'].tolist():
+                mark_down_text(fontsize=10, color='Red', text='User Name Already Taken')
+                do_not_create = True
+            else:
+                do_not_create = False
 
-        if create_user:
-            if do_not_create:
-                mark_down_text(fontsize=8, color='Red', text='User Name Already Taken')
-                return False
-            else:        
-                USERS['users'].append(add_user__vars(username=un_create, password=pw_create))
-                PickleData(PB_USER_pickle, USERS)
+            if create_user:
+                if do_not_create:
+                    mark_down_text(fontsize=8, color='Red', text='User Name Already Taken')
+                    return False
+                else:        
+                    USERS['users'].append(add_user__vars(username=un_create, password=pw_create))
+                    PickleData(PB_USER_pickle, USERS)
 
-                del st.session_state["createusername"]
-                del st.session_state["createpassword"]
-                return False
+                    del st.session_state["createusername"]
+                    del st.session_state["createpassword"]
+                    return False
 
         if signin:
             p = password_entered()
@@ -1198,7 +1260,7 @@ if check_password(admin=admin):
 
     # option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
     option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
-    st.sidebar.write("<<<('')>>>")
+    st.sidebar.write("<<<('bee better')>>>")
     # st.header(option)
 
 
@@ -1221,12 +1283,7 @@ if check_password(admin=admin):
         ticker_time_frame = selections[0]
         df = POLLENSTORY[ticker_time_frame].copy()
 
-        def pollen__story_charts(df):
-            with st.expander('pollen story'):
-                df_write = df.astype(str)
-                st.dataframe(df_write)
-                pass
-        
+
 
         st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
@@ -1362,7 +1419,7 @@ if check_password(admin=admin):
             mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
 
             with st.expander('Orders'):
-                error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state='error', return_all_cols=True)['df']
+                error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
                 error_orders = error_orders.astype(str)
                 if len(error_orders)> 0:
                     new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
@@ -1370,18 +1427,36 @@ if check_password(admin=admin):
                     st.dataframe(error_orders)
 
                 for order_state in active_queen_order_states:
-                    df = queen_orders_view(QUEEN=QUEEN, queen_order_state=order_state, return_all_cols=True)['df']
+                    df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
                     if len(df) > 0:
                         if order_state == 'error':
                             continue
                         mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
-                        st.dataframe(df)
+                     # st.dataframe(df)
+                        grid_response = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=933)
+
 
 
         if orders_table == 'yes':
-            # main_orders_table = read_csv_db(db_root=db_root, tablename='main_orders', prod=prod)
-            main_orders_table = pd.DataFrame(QUEEN['queen_orders'])
-            st.dataframe(main_orders_table)
+            if "visibility" not in st.session_state:
+                st.session_state.visibility = "visible"
+                st.session_state.disabled = False
+                st.session_state.horizontal = False
+            st.radio(
+                "Set label visibility 👇",
+                ["visible", "hidden", "collapsed"],
+                key="visibility",
+                label_visibility=st.session_state.visibility,
+                disabled=st.session_state.disabled,
+                horizontal=st.session_state.horizontal,
+            )
+            with st.expander('orders table -- Today', expanded=True):
+
+                df = queen_orders_view(QUEEN=QUEEN, queen_order_state=['completed', 'completed_alpaca'])['df']
+                # df_today = split_today_vs_prior(df=df, other_timestamp='datetime')['df_today']
+                grid_response = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=500)
+
+            
 
         st.write("QUEENS Collective CONSCIENCE")
         if ticker_option != 'all':

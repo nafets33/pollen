@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from collections import deque
-from QueenHive import init_QUEEN, init_pollen_dbs, read_queensmind, speedybee, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, rebuild_timeframe_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
 import argparse
 import aiohttp
@@ -233,22 +233,13 @@ if prod: # Return Ticker and Acct Info
 
 
 
-def close_worker(queens_chess_piece, s):
+def close_worker(queens_chess_piece):
+    s = datetime.datetime.now(est)
     date = datetime.datetime.now(est)
     date = date.replace(hour=16, minute=1)
     if s >= date:
         logging.info("Happy Bee Day End")
         print("Great Job! See you Tomorrow")
-        if queens_chess_piece.lower() == 'castle':
-            # make os copy
-            save_files = ['queen.pkl', 'queen_sandbox.pkl']
-            for fname in save_files:
-                src = os.path.join(db_root, fname)
-                dst = os.path.join(os.path.join(os.path.join(db_root, 'logs'), 'logs'), 'queens')
-                dst_ = os.path.join(dst, fname)
-                shutil.copy(src, dst_)
-            print("Queen Bee Saved")
-        
         sys.exit()
 
 
@@ -292,24 +283,23 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
         error_dict = {}
         s = datetime.datetime.now(est)
         dfs_index_tickers = {}
-        bars = return_bars_list(ticker_list, chart_times)
-        if bars[0] == False:
-            print("kill")        
-        if bars[1]: # rebuild and split back to ticker_time with market hours only
-            bars_dfs = bars[1]
-            for timeframe, df in bars_dfs.items():
-                time_frame=timeframe.split("_")[0] # '1day_1year'
-                if '1day' in time_frame.lower():
-                    for ticker in ticker_list:
-                        df_return = df[df['symbol']==ticker].copy()
-                        dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
-                else:
-                    df = df.set_index('timestamp_est')
-                    market_hours_data = df.between_time('9:30', '16:00')
-                    market_hours_data = market_hours_data.reset_index()
-                    for ticker in ticker_list:
-                        df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
-                        dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
+        bars = return_bars_list(ticker_list, chart_times)      
+        # if bars['return']: # rebuild and split back to ticker_time with market hours only
+        #     # bars_dfs = bars['return']
+        for timeframe, df in bars['return'].items():
+            time_frame=timeframe.split("_")[0] # '1day_1year'
+            if '1day' in time_frame.lower():
+                for ticker in ticker_list:
+                    df_return = df[df['symbol']==ticker].copy()
+                    dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
+            else:
+                df = df.set_index('timestamp_est')
+                market_hours_data = df.between_time('9:30', '16:00')
+                market_hours_data = market_hours_data.reset_index()
+                # market_hours_data = df
+                for ticker in ticker_list:
+                    df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
+                    dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
         
         e = datetime.datetime.now(est)
         msg = {'function':'Return Init ChartData',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
@@ -331,12 +321,8 @@ def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indic
     try:
         # return market hours data from bars
         bars_data = return_bars(symbol=ticker, timeframe=timeframe, ndays=0, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
-        df_bars_data = bars_data[2] # mkhrs if in minutes
-        # df_bars_data = df_bars_data.reset_index()
-        if bars_data[0] == False:
-            error_dict["NoData"] = bars_data[1] # symbol already included in value
-        else:
-            dfs_index_tickers[ticker_time] = df_bars_data
+        df_bars_data = bars_data['market_hours_data'] # mkhrs if in minutes
+        dfs_index_tickers[ticker_time] = df_bars_data
     except Exception as e:
         print(ticker_time, e)
     
@@ -661,7 +647,7 @@ def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece):
     # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 
-    close_worker(queens_chess_piece=queens_chess_piece, s=s)
+    close_worker(queens_chess_piece=queens_chess_piece)
 
     # main 
     pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
