@@ -1,3 +1,4 @@
+import random
 from asyncore import poll
 from cProfile import run
 from queue import Queue
@@ -67,9 +68,9 @@ else:
 #     return parser
 
 if prod:
-    from QueenHive import createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
+    from QueenHive import convert_to_float, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
 else:
-    from QueenHive_sandbox import createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
+    from QueenHive_sandbox import convert_to_float, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
 
 # ###### GLOBAL # ######
 ARCHIVE_queenorder = 'archived_bee'
@@ -84,8 +85,7 @@ coin_exchange = "CBSE"
 
 parser = createParser_App(prod)
 namespace = parser.parse_args()
-admin = [True if namespace.admin == 'true' else False]
-print(admin)
+admin = [True if namespace.admin == 'true' else False][0]
 
 # /home/stapinski89/pollen/pollen/db
 
@@ -334,12 +334,11 @@ def create_wave_chart_all(df, wave_col):
 
 def return_total_profits(QUEEN):
     
-    ORDERS = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'completed' and i['side'] == 'sell']
-    
+    df = QUEEN['queen_orders']
+    ORDERS = df[(df['queen_order_state']== 'completed') & (df['side'] == 'sell')].copy()
     return_dict = {}
-    if ORDERS:
-        # with st.form("orderss"):
-        df = pd.DataFrame(ORDERS)
+    if len(ORDERS) > 0:
+
         tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
         return_dict['TotalProfitLoss'] = tic_group_df
         
@@ -350,9 +349,10 @@ def return_total_profits(QUEEN):
 
 
         now_ = datetime.datetime.now(est)
-        orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
-        if orders_today:
-            df = pd.DataFrame(orders_today)
+        orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
+        
+        if len(orders_today) > 0:
+            df = orders_today
             tic_group_df = df.groupby(['symbol'])[['profit_loss']].sum().reset_index()
             st.write("Today Profit Loss")
             st.write(tic_group_df)
@@ -980,8 +980,6 @@ def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_lo
     return grid_response
 
 
-
-
 def add_trading_model(QUEEN, ticker, trading_model_universe):
     trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
     if ticker not in trading_models.keys():
@@ -1125,7 +1123,8 @@ def color_coding(row):
 
 PB_USER_pickle = os.path.join(db_root, 'queen_users.plk')
 if os.path.exists(PB_USER_pickle) == False:
-    PickleData(PB_USER_pickle, {'users': [{'signin_count': 1, 'username': 'queen', 'password': 'bee', 'date': datetime.datetime.now(est)}]})
+    PickleData(PB_USER_pickle, {'users': [{'signin_count': 1, 'username': 'queen', 'password': 'bee', 'date': datetime.datetime.now(est)},
+    {'signin_count': 1, 'username': 'pollen', 'password': 'master', 'date': datetime.datetime.now(est)}]})
 USERS = ReadPickleData(PB_USER_pickle)
 
 def add_user__vars(username, password, date=datetime.datetime.now(est), signin_count=1):
@@ -1139,8 +1138,6 @@ def check_password(admin):
         st.sidebar.write('admin', admin)
         st.session_state['password_correct'] = True
         return True
-    else:
-        st.sidebar.write('admin', admin)
 
     if 'password_correct' in st.session_state and st.session_state['password_correct']:
         return True
@@ -1166,6 +1163,10 @@ def check_password(admin):
                 return False
             correct_pw = df_user.iloc[-1]['password']
             if pw == correct_pw:
+                if prod:
+                    if un != 'pollen':
+                        st.write("Who Are You and no You are not allowed in")
+                        return False
                 USERS['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
                 USERS['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
                 print("pw correct")
@@ -1230,7 +1231,6 @@ if check_password(admin=admin):
 
 # st.error("😕 User not known or password incorrect")
 
-
     # st.sidebar.write(write_flying_bee())
     st.sidebar.write("Production: ", prod)
     # st.write(prod)
@@ -1257,12 +1257,26 @@ if check_password(admin=admin):
     KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
     ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
-
+    # if "visibility" not in st.session_state:
+    #     st.session_state.visibility = "visible"
+    #     st.session_state.disabled = False
+    #     st.session_state.horizontal = False
+    c1,c2,c3,c4,c5, = st.columns(5)
+    with c3:
+        option = st.radio(
+                    "",
+            ["queen", "signal", "charts"],
+            key="visibility",
+            label_visibility='visible',
+            # disabled=st.session_state.disabled,
+            horizontal=True,
+        )
     # option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-    option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
+    # option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
     st.sidebar.write("<<<('bee better')>>>")
     # st.header(option)
 
+    page_line_seperator('3', color='#C5B743')
 
     colors = QUEEN['queen_controls']['power_rangers']['1Minute_1Day']['mac_ranger']['buy_wave']['nuetral']
     # st.write(colors)
@@ -1396,7 +1410,6 @@ if check_password(admin=admin):
         cq1, cq2, cq3 = st.columns((3,1,1))
         
         if command_conscience_option == 'yes':
-            ORDERS = QUEEN['queen_orders']
             now_time = datetime.datetime.now().astimezone(est)
             all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
             
@@ -1428,33 +1441,43 @@ if check_password(admin=admin):
 
                 for order_state in active_queen_order_states:
                     df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
+                    if len(df) > 89:
+                        grid_height = 654
+                    elif len(df) < 10:
+                        grid_height = 200
+                    else:
+                        grid_height = 333
+                    
                     if len(df) > 0:
                         if order_state == 'error':
                             continue
-                        mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
-                     # st.dataframe(df)
-                        grid_response = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=933)
+                        elif order_state == 'submitted':
+                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                            run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                        elif order_state == 'running_open':
+                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                            run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                        elif order_state == 'running':
+                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                            # df['honey'] = 
+                            # df['honey'] = pd.to_numeric(df['honey'], errors='coerce').fillna(0)
+                            # df['honey'] = df['honey'].apply(lambda x: convert_to_float(x))
+                            # df.loc['Total'] = df.sum(numeric_only=True)
+                            run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                            # df.iloc[[df.columns.tolist()][0]] = 'Total'
+                        elif order_state == 'running_close':
+                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                            run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+
 
 
 
         if orders_table == 'yes':
-            if "visibility" not in st.session_state:
-                st.session_state.visibility = "visible"
-                st.session_state.disabled = False
-                st.session_state.horizontal = False
-            st.radio(
-                "Set label visibility 👇",
-                ["visible", "hidden", "collapsed"],
-                key="visibility",
-                label_visibility=st.session_state.visibility,
-                disabled=st.session_state.disabled,
-                horizontal=st.session_state.horizontal,
-            )
             with st.expander('orders table -- Today', expanded=True):
 
                 df = queen_orders_view(QUEEN=QUEEN, queen_order_state=['completed', 'completed_alpaca'])['df']
                 # df_today = split_today_vs_prior(df=df, other_timestamp='datetime')['df_today']
-                grid_response = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=500)
+                ordertables__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=500)
 
             
 
@@ -1604,12 +1627,12 @@ if check_password(admin=admin):
                 # agg_view = agg_view.astype(str)
                 # st.dataframe(agg_view)
 
-                st.write(ttframe)
-                story_sort = knowledge['story']
-                st.write(story_sort)
+                # st.write(ttframe)
+                # story_sort = knowledge['story']
+                # st.write(story_sort)
                 
                 if option_showaves.lower() == 'yes':
-                    st.write("waves story")
+                    st.write("waves story -- investigate BACKEND functions")
                     df = knowledge['waves']['story']
                     df = df.astype(str)
                     st.dataframe(df)
@@ -1634,11 +1657,11 @@ if check_password(admin=admin):
             print("groups not allowed yet")
         
         st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
-        ORDERS = [i for i in ORDERS if i['queen_order_state'] == 'completed']
+        df = QUEEN['queen_orders']
+        
         # queen shows only today orders
-        now_ = datetime.datetime.now()
-        orders_today = [i for i in ORDERS if i['datetime'].day == now_.day and i['datetime'].month == now_.month and i['datetime'].year == now_.year]
-        orders_today = pd.DataFrame(orders_today)
+        now_ = datetime.datetime.now(est)
+        orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
         orders_today = orders_today.astype(str)
         st.write(orders_today)
 
@@ -1647,14 +1670,32 @@ if check_password(admin=admin):
         betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
         df_betty = pd.DataFrame(betty_bee)
         df_betty = df_betty.astype(str)
-        # st.write('betty_bee', df_betty)
-        write_flying_bee()
-        with st.expander('betty_bee'):
-            st.write(df_betty)
+        c1,c2,c3,c4,c5 = st.columns(5)
+        # col_d = {f'{"c"}{n}': for n in [c1,c2,c3,c4,c5,c6,c7,c8]}
 
         st.write(APP_requests['queen_controls'])
 
-        save_signals = st.sidebar.selectbox('Send to Queen', ['beeaction', 'orders', 'controls', 'QueenOrders'], index=['controls'].index('controls'))
+        # save_signals = st.sidebar.selectbox('Send to Queen', ['beeaction', 'orders', 'controls', 'QueenOrders'], index=['controls'].index('controls'))
+        # c1,c2,c3,c4, c5 = st.columns(5)
+        with c3:
+            option__ = st.radio(
+                                    "",
+                ['beeaction', 'orders', 'controls', 'QueenOrders'],
+                key="signal_radio",
+                label_visibility='visible',
+                # disabled=st.session_state.disabled,
+                horizontal=True,
+            )
+
+        # with c4:
+        #     write_flying_bee()
+        # with random.choice(range(1))
+        with st.expander('betty_bee'):
+            st.write(df_betty)
+
+        
+        save_signals = option__
+        
         col1, col2 = st.columns(2)
 
         ## SHOW CURRENT THEME
@@ -1681,11 +1722,9 @@ if check_password(admin=admin):
 
 
         if save_signals == 'QueenOrders':
-            def return_queen_order(client_order_id):
-                return {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == client_order_id}
 
             # Update run order
-            all_orders = pd.DataFrame(QUEEN['queen_orders'])
+            all_orders = QUEEN['queen_orders']
             active_orders = all_orders[all_orders['queen_order_state'].isin(active_order_state_list)].copy()
             show_errors_option = st.selectbox('show last error', ['no', 'yes'], index=['no'].index('no'))
             c_order_input_list = st.multiselect("active client_order_id", active_orders['client_order_id'].to_list(), default=active_orders.iloc[-1]['client_order_id'])
@@ -1694,23 +1733,16 @@ if check_password(admin=admin):
 
             # if show_errors_option == 'yes':
             if show_errors_option == 'yes':
-                latest_queen_order = [i for i in QUEEN['queen_orders'] if i['queen_order_state'] == 'error'].copy()
-                latest_queen_order = [latest_queen_order[-1]]
-            else:
-                latest_queen_order = active_orders.tail(1)
-                last3 = all_orders.iloc[-3:].astype(str)
-                st.write(last3)
-                q_order = {k: i for k, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_input}
-                idx = list(q_order.keys())[0]
-                latest_queen_order = [QUEEN['queen_orders'][idx]] # latest
+                latest_queen_order = all_orders[all_orders['queen_order_state'] == 'error'].copy()
+            else:                
+                latest_queen_order = df[df['client_order_id'] == c_order_input].copy()
 
-            # q_order = [i for i in QUEEN['queen_orders'] if i['client_order_id'] == c_order_input]
-            # return_queen_order()
+
             st.write("current queen order requests")
             data = ReadPickleData(pickle_file=PB_App_Pickle)
             st.write(data['update_queen_order'])
             
-            df = pd.DataFrame(latest_queen_order)
+            df = latest_queen_order
             df = df.T.reset_index()
             df = df.astype(str)
             df = df.rename(columns={0: 'main'})
@@ -1754,81 +1786,82 @@ if check_password(admin=admin):
                 st.write(data['update_queen_order'])
                     
     
-        if save_signals == 'orders':
-            show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
-            if show_app_req == 'yes':
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                st.write("sell orders", data['sell_orders'])
-                st.write("buy orders", data['buy_orders'])
-            current_orders = QUEEN['queen_orders']
-            running_orders = [i for i in current_orders if i['queen_order_state'] == 'running']
+        # if save_signals == 'orders':
+        #     show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
+        #     if show_app_req == 'yes':
+        #         data = ReadPickleData(pickle_file=PB_App_Pickle)
+        #         st.write("sell orders", data['sell_orders'])
+        #         st.write("buy orders", data['buy_orders'])
+        #     df = QUEEN['queen_orders']
             
-            running_portfolio = return_dfshaped_orders(running_orders)
+        #     running_orders = df[df['queen_order_state'] == 'running'].copy()
             
-            portfolio = return_alpc_portolio(api)['portfolio']
-            p_view = {k: [v['qty'], v['qty_available']] for (k,v) in portfolio.items()}
-            st.write(p_view)
-            st.write(running_portfolio)
+        #     # running_portfolio = return_dfshaped_orders(running_orders)
+            
+        #     # portfolio = return_alpc_portolio(api)['portfolio']
+        #     # p_view = {k: [v['qty'], v['qty_available']] for (k,v) in portfolio.items()}
+        #     # st.write(p_view)
+        #     # st.write(running_portfolio)
 
-            position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
-            closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
-            c_order_ids = [i['client_order_id'] for i in position_orders]
-            c_order_iddict = {i['client_order_id']: idx for idx, i in enumerate(position_orders)}
-            c_order_ids.append("Select")
-            c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
-            if c_order_id_option != 'Select':
-                run_order = position_orders[c_order_iddict[c_order_id_option]]
-                run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=prod)
-                st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
-                st.write(run_order_alpaca)
-                st.write(run_order['filled_qty'])
-                sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
-                # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
-                type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
+        #     position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
+        #     closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
+        #     c_order_ids = [i['client_order_id'] for i in position_orders]
+        #     c_order_iddict = {i['client_order_id']: idx for idx, i in enumerate(position_orders)}
+        #     c_order_ids.append("Select")
+        #     c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
+        #     if c_order_id_option != 'Select':
+        #         run_order = position_orders[c_order_iddict[c_order_id_option]]
+        #         run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=prod)
+        #         st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
+        #         st.write(run_order_alpaca)
+        #         st.write(run_order['filled_qty'])
+        #         sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
+        #         # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
+        #         type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
 
-                sell_command = st.button("Sell Order")
-                if sell_command:
-                    st.write("yes")
-                    # val qty
-                    if sell_qty_option > 0 and sell_qty_option <= float(run_order['filled_qty']):
-                        print("qty validated")
-                        # process order signal
-                        client_order_id = c_order_id_option
-                        sellable_qty = sell_qty_option
+        #         sell_command = st.button("Sell Order")
+        #         if sell_command:
+        #             st.write("yes")
+        #             # val qty
+        #             if sell_qty_option > 0 and sell_qty_option <= float(run_order['filled_qty']):
+        #                 print("qty validated")
+        #                 # process order signal
+        #                 client_order_id = c_order_id_option
+        #                 sellable_qty = sell_qty_option
                         
-                        order_dict = {'system': 'app',
-                        'request_time': datetime.datetime.now(),
-                        'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
-                        'side': 'sell',
-                        'type': type_option,
-                        'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+        #                 order_dict = {'system': 'app',
+        #                 'request_time': datetime.datetime.now(),
+        #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
+        #                 'side': 'sell',
+        #                 'type': type_option,
+        #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
 
-                        }
-                        data = ReadPickleData(pickle_file=PB_App_Pickle)
-                        data['sell_orders'].append(order_dict)
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-                        data = ReadPickleData(pickle_file=PB_App_Pickle)
-                        st.write(data['sell_orders'])
+        #                 }
+        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+        #                 data['sell_orders'].append(order_dict)
+        #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+        #                 st.write(data['sell_orders'])
                     
-                    if sell_qty_option < 0 and sell_qty_option >= float(run_order['filled_qty']):
-                        print("qty validated")
-                        # process order signal
-                        client_order_id = c_order_id_option
-                        sellable_qty = sell_qty_option
+        #             if sell_qty_option < 0 and sell_qty_option >= float(run_order['filled_qty']):
+        #                 print("qty validated")
+        #                 # process order signal
+        #                 client_order_id = c_order_id_option
+        #                 sellable_qty = sell_qty_option
                         
-                        order_dict = {'system': 'app',
-                        'request_time': datetime.datetime.now(),
-                        'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
-                        'side': 'sell',
-                        'type': type_option,
-                        'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+        #                 order_dict = {'system': 'app',
+        #                 'request_time': datetime.datetime.now(),
+        #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
+        #                 'side': 'sell',
+        #                 'type': type_option,
+        #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
 
-                        }
-                        data = ReadPickleData(pickle_file=PB_App_Pickle)
-                        data['sell_orders'].append(order_dict)
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-                        data = ReadPickleData(pickle_file=PB_App_Pickle)
-                        st.write(data['sell_orders'])
+        #                 }
+        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+        #                 data['sell_orders'].append(order_dict)
+        #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+        #                 st.write(data['sell_orders'])
 
         
         if save_signals == 'beeaction':

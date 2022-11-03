@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 # from QueenHiveCoin import speedybee,  return_bars_list, return_bars
-from QueenHive import return_bars_list, return_bars, pollen_story, init_pollen_dbs, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
+from QueenHive import return_bars_list, return_bars, pollen_story, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
@@ -621,19 +621,27 @@ def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD
         print(msg)
 
 
-init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
-PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-# PB_App_Pickle = init_pollen['PB_App_Pickle']
+# init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
+# PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+# # PB_App_Pickle = init_pollen['PB_App_Pickle']
 
-if os.path.exists(PB_QUEEN_Pickle) == False:
-    print("WorkerBee Needs a Queen")
-    # sys.exit()
-    PickleData(PB_QUEEN_Pickle, data_to_store=False)
+
+
+
 # Pollen QUEEN
 if prod:
+    PB_QUEEN_Pickle = os.path.join(db_root, f'{"queen"}{".pkl"}')
+    if os.path.exists(PB_QUEEN_Pickle) == False:
+        print("WorkerBee Needs a Queen")
+        sys.exit()
     WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
 else:
+    PB_QUEEN_Pickle = os.path.join(db_root, f'{"queen_sandbox"}{".pkl"}')
+    if os.path.exists(PB_QUEEN_Pickle) == False:
+        print("WorkerBee Needs a Queen")
+        sys.exit()
     WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+
 WORKER_QUEEN['source'] = PB_QUEEN_Pickle
 MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
 master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']

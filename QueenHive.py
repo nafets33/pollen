@@ -471,6 +471,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         print("pollen_story error ", e)
         print_line_of_error()
         print(ticker_time_frame)
+        ipdb.set_trace()
         
 
 def knights_triggerbees(df): # adds all triggers to dataframe
@@ -1069,17 +1070,24 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
 
 
 def split_today_vs_prior(df, timestamp='timestamp_est'):
-    df[timestamp] = pd.to_datetime(df[timestamp], errors='coerce').fillna('err')
-    err = df[df[timestamp] == 'err']
-    if len(err) > 0:
-        print('datetime conv failed')
+    # df[timestamp] = pd.to_datetime(df[timestamp], errors='coerce').fillna('err')
+    # err = df[df[timestamp] == 'err']
+    # if len(err) > 0:
+    #     print('datetime conv failed')
     
-    df = df[df[timestamp] != 'err'].copy()
+    # df = df[df[timestamp] != 'err'].copy()
+
     df_today = df[df[timestamp] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
     df_prior = df[~(df[timestamp].isin(df_today[timestamp].to_list()))].copy()
     
     return {'df_today': df_today, 'df_prior': df_prior}
 
+
+def convert_to_float(x):
+    try:
+        return float(x)
+    except:
+        return 0
 
 
 def return_degree_angle(x, y): #
@@ -1098,49 +1106,45 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
     try:
         s = datetime.datetime.now(est)
         error_dict = {}
-        try:
-            # Fetch bars for prior ndays and then add on today
-            # s_fetch = datetime.datetime.now()
-            if edate_input != False:
-                end_date = edate_input
+        # Fetch bars for prior ndays and then add on today
+        # s_fetch = datetime.datetime.now()
+        if edate_input != False:
+            end_date = edate_input
+        else:
+            end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+        
+        if sdate_input != False:
+            start_date = sdate_input
+        else:
+            if ndays == 0:
+                start_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
             else:
-                end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
-            
-            if sdate_input != False:
-                start_date = sdate_input
-            else:
-                if ndays == 0:
-                    start_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
-                else:
-                    start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
+                start_date = trading_days_df.query('date < @current_day').tail(ndays).head(1).date
 
-            if exchange:
-                symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
-                                            start=start_date,
-                                            end=end_date,
-                                            exchanges=exchange).df
-            else:
-                symbol_data = api.get_bars(symbol, timeframe=timeframe,
+        if exchange:
+            symbol_data = api.get_crypto_bars(symbol, timeframe=timeframe,
                                         start=start_date,
-                                        end=end_date, 
-                                        adjustment='all').df
-            if len(symbol_data) == 0:
-                print("No Data Returned for ", timeframe)
-                error_dict[symbol] = {'msg': 'no data returned', 'time': time}
-                return [False, error_dict]
-        except Exception as e:
-            # print(" log info")
-            error_dict[symbol] = e   
+                                        end=end_date,
+                                        exchanges=exchange).df
+        else:
+            symbol_data = api.get_bars(symbol, timeframe=timeframe,
+                                    start=start_date,
+                                    end=end_date, 
+                                    adjustment='all').df
+        if len(symbol_data) == 0:
+            print("No Data Returned for ", timeframe)
+            error_dict[symbol] = {'msg': 'no data returned', 'time': time}
+            return [False, error_dict]
 
         # set index to EST time
-        symbol_data['index_timestamp'] = symbol_data.index
-        symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
-        del symbol_data['index_timestamp']
+        symbol_data['timestamp_est'] = symbol_data.index
+        symbol_data['timestamp_est'] = symbol_data['timestamp_est'].apply(lambda x: x.astimezone(est))
 
-        symbol_data = symbol_data.set_index('timestamp_est')
+        # symbol_data = symbol_data.set_index('timestamp_est', drop=False)
 
         symbol_data['symbol'] = symbol
         symbol_data['timeframe'] = timeframe
+        symbol_data['bars'] = 'bars'
 
         # Make two dataframes one with just market hour data the other with after hour data
         if "day" in timeframe:
@@ -1148,9 +1152,11 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
             after_hours_data =  None
         else:
             market_hours_data = symbol_data.between_time('9:30', '16:00')
-            market_hours_data = market_hours_data.reset_index()
+            market_hours_data = market_hours_data.reset_index(drop=True)
             after_hours_data =  symbol_data.between_time('16:00', '9:30')
-            after_hours_data = after_hours_data.reset_index()          
+            after_hours_data = after_hours_data.reset_index(drop=True)  
+        
+        symbol_data = symbol_data.reset_index(drop=True)        
 
         e = datetime.datetime.now(est)
         # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
@@ -1158,11 +1164,14 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
         # if ndays == 1:
         #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-        # return [True, symbol_data, market_hours_data, after_hours_data]
+        if symbol_data.iloc[-1]["timestamp_est"] == 0:
+            ipdb.set_trace()
+
         return {'resp': True, "df": symbol_data, 'market_hours_data': market_hours_data, 'after_hours_data': after_hours_data}
     # handle error
     except Exception as e:
         print("sending email of error", e)
+        ipdb.set_trace()
 
 
 def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
@@ -1177,55 +1186,50 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
         return_dict = {}
         error_dict = {}
 
-        try:
-            for charttime, ndays in chart_times.items():
-                timeframe = charttime.split("_")[0] # '1Minute_1Day'
+        for charttime, ndays in chart_times.items():
+            timeframe = charttime.split("_")[0] # '1Minute_1Day'
 
-                trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
-                start_date = trading_days_df_.tail(ndays).head(1).date
-                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-                end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+            trading_days_df_ = trading_days_df[trading_days_df['date'] < current_date] # less then current date
+            start_date = trading_days_df_.tail(ndays).head(1).date
+            start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+            end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 
-                if exchange:
-                    symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
-                                                start=start_date,
-                                                end=end_date,
-                                                exchanges=exchange).df
-                else:
-                    symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+            if exchange:
+                symbol_data = api.get_crypto_bars(ticker_list, timeframe=timeframe,
                                             start=start_date,
-                                            end=end_date, 
-                                            adjustment='all').df
-                
-                # set index to EST time
-                symbol_data['index_timestamp'] = symbol_data.index
-                symbol_data['timestamp_est'] = symbol_data['index_timestamp'].apply(lambda x: x.astimezone(est))
-                del symbol_data['index_timestamp']
-                symbol_data['timeframe'] = timeframe
-                symbol_data = symbol_data.reset_index(drop=True)
-                # if ndays == 1:
-                #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+                                            end=end_date,
+                                            exchanges=exchange).df
+            else:
+                symbol_data = api.get_bars(ticker_list, timeframe=timeframe,
+                                        start=start_date,
+                                        end=end_date, 
+                                        adjustment='all').df
+            
+            # set index to EST time
+            symbol_data['timestamp_est'] = symbol_data.index
+            symbol_data['timestamp_est'] = symbol_data['timestamp_est'].apply(lambda x: x.astimezone(est))
+            symbol_data['timeframe'] = timeframe
+            symbol_data['bars'] = 'bars_list'
+            
+            symbol_data = symbol_data.reset_index(drop=True)
+            # if ndays == 1:
+            #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-                return_dict[charttime] = symbol_data
+            return_dict[charttime] = symbol_data
 
 
             if len(symbol_data) == 0:
                 error_dict[ticker_list] = {'msg': 'no data returned', 'time': time}
-                return [False, error_dict]
-        except Exception as e:
-            # print(" log info")
-            error_dict[ticker_list] = e      
+                return False
+
 
         e = datetime.datetime.now(est)
-        
 
-        
-        # return [True, return_dict]
         return {'resp': True, 'return': return_dict}
-    # handle error
+
     except Exception as e:
         print("sending email of error", e)
-        return [False, e]
+        return False
 
 
 def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
@@ -1754,7 +1758,10 @@ def return_VWAP(df):
         d_token = split_today_vs_prior(df=df)
         df_today = d_token['df_today']
         df_prior = d_token['df_prior']
-
+        
+        if df_today.iloc[-1]["timestamp_est"] == 0 or df_prior.iloc[-1]["timestamp_est"] == 0:
+            ipdb.set_trace()
+        
         df_split = []
         for df__ in [df_today, df_prior]:                
             df__['typical_price'] = (df__.high + df__.low + df__.close) / 3 # 1 Calculate the Typical Price for the period. (High + Low + Close)/3)
@@ -1788,14 +1795,6 @@ def return_VWAP(df):
 
     return vwap_df
 
-
-
-# def vwap(df):
-#     q = df.volume.values
-#     p = df.close.values
-#     df.assign(vwap=(p * q).cumsum() / q.cumsum())
-#     df = df.groupby(df['timestamp_est'], group_keys=False).apply(vwap).fillna(0)
-#     return df
 
 
 def return_RSI(df, length):
@@ -1855,351 +1854,6 @@ def return_sma_slope(df, y_list, time_measure_list):
                 df[sma_name] = df[el].rolling(mtime).mean().fillna(1)
                 df[slope_name] = np.degrees(np.arctan(df[sma_name].diff()/mtime))
         return df
-
-
-
-""" Main Functions"""
-def return_getbars_WithIndicators(bars_data, MACD):
-    # time = '1Minute' #TEST
-    # symbol = 'SPY' #TEST
-    # ndays = 1
-    # bars_data = return_bars(symbol, time, ndays, trading_days_df=trading_days_df)
-
-    try:
-        s = datetime.datetime.now(est) #TEST
-        bars_data['vwap_original'] = bars_data['vwap']
-        # del mk_hrs_data['vwap']
-        df_vwap = return_VWAP(bars_data)
-        # df_vwap = vwap(bars_data)
-
-        df_vwap_rsi = return_RSI(df=df_vwap, length=14)
-        # append_MACD(df_vwap_rsi_macd, fast=MACD['fast'], slow=MACD['slow'])
-        df_vwap_rsi_macd = return_macd(df_main=df_vwap_rsi, fast=MACD['fast'], slow=MACD['slow'], smooth=MACD['smooth'])
-        df_vwap_rsi_macd_smaslope = return_sma_slope(df=df_vwap_rsi_macd, time_measure_list=[3, 6, 23, 33], y_list=['close', 'macd', 'hist'])
-        e = datetime.datetime.now(est)
-        # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-        # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
-        return [True, df_vwap_rsi_macd_smaslope]
-    except Exception as e:
-        print("log error", print_line_of_error())
-        return [False, e, print_line_of_error()]
-
-
-def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with Indicator Data
-    # ticker_list = ['SPY', 'QQQ']
-    # chart_times = {
-    #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18, 
-    #     "1Hour_3Month": 48, "2Hour_6Month": 72, 
-    #     "1Day_1Year": 250}
-    msg = (ticker_list, chart_times)
-    logging.info(msg)
-    print(msg)
-
-    error_dict = {}
-    s = datetime.datetime.now(est)
-    dfs_index_tickers = {}
-    bars = return_bars_list(ticker_list, chart_times)
-    if bars[1]: # rebuild and split back to ticker_time with market hours only
-        bars_dfs = bars[1]
-        for timeframe, df in bars_dfs.items():
-            time_frame=timeframe.split("_")[0] # '1day_1year'
-            if '1day' in time_frame.lower():
-                for ticker in ticker_list:
-                    df_return = df[df['symbol']==ticker].copy()
-                    dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
-            else:
-                df = df.set_index('timestamp_est')
-                market_hours_data = df.between_time('9:30', '16:00')
-                market_hours_data = market_hours_data.reset_index()
-                for ticker in ticker_list:
-                    df_return = market_hours_data[market_hours_data['symbol']==ticker].copy()
-                    dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
-    
-    e = datetime.datetime.now(est)
-    msg = {'function':'Return_Init_ChartData',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
-    print(msg)
-    # dfs_index_tickers['SPY_5Minute']
-    return {'init_charts': dfs_index_tickers, 'errors': error_dict}
-
-
-def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
-    # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
-    # ticker_time = "SPY_1Minute_1Day"
-
-    ticker, timeframe, days = ticker_time.split("_")
-    error_dict = {}
-    s = datetime.datetime.now(est)
-    dfs_index_tickers = {}
-    try:
-        # return market hours data from bars
-        bars_data = return_bars(symbol=ticker, timeframe=timeframe, ndays=0, trading_days_df=trading_days_df) # return [True, symbol_data, market_hours_data, after_hours_data]
-        df_bars_data = bars_data[2] # mkhrs if in minutes
-        # df_bars_data = df_bars_data.reset_index()
-        if bars_data[0] == False:
-            error_dict["NoData"] = bars_data[1] # symbol already included in value
-        else:
-            dfs_index_tickers[ticker_time] = df_bars_data
-    except Exception as e:
-        print(ticker_time, e)
-    
-    e = datetime.datetime.now(est)
-    msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
-    # print(msg)
-    # dfs_index_tickers['SPY_5Minute']
-    return [dfs_index_tickers, error_dict, msg]
-
-
-def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & consider using day.min.chart to rebuild other timeframes
-    ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
-
-    snapshots = api.get_snapshots(ticker_list)
-    # snapshots['SPY'].latest_trade
-    # snapshots['SPY'].latest_trade.conditions
-
-    for ticker in snapshots.keys(): # replace snapshot if in exclude_conditions
-        c = 0
-        while True:
-            conditions = snapshots[ticker].latest_trade.conditions
-            # print(conditions)
-            invalid = [c for c in conditions if c in exclude_conditions]
-            if len(invalid) == 0 or c > 10:
-                break
-            else:
-                print("invalid trade-condition pull snapshot")
-                snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
-                snapshots[ticker] = snapshot
-                c+=1
-
-    float_cols = ['close', 'high', 'open', 'low', 'vwap']
-    int_cols = ['volume', 'trade_count']
-    main_return_dict = {}
-    # min_bars_dict = rebuild_timeframe_bars(ticker_list)
-    # if min_bars_dict['resp'] == False:
-    #     print("Min Bars Error", min_bars_dict)
-    #     min_bars_dict = {k:{} for k in ticker_list}
-    # else:
-    #     min_bars_dict = min_bars_dict['resp']
-    min_bars_dict = {k:{} for k in ticker_list} # REBUILDING MIN BARS NEEDS IMPROVEMENT BEFORE SOME MAY FAIL TO RETURN
-
-    def response_returned(ticker_list):
-        return_dict = {}
-        for ticker in ticker_list:
-            dl = {
-            'close': snapshots[ticker].daily_bar.close,
-            'high': snapshots[ticker].daily_bar.high,
-            'low': snapshots[ticker].daily_bar.low,
-            'timestamp_est': snapshots[ticker].daily_bar.timestamp,
-            'open': snapshots[ticker].daily_bar.open,
-            'volume': snapshots[ticker].daily_bar.volume,
-            'trade_count': snapshots[ticker].daily_bar.trade_count,
-            'vwap': snapshots[ticker].daily_bar.vwap
-            }
-            df_daily = pd.Series(dl).to_frame().T  # reshape dataframe
-            for i in float_cols:
-                df_daily[i] = df_daily[i].apply(lambda x: float(x))
-            for i in int_cols:
-                df_daily[i] = df_daily[i].apply(lambda x: int(x))
-            # df_daily = df_daily.rename(columns={'timestamp': 'timestamp_est'})
-            
-            return_dict[ticker + "_day"] = df_daily
-            
-            # if len(min_bars_dict[ticker]) != 0:
-            #     # "THIS IS NOT being used"
-            #     d = {'close': min_bars_dict[ticker].close.iloc[-1],
-            #     'high': min_bars_dict[ticker].high.iloc[-1],
-            #     'low': min_bars_dict[ticker].low.iloc[-1],
-            #     'timestamp_est': min_bars_dict[ticker].timestamp_est.iloc[-1],
-            #     'open': min_bars_dict[ticker].open.iloc[-1],
-            #     'volume': min_bars_dict[ticker].volume.iloc[-1],
-            #     'trade_count': min_bars_dict[ticker].trade_count.iloc[-1],
-            #     'vwap': min_bars_dict[ticker].vwap.iloc[-1]
-            #     }
-            # else:
-            #     d = {
-            #     'close': snapshots[ticker].latest_trade.price,
-            #     'high': 0, # snapshots[ticker].minute_bar.high,
-            #     'low': 0, # snapshots[ticker].minute_bar.low,
-            #     'timestamp_est': snapshots[ticker].latest_trade.timestamp,
-            #     'open': 0, # snapshots[ticker].minute_bar.open,
-            #     'volume': 0, # snapshots[ticker].minute_bar.volume,
-            #     'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
-            #     'vwap': snapshots[ticker].minute_bar.vwap
-            #     }
-            d = {
-                'close': snapshots[ticker].latest_trade.price,
-                'high': 0, # snapshots[ticker].minute_bar.high,
-                'low': 0, # snapshots[ticker].minute_bar.low,
-                'timestamp_est': snapshots[ticker].latest_trade.timestamp,
-                'open': 0, # snapshots[ticker].minute_bar.open,
-                'volume': 0, # snapshots[ticker].minute_bar.volume,
-                'trade_count': 0, # snapshots[ticker].minute_bar.trade_count,
-                'vwap': snapshots[ticker].minute_bar.vwap
-                }
-            df_minute = pd.Series(d).to_frame().T
-            for i in float_cols:
-                df_minute[i] = df_minute[i].apply(lambda x: float(x))
-            for i in int_cols:
-                df_minute[i] = df_minute[i].apply(lambda x: int(x))
-            # df_minute = df_minute.rename(columns={'timestamp': 'timestamp_est'})
-
-            return_dict[ticker + "_minute"] = df_minute
-        
-        return return_dict
-    snapshot_ticker_data = response_returned(ticker_list)
-    
-    for ticker_time, df in df_tickers_data.items():
-        symbol_snapshots = {k:v for (k,v) in snapshot_ticker_data.items() if k.split("_")[0] == ticker_time.split("_")[0]}
-        symbol, timeframe, days = ticker_time.split("_")
-        if "day" in timeframe.lower():
-            df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}'] # stapshot df
-            df_day_snapshot['symbol'] = symbol
-            df = df.head(-1) # drop last row which has current day / added minute
-            df_rebuild = pd.concat([df, df_day_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
-            main_return_dict[ticker_time] = df_rebuild
-        else:
-            df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
-            df_snapshot['symbol'] = symbol
-            if init:
-                df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
-                main_return_dict[ticker_time] = df_rebuild
-            else:
-                df = df.head(-1) # drop last row which has current day
-                df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
-                main_return_dict[ticker_time] = df_rebuild
-
-    return main_return_dict
-
-
-def ReInitiate_Charts_Past_Their_Time(df_tickers_data): # re-initiate for i timeframe 
-    # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
-    return_dict = {}
-    rebuild_confirmation = {}
-
-    def tag_current_day(timestamp):
-        if timestamp.day == current_day and timestamp.month == current_month and timestamp.year == current_year:
-            return 'tag'
-        else:
-            return '0'
-
-    for ticker_time, df in df_tickers_data.items():
-        ticker, timeframe, days = ticker_time.split("_")
-        last = df['timestamp_est'].iloc[-2]
-        now = datetime.datetime.now(est)
-        timedelta_minutes = (now - last).seconds / 60
-        now_day = now.day
-        last_day = last.day
-        if now_day != last_day:
-            return_dict[ticker_time] = df
-            continue
-
-        if "1minute" == timeframe.lower():
-            if timedelta_minutes > 2:
-                dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                if len(dfn[1]) == 0:
-                    df_latest = dfn[0][ticker_time]
-                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
-                    df_replace = df[df['timetag']!= 'tag'].copy()
-                    del df_replace['timetag']
-                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
-                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
-                    return_dict[ticker_time] = df_return_me
-                    rebuild_confirmation[ticker_time] = "rebuild"
-            else:
-                return_dict[ticker_time] = df
-
-        elif "5minute" == timeframe.lower():
-            if timedelta_minutes > 6:
-                dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                if len(dfn[1]) == 0:
-                    df_latest = dfn[0][ticker_time]
-                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
-                    df_replace = df[df['timetag']!= 'tag'].copy()
-                    del df_replace['timetag']
-                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
-                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
-                    return_dict[ticker_time] = df_return_me
-                    rebuild_confirmation[ticker_time] = "rebuild"
-            else:
-                return_dict[ticker_time] = df
-        
-        elif "30minute" == timeframe.lower():
-            if timedelta_minutes > 31:
-                dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                if len(dfn[1]) == 0:
-                    df_latest = dfn[0][ticker_time]
-
-                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
-                    df_replace = df[df['timetag']!= 'tag'].copy()
-                    del df_replace['timetag']
-                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
-                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
-                    return_dict[ticker_time] = df_return_me
-                    rebuild_confirmation[ticker_time] = "rebuild"
-            else:
-                return_dict[ticker_time] = df
-
-        elif "1hour" == timeframe.lower():
-            if timedelta_minutes > 61:
-                dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                if len(dfn[1]) == 0:
-                    df_latest = dfn[0][ticker_time]
-                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
-                    df_replace = df[df['timetag']!= 'tag'].copy()
-                    del df_replace['timetag']
-                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
-                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
-                    return_dict[ticker_time] = df_return_me
-                    rebuild_confirmation[ticker_time] = "rebuild"
-            else:
-                return_dict[ticker_time] = df
-
-        elif "2hour" == timeframe.lower():
-            if timedelta_minutes > 121:
-                dfn = Return_Bars_LatestDayRebuild(ticker_time)
-                if len(dfn[1]) == 0:
-                    df_latest = dfn[0][ticker_time]
-                    df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
-                    df_replace = df[df['timetag']!= 'tag'].copy()
-                    del df_replace['timetag']
-                    df_return = pd.concat([df_replace, df_latest], join='outer', axis=0).reset_index(drop=True)
-                    df_return_me = pd.concat([df_return, df_return.tail(1)], join='outer', axis=0).reset_index(drop=True) # add dup last row to act as snapshot
-                    return_dict[ticker_time] = df_return_me
-                    rebuild_confirmation[ticker_time] = "rebuild"
-            else:
-                return_dict[ticker_time] = df
-
-        else:
-            return_dict[ticker_time] = df
-    
-    # add back in snapshot init
-    return {"ticker_time": return_dict, "rebuild_confirmation": rebuild_confirmation}
-
-
-def pollen_hunt(df_tickers_data, MACD):
-    # Check to see if any charts need to be Recreate as times lapsed
-    df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-    if len(df_tickers_data_rebuilt['rebuild_confirmation'].keys()) > 0:
-        print(df_tickers_data_rebuilt['rebuild_confirmation'].keys())
-        print(datetime.datetime.now(est).strftime("%H:%M-%S"))
-    
-    # re-add snapshot
-    df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
-    
-    main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
-    chart_rebuild_dict = {}
-    for ticker_time, bars_data in df_tickers_data_rebuilt.items():
-        chart_rebuild_dict[ticker_time] = bars_data
-        df_data_new = return_getbars_WithIndicators(bars_data=bars_data, MACD=MACD)
-        if df_data_new[0] == True:
-            main_rebuild_dict[ticker_time] = df_data_new[1]
-        else:
-            print("error", ticker_time)
-
-    return {'pollencharts_nectar': main_rebuild_dict, 'pollencharts': chart_rebuild_dict}
-
-
-
-###### >>>>>>>>>>>>>>>> CASTLE BISHOP FUNCTIONS <<<<<<<<<<<<<<<#########
 
 
 # ###### >>>>>>>>>>>>>>>> QUEEN <<<<<<<<<<<<<<<#########
@@ -2369,7 +2023,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         
         def star__DEFAULT_kings_order_rules_mapping(stars=stars):
             return {
-                '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=120, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                '1Minute_1Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=120, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
                 '5Minute_5Day': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=5, timeduration=320, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
                 '30Minute_1Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=30, timeduration=43800, take_profit=.05 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
                 '1Hour_3Month': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60, timeduration=43800*3, take_profit=.05 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
@@ -2386,6 +2040,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
             'ready_buy_cross': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
             }
 
+        
         def star_kings_order_rules_mapping(stars, trigbees, waveBlocktimes, star__DEFAULT_kings_order_rules_mapping=star__DEFAULT_kings_order_rules_mapping, trigbees__DEFAULT_keys=trigbees__DEFAULT_keys): # --> returns star_trigbee_king_order_rules
             star_kings_order_rules_dict = {}
             star_default_rules = star__DEFAULT_kings_order_rules_mapping()
@@ -2616,7 +2271,7 @@ def order_vars__queen_order_items(order_side=False, trading_model=False, king_or
 
 def create_QueenOrderBee(trading_model='init', KING='init', ticker_time_frame='init', portfolio_name='init', status_q='init', trig='init', exit_order_link='init', order_vars={}, order={}, priceinfo={}, queen_init=False): # Create Running Order
     
-    def gen_queen_order(trading_model=trading_model, double_down_trade=False, queen_order_state=False, side=False, order_trig_buy_stop=False, order_trig_sell_stop=False, order_trig_sell_stop_limit=False, limit_price=False, running_close_legs=False, symbol=False, order_rules=False, origin_wave=False, wave_at_creation=False, assigned_wave=False, power_up=False, power_up_rangers=False, ticker_time_frame_origin=False, wave_amo=False, trigname=trig, ticker_time_frame=ticker_time_frame, status_q=status_q, portfolio_name=portfolio_name, exit_order_link=exit_order_link, client_order_id=False, system_recon=False, req_qty=False, filled_qty=False, qty_available=0, filled_avg_price=False, price_time_of_request=False, bid=False, ask=False, honey_gauge=False, macd_gauge=False, honey_money=False, sell_reason=False, honey_time_in_profit=False, order=order, order_vars=order_vars, priceinfo=priceinfo, queen_init=False):
+    def gen_queen_order(trading_model=trading_model, double_down_trade=False, queen_order_state=False, side=False, order_trig_buy_stop=False, order_trig_sell_stop=False, order_trig_sell_stop_limit=False, limit_price=False, running_close_legs=False, symbol=False, order_rules=False, origin_wave=False, wave_at_creation=False, assigned_wave=False, power_up=False, power_up_rangers=False, ticker_time_frame_origin=False, wave_amo=False, trigname=trig, ticker_time_frame=ticker_time_frame, status_q=status_q, portfolio_name=portfolio_name, exit_order_link=exit_order_link, client_order_id=False, system_recon=False, req_qty=False, filled_qty=False, qty_available=0, filled_avg_price=False, price_time_of_request=False, bid=False, ask=False, honey_gauge=False, macd_gauge=False, honey_money=False, sell_reason=False, honey_time_in_profit=0, order=order, order_vars=order_vars, priceinfo=priceinfo, queen_init=False):
         date_mark = datetime.datetime.now().astimezone(est)
         if queen_init:
             return {name: 'init' for name in gen_queen_order.__code__.co_varnames if name not in ['order', 'order_vars', 'priceinfo']}
@@ -2666,6 +2321,7 @@ def create_QueenOrderBee(trading_model='init', KING='init', ticker_time_frame='i
                     '$honey': 0,
                     'sell_reason': order_vars['sell_reason'],
                     'honey_time_in_profit': {},
+                    'profit_loss': 0,
                     }
     
     if queen_init:
@@ -2801,8 +2457,6 @@ def return_queen_controls(stars=stars):
 
 
 def init_QUEEN(queens_chess_piece):
-    KING = KINGME()
-    num_of_stars = len(stars())
     
     QUEEN = { # The Queens Mind
         'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
@@ -2810,7 +2464,7 @@ def init_QUEEN(queens_chess_piece):
         'source': "na",
         'last_modified': datetime.datetime.now(est),
         'command_conscience': {},
-        'queen_orders': [create_QueenOrderBee(trading_model=False, KING=KING, queen_init=True, order_vars=False, order=False, ticker_time_frame=False, portfolio_name=False, status_q=False, trig=False, exit_order_link=False, priceinfo=False)],
+        'queen_orders': pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
         'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
@@ -3124,10 +2778,9 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
     if cols_to_view:
         col_view = col_view
     else:
-        col_view = ['datetime','symbol', 'trigname', 'ticker_time_frame', 'filled_qty', 'qty_available', 'filled_avg_price', 'cost_basis', 'wave_amo', 'honey', '$honey', 'honey_time_in_profit', 'profit_loss', 'status_q', 'client_order_id', 'origin_wave', 'wave_at_creation', 'power_up', 'sell_reason', 'exit_order_link', 'queen_order_state', 'order_rules']
+        col_view = ['datetime','symbol', 'trigname', 'ticker_time_frame', 'honey', '$honey', 'honey_time_in_profit', 'filled_qty', 'qty_available', 'filled_avg_price', 'limit_price', 'cost_basis', 'wave_amo', 'status_q', 'client_order_id', 'origin_wave', 'wave_at_creation', 'power_up', 'sell_reason', 'exit_order_link', 'queen_order_state', 'order_rules', 'order_trig_sell_stop',  'side']
     if len(QUEEN['queen_orders']) > 0:
-        # all_orders = [i for i in QUEEN['queen_orders'] if i['queen_order_state'].isin(queen_order_state)]
-        df = pd.DataFrame(QUEEN['queen_orders'])
+        df = QUEEN['queen_orders']
         df = df[df['queen_order_state'].isin(queen_order_state)].copy()
 
         if len(df) > 0:
@@ -3269,7 +2922,7 @@ def init_PowerRangers(ranger_dimensions=False):
 
 def init_queen_orders(pickle_file):
     db = {}
-    db['queen_orders'] = [create_QueenOrderBee(queen_init=True)]
+    db['queen_orders'] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
     PickleData(pickle_file=pickle_file, data_to_store=db)
     print("Order init")
     logging_log_message(msg='Orders init')
@@ -3348,3 +3001,42 @@ def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.l
 
     print("cum.slope", sum([v for k,v in slope_dict.items()]))
     return {'speedybee': speedybee_dict}
+
+"""##################REFERENCEs############################""" 
+#     """ Return Index Charts & Data for All Tickers Wanted"""
+#     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
+
+#     all_alpaca_tickers = api.list_assets()
+#     alpaca_symbols_dict = {}
+#     for n, v in enumerate(all_alpaca_tickers):
+#         if all_alpaca_tickers[n].status == 'active':
+#             alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
+
+#     symbol_shortable_list = []
+#     easy_to_borrow_list = []
+#     for ticker, v in alpaca_symbols_dict.items():
+#         if v['_raw']['shortable'] == True:
+#             symbol_shortable_list.append(ticker)
+#         if v['_raw']['easy_to_borrow'] == True:
+#             easy_to_borrow_list.append(ticker)
+
+#     # alpaca_symbols_dict[list(alpaca_symbols_dict.keys())[100]]
+
+#     market_exchanges_tickers = defaultdict(list)
+#     for k, v in alpaca_symbols_dict.items():
+#         market_exchanges_tickers[v['_raw']['exchange']].append(k)
+#     # market_exchanges = ['OTC', 'NASDAQ', 'NYSE', 'ARCA', 'AMEX', 'BATS']
+
+
+#     main_index_dict = index_ticker_db[0]
+#     main_symbols_full_list = index_ticker_db[1]
+#     not_avail_in_alpaca =[i for i in main_symbols_full_list if i not in alpaca_symbols_dict]
+#     main_symbols_full_list = [i for i in main_symbols_full_list if i in alpaca_symbols_dict]
+
+#     LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
+
+
+#     index_ticker_db = return_index_tickers(index_dir=os.path.join(db_root, 'index_tickers'), ext='.csv')
+
+#     """ Return Index Charts & Data for All Tickers Wanted"""
+#     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
