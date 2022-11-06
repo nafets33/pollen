@@ -68,9 +68,9 @@ if queens_chess_piece.lower() not in ['queen']:
     sys.exit()
 
 if prod:
-    from QueenHive import convert_to_float, createParser_QUEEN, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 else:
-    from QueenHive_sandbox import convert_to_float, createParser_QUEEN, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, createParser, return_index_tickers, return_alpc_portolio, return_market_hours, return_dfshaped_orders, add_key_to_app, pollen_themes, init_app, check_order_status, slice_by_time, split_today_vs_prior, timestamp_string, read_queensmind, read_pollenstory, speedybee, submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
 
 
 # Green Light to Main
@@ -561,7 +561,7 @@ def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
         active_orders['order_exits'] = np.where(
             (active_orders['trigname'] == trig) &
             (active_orders['ticker_time_frame_origin'] == ticker_time_frame), 1, 0)
-        trigbee_orders =  active_orders[active_orders['order_exits'] == 1].copy()
+        trigbee_orders = active_orders[active_orders['order_exits'] == 1].copy()
         if len(trigbee_orders) > 0:
             # print('trig in action ',  len(trigbee_orders))
             return trigbee_orders
@@ -1173,18 +1173,7 @@ def command_conscience(api, QUEEN, APP_requests):
                         # ticker_time_frame = f'{ticker}{"_1Minute_1Day"}'
                         ticker, tframe, frame = ticker_time_frame.split("_")
                         frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
-                        
-                        # # validation trading model
-                        # if ticker not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
-                        #     print("error defaulting to SPY Model")
-                        #     logging.error(("error TICKER not in trading models ", ticker))
-                        #     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel']['SPY'][frame_block]
-                        # elif frame_block not in QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker].keys():
-                        #     print("error defaulting to 1Minute Star Ranger")
-                        #     logging.error(("error STAR not in trading models ", ticker))
-                        #     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel']['SPY']['1Minute_1Day']
-                        # else:
-                        #     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker][frame_block]
+
                         trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
                         
                         if str(trading_model['status']) not in ['active']:
@@ -1207,9 +1196,7 @@ def command_conscience(api, QUEEN, APP_requests):
                                 # check if you already placed order or if a workerbee in transit to place order
                                 trig_action = trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame)
 
-                                """ HAIL TRIGGER, WHAT SAY YOU?
-                                ~forgive me but I bring a gift for the king and queen
-                                """
+                                """ HAIL TRIGGER, WHAT SAY YOU? ~forgive me but I bring a gift for the king and queen"""
                                 king_resp = king_knights_requests(QUEEN=QUEEN, avail_trigs=avail_trigs, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
                                 if king_resp['kings_blessing']:
                                     execute_order(QUEEN=QUEEN, king_resp=king_resp, king_eval_order=False, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio, crypto=crypto)
@@ -2003,7 +1990,7 @@ def queen_orders_main(portfolio, APP_requests):
                                 # Check to complete Queen Order 
                                 origin_closed = check_origin_order_status(QUEEN=QUEEN, origin_order=origin_order, origin_idx=origin_order_idx, closing_filled=closing_filled)
                                 if origin_closed:
-                                    print("Sell Order Fuly Filled: Honey>> ", profit_loss_value, " :: ", profit_loss)
+                                    print("but why? >> Sell Order Fuly Filled: Honey>> ", profit_loss_value, " :: ", profit_loss)
                                     QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'completed'
                         else:
                             QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = "running"

@@ -18,7 +18,6 @@ import os
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
-import sys
 # from alpaca_trade_api.rest import TimeFrame, URL
 # from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
@@ -56,16 +55,8 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 
 scriptname = os.path.basename(__file__)
-if 'sandbox' in scriptname:
-    prod = False
-else:
-    prod = True
+prod = [False if 'sandbox' in scriptname else True][0]
 
-# def createParser():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument ('-qcp', default="queen")
-#     parser.add_argument ('-prod', default='false')
-#     return parser
 
 if prod:
     from QueenHive import convert_to_float, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_pollenstory, read_queensmind, split_today_vs_prior, check_order_status
@@ -109,18 +100,7 @@ st.set_page_config(
     #      'About': "# This is a header. This is an *extremely* cool app!"
     #  }
  )
-col1, col2, col3, col4 = st.columns(4)
-# col1_sb, col2_sb = st.sidebar.columns(2)
-# with col1_sb:
-st.sidebar.button("ReRun")
-# with col2_sb:
-# st.sidebar.image(image, caption='pollenq', width=89)
-with col4:
-    st.image(image, caption='pollenq', width=54)
 
-bee_power_image = os.path.join(jpg_root, 'power.jpg')
-# with col4:
-#     st.image(Image.open(bee_image), width=89)
 
 queens_chess_piece = os.path.basename(__file__)
 log_dir = dst = os.path.join(db_root, 'logs')
@@ -203,6 +183,235 @@ today_day = datetime.datetime.now(est).day
 
 acct_info = refresh_account_info(api=api)
 # st.write(acct_info)
+
+def queen_triggerbees():
+    cq1, cq2, cq3 = st.columns((3,1,1))
+    
+    now_time = datetime.datetime.now().astimezone(est)
+    all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
+    
+    with cq1:
+        if len(all_trigs) > 0:
+            mark_down_text(fontsize=25, color='Green', text="All Available TriggerBees")
+            df = pd.DataFrame(all_trigs.items())
+            df = df.rename(columns={0: 'ttf', 1: 'trig'})
+            df = df.sort_values('ttf')
+            st.write(df)
+            g = {write_flying_bee() for i in range(len(df))}
+        else:
+            mark_down_text(fontsize=25, color='Red', text="No Available TriggerBees")
+        with cq2:
+            write_flying_bee(width=100, height=100)
+
+
+def queen_order_flow():
+    # if st.session_state['admin'] == False:
+    #     return False
+    
+    page_line_seperator()
+
+    mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
+
+    with st.expander('Orders'):
+        error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
+        error_orders = error_orders.astype(str)
+        if len(error_orders)> 0:
+            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
+            st.markdown(new_title, unsafe_allow_html=True)
+            st.dataframe(error_orders)
+
+        for order_state in active_queen_order_states:
+            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
+            if len(df) > 89:
+                grid_height = 654
+            elif len(df) < 10:
+                grid_height = 200
+            else:
+                grid_height = 333
+            
+            if len(df) > 0:
+                if order_state == 'error':
+                    continue
+                elif order_state == 'submitted':
+                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                elif order_state == 'running_open':
+                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                elif order_state == 'running':
+                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height, paginationOn=False)
+                elif order_state == 'running_close':
+                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+
+        
+def queen_QueenOrders():
+    if admin == False:
+        st.write("You Do Not Have Access")
+        return False
+    # Update run order
+    all_orders = QUEEN['queen_orders']
+    active_orders = all_orders[all_orders['queen_order_state'].isin(active_order_state_list)].copy()
+    show_errors_option = st.selectbox('show last error', ['no', 'yes'], index=['no'].index('no'))
+    c_order_input_list = st.multiselect("active client_order_id", active_orders['client_order_id'].to_list(), default=active_orders.iloc[-1]['client_order_id'])
+    
+    c_order_input = [c_order_input_list[0] if len(c_order_input_list) > 0 else all_orders.iloc[-1]['client_order_id'] ][0]
+
+    # if show_errors_option == 'yes':
+    if show_errors_option == 'yes':
+        latest_queen_order = all_orders[all_orders['queen_order_state'] == 'error'].copy()
+    else:                
+        latest_queen_order = df[df['client_order_id'] == c_order_input].copy()
+
+
+    st.write("current queen order requests")
+    data = ReadPickleData(pickle_file=PB_App_Pickle)
+    st.write(data['update_queen_order'])
+    
+    df = latest_queen_order
+    df = df.T.reset_index()
+    df = df.astype(str)
+    df = df.rename(columns={0: 'main'})
+
+    # df = latest_queen_order.astype(str)
+
+    
+    grid_response = build_AGgrid_df(data=df, reload_data=False, update_cols=['update_column'], height=933)
+    data = grid_response['data']
+    # st.write(data)
+    ttframe = data[data['index'] == 'ticker_time_frame'].copy()
+    ttframe = ttframe.iloc[0]['main']
+    # st.write(ttframe.iloc[0]['main'])
+    selected = grid_response['selected_rows'] 
+    df_sel = pd.DataFrame(selected)
+
+    if len(df_sel) > 0:
+        df_sel = df_sel.astype(str)
+        st.write(df_sel)
+        up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
+        up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
+        update_dict = {latest_queen_order[0]["client_order_id"]: up_values}
+        st.session_state['update'] = update_dict
+        st.session_state['ttframe_update'] = ttframe
+
+    save_button_runorder = st.button("Save RunOrderUpdate")
+    if save_button_runorder:
+        # st.write(st.session_state['update'])
+        update_sstate = st.session_state['update']
+        update_ttframe = st.session_state['ttframe_update']
+        order_dict = {'system': 'app',
+        'queen_order_update_package': update_sstate,
+        'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}',
+        'ticker_time_frame': update_ttframe,
+        }
+        # st.write(order_dict)
+        data = ReadPickleData(pickle_file=PB_App_Pickle)
+        data['update_queen_order'].append(order_dict)
+        PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+        data = ReadPickleData(pickle_file=PB_App_Pickle)
+        st.write(data['update_queen_order'])
+        
+
+def queen_beeAction():
+    if st.session_state['admin'] == False:
+        st.write('admin', admin)
+        st.write("Permission Denied")
+        return False
+    
+    wave_button_sel = st.selectbox("Waves", ["buy_cross-0", "sell_cross-0"])
+    initiate_waveup = st.button("Send Wave")
+    # pollen = return_pollen()
+    # ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
+    ticker_time_frame = QUEEN['heartbeat']['available_tickers']
+
+    if len(ticker_time_frame) == 0:
+        ticker_time_frame = list(set(i for i in STORY_bee.keys()))
+
+    # ticker_time_frame = [i for i in ticker_time_frame]
+    # ticker_time_frame.sort()
+    ticker_wave_option = st.sidebar.selectbox("Tickers", ticker_time_frame, index=ticker_time_frame.index(["SPY_1Minute_1Day" if "SPY_1Minute_1Day" in ticker_time_frame else ticker_time_frame[0]][0]))
+
+    wave_trigger = {ticker_wave_option: [wave_button_sel]}
+
+    if initiate_waveup:
+        order_dict = {'ticker': ticker_wave_option.split("_")[0],
+        'ticker_time_frame': ticker_wave_option,
+        'system': 'app',
+        'wave_trigger': wave_trigger,
+        'request_time': datetime.datetime.now(),
+        'app_requests_id' : f'{save_signals}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+        }
+
+        # data = ReadPickleData(pickle_file=PB_App_Pickle)
+        # st.write(data.keys())
+        APP_requests['wave_triggers'].append(order_dict)
+        PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+        return_image_upon_save()          
+
+
+    new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Flash Buttons</p>'
+    st.markdown(new_title, unsafe_allow_html=True)
+    
+    c1, c2, = st.columns(2)
+    with c1:
+        quick_buy_short = st.button("FLASH BUY SQQQ")
+    with c2:
+        quick_buy_long = st.button("FLASH BUY TQQQ")
+    
+    quick_buy_BTC = st.button("FLASH BUY BTC")
+    
+    quick_buy_amt = st.selectbox("FLASH BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
+    
+    type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
+
+    if quick_buy_short or quick_buy_long or quick_buy_BTC:
+        
+        if quick_buy_short:
+            ticker = "SQQQ"
+        elif quick_buy_long:
+            ticker = "TQQQ"
+        elif quick_buy_BTC:
+            ticker = "BTCUSD"
+        
+        print("buy buy meee, sending app request")
+        # get price convert to amount
+        if ticker in crypto_currency_symbols:
+            crypto = True
+            snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+            current_price = snap.latest_trade.price
+        else:
+            crypto = False
+            snap = api.get_snapshot(ticker)
+            current_price = snap.latest_trade.price
+        
+        info = api.get_account()
+        total_buying_power = info.buying_power # what is the % amount you want to buy?
+
+
+        validation = True # not > 50% of buying power COIN later
+        
+        if validation:
+            print("qty validated")
+            # process order signal                
+            order_dict = {'ticker': ticker,
+            'system': 'app',
+            'trig': 'app',
+            'request_time': datetime.datetime.now(est),
+            'wave_amo': quick_buy_amt,
+            'app_seen_price': current_price,
+            'side': 'buy',
+            'type': type_option,
+            'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
+            }
+
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            data['buy_orders'].append(order_dict)
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+            data = ReadPickleData(pickle_file=PB_App_Pickle)
+            st.write(data['buy_orders'])
+
+
 
 def subPlot():
     st.header("Sub Plots")
@@ -378,8 +587,6 @@ def return_buying_power(api):
     
     num_text = "Total Fees: " + '${:,.2f}'.format(ac_info['accrued_fees'])
     mark_down_text(fontsize='10', text=num_text)
-    # with st.expander('acctInfo details'):
-    #     st.write(refresh_account_info(api=api)['info_converted'])
 
 
 def pollenstory_view(POLLENSTORY):
@@ -431,7 +638,7 @@ def refresh_queenbee_controls(APP_requests):
     return True
 
 
-def return_image_upon_save():
+def return_image_upon_save(bee_power_image):
     st.write("Controls Saved", return_timestamp_string())
     st.image(Image.open(bee_power_image), width=89)
 
@@ -448,7 +655,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
                 APP_requests['theme'] = theme_option
                 APP_requests['last_app_update'] = datetime.datetime.now()
                 PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-                return_image_upon_save()
+                return_image_upon_save(bee_power_image=bee_power_image)
         return True
 
     elif control_option.lower() == 'max_profit_wavedeviation':
@@ -472,7 +679,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             APP_requests['queen_controls'].append(app_request_package)
             APP_requests['queen_controls_lastupdate'] = datetime.datetime.now().astimezone(est)
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-            return_image_upon_save()
+            return_image_upon_save(bee_power_image=bee_power_image)
 
     elif control_option.lower() == 'power_rangers':
         st.write("active")
@@ -520,7 +727,7 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             APP_requests['power_rangers'].append(app_request_package)
             APP_requests['power_rangers_lastupdate'] = datetime.datetime.now().astimezone(est)
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-            return_image_upon_save()
+            return_image_upon_save(bee_power_image=bee_power_image)
 
             return True
 
@@ -694,14 +901,14 @@ def update_QueenControls(APP_requests, control_option, theme_list):
                 # APP_requests['power_rangers'].append(app_request_package)
                 # APP_requests['power_rangers_lastupdate'] = datetime.datetime.now().astimezone(est)
                 # PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-                return_image_upon_save()
+                return_image_upon_save(bee_power_image=bee_power_image)
         
     else:
         st.write("PENDING WORK")
         st.write(QUEEN['queen_controls'][control_option])
 
 
-def queen_order_update():
+def queen_order_update(latest_queen_order, c_order_input):
     with st.form("my_form"):
         df = pd.DataFrame(latest_queen_order)
         df = df.T.reset_index()
@@ -844,6 +1051,7 @@ def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_module
     # selected_df = pd.DataFrame(selected).apply(pd.to_numeric, errors='coerce')
 
     return True
+
 
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
@@ -1042,6 +1250,105 @@ def pollen__story_charts(df):
         st.dataframe(df_write)
         pass
         
+def add_user__vars(username, password, date=datetime.datetime.now(est), signin_count=1):
+    return {'signin_count': 1, 'username': username, 'password': password, 'date': date}
+
+def callback_function(state, key):
+    # 1. Access the widget's setting via st.session_state[key]
+    # 2. Set the session state you intended to set in the widget
+    st.session_state[state] = st.session_state[key]
+
+def check_password():
+    """Returns True if the user had a correct password."""
+    # for i, k in st.session_state.items():
+    #     print(i, k)
+
+    if 'password_correct' in st.session_state and st.session_state['password_correct']:
+        # print("pw initialized")
+        return True
+    
+    # with st.form('signin'):
+    df_users = pd.DataFrame(USERS['users'])
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        df = pd.DataFrame(USERS['users'])
+        df['index'] = df.index
+        client_username = st.session_state["username"]
+        client_password = st.session_state["password"]
+        
+        df_user = df[df['username'] == client_username].copy()
+        if len(df_user) == 0:
+            mark_down_text(text="No User Name Exists")
+            return False
+        correct_pw = df_user.iloc[-1]['password']
+        if client_password == correct_pw:
+            if client_username != 'pollen':
+                st.write("READ ONLY MODE")
+                st.session_state['admin'] = False
+            else:
+                st.session_state['admin'] = True
+            USERS['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
+            USERS['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
+            print("pw correct")
+            st.write("pw correct")
+            write_flying_bee()
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # don't store username + password
+            # del st.session_state["username"]
+            PickleData(PB_USER_pickle, USERS)
+            return True
+        else:
+            st.session_state["password_correct"] = False
+            mark_down_text(text="sorry charlie thats not correct")
+            return False
+
+    st.text_input("Username", key="username_key", on_change=callback_function, args=('username', 'username_key'))
+    st.text_input("Password", type="password",  key="password")
+    
+    signin = st.button("SignIn")
+
+    with st.expander('Want your own Trading Bot? >>> Join pollenq'):
+        st.write("Not a User? Join the QueensHive")
+
+        st.text_input("Create Username", key="createusername")
+        st.text_input("Create Password", type="password",  key="createpassword")
+        st.text_input("Email",  key="email")
+
+        create_user = st.button("Join pollenq")
+        un_create = st.session_state["createusername"]
+        pw_create = st.session_state["createpassword"]
+        email_ = st.session_state["email"]
+        # st.write(un_create)
+        if un_create in df_users['username'].tolist():
+            mark_down_text(fontsize=5, color='Red', text='User Name Already Exists')
+            do_not_create = True
+        else:
+            do_not_create = False
+
+        if create_user:
+            if do_not_create:
+                mark_down_text(fontsize=15, color='Red', text='User Name Already Exists')
+                return False
+            else:        
+                USERS['users'].append(add_user__vars(username=un_create, password=pw_create))
+                PickleData(PB_USER_pickle, USERS)
+
+                del st.session_state["createusername"]
+                del st.session_state["createpassword"]
+                mark_down_text(fontsize=20, color='Green', text='Check Email with Link to Confirm')
+
+                return False
+
+    if signin:
+        p = password_entered()
+
+        if p:
+            return True
+        else:
+            return False
+    else:
+        return False
+
 
 
 def color_coding(row):
@@ -1068,27 +1375,6 @@ def color_coding(row):
     df.style.background_gradient(cmap=cm).set_precision(2)
 
 
-# # Store the initial value of widgets in session state
-# if "visibility" not in st.session_state:
-#     st.session_state.visibility = "visible"
-#     st.session_state.disabled = False
-#     st.session_state.horizontal = False
-
-# col1, col2 = st.columns(2)
-
-# with col1:
-#     st.checkbox("Disable radio widget", key="disabled")
-#     st.checkbox("Orient radio options horizontally", key="horizontal")
-
-# with col2:
-#     st.radio(
-#         "Set label visibility 👇",
-#         ["visible", "hidden", "collapsed"],
-#         key="visibility",
-#         label_visibility=st.session_state.visibility,
-#         disabled=st.session_state.disabled,
-#         horizontal=st.session_state.horizontal,
-#     )
 
 # # # Show users table 
 # colms = st.columns((1, 2, 2, 1, 1))
@@ -1113,13 +1399,15 @@ def color_coding(row):
 
 
 # """ if "__name__" == "__main__": """
-# USERS = [{'username': 'pollen', 'password': 'beebetter'},
-# {'username': 'guest', 'password': 'bee'}, {'username': 'queen', 'password': 'bee'} ]
 
-# placeholder = st.empty()
-# isclick = placeholder.button('delete this button')
-# if isclick:
-#     placeholder.empty()
+
+
+# with col2_sb:
+# st.sidebar.image(image, caption='pollenq', width=89)
+
+bee_power_image = os.path.join(jpg_root, 'power.jpg')
+# with col4:
+#     st.image(Image.open(bee_image), width=89)
 
 PB_USER_pickle = os.path.join(db_root, 'queen_users.plk')
 if os.path.exists(PB_USER_pickle) == False:
@@ -1127,241 +1415,90 @@ if os.path.exists(PB_USER_pickle) == False:
     {'signin_count': 1, 'username': 'pollen', 'password': 'master', 'date': datetime.datetime.now(est)}]})
 USERS = ReadPickleData(PB_USER_pickle)
 
-def add_user__vars(username, password, date=datetime.datetime.now(est), signin_count=1):
-    return {'signin_count': 1, 'username': username, 'password': password, 'date': date}
 
-def check_password(admin):
-    """Returns True if the user had a correct password."""
-    # for i, k in st.session_state.items():
-    #     print(i, k)
-    if admin == True:
+
+if check_password():
+    if 'admin' in st.session_state.keys() and st.session_state['admin']:
+        admin = True
         st.sidebar.write('admin', admin)
-        st.session_state['password_correct'] = True
-        return True
-
-    if 'password_correct' in st.session_state and st.session_state['password_correct']:
-        return True
-    
-    # def proc(un_create):
-    #     if un_create in df_users['username'].tolist():
-    #         mark_down_text(fontsize=10, color='Red', text='User Name Already Taken')
-
-    # st.text_area('enter text', on_change=proc, key='text_key')
-    
-    with st.form('signin'):
-        df_users = pd.DataFrame(USERS['users'])
-        def password_entered():
-            """Checks whether a password entered by the user is correct."""
-            df = pd.DataFrame(USERS['users'])
-            df['index'] = df.index
-            un = st.session_state["username"]
-            pw = st.session_state["password"]
-            
-            df_user = df[df['username'] == un].copy()
-            if len(df_user) == 0:
-                mark_down_text(text="No User Name Exists")
-                return False
-            correct_pw = df_user.iloc[-1]['password']
-            if pw == correct_pw:
-                if prod:
-                    if un != 'pollen':
-                        st.write("Who Are You and no You are not allowed in")
-                        return False
-                USERS['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
-                USERS['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
-                print("pw correct")
-                st.write("pw correct")
-                write_flying_bee()
-                st.session_state["password_correct"] = True
-                del st.session_state["password"]  # don't store username + password
-                del st.session_state["username"]
-                PickleData(PB_USER_pickle, USERS)
-                return True
-            else:
-                st.session_state["password_correct"] = False
-                mark_down_text(text="sorry charlie thats not correct")
-                return False
-
-        st.text_input("Username", key="username")
-        st.text_input("Password", type="password",  key="password")
-        signin = st.form_submit_button("SignIn")
-
-        with st.expander('Want your own Trading Bot? >>> Join pollenq'):
-            st.write("Not a User? Join the QueensHive")
-
-            st.text_input("Create Username", key="createusername")
-            st.text_input("Create Password", type="password",  key="createpassword")
-            st.text_input("Email",  key="email")
-
-            create_user = st.form_submit_button("Join pollenq")
-            un_create = st.session_state["createusername"]
-            pw_create = st.session_state["createpassword"]
-            email_ = st.session_state["email"]
-            # st.write(un_create)
-            if un_create in df_users['username'].tolist():
-                mark_down_text(fontsize=10, color='Red', text='User Name Already Taken')
-                do_not_create = True
-            else:
-                do_not_create = False
-
-            if create_user:
-                if do_not_create:
-                    mark_down_text(fontsize=8, color='Red', text='User Name Already Taken')
-                    return False
-                else:        
-                    USERS['users'].append(add_user__vars(username=un_create, password=pw_create))
-                    PickleData(PB_USER_pickle, USERS)
-
-                    del st.session_state["createusername"]
-                    del st.session_state["createpassword"]
-                    return False
-
-        if signin:
-            p = password_entered()
-
-            if p:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-
-if check_password(admin=admin):
-
-# st.error("😕 User not known or password incorrect")
-
-    # st.sidebar.write(write_flying_bee())
-    st.sidebar.write("Production: ", prod)
-    # st.write(prod)
-    if prod:
-        api = api
-        # db_root = '/home/stapinski89/pollen/pollen/db/' # linix
-        # db_root = '/Users/stefanstapinski/Jq/pollen' # mac
-        PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
-        st.sidebar.write("""My Queen Production""")
+    # if st.session_state["username"] == 'pollen':
+    #     admin = True
     else:
-        api = api_paper
-        PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
-        st.sidebar.write("""My Queen Sandbox""")
+        st.write("queenbee not yet authorized read only")
+        st.sidebar.write('Read Only')
+        admin = False
+
+else:
+    st.write("Are you My Queen?")
+    # sys.exit()
+    st.stop()
+
+# st.write(prod)
+if prod:
+    api = api
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
+    st.sidebar.write("""My Queen Production""")
+else:
+    api = api_paper
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
+    st.sidebar.write("""My Queen Sandbox""")
 
 
-    KING = KINGME()
-    pollen_theme = pollen_themes(KING=KING)
+KING = KINGME()
+pollen_theme = pollen_themes(KING=KING)
 
 
-    QUEEN = read_queensmind(prod)['queen']
-    POLLENSTORY = read_pollenstory()
-    APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-    STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
-    KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
-    ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
-
-    # if "visibility" not in st.session_state:
-    #     st.session_state.visibility = "visible"
-    #     st.session_state.disabled = False
-    #     st.session_state.horizontal = False
-    c1,c2,c3,c4,c5, = st.columns(5)
-    with c3:
-        option = st.radio(
-                    "",
-            ["queen", "signal", "charts"],
-            key="visibility",
-            label_visibility='visible',
-            # disabled=st.session_state.disabled,
-            horizontal=True,
-        )
-    # option3 = st.sidebar.selectbox("Always RUN", ('No', 'Yes'))
-    # option = st.sidebar.selectbox("Dashboards", ('queen', 'charts', 'signal'))
-    st.sidebar.write("<<<('bee better')>>>")
-    # st.header(option)
-
-    page_line_seperator('3', color='#C5B743')
-
-    colors = QUEEN['queen_controls']['power_rangers']['1Minute_1Day']['mac_ranger']['buy_wave']['nuetral']
-    # st.write(colors)
+QUEEN = read_queensmind(prod)['queen']
+POLLENSTORY = read_pollenstory()
+APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
+KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
+ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
 
 
-    if option == 'charts':
-        tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
-        ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
-        ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-        ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
-        frame_option = st.sidebar.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
-        day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
-        slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
-        wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-        fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
-        selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+st.sidebar.button("ReRun")
+st.sidebar.write("Production: ", prod)
 
-        ticker_time_frame = selections[0]
-        df = POLLENSTORY[ticker_time_frame].copy()
+c1,c2,c3 = st.columns(3)
+with c2:
+    option = st.radio(
+                "",
+        ["queen", "signal", "charts"],
+        key="main_radio",
+        label_visibility='visible',
+        # disabled=st.session_state.disabled,
+        horizontal=True,
+    )
+with c3:
+    st.image(image, caption='pollenq', width=54)
 
+c1,c2,c3,c4,c5, = st.columns(5)
 
+st.sidebar.write("<<<('bee better')>>>")
 
-        st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
-
-        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
-
-        pollen__story_charts(df=df)
-
-
-        if day_only_option == 'yes':
-            df_day = df['timestamp_est'].iloc[-1]
-            df['date'] = df['timestamp_est'] # test
-            # df = df.set_index('timestamp_est', drop=False) # test
-            # between certian times
-            # df_t = df.between_time('9:30', '12:00')
-            df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-            df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
-            # df = df[(df['timestamp_est'].day == df_day.day) & 
-            #         (df['timestamp_est'].month == df_day.month) & 
-            #         (df['timestamp_est'].year == df_day.year)
-            #     ].copy() # remove other days
-            df = df_today
-
-        # if fullstory_option == 'yes':
-        #     df_write = df.astype(str)
-        #     st.dataframe(df_write)
-                # ag_grid_main_build(df=df_write, default=True, add_vars={'update_mode_value': 'MODEL_CHANGED'})
-            
-            
-        # Main CHART Creation
-        fig = create_main_macd_chart(df)
-        st.write(fig)
-
-        if slope_option == 'yes':
-            slope_cols = [i for i in df.columns if "slope" in i]
-            slope_cols.append("close")
-            slope_cols.append("timestamp_est")
-            slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
-            fig = create_slope_chart(df=df)
-            st.write(fig)
-            st.dataframe(slopes_df)
-            
-        if wave_option == "yes":
-            fig = create_wave_chart(df=df)
-            st.write(fig)
-            
-            dft = split_today_vs_prior(df=df)
-            dft = dft['df_today']
-
-            fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
-            st.write(fig)
-
-            st.write("current wave")
-            current_buy_wave = df['buy_cross-0__wave_number'].tolist()
-            current_buy_wave = [int(i) for i in current_buy_wave]
-            current_buy_wave = max(current_buy_wave)
-            st.write("current wave number")
-            st.write(current_buy_wave)
-            dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
-            st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
-            fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
-            st.write(fig)
+page_line_seperator('3', color='#C5B743')
 
 
-    if option == 'queen':
+if str(option).lower() == 'queen':
+    
+    # Global Vars
+    tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
+    tickers_avail.update({"all"})
+    tickers_avail_op = list(tickers_avail)
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
+    ticker = ticker_option
+    ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
+
+    
+    option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
+
+    orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
+    today_day = datetime.datetime.now().day
+
+    def queen_main_view():
+        if st.session_state['admin'] == False:
+            return False
+        
         cq1, cq2, cq3 = st.columns(3)
         with cq1:
             update_queen_controls = st.selectbox('Show Symbol Trading Model Controls', ['yes', 'no'], index=['no'].index('no'))
@@ -1373,27 +1510,13 @@ if check_password(admin=admin):
             # st.write("direct to control page")
             mark_down_text(color='Red', text="PENDING DEV WORKING")
         
-        # if st.session_state['qc'] == 'yes':
         if update_queen_controls == True:
             theme_list = list(pollen_theme.keys())
             contorls = list(QUEEN['queen_controls'].keys())
             # control_option = st.selectbox('Show Trading Models', contorls, index=contorls.index('theme'))
             update_QueenControls(APP_requests=APP_requests, control_option='symbols_stars_TradingModel', theme_list=theme_list)
         
-        # Global Vars
-        tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
-        tickers_avail.update({"all"})
-        tickers_avail_op = list(tickers_avail)
-        ticker_option = st.sidebar.selectbox("Tickers", tickers_avail_op, index=tickers_avail_op.index('SPY'))
-        ticker = ticker_option
-        ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] == ticker_option}
 
-        
-        option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
-
-        command_conscience_option = st.sidebar.selectbox("command conscience", ['yes', 'no'], index=["yes"].index("yes"))
-        orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
-        today_day = datetime.datetime.now().day
         
         with cq1:
             mark_down_text(align='Left', fontsize='64', text=ticker_option)
@@ -1406,306 +1529,313 @@ if check_password(admin=admin):
             return_total_profits(QUEEN=QUEEN)
         
         page_line_seperator()
-
-        cq1, cq2, cq3 = st.columns((3,1,1))
         
-        if command_conscience_option == 'yes':
-            now_time = datetime.datetime.now().astimezone(est)
-            all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
+
+
+
+    queen_main_view()
+    queen_triggerbees()
+    queen_order_flow()
+
+    if orders_table == 'yes':
+        with st.expander('orders table -- Today', expanded=True):
+
+            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=['completed', 'completed_alpaca'])['df']
+            # df_today = split_today_vs_prior(df=df, other_timestamp='datetime')['df_today']
+            ordertables__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=500)
+
+        
+
+    st.write("QUEENS Collective CONSCIENCE")
+    
+    if ticker_option != 'all':
+
+        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+        
+        # cq1_1, cq2_2 = st.columns((1, 1))
+
+        # with cq2_2:
+
+        st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}{}</div>'.format(ticker_option, " STARS"), unsafe_allow_html=True)
+
+            # return ['background-color:black'] * len(
+            #     row) if row.mac_ranger == 'white'  else ['background-color:green'] * len(row)
+        with st.expander('Tickers Stars'):
+            mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
+            mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
+            df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
+            df = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+            # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
+            # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
+            # st.dataframe(df.style.apply(color_coding, axis=1))
+            st.dataframe(df)
+            # st.markdown('<style>div[title="mac_ranger"] { color: green; } div[title="white"] { color: red; } .data:hover{ background:rgb(243 246 255)}</style>', unsafe_allow_html=True)
+
+        
+        # ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
+        # default=True, add_vars={'update_cols': False}, write_selection=False)
+        
+        
+        # View Star and Waves
+        # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
+
+        # # Analyze Waves
+        # st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
+        # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df']) 
+        # df = df.astype(str)
+        # st.write(df)
+
+        # # Summary of all ticker_time_frames
+        # st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
+        # st.markdown(new_title, unsafe_allow_html=True)
+        # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
+        # df = df.astype(str)
+        # st.write(df)
+        
+        st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
+        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
+
+        for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+            ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+            buys = [data[trigbee] for k, data in ticker_selection.items()]
+            df_trigbee_waves = pd.concat(buys, axis=0)
+            col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
+            df_trigbee_waves = df_trigbee_waves[col_view]
+            if 'buy' in trigbee:
+                st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+                st.markdown('<div style="text-align: center;color:Green; font-size: 33px;">{}{}</div>'.format("Trigbee : ", trigbee), unsafe_allow_html=True)
+
+            else:
+                st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
+                st.markdown('<div style="text-align: center;color:Red; font-size: 33px;">{}{}</div>'.format("Trigbee : ", trigbee), unsafe_allow_html=True)
+
+            # df_trigbee_waves["maxprofit"] = df_trigbee_waves['maxprofit'].map("{:.2f}".format)
+            # total winners total loser, total maxprofit
+            t_winners = sum(df_trigbee_waves['winners_n'].apply(lambda x: int(x)))
+            t_losers = sum(df_trigbee_waves['losers_n'].apply(lambda x: int(x)))
+            # t_maxprofit = round(sum(df_trigbee_waves['sum_maxprofit'].apply(lambda x: float(x))),2)
+            total_waves = t_winners + t_losers
+            win_pct = 100 * round(t_winners / total_waves, 2)
             
+            title = f'{"Total Winners "}{t_winners}{" ::: Total Losers "}{t_losers}{" ::: won "}{win_pct}{"%"}'
+            mark_down_text(align='left', color='Green', fontsize='23', text=title)
             
-            with cq1:
-                if len(all_trigs) > 0:
-                    mark_down_text(fontsize=25, color='Green', text="All Available TriggerBees")
-                    df = pd.DataFrame(all_trigs.items())
-                    df = df.rename(columns={0: 'ttf', 1: 'trig'})
-                    df = df.sort_values('ttf')
-                    st.write(df)
-                    g = {write_flying_bee() for i in range(len(df))}
-                else:
-                    mark_down_text(fontsize=25, color='Red', text="No Available TriggerBees")
-                with cq2:
-                    write_flying_bee(width=100, height=100)
-
-            page_line_seperator()
-
-            mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
-
-            with st.expander('Orders'):
-                error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
-                error_orders = error_orders.astype(str)
-                if len(error_orders)> 0:
-                    new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
-                    st.markdown(new_title, unsafe_allow_html=True)
-                    st.dataframe(error_orders)
-
-                for order_state in active_queen_order_states:
-                    df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
-                    if len(df) > 89:
-                        grid_height = 654
-                    elif len(df) < 10:
-                        grid_height = 200
-                    else:
-                        grid_height = 333
-                    
-                    if len(df) > 0:
-                        if order_state == 'error':
-                            continue
-                        elif order_state == 'submitted':
-                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
-                            run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
-                        elif order_state == 'running_open':
-                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
-                            run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
-                        elif order_state == 'running':
-                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
-                            # df['honey'] = 
-                            # df['honey'] = pd.to_numeric(df['honey'], errors='coerce').fillna(0)
-                            # df['honey'] = df['honey'].apply(lambda x: convert_to_float(x))
-                            # df.loc['Total'] = df.sum(numeric_only=True)
-                            run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
-                            # df.iloc[[df.columns.tolist()][0]] = 'Total'
-                        elif order_state == 'running_close':
-                            mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
-                            run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+            # Top Winners Header
+            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
+            st.markdown('<div style="text-center: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            st.dataframe(df_bestwaves)
+            # Data
+            st.dataframe(df_trigbee_waves)
 
 
 
+        # ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+        # buys = [data['buy_cross-0'] for k, data in ticker_selection.items()]
+        # df_trigbee_waves = pd.concat(buys, axis=0)
 
-        if orders_table == 'yes':
-            with st.expander('orders table -- Today', expanded=True):
+        
+        # [st.write(k, v) for k,v in v.items()]
+        # df = pd.DataFrame(dict_list_ttf[ticker_option])
+        # df = df.astype(str)
+        # df = df.T
+        # st.write(df)
 
-                df = queen_orders_view(QUEEN=QUEEN, queen_order_state=['completed', 'completed_alpaca'])['df']
-                # df_today = split_today_vs_prior(df=df, other_timestamp='datetime')['df_today']
-                ordertables__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=500)
+        # d_agg_view_return[ticker_time_frame]["buy_cross-0"]
+        # avail_trigbees = df.columns.to_list()
+        # for trigbee in avail_trigbees:
+        #     trigbee_wave = df[trigbee]
 
-            
 
-        st.write("QUEENS Collective CONSCIENCE")
-        if ticker_option != 'all':
 
-            star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
-            
-            # cq1_1, cq2_2 = st.columns((1, 1))
+        for ttframe, knowledge in ticker_storys.items():
+            # with st.form(str(ttframe)):
+            # WaveUp
+            st.markdown('<div style="text-align: left;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
 
-            # with cq2_2:
+            # # Top Winners
+            # buzzz_linebreak()
+            # df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
+            # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
+            # df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
+            # df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
+            # st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
+            # st.write('top buy waves', df_bestwaves)
+            # st.write('top sell waves', df_bestwaves_sell)
+            # st.write('top day buy waves', df_day_bestwaves)
+            # st.write('top day buy/sell waves', df_best_buy__sell__waves)
+            # buzzz_linebreak()
 
-            st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}</div>'.format("STARS IN HEAVEN"), unsafe_allow_html=True)
+            # Today df_today
+            buzzz_linebreak()
+            st.markdown('<div style="text-align: left;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
+            df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
+            df = df.astype(str)
+            st.write(datetime.datetime.now().astimezone(est), 'EST')
+            st.dataframe(df)
+            buzzz_linebreak()
 
-                # return ['background-color:black'] * len(
-                #     row) if row.mac_ranger == 'white'  else ['background-color:green'] * len(row)
-            with st.expander('Tickers Stars'):
-                mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
-                mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
-                df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
-                df = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
-                # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
-                # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
-                # st.dataframe(df.style.apply(color_coding, axis=1))
-                st.dataframe(df)
-                # st.markdown('<style>div[title="mac_ranger"] { color: green; } div[title="white"] { color: red; } .data:hover{ background:rgb(243 246 255)}</style>', unsafe_allow_html=True)
-
-            
-            # ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
-            # default=True, add_vars={'update_cols': False}, write_selection=False)
-            
-            
-            # View Star and Waves
-            # m2 = {k:v for (k,v) in KNIGHTSWORD.items() if k.split("_")[0] == ticker_option}
-
-            # # Analyze Waves
-            # st.markdown('<div style="text-align: center;">{}</div>'.format('analzye waves'), unsafe_allow_html=True)
-            # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df']) 
+            # # WaveDown
+            # st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
+            # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
             # df = df.astype(str)
-            # st.write(df)
-
-            # # Summary of all ticker_time_frames
-            # st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("SUMMARY ALL WAVES"), unsafe_allow_html=True)
-            # st.markdown(new_title, unsafe_allow_html=True)
-            # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
-            # df = df.astype(str)
-            # st.write(df)
+            # st.write(datetime.datetime.now().astimezone(est), 'EST')
+            # st.dataframe(df)
             
-            st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
-            dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
-
-            for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
-                ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
-                buys = [data[trigbee] for k, data in ticker_selection.items()]
-                df_trigbee_waves = pd.concat(buys, axis=0)
-                col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
-                df_trigbee_waves = df_trigbee_waves[col_view]
-                if 'buy' in trigbee:
-                    st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
-                    st.markdown('<div style="text-align: center;color:Green; font-size: 33px;">{}{}</div>'.format("Trigbee : ", trigbee), unsafe_allow_html=True)
-
-                else:
-                    st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
-                    st.markdown('<div style="text-align: center;color:Red; font-size: 33px;">{}{}</div>'.format("Trigbee : ", trigbee), unsafe_allow_html=True)
-
-                # df_trigbee_waves["maxprofit"] = df_trigbee_waves['maxprofit'].map("{:.2f}".format)
-                # total winners total loser, total maxprofit
-                t_winners = sum(df_trigbee_waves['winners_n'].apply(lambda x: int(x)))
-                t_losers = sum(df_trigbee_waves['losers_n'].apply(lambda x: int(x)))
-                # t_maxprofit = round(sum(df_trigbee_waves['sum_maxprofit'].apply(lambda x: float(x))),2)
-                total_waves = t_winners + t_losers
-                win_pct = 100 * round(t_winners / total_waves, 2)
-                
-                title = f'{"Total Winners "}{t_winners}{" ::: Total Losers "}{t_losers}{" ::: won "}{win_pct}{"%"}'
-                mark_down_text(align='left', color='Green', fontsize='23', text=title)
-                
-                # Top Winners Header
-                df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
-                st.markdown('<div style="text-center: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
-                st.dataframe(df_bestwaves)
-                # Data
-                st.dataframe(df_trigbee_waves)
-
-
-
-            # ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
-            # buys = [data['buy_cross-0'] for k, data in ticker_selection.items()]
-            # df_trigbee_waves = pd.concat(buys, axis=0)
-
-            
-            # [st.write(k, v) for k,v in v.items()]
-            # df = pd.DataFrame(dict_list_ttf[ticker_option])
-            # df = df.astype(str)
+            # # view details
+            # st.write("VIEW TRANSPOSE")
             # df = df.T
-            # st.write(df)
+            # st.dataframe(df)
+            # agg_view = pd.DataFrame(agg_view)
+            # agg_view = agg_view.astype(str)
+            # st.dataframe(agg_view)
 
-            # d_agg_view_return[ticker_time_frame]["buy_cross-0"]
-            # avail_trigbees = df.columns.to_list()
-            # for trigbee in avail_trigbees:
-            #     trigbee_wave = df[trigbee]
-
-
-
-            for ttframe, knowledge in ticker_storys.items():
-                # with st.form(str(ttframe)):
-                # WaveUp
-                st.markdown('<div style="text-align: left;">{}</div>'.format("WAVE UP"), unsafe_allow_html=True)
-                df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df'])
+            # st.write(ttframe)
+            # story_sort = knowledge['story']
+            # st.write(story_sort)
+            
+            if option_showaves.lower() == 'yes':
+                st.write("waves story -- investigate BACKEND functions")
+                df = knowledge['waves']['story']
                 df = df.astype(str)
-                st.write(datetime.datetime.now().astimezone(est), 'EST')
                 st.dataframe(df)
 
-                # # Top Winners
-                # buzzz_linebreak()
-                # df_day_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_day_bestwaves']
-                # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves']
-                # df_bestwaves_sell = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_bestwaves_sell_cross']
-                # df_best_buy__sell__waves = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_best_buy__sell__waves']
-                # st.markdown('<div style="text-align: center;color:Purple; font-size: 20px;">{}{}{}</div>'.format("BEST WAVES (mac) : ", 'top: ', len(df_bestwaves)), unsafe_allow_html=True)
-                # st.write('top buy waves', df_bestwaves)
-                # st.write('top sell waves', df_bestwaves_sell)
-                # st.write('top day buy waves', df_day_bestwaves)
-                # st.write('top day buy/sell waves', df_best_buy__sell__waves)
-                # buzzz_linebreak()
+                st.write("buy cross waves")
+                m_sort = knowledge['waves']['buy_cross-0']
+                df_m_sort = pd.DataFrame(m_sort).T
+                # df_m_sort['wave_times'] = df_m_sort['wave_times'].apply(lambda x: [])
+                df_m_sort = df_m_sort.astype(str)
+                st.dataframe(data=df_m_sort)
+                # grid_response = build_AGgrid_df(data=df_m_sort, reload_data=False, height=333, update_cols=['Note'])
+                # data = grid_response['data']
 
-                # Today df_today
-                buzzz_linebreak()
-                st.markdown('<div style="text-align: left;">{}</div>'.format("WAVE UP TODAY"), unsafe_allow_html=True)
-                df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_today'])
-                df = df.astype(str)
-                st.write(datetime.datetime.now().astimezone(est), 'EST')
-                st.dataframe(df)
-                buzzz_linebreak()
+                st.write("sell cross waves")
+                m_sort = knowledge['waves']['sell_cross-0']
+                df_m_sort = pd.DataFrame(m_sort).T
+                df_m_sort = df_m_sort.astype(str)
+                st.dataframe(data=df_m_sort)
 
-                # # WaveDown
-                # st.markdown('<div style="text-align: center;">{}</div>'.format("WAVE DOWN"), unsafe_allow_html=True)
-                # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)['df_wavedown'])
-                # df = df.astype(str)
-                # st.write(datetime.datetime.now().astimezone(est), 'EST')
-                # st.dataframe(df)
-                
-                # # view details
-                # st.write("VIEW TRANSPOSE")
-                # df = df.T
-                # st.dataframe(df)
-                # agg_view = pd.DataFrame(agg_view)
-                # agg_view = agg_view.astype(str)
-                # st.dataframe(agg_view)
+    else:
+        # st.write(STORY_bee)
+        print("groups not allowed yet")
+    
+    st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
+    df = QUEEN['queen_orders']
+    
+    # queen shows only today orders
+    now_ = datetime.datetime.now(est)
+    orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
+    orders_today = orders_today.astype(str)
+    st.write(orders_today)
 
-                # st.write(ttframe)
-                # story_sort = knowledge['story']
-                # st.write(story_sort)
-                
-                if option_showaves.lower() == 'yes':
-                    st.write("waves story -- investigate BACKEND functions")
-                    df = knowledge['waves']['story']
-                    df = df.astype(str)
-                    st.dataframe(df)
 
-                    st.write("buy cross waves")
-                    m_sort = knowledge['waves']['buy_cross-0']
-                    df_m_sort = pd.DataFrame(m_sort).T
-                    # df_m_sort['wave_times'] = df_m_sort['wave_times'].apply(lambda x: [])
-                    df_m_sort = df_m_sort.astype(str)
-                    st.dataframe(data=df_m_sort)
-                    # grid_response = build_AGgrid_df(data=df_m_sort, reload_data=False, height=333, update_cols=['Note'])
-                    # data = grid_response['data']
+if str(option).lower() == 'charts':
+    tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
+    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+    ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
+    ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
+    frame_option = st.sidebar.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
+    day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
+    slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
+    wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
+    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
+    selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
 
-                    st.write("sell cross waves")
-                    m_sort = knowledge['waves']['sell_cross-0']
-                    df_m_sort = pd.DataFrame(m_sort).T
-                    df_m_sort = df_m_sort.astype(str)
-                    st.dataframe(data=df_m_sort)
+    ticker_time_frame = selections[0]
+    df = POLLENSTORY[ticker_time_frame].copy()
 
+    st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+    star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+
+    pollen__story_charts(df=df)
+
+
+    if day_only_option == 'yes':
+        df_day = df['timestamp_est'].iloc[-1]
+        df['date'] = df['timestamp_est'] # test
+
+        df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+        df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+
+        df = df_today
+
+        
+        
+    # Main CHART Creation
+    fig = create_main_macd_chart(df)
+    st.write(fig)
+
+    if slope_option == 'yes':
+        slope_cols = [i for i in df.columns if "slope" in i]
+        slope_cols.append("close")
+        slope_cols.append("timestamp_est")
+        slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
+        fig = create_slope_chart(df=df)
+        st.write(fig)
+        st.dataframe(slopes_df)
+        
+    if wave_option == "yes":
+        fig = create_wave_chart(df=df)
+        st.write(fig)
+        
+        dft = split_today_vs_prior(df=df)
+        dft = dft['df_today']
+
+        fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
+        st.write(fig)
+
+        st.write("current wave")
+        current_buy_wave = df['buy_cross-0__wave_number'].tolist()
+        current_buy_wave = [int(i) for i in current_buy_wave]
+        current_buy_wave = max(current_buy_wave)
+        st.write("current wave number")
+        st.write(current_buy_wave)
+        dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
+        st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
+        fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
+        st.write(fig)
+
+
+if str(option).lower() == 'signal':
+    betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
+    df_betty = pd.DataFrame(betty_bee)
+    df_betty = df_betty.astype(str)
+    c1,c2,c3 = st.columns(3)
+    
+    with c2:
+        option__ = st.radio(
+                                "",
+            ['beeaction', 'orders', 'controls', 'QueenOrders', 'WorkerBees'],
+            key="signal_radio",
+            label_visibility='visible',
+            # disabled=st.session_state.disabled,
+            horizontal=True,
+        )
+    save_signals = option__
+    c1,c2,c3,c4,c5 = st.columns(5)
+
+    with st.expander('betty_bee'):
+        st.write(df_betty)
+
+    col1, col2 = st.columns(2)
+
+    ## SHOW CURRENT THEME
+    with st.sidebar:
+        # with st.echo():
+            # st.write("theme>>>", QUEEN['collective_conscience']['theme']['current_state'])
+        st.write("theme>>>", QUEEN['queen_controls']['theme'])
+
+
+    if save_signals == 'controls':
+        st.write('admin', admin)
+        if st.session_state['admin'] == False:
+            st.write("permission denied")
+            st.stop()
         else:
-            # st.write(STORY_bee)
-            print("groups not allowed yet")
-        
-        st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
-        df = QUEEN['queen_orders']
-        
-        # queen shows only today orders
-        now_ = datetime.datetime.now(est)
-        orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
-        orders_today = orders_today.astype(str)
-        st.write(orders_today)
-
-
-    if option == 'signal':
-        betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
-        df_betty = pd.DataFrame(betty_bee)
-        df_betty = df_betty.astype(str)
-        c1,c2,c3,c4,c5 = st.columns(5)
-        # col_d = {f'{"c"}{n}': for n in [c1,c2,c3,c4,c5,c6,c7,c8]}
-
-        st.write(APP_requests['queen_controls'])
-
-        # save_signals = st.sidebar.selectbox('Send to Queen', ['beeaction', 'orders', 'controls', 'QueenOrders'], index=['controls'].index('controls'))
-        # c1,c2,c3,c4, c5 = st.columns(5)
-        with c3:
-            option__ = st.radio(
-                                    "",
-                ['beeaction', 'orders', 'controls', 'QueenOrders'],
-                key="signal_radio",
-                label_visibility='visible',
-                # disabled=st.session_state.disabled,
-                horizontal=True,
-            )
-
-        # with c4:
-        #     write_flying_bee()
-        # with random.choice(range(1))
-        with st.expander('betty_bee'):
-            st.write(df_betty)
-
-        
-        save_signals = option__
-        
-        col1, col2 = st.columns(2)
-
-        ## SHOW CURRENT THEME
-        with st.sidebar:
-            # with st.echo():
-                # st.write("theme>>>", QUEEN['collective_conscience']['theme']['current_state'])
-            st.write("theme>>>", QUEEN['queen_controls']['theme'])
-
-
-        if save_signals == 'controls':
             with st.expander('Heartbeat'):
                 st.write(QUEEN['heartbeat'])
             
@@ -1717,262 +1847,103 @@ if check_password(admin=admin):
             theme_list = list(pollen_theme.keys())
             contorls = list(QUEEN['queen_controls'].keys())
             control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
+            wrkerbees_list = list(QUEEN['workerbees'].keys())
+            workerbee = st.selectbox('select worker', wrkerbees_list, index=wrkerbees_list.index('castle'))
+            all_alpaca_tickers = api.list_assets()
+            alpaca_symbols_dict = {}
+            for n, v in enumerate(all_alpaca_tickers):
+                if all_alpaca_tickers[n].status == 'active':
+                    alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
+            # add ticker
+            worker_tickers = st.multiselect(label='workers', options=list(alpaca_symbols_dict.keys()), default=QUEEN['workerbees'][workerbee]['tickers'])
 
             update_QueenControls(APP_requests=APP_requests, control_option=control_option, theme_list=theme_list)
 
 
-        if save_signals == 'QueenOrders':
-
-            # Update run order
-            all_orders = QUEEN['queen_orders']
-            active_orders = all_orders[all_orders['queen_order_state'].isin(active_order_state_list)].copy()
-            show_errors_option = st.selectbox('show last error', ['no', 'yes'], index=['no'].index('no'))
-            c_order_input_list = st.multiselect("active client_order_id", active_orders['client_order_id'].to_list(), default=active_orders.iloc[-1]['client_order_id'])
-            
-            c_order_input = [c_order_input_list[0] if len(c_order_input_list) > 0 else all_orders.iloc[-1]['client_order_id'] ][0]
-
-            # if show_errors_option == 'yes':
-            if show_errors_option == 'yes':
-                latest_queen_order = all_orders[all_orders['queen_order_state'] == 'error'].copy()
-            else:                
-                latest_queen_order = df[df['client_order_id'] == c_order_input].copy()
-
-
-            st.write("current queen order requests")
-            data = ReadPickleData(pickle_file=PB_App_Pickle)
-            st.write(data['update_queen_order'])
-            
-            df = latest_queen_order
-            df = df.T.reset_index()
-            df = df.astype(str)
-            df = df.rename(columns={0: 'main'})
-
-            # df = latest_queen_order.astype(str)
-
-            
-            grid_response = build_AGgrid_df(data=df, reload_data=False, update_cols=['update_column'], height=933)
-            data = grid_response['data']
-            # st.write(data)
-            ttframe = data[data['index'] == 'ticker_time_frame'].copy()
-            ttframe = ttframe.iloc[0]['main']
-            # st.write(ttframe.iloc[0]['main'])
-            selected = grid_response['selected_rows'] 
-            df_sel = pd.DataFrame(selected)
-
-            if len(df_sel) > 0:
-                df_sel = df_sel.astype(str)
-                st.write(df_sel)
-                up_values = dict(zip(df_sel['index'], df_sel['update_column_update']))
-                up_values = {k: v for (k,v) in up_values.items() if len(v) > 0}
-                update_dict = {latest_queen_order[0]["client_order_id"]: up_values}
-                st.session_state['update'] = update_dict
-                st.session_state['ttframe_update'] = ttframe
-
-            save_button_runorder = st.button("Save RunOrderUpdate")
-            if save_button_runorder:
-                # st.write(st.session_state['update'])
-                update_sstate = st.session_state['update']
-                update_ttframe = st.session_state['ttframe_update']
-                order_dict = {'system': 'app',
-                'queen_order_update_package': update_sstate,
-                'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}',
-                'ticker_time_frame': update_ttframe,
-                }
-                # st.write(order_dict)
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                data['update_queen_order'].append(order_dict)
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                st.write(data['update_queen_order'])
-                    
+    if save_signals == 'QueenOrders':
+        queen_QueenOrders()
     
-        # if save_signals == 'orders':
-        #     show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
-        #     if show_app_req == 'yes':
-        #         data = ReadPickleData(pickle_file=PB_App_Pickle)
-        #         st.write("sell orders", data['sell_orders'])
-        #         st.write("buy orders", data['buy_orders'])
-        #     df = QUEEN['queen_orders']
-            
-        #     running_orders = df[df['queen_order_state'] == 'running'].copy()
-            
-        #     # running_portfolio = return_dfshaped_orders(running_orders)
-            
-        #     # portfolio = return_alpc_portolio(api)['portfolio']
-        #     # p_view = {k: [v['qty'], v['qty_available']] for (k,v) in portfolio.items()}
-        #     # st.write(p_view)
-        #     # st.write(running_portfolio)
-
-        #     position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
-        #     closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
-        #     c_order_ids = [i['client_order_id'] for i in position_orders]
-        #     c_order_iddict = {i['client_order_id']: idx for idx, i in enumerate(position_orders)}
-        #     c_order_ids.append("Select")
-        #     c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
-        #     if c_order_id_option != 'Select':
-        #         run_order = position_orders[c_order_iddict[c_order_id_option]]
-        #         run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=prod)
-        #         st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
-        #         st.write(run_order_alpaca)
-        #         st.write(run_order['filled_qty'])
-        #         sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
-        #         # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
-        #         type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
-
-        #         sell_command = st.button("Sell Order")
-        #         if sell_command:
-        #             st.write("yes")
-        #             # val qty
-        #             if sell_qty_option > 0 and sell_qty_option <= float(run_order['filled_qty']):
-        #                 print("qty validated")
-        #                 # process order signal
-        #                 client_order_id = c_order_id_option
-        #                 sellable_qty = sell_qty_option
-                        
-        #                 order_dict = {'system': 'app',
-        #                 'request_time': datetime.datetime.now(),
-        #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
-        #                 'side': 'sell',
-        #                 'type': type_option,
-        #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-
-        #                 }
-        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-        #                 data['sell_orders'].append(order_dict)
-        #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-        #                 st.write(data['sell_orders'])
-                    
-        #             if sell_qty_option < 0 and sell_qty_option >= float(run_order['filled_qty']):
-        #                 print("qty validated")
-        #                 # process order signal
-        #                 client_order_id = c_order_id_option
-        #                 sellable_qty = sell_qty_option
-                        
-        #                 order_dict = {'system': 'app',
-        #                 'request_time': datetime.datetime.now(),
-        #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
-        #                 'side': 'sell',
-        #                 'type': type_option,
-        #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-
-        #                 }
-        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-        #                 data['sell_orders'].append(order_dict)
-        #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-        #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-        #                 st.write(data['sell_orders'])
-
+    
+    # if save_signals == 'orders':
+    #     show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
+    #     if show_app_req == 'yes':
+    #         data = ReadPickleData(pickle_file=PB_App_Pickle)
+    #         st.write("sell orders", data['sell_orders'])
+    #         st.write("buy orders", data['buy_orders'])
+    #     df = QUEEN['queen_orders']
         
-        if save_signals == 'beeaction':
-            st.write("beeaction")
+    #     running_orders = df[df['queen_order_state'] == 'running'].copy()
+        
+    #     # running_portfolio = return_dfshaped_orders(running_orders)
+        
+    #     # portfolio = return_alpc_portolio(api)['portfolio']
+    #     # p_view = {k: [v['qty'], v['qty_available']] for (k,v) in portfolio.items()}
+    #     # st.write(p_view)
+    #     # st.write(running_portfolio)
 
-            wave_button_sel = st.selectbox("Waves", ["buy_cross-0", "sell_cross-0"])
-            initiate_waveup = st.button("Send Wave")
-            # pollen = return_pollen()
-            # ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
-            ticker_time_frame = QUEEN['heartbeat']['available_tickers']
+    #     position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
+    #     closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
+    #     c_order_ids = [i['client_order_id'] for i in position_orders]
+    #     c_order_iddict = {i['client_order_id']: idx for idx, i in enumerate(position_orders)}
+    #     c_order_ids.append("Select")
+    #     c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
+    #     if c_order_id_option != 'Select':
+    #         run_order = position_orders[c_order_iddict[c_order_id_option]]
+    #         run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=prod)
+    #         st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
+    #         st.write(run_order_alpaca)
+    #         st.write(run_order['filled_qty'])
+    #         sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
+    #         # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
+    #         type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
 
-            if len(ticker_time_frame) == 0:
-                ticker_time_frame = list(set(i for i in STORY_bee.keys()))
+    #         sell_command = st.button("Sell Order")
+    #         if sell_command:
+    #             st.write("yes")
+    #             # val qty
+    #             if sell_qty_option > 0 and sell_qty_option <= float(run_order['filled_qty']):
+    #                 print("qty validated")
+    #                 # process order signal
+    #                 client_order_id = c_order_id_option
+    #                 sellable_qty = sell_qty_option
+                    
+    #                 order_dict = {'system': 'app',
+    #                 'request_time': datetime.datetime.now(),
+    #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
+    #                 'side': 'sell',
+    #                 'type': type_option,
+    #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
 
-            # ticker_time_frame = [i for i in ticker_time_frame]
-            # ticker_time_frame.sort()
-            ticker_wave_option = st.sidebar.selectbox("Tickers", ticker_time_frame, index=ticker_time_frame.index(["SPY_1Minute_1Day" if "SPY_1Minute_1Day" in ticker_time_frame else ticker_time_frame[0]][0]))
-
-            wave_trigger = {ticker_wave_option: [wave_button_sel]}
-            data = ReadPickleData(pickle_file=PB_App_Pickle)
-            st.write(data['wave_triggers'])  
-
-            def create_app_request(var_dict):
-                valid_cols = ['app_requests_id', 'ticker', 'ticker_time_frame', 'wave_trigger']
-                for k,v in var_dict.items():
-                    if k not in v:
-                        print("invalid key")
-                    else:
-                        var_dict
-
-            if initiate_waveup:
-                order_dict = {'ticker': ticker_wave_option.split("_")[0],
-                'ticker_time_frame': ticker_wave_option,
-                'system': 'app',
-                'wave_trigger': wave_trigger,
-                'request_time': datetime.datetime.now(),
-                'app_requests_id' : f'{save_signals}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-                }
-
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                # st.write(data.keys())
-                data['wave_triggers'].append(order_dict)
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-                data = ReadPickleData(pickle_file=PB_App_Pickle)
-                st.write(data['wave_triggers'])            
-
-
-            new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Flash Buttons</p>'
-            st.markdown(new_title, unsafe_allow_html=True)
-            
-            c1, c2, = st.columns(2)
-            with c1:
-                quick_buy_short = st.button("FLASH BUY SQQQ")
-            with c2:
-                quick_buy_long = st.button("FLASH BUY TQQQ")
-            
-            quick_buy_BTC = st.button("FLASH BUY BTC")
-            
-            quick_buy_amt = st.selectbox("FLASH BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
-            
-            type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
-
-            if quick_buy_short or quick_buy_long or quick_buy_BTC:
+    #                 }
+    #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+    #                 data['sell_orders'].append(order_dict)
+    #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+    #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+    #                 st.write(data['sell_orders'])
                 
-                if quick_buy_short:
-                    ticker = "SQQQ"
-                elif quick_buy_long:
-                    ticker = "TQQQ"
-                elif quick_buy_BTC:
-                    ticker = "BTCUSD"
-                
-                print("buy buy meee, sending app request")
-                # get price convert to amount
-                if ticker in crypto_currency_symbols:
-                    crypto = True
-                    snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-                    current_price = snap.latest_trade.price
-                else:
-                    crypto = False
-                    snap = api.get_snapshot(ticker)
-                    current_price = snap.latest_trade.price
-                
-                info = api.get_account()
-                total_buying_power = info.buying_power # what is the % amount you want to buy?
+    #             if sell_qty_option < 0 and sell_qty_option >= float(run_order['filled_qty']):
+    #                 print("qty validated")
+    #                 # process order signal
+    #                 client_order_id = c_order_id_option
+    #                 sellable_qty = sell_qty_option
+                    
+    #                 order_dict = {'system': 'app',
+    #                 'request_time': datetime.datetime.now(),
+    #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
+    #                 'side': 'sell',
+    #                 'type': type_option,
+    #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
 
+    #                 }
+    #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+    #                 data['sell_orders'].append(order_dict)
+    #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
+    #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
+    #                 st.write(data['sell_orders'])
 
-                validation = True # not > 50% of buying power COIN later
-                
-                if validation:
-                    print("qty validated")
-                    # process order signal                
-                    order_dict = {'ticker': ticker,
-                    'system': 'app',
-                    'trig': 'app',
-                    'request_time': datetime.datetime.now(est),
-                    'wave_amo': quick_buy_amt,
-                    'app_seen_price': current_price,
-                    'side': 'buy',
-                    'type': type_option,
-                    'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-                    }
+    
+    if save_signals == 'beeaction':
 
-                    data = ReadPickleData(pickle_file=PB_App_Pickle)
-                    data['buy_orders'].append(order_dict)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-                    data = ReadPickleData(pickle_file=PB_App_Pickle)
-                    st.write(data['buy_orders'])
+        queen_beeAction()
 
-
-    # with st.sidebar:
-    #     stop_queenbee(APP_requests)
-else:
-    st.write("user auth")    
     ##### END ####
