@@ -569,32 +569,6 @@ def pollen_hunt(df_tickers_data, MACD):
 
     return {'pollencharts_nectar': main_rebuild_dict, 'pollencharts': chart_rebuild_dict}
 
-
-print(
-"""
-We all shall prosper through the depths of our connected hearts,
-Not all will share my world,
-So I put forth my best mind of virtue and goodness, 
-Always Bee Better
-"""
-)
-
-# if '__name__' == '__main__':
-#     print("Buzz Buzz Where My Honey")
-#     logging.info("Buzz Buzz Where My Honey")
-
-# init files needed
-PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-if queens_chess_piece == 'castle_coin':
-    # if os.path.exists(PB_Story_Pickle):
-    #     os.remove(PB_Story_Pickle)
-    chart_times_castle = {
-            "1Minute_1Day": 1, "5Minute_5Day": 5,
-            "30Minute_1Month": 18, 
-            "1Hour_3Month": 48, "2Hour_6Month": 72, 
-            "1Day_1Year": 250}
-
-
 """ Initiate your Charts with Indicators """
 def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD_settings):
     s_mainbeetime = datetime.datetime.now(est)
@@ -621,100 +595,116 @@ def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD
         print(msg)
 
 
-# init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
-# PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-# # PB_App_Pickle = init_pollen['PB_App_Pickle']
+def workerbee_coins():
+    print(
+    """
+    We all shall prosper through the depths of our connected hearts,
+    Not all will share my world,
+    So I put forth my best mind of virtue and goodness, 
+    Always Bee Better
+    """
+    )
+
+
+    # init files needed
+    PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
+    if queens_chess_piece == 'castle_coin':
+        # if os.path.exists(PB_Story_Pickle):
+        #     os.remove(PB_Story_Pickle)
+        chart_times_castle = {
+                "1Minute_1Day": 1, "5Minute_5Day": 5,
+                "30Minute_1Month": 18, 
+                "1Hour_3Month": 48, "2Hour_6Month": 72, 
+                "1Day_1Year": 250}
 
 
 
+    # Pollen QUEEN
+    if prod:
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{"queen"}{".pkl"}')
+        if os.path.exists(PB_QUEEN_Pickle) == False:
+            print("WorkerBee Needs a Queen")
+            sys.exit()
+        WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+    else:
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{"queen_sandbox"}{".pkl"}')
+        if os.path.exists(PB_QUEEN_Pickle) == False:
+            print("WorkerBee Needs a Queen")
+            sys.exit()
+        WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
-# Pollen QUEEN
-if prod:
-    PB_QUEEN_Pickle = os.path.join(db_root, f'{"queen"}{".pkl"}')
-    if os.path.exists(PB_QUEEN_Pickle) == False:
-        print("WorkerBee Needs a Queen")
-        sys.exit()
-    WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
-else:
-    PB_QUEEN_Pickle = os.path.join(db_root, f'{"queen_sandbox"}{".pkl"}')
-    if os.path.exists(PB_QUEEN_Pickle) == False:
-        print("WorkerBee Needs a Queen")
-        sys.exit()
-    WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
-
-WORKER_QUEEN['source'] = PB_QUEEN_Pickle
-MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
-master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']
-MACD_settings = WORKER_QUEEN['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
-star_times = WORKER_QUEEN['workerbees'][queens_chess_piece]['stars']
-
-
-try:
-    initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings)
-    workerbee_run_times = []
-    speed_gauges = {
-        f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
-        for tic in master_tickers for star_ in star_times.keys()}
-
-    while True:
-        if queens_chess_piece.lower() in ['castle_coin']: # create the story
-            s = datetime.datetime.now(est)
-            if s > datetime.datetime(s.year, s.month, s.day, 23).astimezone(est):
-                logging.info("Happy Bee Crypto Day End")
-                print("Great Job! See you Tomorrow")
-                break
-            
-            # main 
-            pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
-            QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
-            QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
-            
-            pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'])
-            ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
-            knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
-            STORY_bee = pollens_honey['conscience']['STORY_bee']
-
-            # add all charts
-            QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
+    WORKER_QUEEN['source'] = PB_QUEEN_Pickle
+    MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
+    master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']
+    MACD_settings = WORKER_QUEEN['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
+    star_times = WORKER_QUEEN['workerbees'][queens_chess_piece]['stars']
 
 
-            # for each star append last macd state
-            for ticker_time_frame, i in STORY_bee.items():
-                speed_gauges[ticker_time_frame]['macd_gauge'].append(i['story']['macd_state'])
-                speed_gauges[ticker_time_frame]['price_gauge'].append(i['story']['last_close_price'])
-                STORY_bee[ticker_time_frame]['story']['macd_gauge'] = speed_gauges[ticker_time_frame]['macd_gauge']
-                STORY_bee[ticker_time_frame]['story']['price_gauge'] = speed_gauges[ticker_time_frame]['price_gauge']
-            SPEEDY_bee = speed_gauges
+    try:
+        initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings)
+        workerbee_run_times = []
+        speed_gauges = {
+            f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+            for tic in master_tickers for star_ in star_times.keys()}
 
-            # populate conscience
-            QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
-            QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
-            QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
+        while True:
+            if queens_chess_piece.lower() in ['castle_coin']: # create the story
+                s = datetime.datetime.now(est)
+                if s > datetime.datetime(s.year, s.month, s.day, 23).astimezone(est):
+                    logging.info("Happy Bee Crypto Day End")
+                    print("Great Job! See you Tomorrow")
+                    break
+                
+                # main 
+                pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
+                QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
+                QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
+                
+                pollens_honey = pollen_story(pollen_nectar=QUEEN[queens_chess_piece]['pollencharts_nectar'])
+                ANGEL_bee = pollens_honey['conscience']['ANGEL_bee']
+                knights_sight_word = pollens_honey['conscience']['KNIGHTSWORD']
+                STORY_bee = pollens_honey['conscience']['STORY_bee']
 
-            
+                # add all charts
+                QUEEN[queens_chess_piece]['pollenstory'] = pollens_honey['pollen_story']
 
-            
-            # God Save The QUEEN
-            if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-                msg=("Pickle Data Failed")
-                print(msg)
-                logging.critical(msg)
-                continue
 
-            e = datetime.datetime.now(est)
-            cycle_run_time = (e-s)
-            if cycle_run_time.seconds > 15:
-                print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
-                logging.info({"cycle_time > 15 seconds": str(cycle_run_time.seconds)})
-            workerbee_run_times.append(cycle_run_time)
-            avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
-            print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now(est).strftime("%A,%d. %I:%M:%S%p"))
+                # for each star append last macd state
+                for ticker_time_frame, i in STORY_bee.items():
+                    speed_gauges[ticker_time_frame]['macd_gauge'].append(i['story']['macd_state'])
+                    speed_gauges[ticker_time_frame]['price_gauge'].append(i['story']['last_close_price'])
+                    STORY_bee[ticker_time_frame]['story']['macd_gauge'] = speed_gauges[ticker_time_frame]['macd_gauge']
+                    STORY_bee[ticker_time_frame]['story']['price_gauge'] = speed_gauges[ticker_time_frame]['price_gauge']
+                SPEEDY_bee = speed_gauges
 
-except Exception as errbuz:
-    print(errbuz)
-    erline = print_line_of_error()
-    log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
-    print(log_msg)
-    logging.critical(log_msg)
+                # populate conscience
+                QUEEN[queens_chess_piece]['conscience']['ANGEL_bee'] = ANGEL_bee
+                QUEEN[queens_chess_piece]['conscience']['KNIGHTSWORD'] = knights_sight_word
+                QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
+                # God Save The QUEEN
+                if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
+                    msg=("Pickle Data Failed")
+                    print(msg)
+                    logging.critical(msg)
+                    continue
+
+                e = datetime.datetime.now(est)
+                cycle_run_time = (e-s)
+                if cycle_run_time.seconds > 15:
+                    print("CYCLE TIME SLLLLLLOOOoooooOOOOOO????")
+                    logging.info({"cycle_time > 15 seconds": str(cycle_run_time.seconds)})
+                workerbee_run_times.append(cycle_run_time)
+                avg_time = round(sum([i.seconds for i in workerbee_run_times]) / len(workerbee_run_times),2)
+                print(queens_chess_piece, " avg cycle:", avg_time, ": ", cycle_run_time,  "sec: ", datetime.datetime.now(est).strftime("%A,%d. %I:%M:%S%p"))
+
+    except Exception as errbuz:
+        print(errbuz)
+        erline = print_line_of_error()
+        log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
+        print(log_msg)
+        logging.critical(log_msg)
+
+if __name__ == '__main__':
+    workerbee_coins()
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
