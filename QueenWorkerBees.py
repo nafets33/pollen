@@ -46,7 +46,7 @@ from itertools import islice
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
 
 # script arguments
-def createParser():
+def createParser_workerbees():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="castle")
     parser.add_argument ('-prod', default=True)
@@ -55,7 +55,7 @@ def createParser():
     return parser
 
 # script arguments
-parser = createParser()
+parser = createParser_workerbees()
 namespace = parser.parse_args()
 queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
 windows = namespace.windows

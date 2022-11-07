@@ -36,7 +36,7 @@ from scipy import stats
 import hashlib
 import json
 # from QueenHiveCoin import speedybee,  return_bars_list, return_bars
-from QueenHive import return_bars_list, return_bars, pollen_story, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
+from QueenHive import init_logging, return_bars_list, return_bars, pollen_story, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
 
 client_symbols_castle = ['BTCUSD', 'ETHUSD']
 
@@ -51,32 +51,7 @@ prod = True
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
-# init_logging(queens_chess_piece, db_root)
-loglog_newfile = False
-log_dir = dst = os.path.join(db_root, 'logs')
-log_dir_logs = dst = os.path.join(log_dir, 'logs')
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-if prod:
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-else:
-    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
-
-log_file = os.path.join(log_dir, log_name)
-if loglog_newfile:
-    # copy log file to log dir & del current log file
-    datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
-    dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
-    shutil.copy(log_file, dst_path) # only when you want to log your log files
-    os.remove(log_file)
-else:
-    # print("logging",log_file)
-    logging.basicConfig(filename=log_file,
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO,
-                        force=True)
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
 
 # Macd Settings

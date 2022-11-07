@@ -10,14 +10,14 @@ import argparse
 from QueenWorkerCrypto import queen_workerbee_coins
 from QueenWorkerBees import queen_workerbees
 
-def createParser():
+def createParser_scheduler():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="scheduler")
     parser.add_argument ('-prod', default='false')
     parser.add_argument ('-adhoc', default='false')
     return parser
 
-parser = createParser()
+parser = createParser_scheduler()
 namespace = parser.parse_args()
 adhoc_run = namespace.adhoc
 
