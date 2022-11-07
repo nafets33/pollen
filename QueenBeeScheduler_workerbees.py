@@ -3,37 +3,38 @@
 # use scheduler to run cron jobs
 import time
 import datetime
-# import subprocess
+import subprocess
 import schedule
 import sys
 import argparse
-from QueenWorkerCrypto import queen_workerbee_coins
+# from QueenWorkerCrypto import queen_workerbee_coins
 from QueenWorkerBees import queen_workerbees
 
 def createParser_scheduler():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="scheduler")
     parser.add_argument ('-prod', default='false')
-    parser.add_argument ('-adhoc', default='false')
+    # parser.add_argument ('-adhoc_coins', default='false')
+    parser.add_argument ('-adhoc_workers', default='false')
     return parser
 
 parser = createParser_scheduler()
 namespace = parser.parse_args()
-adhoc_run = namespace.adhoc
+# adhoc_coins = namespace.adhoc_coins
+adhoc_workers = namespace.adhoc_workers
 
-def call_job():
+def call_job_workerbees():
     print("I'm Awake!: ", datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
     # subprocess.call("QueenWorkerCrypto.py", shell=True)
-    queen_workerbee_coins()
+    queen_workerbees()
 
 
+schedule.every().day.at("09:02").do(call_job_workerbees)
+print("Workers Turns on at 9AM")
 
-schedule.every().day.at("07:00").do(call_job)
-print("HeartBeat Turns on at 7AM")
-
-if adhoc_run == 'true':
+if adhoc_workers == 'true':
     print("running adhoc")
-    call_job()
+    call_job_workerbees()
 
 while True:
     schedule.run_pending()
