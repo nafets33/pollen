@@ -595,7 +595,17 @@ def initiate_ttframe_charts(queens_chess_piece, master_tickers, star_times, MACD
         print(msg)
 
 
-def workerbee_coins():
+def close_worker():
+    s = datetime.datetime.now(est)
+    date = datetime.datetime.now(est)
+    date = date.replace(hour=23, minute=1)
+    if s >= date:
+        logging.info("Happy Bee Day End")
+        print("Great Job! See you Tomorrow")
+        sys.exit()
+
+
+def queen_workerbee_coins():
     print(
     """
     We all shall prosper through the depths of our connected hearts,
@@ -650,10 +660,12 @@ def workerbee_coins():
         while True:
             if queens_chess_piece.lower() in ['castle_coin']: # create the story
                 s = datetime.datetime.now(est)
-                if s > datetime.datetime(s.year, s.month, s.day, 23).astimezone(est):
-                    logging.info("Happy Bee Crypto Day End")
-                    print("Great Job! See you Tomorrow")
-                    break
+                # if s > datetime.datetime(s.year, s.month, s.day, 23).astimezone(est):
+                #     logging.info("Happy Bee Crypto Day End")
+                #     print("Great Job! See you Tomorrow")
+                #     break
+
+                close_worker()
                 
                 # main 
                 pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
@@ -706,5 +718,5 @@ def workerbee_coins():
         logging.critical(log_msg)
 
 if __name__ == '__main__':
-    workerbee_coins()
+    queen_workerbee_coins()
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

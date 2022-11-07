@@ -7,7 +7,8 @@ import datetime
 import schedule
 import sys
 import argparse
-from QueenWorkerCrypto import workerbee_coins
+from QueenWorkerCrypto import queen_workerbee_coins
+from QueenWorkerBees import queen_workerbees
 
 def createParser():
     parser = argparse.ArgumentParser()
@@ -23,7 +24,7 @@ adhoc_run = namespace.adhoc
 def call_job():
     print("I'm Awake!: ", datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
     # subprocess.call("QueenWorkerCrypto.py", shell=True)
-    workerbee_coins()
+    queen_workerbee_coins()
 
 
 

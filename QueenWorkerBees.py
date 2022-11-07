@@ -36,8 +36,7 @@ from scipy import stats
 import hashlib
 import json
 from collections import deque
-from QueenHive import init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
-from QueenHive import return_macd, return_VWAP, return_RSI, return_sma_slope
+from QueenHive import init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import argparse
 import aiohttp
 import asyncio
@@ -61,6 +60,9 @@ namespace = parser.parse_args()
 queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
 windows = namespace.windows
 
+if windows:
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
+
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 load_dotenv()
@@ -69,33 +71,8 @@ prod = True
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
-# init_logging(queens_chess_piece, db_root)
-loglog_newfile = False
-log_dir = dst = os.path.join(db_root, 'logs')
-log_dir_logs = dst = os.path.join(log_dir, 'logs')
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-if prod:
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-else:
-    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
-# log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-log_file = os.path.join(log_dir, log_name)
-if loglog_newfile:
-    # copy log file to log dir & del current log file
-    datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
-    dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
-    shutil.copy(log_file, dst_path) # only when you want to log your log files
-    os.remove(log_file)
-else:
-    # print("logging",log_file)
-    logging.basicConfig(filename=log_file,
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO,
-                        force=True)
-    # logging.info("Welcome")
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
+
 
 # Macd Settings
 # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
@@ -233,7 +210,7 @@ if prod: # Return Ticker and Acct Info
 
 
 
-def close_worker(queens_chess_piece):
+def close_worker():
     s = datetime.datetime.now(est)
     date = datetime.datetime.now(est)
     date = date.replace(hour=16, minute=1)
@@ -309,6 +286,7 @@ def Return_Init_ChartData(ticker_list, chart_times): #Iniaite Ticker Charts with
     except Exception as e:
         print("eeeeeror", e, print_line_of_error())
         ipdb.set_trace()
+
 
 def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
     # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
@@ -588,54 +566,13 @@ def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_time
     print(msg)    
     return QUEEN
 
+
 def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
 
 
-print(
-"""
-We all shall prosper through the depths of our connected hearts,
-Not all will share my world,
-So I put forth my best mind of virtue and goodness, 
-Always Bee Better
-"""
-)
-
-# if '_name_' == '_main_':
-# print("Buzz Buzz Where My Honey")
-if queens_chess_piece == 'queen':
-    logging.info("My Queen")
-else:
-    logging.info("Buzz Buzz Where My Honey")
-
-# init files needed
-# PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-
-init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
-PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-# PB_App_Pickle = init_pollen['PB_App_Pickle']
-
-if os.path.exists(PB_QUEEN_Pickle) == False:
-    print("WorkerBee Needs a Queen")
-    sys.exit()
-
-# Pollen QUEEN
-if prod:
-    QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
-else:
-    QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
-
-QUEENBEE['source'] = PB_QUEEN_Pickle
-MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
-# master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
-MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
-star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
-
-if windows:
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
-
-def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece):
+def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges):
     s = datetime.datetime.now(est)
     
     QUEEN = WORKERBEE_queens[queens_chess_piece]
@@ -647,7 +584,7 @@ def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece):
     # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 
-    close_worker(queens_chess_piece=queens_chess_piece)
+    close_worker()
 
     # main 
     pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
@@ -686,13 +623,13 @@ def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece):
     return True
 
 
-def qcp_QUEENWorker__pollenstory(qcp_s, QUEENBEE, WORKERBEE_queens):
+def qcp_QUEENWorker__pollenstory(qcp_s, QUEENBEE, WORKERBEE_queens, speed_gauges):
     try:
         s = datetime.datetime.now(est)
         async def get_changelog(session, qcp):
             async with session:
                 try:
-                    ticker_star_hunter_bee(WORKERBEE_queens=WORKERBEE_queens, QUEENBEE=QUEENBEE, queens_chess_piece=qcp)
+                    ticker_star_hunter_bee(WORKERBEE_queens=WORKERBEE_queens, QUEENBEE=QUEENBEE, queens_chess_piece=qcp, speed_gauges=speed_gauges)
                     return {qcp: ''}
                 except Exception as e:
                     print(e, qcp)
@@ -721,38 +658,79 @@ def qcp_QUEENWorker__pollenstory(qcp_s, QUEENBEE, WORKERBEE_queens):
 
 
 
-try:
 
-    master_tickers = []
-    queens_chess_pieces = [] 
-    for qcp, qcp_vars in QUEENBEE['workerbees'].items():
-        for ticker in qcp_vars['tickers']:
-            if qcp in 'castle' or qcp in 'bishop':
-                master_tickers.append(ticker)
-                queens_chess_pieces.append(qcp)
-    queens_chess_pieces = list(set(queens_chess_pieces))
-    
+print(
+"""
+We all shall prosper through the depths of our connected hearts,
+Not all will share my world,
+So I put forth my best mind of virtue and goodness, 
+Always Bee Better
+"""
+)
+
+def queen_workerbees():
+
+    if queens_chess_piece == 'queen':
+        logging.info("My Queen")
+    else:
+        logging.info("Buzz Buzz Where My Honey")
+
+    # init files needed
+    # PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
+
+    init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
+    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+    # PB_App_Pickle = init_pollen['PB_App_Pickle']
+
+    if os.path.exists(PB_QUEEN_Pickle) == False:
+        print("WorkerBee Needs a Queen")
+        sys.exit()
+
+    # Pollen QUEEN
+    if prod:
+        QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
+    else:
+        QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
+
+    QUEENBEE['source'] = PB_QUEEN_Pickle
+    MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
+    # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
+    MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
+    star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 
-    # initiate_ttframe_charts(queens_chess_piece=queens_chess_piece, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
-    WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
-    for qcp_worker in WORKERBEE_queens.keys():
-        WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
-    
-    workerbee_run_times = []
-    speed_gauges = {
-        f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
-        for tic in master_tickers for star_ in star_times.keys()}
 
-    while True:
-        qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens)
+    try:
+        master_tickers = []
+        queens_chess_pieces = [] 
+        for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+            for ticker in qcp_vars['tickers']:
+                if qcp in 'castle' or qcp in 'bishop':
+                    master_tickers.append(ticker)
+                    queens_chess_pieces.append(qcp)
+        queens_chess_pieces = list(set(queens_chess_pieces))
 
-except Exception as errbuz:
-    print(errbuz)
-    erline = print_line_of_error()
-    log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
-    print(log_msg)
-    logging.critical(log_msg)
-    ipdb.set_trace()
+        WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
+        for qcp_worker in WORKERBEE_queens.keys():
+            WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
+        
+        workerbee_run_times = []
+        speed_gauges = {
+            f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+            for tic in master_tickers for star_ in star_times.keys()}
+
+        while True:
+            qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
+
+    except Exception as errbuz:
+        print(errbuz)
+        erline = print_line_of_error()
+        log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
+        print(log_msg)
+        logging.critical(log_msg)
+        ipdb.set_trace()
+
+if __name__ == '__main__':
+    queen_workerbees()
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
