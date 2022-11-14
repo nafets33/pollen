@@ -4,8 +4,8 @@
 import time
 import datetime
 import subprocess
-# import schedule
-from scheduler import Scheduler
+import schedule
+# from scheduler import Scheduler
 import pytz
 import sys
 import argparse
@@ -30,10 +30,10 @@ def call_job_workerbees():
     # subprocess.call("QueenWorkerCrypto.py", shell=True)
     queen_workerbees()
 
-est = pytz.timezone("US/Eastern")
-schedule = Scheduler(tzinfo=est)
+# est = pytz.timezone("US/Eastern")
+# schedule = Scheduler(tzinfo=est)
 
-schedule.every().day.at("09:32").do(call_job_workerbees)
+schedule.every().day.at("14:32").do(call_job_workerbees) ## UTC
 print("Workers Turns on at 9:32AM")
 
 if adhoc_workers == 'true':
