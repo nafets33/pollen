@@ -4,7 +4,9 @@
 import time
 import datetime
 import subprocess
-import schedule
+# import schedule
+from scheduler import Scheduler
+import pytz
 import sys
 import argparse
 # from QueenWorkerCrypto import queen_workerbee_coins
@@ -28,6 +30,8 @@ def call_job_workerbees():
     # subprocess.call("QueenWorkerCrypto.py", shell=True)
     queen_workerbees()
 
+est = pytz.timezone("US/Eastern")
+schedule = Scheduler(tzinfo=est)
 
 schedule.every().day.at("09:02").do(call_job_workerbees)
 print("Workers Turns on at 9AM")
