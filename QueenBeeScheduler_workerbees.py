@@ -33,8 +33,8 @@ def call_job_workerbees():
 est = pytz.timezone("US/Eastern")
 schedule = Scheduler(tzinfo=est)
 
-schedule.every().day.at("09:02").do(call_job_workerbees)
-print("Workers Turns on at 9AM")
+schedule.every().day.at("09:32").do(call_job_workerbees)
+print("Workers Turns on at 9:32AM")
 
 if adhoc_workers == 'true':
     print("running adhoc")
