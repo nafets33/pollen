@@ -851,7 +851,6 @@ def return_macd_wave_story(df, trigbees, ticker_time_frame, tframe):
     # df = POLLENSTORY["SPY_1Minute_1Day"]
     # trigbees = ["buy_cross-0", "sell_cross-0"]
     # length and height of wave
-    ticker_time_frame = df.iloc[-1]['ticker_time_frame']
     MACDWAVE_story = {'story': {}}
     MACDWAVE_story.update({trig_name: {} for trig_name in trigbees})
 
