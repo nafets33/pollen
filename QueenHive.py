@@ -1747,7 +1747,7 @@ def return_VWAP(df):
             ipdb.set_trace()
         
         df_split = []
-        for df__ in [df_today, df_prior]:                
+        for df__ in [df_prior, df_today]:                
             df__['typical_price'] = (df__.high + df__.low + df__.close) / 3 # 1 Calculate the Typical Price for the period. (High + Low + Close)/3)
             df__['price_volume'] = (df__.typical_price * df__.volume) # 2 Multiply the Typical Price by the period Volume. (Typical Price x Volume)
             df__['cum_price_volume'] = df__.expanding().price_volume.sum() # 3 Create a Cumulative Total of Typical Price. Cumulative(Typical Price x Volume)
