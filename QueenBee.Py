@@ -1701,10 +1701,20 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']
         current_story_wave = df_waves_story.iloc[-1].to_dict()
         
+        trigbees_wave_id_list = []
+        trigbees = ['buy_cross-0', 'sell_cross-0', 'read_buy_cross']
+        for trigbee in trigbees:
+            if trigbee in STORY_bee[ticker_time_frame]['waves'].keys():
+                for wave, v, in STORY_bee[ticker_time_frame]['waves'][trigbee].items():
+                    if wave == '0':
+                        continue
+                    else:
+                        trigbees_wave_id_list.append(v['wave_id'])
+        
         last_buy_wave = STORY_bee[ticker_time_frame]['waves']['buy_cross-0']['1']
         last_sell_wave = STORY_bee[ticker_time_frame]['waves']['sell_cross-0']['1']
         current_wave = last_buy_wave if last_buy_wave["wave_start_time"] > last_sell_wave["wave_start_time"] else last_sell_wave
-        
+
         # handle not in Story default to SPY
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
@@ -1725,7 +1735,7 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         """ Trading Models Kings Order Rules """ 
         # Trading Model Sell Vars
         current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
-        run_order_wave_changed = [True if run_order['origin_wave']['wave_id'] in df_waves_story['wave_id'].to_list() else False][0]
+        run_order_wave_changed = [True if run_order['origin_wave']['wave_id'] in trigbees_wave_id_list else False][0]
 
         # trade is past excepted duration time 
         past_trade_duration = order_past_duration(queen_order=run_order)
