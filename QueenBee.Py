@@ -1698,11 +1698,12 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         honey_gauge = honeyGauge_metric(run_order)
 
         """ Bishop Knight Waves """
-        df_waves_story = STORY_bee[ticker_time_frame]["waves"]["story"]
-        current_wave = df_waves_story.iloc[-1].to_dict()
-        last_buy_wave = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].to_dict()
-        last_sell_wave = df_waves_story[df_waves_story['macd_cross'] == 'sell_cross-0'].iloc[-1].to_dict()
+        df_waves_story = STORY_bee[ticker_time_frame]['waves']['story']
+        current_story_wave = df_waves_story.iloc[-1].to_dict()
         
+        last_buy_wave = STORY_bee[ticker_time_frame]['waves']['buy_cross-0']['1']
+        last_sell_wave = STORY_bee[ticker_time_frame]['waves']['sell_cross-0']['1']
+        current_wave = last_buy_wave if last_buy_wave["wave_start_time"] > last_sell_wave["wave_start_time"] else last_sell_wave
         
         # handle not in Story default to SPY
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():

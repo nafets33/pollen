@@ -296,6 +296,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
 
             s_timetoken = datetime.datetime.now(est)
+            
             wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
             
             MACDWAVE_story = return_macd_wave_story(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame, tframe=tframe)
