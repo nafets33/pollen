@@ -57,25 +57,18 @@ current_day = datetime.datetime.now(est).day
 current_month = datetime.datetime.now(est).month
 current_year = datetime.datetime.now(est).year
 
-# init_logging(queens_chess_piece, db_root)
-loglog_newfile = False
-log_dir = dst = os.path.join(db_root, 'logs')
-log_dir_logs = dst = os.path.join(log_dir, 'logs')
-if os.path.exists(dst) == False:
-    os.mkdir(dst)
-if prod:
-    log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-else:
-    log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+def init_logging(queens_chess_piece, db_root):
+    loglog_newfile = False
+    log_dir = dst = os.path.join(db_root, 'logs')
+    log_dir_logs = dst = os.path.join(log_dir, 'logs')
+    if os.path.exists(dst) == False:
+        os.mkdir(dst)
+    if prod:
+        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+    else:
+        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
 
-log_file = os.path.join(log_dir, log_name)
-if os.path.exists(log_file) == False:
-    logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
-else:
+    log_file = os.path.join(log_dir, log_name)
     if loglog_newfile:
         # copy log file to log dir & del current log file
         datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
@@ -83,12 +76,17 @@ else:
         shutil.copy(log_file, dst_path) # only when you want to log your log files
         os.remove(log_file)
     else:
-        print("logging")
-        logging.basicConfig(filename=f'{"log_"}{queens_chess_piece}{".log"}',
+        # print("logging",log_file)
+        logging.basicConfig(filename=log_file,
                             filemode='a',
                             format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p',
-                            level=logging.INFO)
+                            level=logging.INFO,
+                            force=True)
+    
+    return True
+
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
 
 
@@ -253,24 +251,13 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         STORY_bee = {} 
         # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
         betty_bee = {k: {} for k in pollen_nectar.keys()} # monitor function speeds
-        macd_tier_range = 33
         knights_sight_word = {}
         # knight_sight_df = {}
 
         for ticker_time_frame, df_i in pollen_nectar.items(): # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
             s_ttfame_func_check = datetime.datetime.now(est).astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
-            # if WORKER_QUEEN:
-            #     if ticker in WORKER_QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
-            #         trading_model = WORKER_QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
-            #         trigbees = trading_model['trigbees'].keys()
 
-            #     else:
-            #         trading_model = False
-            #         trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
-            # else:
-            #     trading_model = False
-            #     trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
             trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
 
 
@@ -281,7 +268,6 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             df = df.reset_index(drop=True)
             df['story_index'] = df.index
             df_len = len(df)
-            df['nowdate'] = df['timestamp_est'].apply(lambda x: f'{x.hour}{":"}{x.minute}{":"}{x.second}')
             mac_world = {
             'macd_high': df['macd'].max(),
             'macd_low': df['macd'].min(),
@@ -301,12 +287,10 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             df = resp['df']
             knights_word = resp['bee_triggers']
             # how long does trigger stay profitable?
-            """for every index(timeframe) calculate profit length, bell curve
-                conclude with how well trigger is doing to then determine when next trigger will do well
-            """
             e_timetoken = datetime.datetime.now(est)
             betty_bee[ticker_time_frame]['macdcross'] = (e_timetoken - s_timetoken)
             
+            """for every index(timeframe) calculate profit length, bell curve conclude with how well trigger is doing to then determine when next trigger will do well """
             # MACD WAVE ~~~~~~~~~~~~~~~~~~~~~~~~ WAVES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MACD WAVE #
             # Queen to make understanding of trigger-profit waves
             #Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
@@ -314,7 +298,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             s_timetoken = datetime.datetime.now(est)
             wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
             
-            MACDWAVE_story = return_macd_wave_story(df=df, trigbees=trigbees, tframe=tframe)
+            MACDWAVE_story = return_macd_wave_story(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame, tframe=tframe)
 
             resp = return_waves_measurements(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
             df = resp['df']
@@ -806,7 +790,7 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
 
 def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave based on trigger
     # df = POLLENSTORY['SPY_1Minute_1Day'] # test
-    wave = {ticker_time_frame: {}}
+    wave = {ticker_time_frame: {'ticker_time_frame': ticker_time_frame}}
     for knight_trigger in trigbees:
         trig_name = knight_trigger # "buy_cross-0" # test
         wave[ticker_time_frame][trig_name] = {}
@@ -861,11 +845,12 @@ def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave
     return wave
 
 
-def return_macd_wave_story(df, trigbees, tframe):
+def return_macd_wave_story(df, trigbees, ticker_time_frame, tframe):
     # POLLENSTORY = read_pollenstory()
     # df = POLLENSTORY["SPY_1Minute_1Day"]
     # trigbees = ["buy_cross-0", "sell_cross-0"]
     # length and height of wave
+    ticker_time_frame = df.iloc[-1]['ticker_time_frame']
     MACDWAVE_story = {'story': {}}
     MACDWAVE_story.update({trig_name: {} for trig_name in trigbees})
 
@@ -908,7 +893,8 @@ def return_macd_wave_story(df, trigbees, tframe):
                 else:
                     wave_blocktime = 'afterhours'
 
-            MACDWAVE_story[trigger][wave_n].update({'length': row_2 - row_1, 
+            MACDWAVE_story[trigger][wave_n].update({'ticker_time_frame': ticker_time_frame,
+            'length': row_2 - row_1, 
             'wave_blocktime' : wave_blocktime,
             'wave_start_time': wave_starttime,
             'wave_end_time': wave_endtime,
@@ -989,8 +975,6 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
             return 0
         if "Day" in tframe:
             return "Day"
-            # wave_starttime = df_waves.iloc[x]['timestamp_est']
-            # wave_endtime = df_waves.iloc[x]['timestamp_est']
         else:
             wave_starttime = df_waves.iloc[x]['timestamp_est']
             # wave_endtime = df_waves.iloc[x]['timestamp_est']
@@ -1064,7 +1048,7 @@ def return_waves_measurements(df, ticker_time_frame, trigbees=['buy_cross-0', 's
     index_wave_series = dict(zip(df_waves['story_index'], df_waves['active_wave']))
     df['active_wave'] = df['story_index'].map(index_wave_series).fillna("0")
 
-    df_waves = df_waves[['wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits', 'active_wave',]]
+    df_waves = df_waves[['story_index', 'wave_blocktime', 'timestamp_est', 'macd_cross', 'wave_n', 'length', 'profits', 'active_wave',]]
     
     return {'df': df, 'df_waves': df_waves}
 
@@ -2627,7 +2611,7 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
 
         df_bestwaves = return_Best_Waves(df=df, top=3)
 
-        # # show today only
+        # show today only
         df_today_return = pd.DataFrame()
         df_today = split_today_vs_prior(df=df, timestamp='wave_start_time')['df_today']
         df_day_bestwaves = return_Best_Waves(df=df_today, top=3)
@@ -2928,10 +2912,9 @@ def init_queen_orders(pickle_file):
     logging_log_message(msg='Orders init')
 
 
-def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
+def init_pollen_dbs(db_root, prod, queens_chess_piece):
     if prod:
         print("My Queen Production")
-        api = api
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
@@ -2940,7 +2923,6 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
     else:
         print("My Queen Sandbox")
-        api = api_paper
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
@@ -2972,9 +2954,6 @@ def init_pollen_dbs(db_root, api, prod, queens_chess_piece):
 
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle, 'PB_Orders_Pickle': PB_Orders_Pickle, 'PB_queen_Archives_Pickle': PB_queen_Archives_Pickle}
-
-
-
 
 
 

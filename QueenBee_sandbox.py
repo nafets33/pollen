@@ -523,7 +523,7 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket):
         else:
             return {'app_flag': False}    
 
-    elif request_name == 'trading_models':
+    elif request_name == 'trading_models': # PENDING
         app_order_base = [i for i in APP_requests[request_name]]
         if app_order_base:
             for app_request in app_order_base:
@@ -1660,7 +1660,6 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         else:
             crypto = False
         # gather run_order Vars
-        ticker_runorder = run_order['ticker']
         trigname = run_order['trigname']
         runorder_client_order_id = run_order['client_order_id']
         take_profit = run_order['order_rules']['take_profit']
@@ -1680,7 +1679,7 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
 
         # Only if there are available shares
 
-        priceinfo = return_snap_priceinfo(api=api, ticker=ticker_runorder, crypto=crypto)
+        priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto)
 
         sell_order = False # #### >>> convince me to sell  $$
 
@@ -1698,20 +1697,13 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
         honey_gauge = honeyGauge_metric(run_order)
 
-        run_order_wave_changed = False
-        # try:
-        #     # does current wave differ from origin wave?
-        #     wave_n = [origin_wave['wave_n'] if len(origin_wave) > 0 else False][0]
-        #     if wave_n:
-        #         storybee_origin_wave = STORY_bee[ticker_time_frame]['waves'][trigname][wave_n]
-        #         if storybee_origin_wave['trigbee'] != trigname:
-        #             run_order_wave_changed = True
-        #         else:
-        #             run_order_wave_changed = False
-        # except Exception as e:
-        #     print(e, print_line_of_error())
+        """ Bishop Knight Waves """
+        df_waves_story = STORY_bee[ticker_time_frame]["waves"]["story"]
+        current_wave = df_waves_story.iloc[-1].to_dict()
+        last_buy_wave = df_waves_story[df_waves_story['macd_cross'] == 'buy_cross-0'].iloc[-1].to_dict()
+        last_sell_wave = df_waves_story[df_waves_story['macd_cross'] == 'sell_cross-0'].iloc[-1].to_dict()
         
-
+        
         # handle not in Story default to SPY
         if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
@@ -1726,14 +1718,13 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         current_macd = ttframe_story['macd_state']
         current_macd_time = int(current_macd.split("-")[-1])
         
-        # Bishop Waves
-        current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave'].to_dict()
-        current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigname].to_dict()
-        current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
-
+        # current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave'].to_dict()
+        # current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigname].to_dict()
 
         """ Trading Models Kings Order Rules """ 
-
+        # Trading Model Sell Vars
+        current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
+        run_order_wave_changed = [True if run_order['origin_wave']['wave_id'] in df_waves_story['wave_id'].to_list() else False][0]
 
         # trade is past excepted duration time 
         past_trade_duration = order_past_duration(queen_order=run_order)
@@ -1742,7 +1733,13 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
         ttframe_take_max_profit = run_order['order_rules']['max_profit_waveDeviation']
         ttframe_take_max_profit_global = QUEEN['queen_controls']['max_profit_waveDeviation'][star]
         wave_past_max_profit = float(ttframe_take_max_profit) >= current_wave_maxprofit_stat # max profits exceed setting
-        
+
+        # Gather main sell reason groups
+        sell_trigbee_trigger = [True if str(run_order['order_rules']['sell_trigbee_trigger']).lower() == 'true' else False][0]
+        stagger_profits = [True if str(run_order['order_rules']['stagger_profits']).lower() == 'true' else False][0]
+        scalp_profits = [True if str(run_order['order_rules']['scalp_profits']).lower() == 'true' else False][0]
+        run_order_wave_changed = run_order_wave_changed
+
         # App Requests
         app_req = process_app_sell_signal(QUEEN=QUEEN, PB_App_Pickle=PB_App_Pickle, runorder_client_order_id=run_order['client_order_id'])
         if app_req['sell_order']:
@@ -1752,23 +1749,16 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
             
             sell_qty = app_req['sell_qty']
             order_type = app_req['type']
-            side = app_req['side']
+            order_side = app_req['side']
 
-            sell_reason = 'app'
             order_vars = order_vars__queen_order_items(trading_model=False, 
-            king_order_rules=False, order_side='sell', wave_amo=False, maker_middle=False, 
+            king_order_rules=False, order_side=order_side, wave_amo=False, maker_middle=False, 
             origin_wave=False, power_up_rangers=False, ticker_time_frame_origin='app_app_app',
             sell_reason='app', running_close_legs=False, sell_qty=app_req['sell_qty'], first_sell=first_sell)
             return {'bee_sell': True, 'order_vars': order_vars, 'app_request': app_request}
 
         else:
             app_request = False
-
-        # Gather main sell reason groups
-        sell_trigbee_trigger = [True if str(run_order['order_rules']['sell_trigbee_trigger']).lower() == 'true' else False][0]
-        stagger_profits = [True if str(run_order['order_rules']['stagger_profits']).lower() == 'true' else False][0]
-        scalp_profits = [True if str(run_order['order_rules']['scalp_profits']).lower() == 'true' else False][0]
-        run_order_wave_changed = run_order_wave_changed
         
         # this occurs when selling is chunked
         running_close_legs = False
@@ -1923,7 +1913,7 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
             return {'bee_sell': False, 'run_order': run_order}
     except Exception as e:
         print(e, print_line_of_error())
-        log_error_dict = logging_log_message(log_type='error', msg='unable to process kings read on queen order', error=str(e), origin_func='king Evaluate QueenOrder')
+        log_error_dict = logging_log_message(log_type='error', msg=f'{runorder_client_order_id}{": unable to process kings read on queen order"}', error=str(e), origin_func='king Evaluate QueenOrder')
         logging.error(log_error_dict)
         ipdb.set_trace()
 
@@ -2253,7 +2243,7 @@ try:
     # s_time = datetime.datetime.now().astimezone(est)
 
     # init files needed
-    init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
+    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
     PB_App_Pickle = init_pollen['PB_App_Pickle']
     PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
@@ -2271,7 +2261,6 @@ try:
     QUEEN = pollen['queen']
     QUEEN['source'] = PB_QUEEN_Pickle
     STORY_bee = pollen['STORY_bee']
-    POLLENSTORY = read_pollenstory()
 
     APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
     APP_requests['source'] = PB_App_Pickle
@@ -2353,7 +2342,6 @@ try:
             QUEEN = pollen['queen']
             ORDERS = pollen['ORDERS']
             STORY_bee = pollen['STORY_bee']
-            POLLENSTORY = read_pollenstory()
             charlie_bee['queen_cyle_times']['db_refresh'] = datetime.datetime.now(est) - s
 
             # Read App Reqquests
@@ -2377,8 +2365,6 @@ try:
             # Hunt for Triggers
             command_conscience(api=api, QUEEN=QUEEN, APP_requests=APP_requests) #####>   
 
-
-            time.sleep(1)
             e = datetime.datetime.now(est)
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
 
