@@ -678,7 +678,7 @@ def queen_workerbees():
     # init files needed
     # PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
 
-    init_pollen = init_pollen_dbs(db_root=db_root, api=api, prod=prod, queens_chess_piece=queens_chess_piece)
+    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
     # PB_App_Pickle = init_pollen['PB_App_Pickle']
 
