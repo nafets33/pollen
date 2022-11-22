@@ -5,42 +5,44 @@ from operator import sub
 from signal import signal
 from symtable import Symbol
 import time
-import alpaca_trade_api as tradeapi
 import asyncio
 import os
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
 import sys
-from alpaca_trade_api.rest import TimeFrame, URL
-from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
-import threading
 import sys
 import datetime
 from datetime import date, timedelta
 import pytz
 from typing import Callable
-import random
-import collections
-import pickle
 from tqdm import tqdm
-from stocksymbol import StockSymbol
-import requests
 from collections import defaultdict
-import ipdb
-import tempfile
-import shutil
-# from scipy.stats import linregress
-from scipy import stats
-import hashlib
-import json
 from collections import deque
 from QueenHive import init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import argparse
 import aiohttp
 import asyncio
 from itertools import islice
+import ipdb
+
+# import tempfile
+# import shutil
+# from scipy.stats import linregress
+# from scipy import stats
+# import hashlib
+# import json
+# from stocksymbol import StockSymbol
+# import requests
+# import random
+# import collections
+# import pickle
+# import threading
+# from alpaca_trade_api.rest import TimeFrame, URL
+# from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
+# import alpaca_trade_api as tradeapi
+
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
@@ -255,8 +257,8 @@ def queen_workerbees():
         #     "1Day_1Year": 250}
         try:
             msg = (ticker_list, chart_times)
-            logging.info(msg)
-            print(msg)
+            # logging.info(msg)
+            # print(msg)
 
             error_dict = {}
             s = datetime.datetime.now(est)
@@ -433,10 +435,11 @@ def queen_workerbees():
             if now_day != last_day:
                 return_dict[ticker_time] = df
                 continue
+            
+            dfn = Return_Bars_LatestDayRebuild(ticker_time)
 
             if "1minute" == timeframe.lower():
                 if timedelta_minutes > 2:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
                         df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
@@ -451,7 +454,6 @@ def queen_workerbees():
 
             elif "5minute" == timeframe.lower():
                 if timedelta_minutes > 6:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
                         df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
@@ -466,7 +468,6 @@ def queen_workerbees():
             
             elif "30minute" == timeframe.lower():
                 if timedelta_minutes > 31:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
 
@@ -482,7 +483,6 @@ def queen_workerbees():
 
             elif "1hour" == timeframe.lower():
                 if timedelta_minutes > 61:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
                         df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
@@ -497,7 +497,6 @@ def queen_workerbees():
 
             elif "2hour" == timeframe.lower():
                 if timedelta_minutes > 121:
-                    dfn = Return_Bars_LatestDayRebuild(ticker_time)
                     if len(dfn[1]) == 0:
                         df_latest = dfn[0][ticker_time]
                         df['timetag'] = df['timestamp_est'].apply(lambda x: tag_current_day(x))
@@ -670,17 +669,8 @@ def queen_workerbees():
     )
 
 
-    if queens_chess_piece == 'queen':
-        logging.info("My Queen")
-    else:
-        logging.info("Buzz Buzz Where My Honey")
-
-    # init files needed
-    # PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    # PB_App_Pickle = init_pollen['PB_App_Pickle']
 
     if os.path.exists(PB_QUEEN_Pickle) == False:
         print("WorkerBee Needs a Queen")

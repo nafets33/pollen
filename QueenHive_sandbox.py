@@ -1123,8 +1123,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
         # set index to EST time
         symbol_data['timestamp_est'] = symbol_data.index
         symbol_data['timestamp_est'] = symbol_data['timestamp_est'].apply(lambda x: x.astimezone(est))
-
-        # symbol_data = symbol_data.set_index('timestamp_est', drop=False)
+        symbol_data = symbol_data.set_index('timestamp_est', drop=False)
 
         symbol_data['symbol'] = symbol
         symbol_data['timeframe'] = timeframe
@@ -1148,8 +1147,8 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
         # if ndays == 1:
         #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-        if symbol_data.iloc[-1]["timestamp_est"] == 0:
-            ipdb.set_trace()
+        # if symbol_data.iloc[-1]["timestamp_est"] == 0:
+        #     ipdb.set_trace()
 
         return {'resp': True, "df": symbol_data, 'market_hours_data': market_hours_data, 'after_hours_data': after_hours_data}
     # handle error
@@ -2422,7 +2421,7 @@ def return_queen_controls(stars=stars):
             'symbols_stars_TradingModel': generate_TradingModel()['MACD'],
             'power_rangers': init_PowerRangers(),
             'trigbees': {'buy_cross-0': 'active', 'sell_cross-0':'active', 'ready_buy_cross':'not_active'},
-            'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
+            # 'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
             # Worker Bees UPDATE TO PER TICKER on Ticker Settings
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             # 'macd_worlds' : {
