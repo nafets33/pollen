@@ -1145,7 +1145,8 @@ def command_conscience(api, QUEEN, APP_requests):
         all_orders = QUEEN['queen_orders']
         active_orders = all_orders[all_orders['queen_order_state'].isin(active_queen_order_states)].copy()
 
-        # cycle through stories  # The Golden Ticket    
+        # cycle through stories  # The Golden Ticket
+        s_time = datetime.datetime.now(est)
         for ticker in active_tickers:
             # Ensure Trading Model
             add_trading_model(QUEEN=QUEEN, ticker=ticker, model='MACD')
@@ -1155,19 +1156,22 @@ def command_conscience(api, QUEEN, APP_requests):
             if mkhrs == 'open':
                 val_pass = True
             else:
+                print("Market Not Open Sorry")
                 continue # break loop
 
             """ the hunt """
+            s_time = datetime.datetime.now(est)
             ticker_storys = {k:v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
             all_current_triggers = {k:v['story']['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['story']['alltriggers_current_state']) > 0}
             all_current_triggers = add_app_wave_trigger(all_current_triggers=all_current_triggers, ticker=ticker, app_wave_trig_req=app_wave_trig_req)        
+            charlie_bee['queen_cyle_times']['thehunt__om'] = datetime.datetime.now(est) - s_time
             # Return Scenario based trades
             
             if all_current_triggers:
                 try:
                     # enabled stars
                     # QUEEN['heartbeat']
-
+                    s_time = datetime.datetime.now(est)
                     for ticker_time_frame, avail_trigs in all_current_triggers.items(): 
                         # ticker_time_frame = f'{ticker}{"_1Minute_1Day"}'
                         ticker, tframe, frame = ticker_time_frame.split("_")
@@ -1196,9 +1200,14 @@ def command_conscience(api, QUEEN, APP_requests):
                                 trig_action = trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame)
 
                                 """ HAIL TRIGGER, WHAT SAY YOU? ~forgive me but I bring a gift for the king and queen"""
+                                s_time = datetime.datetime.now(est)
                                 king_resp = king_knights_requests(QUEEN=QUEEN, avail_trigs=avail_trigs, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
                                 if king_resp['kings_blessing']:
                                     execute_order(QUEEN=QUEEN, king_resp=king_resp, king_eval_order=False, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio, crypto=crypto)
+                                charlie_bee['queen_cyle_times']['knights_request__om'] = datetime.datetime.now(est) - s_time
+
+
+                    charlie_bee['queen_cyle_times']['knights_full_loop__om'] = datetime.datetime.now(est) - s_time
 
                     
                 except Exception as e:
@@ -1206,7 +1215,8 @@ def command_conscience(api, QUEEN, APP_requests):
                     print(ticker_time_frame)
                     sys.exit()
 
-    
+        charlie_bee['queen_cyle_times']['full_loop__om'] = datetime.datetime.now(est) - s_time
+        
         # App Buy Order Requests
         app_resp = process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='buy_orders', archive_bucket='app_order_requests')
         if app_resp['order_flag']:
@@ -2092,9 +2102,11 @@ def queen_orders_main(portfolio, APP_requests):
     # route queen order >>>  process queen_order_states
     try:
         # App Requests
+        s_time = datetime.datetime.now(est)
         app_req = process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='update_queen_order', archive_bucket='update_queen_order_requests')
         if app_req['app_flag']:
             update_queen_order(QUEEN=QUEEN, update_package=app_req['app_request']['queen_order_update_package'])
+        s_time = datetime.datetime.now(est)
 
         """ ALL Active SUBMITTED & RUNNING & RUNNING_CLOSE SWITCH TO ASYNC to call all snapshots and orders"""
 
