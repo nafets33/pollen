@@ -20,7 +20,7 @@ from typing import Callable
 from tqdm import tqdm
 from collections import defaultdict
 from collections import deque
-from QueenHive import init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from QueenHive import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import argparse
 import aiohttp
 import asyncio
@@ -62,6 +62,7 @@ def queen_workerbees():
     namespace = parser.parse_args()
     queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
     windows = namespace.windows
+    prod = True if str(namespace.prod).lower() == 'true' else False
 
     if windows:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
@@ -69,7 +70,7 @@ def queen_workerbees():
     pd.options.mode.chained_assignment = None
     est = pytz.timezone("US/Eastern")
     load_dotenv()
-    prod = True
+    
 
     main_root = os.getcwd()
     db_root = os.path.join(main_root, 'db')
@@ -106,8 +107,6 @@ def queen_workerbees():
 
         return QUEEN
 
-
-    QUEEN = init_QUEENWORKER(queens_chess_piece)
 
     if queens_chess_piece.lower() not in ['castle', 'knight', 'bishop', 'workerbee']:
         print("wrong chess move")
@@ -156,62 +155,6 @@ def queen_workerbees():
     ] # 'U'
 
     """# Main Arguments """
-
-    index_list = [
-        'DJA', 'DJI', 'DJT', 'DJUSCL', 'DJU',
-        'NDX', 'IXIC', 'IXCO', 'INDS', 'INSR', 'OFIN', 'IXTC', 'TRAN', 'XMI', 
-        'XAU', 'HGX', 'OSX', 'SOX', 'UTY',
-        'OEX', 'MID', 'SPX',
-        'SCOND', 'SCONS', 'SPN', 'SPF', 'SHLTH', 'SINDU', 'SINFT', 'SMATR', 'SREAS', 'SUTIL']
-
-
-    if prod: # Return Ticker and Acct Info
-        # Initiate Code File Creation
-        index_ticker_db = os.path.join(db_root, "index_tickers")
-        if os.path.exists(index_ticker_db) == False:
-            os.mkdir(index_ticker_db)
-            print("Ticker Index db Initiated")
-            init_index_ticker(index_list, db_root, init=True)
-
-        """ Return Index Charts & Data for All Tickers Wanted"""
-        """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
-        # s = datetime.datetime.now()
-        all_alpaca_tickers = api.list_assets()
-        alpaca_symbols_dict = {}
-        for n, v in enumerate(all_alpaca_tickers):
-            if all_alpaca_tickers[n].status == 'active':
-                alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
-
-        symbol_shortable_list = []
-        t = []
-        for ticker, v in alpaca_symbols_dict.items():
-            if v['_raw']['shortable'] == True:
-                symbol_shortable_list.append(ticker)
-            if v['_raw']['easy_to_borrow'] == True:
-                t.append(ticker)
-
-        # alpaca_symbols_dict[list(alpaca_symbols_dict.keys())[100]]
-        # e = datetime.datetime.now()
-        # print(e-s) # 0:00:00.490031
-
-        market_exchanges_tickers = defaultdict(list)
-
-        for k, v in alpaca_symbols_dict.items():
-            market_exchanges_tickers[v['_raw']['exchange']].append(k)
-        # market_exchanges = ['OTC', 'NASDAQ', 'NYSE', 'ARCA', 'AMEX', 'BATS']
-
-
-        main_index_dict = index_ticker_db[0]
-        main_symbols_full_list = index_ticker_db[1]
-        not_avail_in_alpaca =[i for i in main_symbols_full_list if i not in alpaca_symbols_dict]
-        main_symbols_full_list = [i for i in main_symbols_full_list if i in alpaca_symbols_dict]
-
-        index_ticker_db = return_index_tickers(index_dir=os.path.join(db_root, 'index_tickers'), ext='.csv')
-
-        """ Return Index Charts & Data for All Tickers Wanted"""
-        """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
-
-
 
     def close_worker():
         s = datetime.datetime.now(est)
@@ -315,102 +258,114 @@ def queen_workerbees():
 
 
     def Return_Snapshots_Rebuild(df_tickers_data, init=False): # from snapshots & consider using day.min.chart to rebuild other timeframes
-        ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
-
-        snapshots = api.get_snapshots(ticker_list)
-
-        for ticker in snapshots.keys(): # replace snapshot if in exclude_conditions
-            c = 0
-            while True:
-                conditions = snapshots[ticker].latest_trade.conditions
-                # print(conditions)
-                invalid = [c for c in conditions if c in exclude_conditions]
-                if len(invalid) == 0 or c > 10:
-                    break
-                else:
-                    print("invalid trade-condition pull snapshot")
-                    snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
-                    snapshots[ticker] = snapshot
-                    c+=1
-
-        float_cols = ['close', 'high', 'open', 'low', 'vwap']
-        int_cols = ['volume', 'trade_count']
-        main_return_dict = {}
         
-        # min_bars_dict = rebuild_timeframe_bars(ticker_list)
-        # if min_bars_dict['resp'] == False:
-        #     print("Min Bars Error", min_bars_dict)
-        #     min_bars_dict = {k:{} for k in ticker_list}
-        # else:
-        #     min_bars_dict = min_bars_dict['resp']
-        # min_bars_dict = {k:{} for k in ticker_list} # REBUILDING MIN BARS NEEDS IMPROVEMENT BEFORE SOME MAY FAIL TO RETURN
-
-        def response_returned(ticker_list):
+        def ticker_Snapshots(ticker_list, float_cols, int_cols):
             return_dict = {}
-            for ticker in ticker_list:
-                dl = {
-                'close': snapshots[ticker].daily_bar.close,
-                'high': snapshots[ticker].daily_bar.high,
-                'low': snapshots[ticker].daily_bar.low,
-                'timestamp_est': snapshots[ticker].daily_bar.timestamp,
-                'open': snapshots[ticker].daily_bar.open,
-                'volume': snapshots[ticker].daily_bar.volume,
-                'trade_count': snapshots[ticker].daily_bar.trade_count,
-                'vwap': snapshots[ticker].daily_bar.vwap
-                }
-                df_daily = pd.Series(dl).to_frame().T  # reshape dataframe
-                for i in float_cols:
-                    df_daily[i] = df_daily[i].apply(lambda x: float(x))
-                for i in int_cols:
-                    df_daily[i] = df_daily[i].apply(lambda x: int(x))
-                # df_daily = df_daily.rename(columns={'timestamp': 'timestamp_est'})
-                
-                return_dict[ticker + "_day"] = df_daily
-
-                d = {
-                    'close': snapshots[ticker].latest_trade.price,
-                    'high': snapshots[ticker].latest_trade.price,
-                    'low': snapshots[ticker].latest_trade.price,
-                    'timestamp_est': snapshots[ticker].latest_trade.timestamp,
-                    'open': snapshots[ticker].latest_trade.price,
-                    'volume': snapshots[ticker].minute_bar.volume,
-                    'trade_count': snapshots[ticker].minute_bar.trade_count,
-                    'vwap': snapshots[ticker].minute_bar.vwap
+            try:
+                for ticker in ticker_list:
+                    dl = {
+                    'close': snapshots[ticker].daily_bar.close,
+                    'high': snapshots[ticker].daily_bar.high,
+                    'low': snapshots[ticker].daily_bar.low,
+                    'timestamp_est': snapshots[ticker].daily_bar.timestamp,
+                    'open': snapshots[ticker].daily_bar.open,
+                    'volume': snapshots[ticker].daily_bar.volume,
+                    'trade_count': snapshots[ticker].daily_bar.trade_count,
+                    'vwap': snapshots[ticker].daily_bar.vwap
                     }
-                df_minute = pd.Series(d).to_frame().T
-                for i in float_cols:
-                    df_minute[i] = df_minute[i].apply(lambda x: float(x))
-                for i in int_cols:
-                    df_minute[i] = df_minute[i].apply(lambda x: int(x))
-                # df_minute = df_minute.rename(columns={'timestamp': 'timestamp_est'})
+                    df_daily = pd.Series(dl).to_frame().T  # reshape dataframe
+                    for i in float_cols:
+                        # df_daily[i] = df_daily[i].apply(lambda x: float(x))
+                        df_daily[i] = df_daily[i].astype(float)
+                    for i in int_cols:
+                        # df_daily[i] = df_daily[i].apply(lambda x: int(x))
+                        df_daily[i] = df_daily[i].astype(int)
+                    # df_daily = df_daily.rename(columns={'timestamp': 'timestamp_est'})
+                    
+                    return_dict[ticker + "_day"] = df_daily
 
-                return_dict[ticker + "_minute"] = df_minute
+                    d = {
+                        'close': snapshots[ticker].latest_trade.price,
+                        'high': snapshots[ticker].latest_trade.price,
+                        'low': snapshots[ticker].latest_trade.price,
+                        'timestamp_est': snapshots[ticker].latest_trade.timestamp,
+                        'open': snapshots[ticker].latest_trade.price,
+                        'volume': snapshots[ticker].minute_bar.volume,
+                        'trade_count': snapshots[ticker].minute_bar.trade_count,
+                        'vwap': snapshots[ticker].minute_bar.vwap
+                        }
+                    df_minute = pd.Series(d).to_frame().T
+                    for i in float_cols:
+                        # df_minute[i] = df_minute[i].apply(lambda x: float(x))
+                        df_minute[i] = df_minute[i].astype(float)
+                    for i in int_cols:
+                        # df_minute[i] = df_minute[i].apply(lambda x: int(x))
+                        df_minute[i] = df_minute[i].astype(int)
+
+                    return_dict[ticker + "_minute"] = df_minute
+            except Exception as e:
+                print(e)
+                print(ticker)
+                ipdb.set_trace()
             
             return return_dict
         
-    
-        snapshot_ticker_data = response_returned(ticker_list)
-        
-        for ticker_time, df in df_tickers_data.items():
-            symbol_snapshots = {k:v for (k,v) in snapshot_ticker_data.items() if k.split("_")[0] == ticker_time.split("_")[0]}
-            symbol, timeframe, days = ticker_time.split("_")
-            if "day" in timeframe.lower():
-                df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}'] # stapshot df
-                df_day_snapshot['symbol'] = symbol
-                df = df.head(-1) # drop last row which has current day / added minute
-                df_rebuild = pd.concat([df, df_day_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
-                main_return_dict[ticker_time] = df_rebuild
-            else:
-                df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
-                df_snapshot['symbol'] = symbol
-                if init:
-                    df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
+        try:
+            ticker_list = list([set(j.split("_")[0] for j in df_tickers_data.keys())][0]) #> get list of tickers
+            snapshots = api.get_snapshots(ticker_list)
+
+            for ticker in snapshots.keys(): # replace snapshot if in exclude_conditions
+                c = 0
+                while True:
+                    conditions = snapshots[ticker].latest_trade.conditions
+                    # print(conditions)
+                    invalid = [c for c in conditions if c in exclude_conditions]
+                    if len(invalid) == 0 or c > 10:
+                        break
+                    else:
+                        print("invalid trade-condition pull snapshot")
+                        snapshot = api.get_snapshot(ticker) # return_last_quote from snapshot
+                        snapshots[ticker] = snapshot
+                        c+=1
+
+            float_cols = ['close', 'high', 'open', 'low', 'vwap']
+            int_cols = ['volume', 'trade_count']
+            main_return_dict = {}
+            
+            # min_bars_dict = rebuild_timeframe_bars(ticker_list)
+            # if min_bars_dict['resp'] == False:
+            #     print("Min Bars Error", min_bars_dict)
+            #     min_bars_dict = {k:{} for k in ticker_list}
+            # else:
+            #     min_bars_dict = min_bars_dict['resp']
+            # min_bars_dict = {k:{} for k in ticker_list} # REBUILDING MIN BARS NEEDS IMPROVEMENT BEFORE SOME MAY FAIL TO RETURN
+
+            snapshot_ticker_data = ticker_Snapshots(ticker_list, float_cols, int_cols)
+            
+            for ticker_time, df in df_tickers_data.items():
+                symbol_snapshots = {k:v for (k,v) in snapshot_ticker_data.items() if k.split("_")[0] == ticker_time.split("_")[0]}
+                symbol, timeframe, days = ticker_time.split("_")
+                if "day" in timeframe.lower():
+                    df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}'] # stapshot df
+                    df_day_snapshot['symbol'] = symbol
+                    df = df.head(-1) # drop last row which has current day / added minute
+                    df_rebuild = pd.concat([df, df_day_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
                     main_return_dict[ticker_time] = df_rebuild
                 else:
-                    df = df.head(-1) # drop last row which has current day
-                    df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
-                    main_return_dict[ticker_time] = df_rebuild
-
+                    df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}'] # stapshot df
+                    df_snapshot['symbol'] = symbol
+                    if init:
+                        df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
+                        main_return_dict[ticker_time] = df_rebuild
+                    else:
+                        df = df.head(-1) # drop last row which has current day
+                        df_rebuild = pd.concat([df, df_snapshot], join='outer', axis=0).reset_index(drop=True) # concat minute
+                        main_return_dict[ticker_time] = df_rebuild
+        except Exception as e:
+            print(e)
+            print(queens_chess_piece)
+            ipdb.set_trace()
+        
         return main_return_dict
 
 
@@ -669,12 +624,12 @@ def queen_workerbees():
     )
 
 
-    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
-    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-
-    if os.path.exists(PB_QUEEN_Pickle) == False:
-        print("WorkerBee Needs a Queen")
-        sys.exit()
+    # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
+    # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+    # ipdb.set_trace()
+    # if os.path.exists(PB_QUEEN_Pickle) == False:
+    #     print("WorkerBee Needs a Queen")
+    #     sys.exit()
 
     # Pollen QUEEN
     if prod:
@@ -682,44 +637,88 @@ def queen_workerbees():
     else:
         QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
-    QUEENBEE['source'] = PB_QUEEN_Pickle
+    QUEENBEE['source'] = queens_chess_piece
     MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
     # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
     MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
     star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 
+    ticker_universe = return_Ticker_Universe()
+    main_index_dict = ticker_universe['main_index_dict']
+    index_ticker_db = ticker_universe['index_ticker_db']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
 
-    try:
-        master_tickers = []
-        queens_chess_pieces = [] 
-        for qcp, qcp_vars in QUEENBEE['workerbees'].items():
-            for ticker in qcp_vars['tickers']:
-                if qcp in 'castle' or qcp in 'bishop':
-                    master_tickers.append(ticker)
-                    queens_chess_pieces.append(qcp)
-        queens_chess_pieces = list(set(queens_chess_pieces))
 
-        WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
-        for qcp_worker in WORKERBEE_queens.keys():
-            WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
-        
-        workerbee_run_times = []
-        speed_gauges = {
-            f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
-            for tic in master_tickers for star_ in star_times.keys()}
+    def kingdom__WorkerBees():
+        try:
+            master_tickers = []
+            queens_chess_pieces = [] 
+            for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+                for ticker in qcp_vars['tickers']:
+                    if qcp in 'castle' or qcp in 'bishop':
+                        master_tickers.append(ticker)
+                        queens_chess_pieces.append(qcp)
+            queens_chess_pieces = list(set(queens_chess_pieces))
 
-        while True:
-            qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
+            WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
+            for qcp_worker in WORKERBEE_queens.keys():
+                WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
+            workerbee_run_times = []
+            speed_gauges = {
+                f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+                for tic in master_tickers for star_ in star_times.keys()}
 
-    except Exception as errbuz:
-        print(errbuz)
-        erline = print_line_of_error()
-        log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
-        print(log_msg)
-        logging.critical(log_msg)
-        ipdb.set_trace()
+            while True:
+                qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
 
+        except Exception as errbuz:
+            print(errbuz)
+            erline = print_line_of_error()
+            log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
+            print(log_msg)
+            logging.critical(log_msg)
+            ipdb.set_trace()
+        return True
+
+    def queens_court__WorkerBees():
+        try:
+            master_tickers = []
+            queens_chess_pieces = [] 
+            for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+                for ticker in qcp_vars['tickers']:
+                    if qcp in ['castle', 'bishop', 'knight']:
+                    # if qcp in ['knight']:
+                        master_tickers.append(ticker)
+                        queens_chess_pieces.append(qcp)
+            queens_chess_pieces = list(set(queens_chess_pieces))
+
+            WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
+            for qcp_worker in WORKERBEE_queens.keys():
+                WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
+            workerbee_run_times = []
+            speed_gauges = {
+                f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
+                for tic in master_tickers for star_ in star_times.keys()}
+
+            while True:
+                qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
+
+        except Exception as errbuz:
+            print(errbuz)
+            erline = print_line_of_error()
+            log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
+            print(log_msg)
+            logging.critical(log_msg)
+            ipdb.set_trace()
+
+
+    if queens_chess_piece == 'castle':
+        print("Queens Court")
+        queens_court__WorkerBees()
+    elif queens_chess_piece == 'indexes':
+        print("pending")
 if __name__ == '__main__':
     queen_workerbees()
 

@@ -202,7 +202,7 @@ def read_queensmind(prod): # return active story workers
         ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders__sandbox.pkl'))
 
     # return beeworkers data
-    dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl']
+    dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']
     STORY_bee = {}
     KNIGHTSWORD = {}
     ANGEL_bee = {}
@@ -1123,8 +1123,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
         # set index to EST time
         symbol_data['timestamp_est'] = symbol_data.index
         symbol_data['timestamp_est'] = symbol_data['timestamp_est'].apply(lambda x: x.astimezone(est))
-
-        # symbol_data = symbol_data.set_index('timestamp_est', drop=False)
+        symbol_data = symbol_data.set_index('timestamp_est', drop=False)
 
         symbol_data['symbol'] = symbol
         symbol_data['timeframe'] = timeframe
@@ -1148,8 +1147,8 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
         # if ndays == 1:
         #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-        if symbol_data.iloc[-1]["timestamp_est"] == 0:
-            ipdb.set_trace()
+        # if symbol_data.iloc[-1]["timestamp_est"] == 0:
+        #     ipdb.set_trace()
 
         return {'resp': True, "df": symbol_data, 'market_hours_data': market_hours_data, 'after_hours_data': after_hours_data}
     # handle error
@@ -1620,13 +1619,7 @@ def return_index_tickers(index_dir, ext):
 ##################################################
 
 
-def get_ticker_statatistics(symbol):
-    try:
-        url = f"https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
-        dataframes = pd.read_html(requests.get(url, headers={'User-agent': 'Mozilla/5.0'}).text)
-    except Exception as e:
-        print(symbol, e)
-    return dataframes
+
 
 
 
@@ -1743,8 +1736,8 @@ def return_VWAP(df):
         df_today = d_token['df_today']
         df_prior = d_token['df_prior']
         
-        if df_today.iloc[-1]["timestamp_est"] == 0 or df_prior.iloc[-1]["timestamp_est"] == 0:
-            ipdb.set_trace()
+        # if df_today.iloc[-1]["timestamp_est"] == 0 or df_prior.iloc[-1]["timestamp_est"] == 0:
+        #     ipdb.set_trace()
         
         df_split = []
         for df__ in [df_prior, df_today]:                
@@ -2422,7 +2415,7 @@ def return_queen_controls(stars=stars):
             'symbols_stars_TradingModel': generate_TradingModel()['MACD'],
             'power_rangers': init_PowerRangers(),
             'trigbees': {'buy_cross-0': 'active', 'sell_cross-0':'active', 'ready_buy_cross':'not_active'},
-            'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
+            # 'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
             # Worker Bees UPDATE TO PER TICKER on Ticker Settings
             'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
             # 'macd_worlds' : {
@@ -2440,8 +2433,98 @@ def return_queen_controls(stars=stars):
     return queen_controls_dict
 
 
-def init_QUEEN(queens_chess_piece):
+def return_Ticker_Universe(): # Return Ticker and Acct Info
+    # Initiate Code File Creation
+    index_list = [
+        'DJA', 'DJI', 'DJT', 'DJUSCL', 'DJU',
+        'NDX', 'IXIC', 'IXCO', 'INDS', 'INSR', 'OFIN', 'IXTC', 'TRAN', 'XMI', 
+        'XAU', 'HGX', 'OSX', 'SOX', 'UTY',
+        'OEX', 'MID', 'SPX',
+        'SCOND', 'SCONS', 'SPN', 'SPF', 'SHLTH', 'SINDU', 'SINFT', 'SMATR', 'SREAS', 'SUTIL']
+    index_ticker_db__dir = os.path.join(db_root, "index_tickers")
     
+    if os.path.exists(index_ticker_db__dir) == False:
+        os.mkdir(index_ticker_db__dir)
+        print("Ticker Index db Initiated")
+        init_index_ticker(index_list, db_root, init=True)
+
+    """ Return Index Charts & Data for All Tickers Wanted"""
+    """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
+    # s = datetime.datetime.now()
+    all_alpaca_tickers = api.list_assets()
+    alpaca_symbols_dict = {}
+    for n, v in enumerate(all_alpaca_tickers):
+        if all_alpaca_tickers[n].status == 'active':
+            alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
+
+    symbol_shortable_list = []
+    t = []
+    for ticker, v in alpaca_symbols_dict.items():
+        if v['_raw']['shortable'] == True:
+            symbol_shortable_list.append(ticker)
+        if v['_raw']['easy_to_borrow'] == True:
+            t.append(ticker)
+
+
+    market_exchanges_tickers = defaultdict(list)
+
+    for k, v in alpaca_symbols_dict.items():
+        market_exchanges_tickers[v['_raw']['exchange']].append(k)
+    # market_exchanges = ['OTC', 'NASDAQ', 'NYSE', 'ARCA', 'AMEX', 'BATS']
+
+    index_ticker_db = return_index_tickers(index_dir=os.path.join(db_root, 'index_tickers'), ext='.csv')
+
+    main_index_dict = index_ticker_db[0]
+    main_symbols = index_ticker_db[1]
+    not_avail_in_alpaca =[i for i in main_symbols if i not in alpaca_symbols_dict]
+    main_symbols_full_list = [i for i in main_symbols if i in alpaca_symbols_dict]
+
+
+    """ Return Index Charts & Data for All Tickers Wanted"""
+    """ Return Tickers of SP500 & Nasdaq / Other Tickers"""    
+
+    return {'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
+    'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca}
+    
+
+def get_ticker_statatistics(symbol):
+    try:
+        url = f"https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
+        dataframes = pd.read_html(requests.get(url, headers={'User-agent': 'Mozilla/5.0'}).text)
+    except Exception as e:
+        print(symbol, e)
+    return dataframes
+
+
+def init_ticker_stats__from_yahoo():
+    ticker_universe = return_Ticker_Universe()
+    index_ticker_db = ticker_universe['index_ticker_db']
+    main_index_dict = ticker_universe['main_index_dict']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
+    
+    db_return = {}
+    for symbol in tqdm(main_symbols_full_list):
+        try:
+           db_return[symbol] = get_ticker_statatistics(symbol)
+        except Exception as e:
+            print(symbol, e)
+    
+    yahoo_stats_bee = os.path.join(db_root, 'yahoo_stats_bee.pkl')
+
+    PickleData(yahoo_stats_bee, db_return)
+
+    return db_return
+
+
+def init_QUEEN(queens_chess_piece):
+
+    ticker_universe = return_Ticker_Universe()
+    index_ticker_db = ticker_universe['index_ticker_db']
+    main_index_dict = ticker_universe['main_index_dict']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
+
     QUEEN = { # The Queens Mind
         'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
         'prod': "",
@@ -2453,18 +2536,26 @@ def init_QUEEN(queens_chess_piece):
         'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
         'kings_order_rules': {},
         'queen_controls': return_queen_controls(stars),
+        
+        'symbol_universe': {
+        'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
+        'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca},
+        
         'workerbees': {
             'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
                         'tickers': ['SPY'],
                         'stars': stars(),},
             'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['META', 'GOOG', 'AAPL', 'TSLA'],
+                        'tickers': ['GOOG', 'AAPL', 'TSLA'],
                         'stars': stars(),},
             'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['META', 'GOOG', 'AAPL'],
+                        'tickers': ['AMZN', 'OXY', 'SOFI'],
                         'stars': stars(),},
             'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
                         'tickers': ['BTCUSD', 'ETHUSD'],
+                        'stars': stars(),},
+            'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': main_symbols_full_list[:100],
                         'stars': stars(),},
             },
         'errors': {},
@@ -2931,6 +3022,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
     if 'queen' in queens_chess_piece:
         # List by Necessity
         if os.path.exists(PB_queen_Archives_Pickle) == False:
+            print("Init queen archives")
             queens_archived = {'queens': [{'queen_id': 0}]}
             PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
@@ -2947,9 +3039,11 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
             logging.info(("queen created", timestamp_string()))
         
         if os.path.exists(PB_App_Pickle) == False:
+            print("You Need an QueenApp")
             init_app(pickle_file=PB_App_Pickle)
         
         if os.path.exists(PB_Orders_Pickle) == False:
+            print("You Need an QueenOrders")
             init_queen_orders(pickle_file=PB_Orders_Pickle)
 
     

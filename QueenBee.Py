@@ -17,6 +17,9 @@ import _locale
 
 _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
+scriptname = os.path.basename(__file__)
+prod = [False if 'sandbox' in scriptname else True][0]
+
 # LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
 
 # import pandas_ta as ta
@@ -54,10 +57,6 @@ if prior day abs(change) > 1 ignore ticker for the day!
 
 from QueenHive import createParser_QUEEN
  
-scriptname = os.path.basename(__file__)
-prod = [False if 'sandbox' in scriptname else True][0]
-
-
 # script arguments
 parser = createParser_QUEEN(prod)
 namespace = parser.parse_args()
@@ -1742,7 +1741,6 @@ def king_bishops_QueenOrder(run_order_idx, run_order, current_profit_loss, portf
 
         # Wave distance to Max Profit
         ttframe_take_max_profit = run_order['order_rules']['max_profit_waveDeviation']
-        ttframe_take_max_profit_global = QUEEN['queen_controls']['max_profit_waveDeviation'][star]
         wave_past_max_profit = float(ttframe_take_max_profit) >= current_wave_maxprofit_stat # max profits exceed setting
 
         # Gather main sell reason groups
@@ -2223,7 +2221,7 @@ def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed):
 
     original_state = QUEEN['heartbeat']['available_tickers']
     
-    QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 33]
+    QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 54]
     # create dict of allowed long term and short term of a given ticker so ticker as info for trading
     QUEEN['heartbeat']['active_tickerStars'] = {k: {'trade_type': ['long_term', 'short_term']} for k in QUEEN['heartbeat']['available_tickers']}
     ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['active_tickerStars'].keys()])
@@ -2233,13 +2231,21 @@ def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed):
     new_active = QUEEN['heartbeat']['available_tickers']
     if original_state != new_active:
         print('added dropped / updated tickers')
+        added_list = []
         for ttframe in new_active:
             if ttframe not in original_state:
-                print("added", ttframe, return_timestamp_string())
+                added_list.append({ttframe: return_timestamp_string()})
+                # print("dropped", ttframe, return_timestamp_string())
+        if len(added_list) > 0:
+            print("Added ", added_list)
         
+        dropped_list = []
         for ttframe in original_state:
             if ttframe not in new_active:
-                print("dropped", ttframe, return_timestamp_string())
+                dropped_list.append({ttframe: return_timestamp_string()})
+                # print("dropped", ttframe, return_timestamp_string())
+        if len(dropped_list) > 0:
+            print("dropped ", dropped_list)
 
         PickleData(PB_QUEEN_Pickle, QUEEN)
 
@@ -2325,15 +2331,15 @@ try:
     workerbee_run_times = []
 
 
-########################################################
-########################################################
-#############The Infinite Loop of Time ###################
-########################################################
-########################################################
-########################################################
+    ########################################################
+    ########################################################
+    #############The Infinite Loop of Time ###################
+    ########################################################
+    ########################################################
+    ########################################################
 
-    queens_charlie_bee = os.path.join(db_root, 'charlie_bee.plk')
-    if os.path.exists(os.path.join(db_root, 'charlie_bee.plk')) == False:
+    queens_charlie_bee = os.path.join(db_root, 'charlie_bee.pkl')
+    if os.path.exists(os.path.join(db_root, 'charlie_bee.pkl')) == False:
         charlie_bee = {'queen_cyle_times': {}}
         PickleData(queens_charlie_bee, charlie_bee)
     else:
@@ -2349,19 +2355,17 @@ try:
             """ The Story of every Knight and their Quest """
             s = datetime.datetime.now(est)
             # refresh db
+            s_time = datetime.datetime.now(est)
             pollen = read_queensmind(prod)
             QUEEN = pollen['queen']
             ORDERS = pollen['ORDERS']
             STORY_bee = pollen['STORY_bee']
-            charlie_bee['queen_cyle_times']['db_refresh'] = datetime.datetime.now(est) - s
+            refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
+            charlie_bee['queen_cyle_times']['db_refresh'] = datetime.datetime.now(est) - s_time
 
             # Read App Reqquests
+            s_time = datetime.datetime.now(est)
             APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-
-            # # King ME
-            # KING = KINGME()
-            refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
-            
             # Client
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='stop_queen', archive_bucket=False)
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls', archive_bucket='queen_controls_requests')
@@ -2369,12 +2373,17 @@ try:
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls_reset', archive_bucket=False)
             # return Theme from App    
             confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
+            charlie_bee['queen_cyle_times']['app'] = datetime.datetime.now(est) - s_time
 
             # Process All Orders
+            s_time = datetime.datetime.now(est)
             order_management(api=api, QUEEN=QUEEN, APP_requests=APP_requests, ORDERS=ORDERS)
+            charlie_bee['queen_cyle_times']['order management'] = datetime.datetime.now(est) - s_time
 
             # Hunt for Triggers
+            s_time = datetime.datetime.now(est)
             command_conscience(api=api, QUEEN=QUEEN, APP_requests=APP_requests) #####>   
+            charlie_bee['queen_cyle_times']['command conscience'] = datetime.datetime.now(est) - s_time
 
             e = datetime.datetime.now(est)
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
@@ -2383,7 +2392,8 @@ try:
                 > lets do this!!!!
                 love: anchor on the 1 min macd crosses or better yet just return all triggers and base everything off the trigger
             """
-
+            PickleData(queens_charlie_bee, charlie_bee)
+            
         e = datetime.datetime.now(est)
         if (e - s).seconds > 10:
             logging.info((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))

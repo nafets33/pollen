@@ -1138,6 +1138,7 @@ def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_lo
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
     gb.configure_side_bar() #Add a sidebar
+
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
     if update_cols:
         for colName in update_cols:        
@@ -1236,7 +1237,7 @@ def buzzz_linebreak(icon=">>>", size=15):
     return st.write(line_break)
 
 def pollen__story_charts(df):
-    with st.expander('pollen story'):
+    with st.expander('pollen story', expanded=False):
         df_write = df.astype(str)
         st.dataframe(df_write)
         pass
@@ -1403,7 +1404,38 @@ def queen_main_view():
     page_line_seperator()
     
 
+def model_wave_results(STORY_bee):
+    with st.expander('model results of queens court'):
+        return_results = {}
+        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
 
+        ticker_list = set([i.split("_")[0] for i in dict_list_ttf.keys()])
+        for ticker_option in ticker_list:
+        
+            for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+                
+                ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+                buys = [data[trigbee] for k, data in ticker_selection.items()]
+                df_trigbee_waves = pd.concat(buys, axis=0)
+                col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
+                df_trigbee_waves = df_trigbee_waves[col_view]
+                color = 'Green' if 'buy' in trigbee else 'Red'
+
+                t_winners = sum(df_trigbee_waves['winners_n'])
+                t_losers = sum(df_trigbee_waves['losers_n'])
+                total_waves = t_winners + t_losers
+                win_pct = 100 * round(t_winners / total_waves, 2)
+
+                t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
+
+                return_results[f'{ticker_option}{"_bee_"}{trigbee}'] = f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}{"  ~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}'
+            # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
+
+        df = pd.DataFrame(return_results.items())
+        mark_down_text(color='Green', text=f'{"Trigger Bee Model Results "}')
+        st.write(df) 
+
+        return True
 
 # # # Show users table 
 # colms = st.columns((1, 2, 2, 1, 1))
@@ -1492,7 +1524,7 @@ c1,c2,c3 = st.columns(3)
 with c2:
     option = st.radio(
                 "",
-        ["queen", "signal", "charts", "controls"],
+        ["queen", "signal", "charts", "controls", "model_results", "pollen_engine"],
         key="main_radio",
         label_visibility='visible',
         # disabled=st.session_state.disabled,
@@ -1520,13 +1552,36 @@ if str(option).lower() == 'queen':
     ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
     frame_option = st.sidebar.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
     option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
+    day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
 
     orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
     today_day = datetime.datetime.now().day
 
+    ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
+
     queen_main_view()
     queen_triggerbees()
     queen_order_flow()
+
+    # Main CHART Creation
+    with st.expander('chart', expanded=False):
+        df = POLLENSTORY[ticker_time_frame].copy()
+
+        st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option)
+
+        if day_only_option == 'yes':
+            df_day = df['timestamp_est'].iloc[-1]
+            df['date'] = df['timestamp_est'] # test
+
+            df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+
+            df = df_today
+        fig = create_main_macd_chart(df)
+        st.write(fig)
+
 
     if orders_table == 'yes':
         with st.expander('orders table -- Today', expanded=True):
@@ -1555,14 +1610,15 @@ if str(option).lower() == 'queen':
             mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
             mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
             df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
-            df = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+            df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
             # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
             # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
             # st.dataframe(df.style.apply(color_coding, axis=1))
-            st.dataframe(df)
+            st.dataframe(df_style)
             # st.markdown('<style>div[title="mac_ranger"] { color: green; } div[title="white"] { color: red; } .data:hover{ background:rgb(243 246 255)}</style>', unsafe_allow_html=True)
 
-        
+        # pollen__story_charts(df=df)
+
         # ag_grid_main_build(df=story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df'], 
         # default=True, add_vars={'update_cols': False}, write_selection=False)
         
@@ -1582,6 +1638,8 @@ if str(option).lower() == 'queen':
         # df = pd.DataFrame(analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['df_agg_view_return'])
         # df = df.astype(str)
         # st.write(df)
+
+
         
         st.markdown('<div style="text-align: center;color:Purple; font-size: 33px;">{}</div>'.format("TRIGBEE WAVES"), unsafe_allow_html=True)
         page_line_seperator(color=default_yellow_color)
@@ -1812,9 +1870,7 @@ if str(option).lower() == 'charts':
 
 
 if str(option).lower() == 'signal':
-    betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
-    df_betty = pd.DataFrame(betty_bee)
-    df_betty = df_betty.astype(str)
+
     c1,c2,c3 = st.columns(3)
     
     with c2:
@@ -1828,9 +1884,6 @@ if str(option).lower() == 'signal':
         )
     save_signals = option__
     c1,c2,c3,c4,c5 = st.columns(5)
-
-    with st.expander('betty_bee'):
-        st.write(df_betty)
 
     col1, col2 = st.columns(2)
 
@@ -1957,4 +2010,23 @@ if str(option).lower() == 'signal':
 
         queen_beeAction()
 
-    ##### END ####
+
+if str(option).lower() == 'model_results':
+    model_wave_results(STORY_bee)
+    
+if str(option).lower() == 'pollen_engine':
+    with st.expander('betty_bee'):
+        betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
+        df_betty = pd.DataFrame(betty_bee)
+        df_betty = df_betty.astype(str)
+        st.write(df_betty)
+
+    with st.expander('charlie_bee'):
+
+        queens_charlie_bee = ReadPickleData(os.path.join(db_root, 'charlie_bee.pkl'))
+        df_charlie = pd.DataFrame(queens_charlie_bee)
+        df_charlie = df_charlie.astype(str)
+        st.write(df_charlie)
+
+
+##### END ####
