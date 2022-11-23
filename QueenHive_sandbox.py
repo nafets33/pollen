@@ -1861,8 +1861,8 @@ def return_market_hours(trading_days, crypto):
     s = datetime.datetime.now(est)
     s_iso = s.isoformat()[:10]
     mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = datetime.datetime(s.year, s.month, s.day, hour=9, minute=30).astimezone(est)
-    mk_close = datetime.datetime(s.year, s.month, s.day, hour=16, minute=0).astimezone(est)
+    mk_open = s.replace(hour=1, minute=1, second=1)
+    mk_close = s.replace(hour=16, minute=0, second=0)
     
     if str(crypto).lower() == 'true':
         return "open"
