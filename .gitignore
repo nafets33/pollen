@@ -7,3 +7,4 @@ __pycache__/Hive_Utils.cpython-39.pyc
 .gitignore
 *.pkl
 *.csv
+*.ipynb
