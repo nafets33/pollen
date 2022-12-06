@@ -1,4 +1,4 @@
-*.env
+.env
 __pycache__/Hive_Utils.cpython-39.pyc
 .gitignore
 *.log
@@ -8,4 +8,3 @@ __pycache__/Hive_Utils.cpython-39.pyc
 *.pkl
 *.csv
 *.ipynb
-.env
