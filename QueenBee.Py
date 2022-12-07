@@ -14,7 +14,7 @@ import ipdb
 # import argparse
 import _locale
 pd.options.mode.chained_assignment = None
-load_dotenv()
+
 
 
 _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
@@ -29,9 +29,11 @@ if prior day abs(change) > 1 ignore ticker for the day!
 """
 
 if prod:
-    from QueenHive import createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
 else:
-    from QueenHive_sandbox import createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 # script arguments
 parser = createParser_QUEEN()
@@ -2146,15 +2148,20 @@ def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed):
 
     return True
 
-
-
+################################################################# pollen
+#################################################################
+################################################################# 
+#################################################################
+######################QUEENBEE###################################
+#################################################################
+################################################################# 
+#################################################################
+################################################################# pollen
 # if '__name__' == '__main__':
 try:
     # s_time = datetime.datetime.now().astimezone(est)
 
     db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-    
-    db_app_root = os.path.join(db_root, 'app')
 
     init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
@@ -2230,7 +2237,6 @@ try:
     PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
     # PB_queen_Archives_Pickle = init_pollen['PB_queen_Archives_Pickle']
 
-    
     # init orders
     init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
     init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -2238,22 +2244,22 @@ try:
 
     # Pollen QUEEN # Orders
     APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-    pollen = read_queensmind(prod)
-    QUEEN = pollen['queen']
-    ORDERS = pollen['orders']
-    POLLENSTORY = QUEEN['queen']['pollenstory']
-    STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
-    KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
-    ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
-    portfolio = return_alpc_portolio(api)['portfolio']
+    queen_and_orders = read_queensmind(prod=prod, db_root=db_root)
+    QUEEN = queen_and_orders['queen']
+    ORDERS = queen_and_orders['orders']
 
+    # Ticker database of pollenstory ## Need to seperate out into tables
+    ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
+    POLLENSTORY = ticker_db['pollenstory']
+    STORY_bee = ticker_db['STORY_bee']
+
+    portfolio = return_alpc_portolio(api)['portfolio']
+    
     APP_requests['source'] = PB_App_Pickle
     APP_req = add_key_to_app(APP_requests)
     APP_requests = APP_req['APP_requests']
     if APP_req['update']:
         PickleData(PB_App_Pickle, APP_requests)
-
-    # process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls_reset', archive_bucket=False)
 
     # add new keys
     QUEEN_req = add_key_to_QUEEN(QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
@@ -2265,11 +2271,7 @@ try:
     logging.info("My Queen")
 
     KING = KINGME()
-    # QUEEN = KING['QUEEN']
-    # Extra Queen Info
-    
-    # QUEEN['queen_controls']['MACD_fast_slow_smooth'] = {'fast': 12, 'slow': 26, 'smooth': 9}
-    # QUEEN['kings_order_rules'] = KING['kings_order_rules']
+
     QUEEN['heartbeat']['main_indexes'] = {
         'SPY': {'long1X': "SPY",
                 'long3X': 'SPXL', 
@@ -2325,14 +2327,16 @@ try:
             s_time = datetime.datetime.now(est)
             # Pollen QUEEN # Orders
             APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-            pollen = read_queensmind(prod)
-            QUEEN = pollen['queen']
-            ORDERS = pollen['orders']
-            POLLENSTORY = QUEEN['queen']['pollenstory']
-            STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
-            KNIGHTSWORD = QUEEN['queen']['conscience']['KNIGHTSWORD']
-            ANGEL_bee = QUEEN['queen']['conscience']['ANGEL_bee']
+            queen_and_orders = read_queensmind(prod=prod, db_root=db_root)
+            QUEEN = queen_and_orders['queen']
+            ORDERS = queen_and_orders['orders']
+
+            ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
+            POLLENSTORY = ticker_db['pollenstory']
+            STORY_bee = ticker_db['STORY_bee']
+
             portfolio = return_alpc_portolio(api)['portfolio']
+
 
             refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
             charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.datetime.now(est) - s_time).total_seconds()

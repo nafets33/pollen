@@ -150,9 +150,6 @@ trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
 
 
-start_date = datetime.datetime.now(est).strftime('%Y-%m-%d')
-end_date = datetime.datetime.now(est).strftime('%Y-%m-%d')
-
 """ Global VARS"""
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
 macd_tiers = 8
@@ -167,32 +164,29 @@ MACD_WORLDS = {
     }
 
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
-# def read_pollenstory(): # return combined dataframes
-#     # castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-#     # bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
-#     # pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-
-#     # if os.path.exists(os.path.join(db_root, 'castle_coin.pkl')):
-#     #     castle_coin = ReadPickleData(pickle_file=os.path.join(db_root, 'castle_coin.pkl'))
-#     # else:
-#     #     castle_coin = False
+def read_pollenstory(db_root, dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']): # return combined dataframes
+    # return beeworkers data
     
-#     # pollenstory = {**pollenstory, **castle_coin['castle_coin']['pollenstory']} # combine daytrade and longterm info
+    pollenstory = {}
+    STORY_bee = {}
+    # KNIGHTSWORD = {}
+    # ANGEL_bee = {}
+    # db_names = []
+    for db in dbs:
+        if os.path.exists(os.path.join(db_root, db)):
+            db_name = db.split(".pkl")[0]
+            chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
+            pollenstory = {**pollenstory, **chess_piece['pollenstory']}
+            STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
+            # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
+            # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
+            # dbs_[db_name] = chess_piece
+            # db_names.append(chess_piece)
 
-#     pollenstory = {}
-#     dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']
-#     dbs_ = {}
-#     for db in dbs:
-#         if os.path.exists(os.path.join(db_root, db)):
-#             db_name = db.split(".pkl")[0]
-#             chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-#             pollenstory = {**chess_piece['pollenstory'], **chess_piece['pollenstory']}
-#             dbs_[db_name] = chess_piece
-
-#     return pollenstory
+    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
 
 
-def read_queensmind(prod, queen_only=False): # return active story workers
+def read_queensmind(prod, db_root): # return active story workers
     if prod:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
         ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders_.pkl'))
@@ -200,43 +194,7 @@ def read_queensmind(prod, queen_only=False): # return active story workers
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
         ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders__sandbox.pkl'))
     
-    if queen_only:
-        return {'queen': QUEEN}
-
-    # return beeworkers data
-    dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']
-    pollenstory = {}
-    STORY_bee = {}
-    KNIGHTSWORD = {}
-    ANGEL_bee = {}
-    db_names = []
-    for db in dbs:
-        if os.path.exists(os.path.join(db_root, db)):
-            db_name = db.split(".pkl")[0]
-            chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-            pollenstory = {**pollenstory, **chess_piece['pollenstory']}
-            STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
-            KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
-            ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
-            # dbs_[db_name] = chess_piece
-            db_names.append(chess_piece)
-            db_run = True
-        else:
-            db_run = False
-        
-    if db_run:
-        """Fill Queen with bees and orders"""
-        QUEEN['queen']['pollenstory'] = pollenstory
-        QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
-        QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
-        QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
-        QUEEN['queen_orders'] = ORDERS['queen_orders']
-        QUEEN['db_names'] = db_names
-        return {'queen': QUEEN, 'orders': ORDERS}
-    elif QUEEN:
-        return {'queen': QUEEN, 'orders': ORDERS}
-    else:
-        return False
+    return {'queen': QUEEN, 'orders': ORDERS}
 
 
 def init_QUEEN(queens_chess_piece):
@@ -861,33 +819,11 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
         logging.critical(msg)     
 
 
-def assign_tier_num(num_value,  td):
-    length_td = len(td)
-    max_num_value = td[length_td-1][1]
-    for k, v in td.items():
-        num_value = float(num_value)
-        if num_value > 0 and num_value > v[0] and num_value < v[1]:
-            # print(k, num_value)
-            return k
-        elif num_value < 0 and num_value < v[0] and num_value > v[1]:
-            # print(k, num_value)
-            return k
-        elif num_value > 0 and num_value > max_num_value:
-            # print("way above")
-            return length_td
-        elif num_value < 0 and num_value < max_num_value:
-            # print("way below")
-            return length_td
-        elif num_value == 0:
-            # print('0 really')
-            return 0
 
 
 def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     # create tier ranges
-    # tiers_num = 7
-    
-    ticker, ftime, frame = ticker_time_frame.split("_")    
+    # tiers_num = 8
 
     def create_tier_range(m_high, m_low):
         # m_high = mac_world_ranges[ftime]
@@ -910,6 +846,28 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
                 td_low[i] = (td_low[i-1][1], td_low[i-1][1] + tiers_add)
         
         return {'td_high': td_high, 'td_low': td_low}
+
+   
+    def assign_tier_num(num_value,  td):
+        length_td = len(td)
+        max_num_value = td[length_td-1][1]
+        for k, v in td.items():
+            num_value = float(num_value)
+            if num_value > 0 and num_value > v[0] and num_value < v[1]:
+                # print(k, num_value)
+                return k
+            elif num_value < 0 and num_value < v[0] and num_value > v[1]:
+                # print(k, num_value)
+                return k
+            elif num_value > 0 and num_value > max_num_value:
+                # print("way above")
+                return length_td
+            elif num_value < 0 and num_value < max_num_value:
+                # print("way below")
+                return length_td
+            elif num_value == 0:
+                # print('0 really')
+                return 0
 
     # select mac_world &  # apply tiers
 
@@ -2552,7 +2510,7 @@ def createParser_App():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="app")
     parser.add_argument ('-admin', default='false')
-    parser.add_argument ('-user', default='pollen')
+    # parser.add_argument ('-user', default='pollen')
     return parser
 
 
@@ -3025,32 +2983,31 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
 
-    if 'queen' in queens_chess_piece:
-        # List by Necessity
-        if os.path.exists(PB_queen_Archives_Pickle) == False:
-            print("Init queen archives")
-            queens_archived = {'queens': [{'queen_id': 0}]}
-            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+    # List by Necessity
+    if os.path.exists(PB_queen_Archives_Pickle) == False:
+        print("Init queen archives")
+        queens_archived = {'queens': [{'queen_id': 0}]}
+        PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
-        if os.path.exists(PB_QUEEN_Pickle) == False:
-            print("You Need a Queen")
-            queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
-            l = len(queens_archived['queens'])
-            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
-            QUEEN['id'] = f'{"V1"}{"__"}{l}'
-            queens_archived['queens'].append({'queen_id': QUEEN['id']})
-            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+    if os.path.exists(PB_QUEEN_Pickle) == False:
+        print("You Need a Queen")
+        queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
+        l = len(queens_archived['queens'])
+        QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+        QUEEN['id'] = f'{"V1"}{"__"}{l}'
+        queens_archived['queens'].append({'queen_id': QUEEN['id']})
+        PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-            logging.info(("queen created", timestamp_string()))
-        
-        if os.path.exists(PB_App_Pickle) == False:
-            print("You Need an QueenApp")
-            init_app(pickle_file=PB_App_Pickle)
-        
-        if os.path.exists(PB_Orders_Pickle) == False:
-            print("You Need an QueenOrders")
-            init_queen_orders(pickle_file=PB_Orders_Pickle)
+        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+        logging.info(("queen created", timestamp_string()))
+    
+    if os.path.exists(PB_App_Pickle) == False:
+        print("You Need an QueenApp")
+        init_app(pickle_file=PB_App_Pickle)
+    
+    if os.path.exists(PB_Orders_Pickle) == False:
+        print("You Need an QueenOrders")
+        init_queen_orders(pickle_file=PB_Orders_Pickle)
 
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle, 'PB_Orders_Pickle': PB_Orders_Pickle, 'PB_queen_Archives_Pickle': PB_queen_Archives_Pickle}
@@ -3058,10 +3015,14 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
 
 def init_clientUser_dbroot(client_user):
     main_root = os.getcwd()
-    if client_user == 'pollen':
+    if client_user in ['stefanstapinski@gmail.com', 'pollen']:
         db_root = os.path.join(main_root, 'db')
     else:
+        client_user = client_user.split("@")[0]
         db_root = os.path.join(main_root, f'db__{client_user}')
+        if os.path.exists(db_root) ==  False:
+            os.mkdir(db_root)
+            os.mkdir(os.path.join(db_root, 'logs'))
 
     return db_root
 
