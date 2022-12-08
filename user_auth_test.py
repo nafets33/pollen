@@ -11,7 +11,6 @@ from email.message import EmailMessage
 # "C:\Users\jedidiah\AppData\Local\Programs\Python\Python311\Lib\site-packages\streamlit_authenticator"
 
 
-# TODO user activiation code
 def signin_main():
     """Return True or False if the user is signed in"""
 
@@ -43,6 +42,7 @@ def signin_main():
     PollenQ
     """,
                 )
+                # TODO user activiation code
                 update_db()
                 send_email(
                     recipient=register_email,
