@@ -88,8 +88,7 @@ def init_logging(queens_chess_piece, db_root, prod):
 
 
 
-init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
-
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 
 exclude_conditions = [
