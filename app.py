@@ -38,6 +38,7 @@ main_root = os.getcwd()
 # images
 jpg_root = os.path.join(main_root, 'misc')
 bee_image = os.path.join(jpg_root, 'bee.jpg')
+bee_power_image = os.path.join(jpg_root, 'power.jpg')
 image = Image.open(bee_image)
 
 ##### STREAMLIT ###
@@ -66,7 +67,6 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 est = pytz.timezone("US/Eastern")
 
 pd.options.mode.chained_assignment = None
-load_dotenv()
 
 scriptname = os.path.basename(__file__)
 prod = [False if 'sandbox' in scriptname else True][0]
@@ -94,7 +94,8 @@ crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
 parser = createParser_App()
 namespace = parser.parse_args()
-admin = [True if namespace.admin == 'true' or client_user == 'stefanstapinski@gmail.com' else False][0]
+admin = True if namespace.admin == 'true' or client_user == 'stefanstapinski@gmail.com' else False
+authorized_user = True if namespace.admin == 'true' or client_user == 'stefanstapinski@gmail.com' else False
 
 if admin:
     st.session_state['admin'] = True
@@ -348,44 +349,6 @@ def queen_beeAction():
             data = ReadPickleData(pickle_file=PB_App_Pickle)
             st.write(data['buy_orders'])
 
-
-def subPlot():
-    st.header("Sub Plots")
-    # st.balloons()
-    fig = plt.figure(figsize = (10, 5))
-
-    #Plot 1
-    data = {'C':15, 'C++':20, 'JavaScript': 30, 'Python':35}
-    Courses = list(data.keys())
-    values = list(data.values())
-    
-    plt.xlabel("Programming Environment")
-    plt.ylabel("Number of Students")
-
-    plt.subplot(1, 2, 1)
-    plt.bar(Courses, values)
-
-    #Plot 2
-    x = np.array([35, 25, 25, 15])
-    mylabels = ["Python", "JavaScript", "C++", "C"]
-
-    plt.subplot(1, 2, 2)
-    plt.pie(x, labels = mylabels)
-
-    st.pyplot(fig)
-
-
-def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
-    st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-    if x == False:
-        return df.plot(y=y,figsize=figsize)
-    else:
-        if formatme:
-            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-            return df.plot(x='chartdate', y=y,figsize=figsize)
-        else:
-            return df.plot(x=x, y=y,figsize=figsize)
-  
 
 def create_main_macd_chart(df):
     title = df.iloc[-1]['name']
@@ -857,7 +820,6 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         
     else:
         st.write("PENDING WORK")
-        # st.write(QUEEN['queen_controls'][control_option])
 
 
 def queen_order_update(latest_queen_order, c_order_input):
@@ -1205,40 +1167,6 @@ def pollen__story_charts(df):
         pass
         
 
-def add_user__vars(username, password, date=datetime.datetime.now(est), signin_count=1):
-    return {'signin_count': 1, 'username': username, 'password': password, 'date': date}
-
-
-def callback_function(state, key):
-    # 1. Access the widget's setting via st.session_state[key]
-    # 2. Set the session state you intended to set in the widget
-    st.session_state[state] = st.session_state[key]
-
-
-def color_coding(row):
-    if row.mac_ranger == 'white':
-        return ['background-color:white'] * len(row)
-    elif row.mac_ranger == 'black':
-        return ['background-color:black'] * len(row)
-    elif row.mac_ranger == 'blue':
-        return ['background-color:blue'] * len(row)
-    elif row.mac_ranger == 'purple':
-        return ['background-color:purple'] * len(row)
-    elif row.mac_ranger == 'pink':
-        return ['background-color:pink'] * len(row)
-    elif row.mac_ranger == 'red':
-        return ['background-color:red'] * len(row)
-    elif row.mac_ranger == 'green':
-        return ['background-color:green'] * len(row)
-    elif row.mac_ranger == 'yellow':
-        return ['background-color:yellow'] * len(row)
-
-    
-    import seaborn as sns
-    cm = sns.light_palette("green", as_cmap=True)
-    df.style.background_gradient(cmap=cm).set_precision(2)
-
-
 def queen_main_view():
     if st.session_state['admin'] == False:
         return False
@@ -1330,10 +1258,9 @@ if gatekeeper:
     if 'admin' in st.session_state.keys() and st.session_state['admin']:
         admin = True
         st.sidebar.write('admin', admin)
-    # if st.session_state["username"] == 'pollen':
-    #     admin = True
+
     else:
-        st.write("queenbee not yet authorized read only")
+        st.write("queenbee not yet authorized READ ONLY")
         st.sidebar.write('Read Only')
         admin = False
 else:
@@ -1342,53 +1269,45 @@ else:
     st.stop()
 
 ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
-
-# Client User DB
-db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-log_dir = dst = os.path.join(db_root, 'logs')
-
-if 'db_initalized' not in st.session_state:
+if authorized_user:
+    # SETUP USER #
+    # Client User DB
+    db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen')
-    st.session_state['db_initalized'] = True
+
+else:
+    # Read Only View
+    db_root = os.path.join(main_root, 'db')
+    prod = False
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
+
 
 # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
 if prod:
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
-    keys = return_api_keys(base_url, api_key_id, api_secret)
+    keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
     rest = keys[0]['rest']
     api = keys[0]['api']
-else:
-    # Paper
-    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-    base_url_paper = "https://paper-api.alpaca.markets"
-    keys_paper = return_api_keys(base_url=base_url_paper, 
-        api_key_id=api_key_id_paper, 
-        api_secret=api_secret_paper,
-        prod=False)
-    rest = keys_paper[0]['rest']
-    api = keys_paper[0]['api']
-
-
-init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
-
-# db global
-coin_exchange = "CBSE"
-
-acct_info = refresh_account_info(api=api)
-
-bee_power_image = os.path.join(jpg_root, 'power.jpg')
-
-
-if prod:
     PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
     st.sidebar.write(f'My Queen Production')
+
 else:
+    # Paper
+    keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
+    rest = keys_paper[0]['rest']
+    api = keys_paper[0]['api']
     PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
     st.sidebar.write(f'My Queen Sandbox')
 
+
+portfolio = return_alpc_portolio(api)['portfolio']
+acct_info = refresh_account_info(api=api)
+
+log_dir = dst = os.path.join(db_root, 'logs')
+
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
+
+# db global
+coin_exchange = "CBSE"
 
 KING = KINGME()
 pollen_theme = pollen_themes(KING=KING)
@@ -1402,8 +1321,6 @@ ORDERS = queen_and_orders['orders']
 ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
 POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
-
-portfolio = return_alpc_portolio(api)['portfolio']
 
 
 clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls'])
@@ -1498,9 +1415,7 @@ if str(option).lower() == 'queen':
             mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
             df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
             df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
-            # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
-            # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
-            # st.dataframe(df.style.apply(color_coding, axis=1))
+
             st.dataframe(df_style)
 
         
