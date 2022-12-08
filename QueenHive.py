@@ -41,11 +41,15 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 est = pytz.timezone("America/New_York")
 
-
-
 queens_chess_piece = os.path.basename(__file__)
 
-prod=True
+scriptname = os.path.basename(__file__)
+prod = [False if 'sandbox' in scriptname else True][0]
+if prod:
+    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+else:
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
+
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -57,7 +61,7 @@ current_day = datetime.datetime.now(est).day
 current_month = datetime.datetime.now(est).month
 current_year = datetime.datetime.now(est).year
 
-def init_logging(queens_chess_piece, db_root):
+def init_logging(queens_chess_piece, db_root, prod):
     log_dir = os.path.join(db_root, 'logs')
     log_dir_logs = os.path.join(log_dir, 'logs')
     
@@ -86,8 +90,6 @@ def init_logging(queens_chess_piece, db_root):
 
 init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
-
-load_dotenv()
 
 
 exclude_conditions = [
@@ -3020,7 +3022,7 @@ def init_clientUser_dbroot(client_user):
     else:
         client_user = client_user.split("@")[0]
         db_root = os.path.join(main_root, f'db__{client_user}')
-        if os.path.exists(db_root) ==  False:
+        if os.path.exists(db_root) == False:
             os.mkdir(db_root)
             os.mkdir(os.path.join(db_root, 'logs'))
 

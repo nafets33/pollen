@@ -1,6 +1,101 @@
 # archived_functions
 
 
+def check_password():
+    """Returns True if the user had a correct password."""
+    # for i, k in st.session_state.items():
+    #     print(i, k)
+
+    if 'password_correct' in st.session_state and st.session_state['password_correct']:
+        # print("pw initialized")
+        return True
+    
+    # with st.form('signin'):
+    df_users = pd.DataFrame(USERS['users'])
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        df = pd.DataFrame(USERS['users'])
+        df['index'] = df.index
+        client_username = st.session_state["username"]
+        client_password = st.session_state["password"]
+        
+        df_user = df[df['username'] == client_username].copy()
+        if len(df_user) == 0:
+            mark_down_text(text="No User Name Exists")
+            return False
+        correct_pw = df_user.iloc[-1]['password']
+        if client_password == correct_pw:
+            if client_username != 'pollen':
+                st.write("READ ONLY MODE")
+                st.session_state['admin'] = False
+            else:
+                st.session_state['admin'] = True
+            USERS['users'][df_user.iloc[-1]['index']]['signin_count'] += 1
+            USERS['users'][df_user.iloc[-1]['index']]['date'] = datetime.datetime.now(est)
+            # print("pw correct")
+            # st.write("pw correct")
+            write_flying_bee()
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # don't store username + password
+            # del st.session_state["username"]
+            PickleData(PB_USER_pickle, USERS)
+            return True
+        else:
+            st.session_state["password_correct"] = False
+            mark_down_text(text="sorry charlie thats not correct")
+            return False
+
+    st.text_input("Username", key="username_key", on_change=callback_function, args=('username', 'username_key'))
+    st.text_input("Password", type="password",  key="password")
+    
+    signin = st.button("SignIn")
+
+    with st.expander('Want your own Trading Bot? >>> Join pollenq'):
+        st.write("Not a User? Join the QueensHive")
+
+        st.text_input("Create Username", key="createusername")
+        st.text_input("Create Password", type="password",  key="createpassword")
+        st.text_input("Email",  key="email")
+
+        create_user = st.button("Join pollenq")
+        un_create = st.session_state["createusername"]
+        pw_create = st.session_state["createpassword"]
+        email_ = st.session_state["email"]
+        # st.write(un_create)
+        if un_create in df_users['username'].tolist():
+            mark_down_text(fontsize=5, color='Red', text='User Name Already Exists')
+            do_not_create = True
+        else:
+            do_not_create = False
+
+        if create_user:
+            if do_not_create:
+                mark_down_text(fontsize=15, color='Red', text='User Name Already Exists')
+                return False
+            else:        
+                USERS['users'].append(add_user__vars(username=un_create, password=pw_create))
+                PickleData(PB_USER_pickle, USERS)
+                st.session_state["username"] = st.session_state["createusername"]
+                del st.session_state["createusername"]
+                del st.session_state["createpassword"]
+                mark_down_text(fontsize=20, color='Green', text='Welcome To The Hive')
+
+                return True
+
+    if signin:
+        p = password_entered()
+
+        if p:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
+
+
+
 def produce_pollen_story(pollen_charts):
     # add in indicators
     # produce pollenstory

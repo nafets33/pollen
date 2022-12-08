@@ -73,10 +73,10 @@ prod = [False if 'sandbox' in scriptname else True][0]
 queens_chess_piece = os.path.basename(__file__)
 
 if prod:
-    from QueenHive import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, check_order_status
+    from QueenHive import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
 else:
-    from QueenHive_sandbox import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, check_order_status
+    from QueenHive_sandbox import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
@@ -100,38 +100,32 @@ if admin:
     st.session_state['admin'] = True
 else:
     st.session_state['admin'] = False
-# client_user = namespace.user
 
-# host buttons in dictinory!!!
-# d = ['a', 'b', 'c']
-# d2 = {i: st.button(i, key=i) for i in d}
-# if d2['a']:
-#     st.write('kewl')
 
-def init_logging(queens_chess_piece, db_root):
-    log_dir = os.path.join(db_root, 'logs')
-    log_dir_logs = os.path.join(log_dir, 'logs')
+# def init_logging(queens_chess_piece, db_root):
+#     log_dir = os.path.join(db_root, 'logs')
+#     log_dir_logs = os.path.join(log_dir, 'logs')
     
-    if os.path.exists(log_dir) == False:
-        os.mkdir(log_dir)
-    if os.path.exists(log_dir_logs) == False:
-        os.mkdir(log_dir_logs)
+#     if os.path.exists(log_dir) == False:
+#         os.mkdir(log_dir)
+#     if os.path.exists(log_dir_logs) == False:
+#         os.mkdir(log_dir_logs)
     
-    if prod:
-        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-    else:
-        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+#     if prod:
+#         log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+#     else:
+#         log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
 
-    log_file = os.path.join(log_dir, log_name)
-    # print("logging",log_file)
-    logging.basicConfig(filename=log_file,
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO,
-                        force=True)
+#     log_file = os.path.join(log_dir, log_name)
+#     # print("logging",log_file)
+#     logging.basicConfig(filename=log_file,
+#                         filemode='a',
+#                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+#                         datefmt='%m/%d/%Y %I:%M:%S %p',
+#                         level=logging.INFO,
+#                         force=True)
     
-    return True
+#     return True
 
 
 def queen_triggerbees():
@@ -532,7 +526,7 @@ def return_buying_power(api):
         mark_down_text(fontsize='12', text=num_text)
 
 
-def stop_queenbee(APP_requests, key='1'):
+def stop_queenbee(APP_requests):
     with st.form("stop_queen"):
         checkbox_val = st.checkbox("Stop Queen")
 
@@ -1347,6 +1341,7 @@ else:
     # sys.exit()
     st.stop()
 
+## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
 
 # Client User DB
 db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
@@ -1377,11 +1372,9 @@ else:
     api = keys_paper[0]['api']
 
 
-
 init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
 # db global
-src_root, db_dirname = os.path.split(db_root)
 coin_exchange = "CBSE"
 
 acct_info = refresh_account_info(api=api)

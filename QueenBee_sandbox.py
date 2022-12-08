@@ -2163,7 +2163,7 @@ try:
 
     db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
 
-    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
+    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
     # ###### GLOBAL # ######
     ARCHIVE_queenorder = 'archived'
