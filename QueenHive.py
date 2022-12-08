@@ -1630,36 +1630,6 @@ def init_index_ticker(index_list, db_root, init=True):
     return True
 
 
-def init_logging(queens_chess_piece, db_root):
-    loglog_newfile = False
-    log_dir = dst = os.path.join(db_root, 'logs')
-    log_dir_logs = dst = os.path.join(log_dir, 'logs')
-    if os.path.exists(dst) == False:
-        os.mkdir(dst)
-    if prod:
-        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-    else:
-        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
-
-    log_file = os.path.join(log_dir, log_name)
-    if loglog_newfile:
-        # copy log file to log dir & del current log file
-        datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
-        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
-        shutil.copy(log_file, dst_path) # only when you want to log your log files
-        os.remove(log_file)
-    else:
-        # print("logging",log_file)
-        logging.basicConfig(filename=log_file,
-                            filemode='a',
-                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                            datefmt='%m/%d/%Y %I:%M:%S %p',
-                            level=logging.INFO,
-                            force=True)
-    
-    return True
-
-
 def PickleData(pickle_file, data_to_store):
 
     p_timestamp = {'pq_last_modified': datetime.datetime.now(est)}
