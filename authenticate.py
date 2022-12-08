@@ -2,6 +2,7 @@ import jwt
 import bcrypt
 import streamlit as st
 from datetime import datetime, timedelta
+from pytz import timezone
 import extra_streamlit_components as stx
 
 from .hasher import Hasher
@@ -196,7 +197,7 @@ class Authenticate:
         
                     if st.session_state['authentication_status']:
                         self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
-                        self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now().strftime("%d/%m/%Y %H:%M")
+                        self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now(timezone('EST')).strftime("%d/%m/%Y %H:%M")
                         
 
         return st.session_state['name'], st.session_state['authentication_status'], st.session_state['username']
@@ -347,8 +348,8 @@ class Authenticate:
         new_name = register_user_form.text_input('Name')
         new_password = register_user_form.text_input('Password', type='password')
         new_password_repeat = register_user_form.text_input('Repeat password', type='password')
-        signup_date = datetime.now().strftime("%d/%m/%Y %H:%M")
-        last_login_date = datetime.now().strftime("%d/%m/%Y %H:%M")
+        signup_date = datetime.now(timezone('EST')).strftime("%d/%m/%Y %H:%M")
+        last_login_date = datetime.now(timezone('EST')).strftime("%d/%m/%Y %H:%M")
         login_count = 0
 
         if register_user_form.form_submit_button('Register'):
