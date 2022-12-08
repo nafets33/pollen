@@ -10,7 +10,7 @@ from email.message import EmailMessage
 
 # "C:\Users\jedidiah\AppData\Local\Programs\Python\Python311\Lib\site-packages\streamlit_authenticator"
 
-# TODO store date and time in EST
+
 # TODO user activiation code
 def signin_main():
     """Return True or False if the user is signed in"""
@@ -18,8 +18,8 @@ def signin_main():
     load_dotenv()
 
     def register_user():
-        if "activation_code" not in st.session_state:
-            st.session_state["activation_code"] = randint(100000, 999999)
+        if "verification_code" not in st.session_state:
+            st.session_state["verification_code"] = randint(100000, 999999)
 
         try:
             # NB: st_authenticator.py.register_user() (line 347 & 352) was modified to return the email
@@ -28,14 +28,14 @@ def signin_main():
             )
 
             if register_email:
-                activation_code = st.session_state["activation_code"]
+                verification_code = st.session_state["verification_code"]
 
                 # verify email
                 send_email(
                     recipient=register_email,
                     subject="PollenQ. Verify Email",
                     body=f"""
-    Your PollenQ activation code is {activation_code}
+    Your PollenQ verification code is {verification_code}
 
     Please enter this code in the website to complete your registration
 
@@ -44,13 +44,25 @@ def signin_main():
     """,
                 )
                 update_db()
-                st.success("Welcome On Board! Please login with your detials above")
-                entered_code = st.text_input("Activation Code", max_chars=6)
+                send_email(
+                    recipient=register_email,
+                    subject="Welcome On Board PollenQ!",
+                    body=f"""
+    You have successful created a PollenQ account. Ensure you keep your login detials safe.
+
+    Thank you,
+    PollenQ
+    """,
+                )
+                st.info(
+                    "A verification code has been sent to your email. Please enter the code below"
+                )
+                entered_code = st.text_input("Verification Code", max_chars=6)
 
                 if st.button("Submit"):
-                    if int(entered_code) == st.session_state["activation_code"]:
+                    if int(entered_code) == st.session_state["verification_code"]:
 
-                        # notify user
+                        # verification successful
                         send_email(
                             recipient=register_email,
                             subject="Welcome On Board PollenQ!",
