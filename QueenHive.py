@@ -41,11 +41,15 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 est = pytz.timezone("America/New_York")
 
-
-
 queens_chess_piece = os.path.basename(__file__)
 
-prod=True
+scriptname = os.path.basename(__file__)
+prod = [False if 'sandbox' in scriptname else True][0]
+if prod:
+    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+else:
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
+
 
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
@@ -57,41 +61,34 @@ current_day = datetime.datetime.now(est).day
 current_month = datetime.datetime.now(est).month
 current_year = datetime.datetime.now(est).year
 
-def init_logging(queens_chess_piece, db_root):
-    loglog_newfile = False
-    log_dir = dst = os.path.join(db_root, 'logs')
-    log_dir_logs = dst = os.path.join(log_dir, 'logs')
-    if os.path.exists(dst) == False:
-        os.mkdir(dst)
+def init_logging(queens_chess_piece, db_root, prod):
+    log_dir = os.path.join(db_root, 'logs')
+    log_dir_logs = os.path.join(log_dir, 'logs')
+    
+    if os.path.exists(log_dir) == False:
+        os.mkdir(log_dir)
+    if os.path.exists(log_dir_logs) == False:
+        os.mkdir(log_dir_logs)
+    
     if prod:
         log_name = f'{"log_"}{queens_chess_piece}{".log"}'
     else:
         log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
 
     log_file = os.path.join(log_dir, log_name)
-    if loglog_newfile:
-        # copy log file to log dir & del current log file
-        datet = datetime.datetime.now(est).strftime('%Y-%m-%d %H-%M-%S_%p')
-        dst_path = os.path.join(log_dir_logs, f'{log_name}{"_"}{datet}{".log"}')
-        shutil.copy(log_file, dst_path) # only when you want to log your log files
-        os.remove(log_file)
-    else:
-        # print("logging",log_file)
-        logging.basicConfig(filename=log_file,
-                            filemode='a',
-                            format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                            datefmt='%m/%d/%Y %I:%M:%S %p',
-                            level=logging.INFO,
-                            force=True)
+    # print("logging",log_file)
+    logging.basicConfig(filename=log_file,
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO,
+                        force=True)
     
     return True
 
-init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
 
 
-
-system = 'windows' #mac, windows
-load_dotenv()
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 
 exclude_conditions = [
@@ -99,71 +96,60 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U' afterhours
 
-try:
-    # keys
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
+
+# keys
+api_key_id = os.environ.get('APCA_API_KEY_ID')
+api_secret = os.environ.get('APCA_API_SECRET_KEY')
+base_url = "https://api.alpaca.markets"
 
 
-    def return_api_keys(base_url, api_key_id, api_secret, prod=True):
+def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
-        # api_key_id = os.environ.get('APCA_API_KEY_ID')
-        # api_secret = os.environ.get('APCA_API_SECRET_KEY')
-        # base_url = "https://api.alpaca.markets"
-        # base_url_paper = "https://paper-api.alpaca.markets"
-        # feed = "sip"  # change to "sip" if you have a paid account
-        
-        if prod == False:
-            rest = AsyncRest(key_id=api_key_id,
-                        secret_key=api_secret)
+    # api_key_id = os.environ.get('APCA_API_KEY_ID')
+    # api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    # base_url = "https://api.alpaca.markets"
+    # base_url_paper = "https://paper-api.alpaca.markets"
+    # feed = "sip"  # change to "sip" if you have a paid account
+    
+    if prod == False:
+        rest = AsyncRest(key_id=api_key_id,
+                    secret_key=api_secret)
 
-            api = tradeapi.REST(key_id=api_key_id,
-                        secret_key=api_secret,
-                        base_url=URL(base_url), api_version='v2')
-        else:
-            rest = AsyncRest(key_id=api_key_id,
-                                secret_key=api_secret)
+        api = tradeapi.REST(key_id=api_key_id,
+                    secret_key=api_secret,
+                    base_url=URL(base_url), api_version='v2')
+    else:
+        rest = AsyncRest(key_id=api_key_id,
+                            secret_key=api_secret)
 
-            api = tradeapi.REST(key_id=api_key_id,
-                                secret_key=api_secret,
-                                base_url=URL(base_url), api_version='v2')
-        return [{'rest': rest, 'api': api}]
+        api = tradeapi.REST(key_id=api_key_id,
+                            secret_key=api_secret,
+                            base_url=URL(base_url), api_version='v2')
+    return [{'rest': rest, 'api': api}]
 
-    keys = return_api_keys(base_url, api_key_id, api_secret)
+keys = return_api_keys(base_url, api_key_id, api_secret)
 
-    rest = keys[0]['rest']
-    api = keys[0]['api']
+rest = keys[0]['rest']
+api = keys[0]['api']
 
-    # Paper
-    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-    base_url_paper = "https://paper-api.alpaca.markets"
-    keys_paper = return_api_keys(base_url=base_url_paper, 
-        api_key_id=api_key_id_paper, 
-        api_secret=api_secret_paper,
-        prod=False)
-    rest_paper = keys_paper[0]['rest']
-    api_paper = keys_paper[0]['api']
-
-
-    """# Dates """
-    # current_day = api.get_clock().timestamp.date().isoformat()
-    # trading_days = api.get_calendar()
-    # trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-
-except Exception as e:
-    print("offline no connection")
+# Paper
+api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+base_url_paper = "https://paper-api.alpaca.markets"
+keys_paper = return_api_keys(base_url=base_url_paper, 
+    api_key_id=api_key_id_paper, 
+    api_secret=api_secret_paper,
+    prod=False)
+rest_paper = keys_paper[0]['rest']
+api_paper = keys_paper[0]['api']
 
 
+"""# Dates """
 current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
 
-
-start_date = datetime.datetime.now(est).strftime('%Y-%m-%d')
-end_date = datetime.datetime.now(est).strftime('%Y-%m-%d')
 
 """ Global VARS"""
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
@@ -179,59 +165,195 @@ MACD_WORLDS = {
     }
 
 """ VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
-def read_pollenstory(): # return combined dataframes
-    castle = ReadPickleData(pickle_file=os.path.join(db_root, 'castle.pkl'))
-    bishop = ReadPickleData(pickle_file=os.path.join(db_root, 'bishop.pkl'))
-    pollenstory = {**bishop['bishop']['pollenstory'], **castle['castle']['pollenstory']} # combine daytrade and longterm info
-
-    if os.path.exists(os.path.join(db_root, 'castle_coin.pkl')):
-        castle_coin = ReadPickleData(pickle_file=os.path.join(db_root, 'castle_coin.pkl'))
-    else:
-        castle_coin = False
+def read_pollenstory(db_root, dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']): # return combined dataframes
+    # return beeworkers data
     
-    pollenstory = {**pollenstory, **castle_coin['castle_coin']['pollenstory']} # combine daytrade and longterm info
-    return pollenstory
+    pollenstory = {}
+    STORY_bee = {}
+    # KNIGHTSWORD = {}
+    # ANGEL_bee = {}
+    # db_names = []
+    for db in dbs:
+        if os.path.exists(os.path.join(db_root, db)):
+            db_name = db.split(".pkl")[0]
+            chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
+            pollenstory = {**pollenstory, **chess_piece['pollenstory']}
+            STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
+            # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
+            # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
+            # dbs_[db_name] = chess_piece
+            # db_names.append(chess_piece)
+
+    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
 
 
-def read_queensmind(prod): # return active story workers
+def read_queensmind(prod, db_root): # return active story workers
     if prod:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
         ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders_.pkl'))
     else:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
         ORDERS = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_Orders__sandbox.pkl'))
+    
+    return {'queen': QUEEN, 'orders': ORDERS}
 
-    # return beeworkers data
-    dbs = ['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']
-    STORY_bee = {}
-    KNIGHTSWORD = {}
-    ANGEL_bee = {}
-    dbs_ = {}
-    for db in dbs:
-        if os.path.exists(os.path.join(db_root, db)):
-            db_name = db.split(".pkl")[0]
-            chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-            STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
-            KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
-            ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
-            dbs_[db_name] = chess_piece
-            db_run = True
-        else:
-            db_run = False
+
+def init_QUEEN(queens_chess_piece):
+
+    ticker_universe = return_Ticker_Universe()
+    index_ticker_db = ticker_universe['index_ticker_db']
+    main_index_dict = ticker_universe['main_index_dict']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
+
+    QUEEN = { # The Queens Mind
+        'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
+        'prod': "",
+        'source': "na",
+        'last_modified': datetime.datetime.now(est),
+        'command_conscience': {},
+        'queen_orders': pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
+        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
+        'kings_order_rules': {},
+        'queen_controls': return_queen_controls(stars),
         
-    if db_run:
-        """Fill Queen with bees and orders"""
-        QUEEN['queen']['conscience']['STORY_bee'] = STORY_bee
-        QUEEN['queen']['conscience']['KNIGHTSWORD'] = KNIGHTSWORD
-        QUEEN['queen']['conscience']['ANGEL_bee'] = ANGEL_bee
-        QUEEN['queen_orders'] = ORDERS['queen_orders']
-        return {'queen': QUEEN, 
-        'STORY_bee': STORY_bee, 'KNIGHTSWORD': KNIGHTSWORD, 'ANGEL_bee': ANGEL_bee, 
-        'dbs_': dbs_, 'ORDERS': ORDERS}
-    elif QUEEN:
-        return {'queen': QUEEN}
-    else:
-        return False
+        'symbol_universe': {
+        'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
+        'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca},
+        
+        'workerbees': {
+            'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['SPY'],
+                        'stars': stars(),},
+            'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['GOOG', 'AAPL', 'TSLA'],
+                        'stars': stars(),},
+            'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['AMZN', 'OXY', 'SOFI'],
+                        'stars': stars(),},
+            'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': ['BTCUSD', 'ETHUSD'],
+                        'stars': stars(),},
+            'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                        'tickers': main_symbols_full_list[:100],
+                        'stars': stars(),},
+            },
+        'errors': {},
+        'client_order_ids_qgen': [],
+        'app_requests__bucket': [],
+        # 'triggerBee_frequency': {}, # hold a star and the running trigger
+        'saved_pollenThemes': [], # bucket of saved star settings to choose from
+        'saved_powerRangers': [], # bucket of saved star settings to choose from
+        'subconscious': {},
+        # Worker Bees
+        queens_chess_piece: {
+        'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+        'pollenstory': {}, # latest story of dataframes castle and bishop
+        'pollencharts': {}, # latest chart rebuild
+        'pollencharts_nectar': {}, # latest chart rebuild with indicators
+        'pollenstory_info': {}, # Misc Info,
+        'client': {},
+        # 'heartbeat': {},
+        'last_modified' : datetime.datetime.now(est),
+        }
+    }
+    
+    
+    return QUEEN
+
+
+def init_QUEEN_App():
+    app_requests = ["workerbees", "queen_controls", "trading_models"]
+    
+    app = {'theme': 'nuetral', 
+    'app_order_requests': [], 
+    'sell_orders': [], 'buy_orders': [], 
+    'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
+    'queen_processed_orders': [],
+    'wave_triggers': [],
+    'app_wave_requests': [],
+    'trading_models': [],
+    'trading_models_requests': [],
+    'power_rangers': [],
+    'power_rangers_requests': [],
+    'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),
+    'knight_bees_kings_rules': [],
+    'knight_bees_kings_rules_requests': [],
+    'queen_controls_reset': False, 
+    'queen_controls': [],
+    'queen_controls_requests': [],
+    'queen_contorls_lastupdate': False, 
+    'workerbees': [],
+    'workerbees_requests': [],
+    'del_QUEEN_object': [],
+    'del_QUEEN_object_requests': [],
+    'last_app_update': datetime.datetime.now(est), ## Update Time Zone... Low Priority
+    'update_queen_order': [],
+    'update_queen_order_requests': [],
+    'savedstars': [],
+    'misc_bucket': [],
+    'source': 'na',
+    'stop_queen' : False,
+    }
+    return app
+
+
+def add_key_to_app(APP_requests): # returns QUEES
+    q_keys = APP_requests.keys()
+    latest_queen = init_QUEEN_App()
+    update=False
+    for k, v in latest_queen.items():
+        if k not in q_keys:
+            APP_requests[k] = v
+            update=True
+            msg = f'{k}{" : Key Added"}'
+            print(msg)
+            logging.info(msg)
+    return {'APP_requests': APP_requests, 'update': update}
+
+
+def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
+    update = False
+    q_keys = QUEEN.keys()
+    latest_queen = init_QUEEN('queen')
+    for k, v in latest_queen.items():
+        if k not in q_keys:
+            QUEEN[k] = v
+            update=True
+            msg = f'{k}{" : Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+    
+    for k, v in latest_queen['queen_controls'].items():
+        if k not in QUEEN['queen_controls'].keys():
+            QUEEN['queen_controls'][k] = v
+            update=True
+            msg = f'{k}{" : queen controls Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    for k, v in latest_queen['heartbeat'].items():
+        if k not in QUEEN['heartbeat'].keys():
+            QUEEN['heartbeat'][k] = v
+            update=True
+            msg = f'{k}{" : queen heartbeat Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    for k, v in latest_queen['workerbees'].items():
+        if k not in QUEEN['workerbees'].keys():
+            QUEEN['workerbees'][k] = v
+            update=True
+            msg = f'{k}{" : queen workerbees Key Added to "}{queens_chess_piece}'
+            print(msg)
+            logging.info(msg)
+
+    return {'QUEEN': QUEEN, 'update': update}
+
+
+
+
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 ### Story
@@ -698,33 +820,11 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
         logging.critical(msg)     
 
 
-def assign_tier_num(num_value,  td):
-    length_td = len(td)
-    max_num_value = td[length_td-1][1]
-    for k, v in td.items():
-        num_value = float(num_value)
-        if num_value > 0 and num_value > v[0] and num_value < v[1]:
-            # print(k, num_value)
-            return k
-        elif num_value < 0 and num_value < v[0] and num_value > v[1]:
-            # print(k, num_value)
-            return k
-        elif num_value > 0 and num_value > max_num_value:
-            # print("way above")
-            return length_td
-        elif num_value < 0 and num_value < max_num_value:
-            # print("way below")
-            return length_td
-        elif num_value == 0:
-            # print('0 really')
-            return 0
 
 
 def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     # create tier ranges
-    # tiers_num = 7
-    
-    ticker, ftime, frame = ticker_time_frame.split("_")    
+    # tiers_num = 8
 
     def create_tier_range(m_high, m_low):
         # m_high = mac_world_ranges[ftime]
@@ -747,6 +847,28 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
                 td_low[i] = (td_low[i-1][1], td_low[i-1][1] + tiers_add)
         
         return {'td_high': td_high, 'td_low': td_low}
+
+   
+    def assign_tier_num(num_value,  td):
+        length_td = len(td)
+        max_num_value = td[length_td-1][1]
+        for k, v in td.items():
+            num_value = float(num_value)
+            if num_value > 0 and num_value > v[0] and num_value < v[1]:
+                # print(k, num_value)
+                return k
+            elif num_value < 0 and num_value < v[0] and num_value > v[1]:
+                # print(k, num_value)
+                return k
+            elif num_value > 0 and num_value > max_num_value:
+                # print("way above")
+                return length_td
+            elif num_value < 0 and num_value < max_num_value:
+                # print("way below")
+                return length_td
+            elif num_value == 0:
+                # print('0 really')
+                return 0
 
     # select mac_world &  # apply tiers
 
@@ -2378,29 +2500,20 @@ def generate_queen_ticker_settings(ticker='SPY', status='active', portforlio_nam
 #     return_dict = {f'{num}{"X"}': num * .01 for num in range(1, 100)}
     
 #     return return_dict
-def createParser_QUEEN(prod):
-    if prod:
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="queen")
-        parser.add_argument ('-prod', default='true')
-    else:
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="queen")
-        parser.add_argument ('-prod', default='false')
+def createParser_QUEEN():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default="queen")
+    parser.add_argument ('-user', default='pollen')
+
     return parser
 
-def createParser_App(prod):
-    if prod:
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="app")
-        parser.add_argument ('-prod', default='true')
-        parser.add_argument ('-admin', default='false')
-    else:
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="app")
-        parser.add_argument ('-prod', default='false')
-        parser.add_argument ('-admin', default='false')
+def createParser_App():
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-qcp', default="app")
+    parser.add_argument ('-admin', default='false')
+    # parser.add_argument ('-user', default='pollen')
     return parser
+
 
 def return_queen_controls(stars=stars):
     num_of_stars = len(stars())
@@ -2516,155 +2629,6 @@ def init_ticker_stats__from_yahoo():
 
     return db_return
 
-
-def init_QUEEN(queens_chess_piece):
-
-    ticker_universe = return_Ticker_Universe()
-    index_ticker_db = ticker_universe['index_ticker_db']
-    main_index_dict = ticker_universe['main_index_dict']
-    main_symbols_full_list = ticker_universe['main_symbols_full_list']
-    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
-
-    QUEEN = { # The Queens Mind
-        'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
-        'prod': "",
-        'source': "na",
-        'last_modified': datetime.datetime.now(est),
-        'command_conscience': {},
-        'queen_orders': pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
-        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
-        'kings_order_rules': {},
-        'queen_controls': return_queen_controls(stars),
-        
-        'symbol_universe': {
-        'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
-        'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca},
-        
-        'workerbees': {
-            'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['SPY'],
-                        'stars': stars(),},
-            'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['GOOG', 'AAPL', 'TSLA'],
-                        'stars': stars(),},
-            'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['AMZN', 'OXY', 'SOFI'],
-                        'stars': stars(),},
-            'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['BTCUSD', 'ETHUSD'],
-                        'stars': stars(),},
-            'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': main_symbols_full_list[:100],
-                        'stars': stars(),},
-            },
-        'errors': {},
-        'client_order_ids_qgen': [],
-        'app_requests__bucket': [],
-        # 'triggerBee_frequency': {}, # hold a star and the running trigger
-        'saved_pollenThemes': [], # bucket of saved star settings to choose from
-        'saved_powerRangers': [], # bucket of saved star settings to choose from
-        'subconscious': {},
-        # Worker Bees
-        queens_chess_piece: {
-        'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
-        'pollenstory': {}, # latest story of dataframes castle and bishop
-        'pollencharts': {}, # latest chart rebuild
-        'pollencharts_nectar': {}, # latest chart rebuild with indicators
-        'pollenstory_info': {}, # Misc Info,
-        'client': {},
-        # 'heartbeat': {},
-        'last_modified' : datetime.datetime.now(est),
-        }
-    }
-    
-    
-    return QUEEN
-
-
-def init_QUEEN_App():
-    app = {'theme': 'nuetral', 
-    'app_order_requests': [], 
-    'sell_orders': [], 'buy_orders': [], 
-    'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
-    'queen_processed_orders': [],
-    'wave_triggers': [],
-    'app_wave_requests': [],
-    'trading_models': [],
-    'trading_models_requests': [],
-    'power_rangers': [],
-    'power_rangers_requests': [],
-    'power_rangers_lastupdate': datetime.datetime.now().astimezone(est),
-    'knight_bees_kings_rules': [],
-    'knight_bees_kings_rules_requests': [],
-    'queen_controls_reset': False, 
-    'queen_controls': [],
-    'queen_controls_requests': [],
-    'queen_contorls_lastupdate': False, 
-    'del_QUEEN_object': [],
-    'del_QUEEN_object_requests': [],
-    'last_app_update': datetime.datetime.now(est), ## Update Time Zone... Low Priority
-    'update_queen_order': [],
-    'update_queen_order_requests': [],
-    'savedstars': [],
-    'misc_bucket': [],
-    'source': 'na',
-    'stop_queen' : False,
-    }
-    return app
-
-
-def add_key_to_app(APP_requests): # returns QUEES
-    q_keys = APP_requests.keys()
-    latest_queen = init_QUEEN_App()
-    update=False
-    for k, v in latest_queen.items():
-        if k not in q_keys:
-            APP_requests[k] = v
-            update=True
-            msg = f'{k}{" : Key Added"}'
-            print(msg)
-            logging.info(msg)
-    return {'APP_requests': APP_requests, 'update': update}
-
-
-def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
-    update = False
-    q_keys = QUEEN.keys()
-    latest_queen = init_QUEEN('queen')
-    for k, v in latest_queen.items():
-        if k not in q_keys:
-            QUEEN[k] = v
-            update=True
-            msg = f'{k}{" : Key Added to "}{queens_chess_piece}'
-            print(msg)
-            logging.info(msg)
-    
-    for k, v in latest_queen['queen_controls'].items():
-        if k not in QUEEN['queen_controls'].keys():
-            QUEEN['queen_controls'][k] = v
-            update=True
-            msg = f'{k}{" : queen controls Key Added to "}{queens_chess_piece}'
-            print(msg)
-            logging.info(msg)
-
-    for k, v in latest_queen['heartbeat'].items():
-        if k not in QUEEN['heartbeat'].keys():
-            QUEEN['heartbeat'][k] = v
-            update=True
-            msg = f'{k}{" : queen heartbeat Key Added to "}{queens_chess_piece}'
-            print(msg)
-            logging.info(msg)
-
-    for k, v in latest_queen['workerbees'].items():
-        if k not in QUEEN['workerbees'].keys():
-            QUEEN['workerbees'][k] = v
-            update=True
-            msg = f'{k}{" : queen workerbees Key Added to "}{queens_chess_piece}'
-            print(msg)
-            logging.info(msg)
-
-    return {'QUEEN': QUEEN, 'update': update}
 
 
 def logging_log_message(log_type='info', msg='default', error='none', origin_func='default', ticker='false'):
@@ -3004,6 +2968,7 @@ def init_queen_orders(pickle_file):
 
 
 def init_pollen_dbs(db_root, prod, queens_chess_piece):
+    
     if prod:
         print("My Queen Production")
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
@@ -3019,38 +2984,48 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
 
-    if 'queen' in queens_chess_piece:
-        # List by Necessity
-        if os.path.exists(PB_queen_Archives_Pickle) == False:
-            print("Init queen archives")
-            queens_archived = {'queens': [{'queen_id': 0}]}
-            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+    # List by Necessity
+    if os.path.exists(PB_queen_Archives_Pickle) == False:
+        print("Init queen archives")
+        queens_archived = {'queens': [{'queen_id': 0}]}
+        PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
-        if os.path.exists(PB_QUEEN_Pickle) == False:
-            print("You Need a Queen")
-            queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
-            l = len(queens_archived['queens'])
-            QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
-            QUEEN['id'] = f'{"V1"}{"__"}{l}'
-            queens_archived['queens'].append({'queen_id': QUEEN['id']})
-            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+    if os.path.exists(PB_QUEEN_Pickle) == False:
+        print("You Need a Queen")
+        queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
+        l = len(queens_archived['queens'])
+        QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+        QUEEN['id'] = f'{"V1"}{"__"}{l}'
+        queens_archived['queens'].append({'queen_id': QUEEN['id']})
+        PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-            logging.info(("queen created", timestamp_string()))
-        
-        if os.path.exists(PB_App_Pickle) == False:
-            print("You Need an QueenApp")
-            init_app(pickle_file=PB_App_Pickle)
-        
-        if os.path.exists(PB_Orders_Pickle) == False:
-            print("You Need an QueenOrders")
-            init_queen_orders(pickle_file=PB_Orders_Pickle)
+        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+        logging.info(("queen created", timestamp_string()))
+    
+    if os.path.exists(PB_App_Pickle) == False:
+        print("You Need an QueenApp")
+        init_app(pickle_file=PB_App_Pickle)
+    
+    if os.path.exists(PB_Orders_Pickle) == False:
+        print("You Need an QueenOrders")
+        init_queen_orders(pickle_file=PB_Orders_Pickle)
 
     
     return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle, 'PB_Orders_Pickle': PB_Orders_Pickle, 'PB_queen_Archives_Pickle': PB_queen_Archives_Pickle}
 
 
+def init_clientUser_dbroot(client_user):
+    main_root = os.getcwd()
+    if client_user in ['stefanstapinski@gmail.com', 'pollen']:
+        db_root = os.path.join(main_root, 'db')
+    else:
+        client_user = client_user.split("@")[0]
+        db_root = os.path.join(main_root, f'db__{client_user}')
+        if os.path.exists(db_root) == False:
+            os.mkdir(db_root)
+            os.mkdir(os.path.join(db_root, 'logs'))
 
+    return db_root
 
 ### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
 def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics

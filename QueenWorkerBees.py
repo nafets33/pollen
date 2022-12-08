@@ -82,15 +82,8 @@ def queen_workerbees():
     # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
     def init_QUEENWORKER(queens_chess_piece):
 
-        QUEEN = { # The Queens Mind
-            'command_conscience': {'memory': {'trigger_stopped': [], 'trigger_sell_stopped': [], 'orders_completed': []}, 
-                                    'orders': { 'requests': [],
-                                                'submitted': [],
-                                                'running': [],
-                                                'running_close': []}
-                                                }, # ONLY for the Kings Eyes
-                'heartbeat': {}, # ticker info ... change name
-                'kings_order_rules': {},
+        QUEEN = { # To Go To The Queens Mind
+
             # Worker Bees
             queens_chess_piece: {
             'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}},
@@ -122,16 +115,16 @@ def queen_workerbees():
     rest = keys[0]['rest']
     api = keys[0]['api']
 
-    # Paper
-    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-    base_url_paper = "https://paper-api.alpaca.markets"
-    keys_paper = return_api_keys(base_url=base_url_paper, 
-        api_key_id=api_key_id_paper, 
-        api_secret=api_secret_paper,
-        prod=False)
-    rest_paper = keys_paper[0]['rest']
-    api_paper = keys_paper[0]['api']
+    # # Paper
+    # api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
+    # api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
+    # base_url_paper = "https://paper-api.alpaca.markets"
+    # keys_paper = return_api_keys(base_url=base_url_paper, 
+    #     api_key_id=api_key_id_paper, 
+    #     api_secret=api_secret_paper,
+    #     prod=False)
+    # rest_paper = keys_paper[0]['rest']
+    # api_paper = keys_paper[0]['api']
 
     """# Dates """
     # current_day = api.get_clock().timestamp.date().isoformat()
@@ -533,16 +526,16 @@ def queen_workerbees():
         QUEEN = WORKERBEE_queens[queens_chess_piece]
         # QUEEN = qcp_QUEEN
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-        MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
-        master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
-        # MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
+        # MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
+        # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
+        MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
         # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 
         close_worker()
 
         # main 
-        pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_12_26_9)
+        pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
         QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
         QUEEN[queens_chess_piece]['pollencharts_nectar'] = pollen['pollencharts_nectar']
         
@@ -597,7 +590,7 @@ def queen_workerbees():
                     return_list = []
                     tasks = []
                     for qcp in qcp_s:
-                        print(qcp)
+                        # print(qcp)
                         tasks.append(asyncio.ensure_future(get_changelog(session, qcp)))
                     original_pokemon = await asyncio.gather(*tasks)
                     for pokemon in original_pokemon:
@@ -606,7 +599,7 @@ def queen_workerbees():
 
             x = asyncio.run(main(qcp_s))
             e = datetime.datetime.now(est)
-            # print("--- %s seconds ---" % (e - s))
+            print(f'All Workers Refreshed {qcp_s} --- {(e - s)} seconds ---')
             return x
         except Exception as e:
             print("qtf", e, print_line_of_error())
@@ -632,16 +625,34 @@ def queen_workerbees():
     #     sys.exit()
 
     # Pollen QUEEN
+    
     if prod:
+        queen_db = os.path.join(db_root, 'queen.pkl')
         QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
     else:
+        queen_db = os.path.join(db_root, 'queen_sandbox.pkl')
         QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
-    QUEENBEE['source'] = queens_chess_piece
-    MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
+    # QUEENBEE['source'] = queens_chess_piece
+    def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
+        QUEENBEE = ReadPickleData(queen_db)
+        queens_master_tickers = []
+        queens_chess_pieces = [] 
+        for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+            for ticker in qcp_vars['tickers']:
+                if qcp in qcp_s:
+                # if qcp in ['knight']:
+                    queens_master_tickers.append(ticker)
+                    queens_chess_pieces.append(qcp)
+        queens_chess_pieces = list(set(queens_chess_pieces))
+
+        return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
+    
+    
+    # MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
     # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
-    MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
-    star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
+    # MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
+    # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
 
     ticker_universe = return_Ticker_Universe()
@@ -682,27 +693,43 @@ def queen_workerbees():
             ipdb.set_trace()
         return True
 
+
+    def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces):
+
+        speed_gauges = {}
+
+        WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
+        for qcp_worker in WORKERBEE_queens.keys():
+            MACD_settings = QUEENBEE['workerbees'][qcp_worker]['MACD_fast_slow_smooth']
+            master_tickers = QUEENBEE['workerbees'][qcp_worker]['tickers']
+            star_times = QUEENBEE['workerbees'][qcp_worker]['stars']
+            WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings)
+            speed_gauges.update({f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)} for tic in master_tickers for star_ in star_times.keys()})
+        
+        return {'WORKERBEE_queens': WORKERBEE_queens, 'speed_gauges': speed_gauges}
+    
+    
     def queens_court__WorkerBees():
         try:
-            master_tickers = []
-            queens_chess_pieces = [] 
-            for qcp, qcp_vars in QUEENBEE['workerbees'].items():
-                for ticker in qcp_vars['tickers']:
-                    if qcp in ['castle', 'bishop', 'knight']:
-                    # if qcp in ['knight']:
-                        master_tickers.append(ticker)
-                        queens_chess_pieces.append(qcp)
-            queens_chess_pieces = list(set(queens_chess_pieces))
-
-            WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
-            for qcp_worker in WORKERBEE_queens.keys():
-                WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(QUEEN=WORKERBEE_queens[qcp_worker], queens_chess_piece=qcp_worker, master_tickers=master_tickers, star_times=star_times, MACD_settings=MACD_settings) # only Initiates if Castle or Bishop
-            workerbee_run_times = []
-            speed_gauges = {
-                f'{tic}{"_"}{star_}': {'macd_gauge': deque([], 89), 'price_gauge': deque([], 89)}
-                for tic in master_tickers for star_ in star_times.keys()}
-
+            pq = read_QUEEN(queen_db=queen_db)
+            QUEENBEE = pq['QUEENBEE']
+            queens_chess_pieces = pq['queens_chess_pieces']
+            queens_master_tickers = pq['queens_master_tickers']
+            queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=queens_chess_pieces)
+            WORKERBEE_queens = queen_workers['WORKERBEE_queens']
+            speed_gauges = queen_workers['speed_gauges']
+            
             while True:
+                pq = read_QUEEN(queen_db=queen_db)
+                QUEENBEE = pq['QUEENBEE']
+                latest__queens_chess_pieces = pq['queens_chess_pieces']
+                latest__queens_master_tickers = pq['queens_master_tickers']
+                if latest__queens_master_tickers != queens_master_tickers:
+                    print("Revised Ticker List ReInitiate")
+                    queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces)
+                    WORKERBEE_queens = queen_workers['WORKERBEE_queens']
+                    speed_gauges = queen_workers['speed_gauges']
+                
                 qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
 
         except Exception as errbuz:
