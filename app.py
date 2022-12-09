@@ -130,23 +130,36 @@ else:
 
 
 def queen_triggerbees():
-    cq1, cq2, cq3 = st.columns((3,1,1))
+    cq1, cq2, cq3 = st.columns((2,1,2))
     
     now_time = datetime.datetime.now().astimezone(est)
-    all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
-    
+    all_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
+    active_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and i['story']["macd_state"] in QUEEN['heartbeat']['available_triggerbees'] and (now_time - i['story']['time_state']).seconds < 33}
+
     with cq1:
-        if len(all_trigs) > 0:
-            mark_down_text(fontsize=25, color='Green', text="All Available TriggerBees")
-            df = pd.DataFrame(all_trigs.items())
+        if len(active_trigs) > 0:
+            mark_down_text(align='left', fontsize=15, color='Green', text="Active TriggerBees")
+            # write_flying_bee()
+            df = pd.DataFrame(active_trigs.items())
             df = df.rename(columns={0: 'ttf', 1: 'trig'})
             df = df.sort_values('ttf')
             st.write(df)
-            g = {write_flying_bee() for i in range(len(df))}
+            # g = {write_flying_bee() for i in range(len(df))}
         else:
-            mark_down_text(fontsize=25, color='Red', text="No Available TriggerBees")
-        with cq2:
-            write_flying_bee(width=100, height=100)
+            mark_down_text(fontsize=12, color='Red', text="No Active TriggerBees")     
+    with cq2:
+        write_flying_bee(width=89, height=89)
+
+    with cq3:
+        if len(all_trigs) > 0:
+            with st.expander('All Available TriggerBees'):
+                mark_down_text(fontsize=15, color='Green', text="All Available TriggerBees")
+                df = pd.DataFrame(all_trigs.items())
+                df = df.rename(columns={0: 'ttf', 1: 'trig'})
+                df = df.sort_values('ttf')
+                st.write(df)
+        else:
+            mark_down_text(fontsize=12, color='Red', text="No Available TriggerBees")
 
 
 def queen_order_flow():
@@ -155,7 +168,7 @@ def queen_order_flow():
     
     page_line_seperator()
 
-    mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
+    # mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
 
     with st.expander('Orders', expanded=True):
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
@@ -452,17 +465,20 @@ def return_total_profits(QUEEN):
 
             tic_group_df = df.groupby([group_by_value])[['profit_loss']].sum().reset_index()
             return_dict['TotalProfitLoss'] = tic_group_df
-            mark_down_text(fontsize='25', text="Total Profit Loss")
-            # page_line_seperator()
-            st.write(tic_group_df)
 
             now_ = datetime.datetime.now(est)
             orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
             
             if len(orders_today) > 0:
                 df = orders_today
-                tic_group_df = df.groupby([group_by_value])[['profit_loss']].sum().reset_index()
-                st.write("Today Profit Loss")
+                today_pl_df = df.groupby([group_by_value])[['profit_loss']].sum().reset_index()
+                mark_down_text(fontsize='25', text="Today Profit Loss")
+                st.write(today_pl_df)
+                mark_down_text(fontsize='25', text="Total Profit Loss")
+                st.write(tic_group_df)
+            else:
+                mark_down_text(fontsize='25', text="Total Profit Loss")
+
                 st.write(tic_group_df)
             # submitted = st.form_submit_button("Save")
     
@@ -496,12 +512,9 @@ def stop_queenbee(APP_requests):
         # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
         if submitted:
-            ("checkbox", checkbox_val)
             APP_requests['stop_queen'] = str(checkbox_val).lower()
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-            
-            test = ReadPickleData(PB_App_Pickle)
-            st.write(test['stop_queen'])
+            st.success("Queen Sleeps")
     return True
 
 
@@ -1057,6 +1070,8 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
 
 
 def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
+    # Color Code Honey
+
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
@@ -1160,7 +1175,7 @@ def buzzz_linebreak(icon=">>>", size=15):
     return st.write(line_break)
 
 
-def pollen__story_charts(df):
+def pollen__story(df):
     with st.expander('pollen story', expanded=False):
         df_write = df.astype(str)
         st.dataframe(df_write)
@@ -1298,31 +1313,31 @@ else:
     PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
     st.sidebar.write(f'My Queen Sandbox')
 
-
+# if authorized_user:
 portfolio = return_alpc_portolio(api)['portfolio']
 acct_info = refresh_account_info(api=api)
 
+# # if authorized_user: log type auth and none
 log_dir = dst = os.path.join(db_root, 'logs')
-
 init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 # db global
 coin_exchange = "CBSE"
 
+# def run_main_page():
 KING = KINGME()
 pollen_theme = pollen_themes(KING=KING)
-
 # Pollen QUEEN # Orders
 APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
 queen_and_orders = read_queensmind(prod=prod, db_root=db_root)
 QUEEN = queen_and_orders['queen']
 ORDERS = queen_and_orders['orders']
-
+# Ticker DataBase
 ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
 POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
 
-
+####### START ######
 clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls'])
 
 st.sidebar.button("ReRun")
@@ -1346,6 +1361,17 @@ c1,c2,c3,c4,c5, = st.columns(5)
 default_yellow_color = '#C5B743'
 page_line_seperator('3', color='#C5B743')
 
+def rename_trigbee_name(tribee_name):
+    return tribee_name
+
+
+def ticker_time_frame_UI_rename(ticker_time_frame):
+    new_ttf = ticker_time_frame
+    # group tickers . i.e. if apart of index = index is a character
+    stars = stars() # 1Minute_1Day
+    rename = {'ticker': {}, 'time': {}, 'stars': {}}
+    return new_ttf
+
 
 if str(option).lower() == 'queen':
     
@@ -1365,10 +1391,14 @@ if str(option).lower() == 'queen':
     today_day = datetime.datetime.now().day
 
     ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
+    
+    with st.expander('STORY_bee'):
+        st.write(STORY_bee[ticker_time_frame]['story'])
 
     queen_main_view()
     queen_triggerbees()
     queen_order_flow()
+    pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
 
     # Main CHART Creation
     with st.expander('chart', expanded=False):
@@ -1620,13 +1650,25 @@ if str(option).lower() == 'charts':
 
     ticker_time_frame = selections[0]
     df = POLLENSTORY[ticker_time_frame].copy()
-
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-    star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+    # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
 
-    pollen__story_charts(df=df)
-
+    c1, c2, c3, c4, c5, c6, c7, c8 = st.columns((1,1,1,1,1,1,1,6))
+    with c1:
+        one = st.button("1m")
+    with c2:
+        two = st.button("5m")
+    with c3:
+        three = st.button("1M")
+    with c4:
+        four = st.button("3M")
+    with c5:
+        five = st.button("6M")
+    with c6:
+        six = st.button("1yr")
+    with c7:
+        all = st.button("All")
 
     if day_only_option == 'yes':
         df_day = df['timestamp_est'].iloc[-1]
@@ -1637,11 +1679,32 @@ if str(option).lower() == 'charts':
 
         df = df_today
 
-        
-        
-    # Main CHART Creation
-    fig = create_main_macd_chart(df)
-    st.write(fig)
+    min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+    min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+    min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+    min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+    min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+    min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+
+    if all:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(create_main_macd_chart(min_1))
+        with c2:
+            st.write(create_main_macd_chart(min_5))
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(create_main_macd_chart(min_30m))
+        with c2:
+            st.write(create_main_macd_chart(min_1hr))
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(create_main_macd_chart(min_2hr))
+        with c2:
+            st.write(create_main_macd_chart(min_1yr))
+    else:
+        # Main CHART Creation
+        st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
 
     if slope_option == 'yes':
         slope_cols = [i for i in df.columns if "slope" in i]

@@ -44,11 +44,8 @@ est = pytz.timezone("America/New_York")
 queens_chess_piece = os.path.basename(__file__)
 
 scriptname = os.path.basename(__file__)
-prod = [False if 'sandbox' in scriptname else True][0]
-if prod:
-    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-else:
-    load_dotenv(os.path.join(os.getcwd(), '.env'))
+prod = False if 'sandbox' in scriptname else True
+
 
 
 main_root = os.getcwd()
@@ -97,12 +94,6 @@ exclude_conditions = [
 ] # 'U' afterhours
 
 
-# keys
-api_key_id = os.environ.get('APCA_API_KEY_ID')
-api_secret = os.environ.get('APCA_API_SECRET_KEY')
-base_url = "https://api.alpaca.markets"
-
-
 def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
     # api_key_id = os.environ.get('APCA_API_KEY_ID')
@@ -127,21 +118,34 @@ def return_api_keys(base_url, api_key_id, api_secret, prod=True):
                             base_url=URL(base_url), api_version='v2')
     return [{'rest': rest, 'api': api}]
 
-keys = return_api_keys(base_url, api_key_id, api_secret)
 
-rest = keys[0]['rest']
-api = keys[0]['api']
 
-# Paper
-api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-base_url_paper = "https://paper-api.alpaca.markets"
-keys_paper = return_api_keys(base_url=base_url_paper, 
-    api_key_id=api_key_id_paper, 
-    api_secret=api_secret_paper,
-    prod=False)
-rest_paper = keys_paper[0]['rest']
-api_paper = keys_paper[0]['api']
+
+# """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
+if prod:
+    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    # keys
+    api_key_id = os.environ.get('APCA_API_KEY_ID')
+    api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    base_url = "https://api.alpaca.markets"
+    keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+    rest = keys[0]['rest']
+    api = keys[0]['api']
+else:
+    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    api_key_id = os.environ.get('APCA_API_KEY_ID')
+    api_secret = os.environ.get('APCA_API_SECRET_KEY')
+    base_url = "https://api.alpaca.markets"
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
+    keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+    rest = keys[0]['rest']
+    api = keys[0]['api']
+
+    # # Paper
+    # keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
+    # rest = keys_paper[0]['rest']
+    # api = keys_paper[0]['api']
+
 
 
 """# Dates """
@@ -474,6 +478,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             df['vwap_deviation'] = df['close'] - df['vwap_original']
             STORY_bee[ticker_time_frame]['story']['vwap_deviation'] = df.iloc[-1]['vwap_deviation']     
             
+            # ipdb.set_trace()
             # MACD WAVE 
             macd_state = df['macd_cross'].iloc[-1]
             macd_state_side = macd_state.split("_")[0] # buy_cross-num
@@ -497,7 +502,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                 STORY_bee[ticker_time_frame]['story'][f'{"prior_seen_macd_sell_time"}'] = prior_macd_time
             
             # all triggers ? move to top?
-            STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
+            # STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
 
             # count number of Macd Crosses
             # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
@@ -2070,10 +2075,10 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     return return_dict
 
 def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1):
-    return {
+    return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
     'status': status,
     'trade_using_limits': trade_using_limits,
-    'limitprice_decay_timeduration': limitprice_decay_timeduration,
+    'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
     'doubledown_timeduration': doubledown_timeduration,
     'max_profit_waveDeviation': max_profit_waveDeviation,
     'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,

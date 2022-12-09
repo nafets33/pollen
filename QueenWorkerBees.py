@@ -20,7 +20,7 @@ from typing import Callable
 from tqdm import tqdm
 from collections import defaultdict
 from collections import deque
-from QueenHive import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+# from QueenHive import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import argparse
 import aiohttp
 import asyncio
@@ -64,6 +64,12 @@ def queen_workerbees():
     windows = namespace.windows
     prod = True if str(namespace.prod).lower() == 'true' else False
 
+    if prod:
+        from QueenHive import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+    else:
+        from QueenHive_sandbox import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+
+
     if windows:
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
 
@@ -75,7 +81,7 @@ def queen_workerbees():
     main_root = os.getcwd()
     db_root = os.path.join(main_root, 'db')
 
-    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
+    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 
     # Macd Settings

@@ -765,7 +765,7 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     return {'current_wave': current_wave, 'current_active_waves': d_return}
 
 
-def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, trading_model, trig_action, crypto=False):
+def king_knights_requests(QUEEN, STORY_bee, avail_trigs, trigbee, ticker_time_frame, trading_model, trig_action, crypto=False):
     # answer all questions for order to be placed, compare against the rules
     # measure len of trigbee how long has trigger been there?
     # Std Deivation from last X trade prices
@@ -828,7 +828,7 @@ def king_knights_requests(QUEEN, avail_trigs, trigbee, ticker_time_frame, tradin
         # # # # vars
         ticker, tframe, frame = ticker_time_frame.split("_")
         star_time = f'{tframe}{"_"}{frame}'
-        STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
+        # STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
         ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
         trigbee_wave_direction = ['waveup' if 'buy' in trigbee else 'wavedown' ][0]
 
@@ -1011,10 +1011,10 @@ def add_trading_model(QUEEN, ticker, model='MACD', status='active'):
         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
 
 
-def command_conscience(api, QUEEN, APP_requests):
+def command_conscience(api, QUEEN, STORY_bee, APP_requests):
 
     try:
-        STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
+        # STORY_bee = QUEEN['queen']['conscience']['STORY_bee']
 
         active_tickers = QUEEN['heartbeat']['active_tickers']
 
@@ -1031,7 +1031,7 @@ def command_conscience(api, QUEEN, APP_requests):
         for ticker in active_tickers:
             # Ensure Trading Model
             add_trading_model(QUEEN=QUEEN, ticker=ticker, model='MACD')
-            crypto = [True if ticker in crypto_currency_symbols else False][0]
+            crypto = True if ticker in crypto_currency_symbols else False
             # Check Mrk Hours
             mkhrs = return_market_hours(trading_days=trading_days, crypto=crypto)
             if mkhrs == 'open':
@@ -1043,17 +1043,18 @@ def command_conscience(api, QUEEN, APP_requests):
             """ the hunt """
             s_time = datetime.datetime.now(est)
             ticker_storys = {k:v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
-            all_current_triggers = {k:v['story']['alltriggers_current_state'] for (k,v) in ticker_storys.items() if len(v['story']['alltriggers_current_state']) > 0}
-            all_current_triggers = add_app_wave_trigger(all_current_triggers=all_current_triggers, ticker=ticker, app_wave_trig_req=app_wave_trig_req)        
+            all_current_triggers = {k:v['story']['macd_state'] for (k,v) in ticker_storys.items()}
+            active_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and i['story']["macd_state"] in QUEEN['heartbeat']['available_triggerbees'] and (s_time - i['story']['time_state']).seconds < 60}
+            active_trigs = add_app_wave_trigger(all_current_triggers=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)      
             charlie_bee['queen_cyle_times']['thehunt__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
             # Return Scenario based trades
-            
-            if all_current_triggers:
+            ipdb.set_trace()
+            if active_trigs:
                 try:
                     # enabled stars
                     # QUEEN['heartbeat']
                     s_time = datetime.datetime.now(est)
-                    for ticker_time_frame, avail_trigs in all_current_triggers.items(): 
+                    for ticker_time_frame, avail_trigs in active_trigs.items(): 
                         # ticker_time_frame = f'{ticker}{"_1Minute_1Day"}'
                         ticker, tframe, frame = ticker_time_frame.split("_")
                         frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
@@ -1082,7 +1083,7 @@ def command_conscience(api, QUEEN, APP_requests):
 
                                 """ HAIL TRIGGER, WHAT SAY YOU? ~forgive me but I bring a gift for the king and queen"""
                                 s_time = datetime.datetime.now(est)
-                                king_resp = king_knights_requests(QUEEN=QUEEN, avail_trigs=avail_trigs, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
+                                king_resp = king_knights_requests(QUEEN=QUEEN, STORY_bee=STORY_bee, avail_trigs=avail_trigs, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
                                 if king_resp['kings_blessing']:
                                     execute_order(QUEEN=QUEEN, king_resp=king_resp, king_eval_order=False, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio, crypto=crypto)
                                 charlie_bee['queen_cyle_times']['knights_request__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
@@ -2177,23 +2178,14 @@ try:
     coin_exchange = "CBSE"
 
 
-    """ Keys """
+    # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
     if prod:
-        api_key_id = os.environ.get('APCA_API_KEY_ID')
-        api_secret = os.environ.get('APCA_API_SECRET_KEY')
-        base_url = "https://api.alpaca.markets"
-        keys = return_api_keys(base_url, api_key_id, api_secret, prod=True)
+        keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
         rest = keys[0]['rest']
         api = keys[0]['api']
     else:
         # Paper
-        api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-        api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-        base_url_paper = "https://paper-api.alpaca.markets"
-        keys_paper = return_api_keys(base_url=base_url_paper, 
-            api_key_id=api_key_id_paper, 
-            api_secret=api_secret_paper,
-            prod=False)
+        keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
         rest = keys_paper[0]['rest']
         api = keys_paper[0]['api']
 
@@ -2361,7 +2353,7 @@ try:
 
             # Hunt for Triggers
             s_time = datetime.datetime.now(est)
-            command_conscience(api=api, QUEEN=QUEEN, APP_requests=APP_requests) #####>   
+            command_conscience(api=api, QUEEN=QUEEN, STORY_bee=STORY_bee, APP_requests=APP_requests) #####>   
             charlie_bee['queen_cyle_times']['command conscience'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             e = datetime.datetime.now(est)

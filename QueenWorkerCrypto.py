@@ -53,7 +53,7 @@ def queen_workerbee_coins():
     main_root = os.getcwd()
     db_root = os.path.join(main_root, 'db')
 
-    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
+    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 
     # Macd Settings
