@@ -1048,7 +1048,7 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
             active_trigs = add_app_wave_trigger(all_current_triggers=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)      
             charlie_bee['queen_cyle_times']['thehunt__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
             # Return Scenario based trades
-            ipdb.set_trace()
+            # ipdb.set_trace()
             if active_trigs:
                 try:
                     # enabled stars
