@@ -73,10 +73,10 @@ prod = [False if 'sandbox' in scriptname else True][0]
 queens_chess_piece = os.path.basename(__file__)
 
 if prod:
-    from QueenHive import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    from QueenHive import add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
 else:
-    from QueenHive_sandbox import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    from QueenHive_sandbox import add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
@@ -544,9 +544,9 @@ def refresh_queenbee_controls(APP_requests):
     return True
 
 
-def return_image_upon_save(bee_power_image):
+def return_image_upon_save(bee_power_image, width=33):
     st.write("Controls Saved", return_timestamp_string())
-    st.image(Image.open(bee_power_image), width=89)
+    st.image(Image.open(bee_power_image), width=width)
 
 
 def update_Workerbees(APP_requests):
@@ -1256,6 +1256,9 @@ def model_wave_results(STORY_bee):
 def clean_out_app_requests(QUEEN, APP_requests, request_buckets):
     save = False
     for req_bucket in request_buckets:
+        if req_bucket not in APP_requests.keys():
+            st.write("Verison Missing DB", req_bucket)
+            continue
         for app_req in APP_requests[req_bucket]:
             if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
                 print("Quen Processed app req item")
@@ -1266,6 +1269,28 @@ def clean_out_app_requests(QUEEN, APP_requests, request_buckets):
     if save:
         PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
 
+
+def queens_subconscious_Thoughts(QUEEN):
+    with st.expander('subconscious'):
+        for key, bucket in QUEEN['subconscious'].items():
+            if len(bucket) > 0:
+                st.write(bucket)
+
+def clear_subconscious_Thought(QUEEN, APP_requests):
+    with st.form('clear subconscious'):
+        thoughts = QUEEN['subconscious'].keys()
+        clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
+        
+        if st.form_submit_button("Save"):
+            app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
+            app_req['subconscious_thought_to_clear'] = clear_thought
+            app_req['subconscious_thought_new_value'] = []
+            APP_requests['subconscious'].append(app_req)
+            st.success("subconscious thought cleared")
+            return_image_upon_save(bee_power_image=bee_power_image)
+            PickleData(APP_requests)
+
+            return True
 
 # """ if "__name__" == "__main__": """
 
@@ -1311,7 +1336,7 @@ else:
     rest = keys_paper[0]['rest']
     api = keys_paper[0]['api']
     PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
-    st.sidebar.write(f'My Queen Sandbox')
+    st.sidebar.write("My Queen Sandbox")
 
 # if authorized_user:
 portfolio = return_alpc_portolio(api)['portfolio']
@@ -1338,7 +1363,13 @@ POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
 
 ####### START ######
-clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls'])
+APP_requests['source'] = PB_App_Pickle
+APP_req = add_key_to_app(APP_requests)
+APP_requests = APP_req['APP_requests']
+if APP_req['update']:
+    PickleData(PB_App_Pickle, APP_requests)
+
+clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
 
 st.sidebar.button("ReRun")
 
@@ -1399,6 +1430,7 @@ if str(option).lower() == 'queen':
     queen_triggerbees()
     queen_order_flow()
     pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
+    queens_subconscious_Thoughts(QUEEN=QUEEN)
 
     # Main CHART Creation
     with st.expander('chart', expanded=False):
@@ -1612,8 +1644,7 @@ if str(option).lower() == 'queen':
 
 if str(option).lower() == 'controls':
     col1, col2 = st.columns(2)
-    st.write('admin', admin)
-    if st.session_state['admin'] == False:
+    if admin == False:
         st.write("permission denied")
         st.stop()
     else:
@@ -1634,6 +1665,8 @@ if str(option).lower() == 'controls':
         contorls = list(QUEEN['queen_controls'].keys())
         control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
         update_QueenControls(APP_requests=APP_requests, control_option=control_option, theme_list=theme_list)
+
+        clear_subconscious_Thought(QUEEN=QUEEN, APP_requests=APP_requests)
 
 
 if str(option).lower() == 'charts':
