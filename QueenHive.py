@@ -249,7 +249,7 @@ def init_QUEEN(queens_chess_piece):
         # 'triggerBee_frequency': {}, # hold a star and the running trigger
         'saved_pollenThemes': [], # bucket of saved star settings to choose from
         'saved_powerRangers': [], # bucket of saved star settings to choose from
-        'subconscious': {},
+        'subconscious': {'app_info': []},
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
