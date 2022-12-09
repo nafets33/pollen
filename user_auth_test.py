@@ -8,8 +8,6 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
-# "C:\Users\jedidiah\AppData\Local\Programs\Python\Python311\Lib\site-packages\streamlit_authenticator"
-
 
 def signin_main():
     """Return True or False if the user is signed in"""
