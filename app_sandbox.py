@@ -59,12 +59,13 @@ st.set_page_config(
     #  }
  )
 
-client_user = signin_main()
+signin_auth = signin_main()
 # st.write(st.session_state)
-
-if client_user:
+if signin_auth:
+    client_user = st.session_state['username']
     gatekeeper = True
 else:
+    st.write("Sign in to get your Queen")
     st.stop()
 
 _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
@@ -105,32 +106,6 @@ if admin:
     st.session_state['admin'] = True
 else:
     st.session_state['admin'] = False
-
-
-# def init_logging(queens_chess_piece, db_root):
-#     log_dir = os.path.join(db_root, 'logs')
-#     log_dir_logs = os.path.join(log_dir, 'logs')
-    
-#     if os.path.exists(log_dir) == False:
-#         os.mkdir(log_dir)
-#     if os.path.exists(log_dir_logs) == False:
-#         os.mkdir(log_dir_logs)
-    
-#     if prod:
-#         log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-#     else:
-#         log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
-
-#     log_file = os.path.join(log_dir, log_name)
-#     # print("logging",log_file)
-#     logging.basicConfig(filename=log_file,
-#                         filemode='a',
-#                         format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-#                         datefmt='%m/%d/%Y %I:%M:%S %p',
-#                         level=logging.INFO,
-#                         force=True)
-    
-#     return True
 
 
 
@@ -1042,24 +1017,6 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
         for k, v in add_vars.items():
             vars[k] = v
 
-    # if 'mac_ranger' in df.columns:
-    #     cellsytle_jscode = JsCode("""
-    #     function(params) {
-    #         if (params.data.state === 'white') {
-    #             return {
-    #                 'color': 'white',
-    #                 'backgroundColor': 'red'
-    #             }
-    #         }
-    #     };
-    #     """)
-    #     gb = GridOptionsBuilder.from_dataframe(df)
-
-    #     gb.configure_grid_options(domLayout='normal')
-    #     gridOptions = gb.build()
-    #     gridOptions['getRowStyle'] = cellsytle_jscode
-    #     gridOptions['rememberGroupStateWhenNewData'] = 'true'
-    #     gb.configure_column("mac_ranger", cellStyle=cellsytle_jscode)
     
     grid_response = build_AGgrid_df(data=df, 
     reload_data=vars['reload_data'],
@@ -1590,6 +1547,7 @@ if str(option).lower() == 'controls':
 if str(option).lower() == 'charts':
     tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
     ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+    ticker = ticker_option
     ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
     ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
     frame_option = st.sidebar.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
@@ -1604,22 +1562,6 @@ if str(option).lower() == 'charts':
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
     # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-
-    c1, c2, c3, c4, c5, c6, c7, c8 = st.columns((1,1,1,1,1,1,1,6))
-    with c1:
-        one = st.button("1m")
-    with c2:
-        two = st.button("5m")
-    with c3:
-        three = st.button("1M")
-    with c4:
-        four = st.button("3M")
-    with c5:
-        five = st.button("6M")
-    with c6:
-        six = st.button("1yr")
-    with c7:
-        all = st.button("All")
 
     if day_only_option == 'yes':
         df_day = df['timestamp_est'].iloc[-1]
@@ -1637,7 +1579,16 @@ if str(option).lower() == 'charts':
     min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
     min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
 
-    if all:
+    option__ = st.radio(
+                            "",
+        ['1Min', '5Min', '30m', '1hr', '2hr', '1Yr', 'all'],
+        key="signal_radio",
+        label_visibility='visible',
+        # disabled=st.session_state.disabled,
+        horizontal=True,
+    )
+
+    if option__.lower() == 'all':
         c1, c2 = st.columns(2)
         with c1:
             st.write(create_main_macd_chart(min_1))
@@ -1655,6 +1606,10 @@ if str(option).lower() == 'charts':
             st.write(create_main_macd_chart(min_1yr))
     else:
         # Main CHART Creation
+        radio_b_dict = {'1Min': '1Minute_1Day', 
+        '5Min': '5Minute_5Day', '30m': '30Minute_1Month', 
+        '1hr': '1Hour_3Month' , '2hr': '2Hour_6Month', '1Yr': '1Day_1Year'}
+        ticker_time_frame = f'{ticker}_{radio_b_dict[option__]}'
         st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
 
     if slope_option == 'yes':

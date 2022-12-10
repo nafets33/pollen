@@ -12,7 +12,7 @@ from email.message import EmailMessage
 def signin_main():
     """Return True or False if the user is signed in"""
 
-    load_dotenv()
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
 
     def register_user():
         write_flying_bee(54,54)
