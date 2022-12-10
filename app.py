@@ -38,6 +38,7 @@ main_root = os.getcwd()
 # images
 jpg_root = os.path.join(main_root, 'misc')
 bee_image = os.path.join(jpg_root, 'bee.jpg')
+bee_power_image = os.path.join(jpg_root, 'power.jpg')
 image = Image.open(bee_image)
 
 ##### STREAMLIT ###
@@ -66,17 +67,16 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 est = pytz.timezone("US/Eastern")
 
 pd.options.mode.chained_assignment = None
-load_dotenv()
 
 scriptname = os.path.basename(__file__)
 prod = [False if 'sandbox' in scriptname else True][0]
 queens_chess_piece = os.path.basename(__file__)
 
 if prod:
-    from QueenHive import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    from QueenHive import add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
 else:
-    from QueenHive_sandbox import read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    from QueenHive_sandbox import add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
@@ -94,7 +94,8 @@ crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
 parser = createParser_App()
 namespace = parser.parse_args()
-admin = [True if namespace.admin == 'true' or client_user == 'stefanstapinski@gmail.com' else False][0]
+admin = True if namespace.admin == 'true' or client_user == 'stefanstapinski@gmail.com' else False
+authorized_user = True if namespace.admin == 'true' or client_user == 'stefanstapinski@gmail.com' else False
 
 if admin:
     st.session_state['admin'] = True
@@ -129,23 +130,36 @@ else:
 
 
 def queen_triggerbees():
-    cq1, cq2, cq3 = st.columns((3,1,1))
+    cq1, cq2, cq3 = st.columns((2,1,2))
     
     now_time = datetime.datetime.now().astimezone(est)
-    all_trigs = {k: i['story']["alltriggers_current_state"] for (k, i) in STORY_bee.items() if len(i['story']["alltriggers_current_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
-    
+    all_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
+    active_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and i['story']["macd_state"] in QUEEN['heartbeat']['available_triggerbees'] and (now_time - i['story']['time_state']).seconds < 33}
+
     with cq1:
-        if len(all_trigs) > 0:
-            mark_down_text(fontsize=25, color='Green', text="All Available TriggerBees")
-            df = pd.DataFrame(all_trigs.items())
+        if len(active_trigs) > 0:
+            mark_down_text(align='left', fontsize=15, color='Green', text="Active TriggerBees")
+            # write_flying_bee()
+            df = pd.DataFrame(active_trigs.items())
             df = df.rename(columns={0: 'ttf', 1: 'trig'})
             df = df.sort_values('ttf')
             st.write(df)
-            g = {write_flying_bee() for i in range(len(df))}
+            # g = {write_flying_bee() for i in range(len(df))}
         else:
-            mark_down_text(fontsize=25, color='Red', text="No Available TriggerBees")
-        with cq2:
-            write_flying_bee(width=100, height=100)
+            mark_down_text(fontsize=12, color='Red', text="No Active TriggerBees")     
+    with cq2:
+        write_flying_bee(width=89, height=89)
+
+    with cq3:
+        if len(all_trigs) > 0:
+            with st.expander('All Available TriggerBees'):
+                mark_down_text(fontsize=15, color='Green', text="All Available TriggerBees")
+                df = pd.DataFrame(all_trigs.items())
+                df = df.rename(columns={0: 'ttf', 1: 'trig'})
+                df = df.sort_values('ttf')
+                st.write(df)
+        else:
+            mark_down_text(fontsize=12, color='Red', text="No Available TriggerBees")
 
 
 def queen_order_flow():
@@ -154,7 +168,7 @@ def queen_order_flow():
     
     page_line_seperator()
 
-    mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
+    # mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
 
     with st.expander('Orders', expanded=True):
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
@@ -349,44 +363,6 @@ def queen_beeAction():
             st.write(data['buy_orders'])
 
 
-def subPlot():
-    st.header("Sub Plots")
-    # st.balloons()
-    fig = plt.figure(figsize = (10, 5))
-
-    #Plot 1
-    data = {'C':15, 'C++':20, 'JavaScript': 30, 'Python':35}
-    Courses = list(data.keys())
-    values = list(data.values())
-    
-    plt.xlabel("Programming Environment")
-    plt.ylabel("Number of Students")
-
-    plt.subplot(1, 2, 1)
-    plt.bar(Courses, values)
-
-    #Plot 2
-    x = np.array([35, 25, 25, 15])
-    mylabels = ["Python", "JavaScript", "C++", "C"]
-
-    plt.subplot(1, 2, 2)
-    plt.pie(x, labels = mylabels)
-
-    st.pyplot(fig)
-
-
-def df_plotchart(title, df, y, x=False, figsize=(14,7), formatme=False):
-    st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-    if x == False:
-        return df.plot(y=y,figsize=figsize)
-    else:
-        if formatme:
-            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-            return df.plot(x='chartdate', y=y,figsize=figsize)
-        else:
-            return df.plot(x=x, y=y,figsize=figsize)
-  
-
 def create_main_macd_chart(df):
     title = df.iloc[-1]['name']
     # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -489,17 +465,20 @@ def return_total_profits(QUEEN):
 
             tic_group_df = df.groupby([group_by_value])[['profit_loss']].sum().reset_index()
             return_dict['TotalProfitLoss'] = tic_group_df
-            mark_down_text(fontsize='25', text="Total Profit Loss")
-            # page_line_seperator()
-            st.write(tic_group_df)
 
             now_ = datetime.datetime.now(est)
             orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
             
             if len(orders_today) > 0:
                 df = orders_today
-                tic_group_df = df.groupby([group_by_value])[['profit_loss']].sum().reset_index()
-                st.write("Today Profit Loss")
+                today_pl_df = df.groupby([group_by_value])[['profit_loss']].sum().reset_index()
+                mark_down_text(fontsize='25', text="Today Profit Loss")
+                st.write(today_pl_df)
+                mark_down_text(fontsize='25', text="Total Profit Loss")
+                st.write(tic_group_df)
+            else:
+                mark_down_text(fontsize='25', text="Total Profit Loss")
+
                 st.write(tic_group_df)
             # submitted = st.form_submit_button("Save")
     
@@ -533,12 +512,9 @@ def stop_queenbee(APP_requests):
         # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
         if submitted:
-            ("checkbox", checkbox_val)
             APP_requests['stop_queen'] = str(checkbox_val).lower()
             PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-            
-            test = ReadPickleData(PB_App_Pickle)
-            st.write(test['stop_queen'])
+            st.success("Queen Sleeps")
     return True
 
 
@@ -568,9 +544,9 @@ def refresh_queenbee_controls(APP_requests):
     return True
 
 
-def return_image_upon_save(bee_power_image):
+def return_image_upon_save(bee_power_image, width=33):
     st.write("Controls Saved", return_timestamp_string())
-    st.image(Image.open(bee_power_image), width=89)
+    st.image(Image.open(bee_power_image), width=width)
 
 
 def update_Workerbees(APP_requests):
@@ -857,7 +833,6 @@ def update_QueenControls(APP_requests, control_option, theme_list):
         
     else:
         st.write("PENDING WORK")
-        # st.write(QUEEN['queen_controls'][control_option])
 
 
 def queen_order_update(latest_queen_order, c_order_input):
@@ -1095,6 +1070,8 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
 
 
 def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
+    # Color Code Honey
+
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
@@ -1198,46 +1175,12 @@ def buzzz_linebreak(icon=">>>", size=15):
     return st.write(line_break)
 
 
-def pollen__story_charts(df):
+def pollen__story(df):
     with st.expander('pollen story', expanded=False):
         df_write = df.astype(str)
         st.dataframe(df_write)
         pass
         
-
-def add_user__vars(username, password, date=datetime.datetime.now(est), signin_count=1):
-    return {'signin_count': 1, 'username': username, 'password': password, 'date': date}
-
-
-def callback_function(state, key):
-    # 1. Access the widget's setting via st.session_state[key]
-    # 2. Set the session state you intended to set in the widget
-    st.session_state[state] = st.session_state[key]
-
-
-def color_coding(row):
-    if row.mac_ranger == 'white':
-        return ['background-color:white'] * len(row)
-    elif row.mac_ranger == 'black':
-        return ['background-color:black'] * len(row)
-    elif row.mac_ranger == 'blue':
-        return ['background-color:blue'] * len(row)
-    elif row.mac_ranger == 'purple':
-        return ['background-color:purple'] * len(row)
-    elif row.mac_ranger == 'pink':
-        return ['background-color:pink'] * len(row)
-    elif row.mac_ranger == 'red':
-        return ['background-color:red'] * len(row)
-    elif row.mac_ranger == 'green':
-        return ['background-color:green'] * len(row)
-    elif row.mac_ranger == 'yellow':
-        return ['background-color:yellow'] * len(row)
-
-    
-    import seaborn as sns
-    cm = sns.light_palette("green", as_cmap=True)
-    df.style.background_gradient(cmap=cm).set_precision(2)
-
 
 def queen_main_view():
     if st.session_state['admin'] == False:
@@ -1313,6 +1256,9 @@ def model_wave_results(STORY_bee):
 def clean_out_app_requests(QUEEN, APP_requests, request_buckets):
     save = False
     for req_bucket in request_buckets:
+        if req_bucket not in APP_requests.keys():
+            st.write("Verison Missing DB", req_bucket)
+            continue
         for app_req in APP_requests[req_bucket]:
             if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
                 print("Quen Processed app req item")
@@ -1324,16 +1270,37 @@ def clean_out_app_requests(QUEEN, APP_requests, request_buckets):
         PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
 
 
+def queens_subconscious_Thoughts(QUEEN):
+    with st.expander('subconscious'):
+        for key, bucket in QUEEN['subconscious'].items():
+            if len(bucket) > 0:
+                st.write(bucket)
+
+def clear_subconscious_Thought(QUEEN, APP_requests):
+    with st.form('clear subconscious'):
+        thoughts = QUEEN['subconscious'].keys()
+        clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
+        
+        if st.form_submit_button("Save"):
+            app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
+            app_req['subconscious_thought_to_clear'] = clear_thought
+            app_req['subconscious_thought_new_value'] = []
+            APP_requests['subconscious'].append(app_req)
+            st.success("subconscious thought cleared")
+            return_image_upon_save(bee_power_image=bee_power_image)
+            PickleData(APP_requests)
+
+            return True
+
 # """ if "__name__" == "__main__": """
 
 if gatekeeper:
     if 'admin' in st.session_state.keys() and st.session_state['admin']:
         admin = True
         st.sidebar.write('admin', admin)
-    # if st.session_state["username"] == 'pollen':
-    #     admin = True
+
     else:
-        st.write("queenbee not yet authorized read only")
+        st.write("queenbee not yet authorized READ ONLY")
         st.sidebar.write('Read Only')
         admin = False
 else:
@@ -1342,71 +1309,67 @@ else:
     st.stop()
 
 ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
-
-# Client User DB
-db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-log_dir = dst = os.path.join(db_root, 'logs')
-
-if 'db_initalized' not in st.session_state:
+if authorized_user:
+    # SETUP USER #
+    # Client User DB
+    db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen')
-    st.session_state['db_initalized'] = True
+
+else:
+    # Read Only View
+    db_root = os.path.join(main_root, 'db')
+    prod = False
+    load_dotenv(os.path.join(os.getcwd(), '.env'))
+
 
 # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
 if prod:
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
-    keys = return_api_keys(base_url, api_key_id, api_secret)
+    keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
     rest = keys[0]['rest']
     api = keys[0]['api']
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
+    st.sidebar.write(f'My Queen Production')
+
 else:
     # Paper
-    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-    base_url_paper = "https://paper-api.alpaca.markets"
-    keys_paper = return_api_keys(base_url=base_url_paper, 
-        api_key_id=api_key_id_paper, 
-        api_secret=api_secret_paper,
-        prod=False)
+    keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
     rest = keys_paper[0]['rest']
     api = keys_paper[0]['api']
+    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
+    st.sidebar.write("My Queen Sandbox")
 
+# if authorized_user:
+portfolio = return_alpc_portolio(api)['portfolio']
+acct_info = refresh_account_info(api=api)
 
-init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root)
+# # if authorized_user: log type auth and none
+log_dir = dst = os.path.join(db_root, 'logs')
+init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 # db global
 coin_exchange = "CBSE"
 
-acct_info = refresh_account_info(api=api)
-
-bee_power_image = os.path.join(jpg_root, 'power.jpg')
-
-
-if prod:
-    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{".pkl"}')
-    st.sidebar.write(f'My Queen Production')
-else:
-    PB_App_Pickle = os.path.join(db_root, f'{"queen"}{"_App_"}{"_sandbox"}{".pkl"}')
-    st.sidebar.write(f'My Queen Sandbox')
-
-
+# def run_main_page():
 KING = KINGME()
 pollen_theme = pollen_themes(KING=KING)
-
 # Pollen QUEEN # Orders
 APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
 queen_and_orders = read_queensmind(prod=prod, db_root=db_root)
 QUEEN = queen_and_orders['queen']
 ORDERS = queen_and_orders['orders']
-
+# Ticker DataBase
 ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
 POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
 
-portfolio = return_alpc_portolio(api)['portfolio']
+####### START ######
+APP_requests['source'] = PB_App_Pickle
+APP_req = add_key_to_app(APP_requests)
+APP_requests = APP_req['APP_requests']
+if APP_req['update']:
+    PickleData(PB_App_Pickle, APP_requests)
 
-
-clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls'])
+clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
 
 st.sidebar.button("ReRun")
 
@@ -1429,6 +1392,17 @@ c1,c2,c3,c4,c5, = st.columns(5)
 default_yellow_color = '#C5B743'
 page_line_seperator('3', color='#C5B743')
 
+def rename_trigbee_name(tribee_name):
+    return tribee_name
+
+
+def ticker_time_frame_UI_rename(ticker_time_frame):
+    new_ttf = ticker_time_frame
+    # group tickers . i.e. if apart of index = index is a character
+    stars = stars() # 1Minute_1Day
+    rename = {'ticker': {}, 'time': {}, 'stars': {}}
+    return new_ttf
+
 
 if str(option).lower() == 'queen':
     
@@ -1448,10 +1422,15 @@ if str(option).lower() == 'queen':
     today_day = datetime.datetime.now().day
 
     ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
+    
+    with st.expander('STORY_bee'):
+        st.write(STORY_bee[ticker_time_frame]['story'])
 
     queen_main_view()
     queen_triggerbees()
     queen_order_flow()
+    pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
+    queens_subconscious_Thoughts(QUEEN=QUEEN)
 
     # Main CHART Creation
     with st.expander('chart', expanded=False):
@@ -1498,9 +1477,7 @@ if str(option).lower() == 'queen':
             mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
             df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
             df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
-            # df = df.style.background_gradient(subset=["current_hist_tier"], cmap="RdYlGn", vmin=-8, vmax=8)
-            # df['mac_ranger'] = df['mac_ranger'].apply(lambda x: color_coding(x))
-            # st.dataframe(df.style.apply(color_coding, axis=1))
+
             st.dataframe(df_style)
 
         
@@ -1667,8 +1644,7 @@ if str(option).lower() == 'queen':
 
 if str(option).lower() == 'controls':
     col1, col2 = st.columns(2)
-    st.write('admin', admin)
-    if st.session_state['admin'] == False:
+    if admin == False:
         st.write("permission denied")
         st.stop()
     else:
@@ -1690,6 +1666,8 @@ if str(option).lower() == 'controls':
         control_option = st.selectbox('select control', contorls, index=contorls.index('theme'))
         update_QueenControls(APP_requests=APP_requests, control_option=control_option, theme_list=theme_list)
 
+        clear_subconscious_Thought(QUEEN=QUEEN, APP_requests=APP_requests)
+
 
 if str(option).lower() == 'charts':
     tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
@@ -1705,13 +1683,25 @@ if str(option).lower() == 'charts':
 
     ticker_time_frame = selections[0]
     df = POLLENSTORY[ticker_time_frame].copy()
-
     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-    star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+    # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
 
-    pollen__story_charts(df=df)
-
+    c1, c2, c3, c4, c5, c6, c7, c8 = st.columns((1,1,1,1,1,1,1,6))
+    with c1:
+        one = st.button("1m")
+    with c2:
+        two = st.button("5m")
+    with c3:
+        three = st.button("1M")
+    with c4:
+        four = st.button("3M")
+    with c5:
+        five = st.button("6M")
+    with c6:
+        six = st.button("1yr")
+    with c7:
+        all = st.button("All")
 
     if day_only_option == 'yes':
         df_day = df['timestamp_est'].iloc[-1]
@@ -1722,11 +1712,32 @@ if str(option).lower() == 'charts':
 
         df = df_today
 
-        
-        
-    # Main CHART Creation
-    fig = create_main_macd_chart(df)
-    st.write(fig)
+    min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+    min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+    min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+    min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+    min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+    min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+
+    if all:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(create_main_macd_chart(min_1))
+        with c2:
+            st.write(create_main_macd_chart(min_5))
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(create_main_macd_chart(min_30m))
+        with c2:
+            st.write(create_main_macd_chart(min_1hr))
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(create_main_macd_chart(min_2hr))
+        with c2:
+            st.write(create_main_macd_chart(min_1yr))
+    else:
+        # Main CHART Creation
+        st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
 
     if slope_option == 'yes':
         slope_cols = [i for i in df.columns if "slope" in i]
