@@ -15,6 +15,8 @@ def signin_main():
     load_dotenv()
 
     def register_user():
+        write_flying_bee(54,54)
+
         if "verification_code" not in st.session_state:
             st.session_state["verification_code"] = randint(100000, 999999)
 
@@ -73,7 +75,7 @@ def signin_main():
                         )
                     else:
                         st.error("Incorrect Code")
-
+            write_flying_bee(54,54)
         except Exception as e:
             st.error(e)
 
@@ -165,6 +167,9 @@ def signin_main():
                 (email, password, name, signup_date, last_login_date, login_count),
             )
         con.commit()
+
+    def write_flying_bee(width="45", height="45", frameBorder="0"):
+        return st.markdown('<iframe src="https://giphy.com/embed/ksE4eFvxZM3oyaFEVo" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/bee-traveling-flying-into-next-week-like-ksE4eFvxZM3oyaFEVo"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
 
     con = sqlite3.connect("db/users.db")
     cur = con.cursor()
