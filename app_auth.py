@@ -21,7 +21,7 @@ def signin_main():
         try:
             # NB: st_authenticator.py.register_user() (line 347 & 352) was modified to return the email
             register_email = authenticator.register_user(
-                form_name="Sign Up", preauthorization=False, location="sidebar"
+                form_name="Sign Up", preauthorization=False, location="main"
             )
 
             if register_email:
@@ -109,7 +109,7 @@ def signin_main():
 
     def reset_password(email):
         try:
-            if authenticator.reset_password(email, ""):
+            if authenticator.reset_password(email, "", location='sidebar'):
                 update_db()
                 send_email(
                     recipient=email,
@@ -201,7 +201,7 @@ def signin_main():
     if authentication_status:
         update_db()
 
-        authenticator.logout("Logout", "main")
+        authenticator.logout("Logout", "sidebar")
         detials_cols = st.columns(2)
         detials_cols[0].write(f"Welcome *{name}*")
         with detials_cols[1].expander("Reset Password"):

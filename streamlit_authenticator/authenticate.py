@@ -265,13 +265,13 @@ class Authenticate:
         if location == 'main':
             reset_password_form = st.form('Reset password')
         elif location == 'sidebar':
-            reset_password_form = st.sidebar.form('Reset password')
-        
-        reset_password_form.subheader(form_name)
-        self.username = username.lower()
-        self.password = reset_password_form.text_input('Current password', type='password')
-        new_password = reset_password_form.text_input('New password', type='password')
-        new_password_repeat = reset_password_form.text_input('Repeat password', type='password')
+            with st.sidebar.expander('reset password', False):
+                reset_password_form = st.form('Reset password')
+                reset_password_form.subheader(form_name)
+                self.username = username.lower()
+                self.password = reset_password_form.text_input('Current password', type='password')
+                new_password = reset_password_form.text_input('New password', type='password')
+                new_password_repeat = reset_password_form.text_input('Repeat password', type='password')
 
         if reset_password_form.form_submit_button('Reset'):
             if self._check_credentials(inplace=False):
