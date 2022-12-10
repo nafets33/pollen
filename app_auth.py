@@ -1,36 +1,38 @@
 import os
 from random import randint
+from dotenv import load_dotenv
 import sqlite3
 import streamlit as st
 import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from dotenv import load_dotenv
-load_dotenv()
-# "C:\Users\jedidiah\AppData\Local\Programs\Python\Python311\Lib\site-packages\streamlit_authenticator"
 
-## IMPROVE GLOBAL VARIABLES
 
 def signin_main():
+    """Return True or False if the user is signed in"""
+
+    load_dotenv()
 
     def register_user():
-        if "activation_code" not in st.session_state:
-            st.session_state["activation_code"] = randint(100000, 999999)
+        if "verification_code" not in st.session_state:
+            st.session_state["verification_code"] = randint(100000, 999999)
 
         try:
             # NB: st_authenticator.py.register_user() (line 347 & 352) was modified to return the email
-            register_email = authenticator.register_user("Sign Up", preauthorization=False)
+            register_email = authenticator.register_user(
+                "Sign Up", preauthorization=False
+            )
 
             if register_email:
-                activation_code = st.session_state["activation_code"]
+                verification_code = st.session_state["verification_code"]
 
                 # verify email
                 send_email(
                     recipient=register_email,
                     subject="PollenQ. Verify Email",
                     body=f"""
-    Your PollenQ activation code is {activation_code}
+    Your PollenQ verification code is {verification_code}
 
     Please enter this code in the website to complete your registration
 
@@ -38,14 +40,27 @@ def signin_main():
     PollenQ
     """,
                 )
+                # TODO user activiation code
                 update_db()
-                st.success("Welcome On Board! Please login with your detials above")
-                entered_code = st.text_input("Activation Code", max_chars=6)
+                send_email(
+                    recipient=register_email,
+                    subject="Welcome On Board PollenQ!",
+                    body=f"""
+    You have successful created a PollenQ account. Ensure you keep your login detials safe.
+
+    Thank you,
+    PollenQ
+    """,
+                )
+                st.info(
+                    "A verification code has been sent to your email. Please enter the code below"
+                )
+                entered_code = st.text_input("Verification Code", max_chars=6)
 
                 if st.button("Submit"):
-                    if int(entered_code) == st.session_state["activation_code"]:
+                    if int(entered_code) == st.session_state["verification_code"]:
 
-                        # notify user
+                        # verification successful
                         send_email(
                             recipient=register_email,
                             subject="Welcome On Board PollenQ!",
@@ -61,7 +76,6 @@ def signin_main():
 
         except Exception as e:
             st.error(e)
-
 
     def forgot_password():
         try:
@@ -94,7 +108,6 @@ def signin_main():
         except Exception as e:
             st.error(e)
 
-
     def reset_password(email):
         try:
             if authenticator.reset_password(email, ""):
@@ -117,12 +130,11 @@ def signin_main():
         except Exception as e:
             st.error(e)
 
-
     def send_email(recipient, subject, body):
 
         # Define email sender and receiver
-        pollenq_gmail = os.environ.get('pollenq_gmail')
-        pollenq_gmail_app_pw = os.environ.get('pollenq_gmail_app_pw')
+        pollenq_gmail = os.environ.get("pollenq_gmail")
+        pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
 
         em = EmailMessage()
         em["From"] = pollenq_gmail
@@ -137,7 +149,6 @@ def signin_main():
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
             smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
             smtp.sendmail(pollenq_gmail, recipient, em.as_string())
-
 
     def update_db():
         cur.execute("DELETE FROM users")
@@ -156,12 +167,11 @@ def signin_main():
             )
         con.commit()
 
-
     con = sqlite3.connect("db/users.db")
     cur = con.cursor()
 
     # cur.execute("DROP TABLE users")
-    # cur.execute("CREATE TABLE users(email, password, name, signup_date)")
+    # cur.execute("CREATE TABLE users(email, password, name, signup_date, last_login_date, login_count)")
 
     # Read usernames and convert to nested dict
     users = cur.execute("SELECT * FROM users").fetchall()
@@ -176,13 +186,12 @@ def signin_main():
         }
     credentials = {"usernames": credentials}
 
-
     # Create authenticator object
     authenticator = stauth.Authenticate(
         credentials=credentials,
-        cookie_name= os.environ.get("cookie_name"),
-        key= os.environ.get("cookie_key"),
-        cookie_expiry_days= int(os.environ.get("cookie_expiry_days")),
+        cookie_name=os.environ.get("cookie_name"),
+        key=os.environ.get("cookie_key"),
+        cookie_expiry_days=int(os.environ.get("cookie_expiry_days")),
         preauthorized={"emails": "na"},
     )
 
@@ -198,8 +207,7 @@ def signin_main():
         detials_cols[0].write(f"Welcome *{name}*")
         with detials_cols[1].expander("Reset Password"):
             reset_password(email)
-
-        return email
+        return True
 
     # login unsucessful; forgot password or create account
     elif authentication_status == False:
@@ -208,7 +216,6 @@ def signin_main():
             forgot_password()
         with st.expander("New User"):
             register_user()
-
         return False
 
     # no login trial; create account
@@ -216,12 +223,4 @@ def signin_main():
         st.warning("Please enter your email and password")
         with st.expander("New User"):
             register_user()
-        
         return False
-
-
-    # # Proceed if authentication is successful
-    # if authentication_status:
-    #     # st.title("PollenQ Homepage")
-
-    
