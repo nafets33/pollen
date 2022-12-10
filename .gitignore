@@ -8,3 +8,4 @@ __pycache__/Hive_Utils.cpython-39.pyc
 *.csv
 *.ipynb
 .env_jq
+.venv

@@ -224,3 +224,7 @@ def signin_main():
         with st.expander("New User"):
             register_user()
         return False
+
+
+if __name__ == "__main__":
+    signin_main()
