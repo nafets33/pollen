@@ -21,7 +21,7 @@ def signin_main():
         try:
             # NB: st_authenticator.py.register_user() (line 347 & 352) was modified to return the email
             register_email = authenticator.register_user(
-                "Sign Up", preauthorization=False
+                form_name="Sign Up", preauthorization=False, location="sidebar"
             )
 
             if register_email:
@@ -79,10 +79,9 @@ def signin_main():
 
     def forgot_password():
         try:
-            (
-                email_forgot_pw,
-                random_password,
-            ) = authenticator.forgot_password("Reset Password")
+            (email_forgot_pw, random_password,) = authenticator.forgot_password(
+                form_name="Reset Password", location="sidebar"
+            )
 
             if email_forgot_pw:
                 # notify user and update password
@@ -196,7 +195,7 @@ def signin_main():
     )
 
     # Check login. Automatically gets stored in session state
-    name, authentication_status, email = authenticator.login("Login", "main")
+    name, authentication_status, email = authenticator.login("Login", "sidebar")
 
     # login successful; proceed
     if authentication_status:
