@@ -29,10 +29,10 @@ if prior day abs(change) > 1 ignore ticker for the day!
 """
 
 if prod:
-    from QueenHive import read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
 else:
-    from QueenHive_sandbox import read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 # script arguments
@@ -386,6 +386,29 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
         else:
             return {'app_flag': False}    
 
+    elif request_name == "subconscious": # buz
+        # archive_bucket = 'queen_controls_requests'
+        app_order_base = [i for i in APP_requests[request_name]]
+        if app_order_base:
+            for app_request in app_order_base:
+                if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
+                    # print("queen update order trigger request Id already received")
+                    return {'app_flag': False}
+                else:
+                    print("queen control gather", app_request['request_name'],)
+                    QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
+                    # update control
+                    path_key = app_request['subconscious_thought_to_clear']
+                    QUEEN[request_name][path_key] = app_request['subconscious_thought_new_value']
+                    msg = (f'{path_key} Subconscious thought cleared:: {path_key}')
+                    print(msg)
+                    logging.info(msg)
+
+                    PickleData(PB_QUEEN_Pickle, QUEEN)
+                    return {'app_flag': True, 'app_request': app_request}
+        else:
+            return {'app_flag': False}
+    
     elif request_name == "workerbees":
         app_order_base = [i for i in APP_requests[request_name]]
         if app_order_base:
@@ -773,7 +796,6 @@ def king_knights_requests(QUEEN, STORY_bee, avail_trigs, trigbee, ticker_time_fr
     def knight_request_recon_portfolio():
         # debate if we should place a new order based on current portfolio trades
         pass
-    
     def trade_Scenarios(trigbee, wave_amo):
         # Create buying power upgrades depending on the STARS waves
         
@@ -783,13 +805,9 @@ def king_knights_requests(QUEEN, STORY_bee, avail_trigs, trigbee, ticker_time_fr
         #     pass
 
         return True
-
-
     def trade_Allowance():
         # trade is not allowed x% level, if so kill/reduce trade
-        return True
-
-    
+        return True 
     def proir_waves():
         # return fequency of prior waves and statement conclusions
         return True
@@ -828,7 +846,6 @@ def king_knights_requests(QUEEN, STORY_bee, avail_trigs, trigbee, ticker_time_fr
         # # # # vars
         ticker, tframe, frame = ticker_time_frame.split("_")
         star_time = f'{tframe}{"_"}{frame}'
-        # STORY_bee = QUEEN[queens_chess_piece]['conscience']['STORY_bee']
         ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
         trigbee_wave_direction = ['waveup' if 'buy' in trigbee else 'wavedown' ][0]
 
@@ -1042,20 +1059,14 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
 
             """ the hunt """
             s_time = datetime.datetime.now(est)
-            ticker_storys = {k:v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
-            # ticker_storys["TSLA_1Minute_1Day"].keys() >>> # dict_keys(['story', 'waves', 'KNIGHTSWORD'])
-            all_tickers__macdstates = {k:v['story']['macd_state'] for (k,v) in ticker_storys.items()}
             
-            active_trigs = {k: [] for k in ticker_storys.keys()}
-            for ttf, story_ in ticker_storys.items():
-                if story_['story']['macd_state'] in QUEEN['heartbeat']['available_triggerbees'] and (s_time - story_['story']['time_state']).seconds < 33:
-                    active_trigs[ttf].append(story_['story']['macd_state'])
+            req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=[ticker])
+            active_trigs = req['active_trigs']
+            # all_current_trigs = req['all_current_trigs']
             
-            # active_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and i['story']["macd_state"] in QUEEN['heartbeat']['available_triggerbees'] and (s_time - i['story']['time_state']).seconds < 33}
             active_trigs = add_app_wave_trigger(active_trigs=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)      
             charlie_bee['queen_cyle_times']['thehunt__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
             # Return Scenario based trades
-            # ipdb.set_trace()
             
             try:
                 # enabled stars
@@ -1549,10 +1560,34 @@ def qorder_honey__distance_from_breakeven_tiers(run_order):
 def subconscious_update(root_name, dict_to_add):
     # store message
     if root_name not in QUEEN['subconscious'].keys():
-        QUEEN['subconscious'][root_name] = []
-        QUEEN['subconscious'][root_name].append(dict_to_add)
+        if dict_to_add not in QUEEN['subconscious'][root_name]:
+            QUEEN['subconscious'][root_name].append(dict_to_add)
     else:
-        QUEEN['subconscious'][root_name].append(dict_to_add)
+        if dict_to_add not in QUEEN['subconscious'][root_name]:
+            QUEEN['subconscious'][root_name].append(dict_to_add)
+
+    return True
+
+
+def subconscious_clear(root_name):
+    # store message
+    if len(QUEEN['subconscious'][root_name]) > 0:
+        
+        if root_name == 'app_info':
+            try:
+                thoughts_to_pop = []
+                for idx, thought in enumerate(QUEEN['subconscious'][root_name]):
+                    if len(thought) > 0 and thought['ticker_time_frame'] in STORY_bee.keys():
+                        print('clear subconscious thought, db now streaming ticker')
+                        thoughts_to_pop.append(idx)
+                if len(thoughts_to_pop) > 0:
+                    QUEEN['subconscious'][root_name] = [i for idx, i in enumerate(QUEEN['subconscious'][root_name]) if idx not in thoughts_to_pop]
+
+            except Exception as e:
+                print(e, print_line_of_error())
+                ipdb.set_trace()
+
+    return True
 
 
 def king_bishops_QueenOrder(STORY_bee, run_order_idx, run_order, current_profit_loss, portfolio, crypto=False):
@@ -1586,6 +1621,8 @@ def king_bishops_QueenOrder(STORY_bee, run_order_idx, run_order, current_profit_
         if ticker_time_frame not in STORY_bee.keys():
             subconscious_update(root_name='app_info', dict_to_add={'ticker_time_frame': ticker_time_frame, 'msg': f'{run_order["symbol"]} open order and ticker not active Handle Order Manually'})
             return {'bee_sell': False}
+        
+        subconscious_clear(root_name='app_info')
         
         origin_closing_orders_df = return_closing_orders_df(QUEEN=QUEEN, exit_order_link=runorder_client_order_id)
         first_sell = True if len(origin_closing_orders_df) > 0 else False
@@ -1641,7 +1678,7 @@ def king_bishops_QueenOrder(STORY_bee, run_order_idx, run_order, current_profit_
         current_wave = last_buy_wave if last_buy_wave["wave_start_time"] > last_sell_wave["wave_start_time"] else last_sell_wave
 
         # handle not in Story default to SPY
-        if ticker_time_frame_origin not in QUEEN[queens_chess_piece]['conscience']['STORY_bee'].keys():
+        if ticker_time_frame_origin not in STORY_bee.keys():
             ticker_time_frame_origin = "SPY_1Minute_1Day"
         ticker, tframe, tperiod = ticker_time_frame_origin.split("_")
         star = f'{tframe}{"_"}{tperiod}'
@@ -1649,7 +1686,7 @@ def king_bishops_QueenOrder(STORY_bee, run_order_idx, run_order, current_profit_
 
 
         # POLLEN STORY
-        ttframe_story = QUEEN[queens_chess_piece]['conscience']['STORY_bee'][ticker_time_frame_origin]['story']
+        ttframe_story = STORY_bee[ticker_time_frame_origin]['story']
         current_macd = ttframe_story['macd_state']
         current_macd_time = int(current_macd.split("-")[-1])
         
@@ -1851,7 +1888,7 @@ def stop_queen_order_from_kingbishop(run_order):
         return False
 
 
-def queen_orders_main(QUEEN, STORY_bee, portfolio, APP_requests):
+def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
 
     def route_queen_order(QUEEN, queen_order, queen_order_idx):
         
@@ -2121,7 +2158,7 @@ def order_management(STORY_bee, QUEEN, APP_requests, ORDERS, portfolio):
     # >for each running position determine to exit the position                
 
     # Submitted Orders First
-    queen_orders_main(QUEEN=QUEEN, STORY_bee=STORY_bee, portfolio=portfolio, APP_requests=APP_requests)
+    queen_orders_main(QUEEN=QUEEN, ORDERS=ORDERS, STORY_bee=STORY_bee, portfolio=portfolio, APP_requests=APP_requests)
 
     # Reconcile QUEENs portfolio
     # reconcile_portfolio()
@@ -2199,15 +2236,8 @@ try:
 
 
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-    if prod:
-        keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
-        rest = keys[0]['rest']
-        api = keys[0]['api']
-    else:
-        # Paper
-        keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
-        rest = keys_paper[0]['rest']
-        api = keys_paper[0]['api']
+    api = return_alpaca_api_keys(prod=prod)['api']
+
 
     """# Dates """
     # current_day = api.get_clock().timestamp.date().isoformat()
@@ -2254,11 +2284,10 @@ try:
     init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
 
-    # Pollen QUEEN # Orders
+    # QUEEN Databases
     APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-    queen_and_orders = read_queensmind(prod=prod, db_root=db_root)
-    QUEEN = queen_and_orders['queen']
-    ORDERS = queen_and_orders['orders']
+    QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+    ORDERS = ReadPickleData(PB_Orders_Pickle)
 
     # Ticker database of pollenstory ## Need to seperate out into tables
     ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
@@ -2271,7 +2300,8 @@ try:
     APP_req = add_key_to_app(APP_requests)
     APP_requests = APP_req['APP_requests']
     if APP_req['update']:
-        PickleData(PB_App_Pickle, APP_requests)
+        # PickleData(PB_App_Pickle, APP_requests)
+        print("App DB needs update")
 
     # add new keys
     QUEEN_req = add_key_to_QUEEN(QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
@@ -2337,31 +2367,29 @@ try:
             s = datetime.datetime.now(est)
             # refresh db
             s_time = datetime.datetime.now(est)
-            # Pollen QUEEN # Orders
+            # QUEEN Databases
             APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-            queen_and_orders = read_queensmind(prod=prod, db_root=db_root)
-            QUEEN = queen_and_orders['queen']
-            ORDERS = queen_and_orders['orders']
+            portfolio = return_alpc_portolio(api)['portfolio']
+            # QUEEN = ReadPickleData(PB_Orders_Pickle)
+            # ORDERS = ReadPickleData(PB_Orders_Pickle)
 
             ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
             POLLENSTORY = ticker_db['pollenstory']
             STORY_bee = ticker_db['STORY_bee']
-
-            portfolio = return_alpc_portolio(api)['portfolio']
-
 
             refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
             charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             # Read App Reqquests
             s_time = datetime.datetime.now(est)
-            APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
             # Client
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='stop_queen', archive_bucket=False)
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls', archive_bucket='queen_controls_requests')
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='power_rangers', archive_bucket='power_rangers_requests')
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls_reset', archive_bucket=False)
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='workerbees')
+            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='subconscious', archive_bucket='subconscious_requests')
+
 
             confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
             charlie_bee['queen_cyle_times']['app'] = (datetime.datetime.now(est) - s_time).total_seconds()

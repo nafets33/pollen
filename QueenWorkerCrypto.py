@@ -1,54 +1,54 @@
 # QueenBee
 import logging
-from enum import Enum
-from operator import sub
-from signal import signal
-from symtable import Symbol
-import time
-import alpaca_trade_api as tradeapi
-import asyncio
+# import asynci
 import os
 import pandas as pd
-import numpy as np
-import pandas_ta as ta
+# import numpy as np
+# import pandas_ta as ta
 import sys
-from alpaca_trade_api.rest import TimeFrame, URL
-from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
 from dotenv import load_dotenv
-import threading
 import sys
 import datetime
-from datetime import date, timedelta
 import pytz
-from typing import Callable
-import random
-import collections
-import pickle
-from tqdm import tqdm
-from stocksymbol import StockSymbol
-import requests
+# import requests
 from collections import defaultdict, deque
 import ipdb
-import tempfile
-import shutil
+import argparse
+# import tempfile
+# import shutil
 # from scipy.stats import linregress
-from scipy import stats
-import hashlib
-import json
-# from QueenHiveCoin import speedybee,  return_bars_list, return_bars
-from QueenHive import init_logging, return_bars_list, return_bars, pollen_story, ReadPickleData, return_api_keys, PickleData, return_macd, return_VWAP, return_RSI, return_sma_slope, print_line_of_error
+# from scipy import stats
+# import hashlib
+# import json
+
 
 def queen_workerbee_coins():
 
-    client_symbols_castle = ['BTCUSD', 'ETHUSD']
+    def createParser():
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-qcp', default="castle_coin")
+        parser.add_argument ('-prod', default=True)
+        return parser
+    
+    # script arguments
+    parser = createParser()
+    namespace = parser.parse_args()
+    queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
+    prod = True if str(namespace.prod).lower() == 'true' else False
+
 
     # script arguments
     # queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
-    queens_chess_piece = 'castle_coin'
+    # queens_chess_piece = 'castle_coin'
     pd.options.mode.chained_assignment = None
     est = pytz.timezone("US/Eastern")
-    load_dotenv()
-    prod = True
+
+    if prod:
+        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    else:
+        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        load_dotenv(os.path.join(os.getcwd(), '.env'))
 
     main_root = os.getcwd()
     db_root = os.path.join(main_root, 'db')
@@ -91,24 +91,19 @@ def queen_workerbee_coins():
         } 
 
 
-    """ Keys """
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
-    keys = return_api_keys(base_url, api_key_id, api_secret)
-    rest = keys[0]['rest']
-    api = keys[0]['api']
+    # # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
+    # if prod:
+    #     keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+    #     rest = keys[0]['rest']
+    #     api = keys[0]['api']
+    # else:
+    #     # Paper
+    #     keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
+    #     rest = keys_paper[0]['rest']
+    #     api = keys_paper[0]['api']
 
-    # Paper
-    api_key_id_paper = os.environ.get('APCA_API_KEY_ID_PAPER')
-    api_secret_paper = os.environ.get('APCA_API_SECRET_KEY_PAPER')
-    base_url_paper = "https://paper-api.alpaca.markets"
-    keys_paper = return_api_keys(base_url=base_url_paper, 
-        api_key_id=api_key_id_paper, 
-        api_secret=api_secret_paper,
-        prod=False)
-    rest_paper = keys_paper[0]['rest']
-    api_paper = keys_paper[0]['api']
+    api = return_alpaca_api_keys(prod=prod)['api']
+
 
     """# Dates """
     current_day = datetime.datetime.now(est).day

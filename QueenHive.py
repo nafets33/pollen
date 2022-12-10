@@ -94,6 +94,7 @@ exclude_conditions = [
 ] # 'U' afterhours
 
 
+
 def return_api_keys(base_url, api_key_id, api_secret, prod=True):
 
     # api_key_id = os.environ.get('APCA_API_KEY_ID')
@@ -116,37 +117,54 @@ def return_api_keys(base_url, api_key_id, api_secret, prod=True):
         api = tradeapi.REST(key_id=api_key_id,
                             secret_key=api_secret,
                             base_url=URL(base_url), api_version='v2')
-    return [{'rest': rest, 'api': api}]
-
+    return {'rest': rest, 'api': api}
 
 
 
 # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-if prod:
-    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    # keys
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
-    keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
-    rest = keys[0]['rest']
-    api = keys[0]['api']
-else:
-    load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    api_key_id = os.environ.get('APCA_API_KEY_ID')
-    api_secret = os.environ.get('APCA_API_SECRET_KEY')
-    base_url = "https://api.alpaca.markets"
-    load_dotenv(os.path.join(os.getcwd(), '.env'))
-    keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
-    rest = keys[0]['rest']
-    api = keys[0]['api']
+# if prod:
+#     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+#     # keys
+#     api_key_id = os.environ.get('APCA_API_KEY_ID')
+#     api_secret = os.environ.get('APCA_API_SECRET_KEY')
+#     base_url = "https://api.alpaca.markets"
+#     keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+#     rest = keys[0]['rest']
+#     api = keys[0]['api']
+# else:
+#     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+#     api_key_id = os.environ.get('APCA_API_KEY_ID')
+#     api_secret = os.environ.get('APCA_API_SECRET_KEY')
+#     base_url = "https://api.alpaca.markets"
+#     load_dotenv(os.path.join(os.getcwd(), '.env'))
+#     keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+#     rest = keys[0]['rest']
+#     api = keys[0]['api']
 
     # # Paper
     # keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
     # rest = keys_paper[0]['rest']
     # api = keys_paper[0]['api']
 
+def return_alpaca_api_keys(prod):
 
+    # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
+    if prod:
+        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+        keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+        rest = keys['rest']
+        api = keys['api']
+    else:
+        # Paper
+        load_dotenv(os.path.join(os.getcwd(), '.env'))
+        keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
+        rest = keys_paper['rest']
+        api = keys_paper['api']
+
+    
+    return {'rest': rest, 'api': api}
+
+api = return_alpaca_api_keys(prod=prod)['api']
 
 """# Dates """
 current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
@@ -290,6 +308,8 @@ def init_QUEEN_App():
     'queen_contorls_lastupdate': False, 
     'workerbees': [],
     'workerbees_requests': [],
+    'subconscious': [],
+    'subconscious_requests': [],
     'del_QUEEN_object': [],
     'del_QUEEN_object_requests': [],
     'last_app_update': datetime.datetime.now(est), ## Update Time Zone... Low Priority
@@ -356,7 +376,44 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
     return {'QUEEN': QUEEN, 'update': update}
 
 
+def return_STORYbee_trigbees(QUEEN, STORY_bee, tickers_filter=False):
+    now_time = datetime.datetime.now(est)
+    # all_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
+    # active_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and i['story']["macd_state"] in QUEEN['heartbeat']['available_triggerbees'] and (now_time - i['story']['time_state']).seconds < 33}
 
+    # ticker_storys = {k:v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker} # filter by ticker
+    # ticker_storys["TSLA_1Minute_1Day"].keys() >>> # dict_keys(['story', 'waves', 'KNIGHTSWORD'])
+    # all_trigs = {k: v['story']['macd_state'] for (k,v) in STORY_bee.items()}
+    all_current_trigs = {}
+    active_trigs = {}
+    for ttf, story_ in STORY_bee.items():
+        ticker = ttf.split("_")[0]
+        if tickers_filter:
+            if ticker not in tickers_filter:
+                continue # next ttf
+        if story_['story']['macd_state'] in QUEEN['heartbeat']['available_triggerbees'] and (now_time - story_['story']['time_state']).seconds < 33:
+            if ttf not in active_trigs.keys():
+                active_trigs[ttf] = []
+            active_trigs[ttf].append(story_['story']['macd_state'])
+        elif (now_time - story_['story']['time_state']).seconds < 33:
+            if ttf not in all_current_trigs.keys():
+                all_current_trigs[ttf] = []
+            all_current_trigs[ttf].append(story_['story']['macd_state'])
+    
+    return {'active_trigs': active_trigs, 'all_current_trigs': all_current_trigs}
+
+
+# def add_trading_model(PB_QUEEN_Pickle, QUEEN, ticker, model='MACD', status='active'):  ### TEST OUT SAVING QUEEN OUTSIDE QUEEN Glob var
+#     trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
+#     if ticker not in trading_models.keys():
+#         print(ticker, " Ticker Missing Trading Model Adding Default ", model)
+#         logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
+#         tradingmodel1 = generate_TradingModel(ticker=ticker, status=status)[model]
+#         QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
+#         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+#         return QUEEN
+#     else:
+#         return QUEEN
 
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
@@ -823,8 +880,6 @@ def mark_macd_signal_cross(df):  #return df: Mark the signal macd crosses
     except Exception as e:
         msg=(e,"--", print_line_of_error(), "--", 'macd_cross')
         logging.critical(msg)     
-
-
 
 
 def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
