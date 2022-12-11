@@ -2853,14 +2853,14 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
         df = df[df['queen_order_state'].isin(queen_order_state)].copy()
 
         if len(df) > 0:
-            if 'running' in queen_order_state:
-                df = df[col_view]
-            if 'profit_loss' in df.columns:
-                df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
+            # if 'running' in queen_order_state:
+            #     df = df[col_view]
+            # if 'profit_loss' in df.columns:
+            #     df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
             if "honey" in df.columns:
                 df["honey"] = df['honey'].map("{:.2%}".format)
-            if "cost_basis" in df.columns:
-                df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
+            # if "cost_basis" in df.columns:
+            #     df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
 
             col_view = [i for i in col_view if i in df.columns]
             df_return = df[col_view].copy()
