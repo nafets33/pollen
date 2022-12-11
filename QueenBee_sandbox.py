@@ -1569,10 +1569,11 @@ def subconscious_update(root_name, dict_to_add):
     return True
 
 
-def subconscious_clear(root_name):
+def subconscious_mind(root_name):
     # store message
+    if root_name not in QUEEN['subconscious']:
+        QUEEN['subconscious'][root_name] = []
     if len(QUEEN['subconscious'][root_name]) > 0:
-        
         if root_name == 'app_info':
             try:
                 thoughts_to_pop = []
@@ -1622,7 +1623,7 @@ def king_bishops_QueenOrder(STORY_bee, run_order_idx, run_order, current_profit_
             subconscious_update(root_name='app_info', dict_to_add={'ticker_time_frame': ticker_time_frame, 'msg': f'{run_order["symbol"]} open order and ticker not active Handle Order Manually'})
             return {'bee_sell': False}
         
-        subconscious_clear(root_name='app_info')
+        subconscious_mind(root_name='app_info')
         
         origin_closing_orders_df = return_closing_orders_df(QUEEN=QUEEN, exit_order_link=runorder_client_order_id)
         first_sell = True if len(origin_closing_orders_df) > 0 else False
