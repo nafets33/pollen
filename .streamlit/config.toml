@@ -114,15 +114,19 @@ showfileUploaderEncoding = true
 # Default: true
 showPyplotGlobalUse = true
 [theme]
-# The preset Streamlit theme that your custom theme inherits from. One of "light" or "dark".
-# base =
-# Primary accent color for interactive elements.
-# primaryColor =
-# Background color for the main content area.
-# backgroundColor =
-# Background color used for the sidebar and most interactive widgets.
-# secondaryBackgroundColor =
-# Color used for almost all text.
-# textColor =
-# Font family for all text in the app, except code blocks. One of "sans serif", "serif", or "monospace".
-# font =
+# Primary accent for interactive elements
+primaryColor = '#C9A500'
+
+# Background color for the main content area
+backgroundColor = '#FFFDE8'
+
+# Background color for sidebar and most interactive widgets
+secondaryBackgroundColor = '#C9A500'
+
+# Color used for almost all text
+textColor = '#59490A'
+
+# Font family for all text in the app, except code blocks
+# Accepted values (serif | sans serif | monospace) 
+# Default: "sans serif"
+font = "sans serif"

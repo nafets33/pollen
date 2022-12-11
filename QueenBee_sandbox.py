@@ -1059,11 +1059,8 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
 
             """ the hunt """
             s_time = datetime.datetime.now(est)
-            
             req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=[ticker])
-            active_trigs = req['active_trigs']
-            # all_current_trigs = req['all_current_trigs']
-            
+            active_trigs = req['active_trigs']            
             active_trigs = add_app_wave_trigger(active_trigs=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)      
             charlie_bee['queen_cyle_times']['thehunt__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
             # Return Scenario based trades
@@ -1890,6 +1887,12 @@ def stop_queen_order_from_kingbishop(run_order):
 
 
 def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
+    ### TO DO ###
+
+    # For all Valid Tickers (mkr is open) aysnc api returns for 1.Order & 2.LastPrice (getsnapshot) Instead func that returns from main db BUT check if ticker isn't streaming (Story_bee['timestame'])
+    def async_route_queenorder():
+        # order_status = check_order_status(api=api, client_order_id=order_id, queen_order=queen_order)
+        return True
 
     def route_queen_order(QUEEN, queen_order, queen_order_idx):
         
@@ -2018,11 +2021,11 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
             ticker = queen_order['ticker']
             order_id = queen_order['client_order_id']
             current_updated_at = [queen_order['updated_at'] if 'updated_at' in queen_order.keys() else False][0]
-            # check if order fulfilled
+            # 1 check if order fulfilled
             order_status = check_order_status(api=api, client_order_id=order_id, queen_order=queen_order)
-            # update filled qty & $
+            # 2 update filled qty & $
             queen_order = update_latest_queen_order_status(order_status=order_status, queen_order_idx=queen_order_idx)
-            # Process Queen Order State
+            # 3 Process Queen Order State
             queen_order = alpaca_queen_order_state(QUEEN=QUEEN, order_status=order_status, queen_order=queen_order, queen_order_idx=queen_order_idx)
             # validate RUNNING # check if run_order needs to be arhived?
 
@@ -2039,13 +2042,14 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
             logging.error({'queen order client id': queen_order['client_order_id'], 'msg': 'unable to route queen order', 'error': str(e)})
 
     # route queen order >>>  process queen_order_states
-    try:
-        # App Requests
-        
+    try: # App Requests
+        s_app = datetime.datetime.now(est)
         app_req = process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='update_queen_order', archive_bucket='update_queen_order_requests')
         if app_req['app_flag']:
             update_queen_order(QUEEN=QUEEN, update_package=app_req['app_request']['queen_order_update_package'])
-        # charlie_bee['queen_cyle_times']['refresh_queenorder__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
+            charlie_bee['queen_cyle_times']['app_req_updatequeenOrder_om'] = (datetime.datetime.now(est) - s_app).total_seconds()
+
+        charlie_bee['queen_cyle_times']['app_req_om'] = (datetime.datetime.now(est) - s_app).total_seconds()
     except Exception as e:
         print('APP: Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
         log_error_dict = logging_log_message(log_type='error', msg='APP: Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
@@ -2058,6 +2062,9 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
     df = QUEEN['queen_orders']
     df['index'] = df.index
     df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
+    charlie_bee['queen_cyle_times']['app_filter_ORDERS_om'] = (datetime.datetime.now(est) - s_loop).total_seconds()
+
+
     # active_orders = df_active.set_index("index").transpose().to_dict(orient="dict")
     for idx in df_active['index'].to_list():
         run_order = QUEEN['queen_orders'].iloc[idx].to_dict()
@@ -2082,7 +2089,7 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
 
             # Process Queen Order States
             s_time = datetime.datetime.now(est)
-            run_order = route_queen_order(QUEEN=QUEEN, queen_order=run_order, queen_order_idx=idx)
+            run_order = route_queen_order(QUEEN=QUEEN, queen_order=run_order, queen_order_idx=idx) ## send in order_status
             charlie_bee['queen_cyle_times']['route_queenorder__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             if run_order['queen_order_state'] in ["error", "completed"]:

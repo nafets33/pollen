@@ -24,6 +24,8 @@ import sqlite3
 import streamlit as st
 # from appHIVE import signin_main
 from app_auth import signin_main
+import base64
+
 
 # import streamlit_authenticator as stauth
 # import smtplib
@@ -43,12 +45,21 @@ main_root = os.getcwd()
 jpg_root = os.path.join(main_root, 'misc')
 bee_image = os.path.join(jpg_root, 'bee.jpg')
 bee_power_image = os.path.join(jpg_root, 'power.jpg')
-image = Image.open(bee_image)
+hex_image = os.path.join(jpg_root, 'hex_design.jpg')
+hive_image = os.path.join(jpg_root, 'bee_hive.jpg')
+queen_image = os.path.join(jpg_root, 'queen.jpg')
+queen_angel_image = os.path.join(jpg_root, 'queen_angel.jpg')
+page_icon = Image.open(bee_image)
+flyingbee_gif_path = os.path.join(jpg_root, 'flyingbee_gif_clean.gif')
+
 
 ##### STREAMLIT ###
+default_text_color = '#59490A'
+default_font = "sans serif"
+default_yellow_color = '#C5B743'
 st.set_page_config(
      page_title="pollenq",
-     page_icon=image,
+     page_icon=page_icon,
      layout="wide",
      initial_sidebar_state="expanded",
     #  Theme='Light'
@@ -119,7 +130,7 @@ def queen_triggerbees():
     
     with cq1:
         if len(active_trigs) > 0:
-            mark_down_text(align='left', fontsize=15, color='Green', text="Active TriggerBees")
+            mark_down_text(align='left', fontsize=15, color=default_text_color, text="Active TriggerBees")
             # write_flying_bee()
             df = pd.DataFrame(active_trigs.items())
             df = df.rename(columns={0: 'ttf', 1: 'trig'})
@@ -127,20 +138,21 @@ def queen_triggerbees():
             st.write(df)
             # g = {write_flying_bee() for i in range(len(df))}
         else:
-            mark_down_text(fontsize=12, color='Red', text="No Active TriggerBees")     
+            mark_down_text(fontsize=12, color=default_text_color, text="No Active TriggerBees")     
     with cq2:
-        write_flying_bee(width=89, height=89)
+        # write_flying_bee(width=89, height=89)
+        flying_bee_gif()
 
     with cq3:
         if len(all_current_trigs) > 0:
             with st.expander('All Available TriggerBees'):
-                mark_down_text(fontsize=15, color='Green', text="All Available TriggerBees")
+                mark_down_text(fontsize=15, color=default_text_color, text="All Available TriggerBees")
                 df = pd.DataFrame(all_current_trigs.items())
                 df = df.rename(columns={0: 'ttf', 1: 'trig'})
                 df = df.sort_values('ttf')
                 st.write(df)
         else:
-            mark_down_text(fontsize=12, color='Red', text="No Available TriggerBees")
+            mark_down_text(fontsize=12, color=default_text_color, text="No Available TriggerBees")
 
 
 def queen_order_flow():
@@ -172,16 +184,16 @@ def queen_order_flow():
                 if order_state == 'error':
                     continue
                 elif order_state == 'submitted':
-                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
                     run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
                 elif order_state == 'running_open':
-                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
                     run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
                 elif order_state == 'running':
-                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
                     run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height, paginationOn=False)
                 elif order_state == 'running_close':
-                    mark_down_text(align='center', color='Green', fontsize='23', text=order_state)
+                    mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
                     run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
 
         
@@ -360,7 +372,7 @@ def create_main_macd_chart(df):
     fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
     fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
     fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
-    fig.update_layout(height=600, width=1500, title_text=title)
+    fig.update_layout(title_text=title)
     df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
     fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
     # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
@@ -532,20 +544,25 @@ def return_image_upon_save(bee_power_image, width=54):
 
 
 def update_Workerbees(APP_requests):
-
+    #### SPEED THIS UP AND CHANGE TO DB CALL FOR ALLOWED ACTIVE TICKERS ###
+    all_alpaca_tickers = api.list_assets()
+    alpaca_symbols_dict = {}
+    for n, v in enumerate(all_alpaca_tickers):
+        if all_alpaca_tickers[n].status == 'active':
+            alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
     with st.expander("WorkingBees Sybmols"):
         wrkerbees_list = list(QUEEN['workerbees'].keys())
-        workerbee = st.selectbox('select worker', wrkerbees_list, index=wrkerbees_list.index('castle'))
-        with st.form("Update WorkerBees"):
-            all_alpaca_tickers = api.list_assets()
-            alpaca_symbols_dict = {}
-            for n, v in enumerate(all_alpaca_tickers):
-                if all_alpaca_tickers[n].status == 'active':
-                    alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
-            # add ticker
+        c1, c2, c3 = st.columns((1,5,1))
+        with c1:
+            workerbee = st.selectbox('select worker', wrkerbees_list, index=wrkerbees_list.index('castle'))
+        with c2:
             worker_tickers = st.multiselect(label='workers', options=list(alpaca_symbols_dict.keys()) + crypto_symbols__tickers_avail, default=QUEEN['workerbees'][workerbee]['tickers'])
-            c1, c2, c3 = st.columns(3)
+        with c3:
+            flying_bee_gif()
 
+        with st.form("Update WorkerBees"):
+            st.write("MACD Model Settings")
+            c1, c2, c3 = st.columns(3)
             with c1:
                 fast = st.slider("fast", min_value=1, max_value=33, value=int(QUEEN['workerbees'][workerbee]['MACD_fast_slow_smooth']['fast']))
             with c2:
@@ -1122,8 +1139,8 @@ def its_morphin_time_view(QUEEN, STORY_bee, ticker, POLLENSTORY):
     return {'macd_tier_guage': t, 'hist_tier_guage': h}
 
 
-def mark_down_text(align='center', color='Black', fontsize='33', text='Hello There'):
-    st.markdown('<p style="text-align: {}; font-family:sans-serif; color:{}; font-size: {}px;">{}</p>'.format(align, color, fontsize, text), unsafe_allow_html=True)
+def mark_down_text(align='center', color=default_text_color, fontsize='33', text='Hello There', font=default_font):
+    st.markdown('<p style="text-align: {}; font-family:{}; color:{}; font-size: {}px;">{}</p>'.format(align, font, color, fontsize, text), unsafe_allow_html=True)
     return True
 
 
@@ -1134,6 +1151,25 @@ def page_line_seperator(height='3', border='none', color='#C5B743'):
 def write_flying_bee(width="45", height="45", frameBorder="0"):
     return st.markdown('<iframe src="https://giphy.com/embed/ksE4eFvxZM3oyaFEVo" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/bee-traveling-flying-into-next-week-like-ksE4eFvxZM3oyaFEVo"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
 
+
+def hexagon_gif(width="45", height="45", frameBorder="0"):
+    return st.markdown('<iframe src="https://giphy.com/embed/Wv35RAfkREOSSjIZDS" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/star-12-hexagon-Wv35RAfkREOSSjIZDS"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
+
+
+def flying_bee_gif():
+    file_ = open(os.path.join(jpg_root, 'flyingbee_gif_clean.gif'), "rb")
+    contents = file_.read()
+    data_url = base64.b64encode(contents).decode("utf-8")
+    file_.close()
+    st.markdown(f'<img src="data:image/gif;base64,{data_url}" width="33" height="33" alt="bee">',unsafe_allow_html=True,)
+
+
+def local_gif(gif_path, width='33', height='33'):
+    with open(gif_path, "rb") as file_:
+        contents = file_.read()
+        data_url = base64.b64encode(contents).decode("utf-8")
+        # file_.close()
+        st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">',unsafe_allow_html=True,)
 
 
 def pollen__story(df):
@@ -1191,7 +1227,7 @@ def model_wave_results(STORY_bee):
             # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
 
         df = pd.DataFrame(return_results.items())
-        mark_down_text(color='Green', text=f'{"Trigger Bee Model Results "}')
+        mark_down_text(color='#C5B743', text=f'{"Trigger Bee Model Results "}')
         st.write(df) 
 
         return True
@@ -1219,6 +1255,7 @@ def queens_subconscious_Thoughts(QUEEN):
         for key, bucket in QUEEN['subconscious'].items():
             if len(bucket) > 0:
                 st.write(bucket)
+
 
 def clear_subconscious_Thought(QUEEN, APP_requests):
     with st.form('clear subconscious'):
@@ -1311,9 +1348,12 @@ if authorized_user:
 
     clean_out_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
 
-st.sidebar.button("ReRun")
+st.sidebar.button("Refresh")
+st.sidebar.write("always Bee better")
 
-c1,c2,c3 = st.columns(3)
+c1,c2,c3 = st.columns((1,3,1))
+# with c1:
+#     local_gif(gif_path=flyingbee_gif_path, width='33', height='33')
 with c2:
     option = st.radio(
                 "",
@@ -1324,13 +1364,13 @@ with c2:
         horizontal=True,
     )
 with c3:
-    st.image(image, caption='pollenq', width=54)
+    # st.image(page_icon, caption='pollenq', width=54)
+    flying_bee_gif()
 
-c1,c2,c3,c4,c5, = st.columns(5)
+page_line_seperator('3', color=default_yellow_color)
 
-# st.sidebar.write("<<<('bee better')>>>")
-default_yellow_color = '#C5B743'
-page_line_seperator('3', color='#C5B743')
+# c1,c2,c3,c4,c5, = st.columns(5)
+
 
 def rename_trigbee_name(tribee_name):
     return tribee_name
@@ -1453,17 +1493,18 @@ if str(option).lower() == 'queen':
             df_bestwaves = df_bestwaves[[col for col in df_bestwaves.columns if col not in ['wave_id', 'winners_n', 'loser_n']]]
             df_bestwaves = df_bestwaves[['maxprofit'] + [col for col in df_bestwaves.columns if col not in ['maxprofit']]]
             
-            c1, c2, c3 = st.columns((1,1,2))
+            c1, c2, c3, c4 = st.columns((1,3,3,3))
             with c1:
-                # write_flying_bee(22,22)
-                mark_down_text(align='left', color=color, fontsize='15', text=f'{"Trigger Bee "}{trigbee}')
+                flying_bee_gif()
             with c2:
-                # write_flying_bee(25,25)
-                mark_down_text(align='left', color='Green', fontsize='12', text=f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}')
+                mark_down_text(align='left', color=color, fontsize='15', text=f'{"Trigger Bee "}{trigbee}')
             with c3:
+                # write_flying_bee(25,25)
+                mark_down_text(align='left', color='Green', fontsize='15', text=f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}')
+            with c4:
                 # write_flying_bee(28,28)
-                mark_down_text(align='left', color='Green', fontsize='12', text=f'{"~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}')
-            
+                mark_down_text(align='left', color='Green', fontsize='15', text=f'{"~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}')
+
             # with st.expander(f'{"Todays Best Waves: "}{len(df_bestwaves)}', expanded=False):
             #     st.dataframe(df_bestwaves)
             # c1, c2, c3 = st.columns(3)
@@ -1509,6 +1550,7 @@ if str(option).lower() == 'queen':
     st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
     df = QUEEN['queen_orders']
     
+
     # queen shows only today orders
     now_ = datetime.datetime.now(est)
     if len(df) > 1:

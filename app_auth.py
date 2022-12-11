@@ -207,10 +207,11 @@ def signin_main():
         update_db()
 
         authenticator.logout("Logout", "sidebar")
-        detials_cols = st.columns(2)
-        detials_cols[0].write(f"Welcome *{name}*")
-        with detials_cols[1].expander("Reset Password"):
-            reset_password(email)
+        # detials_cols = st.columns(2)
+        # detials_cols[0].write(f"Welcome *{name}*")
+        # with detials_cols[1].expander("Reset Password"):
+        st.sidebar.write(f"Welcome *{name}*")
+        reset_password(email)
         return True
 
     # login unsucessful; forgot password or create account

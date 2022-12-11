@@ -568,7 +568,7 @@ def queen_workerbees():
                 async with session:
                     try:
                         ticker_star_hunter_bee(WORKERBEE_queens=WORKERBEE_queens, QUEENBEE=QUEENBEE, queens_chess_piece=qcp, speed_gauges=speed_gauges)
-                        return {qcp: ''}
+                        return {qcp: ''} # return Charts Data based on Queen's Query Params, (stars())
                     except Exception as e:
                         print(e, qcp)
                         logging.error((str(qcp), str(e)))
@@ -579,7 +579,7 @@ def queen_workerbees():
                 async with aiohttp.ClientSession() as session:
                     return_list = []
                     tasks = []
-                    for qcp in qcp_s:
+                    for qcp in qcp_s: # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
                         # print(qcp)
                         tasks.append(asyncio.ensure_future(get_changelog(session, qcp)))
                     original_pokemon = await asyncio.gather(*tasks)
