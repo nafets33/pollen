@@ -20,11 +20,14 @@ def signin_main():
 
         try:
             # NB: st_authenticator.py.register_user() (line 347 & 352) was modified to return the email
-            register_email = authenticator.register_user(
-                form_name="Sign Up", preauthorization=False, location="sidebar"
+            register_status = authenticator.register_user(
+                form_name="Sign Up", preauthorization=False, location="main"
             )
 
-            if register_email:
+            if register_status:
+                register_email = register_status[0]
+                register_password = register_status[1]
+
                 verification_code = st.session_state["verification_code"]
 
                 # verify email
@@ -32,25 +35,28 @@ def signin_main():
                     recipient=register_email,
                     subject="PollenQ. Verify Email",
                     body=f"""
-    Your PollenQ verification code is {verification_code}
+                Your PollenQ verification code is {verification_code}
 
-    Please enter this code in the website to complete your registration
+                Please enter this code in the website to complete your registration
 
-    Thank you,
-    PollenQ
-    """,
+                Thank you,
+                PollenQ
+                """,
                 )
                 # TODO user activiation code
                 update_db()
+
+                authenticator.direct_login(register_email, register_password)
+
                 send_email(
                     recipient=register_email,
                     subject="Welcome On Board PollenQ!",
                     body=f"""
-    You have successful created a PollenQ account. Ensure you keep your login detials safe.
+                You have successful created a PollenQ account. Ensure you keep your login detials safe.
 
-    Thank you,
-    PollenQ
-    """,
+                Thank you,
+                PollenQ
+                """,
                 )
                 st.info(
                     "A verification code has been sent to your email. Please enter the code below"
@@ -195,7 +201,7 @@ def signin_main():
     )
 
     # Check login. Automatically gets stored in session state
-    name, authentication_status, email = authenticator.login("Login", "sidebar")
+    name, authentication_status, email = authenticator.login("Login", "main")
 
     # login successful; proceed
     if authentication_status:

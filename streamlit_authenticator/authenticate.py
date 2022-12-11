@@ -157,6 +157,15 @@ class Authenticate:
             else:
                 return False
 
+    def direct_login(self, email, password):
+        self.username = email
+        self.password = password
+        st.session_state['username'] = self.username
+        
+        self._check_credentials()
+
+        return st.session_state['name'], st.session_state['authentication_status'], st.session_state['username'], self.password
+
     def login(self, form_name: str, location: str='main') -> tuple:
         """
         Creates a login widget.
@@ -182,6 +191,7 @@ class Authenticate:
         if not st.session_state['authentication_status']:
             self._check_cookie()
             if st.session_state['authentication_status'] != True:
+                
                 if location == 'main':
                     login_form = st.form('Login')
                 elif location == 'sidebar':
@@ -359,12 +369,12 @@ class Authenticate:
                         if preauthorization:
                             if new_username in self.preauthorized['emails']:
                                 self._register_credentials(new_username, new_name, new_password, signup_date, last_login_date, login_count, preauthorization)
-                                return new_username
+                                return new_username, new_password
                             else:
                                 raise RegisterError('User not pre-authorized to register')
                         else:
                             self._register_credentials(new_username, new_name, new_password, signup_date, last_login_date, login_count, preauthorization)
-                            return new_username
+                            return new_username, new_password
                     else:
                         raise RegisterError('Passwords do not match')
                 else:
