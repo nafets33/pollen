@@ -5,6 +5,7 @@ __pycache__/Hive_Utils.cpython-39.pyc
 .DS_Store
 .gitignore
 *.pkl
+*.db
 *.csv
 *.ipynb
 .env_jq

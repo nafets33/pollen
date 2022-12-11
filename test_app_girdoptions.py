@@ -1,3 +1,4 @@
+# https://pablocfonseca-streamlit-aggrid-examples-example-jyosi3.streamlit.app/
 from distutils import errors
 from distutils.log import error
 import streamlit as st
@@ -197,3 +198,150 @@ with st.spinner("Displaying results..."):
         Ag-Grid documentation can be read [here](https://www.ag-grid.com/documentation)
     """)
     st.write(gridOptions)
+
+
+
+
+
+# def qrd_AGgrid(data, int_cols, reload_data=False, fit_columns_on_grid_load=False, height=750, update_mode_value='GRID_CHANGED', paginationOn=True, use_checkbox=True, oth_cols_hidden=False):
+#     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
+#     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
+#     if paginationOn:
+#         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+#     gb.configure_side_bar() #Add a sidebar
+#     # if use_checkbox:
+#     gb.configure_selection('multiple', use_checkbox=use_checkbox, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+    
+#     cellsytle_jscode = JsCode("""
+#     function(params) {
+#         if (params.value == 'EXCEL') {
+#             return {
+#                 'color': 'white',
+#                 'backgroundColor': 'lightblue'
+#             }
+#         } else {
+#             return {
+#                 'color': 'white',
+#                 'backgroundColor': 'purple'
+#             }
+#         }
+#     };
+#     """)
+
+#     test = JsCode("""
+#     function(params) {
+#         if (params.value > .1 || params.value < -.1)
+#             return {
+#                 'color': 'white',
+#                 'backgroundColor': 'red'
+#                 }
+#         };
+#     """)
+
+#     rome_excel_link = """
+#     function(params) {
+#         if (params.value == 'ROME') {
+#             return '<a href="https://' + params.data.full_IO_Num + "/summary" + '" target="_blank">'+ params.value+'</a>'
+#             }
+#         else {
+#             return '<a href="https://' + params.data.IO_Num + '" target="_blank">'+ params.value+'</a>'
+#         }
+#         } """
+
+#     excel_link = """
+#     function(params) {
+#             return '<a href="https:///' + params.data.IO_Num + '" target="_blank">'+ params.value+'</a>'
+#             }"""
+
+#     status_cellsytle_jscode = JsCode("""
+#     function(params) {
+#         if (params.value == 'ACTIVE') {
+#             return {
+#                 'color': 'black',
+#                 'backgroundColor': 'lightgreen'
+#             }
+#         }
+#         else if (params.value == 'NonRev_ACTIVE') {
+#             return {
+#                 'color': 'black',
+#                 'backgroundColor': 'lightgreen'
+#             }
+#         }
+#         else if (params.value == 'FINAL') {
+#             return {
+#                 'color': 'white',
+#                 'backgroundColor': 'black'
+#             }
+#         }
+#         else if (params.value == 'COMPLETED') {
+#             return {
+#                 'color': 'white',
+#                 'backgroundColor': 'grey'
+#             }
+#         }
+#     };
+#     """)
+    
+#     ra_done_list = ['PreClose', 'Open Item', 'Ready Open Item', 'Ready', 'FINAL',  '' ]
+#     rr_done_list = ['PreClose', 'Okay', 'Revisit', 'FINAL',  '' ]
+
+
+#     gb.configure_column("13", header_name='System', pinned='left', cellStyle=cellsytle_jscode, cellRenderer=JsCode(rome_excel_link), maxWidth=100, autoSize=True)
+#     gb.configure_column("IO_Num", pinned='left', cellRenderer=JsCode(excel_link), maxWidth=100, autoSize=True)
+#     gb.configure_column("RR.Done", editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': ra_done_list }, maxWidth=120, autoSize=True)
+#     gb.configure_column("Review.Sign.Off", editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': rr_done_list }, maxWidth=130, autoSize=True)
+#     gb.configure_column('Status', cellStyle=status_cellsytle_jscode, pinned='left', maxWidth=100, autoSize=True)
+#     gb.configure_column('IO.Comment', editable=True, maxWidth=1000, wrapText=True, autoHeight=True, resizable=True)
+#     gb.configure_column('Resolution', header_name='Reviewer.Comment', editable=True, wrapText=True, autoHeight=True, resizable=True, maxWidth=1000,)
+#     gb.configure_column('Open Cases', maxWidth=110, autoSize=True, wrapText=True, autoHeight=True, resizable=True)
+#     gb.configure_column('RR.vs.SF', cellStyle=test, maxWidth=100, autoSize=True)
+#     gb.configure_column("SF.Start.Date", type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='MM-dd-yyyy', pivot=True, initialWidth=100, autoSize=True)
+#     gb.configure_column("SF.End.Date", type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='MM-dd-yyyy', pivot=True, initialWidth=100, autoSize=True)
+#     gb.configure_column("RR.Start.Date", type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='MM-dd-yyyy', pivot=True)
+#     gb.configure_column("RR.End.Date", type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='MM-dd-yyyy', pivot=True)
+#     gb.configure_column("RA", maxWidth=110, autoSize=True)
+#     gb.configure_column("AM", maxWidth=110, autoSize=True)
+#     gb.configure_column("RR.Check", wrapText=True, resizable=True, maxWidth=200, autoSize=True, autoHeight=True)
+#     gb.configure_column("Reviewer(s)", maxWidth=110, autoSize=True)
+#     gb.configure_column("RR.Amount", wrapText=True, resizable=True, maxWidth=110, autoSize=True)
+#     gb.configure_column("SF.Amount", wrapText=True, resizable=True, maxWidth=110, autoSize=True)
+#     gb.configure_column("NetTerms", wrapText=True, resizable=True, maxWidth=80, autoSize=True)
+#     gb.configure_column("NS_Cust.Num", wrapText=True, resizable=True, maxWidth=110, autoSize=True)
+#     gb.configure_column("NS_Cust.Name", wrapText=True, resizable=True, maxWidth=110, autoSize=True)
+#     gb.configure_column("SF.Billing.Cap", wrapText=True, resizable=True, maxWidth=100, autoSize=True, wrapHeaderText=True, initialWidth=80)
+#     gb.configure_column("Unbilled", wrapText=True, resizable=True, maxWidth=110, autoSize=True, wrapHeaderText=True, initialWidth=80)
+#     gb.configure_column("Deferred", wrapText=True, resizable=True, maxWidth=110, autoSize=True, wrapHeaderText=True, initialWidth=80)
+#     gb.configure_column("Contract Assett", wrapText=True, resizable=True, maxWidth=110, autoSize=True, wrapHeaderText=True, initialWidth=80)
+#     gb.configure_column("Contract Liability", wrapText=True, resizable=True, maxWidth=110, autoSize=True, wrapHeaderText=True, initialWidth=80)
+
+
+#     if oth_cols_hidden:
+#         for col in oth_cols_hidden:
+#             gb.configure_column(col, hide=True)
+
+#     k_sep_formatter = JsCode("""
+#     function(params) {
+#         return (params.value == null) ? params.value : params.value.toLocaleString('en-US',{style: "currency", currency: "USD"}); 
+#     }
+#     """)
+#     gb.configure_columns(int_cols, valueFormatter=k_sep_formatter)
+#     # for int_col in int_cols:
+#     #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", aggFunc='max')
+
+#     gridOptions = gb.build()
+#     gridOptions['rememberGroupStateWhenNewData'] = 'true'
+#     gridOptions['resizable'] = 'true'
+#     gridOptions['wrapHeaderText'] = 'true'
+
+#     grid_response = AgGrid(
+#         data,
+#         gridOptions=gridOptions,
+#         data_return_mode='AS_INPUT', 
+#         update_mode=update_mode_value, 
+#         fit_columns_on_grid_load=fit_columns_on_grid_load,
+#         enable_enterprise_modules=True,
+#         height=height, 
+#         reload_data=reload_data,
+#         allow_unsafe_jscode=True,
+#     )
+#     return grid_response
