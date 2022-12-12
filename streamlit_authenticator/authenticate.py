@@ -299,7 +299,7 @@ class Authenticate:
             else:
                 raise CredentialsError
     
-    def _register_credentials(self, username: str, name: str, password: str, signup_date: str, last_login_date: str,  login_count: int, preauthorization: bool):
+    def _register_credentials(self, username: str, name: str, phone_no: str, password: str, signup_date: str, last_login_date: str,  login_count: int, preauthorization: bool):
         """
         Adds to credentials dictionary the new user's information.
 
@@ -318,7 +318,8 @@ class Authenticate:
             False: any user can register.
         """
         self.credentials['usernames'][username] = {
-            'name': name, 
+            'name': name,
+            'phone_no': phone_no,
             'password': Hasher([password]).generate()[0],
             'signup_date': signup_date,
             'last_login_date': last_login_date,
@@ -356,6 +357,10 @@ class Authenticate:
         register_user_form.subheader(form_name)
         new_username = register_user_form.text_input('Email').lower()
         new_name = register_user_form.text_input('Name')
+        phone_no_cols = register_user_form.columns([1,4])
+        new_country_code = phone_no_cols[0].selectbox('Phone Number', ['US (+1)', 'UK (+44)'])
+        new_phone_no = phone_no_cols[1].text_input(' ', max_chars=10)
+        new_phone_no = new_country_code + new_phone_no
         new_password = register_user_form.text_input('Password', type='password')
         new_password_repeat = register_user_form.text_input('Repeat password', type='password')
         signup_date = datetime.now(timezone('EST')).strftime("%d/%m/%Y %H:%M")
@@ -368,12 +373,12 @@ class Authenticate:
                     if new_password == new_password_repeat:
                         if preauthorization:
                             if new_username in self.preauthorized['emails']:
-                                self._register_credentials(new_username, new_name, new_password, signup_date, last_login_date, login_count, preauthorization)
+                                self._register_credentials(new_username, new_name, new_phone_no, new_password, signup_date, last_login_date, login_count, preauthorization)
                                 return new_username, new_password
                             else:
                                 raise RegisterError('User not pre-authorized to register')
                         else:
-                            self._register_credentials(new_username, new_name, new_password, signup_date, last_login_date, login_count, preauthorization)
+                            self._register_credentials(new_username, new_name, new_phone_no, new_password, signup_date, last_login_date, login_count, preauthorization)
                             return new_username, new_password
                     else:
                         raise RegisterError('Passwords do not match')

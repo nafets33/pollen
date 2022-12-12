@@ -163,13 +163,22 @@ def signin_main():
             email = user
             password = user_detials["password"]
             name = user_detials["name"]
+            phone_no = user_detials["phone_no"]
             signup_date = user_detials["signup_date"]
             last_login_date = user_detials["last_login_date"]
             login_count = user_detials["login_count"]
 
             cur.execute(
-                "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)",
-                (email, password, name, signup_date, last_login_date, login_count),
+                "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?)",
+                (
+                    email,
+                    password,
+                    name,
+                    phone_no,
+                    signup_date,
+                    last_login_date,
+                    login_count,
+                ),
             )
         con.commit()
 
@@ -185,7 +194,7 @@ def signin_main():
     cur = con.cursor()
 
     # cur.execute("DROP TABLE users")
-    # cur.execute("CREATE TABLE users(email, password, name, signup_date, last_login_date, login_count)")
+    # cur.execute("CREATE TABLE users(email, password, name, phone_no, signup_date, last_login_date, login_count)")
 
     # Read usernames and convert to nested dict
     users = cur.execute("SELECT * FROM users").fetchall()
@@ -194,9 +203,10 @@ def signin_main():
         credentials[user[0]] = {
             "password": user[1],
             "name": user[2],
-            "signup_date": user[3],
-            "last_login_date": user[4],
-            "login_count": user[5],
+            "phone_no": user[3],
+            "signup_date": user[4],
+            "last_login_date": user[5],
+            "login_count": user[6],
         }
     credentials = {"usernames": credentials}
 
