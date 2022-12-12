@@ -97,11 +97,12 @@ else:
 
 
 # ###### GLOBAL # ######
-ARCHIVE_queenorder = 'archived_bee'
-active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'running_open']
+ARCHIVE_queenorder = 'archived'
+active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
-closing_queen_orders = ['running_close', 'completed']
-RUNNING_Orders = ['running', 'running_close', 'running_open']
+CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
+RUNNING_Orders = ['running', 'running_open']
+RUNNING_CLOSE_Orders = ['running_close']
 
 # crypto
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
@@ -121,7 +122,7 @@ else:
 
 
 def queen_triggerbees():
-    cq1, cq2, cq3 = st.columns((2,1,2))
+    cq1, cq2, cq3, cq4 = st.columns((4,1,1,4))
     
     now_time = datetime.datetime.now(est)
     req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=False)
@@ -142,8 +143,11 @@ def queen_triggerbees():
     with cq2:
         # write_flying_bee(width=89, height=89)
         flying_bee_gif()
-
     with cq3:
+        # write_flying_bee(width=89, height=89)
+        flying_bee_gif()
+
+    with cq4:
         if len(all_current_trigs) > 0:
             with st.expander('All Available TriggerBees'):
                 mark_down_text(fontsize=15, color=default_text_color, text="All Available TriggerBees")
@@ -185,16 +189,16 @@ def queen_order_flow():
                     continue
                 elif order_state == 'submitted':
                     mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                    run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                    run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
                 elif order_state == 'running_open':
                     mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                    run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                    run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
                 elif order_state == 'running':
                     mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                    run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height, paginationOn=False)
+                    run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height, paginationOn=False)
                 elif order_state == 'running_close':
                     mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                    run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=grid_height)
+                    run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
 
         
 def queen_QueenOrders():
@@ -1051,38 +1055,87 @@ def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
         return df_sel
 
 
-def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
+def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_mode_value='VALUE_CHANGED', paginationOn=True,  allow_unsafe_jscode=True):
     # Color Code Honey
 
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
+    
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+    
     gb.configure_side_bar() #Add a sidebar
 
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-    if update_cols:
-        for colName in update_cols:        
-            if dropdownlst:
-                gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
-            else:
-                gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
 
-    jscode = JsCode("""
+    # honey_colors = JsCode("""
+    # function(params) {
+    #     if (params.value > 0) {
+    #         return {
+    #             'color': '#027500',
+    #             'backgroundColor': '#FFFDE8'
+    #             }
+    #     else if (params.value < 0)
+    #         return {
+    #             'color': '#027500',
+    #             'backgroundColor': '#FFFDE8'
+    #             }
+    #         }
+    #     };
+    # """)
+    honey_colors = JsCode("""
     function(params) {
-        if (params.data.state === 'white') {
+        if (params.value > 0) {
             return {
-                'color': 'white',
-                'backgroundColor': 'red'
+                'color': '#027500',
+                'backgroundColor': '#FFFDE8'
+            }
+        }
+        else if (params.value < 0) {
+            return {
+                'color': '#F5AA7F',
+                'backgroundColor': '#5C2C0D'
             }
         }
     };
     """)
+
+    # Config Columns
+    gb.configure_column('queen_order_state', header_name='State', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': active_order_state_list })
+    gb.configure_column("datetime", header_name='Date', type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='MM/dd/yy', pivot=True, initialWidth=100, maxWidth=110, autoSize=True)
+    gb.configure_column("symbol", pivot=True, resizable=True, initialWidth=89, autoSize=True)
+    gb.configure_column("trigname", header_name='TrigBee', pivot=True, wrapText=True, resizable=True, initialWidth=100, maxWidth=120, autoSize=True)
+    gb.configure_column("ticker_time_frame", header_name='Star', pivot=True, wrapText=True, resizable=True, initialWidth=120, maxWidth=140, autoSize=True)
+    gb.configure_column("honey", header_name='Honey', cellStyle=honey_colors, type=["numericColumn"], wrapText=True, resizable=True, initialWidth=89, autoSize=True)
+    gb.configure_column("$honey", header_name='Money', cellStyle=honey_colors, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", wrapText=True, resizable=True, initialWidth=89, maxWidth=100, autoSize=True)
+    gb.configure_column("honey_time_in_profit", header_name='Time.In.Honey', resizable=True, maxWidth=120, autoSize=True, autoHeight=True)
+    gb.configure_column("filled_qty", wrapText=True, resizable=True, initialWidth=95, maxWidth=100, autoSize=True)
+    gb.configure_column("qty_available", header_name='available_qty', autoHeight=True, wrapText=True, resizable=True, initialWidth=105, maxWidth=130, autoSize=True)
+    gb.configure_column("filled_avg_price", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", header_name='filled_avg_price', autoHeight=True, wrapText=True, resizable=True, initialWidth=120, maxWidth=130, autoSize=True)
+    gb.configure_column("limit_price", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", resizable=True, initialWidth=95, maxWidth=100, autoSize=True)
+    gb.configure_column("cost_basis",   type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", autoHeight=True, wrapText=True, resizable=True, initialWidth=110, maxWidth=120, autoSize=True)
+    gb.configure_column("wave_amo",   type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", autoHeight=True, wrapText=True, resizable=True, initialWidth=110, maxWidth=120, autoSize=True)
+    gb.configure_column("order_rules", header_name='OrderRules', wrapText=True, resizable=True, autoSize=True)
+
+    # WHY IS IT NO WORKING??? 
+    # k_sep_formatter = JsCode("""
+    # function(params) {
+    #     return (params.value == null) ? params.value : params.value.toLocaleString('en-US',{style: "currency", currency: "USD"}); 
+    # }
+    # """)
+
+    # int_cols = ['$honey', 'filled_avg_price', 'cost_basis', 'wave_amo']
+    # gb.configure_columns(int_cols, valueFormatter=k_sep_formatter)
+    # for int_col in int_cols:
+    #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$")
     
+
     gridOptions = gb.build()
     
-    gridOptions['getRowStyle'] = jscode
-    gridOptions['rememberGroupStateWhenNewData'] = 'true'
-    gridOptions['enableCellTextSelection'] = 'true'
+    gridOptions['wrapHeaderText'] = 'true'
+    gridOptions['autoHeaderHeight'] = 'true'
+    # gridOptions['rememberGroupStateWhenNewData'] = 'true'
+    # gridOptions['enableCellTextSelection'] = 'true'
+    # gridOptions['resizable'] = 'true'
 
     grid_response = AgGrid(
         data,
@@ -1093,10 +1146,10 @@ def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_lo
         # theme='blue', #Add theme color to the table
         enable_enterprise_modules=True,
         height=height, 
-        # width='100%',
         reload_data=reload_data,
         allow_unsafe_jscode=allow_unsafe_jscode
     )
+
     return grid_response
 
 
@@ -1363,9 +1416,17 @@ with c2:
         # disabled=st.session_state.disabled,
         horizontal=True,
     )
-with c3:
-    # st.image(page_icon, caption='pollenq', width=54)
-    flying_bee_gif()
+# with c3:
+#     # st.image(page_icon, caption='pollenq', width=54)
+#     flying_bee_gif()
+
+cols = st.columns(10)
+if option == 'queen':
+    with cols[2]:
+        flying_bee_gif()
+elif option == "controls":
+    with cols[3]:
+        flying_bee_gif()
 
 page_line_seperator('3', color=default_yellow_color)
 
