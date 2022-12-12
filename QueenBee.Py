@@ -21,7 +21,7 @@ _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 est = pytz.timezone("US/Eastern")
 
 scriptname = os.path.basename(__file__)
-prod = [False if 'sandbox' in scriptname else True][0]
+prod = False if 'sandbox' in scriptname else True
 
 
 """ ideas 
@@ -512,6 +512,8 @@ def update_origin_order_qty_available(QUEEN, run_order_idx, RUNNING_CLOSE_Orders
                 QUEEN['queen_orders'].at[run_order_idx, 'qty_available'] = float(queen_order['filled_qty'])
         elif queen_order['queen_order_state'] in RUNNING_CLOSE_Orders:
             QUEEN['queen_orders'][run_order_idx]['qty_available'] = float(queen_order['qty']) - float(queen_order['filled_qty'])
+        elif queen_order['queen_order_state'] in CLOSED_queenorders:
+            print("Order Closed and will Complete in later function Consider Closing HERE????")
         else:
             print('wtf are you?', queen_order['client_order_id'])
         
@@ -733,8 +735,6 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     # ttf_waves = STORY_bee[ticker_time_frame]['waves']
 
     # ticker, star, frame = ticker_time_frame.split("_")
-
-    # trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
     
     token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
     current_buywave = token_df.iloc[0]
@@ -917,7 +917,7 @@ def king_knights_requests(QUEEN, STORY_bee, avail_trigs, trigbee, ticker_time_fr
         elif trigbee == 'buy_cross-0':
             if crypto:
                 kings_blessing = True
-                order_vars = order_vars__queen_order_items(trading_model=trading_model,king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
+                order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
             else:
                 kings_blessing = True
                 order_vars = order_vars__queen_order_items(trading_model=trading_model, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
@@ -1611,9 +1611,14 @@ def king_bishops_QueenOrder(STORY_bee, run_order_idx, run_order, current_profit_
         ticker_time_frame_origin = run_order['ticker_time_frame_origin']
         entered_trade_time = run_order['datetime'].astimezone(est)
         origin_wave = run_order['origin_wave']
-        trading_model = run_order['trading_model']
+        # trading_model = run_order['trading_model'] # in Future Turn this to TradingModel_Id
         time_in_trade = datetime.datetime.now().astimezone(est) - entered_trade_time
         honey = run_order['honey']
+
+        # Return Latest Model Vars in QUEEN
+        model_ticker = 'SPY' if run_order['symbol'] not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys() else run_order['symbol']
+        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][model_ticker]
+
 
         # Handle Order if Ticker Stream Turned off I.E. Not in STORY_bee
         if ticker_time_frame not in STORY_bee.keys():
@@ -2352,7 +2357,7 @@ try:
 
     ########################################################
     ########################################################
-    #############The Infinite Loop of Time ###################
+    #############The Infinite Loop of Time #################
     ########################################################
     ########################################################
     ########################################################
@@ -2397,7 +2402,6 @@ try:
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls_reset', archive_bucket=False)
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='workerbees')
             process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='subconscious', archive_bucket='subconscious_requests')
-
 
             confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
             charlie_bee['queen_cyle_times']['app'] = (datetime.datetime.now(est) - s_time).total_seconds()

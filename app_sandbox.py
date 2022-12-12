@@ -38,6 +38,10 @@ import base64
 
 # https://discuss.streamlit.io/t/how-to-animate-a-line-chart/164/6 ## animiate the Bees Images : )
 # https://blog.streamlit.io/introducing-theming/  # change theme colors
+pd.options.mode.chained_assignment = None
+
+scriptname = os.path.basename(__file__)
+queens_chess_piece = os.path.basename(__file__)
 
 main_root = os.getcwd()
 
@@ -51,6 +55,9 @@ queen_image = os.path.join(jpg_root, 'queen.jpg')
 queen_angel_image = os.path.join(jpg_root, 'queen_angel.jpg')
 page_icon = Image.open(bee_image)
 flyingbee_gif_path = os.path.join(jpg_root, 'flyingbee_gif_clean.gif')
+flyingbee_grey_gif_path = os.path.join(jpg_root, 'flying_bee_clean_grey.gif')
+bitcoin_gif = os.path.join(jpg_root, 'bitcoin_spinning.gif')
+power_gif = os.path.join(jpg_root, 'power_gif.gif')
 
 
 ##### STREAMLIT ###
@@ -75,18 +82,16 @@ signin_auth = signin_main()
 if signin_auth:
     client_user = st.session_state['username']
     gatekeeper = True
+    prod = False if 'sandbox' in scriptname else True
 else:
     st.write("Sign in to get your Queen")
-    st.stop()
+    # st.stop()
+    client_user = st.session_state['username']
+    gatekeeper = True
+    prod = False
 
 _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 est = pytz.timezone("US/Eastern")
-
-pd.options.mode.chained_assignment = None
-
-scriptname = os.path.basename(__file__)
-prod = [False if 'sandbox' in scriptname else True][0]
-queens_chess_piece = os.path.basename(__file__)
 
 if prod:
     from QueenHive import return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, createParser_App, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
@@ -141,10 +146,8 @@ def queen_triggerbees():
         else:
             mark_down_text(fontsize=12, color=default_text_color, text="No Active TriggerBees")     
     with cq2:
-        # write_flying_bee(width=89, height=89)
         flying_bee_gif()
     with cq3:
-        # write_flying_bee(width=89, height=89)
         flying_bee_gif()
 
     with cq4:
@@ -162,12 +165,13 @@ def queen_triggerbees():
 def queen_order_flow():
     # if st.session_state['admin'] == False:
     #     return False
-    
     page_line_seperator()
+
+    orders_table = st.checkbox("show completed orders")
 
     # mark_down_text(align='center', color='Black', fontsize='33', text='Order Flow')
 
-    with st.expander('Orders', expanded=True):
+    with st.expander('Flying Orders', expanded=True):
         error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
         error_orders = error_orders.astype(str)
         if len(error_orders)> 0:
@@ -200,6 +204,16 @@ def queen_order_flow():
                     mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
                     run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
 
+    if orders_table:
+        
+        with st.expander('Completed Orders', expanded=True):
+            all_orders = st.checkbox("Show All Orders", False)
+            now_time = datetime.datetime.now(est)
+            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=['completed', 'completed_alpaca'], return_str=False)['df']
+            if all_orders == False:
+                orders_today = df[df['datetime'] > now_time.replace(hour=1, minute=1, second=1)].copy()
+                df = orders_today.astype(str)
+            ordertables__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, height=200)
         
 def queen_QueenOrders():
     if admin == False:
@@ -380,7 +394,8 @@ def create_main_macd_chart(df):
     df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
     fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
     # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
-
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=False)
     return fig
 
 
@@ -541,10 +556,11 @@ def refresh_queenbee_controls(APP_requests):
     return True
 
 
-def return_image_upon_save(bee_power_image, width=54):
+def return_image_upon_save(bee_power_image, width=33):
     # st.write("Controls Saved", return_timestamp_string())
-    st.image(Image.open(bee_power_image), width=width)
-    st.success("Saved Its Morphin Time")
+    # st.image(Image.open(bee_power_image), width=width)
+    local_gif(gif_path=power_gif)
+    st.success("Saved")
 
 
 def update_Workerbees(APP_requests):
@@ -554,7 +570,38 @@ def update_Workerbees(APP_requests):
     for n, v in enumerate(all_alpaca_tickers):
         if all_alpaca_tickers[n].status == 'active':
             alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
+    
+    # view = {}
+
+
+    
     with st.expander("WorkingBees Sybmols"):
+        st.subheader("Current Chess Board")
+        cols = st.columns((1,1,1,1))
+        all_workers = list(QUEEN['workerbees'].keys())
+        for qcp in all_workers:
+            if qcp == 'castle_coin':
+                # with cols[0]:
+                #     local_gif(gif_path=bitcoin_gif)
+                with cols[0]:
+                    st.write(f'{qcp} {QUEEN["workerbees"][qcp]["tickers"]}')
+            if qcp == 'castle':
+                with cols[1]:
+                    st.write(f'{qcp} {QUEEN["workerbees"][qcp]["tickers"]}')
+            elif qcp == 'knight':
+                with cols[2]:
+                    st.write(f'{qcp} {QUEEN["workerbees"][qcp]["tickers"]}')
+            elif qcp == 'bishop':
+                with cols[3]:
+                    st.write(f'{qcp} {QUEEN["workerbees"][qcp]["tickers"]}')
+            elif qcp == 'pawns':
+                if len(QUEEN["workerbees"][qcp]["tickers"]) > 20:
+                    show = QUEEN["workerbees"][qcp]["tickers"][:20]
+                    show = f'{show} ....'
+                else:
+                    show = QUEEN["workerbees"][qcp]["tickers"]
+                st.write(f'{qcp} {show}')
+
         wrkerbees_list = list(QUEEN['workerbees'].keys())
         c1, c2, c3 = st.columns((1,5,1))
         with c1:
@@ -695,6 +742,8 @@ def update_QueenControls(APP_requests, control_option, theme_list):
             # wave_blocks_option = st.selectbox("block time", trading_model['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel]['waveBlocktimes']['premarket'])
             trading_model__star = trading_model['stars_kings_order_rules'][star_option_qc]
 
+        with st.expander("trading model"):
+            st.write(trading_model)
         
         tic_options_mapping = {
         # 'QueenBeeTrader', 'trigbees': 'checkbox',
@@ -890,100 +939,6 @@ def create_AppRequest_package(request_name, archive_bucket=None):
     }
 
 
-def aggrid_build(df, js_code_cols=False, js_code=False, enable_enterprise_modules=False, fit_columns_on_grid_load=False, update_mode_value=False, return_mode_value=False, grid_height=False, enable_sidebar=False, enable_selection=False, selection_mode='multiple', use_checkbox=False, enable_pagination=False, paginationAutoSize=False, paginationPageSize=False):
-    #configures last row to use custom styles based on cell's value, injecting JsCode on components front end
-    #Infer basic colDefs from dataframe types
-    gb = GridOptionsBuilder.from_dataframe(df)
-
-    #customize gridOptions
-    gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
-    # gb.configure_column("date_only", type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='yyyy-MM-dd', pivot=True)
-    # gb.configure_column("date_tz_aware", type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='yyyy-MM-dd HH:mm zzz', pivot=True)
-
-    # gb.configure_column("apple", type=["numericColumn","numberColumnFilter","customNumericFormat"], precision=2, aggFunc='sum')
-    # gb.configure_column("banana", type=["numericColumn", "numberColumnFilter", "customNumericFormat"], precision=1, aggFunc='avg')
-    # gb.configure_column("chocolate", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="R$", aggFunc='max')
-    if js_code:
-        js_code =  """ {'mac_ranger':
-        function(params) {
-            if (params.value == 'white') {
-                return {
-                    'color': 'white',
-                    'backgroundColor': 'darkred'
-                }
-            } else {
-                return {
-                    'color': 'black',
-                    'backgroundColor': 'white'
-                }
-            }
-        };
-        """
-        for col in js_code_cols:
-            # cellsytle_jscode = JsCode(js_code[col])
-            cellsytle_jscode = JsCode(js_code)
-            gb.configure_column(col, cellStyle=cellsytle_jscode)
-
-    if enable_sidebar:
-        gb.configure_side_bar()
-
-    if enable_selection:
-        st.sidebar.subheader("Selection options")
-        # selection_mode = st.sidebar.radio("Selection Mode", ['single','multiple'], index=1)
-        
-        if use_checkbox:
-            groupSelectsChildren = st.sidebar.checkbox("Group checkbox select children", value=True)
-            groupSelectsFiltered = st.sidebar.checkbox("Group checkbox includes filtered", value=True)
-
-        if ((selection_mode == 'multiple') & (not use_checkbox)):
-            rowMultiSelectWithClick = st.sidebar.checkbox("Multiselect with click (instead of holding CTRL)", value=False)
-            if not rowMultiSelectWithClick:
-                suppressRowDeselection = st.sidebar.checkbox("Suppress deselection (while holding CTRL)", value=False)
-            else:
-                suppressRowDeselection=False
-        # 
-        gb.configure_selection(selection_mode)
-        if use_checkbox:
-            gb.configure_selection(selection_mode, use_checkbox=True, groupSelectsChildren=groupSelectsChildren, groupSelectsFiltered=groupSelectsFiltered)
-        if ((selection_mode == 'multiple') & (not use_checkbox)):
-            gb.configure_selection(selection_mode, use_checkbox=False, rowMultiSelectWithClick=rowMultiSelectWithClick, suppressRowDeselection=suppressRowDeselection)
-
-    if enable_pagination:
-        if paginationAutoSize:
-            gb.configure_pagination(paginationAutoPageSize=True)
-        else:
-            gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=paginationPageSize)
-
-    gb.configure_grid_options(domLayout='normal')
-    gridOptions = gb.build()
-
-    #Display the grid
-    st.header("Streamlit Ag-Grid")
-    st.markdown("""
-        AgGrid can handle many types of columns and will try to render the most human readable way.  
-        On editions, grid will fallback to string representation of data, DateTime and TimeDeltas are converted to ISO format.
-        Custom display formating may be applied to numeric fields, but returned data will still be numeric.
-    """)
-
-    grid_response = AgGrid(
-        df, 
-        gridOptions=gridOptions,
-        height=grid_height, 
-        width='100%',
-        data_return_mode=return_mode_value, 
-        update_mode=update_mode_value,
-        fit_columns_on_grid_load=fit_columns_on_grid_load,
-        allow_unsafe_jscode=True, #Set it to True to allow jsfunction to be injected
-        enable_enterprise_modules=enable_enterprise_modules
-        )
-
-    df = grid_response['data']
-    selected = grid_response['selected_rows']
-    # selected_df = pd.DataFrame(selected).apply(pd.to_numeric, errors='coerce')
-
-    return True
-
-
 def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     if paginationOn:
@@ -997,20 +952,11 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
             else:
                 gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
 
-    jscode = JsCode("""
-    function(params) {
-        if (params.data.state === 'white') {
-            return {
-                'color': 'white',
-                'backgroundColor': 'red'
-            }
-        }
-    };
-    """)
     
     gridOptions = gb.build()
-    
-    gridOptions['getRowStyle'] = jscode
+
+    gridOptions['wrapHeaderText'] = 'true'
+    gridOptions['autoHeaderHeight'] = 'true'
     gridOptions['rememberGroupStateWhenNewData'] = 'true'
     gridOptions['enableCellTextSelection'] = 'true'
 
@@ -1030,31 +976,6 @@ def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, heig
     return grid_response
 
 
-def ag_grid_main_build(df, default=False, add_vars=False, write_selection=True):
-    if default:
-        vars = {'reload_data': False, 'height': 333, 'update_cols': ['Comment'], 
-        'update_mode_value': 'MANUAL', 'paginationOn': True}
-    if add_vars:
-        for k, v in add_vars.items():
-            vars[k] = v
-
-    
-    grid_response = build_AGgrid_df(data=df, 
-    reload_data=vars['reload_data'],
-    # gridOptions=gridOptions,
-     height=vars['height'], update_cols=vars['update_cols'], 
-     update_mode_value=vars['update_mode_value'], 
-     paginationOn=vars['paginationOn'],
-     allow_unsafe_jscode=True)
-    
-    data = grid_response['data']
-    if write_selection:
-        selected = grid_response['selected_rows'] 
-        df_sel = pd.DataFrame(selected)
-        st.write(df_sel)
-        return df_sel
-
-
 def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_mode_value='VALUE_CHANGED', paginationOn=True,  allow_unsafe_jscode=True):
     # Color Code Honey
 
@@ -1067,21 +988,7 @@ def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_lo
 
     gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
 
-    # honey_colors = JsCode("""
-    # function(params) {
-    #     if (params.value > 0) {
-    #         return {
-    #             'color': '#027500',
-    #             'backgroundColor': '#FFFDE8'
-    #             }
-    #     else if (params.value < 0)
-    #         return {
-    #             'color': '#027500',
-    #             'backgroundColor': '#FFFDE8'
-    #             }
-    #         }
-    #     };
-    # """)
+
     honey_colors = JsCode("""
     function(params) {
         if (params.value > 0) {
@@ -1116,7 +1023,7 @@ def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_lo
     gb.configure_column("wave_amo",   type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", autoHeight=True, wrapText=True, resizable=True, initialWidth=110, maxWidth=120, autoSize=True)
     gb.configure_column("order_rules", header_name='OrderRules', wrapText=True, resizable=True, autoSize=True)
 
-    # WHY IS IT NO WORKING??? 
+    ## WHY IS IT NO WORKING??? 
     # k_sep_formatter = JsCode("""
     # function(params) {
     #     return (params.value == null) ? params.value : params.value.toLocaleString('en-US',{style: "currency", currency: "USD"}); 
@@ -1133,9 +1040,9 @@ def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_lo
     
     gridOptions['wrapHeaderText'] = 'true'
     gridOptions['autoHeaderHeight'] = 'true'
-    # gridOptions['rememberGroupStateWhenNewData'] = 'true'
-    # gridOptions['enableCellTextSelection'] = 'true'
-    # gridOptions['resizable'] = 'true'
+    gridOptions['rememberGroupStateWhenNewData'] = 'true'
+    gridOptions['enableCellTextSelection'] = 'true'
+    gridOptions['resizable'] = 'true'
 
     grid_response = AgGrid(
         data,
@@ -1209,20 +1116,18 @@ def hexagon_gif(width="45", height="45", frameBorder="0"):
     return st.markdown('<iframe src="https://giphy.com/embed/Wv35RAfkREOSSjIZDS" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/star-12-hexagon-Wv35RAfkREOSSjIZDS"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
 
 
-def flying_bee_gif():
-    file_ = open(os.path.join(jpg_root, 'flyingbee_gif_clean.gif'), "rb")
-    contents = file_.read()
-    data_url = base64.b64encode(contents).decode("utf-8")
-    file_.close()
-    st.markdown(f'<img src="data:image/gif;base64,{data_url}" width="33" height="33" alt="bee">',unsafe_allow_html=True,)
-
-
 def local_gif(gif_path, width='33', height='33'):
     with open(gif_path, "rb") as file_:
         contents = file_.read()
         data_url = base64.b64encode(contents).decode("utf-8")
-        # file_.close()
-        st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">',unsafe_allow_html=True,)
+        st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">', unsafe_allow_html=True)
+
+
+def flying_bee_gif(width='33', height='33'):
+    with open(os.path.join(jpg_root, 'flyingbee_gif_clean.gif'), "rb") as file_:
+        contents = file_.read()
+        data_url = base64.b64encode(contents).decode("utf-8")
+        st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">', unsafe_allow_html=True)
 
 
 def pollen__story(df):
@@ -1326,6 +1231,28 @@ def clear_subconscious_Thought(QUEEN, APP_requests):
 
             return True
 
+
+def queen_online(QUEEN):
+    now = datetime.datetime.now(est)
+    if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
+        # st.write("YOUR QUEEN if OFFLINE")
+        mark_down_text(fontsize='15', color='Red', text="YOUR QUEEN is OFFLINE")
+        local_gif(gif_path=flyingbee_grey_gif_path)
+        return False
+    else:
+        return True
+
+
+
+########################################################
+########################################################
+#############The Infinite Loop of Time #################
+########################################################
+########################################################
+########################################################
+
+
+
 # """ if "__name__" == "__main__": """
 
 if gatekeeper:
@@ -1373,7 +1300,7 @@ portfolio = return_alpc_portolio(api)['portfolio']
 acct_info = refresh_account_info(api=api)
 
 # # if authorized_user: log type auth and none
-log_dir = dst = os.path.join(db_root, 'logs')
+log_dir = os.path.join(db_root, 'logs')
 init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
 # db global
@@ -1390,6 +1317,9 @@ ORDERS = ReadPickleData(PB_Orders_Pickle)
 ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
 POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
+
+queen_is_online = queen_online(QUEEN=QUEEN)
+
 
 ####### START ######
 if authorized_user:
@@ -1420,17 +1350,27 @@ with c2:
 #     # st.image(page_icon, caption='pollenq', width=54)
 #     flying_bee_gif()
 
-cols = st.columns(10)
+cols = st.columns((1,1,1,1,1,1,1,1,1,1,1))
 if option == 'queen':
     with cols[2]:
         flying_bee_gif()
 elif option == "controls":
     with cols[3]:
         flying_bee_gif()
+elif option == "signal":
+    with cols[4]:
+        flying_bee_gif()
+elif option == "charts":
+    with cols[5]:
+        flying_bee_gif()
+elif option == "model_results":
+    with cols[6]:
+        flying_bee_gif()
+elif option == "pollen_engine":
+    with cols[7]:
+        flying_bee_gif()
 
 page_line_seperator('3', color=default_yellow_color)
-
-# c1,c2,c3,c4,c5, = st.columns(5)
 
 
 def rename_trigbee_name(tribee_name):
@@ -1457,21 +1397,26 @@ if str(option).lower() == 'queen':
     ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
     frame_option = st.sidebar.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
     option_showaves = st.sidebar.selectbox("Show Waves", ('no', 'yes'), index=["no"].index("no"))
-    day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
 
-    orders_table = st.sidebar.selectbox("orders_table", ['no', 'yes'], index=["no"].index("no"))
     today_day = datetime.datetime.now().day
 
     ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
-    
-    with st.expander('STORY_bee'):
-        st.write(STORY_bee[ticker_time_frame]['story'])
+
+    star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+
+    with st.expander(f'{ticker_option} Tickers Stars'):
+        mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
+        mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
+        df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
+        df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+
+        st.dataframe(df_style)
+
 
     queen_main_view()
     queen_triggerbees()
     queen_order_flow()
-    pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
-    queens_subconscious_Thoughts(QUEEN=QUEEN)
+
 
     # Main CHART Creation
     with st.expander('chart', expanded=False):
@@ -1480,8 +1425,10 @@ if str(option).lower() == 'queen':
         st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
         star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-
-        if day_only_option == 'yes':
+        
+        day_only_option = st.checkbox("Only Today")
+        
+        if day_only_option:
             df_day = df['timestamp_est'].iloc[-1]
             df['date'] = df['timestamp_est'] # test
 
@@ -1493,43 +1440,10 @@ if str(option).lower() == 'queen':
         st.write(fig)
 
 
-    if orders_table == 'yes':
-        with st.expander('orders table -- Today', expanded=True):
-
-            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=['completed', 'completed_alpaca'])['df']
-            # df_today = split_today_vs_prior(df=df, other_timestamp='datetime')['df_today']
-            ordertables__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, update_cols=['comment'], height=500)
-
     
-    if ticker_option != 'all':
-
-        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-        
-        # cq1_1, cq2_2 = st.columns((1, 1))
-
-        # with cq2_2:
-
-        # st.markdown('<div style="text-align: center;color:Blue; font-size: 33px;">{}{}</div>'.format(ticker_option, " STARS"), unsafe_allow_html=True)
-
-            # return ['background-color:black'] * len(
-            #     row) if row.mac_ranger == 'white'  else ['background-color:green'] * len(row)
-        with st.expander(f'{ticker_option} Tickers Stars'):
-            mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
-            mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
-            df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
-            df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
-
-            st.dataframe(df_style)
-
-        
+    if ticker_option != 'all': ### Trigbee Waves
+      
         page_line_seperator(color=default_yellow_color)
-        # c1, c2, c3 = st.columns(3)
-        # with c1:
-        #     write_flying_bee()
-        # with c2:
-        #     write_flying_bee()
-        # with c3:
-        #     write_flying_bee()
 
         dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
 
@@ -1608,19 +1522,11 @@ if str(option).lower() == 'queen':
         # st.write(STORY_bee)
         print("groups not allowed yet")
     
-    st.selectbox("memory timeframe", ['today', 'all'], index=['today'].index('today'))
-    df = QUEEN['queen_orders']
+    with st.expander('STORY_bee'):
+        st.write(STORY_bee[ticker_time_frame]['story'])
     
-
-    # queen shows only today orders
-    now_ = datetime.datetime.now(est)
-    if len(df) > 1:
-        orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
-        orders_today = orders_today.astype(str)
-        st.write(orders_today)
-    else:
-        st.write("No Orders To View")
-
+    pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
+    queens_subconscious_Thoughts(QUEEN=QUEEN)
 
 if str(option).lower() == 'controls':
     col1, col2 = st.columns(2)
@@ -1875,6 +1781,13 @@ if str(option).lower() == 'pollen_engine':
         df_charlie = pd.DataFrame(queens_charlie_bee)
         df_charlie = df_charlie.astype(str)
         st.write(df_charlie)
-
+    
+    with st.expander('queen logs'):
+        logs = os.listdir(log_dir)
+        logs = [i for i in logs if i.endswith(".log")]
+        log_file = st.selectbox('log files', list(logs))
+        with open(os.path.join(log_dir, log_file), 'r') as f:
+            content = f.readlines()
+            st.write(content)
 
 ##### END ####

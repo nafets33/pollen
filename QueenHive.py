@@ -532,9 +532,11 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             STORY_bee[ticker_time_frame]['story']['time_state'] = datetime.datetime.now().astimezone(est)
 
             # devation from vwap
-            df['vwap_deviation'] = df['close'] - df['vwap_original']
+            df['vwap_deviation'] = df['close'] - df['vwap']
+            df['vwap_deviation_pct'] = df['close'] / df['vwap_deviation']
             STORY_bee[ticker_time_frame]['story']['vwap_deviation'] = df.iloc[-1]['vwap_deviation']     
-            
+            STORY_bee[ticker_time_frame]['story']['vwap_deviation_pct'] = df.iloc[-1]['vwap_deviation']     
+ 
             # ipdb.set_trace()
             # MACD WAVE 
             macd_state = df['macd_cross'].iloc[-1]
@@ -2129,24 +2131,30 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     
     return return_dict
 
-def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1):
-    return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
-    'status': status,
-    'trade_using_limits': trade_using_limits,
-    'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
-    'doubledown_timeduration': doubledown_timeduration,
-    'max_profit_waveDeviation': max_profit_waveDeviation,
-    'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
-    'timeduration': timeduration,
-    'take_profit': take_profit,
-    'sellout': sellout,
-    'sell_trigbee_trigger': sell_trigbee_trigger,
-    'stagger_profits': stagger_profits,
-    'scalp_profits': scalp_profits,
-    'scalp_profits_timeduration': scalp_profits_timeduration,
-    'stagger_profits_tiers': stagger_profits_tiers,}
+
 
 def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
+
+    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1, macd_tiers_ignore=[0], take_profit_in_vwap_deviation_range=(-.05, .05)):
+        return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
+        'status': status,
+        'trade_using_limits': trade_using_limits,
+        'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
+        'doubledown_timeduration': doubledown_timeduration,
+        'max_profit_waveDeviation': max_profit_waveDeviation,
+        'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
+        'timeduration': timeduration,
+        'take_profit': take_profit,
+        'sellout': sellout,
+        'sell_trigbee_trigger': sell_trigbee_trigger,
+        'stagger_profits': stagger_profits,
+        'scalp_profits': scalp_profits,
+        'scalp_profits_timeduration': scalp_profits_timeduration,
+        'stagger_profits_tiers': stagger_profits_tiers,
+        'macd_tiers_ignore': macd_tiers_ignore,
+        'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
+        }
+
     
     def star_trading_model_vars(stars=stars):
         
@@ -2843,7 +2851,7 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     return {'df': df, 'df_agg': df_agg, 'current_wave': current_wave}
 
 
-def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False):
+def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False, return_str=True):
     if cols_to_view:
         col_view = col_view
     else:
@@ -2871,7 +2879,8 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
             all_cols = col_view + [i for i in df.columns.tolist() if i not in col_view]
             df_return = df[all_cols].copy()
 
-        df_return = df_return.astype(str)
+        if return_str:
+            df_return = df_return.astype(str)
         
         return {'df': df_return}
     else:
@@ -3000,7 +3009,7 @@ def init_queen_orders(pickle_file):
 def init_pollen_dbs(db_root, prod, queens_chess_piece):
     
     if prod:
-        print("My Queen Production")
+        # print("My Queen Production")
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
@@ -3008,7 +3017,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
     else:
-        print("My Queen Sandbox")
+        # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
