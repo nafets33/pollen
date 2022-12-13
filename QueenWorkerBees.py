@@ -46,23 +46,27 @@ import ipdb
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
-def queen_workerbees():
+def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager'):
 
     # script arguments
-    def createParser_workerbees():
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="castle")
-        parser.add_argument ('-prod', default=True)
-        parser.add_argument ('-windows', default=False)
+    if bee_scheduler:
+        prod = prod
+        queens_chess_piece = queens_chess_piece
+    else:
+        def createParser_workerbees():
+            parser = argparse.ArgumentParser()
+            parser.add_argument ('-qcp', default="workerbee")
+            parser.add_argument ('-prod', default=True)
+            # parser.add_argument ('-windows', default=False)
 
-        return parser
+            return parser
 
-    # script arguments
-    parser = createParser_workerbees()
-    namespace = parser.parse_args()
-    queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
-    windows = namespace.windows
-    prod = True if str(namespace.prod).lower() == 'true' else False
+        # script arguments
+        parser = createParser_workerbees()
+        namespace = parser.parse_args()
+        queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
+        # windows = namespace.windows
+
 
     if prod:
         from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
@@ -71,8 +75,11 @@ def queen_workerbees():
         from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-    if windows:
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
+    # if windows:
+    #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # needed to work on Windows
+    if queens_chess_piece.lower() not in ['workerbee', 'bees_manager']:
+        print("wrong chess move")
+        sys.exit()
 
     pd.options.mode.chained_assignment = None
     est = pytz.timezone("US/Eastern")
@@ -105,11 +112,6 @@ def queen_workerbees():
         }
 
         return QUEEN
-
-
-    if queens_chess_piece.lower() not in ['castle', 'knight', 'bishop', 'workerbee']:
-        print("wrong chess move")
-        sys.exit()
 
 
 
@@ -726,12 +728,12 @@ def queen_workerbees():
             ipdb.set_trace()
 
 
-    if queens_chess_piece == 'castle':
-        print("Queens Court")
-        queens_court__WorkerBees()
-    elif queens_chess_piece == 'indexes':
-        print("pending")
+    # if queens_chess_piece == 'castle':
+    print(f'Queens Court, {queens_chess_piece} I beseech you')
+    queens_court__WorkerBees()
+    # elif queens_chess_piece == 'indexes':
+    #     print("pending")
 if __name__ == '__main__':
-    queen_workerbees()
+    queen_workerbees(prod=True)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
