@@ -117,7 +117,7 @@ class Authenticate:
                             
                             self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
                             self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now().strftime("%d/%m/%Y %H:%M")
-    
+                            st.sidebar.write(f"Welcome *{st.session_state['name']}*")
     def _check_credentials(self, inplace: bool=True) -> bool:
         """
         Checks the validity of the entered credentials.
@@ -208,7 +208,7 @@ class Authenticate:
                     if st.session_state['authentication_status']:
                         self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
                         self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now(timezone('EST')).strftime("%d/%m/%Y %H:%M")
-                        
+                        st.sidebar.write(f"Welcome *{st.session_state['name']}*")
 
         return st.session_state['name'], st.session_state['authentication_status'], st.session_state['username']
 

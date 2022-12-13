@@ -2135,7 +2135,7 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
 
 def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
 
-    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1, macd_tiers_ignore=[0], take_profit_in_vwap_deviation_range=(-.05, .05)):
+    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1, take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}, skip_sell_trigbee_distance_frequency=0, ignore_trigbee_at_power=.01, ignore_trigbee_in_vwap_range={'low_range': -.05, 'high_range': .05}):
         return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
         'status': status,
         'trade_using_limits': trade_using_limits,
@@ -2151,8 +2151,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         'scalp_profits': scalp_profits,
         'scalp_profits_timeduration': scalp_profits_timeduration,
         'stagger_profits_tiers': stagger_profits_tiers,
-        'macd_tiers_ignore': macd_tiers_ignore,
         'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
+        'skip_sell_trigbee_distance_frequency': skip_sell_trigbee_distance_frequency, # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
+        'ignore_trigbee_at_power': ignore_trigbee_at_power,
+        'ignore_trigbee_in_vwap_range': ignore_trigbee_in_vwap_range,
         }
 
     
@@ -2534,10 +2536,6 @@ def generate_queen_ticker_settings(ticker='SPY', status='active', portforlio_nam
     }
 
 
-# def theme_throttle():
-#     return_dict = {f'{num}{"X"}': num * .01 for num in range(1, 100)}
-    
-#     return return_dict
 def createParser_QUEEN():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-qcp', default="queen")
@@ -2790,7 +2788,7 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
     #         d_return[symbol_star][trigbee] = groups
 
 
-    return {'df': d_return, 
+    return {'df': d_return,
     'd_agg_view_return': d_agg_view_return,
     'df_agg_view_return': df_agg_view_return,
     'df_bestwaves': df_bestwaves}
@@ -2855,7 +2853,7 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
     if cols_to_view:
         col_view = col_view
     else:
-        col_view = ['datetime','symbol', 'trigname', 'ticker_time_frame', 'honey', '$honey', 'honey_time_in_profit', 'filled_qty', 'qty_available', 'filled_avg_price', 'limit_price', 'cost_basis', 'wave_amo', 'status_q', 'client_order_id', 'origin_wave', 'wave_at_creation', 'power_up', 'sell_reason', 'exit_order_link', 'queen_order_state', 'order_rules', 'order_trig_sell_stop',  'side']
+        col_view = ['honey', '$honey', 'symbol', 'ticker_time_frame', 'trigname',  'datetime', 'honey_time_in_profit', 'filled_qty', 'qty_available', 'filled_avg_price', 'limit_price', 'cost_basis', 'wave_amo', 'status_q', 'client_order_id', 'origin_wave', 'wave_at_creation', 'power_up', 'sell_reason', 'exit_order_link', 'queen_order_state', 'order_rules', 'order_trig_sell_stop',  'side']
     if len(QUEEN['queen_orders']) > 0:
         df = QUEEN['queen_orders']
         df = df[df['queen_order_state'].isin(queen_order_state)].copy()

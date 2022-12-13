@@ -148,7 +148,9 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
         if s >= date:
             logging.info("Happy Bee Day End")
             print("Great Job! See you Tomorrow")
-            sys.exit()
+            return True
+        else:
+            return False
 
 
     def return_getbars_WithIndicators(bars_data, MACD):
@@ -523,9 +525,6 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
         MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
         # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
-
-        close_worker()
-
         # main 
         pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
         QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
@@ -718,6 +717,9 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
                     speed_gauges = queen_workers['speed_gauges']
                 
                 qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
+
+                if close_worker():
+                    break
 
         except Exception as errbuz:
             print(errbuz)

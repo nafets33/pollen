@@ -230,7 +230,7 @@ def signin_main():
         # detials_cols = st.columns(2)
         # detials_cols[0].write(f"Welcome *{name}*")
         # with detials_cols[1].expander("Reset Password"):
-        st.sidebar.write(f"Welcome *{name}*")
+        # st.sidebar.write(f"Welcome *{name}*")
         reset_password(email)
         return True
 
