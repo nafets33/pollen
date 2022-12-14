@@ -19,7 +19,7 @@ def createParser_scheduler():
     parser = argparse.ArgumentParser()
     parser.add_argument ('-adhoc', default='false')
     parser.add_argument ('-qcp', default="scheduler")
-    parser.add_argument ('-prod', default='false')
+    parser.add_argument ('-prod', default='true')
     return parser
 
 
@@ -36,14 +36,13 @@ def call_job_workerbees(prod, bee_scheduler):
 if __name__ == '__main__':
     parser = createParser_scheduler()
     namespace = parser.parse_args()
-    adhoc_workers = namespace.adhoc
-    prod = namespace.prod
+    prod = True if namespace.prod.lower() == 'true' else False
     bee_scheduler = True
 
     schedule.every().day.at("14:32").do(call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)) ## UTC
     print("Workers Turns on at 9:32AM EST")
 
-    if adhoc_workers == 'true':
+    if namespace.adhoc == 'true':
         print("running adhoc")
         call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)
 
