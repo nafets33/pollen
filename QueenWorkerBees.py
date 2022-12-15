@@ -222,7 +222,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
 
 
     def Return_Bars_LatestDayRebuild(ticker_time): #Iniaite Ticker Charts with Indicator Data
-        # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
+        # IMPROVEMENT: use Return_bars_list for Return Bars_LatestDayRebuild
         # ticker_time = "SPY_1Minute_1Day"
 
         ticker, timeframe, days = ticker_time.split("_")
@@ -238,7 +238,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
             print(ticker_time, e)
         
         e = datetime.datetime.now(est)
-        msg = {'function':'Return_Bars_LatestDayRebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
+        msg = {'function':'Return_Bars_Latest Day Rebuild',  'func_timeit': str((e - s)), 'datetime': datetime.datetime.now(est).strftime('%Y-%m-%d_%H:%M:%S_%p')}
         # print(msg)
         # dfs_index_tickers['SPY_5Minute']
         return [dfs_index_tickers, error_dict, msg]
@@ -466,6 +466,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
             print(datetime.datetime.now(est).strftime("%H:%M-%S"))
         
         # re-add snapshot
+        # ipdb.set_trace()
         df_tickers_data_rebuilt = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data_rebuilt['ticker_time'])
         
         main_rebuild_dict = {} ##> only override current dict if memory becomes issues!
@@ -692,7 +693,9 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
             ipdb.set_trace()
 
 
-
+    def write_ticker_latest_price(ticker, bars, db_root):
+        PickleData(pickle_file=os.path.join(db_root, ticker), data_to_store=bars)
+        return True
     
     
     def queens_court__WorkerBees():

@@ -169,7 +169,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         orders_table = st.checkbox("show completed orders")
 
         if orders_table:
-            refresh_b = st.button("Refresh Orders")
+            refresh_b = st.button("Refresh Orders", key='r1')
             with st.expander('Completed/ALL Orders', expanded=True):
                 now_time = datetime.datetime.now(est)
                 cols = st.columns((1,1,5))
@@ -192,13 +192,15 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     st.info("No Orders to View")
                 else:
                     if today_orders:
-                        orders_today = df[df['datetime'] > now_time.replace(hour=1, minute=1, second=1)].copy()
+                        df = df[df['datetime'] > now_time.replace(hour=1, minute=1, second=1)].copy()
                     
-                    ordertables__agrid = build_AGgrid_df__queenorders(data=df.astype(str), reload_data=False, height=200)
-        
+                    if len(df) > 0:
+                        ordertables__agrid = build_AGgrid_df__queenorders(data=df.astype(str), reload_data=False, height=200)
+                    else:
+                        st.info("No Orders To View")
         
         with st.expander('Flying Orders', expanded=True):
-            refresh_b = st.button("Refresh Orders")
+            refresh_b = st.button("Refresh Orders", key='r2')
             error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
             error_orders = error_orders.astype(str)
             if len(error_orders)> 0:
@@ -596,7 +598,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         all_workers = list(QUEEN['workerbees'].keys())
         view = []
         for qcp in all_workers:
-            if qcp in ['caslte', 'bishop', 'knight', 'castle_coin']:
+            if qcp in ['castle', 'bishop', 'knight', 'castle_coin']:
                 view.append(f'{qcp} ({QUEEN["workerbees"][qcp]["tickers"]} )')
         name = str(view).replace("[", "").replace("]", "").replace('"', "")
         with st.expander(f'WorkingBees Sybmols Chess Board: {name}'):
@@ -1000,7 +1002,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         return grid_response
 
 
-    def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_mode_value='VALUE_CHANGED', paginationOn=True,  allow_unsafe_jscode=True):
+    def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_mode_value='VALUE_CHANGED', paginationOn=False,  allow_unsafe_jscode=True):
         # Color Code Honey
 
         gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
@@ -1407,7 +1409,7 @@ with c2:
 #     # st.image(page_icon, caption='pollenq', width=54)
 #     flying_bee_gif()
 
-cols = st.columns((1,1,1,1,1,1,1,1,1,1,1))
+cols = st.columns((1,1,1,1,1,1,1,1,1,1,1,2))
 if option == 'queen':
     with cols[2]:
         flying_bee_gif()
@@ -1557,10 +1559,12 @@ if str(option).lower() == 'queen':
         # st.write(STORY_bee)
         print("groups not allowed yet")
     
-    with st.expander('STORY_bee'):
-        st.write(STORY_bee[ticker_time_frame]['story'])
-    
-    pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
+    see_pollenstory = st.button("Show Me Pollenstory")
+    if see_pollenstory:
+        with st.expander('STORY_bee'):
+            st.write(STORY_bee[ticker_time_frame]['story'])
+        
+        pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
 
 if str(option).lower() == 'controls':
     col1, col2 = st.columns(2)

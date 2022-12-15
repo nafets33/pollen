@@ -1481,13 +1481,10 @@ def check_order_status(api, client_order_id, queen_order=False, prod=True): # re
     if queen_order:
         if "queen_gen" in queen_order['client_order_id']:
             return queen_order
-    if prod:
-        order = api.get_order_by_client_order_id(client_order_id=client_order_id)
-        order_ = vars(order)['_raw']
-    else:
-        order = api_paper.get_order_by_client_order_id(client_order_id=client_order_id)
-        order_ = vars(order)['_raw']
-    return order_
+        else:
+            order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+            order_ = vars(order)['_raw']
+            return order_
 
 
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):

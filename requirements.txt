@@ -28,3 +28,4 @@ zope.component==4.3.0
 zope.event==4.4
 zope.hookable==5.0.1
 zope.interface==5.2.0
+scheduler==0.8.2
