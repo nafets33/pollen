@@ -14,6 +14,8 @@ from collections import defaultdict
 import ipdb
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
 from PIL import Image
 from dotenv import load_dotenv
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
@@ -397,6 +399,34 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 st.write(data['buy_orders'])
 
 
+    def create_guage_chart(value=.01):
+
+        fig = go.Figure(go.Indicator(
+            mode = "gauge+number+delta",
+            value = value,
+            domain = {'x': [0, 1], 'y': [0, 1]},
+            title = {'text': "Wave Story Guage", 'font': {'size': 25}},
+            delta = {'reference':.4 , 'increasing': {'color': "RebeccaPurple"}},
+            gauge = {
+                'axis': {'range': [-1, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                'bar': {'color': '#ffe680'},
+                'bgcolor': "white",
+                'borderwidth': 2,
+                'bordercolor': "gray",
+                # 'steps': [
+                #     {'range': [0, .2], 'color': 'cyan'},
+                #     {'range': [.2, .4], 'color': 'royalblue'}],
+                'threshold': {
+                    'line': {'color': "red", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 1}}))
+
+        # fig.update_layout(paper_bgcolor = "lavender", font = {'color': "darkblue", 'family': "Arial"})
+        fig.update_layout(height=289, width=500)
+
+        return fig
+
+    
     def create_main_macd_chart(df):
         title = df.iloc[-1]['name']
         # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
@@ -419,6 +449,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
         fig.update_xaxes(showgrid=False)
         fig.update_yaxes(showgrid=False)
+        # fig.update_layout(sliders=False)
         return fig
 
 
@@ -1122,7 +1153,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         h = '{:,.2%}'.format(total_current_hist_tier / 64)
 
 
-        return {'macd_tier_guage': t, 'hist_tier_guage': h}
+        return {'macd_tier_guage': t, 'hist_tier_guage': h, 'macd_tier_guage_value': (total_current_macd_tier/ 64),
+        'hist_tier_guage_value': (total_current_hist_tier/ 64)
+        }
 
 
     def mark_down_text(align='center', color=default_text_color, fontsize='33', text='Hello There', font=default_font):
@@ -1279,6 +1312,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         else:
             return True
 
+    
     def queen_chart(ticker_option, POLLENSTORY):
         # Main CHART Creation
         with st.expander('chart', expanded=False):
@@ -1299,7 +1333,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
                 df = df_today
             fig = create_main_macd_chart(df)
-            st.write(fig)
+            st.plotly_chart(fig)
 
             return True
 
@@ -1463,9 +1497,13 @@ if str(option).lower() == 'queen':
 
     star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
 
-    with st.expander(f'{ticker_option} Stars {"MACD Guage "}{star__view["macd_tier_guage"]} {"Hist Guage "}{star__view["hist_tier_guage"]}'):
-        mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}')
-        mark_down_text(fontsize=22, text=f'{"Hist Guage "}{star__view["hist_tier_guage"]}')
+
+    # with st.expander(f'{ticker_option} Stars {"MACD Guage "}{star__view["macd_tier_guage"]} {"Hist Guage "}{star__view["hist_tier_guage"]}'):
+    cols = st.columns((1,2))
+    with cols[0]:
+        st.plotly_chart(create_guage_chart(value=float(star__view["macd_tier_guage_value"])))
+    with cols[1]:
+        mark_down_text(fontsize=25, text=f'{"MACD Guage "}{star__view["macd_tier_guage"]}{" Hist Guage "}{star__view["hist_tier_guage"]}')
         df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
         df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
 
@@ -1638,19 +1676,19 @@ if str(option).lower() == 'charts':
     if option__.lower() == 'all':
         c1, c2 = st.columns(2)
         with c1:
-            st.write(create_main_macd_chart(min_1))
+            st.plotly_chart(create_main_macd_chart(min_1))
         with c2:
-            st.write(create_main_macd_chart(min_5))
+            st.plotly_chart(create_main_macd_chart(min_5))
         c1, c2 = st.columns(2)
         with c1:
-            st.write(create_main_macd_chart(min_30m))
+            st.plotly_chart(create_main_macd_chart(min_30m))
         with c2:
-            st.write(create_main_macd_chart(min_1hr))
+            st.plotly_chart(create_main_macd_chart(min_1hr))
         c1, c2 = st.columns(2)
         with c1:
-            st.write(create_main_macd_chart(min_2hr))
+            st.plotly_chart(create_main_macd_chart(min_2hr))
         with c2:
-            st.write(create_main_macd_chart(min_1yr))
+            st.plotly_chart(create_main_macd_chart(min_1yr))
     else:
         # Main CHART Creation
         radio_b_dict = {'1Min': '1Minute_1Day', 
@@ -1665,18 +1703,18 @@ if str(option).lower() == 'charts':
         slope_cols.append("timestamp_est")
         slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
         fig = create_slope_chart(df=df)
-        st.write(fig)
+        st.plotly_chart(fig)
         st.dataframe(slopes_df)
         
     if wave_option == "yes":
         fig = create_wave_chart(df=df)
-        st.write(fig)
+        st.plotly_chart(fig)
         
         dft = split_today_vs_prior(df=df)
         dft = dft['df_today']
 
         fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
-        st.write(fig)
+        st.plotly_chart(fig)
 
         st.write("current wave")
         current_buy_wave = df['buy_cross-0__wave_number'].tolist()
@@ -1687,7 +1725,7 @@ if str(option).lower() == 'charts':
         dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
         st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
         fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
-        st.write(fig)
+        st.plotly_chart(fig)
 
 
 if str(option).lower() == 'signal':

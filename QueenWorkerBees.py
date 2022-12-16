@@ -65,13 +65,14 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
         parser = createParser_workerbees()
         namespace = parser.parse_args()
         queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
-        # windows = namespace.windows
-
+        prod = True if namespace.prod.lower() == 'true' else False
 
     if prod:
+        print("Production")
         from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
     else:
+        print("Sandbox")
         from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 

@@ -912,20 +912,22 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
 
    
     def assign_tier_num(num_value,  td):
-        length_td = len(td)
-        max_num_value = td[length_td-1][1]
+        length_td = len(td)  ## Max Tier
+        max_num_value = td[length_td-1][1] ## max value of range
+
         for k, v in td.items():
             num_value = float(num_value)
+
             if num_value > 0 and num_value > v[0] and num_value < v[1]:
                 # print(k, num_value)
                 return k
             elif num_value < 0 and num_value < v[0] and num_value > v[1]:
                 # print(k, num_value)
                 return k
-            elif num_value > 0 and num_value > max_num_value:
+            elif num_value > 0 and num_value >= max_num_value:
                 # print("way above")
                 return length_td
-            elif num_value < 0 and num_value < max_num_value:
+            elif num_value < 0 and num_value <= max_num_value:
                 # print("way below")
                 return length_td
             elif num_value == 0:
@@ -946,13 +948,17 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     tier_range = create_tier_range(m_high, m_low)
     td_high = tier_range['td_high']
     td_low = tier_range['td_low']
+    
     df['macd_tier'] = np.where( (df['macd'] > 0), 
-    df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_high)), 
-    df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_low))
+        df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_high)), 
+        df['macd'].apply(lambda x: assign_tier_num(num_value=x, td=td_low))
     )
+    
     df['macd_tier'] = np.where(df['macd'] > 0, df['macd_tier'], df['macd_tier'] * -1)
 
-    
+    # if ticker_time_frame == 'SPY_30Minute_1Month':
+    #     ipdb.set_trace()
+
     # "MAC"
     if mac_world['hist_high'] == 0: # no max min exist yet (1day scenario)
         m_high = 1
