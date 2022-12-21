@@ -1497,15 +1497,15 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     queen_is_online = queen_online(QUEEN=QUEEN)
 
+    QUEEN_KING['source'] = PB_App_Pickle
+    APP_req = add_key_to_app(QUEEN_KING)
+    QUEEN_KING = APP_req['QUEEN_KING']
+    if APP_req['update']:
+        PickleData(PB_App_Pickle, QUEEN_KING)
+    
 
     ####### START ######
     if authorized_user:
-        QUEEN_KING['source'] = PB_App_Pickle
-        APP_req = add_key_to_app(QUEEN_KING)
-        QUEEN_KING = APP_req['QUEEN_KING']
-        if APP_req['update']:
-            PickleData(PB_App_Pickle, QUEEN_KING)
-
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
 
 st.sidebar.button("Refresh Bee")
