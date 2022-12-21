@@ -595,7 +595,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
 
     def stop_queenbee(QUEEN_KING):
-        checkbox_val = st.button("Stop Queen")
+        checkbox_val = st.sidebar.button("Stop Queen")
         if checkbox_val:
             QUEEN_KING['stop_queen'] = str(checkbox_val).lower()
             PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
@@ -640,6 +640,14 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             if qcp in ['castle', 'bishop', 'knight', 'castle_coin']:
                 view.append(f'{qcp} ({QUEEN_KING["qcp_workerbees"][qcp]["tickers"]} )')
         name = str(view).replace("[", "").replace("]", "").replace('"', "")
+        # # Create a custom icon using the Material Design icon library
+        # icon = "<i class='material-icons'>expand_more</i>"
+
+        # # Use the st.markdown widget to wrap the icon and label in an HTML string
+        # label = st.markdown(f"{icon} Click to expand")
+
+        # Use the label as the value for the `label` parameter
+        # st.expander(label=label)
         with st.expander(f'WorkingBees Sybmols Chess Board: {name}'):
             st.subheader("Current Chess Board")
             cols = st.columns((1,1,1,1))
@@ -764,16 +772,16 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
             ticker_model_level_1 = {
                     'QueenBeeTrader': {'type': None}, # not allowed to change
-                    'status': {'type': 'list', 'list': ['active', 'not_active']},
+                    'status': {'type': 'status', 'list': ['active', 'not_active']},
                     'buyingpower_allocation_LongTerm': {'type': 'numberslider', 'min': 0, 'max': 1},
                     'buyingpower_allocation_ShortTerm': {'type': None}, # returns opposite of LongTerm
-                    'index_long_X': {'type': 'list', 'list': ['1X', '2X', '3X']},
-                    'index_inverse_X': {'type': 'list', 'list': ['1X', '2X', '3X']},
-                    'portforlio_weight_ask': {'type': 'number'},
-                    'total_budget': {'type': 'number'},
+                    'index_long_X': {'type': 'index_long_X', 'list': ['1X', '2X', '3X']},
+                    'index_inverse_X': {'type': 'index_inverse_X', 'list': ['1X', '2X', '3X']},
+                    'portforlio_weight_ask': {'type': 'portforlio_weight_ask'},
+                    'total_budget': {'type': 'total_budget'},
                     'max_single_trade_amount': {'type': 'number'},
-                    'allow_for_margin': {'type': 'bool'}, 
-                    'buy_ONLY_by_accept_from_QueenBeeTrader': {'type': 'bool'},
+                    'allow_for_margin': {'type': 'allow_for_margin'}, 
+                    'buy_ONLY_by_accept_from_QueenBeeTrader': {'type': 'buy_ONLY_by_accept_from_QueenBeeTrader'},
                     'trading_model_name': {'type': None}, # not allowed to change
                     'portfolio_name': {'type': None}, # not allowed to change
                     'trigbees': {'type': 'trigbees', 'list': ['active', 'not_active']},
@@ -840,38 +848,69 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                             if item_type == None:
                                 continue # not allowed edit
                             
-                            elif item_type == 'bool':
+                            # elif item_type == 'bool':
+                            #     with cols[0]:
+                            #         trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            # elif item_type == 'list':
+                            #     item_val = ticker_model_level_1[kor_option]['list']
+                            #     with cols[1]:
+                            #         trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            # elif item_type == 'number':
+                            #     with cols[2]:
+                            #         trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            elif kor_option == 'total_budget':
+                                with cols[0]:
+                                    trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+
+                            elif kor_option == 'max_single_trade_amount':
+                                with cols[0]:
+                                    trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+
+                            elif kor_option == 'allow_for_margin':
                                 with cols[0]:
                                     trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
-                            elif item_type == 'list':
-                                item_val = ticker_model_level_1[kor_option]['list']
-                                with cols[1]:
-                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
-                            elif item_type == 'number':
+                            elif kor_option == 'buy_ONLY_by_accept_from_QueenBeeTrader':
+                                with cols[0]:
+                                    trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+
+
+                            elif kor_option == 'index_long_X':
                                 with cols[2]:
-                                    trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
-                            elif item_type == 'trigbees':
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            elif kor_option == 'index_inverse_X':
+                                with cols[2]:
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            
+                            elif kor_option == 'portforlio_weight_ask':
+                                with cols[2]:
+                                    trading_model[kor_option] = st.slider(label=f'{"portforlio_weight_ask"}', key='portforlio_weight_ask', min_value=float(0.0), max_value=float(1.0), value=float(kor_v), help="Allocation to Strategy by portfolio")
+
+
+
+                            elif kor_option == 'status':
+                                with cols[2]:
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                          
+                            elif kor_option == 'trigbees':
                                 with cols[3]:
                                     item_val = ticker_model_level_1[kor_option]['list']
                                     for trigbee, trigactive in trading_model['trigbees'].items():
                                         trading_model[kor_option][trigbee] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}_{trigbee}', value=trigactive, key=f'{ticker_option_qc}{"_"}{kor_option}{trigbee}')
 
-                            elif item_type == 'time_blocks':
+                            elif kor_option == 'time_blocks':
                                 with cols[0]:
                                     for wave_block, waveactive in trading_model['time_blocks'].items():
                                         trading_model[kor_option][wave_block] = st.checkbox(label=f'{wave_block}', value=waveactive, key=f'{ticker_option_qc}{"_"}{kor_option}{wave_block}')
                             
-                            elif item_type == 'power_rangers':
+                            elif kor_option == 'power_rangers':
                                 with cols[3]:
                                     st.write('power_rangers')
                                     for power_ranger, pr_active in trading_model['power_rangers'].items():
                                         trading_model[kor_option][power_ranger] = st.checkbox(label=f'{power_ranger}', value=pr_active, key=f'{ticker_option_qc}{"_"}{kor_option}{power_ranger}')
-                            # elif item_type == 'power_rangers_power':
-                            #     with cols[1]:
-                            #         st.write('power_rangers_power')
-                            #         for power_ranger, pr_active in trading_model['power_rangers_power'].items():
-                            #             # st.write(power_ranger, pr_active)
-                            #             trading_model[kor_option] = st.slider(label=f'{power_ranger}', min_value=float(0.0), max_value=float(1.0), value=float(pr_active))
+                            
                             elif kor_option == 'buyingpower_allocation_LongTerm':
                                 with cols[0]:
                                     long = st.slider(label=f'{"Long Term Allocation"}', key='tic_long', min_value=float(0.0), max_value=float(1.0), value=float(trading_model['buyingpower_allocation_LongTerm']), help="Set the Length of the trades, lower number means short trade times")
@@ -1248,23 +1287,27 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         }
 
 
-    def queen_main_view(QUEEN, QUEEN_KING):
+    def queen_main_view(QUEEN, QUEEN_KING, tickers, ticker_option):
 
 
         update_Workerbees(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, admin=admin)
 
         cols = st.columns((1, 2))
-        with cols[0]:
-            st.plotly_chart(create_guage_chart(title=f'{ticker_option} Wave Gauge', value=float(star__view["macd_tier_guage_value"])))
-        with cols[1]:
-            mark_down_text(fontsize=25, text=f'{ticker_option} {"MACD Gauge "}{star__view["macd_tier_guage"]}{" Hist Gauge "}{star__view["hist_tier_guage"]}')
-            df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
-            df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+        if len(tickers) > 8:
+            st.write("Max Story views is 8 symbols")
+        for symbol in tickers:
+            star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=symbol, POLLENSTORY=POLLENSTORY) ## RETURN FASTER maybe cache?
+            with cols[0]:
+                st.plotly_chart(create_guage_chart(title=f'{ticker_option} Wave Gauge', value=float(star__view["macd_tier_guage_value"])))
+            with cols[1]:
+                mark_down_text(fontsize=25, text=f'{ticker_option} {"MACD Gauge "}{star__view["macd_tier_guage"]}{" Hist Gauge "}{star__view["hist_tier_guage"]}')
+                df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
+                df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
 
-            st.dataframe(df_style)
+                st.dataframe(df_style)
 
-        with cols[1]:
-            return_buying_power(api=api)
+        # with cols[1]:
+        return_buying_power(api=api)  # sidebar
 
         
         page_line_seperator()
@@ -1502,6 +1545,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     QUEEN_KING = APP_req['QUEEN_KING']
     if APP_req['update']:
         PickleData(PB_App_Pickle, QUEEN_KING)
+    
 
     ####### START ######
     if authorized_user:
@@ -1582,6 +1626,10 @@ if str(option).lower() == 'queen':
         # ticker, value = package.items()
             with cols[idx + 1]:
                 st.checkbox(ticker, v)  ## add as quick save to turn off and on Model
+    
+    # update_QueenControls(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, control_option="symbols_stars_TradingModel", theme_list=theme_list)
+    # buttons to data
+
 
     page_line_seperator(height='1')
     cols = st.columns(2)
@@ -1616,7 +1664,7 @@ if str(option).lower() == 'queen':
 
     star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
 
-    queen_main_view(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
+    queen_main_view(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, tickers=tickers, ticker_option=ticker_option)
     queen_triggerbees()
     queen_order_flow()
     queen_chart(ticker_option=ticker_option, POLLENSTORY=POLLENSTORY)
@@ -1781,6 +1829,7 @@ if str(option).lower() == 'charts':
         label_visibility='visible',
         # disabled=st.session_state.disabled,
         horizontal=True,
+        # label=bee_image
     )
 
     if option__.lower() == 'all':

@@ -1080,7 +1080,7 @@ def command_conscience(api, QUEEN, STORY_bee, QUEEN_KING):
                     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
                     
                     if str(trading_model['status']) not in ['active']:
-                        print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                        print(str(trading_model['status']), "model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                         continue
 
                     # cycle through triggers and pass buy first logic for buy
