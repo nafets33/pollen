@@ -1092,8 +1092,9 @@ def command_conscience(api, QUEEN, STORY_bee, QUEEN_KING):
                         if trig not in available_triggerbees:
                             continue
                         if trig in trading_model['trigbees'].keys():
-                            if str(trading_model['trigbees'][trig]) != 'active':
-                                print("model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                            if str(trading_model['trigbees'][trig]).lower() != 'true':
+                                # ipdb.set_trace()
+                                print("trig bee model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                                 continue
                             
                             # check if you already placed order or if a workerbee in transit to place order
