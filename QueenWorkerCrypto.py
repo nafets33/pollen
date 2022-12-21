@@ -497,7 +497,8 @@ def queen_workerbee_coins():
         WORKER_QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
     WORKER_QUEEN['source'] = PB_QUEEN_Pickle
-    MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
+    # ipdb.set_trace()
+    # MACD_12_26_9 = WORKER_QUEEN['queen_controls']['MACD_fast_slow_smooth']
     master_tickers = WORKER_QUEEN['workerbees'][queens_chess_piece]['tickers']
     MACD_settings = WORKER_QUEEN['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
     star_times = WORKER_QUEEN['workerbees'][queens_chess_piece]['stars']

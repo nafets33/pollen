@@ -7,117 +7,39 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import matplotlib.pyplot as plt
+import base64
+import pytz
+from PIL import Image
 
 from dotenv import load_dotenv
 
+est = pytz.timezone("US/Eastern")
+
+from dotenv import load_dotenv
+
+default_text_color = '#59490A'
+default_font = "sans serif"
 load_dotenv()
+
+main_root = os.getcwd()
+
+# images
+jpg_root = os.path.join(main_root, 'misc')
+bee_image = os.path.join(jpg_root, 'bee.jpg')
+bee_power_image = os.path.join(jpg_root, 'power.jpg')
+hex_image = os.path.join(jpg_root, 'hex_design.jpg')
+hive_image = os.path.join(jpg_root, 'bee_hive.jpg')
+queen_image = os.path.join(jpg_root, 'queen.jpg')
+queen_angel_image = os.path.join(jpg_root, 'queen_angel.jpg')
+page_icon = Image.open(bee_image)
+flyingbee_gif_path = os.path.join(jpg_root, 'flyingbee_gif_clean.gif')
+flyingbee_grey_gif_path = os.path.join(jpg_root, 'flying_bee_clean_grey.gif')
+bitcoin_gif = os.path.join(jpg_root, 'bitcoin_spinning.gif')
+power_gif = os.path.join(jpg_root, 'power_gif.gif')
 
 ## IMPROVE GLOBAL VARIABLES
 
 ################ AUTH ###################
-def register_user(cur, con, authenticator):
-    if "activation_code" not in st.session_state:
-        st.session_state["activation_code"] = randint(100000, 999999)
-
-    try:
-        # NB: st_authenticator.py.register_user() (line 347 & 352) was modified to return the email
-        register_email = authenticator.register_user("Sign Up", preauthorization=False)
-
-        if register_email:
-            activation_code = st.session_state["activation_code"]
-
-            # verify email
-            send_email(
-                recipient=register_email,
-                subject="PollenQ. Verify Email",
-                body=f"""
-Your PollenQ activation code is {activation_code}
-
-Please enter this code in the website to complete your registration
-
-Thank you,
-PollenQ
-""",
-            )
-            update_db(cur, con)
-            st.success("Welcome On Board! Please login with your detials above")
-            entered_code = st.text_input("Activation Code", max_chars=6)
-
-            if st.button("Submit"):
-                if int(entered_code) == st.session_state["activation_code"]:
-
-                    # notify user
-                    send_email(
-                        recipient=register_email,
-                        subject="Welcome On Board PollenQ!",
-                        body=f"""
-You have successful created a PollenQ account. Ensure you keep your login detials safe.
-
-Thank you,
-PollenQ
-""",
-                    )
-                else:
-                    st.error("Incorrect Code")
-
-    except Exception as e:
-        st.error(e)
-
-
-def forgot_password(authenticator, cur, con):
-    try:
-        (
-            email_forgot_pw,
-            random_password,
-        ) = authenticator.forgot_password("Reset Password")
-
-        if email_forgot_pw:
-            # notify user and update password
-            send_email(
-                recipient=email_forgot_pw,
-                subject="PollenQ. Forgot Password",
-                body=f"""
-Dear {authenticator.credentials["usernames"][email_forgot_pw]["name"]},
-
-Your new password for pollenq.com is {random_password}
-
-Please keep this password safe.
-
-Thank you,
-PollenQ
-""",
-            )
-            update_db(cur, con)
-            st.success("Your new password has been sent your email!")
-
-        elif email_forgot_pw == False:
-            st.error("Email not found")
-    except Exception as e:
-        st.error(e)
-
-
-def reset_password(email):
-    try:
-        if authenticator.reset_password(email, ""):
-            update_db(cur, con)
-            send_email(
-                recipient=email,
-                subject="PollenQ. Password Changed",
-                body=f"""
-Dear {authenticator.credentials["usernames"][email]["name"]},
-
-You are recieving this email because your password for pollenq.com has been changed.
-If you did not authorize this change please contact us immediately.
-
-Thank you,
-PollenQ
-""",
-            )
-            st.success("Password changed successfully")
-
-    except Exception as e:
-        st.error(e)
-
 
 def send_email(recipient, subject, body):
 
@@ -139,91 +61,44 @@ def send_email(recipient, subject, body):
         smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
         smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
-
-def update_db(cur, con):
-    cur.execute("DELETE FROM users")
-
-    for user, user_detials in credentials["usernames"].items():
-        email = user
-        password = user_detials["password"]
-        name = user_detials["name"]
-        signup_date = user_detials["signup_date"]
-        last_login_date = user_detials["last_login_date"]
-        login_count = user_detials["login_count"]
-
-        cur.execute(
-            "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)",
-            (email, password, name, signup_date, last_login_date, login_count),
-        )
-    con.commit()
-
-
-def signin_main():
-    con = sqlite3.connect("db/users.db")
-    cur = con.cursor()
-
-    # cur.execute("DROP TABLE users")
-    # cur.execute("CREATE TABLE users(email, password, name, signup_date)")
-
-    # Read usernames and convert to nested dict
-    users = cur.execute("SELECT * FROM users").fetchall()
-    credentials = {}
-    for user in users:
-        credentials[user[0]] = {
-            "password": user[1],
-            "name": user[2],
-            "signup_date": user[3],
-            "last_login_date": user[4],
-            "login_count": user[5],
-        }
-    credentials = {"usernames": credentials}
-
-
-    # Create authenticator object
-    authenticator = stauth.Authenticate(
-        credentials=credentials,
-        cookie_name= os.environ.get("cookie_name"),
-        key= os.environ.get("cookie_key"),
-        cookie_expiry_days= int(os.environ.get("cookie_expiry_days")),
-        preauthorized={"emails": "na"},
-    )
-
-    # Check login. Automatically gets stored in session state
-    name, authentication_status, email = authenticator.login("Login", "main")
-
-    # login successful; proceed
-    if authentication_status:
-        update_db(cur, con)
-
-        authenticator.logout("Logout", "main")
-        detials_cols = st.columns(2)
-        detials_cols[0].write(f"Welcome *{name}*")
-        with detials_cols[1].expander("Reset Password"):
-            reset_password(email)
-
-        return email
-
-    # login unsucessful; forgot password or create account
-    elif authentication_status == False:
-        st.error("Email/password is incorrect")
-        with st.expander("Forgot Password"):
-            forgot_password(authenticator, cur, con)
-        with st.expander("New User"):
-            register_user(cur, con, authenticator)
-
-        return False
-
-    # no login trial; create account
-    elif authentication_status == None:
-        st.warning("Please enter your email and password")
-        with st.expander("New User"):
-            register_user()
-        
-        return False
-
 ################ AUTH ###################
 
+def mark_down_text(align='center', color=default_text_color, fontsize='33', text='Hello There', font=default_font):
+    st.markdown('<p style="text-align: {}; font-family:{}; color:{}; font-size: {}px;">{}</p>'.format(align, font, color, fontsize, text), unsafe_allow_html=True)
+    return True
 
+
+def page_line_seperator(height='3', border='none', color='#C5B743'):
+    return st.markdown("""<hr style="height:{}px;border:{};color:#333;background-color:{};" /> """.format(height, border, color), unsafe_allow_html=True)
+
+
+def write_flying_bee(width="45", height="45", frameBorder="0"):
+    return st.markdown('<iframe src="https://giphy.com/embed/ksE4eFvxZM3oyaFEVo" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/bee-traveling-flying-into-next-week-like-ksE4eFvxZM3oyaFEVo"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
+
+
+def hexagon_gif(width="45", height="45", frameBorder="0"):
+    return st.markdown('<iframe src="https://giphy.com/embed/Wv35RAfkREOSSjIZDS" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/star-12-hexagon-Wv35RAfkREOSSjIZDS"></a></p>'.format(width, height, frameBorder), unsafe_allow_html=True)
+
+
+def local_gif(gif_path, width='33', height='33'):
+    with open(gif_path, "rb") as file_:
+        contents = file_.read()
+        data_url = base64.b64encode(contents).decode("utf-8")
+        st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">', unsafe_allow_html=True)
+
+
+def flying_bee_gif(width='33', height='33'):
+    with open(os.path.join(jpg_root, 'flyingbee_gif_clean.gif'), "rb") as file_:
+        contents = file_.read()
+        data_url = base64.b64encode(contents).decode("utf-8")
+        st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">', unsafe_allow_html=True)
+
+
+def pollen__story(df):
+    with st.expander('pollen story', expanded=False):
+        df_write = df.astype(str)
+        st.dataframe(df_write)
+        pass
 
 ############### Charts ##################
 
@@ -301,3 +176,5 @@ def example__color_coding__dataframe(row):
 
 
 ############ utils ############
+
+

@@ -527,6 +527,10 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
         MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
         # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
+        # change the script to pull for each ticker, inifinite pawns pw1: [10] ... write out the pollenstory to the local db pickle file
+        # aysnc needs to happen here as well: change from async full chess piece to group of tickers and async the pollen_hunt & pollen_story
+        # multiprocess the workbees
+
         # main 
         pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)
         QUEEN[queens_chess_piece]['pollencharts'] = pollen['pollencharts']
@@ -661,43 +665,6 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
     main_symbols_full_list = ticker_universe['main_symbols_full_list']
     not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
 
-
-    def kingdom__WorkerBees(): ## PENDING call all tickers
-        try:
-            pq = read_QUEEN(queen_db=queen_db)
-            QUEENBEE = pq['QUEENBEE']
-            queens_chess_pieces = pq['queens_chess_pieces']
-            queens_master_tickers = pq['queens_master_tickers']
-            queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=queens_chess_pieces)
-            WORKERBEE_queens = queen_workers['WORKERBEE_queens']
-            speed_gauges = queen_workers['speed_gauges']
-            
-            while True:
-                pq = read_QUEEN(queen_db=queen_db)
-                QUEENBEE = pq['QUEENBEE']
-                latest__queens_chess_pieces = pq['queens_chess_pieces']
-                latest__queens_master_tickers = pq['queens_master_tickers']
-                if latest__queens_master_tickers != queens_master_tickers:
-                    print("Revised Ticker List ReInitiate")
-                    queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces)
-                    WORKERBEE_queens = queen_workers['WORKERBEE_queens']
-                    speed_gauges = queen_workers['speed_gauges']
-                
-                qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
-
-        except Exception as errbuz:
-            print(errbuz)
-            erline = print_line_of_error()
-            log_msg = {'type': 'ProgramCrash', 'lineerror': erline}
-            print(log_msg)
-            logging.critical(log_msg)
-            ipdb.set_trace()
-
-
-    def write_ticker_latest_price(ticker, bars, db_root):
-        PickleData(pickle_file=os.path.join(db_root, ticker), data_to_store=bars)
-        return True
-    
     
     def queens_court__WorkerBees():
         try:

@@ -33,7 +33,12 @@ import ipdb
 import json
 import argparse
 from collections import deque
-import ta as bta
+# import ta as bta
+
+from email.message import EmailMessage
+import smtplib
+import ssl
+
 
 import _locale
 
@@ -286,9 +291,35 @@ def init_QUEEN(queens_chess_piece):
 
 
 def init_QUEEN_App():
-    app_requests = ["workerbees", "queen_controls", "trading_models"]
+    ticker_universe = return_Ticker_Universe()
+    index_ticker_db = ticker_universe['index_ticker_db']
+    main_index_dict = ticker_universe['main_index_dict']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
+
+    app = {
+    'theme': 'nuetral', 
+    'king_controls_queen': return_queen_controls(stars),
+    'qcp_workerbees': {
+        'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                    'tickers': ['SPY'],
+                    'stars': stars(),},
+        'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                    'tickers': ['GOOG', 'AAPL', 'TSLA'],
+                    'stars': stars(),},
+        'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                    'tickers': ['AMZN', 'OXY', 'SOFI'],
+                    'stars': stars(),},
+        'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                    'tickers': ['BTCUSD', 'ETHUSD'],
+                    'stars': stars(),},
+        'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                    'tickers': main_symbols_full_list[:100],
+                    'stars': stars(),},
+        },
+
     
-    app = {'theme': 'nuetral', 
+    
     'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
     'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
@@ -303,10 +334,10 @@ def init_QUEEN_App():
     'knight_bees_kings_rules': [],
     'knight_bees_kings_rules_requests': [],
     'queen_controls_reset': False, 
-    'queen_controls': [],
+    # 'queen_controls': [],
     'queen_controls_requests': [],
     'queen_contorls_lastupdate': False, 
-    'workerbees': [],
+    # 'workerbees': [],
     'workerbees_requests': [],
     'subconscious': [],
     'subconscious_requests': [],
@@ -334,7 +365,7 @@ def add_key_to_app(APP_requests): # returns QUEES
             msg = f'{k}{" : Key Added"}'
             print(msg)
             logging.info(msg)
-    return {'APP_requests': APP_requests, 'update': update}
+    return {'QUEEN_KING': APP_requests, 'update': update}
 
 
 def add_key_to_QUEEN(QUEEN, queens_chess_piece): # returns QUEEN
@@ -402,18 +433,6 @@ def return_STORYbee_trigbees(QUEEN, STORY_bee, tickers_filter=False):
     
     return {'active_trigs': active_trigs, 'all_current_trigs': all_current_trigs}
 
-
-# def add_trading_model(PB_QUEEN_Pickle, QUEEN, ticker, model='MACD', status='active'):  ### TEST OUT SAVING QUEEN OUTSIDE QUEEN Glob var
-#     trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
-#     if ticker not in trading_models.keys():
-#         print(ticker, " Ticker Missing Trading Model Adding Default ", model)
-#         logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
-#         tradingmodel1 = generate_TradingModel(ticker=ticker, status=status)[model]
-#         QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
-#         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-#         return QUEEN
-#     else:
-#         return QUEEN
 
 
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
@@ -1344,7 +1363,9 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
     # handle error
     except Exception as e:
         print("sending email of error", e)
-        ipdb.set_trace()
+        er_line = print_line_of_error()
+        logging_log_message(log_type='critical', msg='bars failed', error=f'error {e}  error line {str(er_line)}')
+        # ipdb.set_trace()
 
 
 def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
@@ -1402,7 +1423,9 @@ def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
 
     except Exception as e:
         print("sending email of error", e)
-        return False
+        er_line = print_line_of_error()
+        logging_log_message(log_type='critical', msg='bars failed', error=f'error {e}  error line {str(er_line)}')
+        # ipdb.set_trace()
 
 
 def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
@@ -1701,38 +1724,55 @@ def PickleData(pickle_file, data_to_store):
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
     with open(pickle_file_temp, 'wb+') as dbfile:
-        db = {k: v for (k,v) in data_to_store.items()}
+        db = data_to_store
         db['pq_last_modified'] = p_timestamp
         pickle.dump(db, dbfile)
     
     with open(pickle_file, 'wb+') as dbfile:
-        db = {k: v for (k,v) in data_to_store.items()}
+        db = data_to_store
         db['pq_last_modified'] = p_timestamp
         pickle.dump(db, dbfile)
      
     return True
 
 
-def ReadPickleData(pickle_file, db_init_dict=False): 
-    # p_timestamp = {'file_creation': datetime.datetime.now()} 
-    # if os.path.exists(pickle_file) == False:
-    #     with open(pickle_file, 'wb+') as dbfile:
-    #         print("init", pickle_file)
-    #         db = {} 
-    #         db['jp_timestamp'] = p_timestamp 
-    #         pickle.dump(db, dbfile) 
-    # for reading also binary mode is important try 3 times
-    try:
-        with open(pickle_file, "rb") as f:
-            return pickle.load(f)
-    except Exception as e:
-        try:
-            time.sleep(.33)
-            with open(pickle_file, "rb") as f:
-                return pickle.load(f)
-        except Exception as e:
-            print("CRITICAL PICKLE READ ERROR logme", e)
-            return False
+def ReadPickleData(pickle_file): 
+
+    # Check the file's size and modification time
+    prev_size = os.stat(pickle_file).st_size
+    prev_mtime = os.stat(pickle_file).st_mtime
+    while True:
+        stop = 0
+        # Get the current size and modification time of the file
+        curr_size = os.stat(pickle_file).st_size
+        curr_mtime = os.stat(pickle_file).st_mtime
+        
+        # Check if the size or modification time has changed
+        if curr_size != prev_size or curr_mtime != prev_mtime:
+            print(f'{pickle_file} is currently being written to')
+            logging.info(f'{pickle_file} is currently being written to')
+        else:
+            if stop > 3:
+                print("pickle error")
+                logging.critical(f'{e} error is pickle load')
+                send_email(subject='CRITICAL Read Pickle Break')
+                break
+            try:
+                with open(pickle_file, "rb") as f:
+                    return pickle.load(f)
+            except Exception as e:
+                print(e)
+                logging.error(f'{e} error is pickle load')
+                stop+=1
+                time.sleep(0.033)
+
+        # Update the previous size and modification time
+        prev_size = curr_size
+        prev_mtime = curr_mtime
+        
+        # Wait a short amount of time before checking again
+        time.sleep(0.033)
+
 
 
 def timestamp_string(format="%m-%d-%Y %I.%M%p", tz=est):
@@ -2100,12 +2140,14 @@ def return_portfolio_ticker_allocation():
     pass
 
 
-def pollen_themes(KING, themes=['nuetral', 'strong'], waves_cycles=['waveup', 'wavedown'], wave_periods={'premarket': .01, 'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'afterhours': .01, 'Day': .01}):
+
+def pollen_themes(KING, themes=['nuetral', 'strong', 'star__storywave'], waves_cycles=['waveup', 'wavedown'], wave_periods={'premarket': .01, 'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'afterhours': .01, 'Day': .01}):
     ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     # themes = ['nuetral', 'strong']
     # waves_cycles = ['waveup', 'wavedown']
     # wave_periods = {'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}
 
+    # star__storywave: auto_adjusting_with_starwave: using story
 
     
     star_times = KING['star_times']
@@ -2173,13 +2215,11 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                 '1Day_1Year': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.1 , sellout=-.05, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=False, scalp_profits_timeduration=30, stagger_profits_tiers=1),
             }
 
-        # def waveBlocktime_specific_DEFAULT_rules(waveBlocktimes):
-        #     return {'premarket': {'status': 'not_active'}}
 
         def trigbees__DEFAULT_keys():
-            return {'buy_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-            'sell_cross-0': kings_order_rules(status='active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-            'ready_buy_cross': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=2, max_profit_waveDeviation_timeduration=60*24, timeduration=525600, take_profit=.01 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+            return {'buy_cross-0': {},
+            'sell_cross-0': {},
+            'ready_buy_cross': {},
             }
 
         
@@ -2204,48 +2244,61 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
             star_default_rules = star__DEFAULT_kings_order_rules_mapping()
 
             star = '1Minute_1Day'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],
+            return_dict[star] = {
+                                    # 'status': 'active', 
+                                    'trade_using_limits': False, 
+                                    'stagger_profits': star_default_rules[star]['stagger_profits'],
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
-                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'power_rangers': {k: 1 for k in stars().keys()},
                                     'trigbees': trigbees_king_order_rules[star], 
             }
             star = '5Minute_5Day'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'], 
+            return_dict[star] = {
+                                    'trade_using_limits': False, 
+                                    'stagger_profits': star_default_rules[star]['stagger_profits'], 
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
-                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'power_rangers': {k: 1 for k in stars().keys()},
                                     'trigbees': trigbees_king_order_rules[star]}
             star = '30Minute_1Month'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
+            return_dict[star] = {
+                                    'trade_using_limits': False, 
+                                    'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
-                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'power_rangers': {k: 1 for k in stars().keys()},
                                     'trigbees': trigbees_king_order_rules[star]}
 
             star = '1Hour_3Month'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
+            return_dict[star] = {
+                                    'trade_using_limits': False, 
+                                    'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
-                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'power_rangers': {k: 1 for k in stars().keys()},
                                     'trigbees': trigbees_king_order_rules[star]}
             star = '2Hour_6Month'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
+            return_dict[star] = {
+                                    'trade_using_limits': False, 
+                                    'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
-                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'power_rangers': {k: 1 for k in stars().keys()},
                                     'trigbees': trigbees_king_order_rules[star]}
             star = '1Day_1Year'
-            return_dict[star] = {'status': 'active', 'trade_using_limits': False, 'stagger_profits': star_default_rules[star]['stagger_profits'],  
+            return_dict[star] = {
+                                    'trade_using_limits': False, 
+                                    'stagger_profits': star_default_rules[star]['stagger_profits'],  
                                     'total_budget': 100,
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
-                                    'power_rangers': {k: 'active' for k in stars().keys() if k in list(stars().keys())},
+                                    'power_rangers': {k: 1 for k in stars().keys()},
                                     'trigbees': trigbees_king_order_rules[star]}
 
             
@@ -2254,8 +2307,9 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
 
         
         def star_vars(star, star_vars_mapping):
-            return {'star': star,
-            'status': star_vars_mapping[star]['status'],
+            return {
+            'star': star,
+            # 'status': star_vars_mapping[star]['status'],
             'trade_using_limits': star_vars_mapping[star]['trade_using_limits'],
             'total_budget': star_vars_mapping[star]['total_budget'],
             'buyingpower_allocation_LongTerm': star_vars_mapping[star]['buyingpower_allocation_LongTerm'],
@@ -2275,7 +2329,8 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
 
 
     def model_vars(trading_model_name, star, stars_vars):
-        return {'status': stars_vars[star]['status'], 
+        return {
+                # 'status': stars_vars[star]['status'], 
                 'buyingpower_allocation_LongTerm': stars_vars[star]['buyingpower_allocation_LongTerm'], 
                 'buyingpower_allocation_ShortTerm': stars_vars[star]['buyingpower_allocation_ShortTerm'], 
                 'power_rangers': stars_vars[star]['power_rangers'],
@@ -2295,11 +2350,21 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         morning = [True if ticker in crypto_currency_symbols else True][0]
         premarket = [True if ticker in crypto_currency_symbols else False][0]
         Day = [True if ticker in crypto_currency_symbols else False][0]
+        
+        time_blocks = {'premarket': premarket,
+                'afterhours': afterhours,
+                'morning_9-11': morning,
+                'lunch_11-2': lunch,
+                'afternoon_2-4': afternoon,
+                'afterhours': afterhours,
+                'Day': Day}
+        
         allow_for_margin = [False if ticker in crypto_currency_symbols else True][0]
-        etf_X_direction = ['1X', '2X', '3X']
-        trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+        etf_X_direction = ['1X', '2X', '3X']  # Determined by QUEEN
+        # trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
 
-        model1 = {'QueenBeeTrader': 'Jq',
+        model1 = {
+                'QueenBeeTrader': 'Jq',
                 'status': status,
                 'buyingpower_allocation_LongTerm': .2,
                 'buyingpower_allocation_ShortTerm': .8,
@@ -2312,15 +2377,9 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                 'buy_ONLY_by_accept_from_QueenBeeTrader': False,
                 'trading_model_name': trading_model_name,
                 'portfolio_name': portfolio_name,
-                'trigbees': {k: 'active' for k in trigbees},
-                'premarket': premarket,
-                'afterhours': afterhours,
-                'morning_9-11': morning,
-                'lunch_11-2': lunch,
-                'afternoon_2-4': afternoon,
-                'afterhours': afterhours,
-                'Day': Day,
-                'power_rangers': {k: 'active' for k in stars().keys()},
+                'trigbees': {k: True for k in trigbees},
+                'time_blocks': time_blocks,
+                'power_rangers': {k: True for k in stars().keys()},
                 'kings_order_rules': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
                 'stars_kings_order_rules': {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
         }
@@ -2555,30 +2614,16 @@ def createParser_App():
 
 
 def return_queen_controls(stars=stars):
-    num_of_stars = len(stars())
+    # num_of_stars = len(stars())
     queen_controls_dict = { 
             'theme': 'nuetral',
             'last_read_app': datetime.datetime.now(est),
             'stars': stars(),
             'ticker_settings': generate_queen_ticker_settings(),
             'buying_powers': generate_queen_buying_powers_settings(),
-
-            # Trading Model and Child Components Worker Bee Controls
             'symbols_stars_TradingModel': generate_TradingModel()['MACD'],
             'power_rangers': init_PowerRangers(),
             'trigbees': {'buy_cross-0': 'active', 'sell_cross-0':'active', 'ready_buy_cross':'not_active'},
-            # 'max_profit_waveDeviation': {star_time: 2 for star_time in stars().keys()},
-            # Worker Bees UPDATE TO PER TICKER on Ticker Settings
-            'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-            # 'macd_worlds' : {
-            #     'crypto': 
-            #         {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
-            #         'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
-                
-            #     'default': 
-            #         {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
-            #         'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
-            #     },
 
     
     }
@@ -2866,8 +2911,8 @@ def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_c
             #     df = df[col_view]
             # if 'profit_loss' in df.columns:
             #     df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
-            if "honey" in df.columns:
-                df["honey"] = df['honey'].map("{:.2%}".format)
+            # if "honey" in df.columns:
+            #     df["honey"] = df['honey'].map("{:.2%}".format)
             # if "cost_basis" in df.columns:
             #     df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
 
@@ -3066,6 +3111,31 @@ def init_clientUser_dbroot(client_user):
             os.mkdir(os.path.join(db_root, 'logs'))
 
     return db_root
+
+
+
+def send_email(recipient='stapinski89@gmail.com', subject="you forgot a subject", body="you forgot to same something"):
+
+    # Define email sender and receiver
+    pollenq_gmail = os.environ.get("pollenq_gmail")
+    pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
+
+    em = EmailMessage()
+    em["From"] = pollenq_gmail
+    em["To"] = recipient
+    em["Subject"] = subject
+    em.set_content(body)
+
+    # Add SSL layer of security
+    context = ssl.create_default_context()
+
+    # Log in and send the email
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+        smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
+        smtp.sendmail(pollenq_gmail, recipient, em.as_string())
+    
+    return True
+
 
 ### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
 def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics

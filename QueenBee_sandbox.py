@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 from tqdm import tqdm
 
-# import shutil
+# import shutilf
 # import argparse
 import _locale
 pd.options.mode.chained_assignment = None
@@ -33,10 +33,10 @@ if prior day abs(change) > 1 ignore ticker for the day!
 """
 
 if prod:
-    from QueenHive import return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive import send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
 else:
-    from QueenHive_sandbox import return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
+    from QueenHive_sandbox import send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, createParser_QUEEN, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, refresh_account_info, return_bars, init_index_ticker, print_line_of_error, add_key_to_QUEEN
     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 # script arguments
@@ -157,19 +157,18 @@ def process_order_submission(trading_model, order, order_vars, trig, ticker_time
         print(e, print_line_of_error())
 
 
-def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None):
-    # APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+def process_app_requests(QUEEN, QUEEN_KING, request_name, archive_bucket=None):
     
     if request_name == "buy_orders":
         archive_bucket = 'app_order_requests'
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("buy trigger request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'order_flag': False,}
                 else:
                     print("app buy order gather")
@@ -181,9 +180,9 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
                     ticker_time_frame = f'{app_request["ticker"]}{"_app_bee"}'
 
                     # remove request
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     
                     return {'king_resp': king_resp, 'order_flag': True, 'app_request': app_request, 'ticker_time_frame': ticker_time_frame,} 
         else:
@@ -191,21 +190,21 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
     
     elif request_name == "wave_triggers":
         archive_bucket = 'app_wave_requests'
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("wave trigger request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("app wave trigger gather", app_request['wave_trigger'], " : ", app_request['ticker_time_frame'])
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     
                     return {'app_flag': True, 'app_request': app_request, 'ticker_time_frame': app_request['ticker_time_frame']}
         else:
@@ -213,42 +212,42 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
     
     elif request_name == "update_queen_order": # buz
         archive_bucket = 'update_queen_order_requests'
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("queen update order trigger request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("queen update order trigger gather", app_request['queen_order_update_package'], " : ", app_request['ticker_time_frame'])
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     
                     return {'app_flag': True, 'app_request': app_request, 'ticker_time_frame': app_request['ticker_time_frame']}
         else:
             return {'app_flag': False}    
 
     elif request_name == "update_queen_order_batch":
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("queen update order trigger request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("queen update order trigger gather", app_request['queen_order_update_package'], " : ", app_request['ticker_time_frame'])
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
                     update_queen_order(update_package=app_request)
                     
@@ -259,31 +258,27 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
     elif request_name == "power_rangers": ## buz
         # archive_bucket = "power_rangers_requests"
         # power rangers
-        all_items = [i for i in APP_requests[request_name]]
+        all_items = [i for i in QUEEN_KING[request_name]]
         if all_items:
             for app_request in all_items:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("Power Rangers trigger request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("Power Ranger Change")
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
                     #Update Rangers
                     # control_name = app_request['control_name']
                     
                     for ranger, update_value in app_request['rangers_values'].items():
                         QUEEN['queen_controls'][request_name][app_request['star']][app_request['wave_type']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
-                        logging_log_message(log_type='info', msg=(ranger, " :updated to: ", update_value ), origin_func='process app requests')
-                    # msg = ('control updated:: ', control_name)
-                    # print(msg)
-                    # logging.info(msg)
 
                     
                     return {'app_flag': True, 'app_request': app_request}
@@ -293,21 +288,21 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
     elif request_name == "knight_bees_kings_rules": ## PEDNIGN
         return False
         archive_bucket = "knight_bees_kings_rules_requests"
-        all_items = [i for i in APP_requests[request_name]]
+        all_items = [i for i in QUEEN_KING[request_name]]
         if all_items:
             for app_request in all_items:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("Knight Bees request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("Knight Bees Change")
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     
                     return {'app_flag': True, 'app_request': app_request}
         else:
@@ -315,21 +310,21 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
 
     elif request_name == "del_QUEEN_object": # PENDING
         archive_bucket = "del_QUEEN_object_requests"
-        all_items = [i for i in APP_requests[request_name]]
+        all_items = [i for i in QUEEN_KING[request_name]]
         if all_items:
             for app_request in all_items:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("Knight Bees request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("Del Queen Object")
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
                     # remove object from QUEEN
                     # key_to_del
@@ -340,43 +335,43 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
             return {'app_flag': False}
 
     elif request_name == "stop_queen": #buz
-        if APP_requests[request_name] == 'true':
+        if QUEEN_KING[request_name] == 'true':
             logging.info(("app stopping queen"))
             print("exiting QUEEN stopping queen")
-            APP_requests[request_name] = 'false'
-            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+            QUEEN_KING[request_name] = 'false'
+            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
             sys.exit()
         else:
             return {'app_flag': False}
     
-    elif request_name == 'queen_controls_reset':
-        if APP_requests[request_name] == 'true':
-            print("All Queen Controls Reset")
-            logging.info(("refreshed queen controls"))
-            # save app
-            APP_requests[request_name] = 'false'
-            PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
-            # save queen
-            QUEEN['queen_controls'] = return_queen_controls()
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+    # elif request_name == 'queen_controls_reset':
+    #     if QUEEN_KING[request_name] == 'true':
+    #         print("All Queen Controls Reset")
+    #         logging.info(("refreshed queen controls"))
+    #         # save app
+    #         QUEEN_KING[request_name] = 'false'
+    #         PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+    #         # save queen
+    #         QUEEN['queen_controls'] = return_queen_controls()
+    #         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
         
     elif request_name == "queen_controls": # buz
         # archive_bucket = 'queen_controls_requests'
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                     print("queen update order trigger request Id already received")
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return {'app_flag': False}
                 else:
                     print("queen control gather", app_request['request_name'],)
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                    APP_requests[archive_bucket].append(app_request)
-                    APP_requests[request_name].remove(app_request)
-                    PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+                    QUEEN_KING[archive_bucket].append(app_request)
+                    QUEEN_KING[request_name].remove(app_request)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
                     # update control
                     control_name = app_request['control_name']
@@ -392,7 +387,7 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
 
     elif request_name == "subconscious": # buz
         # archive_bucket = 'queen_controls_requests'
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
@@ -414,7 +409,7 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
             return {'app_flag': False}
     
     elif request_name == "workerbees":
-        app_order_base = [i for i in APP_requests[request_name]]
+        app_order_base = [i for i in QUEEN_KING[request_name]]
         if app_order_base:
             for app_request in app_order_base:
                 if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
@@ -437,22 +432,22 @@ def process_app_requests(QUEEN, APP_requests, request_name, archive_bucket=None)
 
                     return {'app_flag': True, 'app_request': app_request}  
     
-    elif request_name == 'trading_models': # PENDING
-        app_order_base = [i for i in APP_requests[request_name]]
-        if app_order_base:
-            for app_request in app_order_base:
-                if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
-                    return {'app_flag': False}
-                else:
-                    print("queen trading model update", app_request['request_name'],)
-                    QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
+    # elif request_name == 'trading_models': # Changes to confirm queen sees request
+    #     app_order_base = [i for i in QUEEN_KING[request_name]]
+    #     if app_order_base:
+    #         for app_request in app_order_base:
+    #             if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
+    #                 return {'app_flag': False}
+    #             else:
+    #                 print("queen trading model update", app_request['request_name'],)
+    #                 QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
 
-                    # update trading model
-                    trading_model_update = app_request['trading_model']
-                    QUEEN['queen_controls']['symbols_stars_TradingModel'].update(trading_model_update)
-                    msg = ('trading model updated:: ', trading_model_update)
-                    print(msg)
-                    logging.info(msg)
+    #                 # update trading model
+    #                 trading_model_update = app_request['trading_model']
+    #                 QUEEN['queen_controls']['symbols_stars_TradingModel'].update(trading_model_update)
+    #                 msg = ('trading model updated:: ', trading_model_update)
+    #                 print(msg)
+    #                 logging.info(msg)
 
                     
                     return {'app_flag': True, 'app_request': app_request}    
@@ -1022,17 +1017,17 @@ def king_knights_requests(QUEEN, STORY_bee, avail_trigs, trigbee, ticker_time_fr
         ipdb.set_trace()
 
 
-def add_trading_model(QUEEN, ticker, model='MACD', status='active'):
-    trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
-    if ticker not in trading_models.keys():
-        print(ticker, " Ticker Missing Trading Model Adding Default ", model)
-        logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
-        tradingmodel1 = generate_TradingModel(ticker=ticker, status=status)[model]
-        QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
-        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+# def add_trading_model(QUEEN, ticker, model='MACD', status='active'):
+#     trading_models = QUEEN['queen_controls']['symbols_stars_TradingModel']
+#     if ticker not in trading_models.keys():
+#         print(ticker, " Ticker Missing Trading Model Adding Default ", model)
+#         logging_log_message(msg=f'{ticker}{": added trading model: "}{model}')
+#         tradingmodel1 = generate_TradingModel(ticker=ticker, status=status)[model]
+#         QUEEN['queen_controls']['symbols_stars_TradingModel'].update(tradingmodel1)
+#         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
 
 
-def command_conscience(api, QUEEN, STORY_bee, APP_requests):
+def command_conscience(api, QUEEN, STORY_bee, QUEEN_KING):
 
     try:
         s_time_fullloop = datetime.datetime.now(est)
@@ -1042,7 +1037,7 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
         story_tickers = set([i.split("_")[0] for i in list(STORY_bee.keys())])
         portfolio = return_alpc_portolio(api)['portfolio']
         
-        app_wave_trig_req = process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='wave_triggers', archive_bucket='app_wave_requests')
+        app_wave_trig_req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='wave_triggers', archive_bucket='app_wave_requests')
 
         all_orders = QUEEN['queen_orders']
         active_orders = all_orders[all_orders['queen_order_state'].isin(active_queen_order_states)].copy()
@@ -1051,7 +1046,9 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
         s_time = datetime.datetime.now(est)
         for ticker in active_tickers:
             # Ensure Trading Model
-            add_trading_model(QUEEN=QUEEN, ticker=ticker, model='MACD')
+            if ticker not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
+                continue 
+            
             crypto = True if ticker in crypto_currency_symbols else False
             # Check Mrk Hours
             mkhrs = return_market_hours(trading_days=trading_days, crypto=crypto)
@@ -1121,7 +1118,7 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
         
         # App Buy Order Requests
         s_time = datetime.datetime.now(est)
-        app_resp = process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='buy_orders', archive_bucket='app_order_requests')
+        app_resp = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='buy_orders', archive_bucket='app_order_requests')
         charlie_bee['queen_cyle_times']['app_req_loop__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
         if app_resp['order_flag']:
@@ -1129,9 +1126,9 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
             print(msg)
             # queen process
             logging.info(msg)
-            APP_requests['queen_processed_orders'].append(app_resp['app_request']['app_requests_id'])
+            QUEEN_KING['queen_processed_orders'].append(app_resp['app_request']['app_requests_id'])
             QUEEN['app_requests__bucket'].append(app_resp['app_request']['app_requests_id'])
-            PickleData(PB_App_Pickle, APP_requests)
+            PickleData(PB_App_Pickle, QUEEN_KING)
 
             crypto = [True if app_resp['app_request']['ticker'] in crypto_currency_symbols else False][0]
             
@@ -1155,11 +1152,7 @@ def command_conscience(api, QUEEN, STORY_bee, APP_requests):
 """>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
 """>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
 """>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
-""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
-""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
-""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
-""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
-""">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
+
 
 
 def order_past_duration(queen_order):
@@ -1177,8 +1170,8 @@ def order_past_duration(queen_order):
 # def process_app_sell_signal(QUEEN, PB_App_Pickle, runorder_client_order_id): # ONLY returns if not empty
 #     """Read App Controls and update if anything new"""
 #     # app_request = QUEEN['queen_controls']['orders']
-#     APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
-#     app_order_base = [i for i in APP_requests['sell_orders']]
+#     QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+#     app_order_base = [i for i in QUEEN_KING['sell_orders']]
 #     c_order_ids = {idx: i for idx, i in enumerate(app_order_base) if i['client_order_id'] == runorder_client_order_id}
 #     if c_order_ids: # App Requests to sell client_order_id
 #         if len(c_order_ids) != 1:
@@ -1186,8 +1179,8 @@ def order_past_duration(queen_order):
 #             logging.info("error duplicate client_order_id requests, taking latest")
 #             app_request = c_order_ids[len(c_order_ids)-1]
 #             for i in range(len(c_order_ids) - 1):
-#                 APP_requests["sell_orders"].remove(APP_requests["sell_orders"][i])
-#                 PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+#                 QUEEN_KING["sell_orders"].remove(QUEEN_KING["sell_orders"][i])
+#                 PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 #             return {'sell_order': False}
 #         else:
 #             print("App Request Order")
@@ -1195,9 +1188,9 @@ def order_past_duration(queen_order):
 #             app_request = c_order_ids[list(c_order_ids.keys())[0]]
 #             if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
 #                 print("sell order request Id already received")
-#                 APP_requests['app_order_requests'].append(app_request)
-#                 APP_requests['sell_orders'].remove(app_request)
-#                 PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+#                 QUEEN_KING['app_order_requests'].append(app_request)
+#                 QUEEN_KING['sell_orders'].remove(app_request)
+#                 PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 #                 return {'sell_order': False}
 #             else:
 #                 print("get App Info details")
@@ -1208,29 +1201,13 @@ def order_past_duration(queen_order):
 
 #                 QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
 #                 PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-#                 APP_requests['sell_orders'].remove(app_request)
-#                 PickleData(pickle_file=PB_App_Pickle, data_to_store=APP_requests)
+#                 QUEEN_KING['sell_orders'].remove(app_request)
+#                 PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                                 
 #                 return {'sell_order': True, 'sell_qty': sell_qty, 'type': type, 'side': side}
 #     else:
 #         return {'sell_order': False}
 
-
-def confirm_Theme(QUEEN, APP_requests, savequeen=True): # King 
-    if APP_requests['last_app_update'] > QUEEN['queen_controls']['last_read_app']:
-        print("app request, checking theme")
-        print(APP_requests['theme'])
-        QUEEN['queen_controls']['last_read_app'] = APP_requests['last_app_update']
-        # always set Theme
-        if QUEEN['queen_controls']['theme'] != APP_requests['theme'] and APP_requests['theme'] in pollen_theme_dict.keys():
-            print("setting new theme", APP_requests['theme'], timestamp_string())
-            logging.info({'new_theme': APP_requests['theme'] })
-            QUEEN['queen_controls']['theme'] = APP_requests['theme']
-            
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN) # Save
-        else:
-            print("theme not changed")
-    return True 
 
 
 def fix_crypto_ticker(QUEEN, ticker, idx): # order manage
@@ -1896,7 +1873,7 @@ def stop_queen_order_from_kingbishop(run_order):
 
 
 
-def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
+def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, QUEEN_KING):
     ### TO DO ###
     s_loop = datetime.datetime.now(est)
 
@@ -2156,7 +2133,7 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
     # route queen order >>>  process queen_order_states
     try: # App Requests
         s_app = datetime.datetime.now(est)
-        app_req = process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='update_queen_order', archive_bucket='update_queen_order_requests')
+        app_req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order', archive_bucket='update_queen_order_requests')
         if app_req['app_flag']:
             update_queen_order(QUEEN=QUEEN, update_package=app_req['app_request']['queen_order_update_package'])
             charlie_bee['queen_cyle_times']['app_req_updatequeenOrder_om'] = (datetime.datetime.now(est) - s_app).total_seconds()
@@ -2198,6 +2175,10 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
     queen_orders__dict = {}
     for idx in tqdm(df_active['index'].to_list()):
         run_order = QUEEN['queen_orders'].iloc[idx].to_dict()
+        # Queen Order Local Vars
+        runorder_client_order_id = run_order['client_order_id']
+        ticker = run_order['ticker']
+        crypto = True if ticker in crypto_currency_symbols else False
         priceinfo = [i for i in priceinfo_info if i['client_order_id'] == run_order['client_order_id']] ## return the priceinfo for route and update order
         if len(priceinfo) > 0:
             priceinfo = priceinfo[0]['priceinfo']
@@ -2207,10 +2188,6 @@ def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, APP_requests):
         # ipdb.set_trace()
         
         try:
-            # Queen Order Local Vars
-            runorder_client_order_id = run_order['client_order_id']
-            ticker = run_order['ticker']
-            crypto = True if ticker in crypto_currency_symbols else False
 
             # Process Queen Order States
             order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
@@ -2306,7 +2283,7 @@ def refresh_queen_orders__save_ORDERS(QUEEN, ORDERS):
     return True
 
 
-def order_management(STORY_bee, QUEEN, APP_requests, ORDERS, portfolio): 
+def order_management(STORY_bee, QUEEN, QUEEN_KING, ORDERS, portfolio): 
 
     #### MAIN ####
     # >for every ticker position join in running-positions to account for total position
@@ -2314,7 +2291,7 @@ def order_management(STORY_bee, QUEEN, APP_requests, ORDERS, portfolio):
 
     # Submitted Orders First
     s_loop = datetime.datetime.now(est)
-    queen_orders_main(QUEEN=QUEEN, ORDERS=ORDERS, STORY_bee=STORY_bee, portfolio=portfolio, APP_requests=APP_requests)
+    queen_orders_main(QUEEN=QUEEN, ORDERS=ORDERS, STORY_bee=STORY_bee, portfolio=portfolio, QUEEN_KING=QUEEN_KING)
     charlie_bee['queen_cyle_times']['queen_orders___main'] = (datetime.datetime.now(est) - s_loop).total_seconds()
 
     # Reconcile QUEENs portfolio
@@ -2444,8 +2421,10 @@ try:
     api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
 
     # QUEEN Databases
-    APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
     QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+    QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
+    QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
     ORDERS = ReadPickleData(PB_Orders_Pickle)
 
     # Ticker database of pollenstory ## Need to seperate out into tables
@@ -2455,11 +2434,11 @@ try:
 
     portfolio = return_alpc_portolio(api)['portfolio']
     
-    APP_requests['source'] = PB_App_Pickle
-    APP_req = add_key_to_app(APP_requests)
-    APP_requests = APP_req['APP_requests']
+    QUEEN_KING['source'] = PB_App_Pickle
+    APP_req = add_key_to_app(QUEEN_KING)
+    QUEEN_KING = APP_req['QUEEN_KING']
     if APP_req['update']:
-        # PickleData(PB_App_Pickle, APP_requests)
+        # PickleData(PB_App_Pickle, QUEEN_KING)
         print("App DB needs update")
 
     # add new keys
@@ -2527,12 +2506,20 @@ try:
             # refresh db
             s_time = datetime.datetime.now(est)
             # QUEEN Databases
-            APP_requests = ReadPickleData(pickle_file=PB_App_Pickle)
+            QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+            QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
+            QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
+            
             portfolio = return_alpc_portolio(api)['portfolio']
             # QUEEN = ReadPickleData(PB_Orders_Pickle)
             # ORDERS = ReadPickleData(PB_Orders_Pickle)
 
+            # 2 functions to process
+            # 1 Make Queen Whole (read queen_app : queen_controls & then query out tickers based on Queen) & then Queen processes the pollen story per ticker
+
             ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
+            ### return Ticker Level Data Based upon QUEENs ask and run POLLEN STORY BASED ON THE SETTINGS ##
+            
             POLLENSTORY = ticker_db['pollenstory']
             STORY_bee = ticker_db['STORY_bee']
 
@@ -2542,24 +2529,23 @@ try:
             # Read App Reqquests
             s_time = datetime.datetime.now(est)
             # Client
-            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='stop_queen', archive_bucket=False)
-            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls', archive_bucket='queen_controls_requests')
-            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='power_rangers', archive_bucket='power_rangers_requests')
-            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='queen_controls_reset', archive_bucket=False)
-            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='workerbees')
-            process_app_requests(QUEEN=QUEEN, APP_requests=APP_requests, request_name='subconscious', archive_bucket='subconscious_requests')
+            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='stop_queen', archive_bucket=False)
+            # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_controls', archive_bucket='queen_controls_requests')
+            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='power_rangers', archive_bucket='power_rangers_requests')
+            # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_controls_reset', archive_bucket=False)
+            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='workerbees')
+            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious', archive_bucket='subconscious_requests')
 
-            confirm_Theme(QUEEN=QUEEN, APP_requests=APP_requests)
             charlie_bee['queen_cyle_times']['app'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             # Process All Orders
             s_time = datetime.datetime.now(est)
-            order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, APP_requests=APP_requests, ORDERS=ORDERS, portfolio=portfolio)
+            order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, ORDERS=ORDERS, portfolio=portfolio)
             charlie_bee['queen_cyle_times']['order management'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             # Hunt for Triggers
             s_time = datetime.datetime.now(est)
-            command_conscience(api=api, QUEEN=QUEEN, STORY_bee=STORY_bee, APP_requests=APP_requests) #####>   
+            command_conscience(api=api, QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING) #####>   
             charlie_bee['queen_cyle_times']['command conscience'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             e = datetime.datetime.now(est)

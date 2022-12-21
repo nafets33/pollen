@@ -245,8 +245,8 @@ def signin_main():
 
     # no login trial; create account
     elif authentication_status == None:
-        st.warning("Please enter your email and password")
-        with st.expander("New User"):
+        # st.warning("Please enter your email and password")
+        with st.expander("New User Get your Own Queen to Trade your Entire Portoflio"):
             register_user()
         return False
 

@@ -104,20 +104,21 @@ class Authenticate:
         """
         Checks the validity of the reauthentication cookie.
         """
-        self.token = self.cookie_manager.get(self.cookie_name)
-        if self.token is not None:
-            self.token = self._token_decode()
-            if self.token is not False:
-                if not st.session_state['logout']:
-                    if self.token['exp_date'] > datetime.utcnow().timestamp():
-                        if 'name' and 'username' in self.token:
-                            st.session_state['name'] = self.token['name']
-                            st.session_state['username'] = self.token['username']
-                            st.session_state['authentication_status'] = True
-                            
-                            self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
-                            self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now().strftime("%d/%m/%Y %H:%M")
-                            st.sidebar.write(f"Welcome *{st.session_state['name']}*")
+        with st.spinner("Buzzz BUzzzz Buzzzz What have you brought the hive"):
+            self.token = self.cookie_manager.get(self.cookie_name)
+            if self.token is not None:
+                self.token = self._token_decode()
+                if self.token is not False:
+                    if not st.session_state['logout']:
+                        if self.token['exp_date'] > datetime.utcnow().timestamp():
+                            if 'name' and 'username' in self.token:
+                                st.session_state['name'] = self.token['name']
+                                st.session_state['username'] = self.token['username']
+                                st.session_state['authentication_status'] = True
+                                
+                                self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
+                                self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now().strftime("%d/%m/%Y %H:%M")
+                                # st.sidebar.write(f"Welcome *{st.session_state['name']}*")
     def _check_credentials(self, inplace: bool=True) -> bool:
         """
         Checks the validity of the entered credentials.
