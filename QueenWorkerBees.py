@@ -529,7 +529,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
 
         # change the script to pull for each ticker, inifinite pawns pw1: [10] ... write out the pollenstory to the local db pickle file
         # aysnc needs to happen here as well: change from async full chess piece to group of tickers and async the pollen_hunt & pollen_story
-        # multiprocess the workbees
+        # multiprocess the workbees # SPY_1Minute_1Day
 
         # main 
         pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]['pollencharts'], MACD=MACD_settings)

@@ -346,7 +346,7 @@ def init_QUEEN_App():
     'last_app_update': datetime.datetime.now(est), ## Update Time Zone... Low Priority
     'update_queen_order': [],
     'update_queen_order_requests': [],
-    'savedstars': [],
+    'saved_trading_models': generate_TradingModel()['MACD'],
     'misc_bucket': [],
     'source': 'na',
     'stop_queen' : False,

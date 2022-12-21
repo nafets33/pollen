@@ -73,7 +73,7 @@ from fpdf import FPDF
 with open( doc_w, 'w') as f:
     f.write(content['content'])
 
-title = 'NDA Agreement'
+title = 'Terms of Contract'
 
 class PDF(FPDF):
     def header(self):
@@ -140,7 +140,7 @@ class PDF(FPDF):
 # pdf.set_left_margin(32)
 # pdf.set_right_margin(32)
 pdf = PDF()
-pdf.set_title('NDA Agreement')
+pdf.set_title(title)
 pdf.print_chapter(1, '----', doc_w)
 
 doc_w = os.path.join(legal_root, f'{receiving_party}{"___"}{"NDA.pdf"}')
