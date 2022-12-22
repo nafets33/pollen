@@ -340,56 +340,25 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             st.write('admin', admin)
             st.write("Permission Denied")
             return False
-        
-        # with st.expander("Send Wave", expand):
-            # ticker_time_frame = QUEEN['heartbeat']['available_tickers']
-            # if len(ticker_time_frame) == 0:
-            #     ticker_time_frame = list(set(i for i in STORY_bee.keys()))
-            # cols = st.columns((1,1,4))
-            # with cols[0]:
-            #     ticker_wave_option = st.selectbox("Tickers", ticker_time_frame, index=ticker_time_frame.index(["SPY_1Minute_1Day" if "SPY_1Minute_1Day" in ticker_time_frame else ticker_time_frame[0]][0]))
-            #     wave_button_sel = st.selectbox("Waves", ["buy_cross-0", "sell_cross-0"])
-            # with cols[1]:
-            #     initiate_waveup = st.button("Send Wave")
-            # # pollen = return_pollen()
-            # # ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
-
-
-            # # ticker_time_frame = [i for i in ticker_time_frame]
-            # # ticker_time_frame.sort()
-
-            # wave_trigger = {ticker_wave_option: [wave_button_sel]}
-
-            # if initiate_waveup:
-            #     order_dict = {'ticker': ticker_wave_option.split("_")[0],
-            #     'ticker_time_frame': ticker_wave_option,
-            #     'system': 'app',
-            #     'wave_trigger': wave_trigger,
-            #     'request_time': datetime.datetime.now(),
-            #     'app_requests_id' : f'{save_signals}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-            #     }
-
-            #     # data = ReadPickleData(pickle_file=PB_App_Pickle)
-            #     # st.write(data.keys())
-            #     QUEEN_KING['wave_triggers'].append(order_dict)
-            #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-            #     return_image_upon_save(title="Action Saved")
-        
+                
         with st.expander("The Flash", expand):
-            cols = st.columns((1,3,1))
+            cols = st.columns((1,1,1,3,1))
             with cols[0]:
-                quick_buy_short = st.button("FLASH BUY SQQQ")
                 quick_buy_long = st.button("FLASH BUY TQQQ")
-                quick_buy_BTC = st.button("FLASH BUY BTC")
+                quick_sell_long = st.button("FLASH SELL TQQQ")
             with cols[1]:   
+                quick_buy_short = st.button("FLASH BUY SQQQ")
+                quick_sell_short = st.button("FLASH SELL SQQQ")
+
+            with cols[2]:
+                quick_buy_BTC = st.button("FLASH BUY BTC")
+                quick_sell_BTC = st.button("FLASH SELL BTC")
+            with cols[3]:   
                 quick_buy_amt = st.selectbox("FLASH BUY $", [5000, 10000, 20000, 30000], index=[10000].index(10000))
                 type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
 
-            with cols[2]:
-                quick_sell_short = st.button("FLASH SELL SQQQ")
-                quick_sell_long = st.button("FLASH SELL TQQQ")
-                quick_sell_BTC = st.button("FLASH SELL BTC")
-
+            with cols[4]:
+                flying_bee_gif('23', '23')
             page_line_seperator('1')
 
             # with cols[1]:
@@ -600,6 +569,31 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
         return fig
 
+    def create_todays_profit_header_information():
+        fig = go.Figure()
+
+        fig.add_trace(go.Indicator(
+            mode = "number+delta",
+            value = 200,
+            domain = {'x': [0, 0.5], 'y': [0, 0.5]},
+            delta = {'reference': 400, 'relative': True, 'position' : "top"}))
+
+        # fig.add_trace(go.Indicator(
+        #     mode = "number+delta",
+        #     value = 350,
+        #     delta = {'reference': 400, 'relative': True},
+        #     domain = {'x': [0, 0.5], 'y': [0.5, 1]}))
+
+        # fig.add_trace(go.Indicator(
+        #     mode = "number+delta",
+        #     value = 450,
+        #     title = {"text": "Accounts<br><span style='font-size:0.8em;color:gray'>Subtitle</span><br><span style='font-size:0.8em;color:gray'>Subsubtitle</span>"},
+        #     delta = {'reference': 400, 'relative': True},
+        #     domain = {'x': [0.6, 1], 'y': [0, 1]}))
+
+        # fig.show()
+        fig.update_layout(height=300, width=333)
+        st.plotly_chart(fig)
     
     def create_main_macd_chart(df):
         title = df.iloc[-1]['name']
@@ -1215,14 +1209,16 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 # WaveBlock Time Levle 4 ## using all selections to change KingsOrderRules
                 trading_model['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel][wave_blocks_option] = king_order_rules_update
 
-                cols = st.columns((1,1,1,3))
+                cols = st.columns((1,1,1,1,3))
                 with cols[0]:
                     save_button_addranger = st.form_submit_button("Save Trading Model Settings")
                 with cols[1]:
                     savecopy_button_addranger = st.form_submit_button("Save Copy of Trading Model Settings")
                 with cols[2]:
                     replace_model_with_saved_selection = st.form_submit_button("replace model with saved selection")
-                
+                with cols[3]:
+                    refresh_to_theme = st.form_submit_button("Refresh Model To Current Theme")           
+
                 if save_button_addranger:
                     app_req = create_AppRequest_package(request_name='trading_models_requests')
                     app_req['trading_model'] = trading_model
@@ -1245,8 +1241,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                     return_image_upon_save(title="Model Replaced With Saved Version")
-            
-            
+                elif refresh_to_theme:
+                    QUEEN_KING = refresh_tickers_TradingModels(QUEEN_KING=QUEEN_KING, ticker=ticker_option_qc)
+                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                    return_image_upon_save(title=f'Model Refreshed to Theme: {QUEEN_KING["theme"]}')
+
+
+
             if st.button('show queens trading model'):
                 st.write(QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc])
         else:
@@ -1823,9 +1824,11 @@ with c2:
         # disabled=st.session_state.disabled,
         horizontal=True,
     )
-# with c3:
+with c3:
 #     # st.image(page_icon, caption='pollenq', width=54)
 #     flying_bee_gif()
+    # create_todays_profit_header_information()
+    pass
 
 cols = st.columns((2,1,1,1,1,1,1,1,1,1,1,2))
 if option == 'queen':
@@ -1847,7 +1850,16 @@ elif option == "pollen_engine":
     with cols[7]:
         flying_bee_gif()
 
+# with cols[8]:
+#     create_todays_profit_header_information()
+
 page_line_seperator('3', color=default_yellow_color)
+
+
+def refresh_tickers_TradingModels(QUEEN_KING, ticker):
+    tradingmodel1 = generate_TradingModel(ticker=ticker, status='active')['MACD']
+    QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(tradingmodel1)
+    return QUEEN_KING
 
 
 def rename_trigbee_name(tribee_name):
@@ -2040,8 +2052,8 @@ if str(option).lower() == 'controls':
     # message("My message") 
     # message("Hello bot!", is_user=True)  # align's the message to the right
 
-    with st.expander("Bee Lounge"):
-        beetable = QUEEN_KING['bee_lounge']
+    # with st.expander("Bee Lounge"):
+    #     beetable = QUEEN_KING['bee_lounge']
     
     cols = st.columns((1,3))
     if admin == False:
