@@ -173,73 +173,84 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         # if st.session_state['admin'] == False:
         #     return False
         page_line_seperator()
-
-        orders_table = st.checkbox("show completed orders")
-
-        if orders_table:
-            refresh_b = st.button("Refresh Orders", key='r1')
-            with st.expander('Completed/ALL Orders', expanded=True):
-                now_time = datetime.datetime.now(est)
-                cols = st.columns((1,1,5))
-                with cols[0]:
-                    all_orders = st.checkbox("Show All Orders", False)
-                with cols[1]:
-                    today_orders = st.checkbox("Today Orders", True)
-                
-                order_states = set(QUEEN['queen_orders']['queen_order_state'].tolist())
-                
-                if all_orders:
-                    order_states = all_orders
-                else:
-                    order_states = ['completed', 'completed_alpaca']
-                
-                queen_order_states = st.multiselect('queen order states', options=list(active_order_state_list), default=order_states)
-
-                df = queen_orders_view(QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False)['df']
-                if len(df) == 0:
-                    st.info("No Orders to View")
-                else:
-                    if today_orders:
-                        df = df[df['datetime'] > now_time.replace(hour=1, minute=1, second=1)].copy()
-                    
-                    if len(df) > 0:
-                        ordertables__agrid = build_AGgrid_df__queenorders(data=df.astype(str), reload_data=False, height=200)
-                    else:
-                        st.info("No Orders To View")
+        # with cols[1]:
+        #     orders_table = st.checkbox("show completed orders")
         
-        with st.expander('Flying Orders', expanded=True):
-            refresh_b = st.button("Refresh Orders", key='r2')
-            error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
-            error_orders = error_orders.astype(str)
-            if len(error_orders)> 0:
-                new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
-                st.markdown(new_title, unsafe_allow_html=True)
-                st.dataframe(error_orders)
+        with st.expander('Portfolio Orders', expanded=True):
+            now_time = datetime.datetime.now(est)
+            cols = st.columns((1,1,1))
+            with cols[1]:
+                refresh_b = st.button("Refresh Orders", key='r1')
+            cols = st.columns((1,1,1,3))
+            with cols[0]:
+                all_orders = st.checkbox("Show All Orders", False)
+            with cols[1]:
+                today_orders = st.checkbox("Today Orders", True)
+            with cols[2]:
+                completed_orders = st.checkbox("show completed orders")
+            with cols[3]:
+                show_errors = st.checkbox("errors, broken orders")
 
-            for order_state in active_queen_order_states:
-                df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
-                if len(df) > 89:
-                    grid_height = 654
-                elif len(df) < 10:
-                    grid_height = 200
-                else:
-                    grid_height = 333
+            
+            order_states = set(QUEEN['queen_orders']['queen_order_state'].tolist())
+            
+            if all_orders:
+                order_states = order_states
+            elif completed_orders:
+                order_states = ['completed', 'completed_alpaca']
+            elif show_errors:
+                order_states = ['error']
+            else:
+                order_states = ['submitted', 'running', 'running_close']
+            
+            queen_order_states = st.multiselect('queen order states', options=list(active_order_state_list), default=order_states)
+
+            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False)['df']
+            if len(df) == 0:
+                st.info("No Orders to View")
+            else:
+                if today_orders:
+                    df = df[df['datetime'] > now_time.replace(hour=1, minute=1, second=1)].copy()
                 
                 if len(df) > 0:
-                    if order_state == 'error':
-                        continue
-                    elif order_state == 'submitted':
-                        mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                        run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
-                    elif order_state == 'running_open':
-                        mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                        run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
-                    elif order_state == 'running':
-                        mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                        run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height, paginationOn=False)
-                    elif order_state == 'running_close':
-                        mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-                        run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
+                    ordertables__agrid = build_AGgrid_df__queenorders(data=df.astype(str), reload_data=False, height=433)
+                else:
+                    st.info("No Orders To View")
+        
+        # with st.expander('Portfolio Orders', expanded=True):
+        #     refresh_b = st.button("Refresh Orders", key='r2')
+        #     error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
+        #     error_orders = error_orders.astype(str)
+        #     st.write("Some Run Orders in Error State to be Fixed")
+        #     # if len(error_orders)> 0:
+        #     #     new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
+        #     #     st.markdown(new_title, unsafe_allow_html=True)
+        #     #     st.dataframe(error_orders)
+
+        #     for order_state in active_queen_order_states:
+        #         df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
+        #         if len(df) > 89:
+        #             grid_height = 654
+        #         elif len(df) < 10:
+        #             grid_height = 200
+        #         else:
+        #             grid_height = 333
+                
+        #         if len(df) > 0:
+        #             if order_state == 'error':
+        #                 continue
+        #             elif order_state == 'submitted':
+        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
+        #                 run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
+        #             elif order_state == 'running_open':
+        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
+        #                 run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
+        #             elif order_state == 'running':
+        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
+        #                 run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height, paginationOn=False)
+        #             elif order_state == 'running_close':
+        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
+        #                 run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
 
 
                 
@@ -340,7 +351,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             # st.write(data.keys())
             QUEEN_KING['wave_triggers'].append(order_dict)
             PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-            return_image_upon_save(bee_power_image=bee_power_image)          
+            return_image_upon_save(title="Action Saved")          
 
 
         new_title = '<p style="font-family:sans-serif; color:Black; font-size: 33px;">Flash Buttons</p>'
@@ -617,11 +628,11 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         return True
 
 
-    def return_image_upon_save(bee_power_image, width=33):
+    def return_image_upon_save(title="Saved", width=33, gif=power_gif):
         # st.write("Controls Saved", return_timestamp_string())
         # st.image(Image.open(bee_power_image), width=width)
         local_gif(gif_path=power_gif)
-        st.success("Saved")
+        st.success(title)
 
 
     def update_Workerbees(QUEEN_KING, QUEEN, admin):
@@ -712,7 +723,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         QUEEN_KING['workerbees_requests'].append(app_req)
                         # QUEEN_KING['qcp_workerbees'].update(QUEEN['workerbees'][workerbee])
                         PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                        return_image_upon_save(bee_power_image=bee_power_image)
+                        return_image_upon_save(title="Workers Saved")
                         return True
 
         return True
@@ -741,7 +752,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     QUEEN_KING['theme'] = theme_option
                     QUEEN_KING['last_app_update'] = datetime.datetime.now()
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                    return_image_upon_save(bee_power_image=bee_power_image)
+                    return_image_upon_save(title="Theme saved")
             return True
 
         elif control_option.lower() == 'symbols_stars_tradingmodel':
@@ -792,13 +803,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
 
             ticker_model_level_1 = {
+                    'portforlio_weight_ask': {'type': 'portforlio_weight_ask'},
                     'QueenBeeTrader': {'type': None}, # not allowed to change
                     'status': {'type': 'status', 'list': ['active', 'not_active']},
                     'buyingpower_allocation_LongTerm': {'type': 'numberslider', 'min': 0, 'max': 1},
                     'buyingpower_allocation_ShortTerm': {'type': None}, # returns opposite of LongTerm
                     'index_long_X': {'type': 'index_long_X', 'list': ['1X', '2X', '3X']},
                     'index_inverse_X': {'type': 'index_inverse_X', 'list': ['1X', '2X', '3X']},
-                    'portforlio_weight_ask': {'type': 'portforlio_weight_ask'},
                     'total_budget': {'type': 'total_budget'},
                     'max_single_trade_amount': {'type': 'number'},
                     'allow_for_margin': {'type': 'allow_for_margin'}, 
@@ -859,8 +870,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 king_order_rules_update = trading_model__star['trigbees'][trigbee_sel][wave_blocks_option]
                 # # st.write('tic level', QUEEN['queen_controls'][control_option][ticker_option_qc].keys())
                 st.subheader("Settings")
-                with st.expander(f'{ticker_option_qc}'):
-                    cols = st.columns(4)
+                with st.expander(f'{ticker_option_qc} Global Settings'):
+                    cols = st.columns((1,1,1,1,1))
                     
                     # all ticker settings
                     for kor_option, kor_v in trading_model.items():
@@ -870,53 +881,56 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                             if item_type == None:
                                 continue # not allowed edit
 
-                            elif kor_option == 'total_budget':
+                            elif kor_option == 'status':
                                 with cols[0]:
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                          
+                            elif kor_option == 'total_budget':
+                                with cols[1]:
                                     trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
 
                             elif kor_option == 'max_single_trade_amount':
-                                with cols[0]:
+                                with cols[1]:
                                     trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
 
                             elif kor_option == 'allow_for_margin':
                                 with cols[0]:
                                     trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            
                             elif kor_option == 'buy_ONLY_by_accept_from_QueenBeeTrader':
-                                with cols[0]:
+                                with cols[1]:
                                     trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
 
                             elif kor_option == 'index_long_X':
-                                with cols[2]:
+                                with cols[0]:
                                     item_val = ticker_model_level_1[kor_option]['list']
                                     trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
                             elif kor_option == 'index_inverse_X':
-                                with cols[2]:
+                                with cols[0]:
                                     item_val = ticker_model_level_1[kor_option]['list']
                                     trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
                             
                             elif kor_option == 'portforlio_weight_ask':
-                                with cols[2]:
+                                with cols[0]:
                                     trading_model[kor_option] = st.slider(label=f'{"portforlio_weight_ask"}', key='portforlio_weight_ask', min_value=float(0.0), max_value=float(1.0), value=float(kor_v), help="Allocation to Strategy by portfolio")
 
-                            elif kor_option == 'status':
-                                with cols[2]:
-                                    item_val = ticker_model_level_1[kor_option]['list']
-                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
-                          
                             elif kor_option == 'trigbees':
-                                with cols[3]:
+                                with cols[4]:
+                                    st.write("Activate Trigbees")
                                     item_val = ticker_model_level_1[kor_option]['list']
                                     for trigbee, trigactive in trading_model['trigbees'].items():
-                                        trading_model[kor_option][trigbee] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}_{trigbee}', value=trigactive, key=f'{ticker_option_qc}{"_"}{kor_option}{trigbee}')
+                                        trading_model[kor_option][trigbee] = st.checkbox(label=f'{trigbee}', value=trigactive, key=f'{ticker_option_qc}{"_"}{kor_option}{trigbee}')
 
                             elif kor_option == 'time_blocks':
-                                with cols[0]:
+                                with cols[2]:
+                                    st.write("Trade Following Time Blocks")
                                     for wave_block, waveactive in trading_model['time_blocks'].items():
                                         trading_model[kor_option][wave_block] = st.checkbox(label=f'{wave_block}', value=waveactive, key=f'{ticker_option_qc}{"_"}{kor_option}{wave_block}')
                             
                             elif kor_option == 'power_rangers':
                                 with cols[3]:
-                                    st.write('power_rangers')
+                                    st.write('Trade Following Time Frames')
                                     for power_ranger, pr_active in trading_model['power_rangers'].items():
                                         trading_model[kor_option][power_ranger] = st.checkbox(label=f'{power_ranger}', value=pr_active, key=f'{ticker_option_qc}{"_"}{kor_option}{power_ranger}')
                             
@@ -1060,14 +1074,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc] = trading_model
                     
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                    st.success("Model Saved")
-                    return_image_upon_save(bee_power_image=bee_power_image)
+                    return_image_upon_save(title="Model Saved")
                 
                 elif savecopy_button_addranger:                        
                     QUEEN_KING['saved_trading_models'].update(trading_model)
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                    st.success("Model Cpoy Saved")
-                    return_image_upon_save(bee_power_image=bee_power_image)
+                    return_image_upon_save(title="Model Cpoy Saved")
 
                 elif replace_model_with_saved_selection:                        
                     app_req = create_AppRequest_package(request_name='trading_models_requests')
@@ -1076,8 +1088,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc] = trading_model
                     
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                    st.success("Model Replaced With Saved Version")
-                    return_image_upon_save(bee_power_image=bee_power_image)
+                    return_image_upon_save(title="Model Replaced With Saved Version")
             
             
             if st.button('show queens trading model'):
@@ -1195,18 +1206,18 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         function(params) {
             if (params.value > 0) {
                 return {
-                    'color': '#027500',
+                    'color': '#168702',
                 }
             }
             else if (params.value < 0) {
                 return {
-                    'color': '#c70c0c',
+                    'color': '#F03811',
                 }
             }
         };
         """)
-                    # //'backgroundColor': '#0c5c13'
-                    # //'backgroundColor': '#5C2C0D'
+                    # 'backgroundColor': '#177311'
+                    # 'backgroundColor': '#F03811',
 
         honey_colors_dollar = JsCode("""
         function(params) {
@@ -1415,8 +1426,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     app_req['subconscious_thought_to_clear'] = clear_thought
                     app_req['subconscious_thought_new_value'] = []
                     QUEEN_KING['subconscious'].append(app_req)
-                    st.success("subconscious thought cleared")
-                    return_image_upon_save(bee_power_image=bee_power_image)
+                    return_image_upon_save(title="subconscious thought cleared")
                     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
                     return True
@@ -1483,6 +1493,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         else:
             return QUEEN_KING
 
+    
     def queen__write_active_symbols():
 
         def chunk(it, size):
@@ -1710,11 +1721,9 @@ if str(option).lower() == 'queen':
     tickers_avail.update({"all"})
     tickers_avail_op = list(tickers_avail)
     active_ticker_models = [{i: v['status']} for i, v in QUEEN['queen_controls']['symbols_stars_TradingModel'].items() if v['status'] == 'active']
-    # st.write(active_ticker_models)
+    queen__write_active_symbols()
+    # ipdb.set_trace()
     
-
-
-
 
     page_line_seperator(height='1')
     cols = st.columns(2)

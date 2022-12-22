@@ -37,8 +37,6 @@ def call_job_workerbees(prod, bee_scheduler):
 # tz_wuppertal = datetime.timezone(datetime.timedelta(hours=2))
 # tz_sydney = datetime.timezone(datetime.timedelta(hours=10))
 
-# can be any valid timezone
-schedule = Scheduler(tzinfo=datetime.timezone.utc)
 
 if __name__ == '__main__':
     parser = createParser_scheduler()
@@ -47,7 +45,7 @@ if __name__ == '__main__':
     bee_scheduler = True
 
     # schedule.every().day.at("09:32").do(call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)) ## UTC
-    schedule.daily(datetime.time(hour=14, minute=32), call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler))
+    schedule.daily(datetime.time(hour=9, minute=32), call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler))
 
     print("Workers Turns on at 9:32AM EST")
 

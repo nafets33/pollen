@@ -1079,6 +1079,7 @@ def command_conscience(api, QUEEN, STORY_bee, QUEEN_KING):
 
                     trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
                     
+                    # check global ticker level
                     if str(trading_model['status']) not in ['active']:
                         print(str(trading_model['status']), "model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                         continue
@@ -2341,7 +2342,7 @@ def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed):
 
         PickleData(PB_QUEEN_Pickle, QUEEN)
 
-    return True
+    return QUEEN
 
 ################################################################# pollen
 #################################################################
@@ -2465,7 +2466,7 @@ try:
     QUEEN['heartbeat']['active_order_state_list'] = active_order_state_list
     ticker_allowed = ['SPY', 'ETHUSD', 'BTCUSD', 'META', 'GOOG', 'AAPL', 'TSLA', 'SOFI']
 
-    refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
+    QUEEN = refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
 
     available_triggerbees = ["sell_cross-0", "buy_cross-0"]
     
@@ -2524,7 +2525,7 @@ try:
             POLLENSTORY = ticker_db['pollenstory']
             STORY_bee = ticker_db['STORY_bee']
 
-            refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
+            QUEEN = refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
             charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             # Read App Reqquests
@@ -2532,9 +2533,9 @@ try:
             # Client
             process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='stop_queen', archive_bucket=False)
             # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_controls', archive_bucket='queen_controls_requests')
-            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='power_rangers', archive_bucket='power_rangers_requests')
+            # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='power_rangers', archive_bucket='power_rangers_requests')
             # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_controls_reset', archive_bucket=False)
-            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='workerbees')
+            # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='workerbees')
             process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious', archive_bucket='subconscious_requests')
 
             charlie_bee['queen_cyle_times']['app'] = (datetime.datetime.now(est) - s_time).total_seconds()
