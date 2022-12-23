@@ -19,6 +19,8 @@ from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
+# from aggrid import AgGrid, CellRenderer, Column
+
 import _locale
 import os
 from random import randint
@@ -181,7 +183,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     st.write(df)
 
         
-        queen_beeAction_theflash()
+        queen_beeAction_theflash(False)
 
 
 
@@ -335,13 +337,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             st.write(data['update_queen_order'])
             
 
-    def queen_beeAction_theflash(expand=True):
+    def queen_beeAction_theflash(Falseexpand=True):
         if st.session_state['admin'] == False:
             st.write('admin', admin)
             st.write("Permission Denied")
             return False
                 
-        with st.expander("The Flash", expand):
+        with st.expander("The Flash", False):
             cols = st.columns((1,1,1,3,1))
             with cols[0]:
                 quick_buy_long = st.button("FLASH BUY TQQQ")
@@ -703,20 +705,24 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             return_dict['TotalProfitLoss'] = tic_group_df
             
             pct_profits = df.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
-            total_dolla = round(sum(pct_profits['profit_loss']), 2)
-            total_honey = round(sum(pct_profits['honey']), 2)
+            # total_dolla = round(sum(pct_profits['profit_loss']), 2)
+            # total_honey = round(sum(pct_profits['honey']), 2)
             # ipdb.set_trace()
             if len(orders_today) > 0:
                 today_pl_df = orders_today.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
+                total_dolla = round(sum(orders_today['profit_loss']), 2)
+                total_honey = round(sum(orders_today['profit_loss']), 2)
             else:
                 today_pl_df = 0
+                total_dolla = 0
+                total_honey = 0
             
             # st.write(sum(pct_profits['profit_loss']))
             
             if len(orders_today) > 0:
-                title = f'P/L Summary Total Profits {"$"} {total_dolla} honey {total_honey} %'
+                title = f'P/L Todays Money {"$"} {total_dolla} honey {total_honey} %'
             else:
-                title = f'P/L Summary Total Profits {"$"} {total_dolla}  honey {total_honey} %'
+                title = f'P/L Todays Money {"$"} {total_dolla}  honey {total_honey} %'
             with st.expander(title):
                 by_ticker = st.checkbox('Group by Ticker', key='by_ticker')
 
@@ -1809,51 +1815,50 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     if authorized_user:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
 
-st.sidebar.button("Refresh Bee")
-# st.sidebar.write("always Bee better")
+    st.sidebar.button("Refresh Bee")
+    # st.sidebar.write("always Bee better")
 
-c1,c2,c3 = st.columns((1,3,1))
-with c3:
-    bee_keeper = st.button("Refresh", key='gatekeeper')
-with c2:
-    option = st.radio(
-                label="",
-        options=["queen", "controls", "charts", "model_results", "pollen_engine"],
-        key="main_radio",
-        label_visibility='visible',
-        # disabled=st.session_state.disabled,
-        horizontal=True,
-    )
-with c3:
-#     # st.image(page_icon, caption='pollenq', width=54)
-#     flying_bee_gif()
-    # create_todays_profit_header_information()
-    pass
+    c1,c2,c3 = st.columns((1,3,1))
+    with c3:
+        bee_keeper = st.button("Refresh", key='gatekeeper')
+    with c2:
+        option = st.radio(
+                    label="",
+            options=["queen", "controls", "charts", "model_results", "pollen_engine"],
+            key="main_radio",
+            label_visibility='visible',
+            # disabled=st.session_state.disabled,
+            horizontal=True,
+        )
+    with c3:
+    #     # st.image(page_icon, caption='pollenq', width=54)
+    #     flying_bee_gif()
+        # create_todays_profit_header_information()
+        pass
 
-cols = st.columns((2,1,1,1,1,1,1,1,1,1,1,2))
-if option == 'queen':
-    with cols[2]:
-        flying_bee_gif()
-elif option == "controls":
-    with cols[3]:
-        flying_bee_gif()
-# elif option == "signal":
-#     with cols[4]:
-#         flying_bee_gif()
-elif option == "charts":
-    with cols[5]:
-        flying_bee_gif()
-elif option == "model_results":
-    with cols[6]:
-        flying_bee_gif()
-elif option == "pollen_engine":
-    with cols[7]:
-        flying_bee_gif()
+    cols = st.columns((2,1,1,1,1,1,1,1,1,1,1,2))
+    if option == 'queen':
+        with cols[2]:
+            flying_bee_gif()
+    elif option == "controls":
+        with cols[3]:
+            flying_bee_gif()
+    # elif option == "signal":
+    #     with cols[4]:
+    #         flying_bee_gif()
+    elif option == "charts":
+        with cols[4]:
+            flying_bee_gif()
+    elif option == "model_results":
+        with cols[5]:
+            flying_bee_gif()
+    elif option == "pollen_engine":
+        with cols[6]:
+            flying_bee_gif()
 
-# with cols[8]:
-#     create_todays_profit_header_information()
+    # with cols[8]:
+    #     create_todays_profit_header_information()
 
-page_line_seperator('3', color=default_yellow_color)
 
 
 def refresh_tickers_TradingModels(QUEEN_KING, ticker):
@@ -1891,169 +1896,385 @@ def queen__account_keys():
         
         return True
 
+def nested_grid():
+    url = "https://www.ag-grid.com/example-assets/master-detail-data.json"
+    df = pd.read_json(url)
+    df["callRecords"] = df["callRecords"].apply(lambda x: pd.json_normalize(x))
 
-# if 'option_sel' in st.session_state and st.session_state['option_sel'] == True:
-#     option = st.session_state['option_sel']
+    gridOptions = {
+        # enable Master / Detail
+        "masterDetail": True,
+        "rowSelection": "single",
+        # the first Column is configured to use agGroupCellRenderer
+        "columnDefs": [
+            {
+                "field": "name",
+                "cellRenderer": "agGroupCellRenderer",
+                "checkboxSelection": True,
+            },
+            {"field": "account"},
+            {"field": "calls"},
+            {"field": "minutes", "valueFormatter": "x.toLocaleString() + 'm'"},
+        ],
+        "defaultColDef": {
+            "flex": 1,
+        },
+        # provide Detail Cell Renderer Params
+        "detailCellRendererParams": {
+            # provide the Grid Options to use on the Detail Grid
+            "detailGridOptions": {
+                "rowSelection": "multiple",
+                "suppressRowClickSelection": True,
+                "enableRangeSelection": True,
+                "pagination": True,
+                "paginationAutoPageSize": True,
+                "columnDefs": [
+                    {"field": "callId", "checkboxSelection": True},
+                    {"field": "direction"},
+                    {"field": "number", "minWidth": 150},
+                    {"field": "duration", "valueFormatter": "x.toLocaleString() + 's'"},
+                    {"field": "switchCode", "minWidth": 150},
+                ],
+                "defaultColDef": {
+                    "sortable": True,
+                    "flex": 1,
+                },
+            },
+            # get the rows for each Detail Grid
+            "getDetailRowData": JsCode(
+                """function (params) {
+                    console.log(params);
+                    params.successCallback(params.data.callRecords);
+        }"""
+            ).js_code,
+        },
+    }
+
+
+    r = AgGrid(
+        df,
+        gridOptions=gridOptions,
+        height=300,
+        allow_unsafe_jscode=True,
+        enable_enterprise_modules=True,
+        update_mode=GridUpdateMode.SELECTION_CHANGED
+    )
+
+# nested_grid()
+def click_button_grid():
+    now = int(datetime.datetime.now().timestamp())
+    start_ts = now - 3 * 30 * 24 * 60 * 60
+
+    @st.cache(allow_output_mutation=True)
+    def make_data():
+        df = pd.DataFrame(
+            {
+                "timestamp": np.random.randint(start_ts, now, 20),
+                "side": [np.random.choice(["buy", "sell"]) for i in range(20)],
+                "base": [np.random.choice(["JPY", "GBP", "CAD"]) for i in range(20)],
+                "quote": [np.random.choice(["EUR", "USD"]) for i in range(20)],
+                "amount": list(
+                    map(
+                        lambda a: round(a, 2),
+                        np.random.rand(20) * np.random.randint(1, 1000, 20),
+                        )
+                ),
+                "price": list(
+                    map(
+                        lambda p: round(p, 5),
+                        np.random.rand(20) * np.random.randint(1, 10, 20),
+                        )
+                ),
+                "clicked": [""]*20,
+            }
+        )
+        df["cost"] = round(df.amount * df.price, 2)
+        df.insert(
+            0,
+            "datetime",
+            df.timestamp.apply(lambda ts: datetime.datetime.fromtimestamp(ts)),
+        )
+
+        return df.sort_values("timestamp").drop("timestamp", axis=1)
+
+
+    # an example based on https://www.ag-grid.com/javascript-data-grid/component-cell-renderer/#simple-cell-renderer-example
+    BtnCellRenderer = JsCode('''
+    class BtnCellRenderer {
+        init(params) {
+            this.params = params;
+            this.eGui = document.createElement('div');
+            this.eGui.innerHTML = 
+            <span>
+                <button id='click-button' 
+                    class='btn-simple' 
+                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>Click!</button>
+            </span>
+        ;
+
+            this.eButton = this.eGui.querySelector('#click-button');
+
+            this.btnClickedHandler = this.btnClickedHandler.bind(this);
+            this.eButton.addEventListener('click', this.btnClickedHandler);
+
+        }
+
+        getGui() {
+            return this.eGui;
+        }
+
+        refresh() {
+            return true;
+        }
+
+        destroy() {
+            if (this.eButton) {
+                this.eGui.removeEventListener('click', this.btnClickedHandler);
+            }
+        }
+
+        btnClickedHandler(event) {
+            if (confirm('Are you sure you want to CLICK?') == true) {
+                if(this.params.getValue() == 'clicked') {
+                    this.refreshTable('');
+                } else {
+                    this.refreshTable('clicked');
+                }
+                    console.log(this.params);
+                    console.log(this.params.getValue());
+                }
+            }
+
+        refreshTable(value) {
+            this.params.setValue(value);
+        }
+    };
+    ''')
+
+    df = make_data()
+    gb = GridOptionsBuilder.from_dataframe(df)
+
+    gb.configure_default_column(editable=True)
+    grid_options = gb.build()
+
+    grid_options['columnDefs'].append({
+        "field": "clicked",
+        "header": "Clicked",
+        "cellRenderer": BtnCellRenderer,
+        "cellRendererParams": {
+            "color": "red",
+            "background_color": "black",
+        },
+    })
+
+    st.title("cellRenderer Class Example")
+
+    response = AgGrid(df,
+                    theme="streamlit",
+                    key='table1',
+                    gridOptions=grid_options,
+                    allow_unsafe_jscode=True,
+                    fit_columns_on_grid_load=True,
+                    reload_data=False,
+                    try_to_convert_back_to_original_types=False
+                    )
+
+    st.write(response['data'])
+    try:
+        st.write(response['data'][response['data'].clicked == 'clicked'])
+    except:
+        st.write('Nothing was clicked')
+
+def click_button_grid_1():
+    # Define a cell renderer that displays a button
+    class ButtonRenderer(CellRenderer):
+        def __call__(self, **kwargs):
+            return st.button('Click Me')
+
+    # Create the ag-Grid object
+    grid = AgGrid()
+
+    # Define the column definition for the button column
+    button_column = Column(
+        header_name='Button',
+        cell_renderer=ButtonRenderer(),
+    )
+
+    # Set the column definitions for the grid
+    grid.set_columns([button_column])
+
+    # Set the data for the grid
+    data = [{'name': 'John', 'age': 28},
+            {'name': 'Jane', 'age': 34},
+            {'name': 'Bob', 'age': 41}]
+    grid.set_data(data)
+
+    # Add the ag-Grid object to the Streamlit app
+    st.ag_grid(grid)
+
 
 if str(option).lower() == 'queen':
-    # if st.sidebar.button("Trading Model"):
-    #     st.session_state['option_sel'] = True
+    with st.spinner("Waking Up the Hive"):
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        # chart = st.line_chart(np.random.randn(10, 2))
+        import time
+        for i in range(100):
+            # Update progress bar.
+            progress_bar.progress(i + 1)
+            time.sleep(.000003)
+        
+        page_line_seperator('1', color=default_yellow_color)
 
-    queen__account_keys()
-    
-    for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
-        for ticker in bees_data['tickers']:
-            QUEEN_KING = add_trading_model(PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee)
+        queen__account_keys()
+        
+        for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
+            for ticker in bees_data['tickers']:
+                QUEEN_KING = add_trading_model(PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee)
 
 
-    today_day = datetime.datetime.now().day
-    
-    # Global Vars
-    tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
-    tickers_avail.update({"all"})
-    tickers_avail_op = list(tickers_avail)
-    queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
-    # ipdb.set_trace()
-    
+        today_day = datetime.datetime.now().day
+        
+        # Global Vars
+        tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
+        tickers_avail.update({"all"})
+        tickers_avail_op = list(tickers_avail)
+        queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
+        # ipdb.set_trace()
+        
 
-    page_line_seperator(height='1')
-    cols = st.columns(2)
+        page_line_seperator(height='1')
+        cols = st.columns(2)
 
-    # cols = st.columns((1,1))
-    with cols[1]:
-        return_total_profits(ORDERS=ORDERS)
-    with cols[0]:
-        queens_subconscious_Thoughts(QUEEN=QUEEN)
+        # cols = st.columns((1,1))
+        with cols[1]:
+            return_total_profits(ORDERS=ORDERS)
+        with cols[0]:
+            queens_subconscious_Thoughts(QUEEN=QUEEN)
 
-    with cols[0]:
-        if 'sel_tickers' not in st.session_state:
-            st.session_state['sel_tickers'] = 'SPY'
-        tickers = st.multiselect('Symbols', options=list(tickers_avail_op), default=st.session_state['sel_tickers'], help='View Groups of symbols to Inspect where to send the Bees')
-        if len(tickers) == 0:
-            ticker_option = 'SPY'
+        with cols[0]:
+            if 'sel_tickers' not in st.session_state:
+                st.session_state['sel_tickers'] = 'SPY'
+            tickers = st.multiselect('Symbols', options=list(tickers_avail_op), default=st.session_state['sel_tickers'], help='View Groups of symbols to Inspect where to send the Bees')
+            if len(tickers) == 0:
+                ticker_option = 'SPY'
+            else:
+                ticker_option = tickers[0]
+        with cols[1]:
+            if 'sel_stars' not in st.session_state:
+                st.session_state['sel_stars'] = '1Minute_1Day'
+            
+            ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
+            frames = st.multiselect('Stars', options=list(ttframe_list), default=st.session_state['sel_stars'], help='View Groups of Stars to Allocate Bees on where to go')
+            frame_option = frames[0]
+            # frame_option = st.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
+        
+        ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] in tickers}
+        
+
+        ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
+
+        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+
+        queen_main_view(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, tickers=tickers, ticker_option=ticker_option)
+        queen_triggerbees()
+        queen_order_flow()
+        queen_chart(ticker_option=ticker_option, POLLENSTORY=POLLENSTORY)
+
+        option_showaves = st.sidebar.button("Show Waves")
+        
+        if ticker_option != 'all': ### Trigbee Waves
+        
+            page_line_seperator(color=default_yellow_color)
+
+            dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
+
+            for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+                
+                ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+                buys = [data[trigbee] for k, data in ticker_selection.items()]
+                df_trigbee_waves = pd.concat(buys, axis=0)
+                col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
+                df_trigbee_waves = df_trigbee_waves[col_view]
+                color = 'Green' if 'buy' in trigbee else 'Red'
+                df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
+
+                t_winners = sum(df_trigbee_waves['winners_n'])
+                t_losers = sum(df_trigbee_waves['losers_n'])
+                total_waves = t_winners + t_losers
+                win_pct = 100 * round(t_winners / total_waves, 2)
+
+                t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
+                
+                # Top Winners Header
+                df_bestwaves = df_bestwaves[[col for col in df_bestwaves.columns if col not in ['wave_id', 'winners_n', 'loser_n']]]
+                df_bestwaves = df_bestwaves[['maxprofit'] + [col for col in df_bestwaves.columns if col not in ['maxprofit']]]
+                
+                c1, c2, c3, c4 = st.columns((1,3,3,3))
+                with c1:
+                    flying_bee_gif()
+                with c2:
+                    mark_down_text(align='left', color=color, fontsize='15', text=f'{"Trigger Bee "}{trigbee}')
+                with c3:
+                    # write_flying_bee(25,25)
+                    mark_down_text(align='left', color='Green', fontsize='15', text=f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}')
+                with c4:
+                    # write_flying_bee(28,28)
+                    mark_down_text(align='left', color='Green', fontsize='15', text=f'{"~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}')
+
+                # with st.expander(f'{"Todays Best Waves: "}{len(df_bestwaves)}', expanded=False):
+                #     st.dataframe(df_bestwaves)
+                # c1, c2, c3 = st.columns(3)
+                # with c1:
+                    # mark_down_text(color='Purple', align='center', text=f'{"All Ticker Bee Waves"}')
+                with st.expander(f'{"Top "}{len(df_bestwaves)}{" Waves"}', expanded=False):
+                    st.dataframe(df_bestwaves)
+                # with c2:
+                #     with st.expander(f'{"Top "}{len(df_bestwaves)}{" Waves"}', expanded=False):
+                #         st.dataframe(df_bestwaves)
+
+                with st.expander(f'{"All Ticker Bee Waves"}', expanded=False):
+                    st.dataframe(df_trigbee_waves)
+            page_line_seperator(color=default_yellow_color, height='3')
+
+
+            if option_showaves == True:
+
+                ttframe = f'{ticker_option}{"_"}{frame_option}'
+                knowledge = ticker_storys[ttframe]
+                
+                mark_down_text(text=ttframe)
+                st.write("waves story -- investigate BACKEND functions")
+                df = knowledge['waves']['story']
+                df = df.astype(str)
+                st.dataframe(df)
+
+                st.write("buy cross waves")
+                m_sort = knowledge['waves']['buy_cross-0']
+                df_m_sort = pd.DataFrame(m_sort).T
+                df_m_sort = df_m_sort.astype(str)
+                st.dataframe(data=df_m_sort)
+
+                st.write("sell cross waves")
+                m_sort = knowledge['waves']['sell_cross-0']
+                df_m_sort = pd.DataFrame(m_sort).T
+                df_m_sort = df_m_sort.astype(str)
+                st.dataframe(data=df_m_sort)
         else:
-            ticker_option = tickers[0]
-    with cols[1]:
-        if 'sel_stars' not in st.session_state:
-            st.session_state['sel_stars'] = '1Minute_1Day'
+            # st.write(STORY_bee)
+            print("groups not allowed yet")
         
-        ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-        frames = st.multiselect('Stars', options=list(ttframe_list), default=st.session_state['sel_stars'], help='View Groups of Stars to Allocate Bees on where to go')
-        frame_option = frames[0]
-        # frame_option = st.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
-    
-    ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] in tickers}
-    
-
-    ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
-
-    star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-
-    queen_main_view(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, tickers=tickers, ticker_option=ticker_option)
-    queen_triggerbees()
-    queen_order_flow()
-    queen_chart(ticker_option=ticker_option, POLLENSTORY=POLLENSTORY)
-
-    option_showaves = st.sidebar.button("Show Waves")
-    
-    if ticker_option != 'all': ### Trigbee Waves
-      
-        page_line_seperator(color=default_yellow_color)
-
-        dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
-
-        for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+        see_pollenstory = st.button("Show Me Pollenstory")
+        if see_pollenstory:
+            with st.expander('STORY_bee'):
+                st.write(STORY_bee[ticker_time_frame]['story'])
             
-            ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
-            buys = [data[trigbee] for k, data in ticker_selection.items()]
-            df_trigbee_waves = pd.concat(buys, axis=0)
-            col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
-            df_trigbee_waves = df_trigbee_waves[col_view]
-            color = 'Green' if 'buy' in trigbee else 'Red'
-            df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
-
-            t_winners = sum(df_trigbee_waves['winners_n'])
-            t_losers = sum(df_trigbee_waves['losers_n'])
-            total_waves = t_winners + t_losers
-            win_pct = 100 * round(t_winners / total_waves, 2)
-
-            t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
-            
-            # Top Winners Header
-            df_bestwaves = df_bestwaves[[col for col in df_bestwaves.columns if col not in ['wave_id', 'winners_n', 'loser_n']]]
-            df_bestwaves = df_bestwaves[['maxprofit'] + [col for col in df_bestwaves.columns if col not in ['maxprofit']]]
-            
-            c1, c2, c3, c4 = st.columns((1,3,3,3))
-            with c1:
-                flying_bee_gif()
-            with c2:
-                mark_down_text(align='left', color=color, fontsize='15', text=f'{"Trigger Bee "}{trigbee}')
-            with c3:
-                # write_flying_bee(25,25)
-                mark_down_text(align='left', color='Green', fontsize='15', text=f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}')
-            with c4:
-                # write_flying_bee(28,28)
-                mark_down_text(align='left', color='Green', fontsize='15', text=f'{"~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}')
-
-            # with st.expander(f'{"Todays Best Waves: "}{len(df_bestwaves)}', expanded=False):
-            #     st.dataframe(df_bestwaves)
-            # c1, c2, c3 = st.columns(3)
-            # with c1:
-                # mark_down_text(color='Purple', align='center', text=f'{"All Ticker Bee Waves"}')
-            with st.expander(f'{"Top "}{len(df_bestwaves)}{" Waves"}', expanded=False):
-                st.dataframe(df_bestwaves)
-            # with c2:
-            #     with st.expander(f'{"Top "}{len(df_bestwaves)}{" Waves"}', expanded=False):
-            #         st.dataframe(df_bestwaves)
-
-            with st.expander(f'{"All Ticker Bee Waves"}', expanded=False):
-                st.dataframe(df_trigbee_waves)
-        page_line_seperator(color=default_yellow_color, height='3')
-
-
-        if option_showaves == True:
-
-            ttframe = f'{ticker_option}{"_"}{frame_option}'
-            knowledge = ticker_storys[ttframe]
-            
-            mark_down_text(text=ttframe)
-            st.write("waves story -- investigate BACKEND functions")
-            df = knowledge['waves']['story']
-            df = df.astype(str)
-            st.dataframe(df)
-
-            st.write("buy cross waves")
-            m_sort = knowledge['waves']['buy_cross-0']
-            df_m_sort = pd.DataFrame(m_sort).T
-            df_m_sort = df_m_sort.astype(str)
-            st.dataframe(data=df_m_sort)
-
-            st.write("sell cross waves")
-            m_sort = knowledge['waves']['sell_cross-0']
-            df_m_sort = pd.DataFrame(m_sort).T
-            df_m_sort = df_m_sort.astype(str)
-            st.dataframe(data=df_m_sort)
-    else:
-        # st.write(STORY_bee)
-        print("groups not allowed yet")
-    
-    see_pollenstory = st.button("Show Me Pollenstory")
-    if see_pollenstory:
-        with st.expander('STORY_bee'):
-            st.write(STORY_bee[ticker_time_frame]['story'])
-        
-        pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
+            pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
     
 
 if str(option).lower() == 'controls':
-    # import streamlit as st
-    # from streamlit_chat import message
 
-    # message("My message") 
-    # message("Hello bot!", is_user=True)  # align's the message to the right
 
-    # with st.expander("Bee Lounge"):
-    #     beetable = QUEEN_KING['bee_lounge']
     
     cols = st.columns((1,3))
     if admin == False:
@@ -2182,119 +2403,8 @@ if str(option).lower() == 'model_results':
     
 
 if str(option).lower() == 'pollen_engine':
+    # click_button_grid()
 
-
-# if str(option).lower() == 'signal':
-
-#     c1,c2,c3 = st.columns(3)
-    
-#     with c2:
-#         option__ = st.radio(
-#                                 "",
-#             ['beeaction', 'orders', 'QueenOrders', 'WorkerBees'],
-#             key="signal_radio",
-#             label_visibility='visible',
-#             # disabled=st.session_state.disabled,
-#             horizontal=True,
-#         )
-#     save_signals = option__
-#     c1,c2,c3,c4,c5 = st.columns(5)
-
-#     col1, col2 = st.columns(2)
-
-#     ## SHOW CURRENT THEME
-#     with st.sidebar:
-#         # with st.echo():
-#             # st.write("theme>>>", QUEEN['collective_conscience']['theme']['current_state'])
-#         st.write("theme>>>", QUEEN['queen_controls']['theme'])
-
-
-#     if save_signals == 'QueenOrders':
-#         queen_QueenOrders()
-    
-    
-#     # if save_signals == 'orders':
-#     #     show_app_req = st.selectbox('show app requests', ['yes', 'no'], index=['yes'].index('yes'))
-#     #     if show_app_req == 'yes':
-#     #         data = ReadPickleData(pickle_file=PB_App_Pickle)
-#     #         st.write("sell orders", data['sell_orders'])
-#     #         st.write("buy orders", data['buy_orders'])
-#     #     df = QUEEN['queen_orders']
-        
-#     #     running_orders = df[df['queen_order_state'] == 'running'].copy()
-        
-#     #     # running_portfolio = return_dfshaped_orders(running_orders)
-        
-#     #     # portfolio = return_alpc_portolio(api)['portfolio']
-#     #     # p_view = {k: [v['qty'], v['qty_available']] for (k,v) in portfolio.items()}
-#     #     # st.write(p_view)
-#     #     # st.write(running_portfolio)
-
-#     #     position_orders = [i for i in running_orders if not i['client_order_id'].startswith("close__") ]
-#     #     closing_orders = [i for i in running_orders if i['client_order_id'].startswith("close__") ]
-#     #     c_order_ids = [i['client_order_id'] for i in position_orders]
-#     #     c_order_iddict = {i['client_order_id']: idx for idx, i in enumerate(position_orders)}
-#     #     c_order_ids.append("Select")
-#     #     c_order_id_option = st.selectbox('client_order_id', c_order_ids, index=c_order_ids.index('Select'))
-#     #     if c_order_id_option != 'Select':
-#     #         run_order = position_orders[c_order_iddict[c_order_id_option]]
-#     #         run_order_alpaca = check_order_status(api=api, client_order_id=c_order_id_option, queen_order=run_order, prod=prod)
-#     #         st.write(("pollen matches alpaca", float(run_order_alpaca['filled_qty']) == float(run_order['filled_qty']))) ## VALIDATION FOR RUN ORDERS
-#     #         st.write(run_order_alpaca)
-#     #         st.write(run_order['filled_qty'])
-#     #         sell_qty_option = st.number_input(label="Sell Qty", max_value=float(run_order['filled_qty']), value=float(run_order['filled_qty']), step=1e-4, format="%.4f")
-#     #         # sell_qty_option = st.selectbox('sell_qty', [run_order['filled_qty']])
-#     #         type_option = st.selectbox('type', ['market'], index=['market'].index('market'))                
-
-#     #         sell_command = st.button("Sell Order")
-#     #         if sell_command:
-#     #             st.write("yes")
-#     #             # val qty
-#     #             if sell_qty_option > 0 and sell_qty_option <= float(run_order['filled_qty']):
-#     #                 print("qty validated")
-#     #                 # process order signal
-#     #                 client_order_id = c_order_id_option
-#     #                 sellable_qty = sell_qty_option
-                    
-#     #                 order_dict = {'system': 'app',
-#     #                 'request_time': datetime.datetime.now(),
-#     #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
-#     #                 'side': 'sell',
-#     #                 'type': type_option,
-#     #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-
-#     #                 }
-#     #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-#     #                 data['sell_orders'].append(order_dict)
-#     #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-#     #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-#     #                 st.write(data['sell_orders'])
-                
-#     #             if sell_qty_option < 0 and sell_qty_option >= float(run_order['filled_qty']):
-#     #                 print("qty validated")
-#     #                 # process order signal
-#     #                 client_order_id = c_order_id_option
-#     #                 sellable_qty = sell_qty_option
-                    
-#     #                 order_dict = {'system': 'app',
-#     #                 'request_time': datetime.datetime.now(),
-#     #                 'client_order_id': client_order_id, 'sellable_qty': sellable_qty,
-#     #                 'side': 'sell',
-#     #                 'type': type_option,
-#     #                 'app_requests_id' : f'{save_signals}{"_app-request_id_"}{return_timestamp_string()}{datetime.datetime.now().microsecond}'
-
-#     #                 }
-#     #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-#     #                 data['sell_orders'].append(order_dict)
-#     #                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
-#     #                 data = ReadPickleData(pickle_file=PB_App_Pickle)
-#     #                 st.write(data['sell_orders'])
-
-    
-#     if save_signals == 'beeaction':
-
-#         # queen_beeAction()
-#         queen_beeAction_theflash()
 
     with st.expander('betty_bee'):
         betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
