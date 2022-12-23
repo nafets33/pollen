@@ -4,7 +4,7 @@
 import time
 import datetime
 import subprocess
-# import schedule
+import schedule
 from scheduler import Scheduler
 import pytz
 import sys
@@ -41,8 +41,8 @@ if __name__ == '__main__':
     prod = True if namespace.prod.lower() == 'true' else False
     bee_scheduler = True
 
-    # schedule.every().day.at("09:32").do(call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)) ## UTC
-    schedule.daily(datetime.time(hour=9, minute=32), call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler))
+    # schedule.every().day.at("14:32").do(call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)) ## UTC
+    # schedule.daily(datetime.time(hour=9, minute=32), call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler))
 
     print("Workers Turns on at 9:32AM EST")
 
