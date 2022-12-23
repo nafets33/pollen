@@ -2403,8 +2403,11 @@ if str(option).lower() == 'model_results':
     
 
 if str(option).lower() == 'pollen_engine':
-    # click_button_grid()
-
+    if admin == False:
+        st.write("permission denied")
+        st.stop()    # click_button_grid()
+    with st.expander("alpaca account info"):
+        st.write(acct_info['info'])
 
     with st.expander('betty_bee'):
         betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
