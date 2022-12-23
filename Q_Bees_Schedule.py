@@ -11,6 +11,7 @@ import sys
 import argparse
 # from QueenWorkerCrypto import queen_workerbee_coins
 from QueenWorkerBees import queen_workerbees
+import pandas as pd
 
 est = pytz.timezone("US/Eastern")
 
@@ -32,10 +33,6 @@ def call_job_workerbees(prod, bee_scheduler):
     # subprocess.call("QueenWorkerCrypto.py", shell=True)
     queen_workerbees(prod=prod, bee_scheduler=bee_scheduler)
 
-# Instead of setting the timezones yourself you can use the `pytz` library
-# tz_new_york = datetime.timezone(datetime.timedelta(hours=-5))
-# tz_wuppertal = datetime.timezone(datetime.timedelta(hours=2))
-# tz_sydney = datetime.timezone(datetime.timedelta(hours=10))
 
 
 if __name__ == '__main__':
@@ -54,5 +51,9 @@ if __name__ == '__main__':
         call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)
 
     while True:
-        schedule.run_pending()
+        s = datetime.datetime.now(est)
+        mk_open = s.replace(hour=9, minute=31, second=1)
+        if s > mk_open:
+            call_job_workerbees(prod=prod, bee_scheduler=bee_scheduler)
+
         time.sleep(1)
