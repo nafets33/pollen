@@ -13,9 +13,13 @@ def signin_main():
     """Return True or False if the user is signed in"""
 
     load_dotenv(os.path.join(os.getcwd(), ".env"))
+    main_root = os.getcwd()
+    jpg_root = os.path.join(main_root, 'misc')
+    queen_flair_gif_original = os.path.join(jpg_root, 'queen-flair.gif')
+
 
     def register_user():
-        write_flying_bee(54, 54)
+        # write_flying_bee(54, 54)
 
         if "verification_code" not in st.session_state:
             st.session_state["verification_code"] = randint(100000, 999999)
@@ -80,7 +84,7 @@ def signin_main():
                         )
                     else:
                         st.error("Incorrect Code")
-            write_flying_bee(54, 54)
+            # write_flying_bee(54, 54)
         except Exception as e:
             st.error(e)
 
