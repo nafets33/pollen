@@ -10,3 +10,4 @@ __pycache__/Hive_Utils.cpython-39.pyc
 *.ipynb
 .env_jq
 .venv
+jed_playground.py
