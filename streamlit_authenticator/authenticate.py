@@ -1,6 +1,7 @@
 import jwt
 import bcrypt
 import streamlit as st
+import time
 from datetime import datetime, timedelta
 from pytz import timezone
 import extra_streamlit_components as stx
@@ -157,7 +158,7 @@ class Authenticate:
                 st.session_state['authentication_status'] = False
             else:
                 return False
-
+    
     def direct_login(self, email, password):
         self.username = email
         self.password = password
@@ -191,6 +192,8 @@ class Authenticate:
             raise ValueError("Location must be one of 'main' or 'sidebar'")
         if not st.session_state['authentication_status']:
             self._check_cookie()
+            time.sleep(1)
+
             if st.session_state['authentication_status'] != True:
                 
                 if location == 'main':
