@@ -125,31 +125,45 @@ def return_api_keys(base_url, api_key_id, api_secret, prod=True):
     return {'rest': rest, 'api': api}
 
 
+def test_api_keys(user_secrets):
+    APCA_API_KEY_ID_PAPER = user_secrets['APCA_API_KEY_ID_PAPER']
+    APCA_API_SECRET_KEY_PAPER = user_secrets['APCA_API_SECRET_KEY_PAPER']
+    APCA_API_KEY_ID = user_secrets['APCA_API_KEY_ID']
+    APCA_API_SECRET_KEY = user_secrets['APCA_API_SECRET_KEY']
+    # ipdb.set_trace()
+    try:
+        base_url = "https://api.alpaca.markets"
+        rest = AsyncRest(key_id=APCA_API_KEY_ID,
+                    secret_key=APCA_API_SECRET_KEY)
+
+        api = tradeapi.REST(key_id=APCA_API_KEY_ID,
+                    secret_key=APCA_API_SECRET_KEY,
+                    base_url=URL(base_url), api_version='v2')
+        api.get_snapshot("SPY")
+        prod = True
+        prod_er = False
+    except Exception as e:
+        prod_er = e
+        prod = False
+
+    try:
+        base_url = "https://paper-api.alpaca.markets"
+        rest = AsyncRest(key_id=APCA_API_KEY_ID_PAPER,
+                            secret_key=APCA_API_SECRET_KEY_PAPER)
+
+        api = tradeapi.REST(key_id=APCA_API_KEY_ID_PAPER,
+                            secret_key=APCA_API_SECRET_KEY_PAPER,
+                            base_url=URL(base_url), api_version='v2')
+        api.get_snapshot("SPY")
+        sandbox = True
+        sb_er = False
+    except Exception as e:
+        sb_er = e
+        sandbox = False
+    return {'prod': prod, 'sandbox': sandbox, 'prod_er': str(prod_er), 'sb_er': str(sb_er)}
+
 
 # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-# if prod:
-#     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-#     # keys
-#     api_key_id = os.environ.get('APCA_API_KEY_ID')
-#     api_secret = os.environ.get('APCA_API_SECRET_KEY')
-#     base_url = "https://api.alpaca.markets"
-#     keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
-#     rest = keys[0]['rest']
-#     api = keys[0]['api']
-# else:
-#     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-#     api_key_id = os.environ.get('APCA_API_KEY_ID')
-#     api_secret = os.environ.get('APCA_API_SECRET_KEY')
-#     base_url = "https://api.alpaca.markets"
-#     load_dotenv(os.path.join(os.getcwd(), '.env'))
-#     keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
-#     rest = keys[0]['rest']
-#     api = keys[0]['api']
-
-    # # Paper
-    # keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
-    # rest = keys_paper[0]['rest']
-    # api = keys_paper[0]['api']
 
 def return_alpaca_api_keys(prod):
 
@@ -290,34 +304,48 @@ def init_QUEEN(queens_chess_piece):
     return QUEEN
 
 
+def init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, client_user='init', APCA_API_KEY_ID_PAPER='init', APCA_API_SECRET_KEY_PAPER='init', APCA_API_KEY_ID='init', APCA_API_SECRET_KEY='init', datetimestamp_est=datetime.datetime.now(est)):
+    return {
+    'prod_keys_confirmed': prod_keys_confirmed,
+    'sandbox_keys_confirmed': sandbox_keys_confirmed,
+    'client_user': client_user,
+    'APCA_API_KEY_ID_PAPER': APCA_API_KEY_ID_PAPER,
+    'APCA_API_SECRET_KEY_PAPER': APCA_API_SECRET_KEY_PAPER,
+    'APCA_API_KEY_ID': APCA_API_KEY_ID,
+    'APCA_API_SECRET_KEY': APCA_API_SECRET_KEY,
+    'datetimestamp_est': datetimestamp_est,
+    }
+
 def init_QUEEN_App():
+
     ticker_universe = return_Ticker_Universe()
     index_ticker_db = ticker_universe['index_ticker_db']
     main_index_dict = ticker_universe['main_index_dict']
     main_symbols_full_list = ticker_universe['main_symbols_full_list']
     not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
-
+    init_macd_vars = {'fast': 12, 'slow': 26, 'smooth': 9}
     app = {
     'theme': 'nuetral', 
     'king_controls_queen': return_queen_controls(stars),
     'qcp_workerbees': {
-        'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+        'castle': {'MACD_fast_slow_smooth': init_macd_vars,
                     'tickers': ['SPY'],
                     'stars': stars(),},
-        'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+        'bishop': {'MACD_fast_slow_smooth': init_macd_vars,
                     'tickers': ['GOOG', 'AAPL', 'TSLA'],
                     'stars': stars(),},
-        'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+        'knight': {'MACD_fast_slow_smooth': init_macd_vars,
                     'tickers': ['AMZN', 'OXY', 'SOFI'],
                     'stars': stars(),},
-        'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+        'castle_coin': {'MACD_fast_slow_smooth': init_macd_vars,
                     'tickers': ['BTCUSD', 'ETHUSD'],
                     'stars': stars(),},
-        'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+        'pawns': {'MACD_fast_slow_smooth': init_macd_vars,
                     'tickers': main_symbols_full_list[:100],
                     'stars': stars(),},
         },
-
+    'bee_lounge': [],
+    'users_secrets': init_client_user_secrets(),
     
     
     'app_order_requests': [], 
@@ -2178,10 +2206,11 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
 
 
 
-def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
+def generate_TradingModel(theme='custom', portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
 
-    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1, take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}, skip_sell_trigbee_distance_frequency=0, ignore_trigbee_at_power=.01, ignore_trigbee_in_vwap_range={'low_range': -.05, 'high_range': .05}):
+    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1, take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}, skip_sell_trigbee_distance_frequency=0, ignore_trigbee_at_power=.01, ignore_trigbee_at_macdstory_range={'low_range': -.05, 'high_range': .05},ignore_trigbee_at_histstory_range={'low_range': -.05, 'high_range': .05}, ignore_trigbee_in_vwap_range={'low_range': -.05, 'high_range': .05}, short_position=False):
         return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
+        'theme': theme,
         'status': status,
         'trade_using_limits': trade_using_limits,
         'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
@@ -2199,7 +2228,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
         'skip_sell_trigbee_distance_frequency': skip_sell_trigbee_distance_frequency, # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
         'ignore_trigbee_at_power': ignore_trigbee_at_power,
+        'ignore_trigbee_at_macdstory_range': ignore_trigbee_at_macdstory_range,
+        'ignore_trigbee_at_histstory_range': ignore_trigbee_at_histstory_range,
         'ignore_trigbee_in_vwap_range': ignore_trigbee_in_vwap_range,
+        'short_position': short_position
         }
 
     
@@ -2252,7 +2284,9 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 1 for k in stars().keys()},
-                                    'trigbees': trigbees_king_order_rules[star], 
+                                    'trigbees': trigbees_king_order_rules[star],
+                                    'short_position': False,
+                                    'ticker_family' : [ticker]
             }
             star = '5Minute_5Day'
             return_dict[star] = {
@@ -2262,7 +2296,11 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 1 for k in stars().keys()},
-                                    'trigbees': trigbees_king_order_rules[star]}
+                                    'trigbees': trigbees_king_order_rules[star],
+                                    'short_position': False,
+                                    'ticker_family' : [ticker]
+                                    }
+                                    
             star = '30Minute_1Month'
             return_dict[star] = {
                                     'trade_using_limits': False, 
@@ -2271,7 +2309,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 1 for k in stars().keys()},
-                                    'trigbees': trigbees_king_order_rules[star]}
+                                    'trigbees': trigbees_king_order_rules[star],
+                                    'short_position': False,
+                                    'ticker_family' : [ticker]
+                                    }
 
             star = '1Hour_3Month'
             return_dict[star] = {
@@ -2281,7 +2322,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 1 for k in stars().keys()},
-                                    'trigbees': trigbees_king_order_rules[star]}
+                                    'trigbees': trigbees_king_order_rules[star],
+                                    'short_position': False,
+                                    'ticker_family' : [ticker]
+                                    }
             star = '2Hour_6Month'
             return_dict[star] = {
                                     'trade_using_limits': False, 
@@ -2290,7 +2334,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 1 for k in stars().keys()},
-                                    'trigbees': trigbees_king_order_rules[star]}
+                                    'trigbees': trigbees_king_order_rules[star],
+                                    'short_position': False,
+                                    'ticker_family' : [ticker]
+                                    }
             star = '1Day_1Year'
             return_dict[star] = {
                                     'trade_using_limits': False, 
@@ -2299,7 +2346,9 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                                     'buyingpower_allocation_LongTerm': .2,
                                     'buyingpower_allocation_ShortTerm': .8,
                                     'power_rangers': {k: 1 for k in stars().keys()},
-                                    'trigbees': trigbees_king_order_rules[star]}
+                                    'trigbees': trigbees_king_order_rules[star],
+                                    'short_position': False,
+                                    'ticker_family' : [ticker]}
 
             
             
@@ -2315,7 +2364,10 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
             'buyingpower_allocation_LongTerm': star_vars_mapping[star]['buyingpower_allocation_LongTerm'],
             'buyingpower_allocation_ShortTerm': star_vars_mapping[star]['buyingpower_allocation_ShortTerm'],
             'power_rangers': star_vars_mapping[star]['power_rangers'],
-            'trigbees': star_vars_mapping[star]['trigbees']}
+            'trigbees': star_vars_mapping[star]['trigbees'],
+            'short_position': star_vars_mapping[star]['short_position'],
+            'ticker_family': star_vars_mapping[star]['ticker_family'],
+            }
         
         # Get Stars Trigbees and Blocktimes to create kings order rules
         all_stars = stars().keys()
@@ -2364,6 +2416,7 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
         # trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
 
         model1 = {
+                'theme': theme,
                 'QueenBeeTrader': 'Jq',
                 'status': status,
                 'buyingpower_allocation_LongTerm': .2,
@@ -2380,8 +2433,11 @@ def generate_TradingModel(portfolio_name='Jq', ticker='SPY', stars=stars, trigbe
                 'trigbees': {k: True for k in trigbees},
                 'time_blocks': time_blocks,
                 'power_rangers': {k: True for k in stars().keys()},
-                'kings_order_rules': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60, max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
-                'stars_kings_order_rules': {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()}
+                'kings_order_rules': kings_order_rules(status='not_active', trade_using_limits=False, doubledown_timeduration=60,
+                 max_profit_waveDeviation=1, max_profit_waveDeviation_timeduration=60*24, timeduration=33, take_profit=.005 , sellout=-.0089, sell_trigbee_trigger=True, stagger_profits=False, scalp_profits=True, scalp_profits_timeduration=30, stagger_profits_tiers=1),
+                'stars_kings_order_rules': {star: model_vars(trading_model_name=trading_model_name, star=star, stars_vars=stars_vars) for star in stars().keys()},
+                'short_position': False,  # flip all star allocation to short
+                'ticker_family' : [ticker],
         }
 
 
@@ -2605,12 +2661,6 @@ def createParser_QUEEN():
 
     return parser
 
-def createParser_App():
-    parser = argparse.ArgumentParser()
-    parser.add_argument ('-qcp', default="app")
-    parser.add_argument ('-admin', default='false')
-    # parser.add_argument ('-user', default='pollen')
-    return parser
 
 
 def return_queen_controls(stars=stars):
@@ -2897,6 +2947,63 @@ def story_view(STORY_bee, ticker): # --> returns dataframe
     return {'df': df, 'df_agg': df_agg, 'current_wave': current_wave}
 
 
+def story_view_combined(STORY_bee, ticker_list): # --> returns dataframe
+    storyview = ['ticker_time_frame', 'macd_state', 'current_macd_tier', 'current_hist_tier', 'macd', 'hist', 'mac_ranger', 'hist_ranger']
+    wave_view = ['length', 'maxprofit', 'time_to_max_profit', 'wave_n']
+    ttframe__items = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] in ticker_list}
+    return_view = [] # queenmemory objects in conscience {}
+    return_agg_view = []
+    for ttframe, conscience in ttframe__items.items():
+        ticker, ttime, tframe = ttframe.split("_")
+        queen_return = {'star': f'{ttime}"_"{tframe}'}
+        ttf_waves = {}
+        
+        # trigbees = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
+        # for trig in trigbees:
+        #     if trig in conscience['waves'].keys():
+        #         last_buy_wave = [v for (k,v) in conscience['waves'][trig].items() if str((len(conscience['waves'][trig].keys()) - 1)) == str(k)][0]
+        #         ttf_waves[trig] = last_buy_wave
+
+        story = {k: v for (k,v) in conscience['story'].items() if k in storyview}
+        p_story = {k: v for (k,v) in conscience['story']['current_mind'].items() if k in storyview}
+        
+        last_buy_wave = [v for (k,v) in conscience['waves']['buy_cross-0'].items() if str((len(conscience['waves']['buy_cross-0'].keys()) - 1)) == str(k)][0]
+        last_sell_wave = [v for (k,v) in conscience['waves']['sell_cross-0'].items() if str((len(conscience['waves']['sell_cross-0'].keys()) - 1)) == str(k)][0]
+        # last_ready_buy_wave = [v for (k,v) in conscience['waves']['ready_buy_cross'].items() if str((len(conscience['waves']['ready_buy_cross'].keys()) - 1)) == str(k)][0]
+
+        # all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
+        # all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
+
+        # ALL waves groups
+        trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+        return_agg_view.append(trigbee_waves_analzyed)
+
+
+        # Current Wave View
+        if 'buy' in story['macd_state']:
+            current_wave = last_buy_wave
+        else:
+            current_wave = last_sell_wave
+        
+        wave_times = {k: i['wave_start_time'] for k,i in ttf_waves.items()}
+        
+        current_wave_view = {k: v for (k,v) in current_wave.items() if k in wave_view}
+        obj_return = {**story, **current_wave_view}
+        obj_return_ = {**obj_return, **p_story}
+        queen_return = {**queen_return, **obj_return_}
+        """append view"""
+        return_view.append(queen_return)
+    
+    
+    df =  pd.DataFrame(return_view)
+    df_agg = pd.DataFrame(return_agg_view)
+
+
+
+    return {'df': df, 'df_agg': df_agg, 'current_wave': current_wave}
+
+
+
 def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False, return_str=True):
     if cols_to_view:
         col_view = col_view
@@ -3044,15 +3151,19 @@ def init_PowerRangers(ranger_dimensions=False):
     return r_dict
 
 
-def init_queen_orders(pickle_file):
-    db = {}
-    db['queen_orders'] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
-    PickleData(pickle_file=pickle_file, data_to_store=db)
-    print("Order init")
-    logging_log_message(msg='Orders init')
+
 
 
 def init_pollen_dbs(db_root, prod, queens_chess_piece):
+    
+    def init_queen_orders(pickle_file):
+        db = {}
+        db['queen_orders'] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
+        PickleData(pickle_file=pickle_file, data_to_store=db)
+        print("Order init")
+        logging_log_message(msg='Orders init')
+
+
     
     if prod:
         # print("My Queen Production")
@@ -3062,12 +3173,14 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
+        # PB_users_secrets = os.path.join(db_root, f'{"_users_secrets_"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
+        # PB_users_secrets = os.path.join(db_root, f'{"_users_secrets_sandbox"}{".pkl"}')
 
     # List by Necessity
     if os.path.exists(PB_queen_Archives_Pickle) == False:
@@ -3095,8 +3208,18 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         print("You Need an QueenOrders")
         init_queen_orders(pickle_file=PB_Orders_Pickle)
 
+    # if os.path.exists(PB_users_secrets) == False:
+    #     print("You Need an QueenUsers")
+    #     init_queen_client_user(pickle_file=PB_users_secrets)
+
     
-    return {'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 'PB_App_Pickle': PB_App_Pickle, 'PB_Orders_Pickle': PB_Orders_Pickle, 'PB_queen_Archives_Pickle': PB_queen_Archives_Pickle}
+    return {
+    'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 
+    'PB_App_Pickle': PB_App_Pickle, 
+    'PB_Orders_Pickle': PB_Orders_Pickle, 
+    'PB_queen_Archives_Pickle': PB_queen_Archives_Pickle,
+    # 'PB_users_secrets': PB_users_secrets,
+    }
 
 
 def init_clientUser_dbroot(client_user):

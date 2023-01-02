@@ -6,7 +6,7 @@ import os
 main_root = os.getcwd()
 db_root = os.path.join(main_root, 'db')
 
-def push_sandbox_to_master(db_root=main_root, sb_file_paths=['QueenBee_sandbox.py', 'QueenHive_sandbox.py', 'app_sandbox.py']):
+def push_sandbox_to_master(db_root=main_root, sb_file_paths=['QueenBee_sandbox.py', 'QueenHive_sandbox.py', 'pollenq_sandbox.py']):
     
     for file_ in sb_file_paths:
         db_file = os.path.join(db_root, file_)
