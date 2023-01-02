@@ -2,34 +2,37 @@ from airflow.operators.python import PythonOperator
 from airflow.sensors.python import PythonSensor
 import datetime
 import os
-from QueenHive import read_queensmind
+# from QueenHive import read_queensmind
 
 
 from airflow.models import DAG
 
-import shutil
+# import shutil
 import os
 
-## main ##
-def copy_to_airflow_dags():
-
-    main_root = os.getcwd()
-    db_root = os.path.join(main_root, 'dags')
-    dst_path = '/home/stapinski89/airflow/dags'
-
-    for fn in os.listdir(db_root):
-        db_file = os.path.join(db_root, fn)
-        shutil.copy(db_file, dst_path)
+# airflow dag list
 
 
-    # if __name__ == '__main__':
-copy_to_airflow_dags()
+# ## main ##
+# def copy_to_airflow_dags():
+
+#     main_root = os.getcwd()
+#     db_root = os.path.join(main_root, 'dags')
+#     dst_path = '/home/stapinski89/airflow/dags'
+
+#     for fn in os.listdir(db_root):
+#         db_file = os.path.join(db_root, fn)
+#         shutil.copy(db_file, dst_path)
+
+
+#     # if __name__ == '__main__':
+# copy_to_airflow_dags()
 
 
 # Parameteres
 WORFKLOW_DAG_ID = "run_workerbee"
 WORFKFLOW_START_DATE = datetime.datetime(2022, 1, 1)
-WORKFLOW_SCHEDULE_INTERVAL = "* * * * *"
+WORKFLOW_SCHEDULE_INTERVAL = "0 0 0 ? * * *"
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
 
 WORKFLOW_DEFAULT_ARGS = {
@@ -43,7 +46,7 @@ WORKFLOW_DEFAULT_ARGS = {
 # Initialize DAG
 dag = DAG(
     dag_id=WORFKLOW_DAG_ID,
-    schedule_interval=WORKFLOW_SCHEDULE_INTERVAL,
+    schedule=WORKFLOW_SCHEDULE_INTERVAL,
     default_args=WORKFLOW_DEFAULT_ARGS,
 )
 # Define functions
