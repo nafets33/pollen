@@ -81,28 +81,40 @@ default_text_color = '#59490A'
 default_font = "sans serif"
 default_yellow_color = '#C5B743'
 
-if 'sidebar_hide' in st.session_state:
-    sidebar_hide = 'collapsed'
-else:
-    sidebar_hide = 'expanded'
+# if 'sidebar_hide' in st.session_state:
+#     sidebar_hide = 'collapsed'
+# else:
+#     sidebar_hide = 'expanded'
 
-st.set_page_config(
-     page_title="pollenq",
-     page_icon=page_icon,
-     layout="wide",
-     initial_sidebar_state=sidebar_hide,
-    #  menu_items={
-    #      'Get Help': 'https://www.extremelycoolapp.com/help',
-    #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-    #      'About': "# This is a header. This is an *extremely* cool app!"
-    #  }
- )
+# st.set_page_config(
+#      page_title="pollenq",
+#      page_icon=page_icon,
+#      layout="wide",
+#      initial_sidebar_state=sidebar_hide,
+#     #  menu_items={
+#     #      'Get Help': 'https://www.extremelycoolapp.com/help',
+#     #      'Report a bug': "https://www.extremelycoolapp.com/bug",
+#     #      'About': "# This is a header. This is an *extremely* cool app!"
+#     #  }
+#  )
 
 with st.spinner("Buzz Buzz Where is my Honey"):
     # # signin_auth = signin_main()
     # signin_auth = True
     # # st.write(st.session_state)
     # if signin_auth:
+    if 'username' not in st.session_state:
+        signin_auth = signin_main()
+        admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+        st.session_state['admin'] = True if admin else False
+    
+    # if 'authentication_status' in st.session_state and st.session_state['authentication_status']:
+    #     pass
+    # else:
+    #     switch_page("pollenq")
+        
+
+    
     client_user = st.session_state['username']
     gatekeeper = True
     # prod = False if 'sandbox' in scriptname else True
@@ -2400,8 +2412,6 @@ if str(option).lower() == 'playground':
     
     with st.expander("nested grid"):
         nested_grid()
-
-
 
 
 st.session_state['option_sel'] = False
