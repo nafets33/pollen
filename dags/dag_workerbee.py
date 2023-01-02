@@ -32,7 +32,7 @@ import os
 # Parameteres
 WORFKLOW_DAG_ID = "run_queenbee"
 WORFKFLOW_START_DATE = datetime.datetime(2022, 1, 1)
-WORKFLOW_SCHEDULE_INTERVAL = "0 0 0 ? * * *"
+WORKFLOW_SCHEDULE_INTERVAL = "@once"
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
 
 WORKFLOW_DEFAULT_ARGS = {
