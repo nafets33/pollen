@@ -13,6 +13,8 @@ from PIL import Image
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 import argparse
 import datetime
+import pandas as pd
+import numpy as np
 
 from dotenv import load_dotenv
 
