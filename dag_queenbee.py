@@ -43,7 +43,7 @@ WORKFLOW_DEFAULT_ARGS = {
 # Initialize DAG
 dag = DAG(
     dag_id=WORFKLOW_DAG_ID,
-    schedule_interval=WORKFLOW_SCHEDULE_INTERVAL,
+    schedule=WORKFLOW_SCHEDULE_INTERVAL,
     default_args=WORKFLOW_DEFAULT_ARGS,
 )
 # Define functions
