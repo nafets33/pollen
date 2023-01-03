@@ -15,7 +15,8 @@ import argparse
 import datetime
 import pandas as pd
 import numpy as np
-from QueenHive import PickleData, queen_orders_view
+# from QueenHive import PickleData, queen_orders_view
+import pickle
 
 from dotenv import load_dotenv
 
@@ -68,6 +69,58 @@ def send_email(recipient, subject, body):
         smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
 ################ AUTH ###################
+
+def queen_orders_view(QUEEN, queen_order_state, cols_to_view=False, return_all_cols=False, return_str=True):
+    if cols_to_view:
+        col_view = col_view
+    else:
+        col_view = ['honey', '$honey', 'symbol', 'ticker_time_frame', 'trigname',  'datetime', 'honey_time_in_profit', 'filled_qty', 'qty_available', 'filled_avg_price', 'limit_price', 'cost_basis', 'wave_amo', 'status_q', 'client_order_id', 'origin_wave', 'wave_at_creation', 'power_up', 'sell_reason', 'exit_order_link', 'queen_order_state', 'order_rules', 'order_trig_sell_stop',  'side']
+    if len(QUEEN['queen_orders']) > 0:
+        df = QUEEN['queen_orders']
+        df = df[df['queen_order_state'].isin(queen_order_state)].copy()
+
+        if len(df) > 0:
+            # if 'running' in queen_order_state:
+            #     df = df[col_view]
+            # if 'profit_loss' in df.columns:
+            #     df["profit_loss"] = df['profit_loss'].map("{:.2f}".format)
+            # if "honey" in df.columns:
+            #     df["honey"] = df['honey'].map("{:.2%}".format)
+            # if "cost_basis" in df.columns:
+            #     df["cost_basis"] = df['cost_basis'].map("{:.2f}".format)
+
+            col_view = [i for i in col_view if i in df.columns]
+            df_return = df[col_view].copy()
+        else:
+            df_return = df
+        
+        if return_all_cols and len(df_return) > 0:
+            all_cols = col_view + [i for i in df.columns.tolist() if i not in col_view]
+            df_return = df[all_cols].copy()
+
+        if return_str:
+            df_return = df_return.astype(str)
+        
+        return {'df': df_return}
+    else:
+        return {'df': pd.DataFrame()}
+
+def PickleData(pickle_file, data_to_store):
+
+    p_timestamp = {'pq_last_modified': datetime.datetime.now(est)}
+    root, name = os.path.split(pickle_file)
+    pickle_file_temp = os.path.join(root, ("temp" + name))
+    with open(pickle_file_temp, 'wb+') as dbfile:
+        db = data_to_store
+        db['pq_last_modified'] = p_timestamp
+        pickle.dump(db, dbfile)
+    
+    with open(pickle_file, 'wb+') as dbfile:
+        db = data_to_store
+        db['pq_last_modified'] = p_timestamp
+        pickle.dump(db, dbfile)
+     
+    return True
 
 def update_queencontrol_theme(QUEEN_KING, theme_list):
     theme_desc = {'nuetral': ' follows basic model wave patterns',
