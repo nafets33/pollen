@@ -150,3 +150,26 @@ with st.form("my_form"):
 #     "scalp_profits": False,
 #     "scalp_profits_timeduration": 30,
 # }
+
+# 'theme': theme,
+# 'status': status,
+# 'trade_using_limits': trade_using_limits,
+# 'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
+# 'doubledown_timeduration': doubledown_timeduration,
+# 'max_profit_waveDeviation': max_profit_waveDeviation,
+# 'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
+# 'timeduration': timeduration,
+# 'take_profit': take_profit,
+# 'sellout': sellout,
+# 'sell_trigbee_trigger': sell_trigbee_trigger,
+# 'stagger_profits': stagger_profits,
+# 'scalp_profits': scalp_profits,
+# 'scalp_profits_timeduration': scalp_profits_timeduration,
+# 'stagger_profits_tiers': stagger_profits_tiers,
+# 'skip_sell_trigbee_distance_frequency': skip_sell_trigbee_distance_frequency, # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
+# 'ignore_trigbee_at_power': ignore_trigbee_at_power,
+# 'ignore_trigbee_in_macdstory_tier': ignore_trigbee_in_macdstory_tier,
+# 'ignore_trigbee_in_histstory_tier': ignore_trigbee_in_histstory_tier,
+# 'ignore_trigbee_in_vwap_range': ignore_trigbee_in_vwap_range,
+# 'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
+# 'short_position': short_position
