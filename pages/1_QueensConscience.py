@@ -25,10 +25,12 @@ import os
 # from random import randint
 import sqlite3
 import streamlit as st
-from appHive import click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from appHive import progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from app_auth import signin_main
 import base64
 import time
+from streamlit_extras.stoggle import stoggle
+
 
 est = pytz.timezone("US/Eastern")
 
@@ -69,10 +71,11 @@ flyingbee_grey_gif_path = os.path.join(jpg_root, 'flying_bee_clean_grey.gif')
 bitcoin_gif = os.path.join(jpg_root, 'bitcoin_spinning.gif')
 power_gif = os.path.join(jpg_root, 'power_gif.gif')
 uparrow_gif = os.path.join(jpg_root, 'uparrows.gif')
-
+learningwalk_bee = os.path.join(jpg_root, 'learningwalks_bee_jq.png')
+learningwalk_bee = Image.open(learningwalk_bee)
 queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
 # queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
-
+chess_piece_queen = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
 runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
 
 page_icon = Image.open(bee_image)
@@ -101,14 +104,22 @@ st.set_page_config(
 
 def set_prod_env(prod):
     st.session_state['production'] = prod
+    st.sidebar.image(chess_piece_queen, width=23)
+
+
+# def welcome_to_hive_pollenq_page():
+#     # st.write(st.session_state)
+#     st.sidebar.write(f'Welcome {st.session_state["name"]}')
+#     admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+#     st.session_state['admin'] = True if admin else False
+#     client_user = st.session_state['username']
+#     authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
 
 with st.spinner("Buzz Buzz Where is my Honey"):
-    # # signin_auth = signin_main()
-    # signin_auth = True
-    # # st.write(st.session_state)
-    # if signin_auth:
+
     if 'username' not in st.session_state:
         signin_auth = signin_main()
+    
     # st.write(st.session_state)
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
     admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
@@ -192,98 +203,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
         
         queen_beeAction_theflash(False)
-
-
-
-    def queen_order_flow():
-        # if st.session_state['admin'] == False:
-        #     return False
-        page_line_seperator()
-        # with cols[1]:
-        #     orders_table = st.checkbox("show completed orders")
-        
-        with st.expander('Portfolio Orders', expanded=True):
-            now_time = datetime.datetime.now(est)
-            cols = st.columns((1,1,1,1,1))
-            with cols[0]:
-                refresh_b = st.button("Refresh Orders", key='r1')
-            with cols[1]:
-                today_orders = st.checkbox("Today Orders", False)
-            with cols[2]:
-                completed_orders = st.checkbox("Completed orders")
-            with cols[3]:
-                all_orders = st.checkbox("All Orders", False)
-            with cols[4]:
-                show_errors = st.checkbox("Lost Bees")
-
-            
-            order_states = set(QUEEN['queen_orders']['queen_order_state'].tolist())
-            
-            if all_orders:
-                order_states = order_states
-            elif completed_orders:
-                order_states = ['completed', 'completed_alpaca']
-            elif show_errors:
-                order_states = ['error']
-            else:
-                order_states = ['submitted', 'running', 'running_close']
-            
-            cols = st.columns((3,1))
-            with cols[0]:
-                queen_order_states = st.multiselect('queen order states', options=list(active_order_state_list), default=order_states)
-            
-            df = queen_orders_view(QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False)['df']
-            if len(df) == 0:
-                st.info("No Orders to View")
-                return False
-
-            if today_orders:
-                df = df[df['datetime'] > now_time.replace(hour=1, minute=1, second=1)].copy()
-            
-            with cols[1]:
-                g_height = grid_height(len_of_rows=len(df))
-                set_grid_height = st.number_input(label=f'Set Orders Grid Height', value=g_height)
-                        
-            ordertables__agrid = build_AGgrid_df__queenorders(data=df.astype(str), reload_data=False, height=set_grid_height)
-        
-        # with st.expander('Portfolio Orders', expanded=True):
-        #     refresh_b = st.button("Refresh Orders", key='r2')
-        #     error_orders = queen_orders_view(QUEEN=QUEEN, queen_order_state=['error'], return_all_cols=True)['df']
-        #     error_orders = error_orders.astype(str)
-        #     st.write("Some Run Orders in Error State to be Fixed")
-        #     # if len(error_orders)> 0:
-        #     #     new_title = '<p style="font-family:sans-serif; color:Black; font-size: 25px;">ERRORS</p>'
-        #     #     st.markdown(new_title, unsafe_allow_html=True)
-        #     #     st.dataframe(error_orders)
-
-        #     for order_state in active_queen_order_states:
-        #         df = queen_orders_view(QUEEN=QUEEN, queen_order_state=[order_state])['df']
-        #         if len(df) > 89:
-        #             grid_height = 654
-        #         elif len(df) < 10:
-        #             grid_height = 200
-        #         else:
-        #             grid_height = 333
-                
-        #         if len(df) > 0:
-        #             if order_state == 'error':
-        #                 continue
-        #             elif order_state == 'submitted':
-        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-        #                 run_orders__agrid_submit = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
-        #             elif order_state == 'running_open':
-        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-        #                 run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
-        #             elif order_state == 'running':
-        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-        #                 run_orders__agrid = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height, paginationOn=False)
-        #             elif order_state == 'running_close':
-        #                 mark_down_text(align='center', color=default_text_color, fontsize='23', text=order_state)
-        #                 run_orders__agrid_open = build_AGgrid_df__queenorders(data=df, reload_data=False, height=grid_height)
-
-
-                
-        return True
 
 
     def queen_QueenOrders():
@@ -844,7 +763,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         return True
         
 
-    def update_QueenControls(QUEEN_KING, QUEEN, control_option, theme_list):
+    def update_QueenControls(QUEEN_KING, control_option, theme_list):
         theme_desc = {'nuetral': ' follows basic model wave patterns',
                     'strong_risk': ' defaults to high power trades',
                     'star__storywave': ' follows symbols each day changes and adjusts order rules based on latest data'}
@@ -1312,199 +1231,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         return grid_response
 
 
-    def build_AGgrid_df__queenorders(data, reload_data=False, fit_columns_on_grid_load=False, height=200, update_mode_value='VALUE_CHANGED', paginationOn=False,  allow_unsafe_jscode=True):
-        # Color Code Honey
-        data['$honey'] = data['$honey'].apply(lambda x: round(float(x), 2)).fillna(data['honey'])
-        data['honey'] = data['honey'].apply(lambda x: round((float(x) * 100), 2)).fillna(data['honey'])
-        data['color'] = np.where(data['honey'] > 0, 'green', 'white')
-        gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
-        
-        if paginationOn:
-            gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
-        
-        gb.configure_side_bar() #Add a sidebar
-
-        # gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-
-        honey_colors = JsCode("""
-        function(params) {
-            if (params.value > 0) {
-                return {
-                    'color': '#168702',
-                }
-            }
-            else if (params.value < 0) {
-                return {
-                    'color': '#F03811',
-                }
-            }
-        };
-        """)
-                    # 'backgroundColor': '#177311'
-                    # 'backgroundColor': '#F03811',
-
-        honey_colors_dollar = JsCode("""
-        function(params) {
-            if (params.value > 0) {
-                return {
-                    'color': '#027500',
-                }
-            }
-            else if (params.value < 0) {
-                return {
-                    'color': '#c70c0c',
-                }
-            }
-        };
-        """)
-
-        # Config Columns
-        gb.configure_column('queen_order_state', header_name='State', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': active_order_state_list })
-        gb.configure_column("datetime", header_name='Date', type=["dateColumnFilter","customDateTimeFormat"], custom_format_string='MM/dd/yy', pivot=True, initialWidth=75, maxWidth=110, autoSize=True)
-        gb.configure_column("symbol", pinned='left', pivot=True, resizable=True, initialWidth=89, autoSize=True)
-        gb.configure_column("trigname", pinned='left', header_name='TrigBee', pivot=True, wrapText=True, resizable=True, initialWidth=100, maxWidth=120, autoSize=True)
-        gb.configure_column("ticker_time_frame", pinned='left', header_name='Star', pivot=True, resizable=True, initialWidth=138, autoSize=True)
-        gb.configure_column("honey", header_name='Honey%', pinned='left', cellStyle=honey_colors, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="%", resizable=True, initialWidth=89, maxWidth=100, autoSize=True)
-        gb.configure_column("$honey", header_name='Money$', pinned='left', cellStyle=honey_colors, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", resizable=True, initialWidth=89, maxWidth=100, autoSize=True)
-        gb.configure_column("honey_time_in_profit", header_name='Time.In.Honey', resizable=True, initialWidth=89, maxWidth=120, autoSize=True)
-        gb.configure_column("filled_qty", wrapText=True, resizable=True, initialWidth=95, maxWidth=100, autoSize=True)
-        gb.configure_column("qty_available", header_name='available_qty', autoHeight=True, wrapText=True, resizable=True, initialWidth=105, maxWidth=130, autoSize=True)
-        gb.configure_column("filled_avg_price", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", header_name='filled_avg_price', autoHeight=True, wrapText=True, resizable=True, initialWidth=120, maxWidth=130, autoSize=True)
-        gb.configure_column("limit_price", type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", resizable=True, initialWidth=95, maxWidth=100, autoSize=True)
-        gb.configure_column("cost_basis",   type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", autoHeight=True, wrapText=True, resizable=True, initialWidth=110, maxWidth=120, autoSize=True)
-        gb.configure_column("wave_amo",   type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", autoHeight=True, wrapText=True, resizable=True, initialWidth=110, maxWidth=120, autoSize=True)
-        gb.configure_column("order_rules", header_name='OrderRules', wrapText=True, resizable=True, autoSize=True)
-
-        # ## WHY IS IT NO WORKING??? 
-        # k_sep_formatter = JsCode("""
-        # function(params) {
-        #     return (params.value == null) ? params.value : params.value.toLocaleString('en-US',{style: "currency", currency: "USD"}); 
-        # }
-        # """)
-
-        # int_cols = ['$honey', 'filled_avg_price', 'cost_basis', 'wave_amo', 'honey']
-        # gb.configure_columns(int_cols, valueFormatter=k_sep_formatter)
-        # for int_col in int_cols:
-        #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$")
-# color code columns based on yourValue
-
-        BtnCellRenderer = JsCode('''
-        class BtnCellRenderer {
-            init(params) {
-                this.params = params;
-                this.eGui = document.createElement('div');
-                this.eGui.innerHTML = `
-                <span>
-                    <button id='click-button' 
-                        class='btn-simple' 
-                        style='color: ${this.params.color}; background-color: ${this.params.background_color}'>Click!</button>
-                </span>
-            `;
-
-                this.eButton = this.eGui.querySelector('#click-button');
-
-                this.btnClickedHandler = this.btnClickedHandler.bind(this);
-                this.eButton.addEventListener('click', this.btnClickedHandler);
-
-            }
-
-            getGui() {
-                return this.eGui;
-            }
-
-            refresh() {
-                return true;
-            }
-
-            destroy() {
-                if (this.eButton) {
-                    this.eGui.removeEventListener('click', this.btnClickedHandler);
-                }
-            }
-
-            btnClickedHandler(event) {
-                if (confirm(this.params.data.order_rules) == true) {
-                    if(this.params.getValue() == 'clicked') {
-                        this.refreshTable('');
-                    } else {
-                        this.refreshTable('clicked');
-                    }
-                        console.log(this.params);
-                        console.log(this.params.getValue());
-                    }
-                }
-
-            refreshTable(value) {
-                this.params.setValue(value);
-            }
-        };
-        ''')
-
-
-
-        gridOptions = gb.build()
-        
-        gridOptions['wrapHeaderText'] = 'true'
-        gridOptions['autoHeaderHeight'] = 'true'
-        gridOptions['rememberGroupStateWhenNewData'] = 'true'
-        gridOptions['enableCellTextSelection'] = 'true'
-        gridOptions['resizable'] = 'true'
-
-        gridOptions["getRowStyle"] = JsCode(
-            """
-        function(params) {
-            if (params.data["color"] == 'green') {
-                return {
-                    'backgroundColor': '#C9A500'
-                }
-            } else if (params.data["color"] == 'white') {
-                return {
-                    'backgroundColor': '#ffe680'
-                }
-            }
-        };
-        """
-        )
-
-        gridOptions['columnDefs'].append({
-            "field": "clicked",
-            "header": "Clicked",
-            "cellRenderer": BtnCellRenderer,
-            "cellRendererParams": {
-                "color": "red",
-                "background_color": "black",
-            },
-        })
-
-    # columnDefs = [
-    #     {colId: 'column1', newPosition: 2},
-    #     {colId: 'column2', newPosition: 0},
-    #     {colId: 'column3', newPosition: 1},
-    # ]
-    # grid_response.setColumnDefs([{'Clicked': 'column1'}, {'Money': 'column2'}])
-
-    # # Next, use the setColumnOrder method to rearrange the columns in the grid
-    # grid.setColumnOrder(columnDefs)
-        # gridOptions.moveColumn('Clicked', 5)
-        # ipdb.set_trace()
-        grid_response = AgGrid(
-            data,
-            gridOptions=gridOptions,
-            data_return_mode='AS_INPUT', 
-            update_mode=update_mode_value, 
-            fit_columns_on_grid_load=fit_columns_on_grid_load,
-            # theme="streamlit", #Add theme color to the table
-            enable_enterprise_modules=True,
-            height=height, 
-            reload_data=reload_data,
-            allow_unsafe_jscode=allow_unsafe_jscode
-        )
-        # grid_response = grid_response.set_filter("symbol", "contains", "SPY")
-        
-        
-        return grid_response
-
-
     def its_morphin_time_view(QUEEN, STORY_bee, ticker, POLLENSTORY, combine_story=False):
 
         now_time = datetime.datetime.now(est)
@@ -1887,7 +1613,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     def return_alpaca_user_apiKeys(prod):
         return return_alpaca_api_keys(prod=prod)['api']
 
-
+   
     ########################################################
     ########################################################
     #############The Infinite Loop of Time #################
@@ -1898,6 +1624,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     # """ if "__name__" == "__main__": """
 
+    # st.image(chess_piece_queen, width=23)
 
     ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
     if authorized_user:
@@ -1925,9 +1652,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         PB_App_Pickle = init_pollen['PB_App_Pickle']
         PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
         st.sidebar.write('Read Only')
-        st.info("You Are In Read OnlyMode...zzzz...You Need your Queen To Start Trading For you! Please contact pollenq.queen@gmail.com to request one or click here!")
-        st.error("Authorization Form COMINGSOON")
-        st.error("Create Alpaca Account and Enter APIS Button PlaceHolder COMINGSOON")
+        if st.session_state['authentication_status']:
+            st.error("Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com")
+        else:
+            st.error("You Are In Read OnlyMode...zzzz...You Need to Create an Account to Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
         admin = False
 
     api = return_alpaca_user_apiKeys(prod=prod)
@@ -1967,7 +1695,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     if authorized_user:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
 
-    # st.sidebar.button("Refresh Bee")
     # st.sidebar.write("always Bee better")
     # queen_tab, controls_tab, charts_tab, model_results_tab, pollen_engine_tab, playground_tab  = st.tabs(["Queen", "Controls", "Charts", "model_results", "pollen_engine", "playground"])
     cols = st.columns((3,10,1,1))
@@ -1992,8 +1719,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             ) 
     with cols[2]:
         bee_keeper = st.button("Refresh", key='gatekeeper')
-    with cols[3]:
-        st.image("https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png", width=23)
+    with cols[2]:
+        st.image(learningwalk_bee, width=34)
 
     # cols = st.columns((2,1,1,1,1,1,1,1,1,1,1,2))
     # if option == 'queen':
@@ -2055,13 +1782,7 @@ tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
 
 if str(option).lower() == 'queen':
     with st.spinner("Waking Up the Hive"):
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        # chart = st.line_chart(np.random.randn(10, 2))
-        for i in range(100):
-            # Update progress bar.
-            progress_bar.progress(i + 1)
-            time.sleep(.000000033)
+        progress_bar(value=100)
                     
         # page_line_seperator('1', color=default_yellow_color)
         queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
@@ -2116,7 +1837,7 @@ if str(option).lower() == 'queen':
 
         queen_main_view(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, tickers=tickers, ticker_option=ticker_option)
         queen_triggerbees()
-        queen_order_flow()
+        queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
         queen_chart(ticker_option=ticker_option, POLLENSTORY=POLLENSTORY)
 
         
@@ -2156,7 +1877,7 @@ if str(option).lower() == 'controls':
         theme_list = list(pollen_theme.keys())
         contorls = list(QUEEN['queen_controls'].keys())
         control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
-        update_QueenControls(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, control_option=control_option, theme_list=theme_list)
+        update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
 
         clear_subconscious_Thought(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
 

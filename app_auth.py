@@ -224,7 +224,7 @@ def signin_main():
     )
 
     # Check login. Automatically gets stored in session state
-    name, authentication_status, email = authenticator.login("Login", "main")
+    name, authentication_status, email = authenticator.login("Login", "sidebar")
 
     # login successful; proceed
     if authentication_status:

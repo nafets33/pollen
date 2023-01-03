@@ -20,7 +20,7 @@ from typing import Callable
 from tqdm import tqdm
 from collections import defaultdict
 from collections import deque
-# from QueenHive import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+# from QueenHive import return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData,  return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 import argparse
 import aiohttp
 import asyncio
@@ -69,11 +69,11 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
 
     if prod:
         print("Production")
-        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData,  return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
     else:
         print("Sandbox")
-        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_api_keys, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData,  return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
     # if windows:
@@ -519,7 +519,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
     def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges):
         s = datetime.datetime.now(est)
         
-        QUEEN = WORKERBEE_queens[queens_chess_piece]
+        QUEEN = WORKERBEE_queens[queens_chess_piece] # castle [spy, qqq], knight,
         # QUEEN = qcp_QUEEN
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         # MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
@@ -668,10 +668,17 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
     
     def queens_court__WorkerBees():
         try:
-            pq = read_QUEEN(queen_db=queen_db)
+            pq = read_QUEEN(queen_db=queen_db) # castle, bishop
             QUEENBEE = pq['QUEENBEE']
             queens_chess_pieces = pq['queens_chess_pieces']
             queens_master_tickers = pq['queens_master_tickers']
+            # for every ticker async init return inital chart data 
+            # res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
+            # for every qcp (chess peiece) 
+            # 1. async pollen_hunt # pulling api close data create the initial setting
+            # 2. async pollen story 
+            # 3. async write
+
             queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=queens_chess_pieces)
             WORKERBEE_queens = queen_workers['WORKERBEE_queens']
             speed_gauges = queen_workers['speed_gauges']

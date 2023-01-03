@@ -32,6 +32,7 @@ def job_1():
     print("Perform job 1")
     client_user = 'workerbees'
     cmd = f'screen -S {client_user}{"_"}{"workerbees"} python QueenWorkerBees.py -prod true'
+    # screen -S bees python QueenWorkerBees.py -prod true
     os.system(cmd)
 
 def job_2():
