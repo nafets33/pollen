@@ -46,6 +46,7 @@ est = pytz.timezone("US/Eastern")
 # https://discuss.streamlit.io/t/how-to-animate-a-line-chart/164/6 ## animiate the Bees Images : )
 # https://blog.streamlit.io/introducing-theming/  # change theme colors
 # https://extras.streamlit.app
+# https://www.freeformatter.com/cron-expression-generator-quartz.html
 
 pd.options.mode.chained_assignment = None
 
@@ -81,22 +82,25 @@ default_text_color = '#59490A'
 default_font = "sans serif"
 default_yellow_color = '#C5B743'
 
-# if 'sidebar_hide' in st.session_state:
-#     sidebar_hide = 'collapsed'
-# else:
-#     sidebar_hide = 'expanded'
+if 'sidebar_hide' in st.session_state:
+    sidebar_hide = 'collapsed'
+else:
+    sidebar_hide = 'expanded'
 
-# st.set_page_config(
-#      page_title="pollenq",
-#      page_icon=page_icon,
-#      layout="wide",
-#      initial_sidebar_state=sidebar_hide,
-#     #  menu_items={
-#     #      'Get Help': 'https://www.extremelycoolapp.com/help',
-#     #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-#     #      'About': "# This is a header. This is an *extremely* cool app!"
-#     #  }
-#  )
+st.set_page_config(
+     page_title="pollenq",
+     page_icon=page_icon,
+     layout="wide",
+     initial_sidebar_state=sidebar_hide,
+    #  menu_items={
+    #      'Get Help': 'https://www.extremelycoolapp.com/help',
+    #      'Report a bug': "https://www.extremelycoolapp.com/bug",
+    #      'About': "# This is a header. This is an *extremely* cool app!"
+    #  }
+ )
+
+def set_prod_env(prod):
+    st.session_state['production'] = prod
 
 with st.spinner("Buzz Buzz Where is my Honey"):
     # # signin_auth = signin_main()
@@ -105,24 +109,17 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     # if signin_auth:
     if 'username' not in st.session_state:
         signin_auth = signin_main()
-        admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-        st.session_state['admin'] = True if admin else False
-    
-    # if 'authentication_status' in st.session_state and st.session_state['authentication_status']:
-    #     pass
-    # else:
-    #     switch_page("pollenq")
-        
-
-    
+    # st.write(st.session_state)
+    st.sidebar.write(f'Welcome {st.session_state["name"]}')
+    admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+    st.session_state['admin'] = True if admin else False
     client_user = st.session_state['username']
-    gatekeeper = True
-    # prod = False if 'sandbox' in scriptname else True
+    authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
     
     prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
     prod_name = 'LIVE' if 'production' in st.session_state and st.session_state['production'] == True else 'Sandbox'
-    st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'], index=['LIVE', 'Sandbox'].index(prod_name))
-
+    st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'], index=['LIVE', 'Sandbox'].index(prod_name), on_change=set_prod_env(prod))
+    # st.write(f'enviroment {prod}')
     if prod:
         from QueenHive import init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
@@ -143,16 +140,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
     crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
-
-    # parser = createParser_App()
-    # namespace = parser.parse_args()
-    admin = True if client_user == 'stefanstapinski@gmail.com' else False
-    authorized_user = True if client_user == 'stefanstapinski@gmail.com' else False
-
-    # if admin:
-    #     st.session_state['admin'] = True
-    # else:
-    #     st.session_state['admin'] = False
 
     def grid_height(len_of_rows):
         if len_of_rows > 10:
@@ -1911,29 +1898,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     # """ if "__name__" == "__main__": """
 
-    if gatekeeper:
-        if 'admin' in st.session_state.keys() and st.session_state['admin']:
-            admin = True
-            st.sidebar.write('admin', admin)
-
-        else:
-            # st.write("queenbee not yet authorized READ ONLY")
-            st.sidebar.write('Read Only')
-            # cols = st.columns((3,1))
-            # with cols[0]:
-            st.info("You Are In Read OnlyMode...zzzz...You Need your Queen To Start Trading For you! Please contact pollenq.queen@gmail.com to request one or click here!")
-            # with cols[1]:
-            #     if st.button("I want a QUEEN"):
-            #         st.sucess("You'll receive Email if you are selected to try out the Queen")
-            admin = False
-    else:
-        st.write("Are you My Queen?")
-        # sys.exit()
-        st.stop()
 
     ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
     if authorized_user:
         READONLY = False
+        if 'admin' in st.session_state.keys() and st.session_state['admin']:
+            admin = True
+            st.sidebar.write('admin', admin)
         # SETUP USER #
         # Client User DB
         db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
@@ -1953,7 +1924,11 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
         PB_App_Pickle = init_pollen['PB_App_Pickle']
         PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-
+        st.sidebar.write('Read Only')
+        st.info("You Are In Read OnlyMode...zzzz...You Need your Queen To Start Trading For you! Please contact pollenq.queen@gmail.com to request one or click here!")
+        st.error("Authorization Form COMINGSOON")
+        st.error("Create Alpaca Account and Enter APIS Button PlaceHolder COMINGSOON")
+        admin = False
 
     api = return_alpaca_user_apiKeys(prod=prod)
     
@@ -2166,8 +2141,6 @@ if str(option).lower() == 'queen':
 
 if str(option).lower() == 'controls':
 
-
-    
     cols = st.columns((1,3))
     if admin == False:
         st.write("permission denied")
@@ -2367,8 +2340,8 @@ if str(option).lower() == 'model_results':
 
 if str(option).lower() == 'pollen_engine':
     cols = st.columns(3)
-    with cols[1]:
-        local_gif(gif_path=queen_flair_gif, height=350, width=400)
+    # with cols[1]:
+    #     local_gif(gif_path=queen_flair_gif, height=350, width=400)
     
     page_tab_permission_denied(admin, st_stop=True)
     
@@ -2405,6 +2378,7 @@ if str(option).lower() == 'pollen_engine':
         users = cur.execute("SELECT * FROM users").fetchall()
         st.dataframe(pd.DataFrame(users))
     
+
 if str(option).lower() == 'playground':
     page_tab_permission_denied(admin)
     with st.expander("button on grid"):

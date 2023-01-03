@@ -2,31 +2,10 @@ from airflow.operators.python import PythonOperator
 from airflow.sensors.python import PythonSensor
 import datetime
 import os
-# from QueenHive import read_queensmind
-
-
+# import subprocess
 from airflow.models import DAG
-
-# import shutil
 import os
 
-# airflow dag list
-
-
-# ## main ##
-# def copy_to_airflow_dags():
-
-#     main_root = os.getcwd()
-#     db_root = os.path.join(main_root, 'dags')
-#     dst_path = '/home/stapinski89/airflow/dags'
-
-#     for fn in os.listdir(db_root):
-#         db_file = os.path.join(db_root, fn)
-#         shutil.copy(db_file, dst_path)
-
-
-#     # if __name__ == '__main__':
-# copy_to_airflow_dags()
 
 
 # Parameteres
@@ -51,10 +30,12 @@ dag = DAG(
 )
 # Define functions
 def job_1():
-    print("Perform job 1")
-    client_user = 'stefanstapinski@gmail.com'
+    # print("Perform job 1")
+    client_user = 'queen_stefanstapinski'
     cmd = f'screen -S {client_user} python QueenBee.Py'
     os.system(cmd)
+    # subprocess.run(["screen", "-S", f'{client_user}', "&&", "python", "QueenBee.Py"])
+
 
 def job_2():
     print("Perform job 2")
