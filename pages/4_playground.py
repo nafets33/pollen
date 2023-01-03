@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_extras.stoggle import stoggle
+from appHive import click_button_grid, nested_grid, page_tab_permission_denied
 
 # https://extras.streamlit.app/Annotated%20text
 
@@ -7,6 +8,14 @@ from streamlit_extras.stoggle import stoggle
 #     page_title="Hello",
 #     page_icon="👋",
 # )
+
+page_tab_permission_denied(st.session_state['admin'])
+with st.expander("button on grid"):
+    click_button_grid()
+
+with st.expander("nested grid"):
+    nested_grid()
+
 
 st.write("# Welcome to Streamlit! 👋")
 
@@ -57,8 +66,8 @@ st.markdown(html, unsafe_allow_html=True)
 st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
 st.button("Show", key=1)
 
-st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
-st.button("Show", key=2)
+# st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
+# st.button("Show", key=2)
 
 
-st.image("https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png", width=33)
+# st.image("https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png", width=33)

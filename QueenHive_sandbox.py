@@ -346,11 +346,11 @@ def init_QUEEN_App():
         },
     'bee_lounge': [],
     'users_secrets': init_client_user_secrets(),
-    
-    
+    'risk_level': 0,
+    'age': 0,
     'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
-    'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
+    'last_modified': {'last_modified': datetime.datetime.now(est)},
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],

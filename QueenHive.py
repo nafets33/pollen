@@ -346,11 +346,11 @@ def init_QUEEN_App():
         },
     'bee_lounge': [],
     'users_secrets': init_client_user_secrets(),
-    
-    
+    'risk_level': 0,
+    'age': 0,
     'app_order_requests': [], 
     'sell_orders': [], 'buy_orders': [], 
-    'last_modified': {'last_modified': datetime.datetime.now().astimezone(est)},
+    'last_modified': {'last_modified': datetime.datetime.now(est)},
     'queen_processed_orders': [],
     'wave_triggers': [],
     'app_wave_requests': [],
@@ -2208,7 +2208,7 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
 
 def generate_TradingModel(theme='custom', portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
 
-    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1, take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}, skip_sell_trigbee_distance_frequency=0, ignore_trigbee_at_power=.01, ignore_trigbee_at_macdstory_range={'low_range': -.05, 'high_range': .05},ignore_trigbee_at_histstory_range={'low_range': -.05, 'high_range': .05}, ignore_trigbee_in_vwap_range={'low_range': -.05, 'high_range': .05}, short_position=False):
+    def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1,  skip_sell_trigbee_distance_frequency=0, ignore_trigbee_at_power=.01, ignore_trigbee_in_macdstory_tier=[],ignore_trigbee_in_histstory_tier=[], ignore_trigbee_in_vwap_range={'low_range': -.05, 'high_range': .05}, take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}, short_position=False):
         return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
         'theme': theme,
         'status': status,
@@ -2225,12 +2225,12 @@ def generate_TradingModel(theme='custom', portfolio_name='Jq', ticker='SPY', sta
         'scalp_profits': scalp_profits,
         'scalp_profits_timeduration': scalp_profits_timeduration,
         'stagger_profits_tiers': stagger_profits_tiers,
-        'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
         'skip_sell_trigbee_distance_frequency': skip_sell_trigbee_distance_frequency, # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
         'ignore_trigbee_at_power': ignore_trigbee_at_power,
-        'ignore_trigbee_at_macdstory_range': ignore_trigbee_at_macdstory_range,
-        'ignore_trigbee_at_histstory_range': ignore_trigbee_at_histstory_range,
+        'ignore_trigbee_in_macdstory_tier': ignore_trigbee_in_macdstory_tier,
+        'ignore_trigbee_in_histstory_tier': ignore_trigbee_in_histstory_tier,
         'ignore_trigbee_in_vwap_range': ignore_trigbee_in_vwap_range,
+        'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
         'short_position': short_position
         }
 

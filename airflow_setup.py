@@ -15,6 +15,7 @@ def copy_to_airflow_dags():
     for fn in os.listdir(db_root):
         db_file = os.path.join(db_root, fn)
         shutil.copy(db_file, dst_path)
+        print("Copied file ", db_file, " to", dst_path)
 
 
     # if __name__ == '__main__':
