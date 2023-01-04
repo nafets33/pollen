@@ -325,6 +325,7 @@ def init_QUEEN_App():
     not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
     init_macd_vars = {'fast': 12, 'slow': 26, 'smooth': 9}
     app = {
+    'prod': False,
     'theme': 'nuetral', 
     'king_controls_queen': return_queen_controls(stars),
     'qcp_workerbees': {
