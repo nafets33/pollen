@@ -25,7 +25,7 @@ import os
 # from random import randint
 import sqlite3
 import streamlit as st
-from appHive import  save_the_QUEEN_KING, progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from appHive import progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from app_auth import signin_main
 import base64
 import time
