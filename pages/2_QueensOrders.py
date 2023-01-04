@@ -97,167 +97,147 @@ with st.spinner("QueensOrders pollenq"):
     if 'username' not in st.session_state:
         signin_auth = signin_main()
     
-    parser = createParser_App()
-    namespace = parser.parse_args()
-    admin = True if namespace.admin == 'true' or st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-    authorized_user = True if namespace.admin == 'true' or st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+    st.sidebar.write(f'Welcome {st.session_state["name"]}')
+    client_user = st.session_state['username']
+    authorized_user = True if st.session_state['admin'] == 'true' or st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com'] else False
+    st.session_state['authorized_user'] = True if authorized_user else False
+    db_client_user_name = st.session_state['username'].split("@")[0]
+
+    # if db__name exists use db__name else use db
+    db_name = os.path.join(main_root, db_client_user_name)
+    if os.path.exists(db_name):
+        db_root = db_name
+    else:
+        db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
+
+    # return last saved sandbox vs prod to return last_saved QUEEN_KING
+
+    prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
+    admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
     st.session_state['admin'] = True if admin else False
+    
+    # st.write("loading ", prod, "packages")
 
+    # prod_name = 'LIVE' if prod else 'Sandbox'
+    prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
+    st.session_state['production'] = True if prod_option == 'LIVE' else False
+    prod = st.session_state['production']
 
-    if st.session_state['authentication_status']:
-        # def INIT SETUP
-        def set_prod_env(prod):
-            st.session_state['production'] = prod
-            # st.sidebar.image(chess_piece_queen, width=23)
-        
-        prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-        prod_name = 'LIVE' if 'production' in st.session_state and st.session_state['production'] == True else 'Sandbox'
-        
-        if prod:
-            from QueenHive import  init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-            load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-        else:
-            from QueenHive_sandbox import init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-            load_dotenv(os.path.join(os.getcwd(), '.env'))
-        
-        st.sidebar.write(f'Welcome {st.session_state["name"]}')
-        admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-        st.session_state['admin'] = True if admin else False
-        client_user = st.session_state['username']
-        authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+    
+    if st.session_state['production']:
+        from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    else:
+        from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+        load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-        # Return True
+    # def save_change():
+    #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
-        st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'], index=['LIVE', 'Sandbox'].index(prod_name), on_change=set_prod_env(prod))
+    init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
+    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+    PB_App_Pickle = init_pollen['PB_App_Pickle']
+    PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
 
-        if authorized_user:
-            READONLY = False
-            if 'admin' in st.session_state.keys() and st.session_state['admin']:
-                admin = True
-                st.sidebar.write('admin', admin)
-            # SETUP USER #
-            # Client User DB
-            db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-            init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen')
-            PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-            PB_App_Pickle = init_pollen['PB_App_Pickle']
-            PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-            # PB_users_secrets = init_pollen['PB_users_secrets']
+    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+    # def run_main_page():
+    KING = KINGME()
+    pollen_theme = pollen_themes(KING=KING)
+    # QUEEN Databases
+    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+    QUEEN_KING['source'] = PB_App_Pickle
+    QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+    ORDERS = ReadPickleData(PB_Orders_Pickle)
+    # st.write("using ", PB_App_Pickle)
 
-        else:
-
-            # Read Only View
-            READONLY = True
-            db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
-            prod = False
-            load_dotenv(os.path.join(os.getcwd(), '.env'))
-            init_pollen = init_pollen_dbs(db_root=db_root, prod=False, queens_chess_piece='queen')
-            PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-            PB_App_Pickle = init_pollen['PB_App_Pickle']
-            PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-            st.sidebar.write('Read Only')
-            if st.session_state['authentication_status']:
-                st.error("Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com")
-            else:
-                st.error("You Are In Read OnlyMode...zzzz...You Need to Create an Account to Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
-            admin = False
-
-
-        QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-        ORDERS = ReadPickleData(PB_Orders_Pickle)
-
-        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
-        QUEEN_KING['source'] = PB_App_Pickle
-        APP_req = add_key_to_app(QUEEN_KING)
-        if APP_req['update']:
-            QUEEN_KING = APP_req['QUEEN_KING']
-            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-
-        KING = KINGME()
+    APP_req = add_key_to_app(QUEEN_KING)
+    QUEEN_KING = APP_req['QUEEN_KING']
+    if APP_req['update']:
+        PickleData(PB_App_Pickle, QUEEN_KING)
         pollen_theme = pollen_themes(KING=KING)
         theme_list = list(pollen_theme.keys())
 
-        queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+    queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
 
 
-        with st.form("Edit Order Rules"):
+    with st.form("Edit Order Rules"):
 
-            st.write("Orders Form Draft")
-            status = st.checkbox("Active")
+        st.write("Orders Form Draft")
+        status = st.checkbox("Active")
 
-            limit_cols = st.columns(3)
-            trade_using_limits = limit_cols[0].checkbox("Trade Using Limits")
-            limitprice_decay_timeduration = limit_cols[1].number_input(
-                "Limit Price Decay Time Duration"
-            )
-            doubledown_timeduration = limit_cols[2].number_input("Double Down Time Duration")
+        limit_cols = st.columns(3)
+        trade_using_limits = limit_cols[0].checkbox("Trade Using Limits")
+        limitprice_decay_timeduration = limit_cols[1].number_input(
+            "Limit Price Decay Time Duration"
+        )
+        doubledown_timeduration = limit_cols[2].number_input("Double Down Time Duration")
 
-            max_profit_cols = st.columns(2)
-            max_profit_waveDeviation = max_profit_cols[0].number_input(
-                "Max Profit Wave Deviation"
-            )
-            max_profit_waveDeviation_timeduration = max_profit_cols[1].number_input(
-                "Max Profit Wave Deviation Time Duration"
-            )
+        max_profit_cols = st.columns(2)
+        max_profit_waveDeviation = max_profit_cols[0].number_input(
+            "Max Profit Wave Deviation"
+        )
+        max_profit_waveDeviation_timeduration = max_profit_cols[1].number_input(
+            "Max Profit Wave Deviation Time Duration"
+        )
 
-            profit_cols = st.columns(3)
-            timeduration = profit_cols[0].number_input("Time Duration")
-            take_profit = profit_cols[1].number_input("Take Profit")
-            sellout = profit_cols[2].number_input("Sellout")
+        profit_cols = st.columns(3)
+        timeduration = profit_cols[0].number_input("Time Duration")
+        take_profit = profit_cols[1].number_input("Take Profit")
+        sellout = profit_cols[2].number_input("Sellout")
 
-            stagger_profit_cols = st.columns([2, 2, 3])
-            sell_trigbee_trigger = stagger_profit_cols[0].checkbox("Sell Trigbee Trigger")
-            stagger_profits = stagger_profit_cols[1].checkbox("Stagger Profits")
-            stagger_profits_tiers = stagger_profit_cols[2].number_input("Stagger Profits Tiers")
+        stagger_profit_cols = st.columns([2, 2, 3])
+        sell_trigbee_trigger = stagger_profit_cols[0].checkbox("Sell Trigbee Trigger")
+        stagger_profits = stagger_profit_cols[1].checkbox("Stagger Profits")
+        stagger_profits_tiers = stagger_profit_cols[2].number_input("Stagger Profits Tiers")
 
-            scalp_profits_cols = st.columns([1, 3])
-            scalp_profits = scalp_profits_cols[0].checkbox("Scalp Profits")
-            scalp_profits_timeduration = scalp_profits_cols[1].number_input(
-                "Scalp Profits Time Duration"
-            )
+        scalp_profits_cols = st.columns([1, 3])
+        scalp_profits = scalp_profits_cols[0].checkbox("Scalp Profits")
+        scalp_profits_timeduration = scalp_profits_cols[1].number_input(
+            "Scalp Profits Time Duration"
+        )
 
-            if st.form_submit_button("Send"):
-                # return values
-                st.success("Order Sent!")
+        if st.form_submit_button("Send"):
+            # return values
+            st.success("Order Sent!")
 
 
-            # {
-            #     "status": "active",
-            #     "trade_using_limits": False,
-            #     "limitprice_decay_timeduration": 1,
-            #     "doubledown_timeduration": 60,
-            #     "max_profit_waveDeviation": 1,
-            #     "max_profit_waveDeviation_timeduration": 1440,
-            #     "timeduration": 525600,
-            #     "take_profit": 0.1,
-            #     "sellout": -0.05,
-            #     "sell_trigbee_trigger": True,
-            #     "stagger_profits": False,
-            #     "stagger_profits_tiers": 1,
+        # {
+        #     "status": "active",
+        #     "trade_using_limits": False,
+        #     "limitprice_decay_timeduration": 1,
+        #     "doubledown_timeduration": 60,
+        #     "max_profit_waveDeviation": 1,
+        #     "max_profit_waveDeviation_timeduration": 1440,
+        #     "timeduration": 525600,
+        #     "take_profit": 0.1,
+        #     "sellout": -0.05,
+        #     "sell_trigbee_trigger": True,
+        #     "stagger_profits": False,
+        #     "stagger_profits_tiers": 1,
 
-            #     "scalp_profits": False,
-            #     "scalp_profits_timeduration": 30,
-            # }
+        #     "scalp_profits": False,
+        #     "scalp_profits_timeduration": 30,
+        # }
 
-            # 'theme': theme,
-            # 'status': status,
-            # 'trade_using_limits': trade_using_limits,
-            # 'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
-            # 'doubledown_timeduration': doubledown_timeduration,
-            # 'max_profit_waveDeviation': max_profit_waveDeviation,
-            # 'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
-            # 'timeduration': timeduration,
-            # 'take_profit': take_profit,
-            # 'sellout': sellout,
-            # 'sell_trigbee_trigger': sell_trigbee_trigger,
-            # 'stagger_profits': stagger_profits,
-            # 'scalp_profits': scalp_profits,
-            # 'scalp_profits_timeduration': scalp_profits_timeduration,
-            # 'stagger_profits_tiers': stagger_profits_tiers,
-            # 'skip_sell_trigbee_distance_frequency': skip_sell_trigbee_distance_frequency, # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
-            # 'ignore_trigbee_at_power': ignore_trigbee_at_power,
-            # 'ignore_trigbee_in_macdstory_tier': ignore_trigbee_in_macdstory_tier,
-            # 'ignore_trigbee_in_histstory_tier': ignore_trigbee_in_histstory_tier,
-            # 'ignore_trigbee_in_vwap_range': ignore_trigbee_in_vwap_range,
-            # 'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
-            # 'short_position': short_position
+        # 'theme': theme,
+        # 'status': status,
+        # 'trade_using_limits': trade_using_limits,
+        # 'limitprice_decay_timeduration': limitprice_decay_timeduration, # TimeHorizion: i.e. the further along time how to sell out of profit
+        # 'doubledown_timeduration': doubledown_timeduration,
+        # 'max_profit_waveDeviation': max_profit_waveDeviation,
+        # 'max_profit_waveDeviation_timeduration': max_profit_waveDeviation_timeduration,
+        # 'timeduration': timeduration,
+        # 'take_profit': take_profit,
+        # 'sellout': sellout,
+        # 'sell_trigbee_trigger': sell_trigbee_trigger,
+        # 'stagger_profits': stagger_profits,
+        # 'scalp_profits': scalp_profits,
+        # 'scalp_profits_timeduration': scalp_profits_timeduration,
+        # 'stagger_profits_tiers': stagger_profits_tiers,
+        # 'skip_sell_trigbee_distance_frequency': skip_sell_trigbee_distance_frequency, # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
+        # 'ignore_trigbee_at_power': ignore_trigbee_at_power,
+        # 'ignore_trigbee_in_macdstory_tier': ignore_trigbee_in_macdstory_tier,
+        # 'ignore_trigbee_in_histstory_tier': ignore_trigbee_in_histstory_tier,
+        # 'ignore_trigbee_in_vwap_range': ignore_trigbee_in_vwap_range,
+        # 'take_profit_in_vwap_deviation_range': take_profit_in_vwap_deviation_range,
+        # 'short_position': short_position

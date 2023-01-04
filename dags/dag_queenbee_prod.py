@@ -9,7 +9,7 @@ import os
 
 
 # Parameteres
-WORFKLOW_DAG_ID = "run_queenbee"
+WORFKLOW_DAG_ID = "run_queenbee_prod"
 WORFKFLOW_START_DATE = datetime.datetime(2022, 1, 1)
 WORKFLOW_SCHEDULE_INTERVAL = "@once"
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
@@ -32,7 +32,7 @@ dag = DAG(
 def job_runqueen():
     # print("Perform job 1")
     client_user = 'queen_stefanstapinski'
-    cmd = f'screen -S {client_user} python QueenBee.Py'
+    cmd = f'screen -S {client_user} python QueenBee.Py -prod true -bee_scheduler true'
     os.system(cmd)
     # subprocess.run(["screen", "-S", f'{client_user}', "&&", "python", "QueenBee.Py"])
 

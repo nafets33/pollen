@@ -9,6 +9,11 @@ from appHive import click_button_grid, nested_grid, page_tab_permission_denied
 #     page_icon="👋",
 # )
 
+view_ss_state = st.sidebar.button("View Session State")
+if view_ss_state:
+    st.write(st.session_state)
+
+
 page_tab_permission_denied(st.session_state['admin'])
 with st.expander("button on grid"):
     click_button_grid()

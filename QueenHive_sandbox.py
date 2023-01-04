@@ -38,7 +38,7 @@ from collections import deque
 from email.message import EmailMessage
 import smtplib
 import ssl
-
+import streamlit as st
 
 import _locale
 
@@ -183,6 +183,50 @@ def return_alpaca_api_keys(prod):
     
     return {'rest': rest, 'api': api}
 
+def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
+
+    def return_client_user__alpaca_api_keys(prod, api_key_id, api_secret):
+
+        # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
+        if prod:
+            # load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+            keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=api_key_id, api_secret=api_secret, prod=prod)
+            rest = keys['rest']
+            api = keys['api']
+        else:
+            # Paper
+            # load_dotenv(os.path.join(os.getcwd(), '.env'))
+            keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=api_key_id, api_secret=api_secret, prod=False)
+            rest = keys_paper['rest']
+            api = keys_paper['api']
+
+        
+        return {'rest': rest, 'api': api}
+
+    # ipdb.set_trace()
+    prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
+    sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
+    if authorized_user:
+        if prod:
+            if prod_keys_confirmed == False:
+                st.error("You Need to Add you PROD API KEYS")
+                return return_alpaca_api_keys(prod=False)['api']
+            else:
+                api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID']
+                api_secret =QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY']
+                return return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
+        else:
+            if sandbox_keys_confirmed == False:
+                st.error("You Need to Add you SandboxPAPER API KEYS")
+                return return_alpaca_api_keys(prod=False)['api']
+            else:
+                api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER']
+                api_secret =QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER']
+                return return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
+    else:
+        return return_alpaca_api_keys(prod=False)['api']
+
+
 api = return_alpaca_api_keys(prod=prod)['api']
 
 """# Dates """
@@ -280,6 +324,7 @@ def init_QUEEN(queens_chess_piece):
                         'tickers': main_symbols_full_list[:100],
                         'stars': stars(),},
             },
+        'auth_users': {'stefanstapinski@gmail.com': {}, 'stevenweaver8@gmail.com': {}},
         'errors': {},
         'client_order_ids_qgen': [],
         'app_requests__bucket': [],

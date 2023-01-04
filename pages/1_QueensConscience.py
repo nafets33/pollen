@@ -25,7 +25,7 @@ import os
 # from random import randint
 import sqlite3
 import streamlit as st
-from appHive import progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from appHive import  save_the_QUEEN_KING, progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from app_auth import signin_main
 import base64
 import time
@@ -54,6 +54,18 @@ pd.options.mode.chained_assignment = None
 
 scriptname = os.path.basename(__file__)
 queens_chess_piece = os.path.basename(__file__)
+
+# ###### GLOBAL # ######
+ARCHIVE_queenorder = 'archived'
+active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
+RUNNING_Orders = ['running', 'running_open']
+RUNNING_CLOSE_Orders = ['running_close']
+
+# crypto
+crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
 main_root = os.getcwd()
 
@@ -118,38 +130,65 @@ def set_prod_env(prod):
 with st.spinner("Buzz Buzz Where is my Honey"):
 
     if 'username' not in st.session_state:
-        signin_auth = signin_main()
+        signin_main()
     
-    # st.write(st.session_state)
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
+    client_user = st.session_state['username']
+    authorized_user = True if st.session_state['admin'] == 'true' or st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com'] else False
+    st.session_state['authorized_user'] = True if authorized_user else False
+    db_client_user_name = st.session_state['username'].split("@")[0]
+
+    # if db__name exists use db__name else use db
+    db_name = os.path.join(main_root, db_client_user_name)
+    if os.path.exists(db_name):
+        db_root = db_name
+    else:
+        db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
+
+    # return last saved sandbox vs prod to return last_saved QUEEN_KING
+
+    prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
     admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
     st.session_state['admin'] = True if admin else False
-    client_user = st.session_state['username']
-    authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
     
-    prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-    prod_name = 'LIVE' if 'production' in st.session_state and st.session_state['production'] == True else 'Sandbox'
-    st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'], index=['LIVE', 'Sandbox'].index(prod_name), on_change=set_prod_env(prod))
-    # st.write(f'enviroment {prod}')
-    if prod:
-        from QueenHive import init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    # st.write("loading ", prod, "packages")
+
+    # prod_name = 'LIVE' if prod else 'Sandbox'
+    prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
+    st.session_state['production'] = True if prod_option == 'LIVE' else False
+    prod = st.session_state['production']
+
+    
+    if st.session_state['production']:
+        from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
     else:
-        from QueenHive_sandbox import init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+        from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
+    # def save_change():
+    #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
-    # ###### GLOBAL # ######
-    ARCHIVE_queenorder = 'archived'
-    active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-    active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
-    CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
-    RUNNING_Orders = ['running', 'running_open']
-    RUNNING_CLOSE_Orders = ['running_close']
+    init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
+    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+    PB_App_Pickle = init_pollen['PB_App_Pickle']
+    PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
 
-    # crypto
-    crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-    crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
+    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+    # def run_main_page():
+    KING = KINGME()
+    pollen_theme = pollen_themes(KING=KING)
+    # QUEEN Databases
+    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+    QUEEN_KING['source'] = PB_App_Pickle
+    QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+    ORDERS = ReadPickleData(PB_Orders_Pickle)
+    # st.write("using ", PB_App_Pickle)
+
+    APP_req = add_key_to_app(QUEEN_KING)
+    QUEEN_KING = APP_req['QUEEN_KING']
+    if APP_req['update']:
+        PickleData(PB_App_Pickle, QUEEN_KING)
 
 
     def grid_height(len_of_rows):
@@ -1620,10 +1659,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
     # @st.cache(allow_output_mutation=True, max_entries=1)
-    def return_alpaca_user_apiKeys(prod):
-        return return_alpaca_api_keys(prod=prod)['api']
 
-   
+
+
     ########################################################
     ########################################################
     #############The Infinite Loop of Time #################
@@ -1637,40 +1675,19 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     # st.image(chess_piece_queen, width=23)
 
     ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
-    if authorized_user:
-        READONLY = False
-        if 'admin' in st.session_state.keys() and st.session_state['admin']:
-            admin = True
-            st.sidebar.write('admin', admin)
-        # SETUP USER #
-        # Client User DB
-        db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-        init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen')
-        PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-        PB_App_Pickle = init_pollen['PB_App_Pickle']
-        PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-        # PB_users_secrets = init_pollen['PB_users_secrets']
 
-    else:
-        # Read Only View
-        READONLY = True
-        db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
-        prod = False
-        load_dotenv(os.path.join(os.getcwd(), '.env'))
-        init_pollen = init_pollen_dbs(db_root=db_root, prod=False, queens_chess_piece='queen')
-        PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-        PB_App_Pickle = init_pollen['PB_App_Pickle']
-        PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-        st.sidebar.write('Read Only')
-        if st.session_state['authentication_status']:
-            st.error("Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com")
-        else:
-            st.error("You Are In Read OnlyMode...zzzz...You Need to Create an Account to Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
-        admin = False
-
-    api = return_alpaca_user_apiKeys(prod=prod)
+    # use API keys from user
+    queen_online(QUEEN=QUEEN)
+    # queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
     
-    # if authorized_user:
+    prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
+    sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
+
+    if authorized_user:
+        clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
+    
+    api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=prod)
+    
     portfolio = return_alpc_portolio(api)['portfolio']
     acct_info = refresh_account_info(api=api)
 
@@ -1681,32 +1698,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     # db global
     coin_exchange = "CBSE"
 
-    # def run_main_page():
-    KING = KINGME()
-    pollen_theme = pollen_themes(KING=KING)
-    # QUEEN Databases
-    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
-    QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-    ORDERS = ReadPickleData(PB_Orders_Pickle)
     # Ticker DataBase
     ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
     POLLENSTORY = ticker_db['pollenstory']
     STORY_bee = ticker_db['STORY_bee']
+    tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
 
-
-    QUEEN_KING['source'] = PB_App_Pickle
-    APP_req = add_key_to_app(QUEEN_KING)
-    QUEEN_KING = APP_req['QUEEN_KING']
-    if APP_req['update']:
-        PickleData(PB_App_Pickle, QUEEN_KING)
-    
-
-    ####### START ######
-    if authorized_user:
-        clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
-
-    # st.sidebar.write("always Bee better")
-    # queen_tab, controls_tab, charts_tab, model_results_tab, pollen_engine_tab, playground_tab  = st.tabs(["Queen", "Controls", "Charts", "model_results", "pollen_engine", "playground"])
     cols = st.columns((3,10,1,1))
     with cols[1]:
         if authorized_user:
@@ -1785,10 +1782,6 @@ def chess_board(width='33', height='33'):
 
 # chess_board()
 
-queen_online(QUEEN=QUEEN)
-
-# Global Vars
-tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
 
 if str(option).lower() == 'queen':
     with st.spinner("Waking Up the Hive"):

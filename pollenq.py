@@ -22,14 +22,14 @@ import argparse
 # from streamlit_extras.stoggle import stoggle
 
 def pollenq(prod):
-    prod = True if prod.lower() == 'true' else False
-    print(prod)
-    if prod:
-        from QueenHive import  init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    else:
-        from QueenHive_sandbox import init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-        load_dotenv(os.path.join(os.getcwd(), '.env'))
+    # prod = True if prod.lower() == 'true' else False
+
+    # if prod:
+    #     from QueenHive import  init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
+    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    # else:
+    #     from QueenHive_sandbox import init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
+    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
     est = pytz.timezone("US/Eastern")
 
     # _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
@@ -101,98 +101,74 @@ def pollenq(prod):
     )
     # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
-        signin_auth = signin_main()
-        parser = createParser_App()
-        namespace = parser.parse_args()
-        admin = True if namespace.admin == 'true' or st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-        authorized_user = True if namespace.admin == 'true' or st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-        st.session_state['admin'] = True if admin else False
+        signin_main()
+        # parser = createParser_App()
+        # namespace = parser.parse_args()
 
 
         if st.session_state['authentication_status']:
-            # def INIT SETUP
-            def save_change():
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                # prod = True if prod_option == 'LIVE' else False
-                # st.session_state['production'] = prod
-                # st.sidebar.image(chess_piece_queen, width=23)
+            # if 'username' not in st.session_state:
+            #     signin_auth = signin_main()
+            
+            st.sidebar.write(f'Welcome {st.session_state["name"]}')
+            client_user = st.session_state['username']
+            authorized_user = True if st.session_state['admin'] == 'true' or st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com'] else False
+            st.session_state['authorized_user'] = True if authorized_user else False
+            db_client_user_name = st.session_state['username'].split("@")[0]
+
             # if db__name exists use db__name else use db
-            db_name = os.path.join(main_root, st.session_state['name'])
+            db_name = os.path.join(main_root, db_client_user_name)
             if os.path.exists(db_name):
                 db_root = db_name
             else:
                 db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
+
+            # return last saved sandbox vs prod to return last_saved QUEEN_KING
+
             prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-            init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen')
+            admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+            st.session_state['admin'] = True if admin else False
+            
+            # st.write("loading ", prod, "packages")
+
+            # prod_name = 'LIVE' if prod else 'Sandbox'
+            prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
+            st.session_state['production'] = True if prod_option == 'LIVE' else False
+            prod = st.session_state['production']
+
+            
+            if st.session_state['production']:
+                from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+                load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+            else:
+                from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+                load_dotenv(os.path.join(os.getcwd(), '.env'))
+
+            # def save_change():
+            #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+
+            init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
             PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
             PB_App_Pickle = init_pollen['PB_App_Pickle']
             PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-            QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
-            prod = QUEEN_KING['prod'] if 'prod' in QUEEN_KING.keys() else False
-            # prod = QUEEN_KING['prod']
-        # prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-            prod_name = 'LIVE' if prod else 'Sandbox'
-            prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'], index=['LIVE', 'Sandbox'].index(prod_name) , on_change=save_change())
-            # st.write(prod_option)
-            st.session_state['production'] = True if prod_option == 'LIVE' else False
-            # st.write(st.session_state['production'])
-            # prod = True if st.session_state['production'] == True else False
-            # st.write(prod_option)
-            # set_prod_env(prod_option)
 
-            # st.write(st.session_state)
-            # if prod:
-            #     from QueenHive import  init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-            #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-            # else:
-            #     from QueenHive_sandbox import init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-            #     load_dotenv(os.path.join(os.getcwd(), '.env'))
-            
-            st.sidebar.write(f'Welcome {st.session_state["name"]}')
-            admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-            st.session_state['admin'] = True if admin else False
-            client_user = st.session_state['username']
-            authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-            
-            if authorized_user:
-                READONLY = False
-                if 'admin' in st.session_state.keys() and st.session_state['admin']:
-                    admin = True
-                    st.sidebar.write('admin', admin)
-                # SETUP USER #
-                # Client User DB
-                db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-                init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen')
-                PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-                PB_App_Pickle = init_pollen['PB_App_Pickle']
-                PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-                # PB_users_secrets = init_pollen['PB_users_secrets']
-
-            else:
-                # Read Only View
-                READONLY = True
-                db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
-                prod = False
-                load_dotenv(os.path.join(os.getcwd(), '.env'))
-                init_pollen = init_pollen_dbs(db_root=db_root, prod=False, queens_chess_piece='queen')
-                PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-                PB_App_Pickle = init_pollen['PB_App_Pickle']
-                PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-                st.sidebar.write('Read Only')
-                if st.session_state['authentication_status']:
-                    st.error("Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com")
-                else:
-                    st.error("You Are In Read OnlyMode...zzzz...You Need to Create an Account to Request Access for a Queen! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
-                admin = False
-            
+            QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+            # def run_main_page():
+            KING = KINGME()
+            pollen_theme = pollen_themes(KING=KING)
+            # QUEEN Databases
             QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
             QUEEN_KING['source'] = PB_App_Pickle
-            APP_req = add_key_to_app(QUEEN_KING)
-            if APP_req['update']:
-                QUEEN_KING = APP_req['QUEEN_KING']
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+            QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+            ORDERS = ReadPickleData(PB_Orders_Pickle)
+            # st.write("using ", PB_App_Pickle)
 
-            KING = KINGME()
+            APP_req = add_key_to_app(QUEEN_KING)
+            QUEEN_KING = APP_req['QUEEN_KING']
+            if APP_req['update']:
+                PickleData(PB_App_Pickle, QUEEN_KING)
+
+           
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
             # Return True
