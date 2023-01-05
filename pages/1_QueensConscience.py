@@ -138,6 +138,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     if 'username' not in st.session_state:
         signin_main()
     
+    # return page last visited 
+    
     if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
         sneak_peak = True
         st.session_state['production'] = True
@@ -1866,7 +1868,6 @@ if str(option).lower() == 'queen':
 
         queen_wavestories(QUEEN=QUEEN)
         queen_triggerbees()
-        st.write(PB_Orders_Pickle)
         queen_order_flow(ORDERS=ORDERS, active_order_state_list=active_order_state_list)
         queen_chart(POLLENSTORY=POLLENSTORY)
 

@@ -426,7 +426,7 @@ def build_AGgrid_df__queenorders(data, active_order_state_list, reload_data=Fals
 def save_the_QUEEN_KING(PB_App_Pickle, QUEEN_KING):
     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
-def queen_order_flow(QUEEN, active_order_state_list):
+def queen_order_flow(ORDERS, active_order_state_list):
     # st.write(QUEEN['source'])
     # if st.session_state['admin'] == False:
     #     return False
@@ -449,7 +449,7 @@ def queen_order_flow(QUEEN, active_order_state_list):
             show_errors = st.checkbox("Lost Bees")
 
         
-        order_states = set(QUEEN['queen_orders']['queen_order_state'].tolist())
+        order_states = set(ORDERS['queen_orders']['queen_order_state'].tolist())
         
         if all_orders:
             order_states = order_states
@@ -464,7 +464,7 @@ def queen_order_flow(QUEEN, active_order_state_list):
         with cols[0]:
             queen_order_states = st.multiselect('queen order states', options=list(active_order_state_list), default=order_states)
         
-        df = queen_orders_view(QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False)['df']
+        df = queen_orders_view(QUEEN=ORDERS, queen_order_state=queen_order_states, return_str=False)['df']
         if len(df) == 0:
             st.info("No Orders to View")
             return False

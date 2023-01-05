@@ -79,6 +79,7 @@ def pollenq():
     queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
     mainpage_bee_png = "https://i.pinimg.com/originals/a8/95/e8/a895e8e96c08357bfeb92d3920cd7da0.png"
     runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
+    floating_queen_gif = os.path.join(jpg_root, "floating-queen-unscreen.gif")
 
     page_icon = Image.open(bee_image)
 
@@ -299,8 +300,17 @@ def pollenq():
             st.error("Create an Account! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
             progress_bar(value=33, text=f'{100-33} Queens Remaining')
 
-            if st.button("Take a sneak peak and watch a Queen Trade in Real Time"):
-                switch_page("QueensConscience")
+            cols = st.columns((3,2,5))
+            with cols[0]:
+                sneak_peak = st.button("Take a sneak peak and watch a Queen Trade in Real Time")
+                if sneak_peak:
+                    st.session_state['sneak_peak'] = True
+                    switch_page("QueensConscience")
+                else:
+                    st.session_state['sneak_peak'] = False
+            with cols[1]:
+                local_gif(floating_queen_gif, '100', '123')
+            
 if __name__ == '__main__':
     # def createParser():
     #     parser = argparse.ArgumentParser()
