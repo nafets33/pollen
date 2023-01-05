@@ -100,7 +100,11 @@ default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 with st.spinner("QueensOrders pollenq"):
     if 'username' not in st.session_state:
         signin_auth = signin_main()
-    
+
+    if st.session_state['authentication_status'] != True:
+        st.error("You Need to Log In")
+        st.stop()
+
     db_root = st.session_state['db_root']
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
