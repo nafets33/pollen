@@ -109,11 +109,12 @@ def pollenq():
     with st.spinner("Hello Welcome To pollenq"):
         signin_main()
         
-        if st.session_state['authorized_user'] == False:
-            st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-            client_user_wants_a_queen = st.button("Yes I want a Queen!")
-            if client_user_wants_a_queen:
-                st.session_state['init_queen_request'] = True
+        if st.session_state['authentication_status'] != None:
+            if st.session_state['authorized_user'] == False:
+                st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+                client_user_wants_a_queen = st.button("Yes I want a Queen!")
+                if client_user_wants_a_queen:
+                    st.session_state['init_queen_request'] = True
         
         # parser = createParser_App()
         # namespace = parser.parse_args()
