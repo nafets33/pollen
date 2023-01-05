@@ -17,11 +17,12 @@ import streamlit as st
 from app_auth import signin_main
 import time
 from streamlit_extras.switch_page_button import switch_page
-from appHive import createParser_App, local_gif, mark_down_text, update_queencontrol_theme, progress_bar
+from appHive import createParser_App, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from King import hive_master_root, streamlit_config_colors
 import argparse
-# from streamlit_extras.stoggle import stoggle
+from streamlit_extras.stoggle import stoggle
 
-def pollenq(prod):
+def pollenq():
     # prod = True if prod.lower() == 'true' else False
 
     # if prod:
@@ -54,7 +55,7 @@ def pollenq(prod):
     scriptname = os.path.basename(__file__)
     queens_chess_piece = os.path.basename(__file__)
 
-    main_root = os.getcwd()
+    main_root = hive_master_root() # os.getcwd()  # hive root
 
     # images
     jpg_root = os.path.join(main_root, 'misc')
@@ -71,17 +72,22 @@ def pollenq(prod):
     power_gif = os.path.join(jpg_root, 'power_gif.gif')
     uparrow_gif = os.path.join(jpg_root, 'uparrows.gif')
     chess_piece_queen = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
-
+    castle_png = "https://images.vexels.com/media/users/3/255175/isolated/lists/3c6de0f0c883416d9b6bd981a4471092-rook-chess-piece-line-art.png"
+    bishop_png = "https://images.vexels.com/media/users/3/255170/isolated/lists/efeb124323c55a60510564779c9e1d38-bishop-chess-piece-line-art.png"
+    knight_png = "https://cdn2.iconfinder.com/data/icons/chess-set-pieces/100/Chess_Set_04-White-Classic-Knight-512.png"
+    queen_png = "https://cdn.shopify.com/s/files/1/0925/9070/products/160103_queen_chess_piece_wood_shape_600x.png?v=1461105893"
     queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
-
+    mainpage_bee_png = "https://i.pinimg.com/originals/a8/95/e8/a895e8e96c08357bfeb92d3920cd7da0.png"
     runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
 
     page_icon = Image.open(bee_image)
 
     ##### STREAMLIT ###
-    default_text_color = '#59490A'
-    default_font = "sans serif"
-    default_yellow_color = '#C5B743'
+    k_colors = streamlit_config_colors()
+    default_text_color = k_colors['default_text_color'] # = '#59490A'
+    default_font = k_colors['default_font'] # = "sans serif"
+    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+
 
     if 'sidebar_hide' in st.session_state:
         sidebar_hide = 'collapsed'
@@ -101,6 +107,12 @@ def pollenq(prod):
     )
     # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
+        if st.session_state['authorized_user'] == False:
+            st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+            client_user_wants_a_queen = st.button("Yes I want a Queen!")
+            if client_user_wants_a_queen:
+                st.session_state['init_queen_request'] = True
+        
         signin_main()
         # parser = createParser_App()
         # namespace = parser.parse_args()
@@ -111,27 +123,15 @@ def pollenq(prod):
             #     signin_auth = signin_main()
             
             st.sidebar.write(f'Welcome {st.session_state["name"]}')
+            st.sidebar.write(f'{st.session_state["username"]}')
             client_user = st.session_state['username']
-            authorized_user = True if st.session_state['admin'] == 'true' or st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com'] else False
-            st.session_state['authorized_user'] = True if authorized_user else False
+            authorized_user = st.session_state['authorized_user']
             db_client_user_name = st.session_state['username'].split("@")[0]
-
-            # if db__name exists use db__name else use db
-            db_name = os.path.join(main_root, db_client_user_name)
-            if os.path.exists(db_name):
-                db_root = db_name
-            else:
-                db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
-
-            # return last saved sandbox vs prod to return last_saved QUEEN_KING
 
             prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
             admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
             st.session_state['admin'] = True if admin else False
-            
-            # st.write("loading ", prod, "packages")
 
-            # prod_name = 'LIVE' if prod else 'Sandbox'
             prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
             st.session_state['production'] = True if prod_option == 'LIVE' else False
             prod = st.session_state['production']
@@ -144,8 +144,8 @@ def pollenq(prod):
                 from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
                 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-            # def save_change():
-            #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+            # if db__name exists use db__name else use db
+            db_root = st.session_state['db_root']
 
             init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
             PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
@@ -173,39 +173,91 @@ def pollenq(prod):
             theme_list = list(pollen_theme.keys())
             # Return True
 
+            if 'init_queen_request' in st.session_state:
+                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
+                PickleData(PB_App_Pickle, QUEEN_KING)
+                st.success("Hive Master Notified and You should receive contact soon")
 
             # hive_setup, QueenInfo, pollenq_account, = st.tabs(["Setup Your Hive", "QueenInfo", "MyAccount"])
+            cols = st.columns((3,1,5,1,1,1,1))
             st.title("Create Yourself The QueenTrader")
-            st.text("Set Trader Settings, Setting will preset AI Trading Patterns and Behaviors. Trade based on how you feel")
+            with cols[0]:
+                st.text("Customize QueenTraderBot Settings!\nTrade based on how you feel&think" )
+            with cols[1]:
+                st.image(mainpage_bee_png, width=89)
+            with cols[2]:
+                st.text("Set an investment theme and watch your QueenTraderBot\nhandle everyone of your trades, trade along side her")
+            with cols[3]:
+                st.image(castle_png, width=133)
+            with cols[4]:
+                st.image(mainpage_bee_png, width=133)
+            
+            cols = st.columns((5,3,3,2,2,2))
+            with cols[0]:
+                st.subheader("Steps to get your QueenTraderBot")
+                stoggle("1. Select your Broker",
+                "Alpaca is only current supported broker (Alpaca is a free no-fee trading broker, they are FDIC 250k insured) create a FREE account at https://app.alpaca.markets/brokerage/new-account"
+                )
+            with cols[0]:
+                stoggle("2. Enter in your API Keys ",
+                """
+                (this allows the QueenTraderBot to place trades) Its going to change the way you trade forever...everyone needs an AI :bot:
+                """
+                )
+            with cols[0]:
+                stoggle("3. Set your Risk Parameters",
+                """
+                Go Start Building your QueenTradingBot! There is too much to dicuss now...we'll talk later
+                """
+                )
+            with cols[1]:
+                st.image(queen_png, width=250)
 
-            with st.expander("Set Trader Settings"):
-                # stoggle("Create Your Alpaca Account Steps",
-                # mark_down_text(align='left', color=default_text_color, fontsize='33', text='Create Alpaca Account', font=default_font, hyperlink="https://app.alpaca.markets/brokerage/new-account")
-                # )
-                cols = st.columns((3,4, 8))
-                with cols[0]:
-                    st.error("1 Create Alpaca Account")
-                with cols[1]:
-                    mark_down_text(align='left', color=default_text_color, fontsize='33', text='Create Alpaca Account', font=default_font, hyperlink="https://app.alpaca.markets/brokerage/new-account")
-                
-                st.info("2 Request a queen and enter in Aplaca API credentials")
-                st.info("3 Create Risk Settings")
-                st.success("4 Start Trading")
+            with cols[3]:
+                # local_gif(gif_path=queen_flair_gif, height=254, width=450)
+                st.image(bishop_png, width=223)
 
+            with cols[2]:
+                # local_gif(gif_path=queen_flair_gif, height=254, width=450)
+                st.image(mainpage_bee_png, width=133)
+            # with cols[4]:
+            #     # local_gif(gif_path=queen_flair_gif, height=254, width=450)
+            #     st.image(knight_png, width=133)    
+            
+            page_line_seperator('1')
+            st.subheader("QueenTraderBot Settings")
+            with st.expander("QueenTraderBot Settings"):
+                mark_down_text(align='left', color=default_text_color, fontsize='23', text='Ensure to Complete Step 1 and an Create Alpaca Account', font=default_font, hyperlink="https://app.alpaca.markets/brokerage/new-account")
+                cols = st.columns((3,4,1))
+                # with cols[0]:
+                #     st.error("1 Create Alpaca Account")
+                # with cols[1]:
+
+                # st.info("2 Request a queen and enter in Aplaca API credentials")
+                # st.info("3 Create Risk Settings")
+                # st.success("4 Start Trading")
+                def update_age():
+                    return True
                 # with st.expander("Risk Levels"):
-                with st.form("Set How You Wish your Queen to Trade"):
-                    cols = st.columns((2,3))
-                    with cols[0]:
+                with cols[0]:
+                    with st.form("Set How You Wish your Queen to Trade"):
                         st.subheader("Set Your Risk Level")
                     # st.write(QUEEN_KING.keys())
-                    with cols[1]:
-                        st.slider("Risk Level", min_value=1, max_value=10, value=int(QUEEN_KING['risk_level']))            
-                        st.slider("Age..How you Feel to Risk", min_value=1, max_value=100, value=int(QUEEN_KING['age']))     
-                    
-                    if st.form_submit_button('Save Risk Settings'):
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                
-                update_queencontrol_theme(QUEEN_KING, theme_list)
+                        st.text("How Old are you?")
+                        birthday = st.date_input("Enter your birthday: YYYY/MM/DD")
+                        yrs_old = datetime.datetime.now().year - birthday.year
+                        if QUEEN_KING['age'] == 0:
+                            QUEEN_KING['age'] = yrs_old
+                        
+                        QUEEN_KING['risk_level'] = st.slider("Risk Level", min_value=1, max_value=10, value=int(QUEEN_KING['risk_level']), help="Shoot for the Moon or Steady as she goes")            
+                        QUEEN_KING['age'] = st.slider("Age..How you Feel to Risk", min_value=1, max_value=100, value=int(QUEEN_KING['age']))     
+                        QUEEN_KING['QueenTraders_Bithday'] = birthday
+                        if st.form_submit_button('Save Risk Settings'):
+                            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                            return_runningbee_gif__save(title='Risk Saved')
+                            
+                with cols[1]:
+                    update_queencontrol_theme(QUEEN_KING, theme_list)
 
 
         
@@ -221,19 +273,23 @@ def pollenq(prod):
             if option == 'to_the_hive':
                 cols = st.columns((2,4,2))
                 with cols[0]:
-                    welcome = st.button("Take me to the Hive, Inside the QueensConscience")
+                    welcome = st.button("QueensConscience")
                     # st.write("The Hive QueensConscience")
                     pass
                 with cols[1]:
                     local_gif(gif_path=flyingbee_gif_path, height=23, width=23)
 
-                local_gif(gif_path=queen_flair_gif, height=450, width=500)
+                # local_gif(gif_path=queen_flair_gif, height=450, width=500)
                     # st.button("Show", key=1)
                 # with cols[1]:
                 #     local_gif(gif_path=queen_flair_gif, height=450, width=500)
                 
                 if welcome:
                     switch_page("QueensConscience")
+
+            if option == 'help':
+                mark_down_text(fontsize='22', text="No Soup for you! Go figure it out..Set a theme and let it handle your entire portfolio....it will beat you ;) ")
+        
         else:
             st.session_state['authorized_user'] = False
             st.session_state['admin'] = False
@@ -244,12 +300,12 @@ def pollenq(prod):
             if st.button("Take a sneak peak and watch a Queen Trade in Real Time"):
                 switch_page("QueensConscience")
 if __name__ == '__main__':
-    def createParser():
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('--qcp', default="queen")
-        parser.add_argument ('--prod', default='false')
-        return parser
-    parser = createParser()
-    namespace = parser.parse_args()
-    prod = namespace.prod
-    pollenq(prod)
+    # def createParser():
+    #     parser = argparse.ArgumentParser()
+    #     parser.add_argument ('--qcp', default="queen")
+    #     parser.add_argument ('--prod', default='false')
+    #     return parser
+    # parser = createParser()
+    # namespace = parser.parse_args()
+    # prod = namespace.prod
+    pollenq()

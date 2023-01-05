@@ -39,6 +39,8 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 import streamlit as st
+from King import hive_master_root
+
 
 import _locale
 
@@ -168,18 +170,25 @@ def test_api_keys(user_secrets):
 def return_alpaca_api_keys(prod):
 
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-    if prod:
-        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-        keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
-        rest = keys['rest']
-        api = keys['api']
-    else:
-        # Paper
+    try:
+        if prod:
+            load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+            keys = return_api_keys(base_url="https://api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID'), api_secret=os.environ.get('APCA_API_SECRET_KEY'), prod=prod)
+            rest = keys['rest']
+            api = keys['api']
+        else:
+            # Paper
+            load_dotenv(os.path.join(os.getcwd(), '.env'))
+            keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
+            rest = keys_paper['rest']
+            api = keys_paper['api']
+    except Exception as e:
+        print("Key Return failure default to HivesKeys")
+        st.error("Key Return failure default to HivesKeys")
         load_dotenv(os.path.join(os.getcwd(), '.env'))
         keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
         rest = keys_paper['rest']
         api = keys_paper['api']
-
     
     return {'rest': rest, 'api': api}
 
@@ -210,7 +219,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
         if prod:
             if prod_keys_confirmed == False:
                 st.error("You Need to Add you PROD API KEYS")
-                return return_alpaca_api_keys(prod=False)['api']
+                return return_alpaca_api_keys(prod=prod)['api']
             else:
                 api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID']
                 api_secret =QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY']
@@ -218,7 +227,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
         else:
             if sandbox_keys_confirmed == False:
                 st.error("You Need to Add you SandboxPAPER API KEYS")
-                return return_alpaca_api_keys(prod=False)['api']
+                return return_alpaca_api_keys(prod=prod)['api']
             else:
                 api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER']
                 api_secret =QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER']
@@ -229,7 +238,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 
 api = return_alpaca_api_keys(prod=prod)['api']
 
-"""# Dates """
+# """# Dates """
 current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
@@ -1369,7 +1378,7 @@ def return_degree_angle(x, y): #
     return degree
 
 ### BARS
-def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
+def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now(est)
         error_dict = {}
@@ -1442,7 +1451,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df=trading_days_df, sdate
         # ipdb.set_trace()
 
 
-def return_bars_list(ticker_list, chart_times, crypto=False, exchange=False):
+def return_bars_list(ticker_list, chart_times, trading_days_df, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now(est)
         # ticker_list = ['SPY', 'QQQ']
@@ -3269,7 +3278,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
 
 
 def init_clientUser_dbroot(client_user):
-    main_root = os.getcwd()
+    main_root = hive_master_root() # os.getcwd()  # hive root
     if client_user in ['stefanstapinski@gmail.com', 'pollen']:
         db_root = os.path.join(main_root, 'db')
     else:

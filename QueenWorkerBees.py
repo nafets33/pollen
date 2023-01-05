@@ -194,7 +194,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
             error_dict = {}
             s = datetime.datetime.now(est)
             dfs_index_tickers = {}
-            bars = return_bars_list(ticker_list, chart_times)      
+            bars = return_bars_list(ticker_list=ticker_list, chart_times=chart_times, trading_days_df=trading_days_df)      
             # if bars['return']: # rebuild and split back to ticker_time with market hours only
             #     # bars_dfs = bars['return']
             for timeframe, df in bars['return'].items():

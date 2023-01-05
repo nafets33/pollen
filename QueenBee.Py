@@ -14,6 +14,8 @@ import asyncio
 import aiohttp
 from tqdm import tqdm
 import argparse
+from King import hive_master_root
+
 
 import _locale
 _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])

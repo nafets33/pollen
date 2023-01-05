@@ -29,8 +29,8 @@ from appHive import progress_bar, queen_order_flow, grid_height, mark_down_text,
 from app_auth import signin_main
 import base64
 import time
-from streamlit_extras.stoggle import stoggle
-
+# from streamlit_extras.stoggle import stoggle
+from King import hive_master_root, streamlit_config_colors
 
 est = pytz.timezone("US/Eastern")
 
@@ -67,7 +67,7 @@ RUNNING_CLOSE_Orders = ['running_close']
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
 crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
-main_root = os.getcwd()
+main_root = hive_master_root() # os.getcwd()  # hive root
 
 # images
 jpg_root = os.path.join(main_root, 'misc')
@@ -89,13 +89,18 @@ queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
 # queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
 chess_piece_queen = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
 runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
+castle_png = "https://images.vexels.com/media/users/3/255175/isolated/lists/3c6de0f0c883416d9b6bd981a4471092-rook-chess-piece-line-art.png"
+bishop_png = "https://images.vexels.com/media/users/3/255170/isolated/lists/efeb124323c55a60510564779c9e1d38-bishop-chess-piece-line-art.png"
+knight_png = "https://cdn2.iconfinder.com/data/icons/chess-set-pieces/100/Chess_Set_04-White-Classic-Knight-512.png"
+queen_png = "https://i.pinimg.com/originals/a8/95/e8/a895e8e96c08357bfeb92d3920cd7da0.png"
 
 page_icon = Image.open(bee_image)
 
 ##### STREAMLIT ###
-default_text_color = '#59490A'
-default_font = "sans serif"
-default_yellow_color = '#C5B743'
+k_colors = streamlit_config_colors()
+default_text_color = k_colors['default_text_color'] # = '#59490A'
+default_font = k_colors['default_font'] # = "sans serif"
+default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
 if 'sidebar_hide' in st.session_state:
     sidebar_hide = 'collapsed'
@@ -128,32 +133,22 @@ def set_prod_env(prod):
 #     authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
 
 with st.spinner("Buzz Buzz Where is my Honey"):
+    # st.write( st.session_state['username'], st.session_state['authorized_user'])
 
     if 'username' not in st.session_state:
         signin_main()
     
+    db_root = st.session_state['db_root']
+
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
     client_user = st.session_state['username']
-    authorized_user = True if st.session_state['admin'] == 'true' or st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com'] else False
-    st.session_state['authorized_user'] = True if authorized_user else False
+    authorized_user = st.session_state['authorized_user']
     db_client_user_name = st.session_state['username'].split("@")[0]
-
-    # if db__name exists use db__name else use db
-    db_name = os.path.join(main_root, db_client_user_name)
-    if os.path.exists(db_name):
-        db_root = db_name
-    else:
-        db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
-
-    # return last saved sandbox vs prod to return last_saved QUEEN_KING
 
     prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
     admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
     st.session_state['admin'] = True if admin else False
     
-    # st.write("loading ", prod, "packages")
-
-    # prod_name = 'LIVE' if prod else 'Sandbox'
     prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
     st.session_state['production'] = True if prod_option == 'LIVE' else False
     prod = st.session_state['production']
@@ -166,8 +161,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-    # def save_change():
-    #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
@@ -713,7 +706,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                             QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')
                     if qcp == 'castle':
                         with cols[0]:
-                            st.image("https://images.vexels.com/media/users/3/255175/isolated/lists/3c6de0f0c883416d9b6bd981a4471092-rook-chess-piece-line-art.png", width=54)
+                            st.image(castle_png, width=54)
                         with cols[1]:
                             QUEEN_KING['qcp_workerbees'][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=list(alpaca_symbols_dict.keys()) + crypto_symbols__tickers_avail, default=QUEEN_KING['qcp_workerbees'][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols')
                         with cols[2]:
@@ -727,7 +720,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
                     if qcp == 'bishop':
                         with cols[0]:
-                            st.image("https://images.vexels.com/media/users/3/255170/isolated/lists/efeb124323c55a60510564779c9e1d38-bishop-chess-piece-line-art.png", width=74)
+                            st.image(bishop_png, width=74)
                         with cols[1]:
                             QUEEN_KING['qcp_workerbees'][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=list(alpaca_symbols_dict.keys()) + crypto_symbols__tickers_avail, default=QUEEN_KING['qcp_workerbees'][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols')
                         with cols[2]:
@@ -741,7 +734,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
                     if qcp == 'knight':
                         with cols[0]:
-                            st.image("https://cdn2.iconfinder.com/data/icons/chess-set-pieces/100/Chess_Set_04-White-Classic-Knight-512.png", width=74)
+                            st.image(knight_png, width=74)
                         with cols[1]:
                             QUEEN_KING['qcp_workerbees'][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=list(alpaca_symbols_dict.keys()) + crypto_symbols__tickers_avail, default=QUEEN_KING['qcp_workerbees'][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols')
                         with cols[2]:
@@ -1611,10 +1604,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
                     # st.write(st.session_state['username']) @ stefanstapinski@gmail.com
 
-                    APCA_API_KEY_ID_PAPER = st.text_input(label=f'APCA_API_KEY_ID_PAPER', value='', key=f'APCA_API_KEY_ID_PAPER')
-                    APCA_API_SECRET_KEY_PAPER = st.text_input(label=f'APCA_API_SECRET_KEY_PAPER', value='', key=f'APCA_API_SECRET_KEY_PAPER')
-                    APCA_API_KEY_ID = st.text_input(label=f'APCA_API_KEY_ID', value='', key=f'APCA_API_KEY_ID')
-                    APCA_API_SECRET_KEY = st.text_input(label=f'APCA_API_SECRET_KEY', value='', key=f'APCA_API_SECRET_KEY')
+                    APCA_API_KEY_ID_PAPER = st.text_input(label=f'APCA_API_KEY_ID_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER'], key=f'APCA_API_KEY_ID_PAPER')
+                    APCA_API_SECRET_KEY_PAPER = st.text_input(label=f'APCA_API_SECRET_KEY_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER'], key=f'APCA_API_SECRET_KEY_PAPER')
+                    APCA_API_KEY_ID = st.text_input(label=f'APCA_API_KEY_ID', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID'], key=f'APCA_API_KEY_ID')
+                    APCA_API_SECRET_KEY = st.text_input(label=f'APCA_API_SECRET_KEY', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY'], key=f'APCA_API_SECRET_KEY')
 
                     if st.form_submit_button("Save API Keys"):
                         
@@ -1784,6 +1777,16 @@ def chess_board(width='33', height='33'):
 
 
 if str(option).lower() == 'queen':
+    if st.session_state['authorized_user'] == False:
+        st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+        client_user_wants_a_queen = st.button("Yes I want a Queen!")
+        if client_user_wants_a_queen:
+            st.session_state['init_queen_request'] = True
+            if 'init_queen_request' in st.session_state:
+                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
+                PickleData(PB_App_Pickle, QUEEN_KING)
+                st.success("Hive Master Notified and You should receive contact soon")
+    
     with st.spinner("Waking Up the Hive"):
         progress_bar(value=100)
                     

@@ -7,13 +7,14 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-
+from King import hive_master_root, init_clientUser_dbroot
+# from QueenHive import init_pollen_dbs
 
 def signin_main():
     """Return True or False if the user is signed in"""
 
     load_dotenv(os.path.join(os.getcwd(), ".env"))
-    main_root = os.getcwd()
+    main_root = hive_master_root() # os.getcwd()  # hive root
     jpg_root = os.path.join(main_root, 'misc')
     queen_flair_gif_original = os.path.join(jpg_root, 'queen-flair.gif')
 
@@ -194,6 +195,25 @@ def signin_main():
             unsafe_allow_html=True,
         )
 
+    def setup_user_pollenqdbs(main_root):
+        # if db__name exists use db__name else use db
+        db_client_user_name = st.session_state['username'].split("@")[0]
+        db_name = os.path.join(main_root, db_client_user_name)
+        db_root = db_name
+        if os.path.exists(db_name) == True:
+            db_root = db_name
+        else:
+            if st.session_state['authorized_user']:
+                db_root = init_clientUser_dbroot(client_user=st.session_state['username']) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+                # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
+                st.warning("Your Queen is Awaiting")
+            else:
+                db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
+        
+        st.session_state['db_root'] = db_root
+        return db_root
+    
+    
     con = sqlite3.connect("db/users.db")
     cur = con.cursor()
 
@@ -236,10 +256,21 @@ def signin_main():
         # with detials_cols[1].expander("Reset Password"):
         # st.sidebar.write(f"Welcome *{name}*")
         reset_password(email)
+        if st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com', 'adivergentthinker@gmail.com']:
+            st.session_state['authorized_user'] = True
+        else:
+            st.session_state['authorized_user'] = False
+        
+        st.session_state['admin'] = True if st.session_state['username'] in ['stefanstapinski@gmail.com'] else False
+
+
+        setup_user_pollenqdbs(main_root)
+
         return True
 
     # login unsucessful; forgot password or create account
     elif authentication_status == False:
+        st.session_state['authorized_user'] = False
         st.error("Email/password is incorrect")
         with st.expander("Forgot Password"):
             forgot_password()

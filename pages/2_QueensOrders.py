@@ -28,6 +28,8 @@ from appHive import queen_order_flow, grid_height, createParser_App, click_butto
 from app_auth import signin_main
 import base64
 import time
+from King import hive_master_root, streamlit_config_colors
+
 
 est = pytz.timezone("US/Eastern")
 
@@ -64,7 +66,7 @@ crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
 crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
 
-main_root = os.getcwd()
+main_root = hive_master_root() # os.getcwd()
 
 # images
 jpg_root = os.path.join(main_root, 'misc')
@@ -89,36 +91,27 @@ runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
 page_icon = Image.open(bee_image)
 
 ##### STREAMLIT ###
-default_text_color = '#59490A'
-default_font = "sans serif"
-default_yellow_color = '#C5B743'
+
+k_colors = streamlit_config_colors()
+default_text_color = k_colors['default_text_color'] # = '#59490A'
+default_font = k_colors['default_font'] # = "sans serif"
+default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
 with st.spinner("QueensOrders pollenq"):
     if 'username' not in st.session_state:
         signin_auth = signin_main()
     
+    db_root = st.session_state['db_root']
+
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
     client_user = st.session_state['username']
-    authorized_user = True if st.session_state['admin'] == 'true' or st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com'] else False
-    st.session_state['authorized_user'] = True if authorized_user else False
+    authorized_user = st.session_state['authorized_user']
     db_client_user_name = st.session_state['username'].split("@")[0]
-
-    # if db__name exists use db__name else use db
-    db_name = os.path.join(main_root, db_client_user_name)
-    if os.path.exists(db_name):
-        db_root = db_name
-    else:
-        db_root = os.path.join(main_root, 'db')  ## Force to Main db and Sandbox API
-
-    # return last saved sandbox vs prod to return last_saved QUEEN_KING
 
     prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
     admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
     st.session_state['admin'] = True if admin else False
     
-    # st.write("loading ", prod, "packages")
-
-    # prod_name = 'LIVE' if prod else 'Sandbox'
     prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
     st.session_state['production'] = True if prod_option == 'LIVE' else False
     prod = st.session_state['production']
@@ -131,8 +124,6 @@ with st.spinner("QueensOrders pollenq"):
         from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-    # def save_change():
-    #     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']

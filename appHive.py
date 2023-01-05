@@ -17,34 +17,49 @@ import pandas as pd
 import numpy as np
 # from QueenHive import PickleData, queen_orders_view
 import pickle
+from King import hive_master_root, streamlit_config_colors
 
 from dotenv import load_dotenv
 
 est = pytz.timezone("US/Eastern")
 
-from dotenv import load_dotenv
 
-default_text_color = '#59490A'
-default_font = "sans serif"
-load_dotenv()
-
-main_root = os.getcwd()
+main_root = hive_master_root() # os.getcwd()  # hive root
 
 # images
 jpg_root = os.path.join(main_root, 'misc')
+# chess_pic_1 = os.path.join(jpg_root, 'chess_pic_1.jpg')
 bee_image = os.path.join(jpg_root, 'bee.jpg')
 bee_power_image = os.path.join(jpg_root, 'power.jpg')
 hex_image = os.path.join(jpg_root, 'hex_design.jpg')
 hive_image = os.path.join(jpg_root, 'bee_hive.jpg')
 queen_image = os.path.join(jpg_root, 'queen.jpg')
 queen_angel_image = os.path.join(jpg_root, 'queen_angel.jpg')
-page_icon = Image.open(bee_image)
 flyingbee_gif_path = os.path.join(jpg_root, 'flyingbee_gif_clean.gif')
 flyingbee_grey_gif_path = os.path.join(jpg_root, 'flying_bee_clean_grey.gif')
 bitcoin_gif = os.path.join(jpg_root, 'bitcoin_spinning.gif')
 power_gif = os.path.join(jpg_root, 'power_gif.gif')
+uparrow_gif = os.path.join(jpg_root, 'uparrows.gif')
+learningwalk_bee = os.path.join(jpg_root, 'learningwalks_bee_jq.png')
+learningwalk_bee = Image.open(learningwalk_bee)
+queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
+# queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
+chess_piece_queen = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
+runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
+
+page_icon = Image.open(bee_image)
+
+##### STREAMLIT ###
+k_colors = streamlit_config_colors()
+default_text_color = k_colors['default_text_color'] # = '#59490A'
+default_font = k_colors['default_font'] # = "sans serif"
+default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
 ## IMPROVE GLOBAL VARIABLES
+
+def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
+    local_gif(gif_path=gif)
+    st.success(title)
 
 ################ AUTH ###################
 
@@ -127,17 +142,17 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
                 'strong_risk': ' defaults to high power trades',
                 'star__storywave': ' follows symbols each day changes and adjusts order rules based on latest data'}
     with st.form("Update Control"):
-        cols = st.columns((1,3))
-        with cols[0]:
-            theme_option = st.selectbox(label='set theme', options=theme_list, index=theme_list.index('nuetral'))
-            save_button = st.form_submit_button("Save Theme Setting")
+        # cols = st.columns((1,3))
+        # with cols[0]:
+        theme_option = st.selectbox(label='set theme', options=theme_list, index=theme_list.index('nuetral'))
+        save_button = st.form_submit_button("Save Theme Setting")
         # with cols[0]:
         # with cols[1]:
         #     st.info("Set your Risk Theme")
         #     # st.warning(f'Theme: {theme_option}')
         #     ep = st.empty()
-        with cols[1]:
-            st.info(f'Theme: {theme_option}{theme_desc[theme_option]}')
+        # with cols[1]:
+        st.info(f'Theme: {theme_option}{theme_desc[theme_option]}')
 
         if save_button:
             QUEEN_KING['theme'] = theme_option
