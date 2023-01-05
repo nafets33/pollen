@@ -138,10 +138,21 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     if 'username' not in st.session_state:
         signin_main()
     
-    if st.session_state['authentication_status'] != True:
+    if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
+        sneak_peak = True
+        st.session_state['production'] = True
+        st.session_state['username'] = 'stefanstapinski@gmail.com'
+        st.session_state['authorized_user'] = False
+        st.session_state['db_root'] = os.path.join(main_root, 'db')
+        st.info("Welcome and Watch A QueenBot in Action")
+    
+    elif st.session_state['authentication_status'] != True:
+        sneak_peak = False
         st.error("You Need to Log In")
         st.stop()
     
+
+
     db_root = st.session_state['db_root']
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
@@ -181,11 +192,11 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     QUEEN = ReadPickleData(PB_QUEEN_Pickle)
     ORDERS = ReadPickleData(PB_Orders_Pickle)
     # st.write("using ", PB_App_Pickle)
-
-    APP_req = add_key_to_app(QUEEN_KING)
-    QUEEN_KING = APP_req['QUEEN_KING']
-    if APP_req['update']:
-        PickleData(PB_App_Pickle, QUEEN_KING)
+    if st.session_state['authorized_user']:
+        APP_req = add_key_to_app(QUEEN_KING)
+        QUEEN_KING = APP_req['QUEEN_KING']
+        if APP_req['update']:
+            PickleData(PB_App_Pickle, QUEEN_KING)
 
 
     def grid_height(len_of_rows):
@@ -1680,7 +1691,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
-    if authorized_user:
+    if st.session_state['authorized_user']:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
     
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=prod)
@@ -1795,11 +1806,11 @@ if str(option).lower() == 'queen':
         progress_bar(value=100)
                     
         # page_line_seperator('1', color=default_yellow_color)
-        queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
-        
-        for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
-            for ticker in bees_data['tickers']:
-                QUEEN_KING = add_trading_model(PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee)
+        if st.session_state['authorized_user'] == True:
+            queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
+            for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
+                for ticker in bees_data['tickers']:
+                    QUEEN_KING = add_trading_model(PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee)
 
 
         today_day = datetime.datetime.now().day
@@ -1855,7 +1866,8 @@ if str(option).lower() == 'queen':
 
         queen_wavestories(QUEEN=QUEEN)
         queen_triggerbees()
-        queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+        st.write(PB_Orders_Pickle)
+        queen_order_flow(ORDERS=ORDERS, active_order_state_list=active_order_state_list)
         queen_chart(POLLENSTORY=POLLENSTORY)
 
         
@@ -2128,4 +2140,5 @@ if str(option).lower() == 'playground':
 
 
 st.session_state['option_sel'] = False
+st.session_state['sneak_peak'] = False
 ##### END ####
