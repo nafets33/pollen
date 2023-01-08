@@ -1,11 +1,12 @@
 __pycache__/Hive_Utils.cpython-39.pyc
-.gitignore
 *.log
 *.pyc
 .DS_Store
-.gitignore
 *.pkl
-*.db
+.idea/
+**/*.pkl
+db/*
+**/*.db
 *.csv
 *.ipynb
 .env_jq
