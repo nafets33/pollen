@@ -1,10 +1,10 @@
-# pollen
+# Pollen
 
-# install evn
+## Install ENV and pre-commit hooks
+- pip install -r requirements.txt <<< may need fix >>>
+- pre-commit install
 
-# pip install requirements.txt <<< needs fix >>>
-
-# Commands:
-## streamlit run app_sandbox.py
-## python QueenBee_sandbox.py
-## python QueenBeeWorkerBees.py -prod False
+## Commands to execute:
+- streamlit run app_sandbox.py
+- python QueenBee_sandbox.py
+- python QueenBeeWorkerBees.py -prod False
