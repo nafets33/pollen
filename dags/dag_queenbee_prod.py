@@ -28,13 +28,22 @@ dag = DAG(
     schedule=WORKFLOW_SCHEDULE_INTERVAL,
     default_args=WORKFLOW_DEFAULT_ARGS,
 )
+
+
 # Define functions
+
+
 def job_runqueen():
-    # print("Perform job 1")
+    # read QueenDagger and check to see if there are any new queens to spin up
+
+
     client_user = 'queen_stefanstapinski'
     cmd = f'screen -S {client_user} python QueenBee.Py -prod true -bee_scheduler true'
     os.system(cmd)
     # subprocess.run(["screen", "-S", f'{client_user}', "&&", "python", "QueenBee.Py"])
+
+    cmd = f'screen -d {client_user}'
+    os.system(cmd)
 
 
 def job_2():
