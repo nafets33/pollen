@@ -218,7 +218,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
     if authorized_user:
         if prod:
             if prod_keys_confirmed == False:
-                st.error("You Need to Add you PROD API KEYS")
+                # st.error("You Need to Add you PROD API KEYS")
                 return return_alpaca_api_keys(prod=prod)['api']
             else:
                 api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID']
@@ -226,7 +226,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
                 return return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
         else:
             if sandbox_keys_confirmed == False:
-                st.error("You Need to Add you SandboxPAPER API KEYS")
+                # st.error("You Need to Add you SandboxPAPER API KEYS")
                 return return_alpaca_api_keys(prod=prod)['api']
             else:
                 api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER']

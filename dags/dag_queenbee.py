@@ -2,9 +2,32 @@ from airflow.operators.python import PythonOperator
 from airflow.sensors.python import PythonSensor
 import datetime
 import os
-# import subprocess
+import subprocess
 from airflow.models import DAG
 import os
+
+
+def get_screen_processes():
+    # Run the "screen -ls" command to get a list of screen processes
+    output = subprocess.run(["screen", "-ls"], stdout=subprocess.PIPE).stdout.decode("utf-8")
+
+    # Split the output into lines
+    lines = output.strip().split("\n")
+
+    # The first line is a header, so skip it
+    lines = lines[1:]
+
+    # Initialize an empty dictionary
+    screen_processes = {}
+
+    # Iterate over the lines and extract the process name and PID
+    for line in lines:
+        parts = line.split()
+        name = parts[0]
+        pid = parts[1]
+        screen_processes[name] = pid
+
+    return screen_processes
 
 
 
@@ -29,9 +52,10 @@ dag = DAG(
     default_args=WORKFLOW_DEFAULT_ARGS,
 )
 # Define functions
-def job_runqueen():
+def job_runqueen(client_user):
     # print("Perform job 1")
-    client_user = 'queen_stefanstapinski'
+    # client_user = 'queen_stefanstapinski'
+    client_user = f'queen_n__{len(get_screen_processes()) + 1}'
     cmd = f'screen -S {client_user} python QueenBee.Py'
     os.system(cmd)
     # subprocess.run(["screen", "-S", f'{client_user}', "&&", "python", "QueenBee.Py"])

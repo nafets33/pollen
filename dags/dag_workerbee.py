@@ -10,7 +10,7 @@ import os
 # Parameteres
 WORFKLOW_DAG_ID = "run_workerbees"
 WORFKFLOW_START_DATE = datetime.datetime(2022, 1, 1)
-WORKFLOW_SCHEDULE_INTERVAL = "@once"
+WORKFLOW_SCHEDULE_INTERVAL = '0 9 * * *'
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
 
 WORKFLOW_DEFAULT_ARGS = {
@@ -30,10 +30,13 @@ dag = DAG(
 # Define functions
 def job_1():
     print("Perform job 1")
-    client_user = 'workerbees'
-    cmd = f'screen -S {client_user}{"_"}{"workerbees"} python QueenWorkerBees.py -prod true'
-    # screen -S bees python QueenWorkerBees.py -prod true
+    bees = 'workerbees'
+    cmd = f'screen -S {bees} python QueenWorkerBees.py -prod true'
     os.system(cmd)
+
+    cmd = f'screen -d {bees}'
+    os.system(cmd)
+
 
 def job_2():
     print("Perform job 2")
