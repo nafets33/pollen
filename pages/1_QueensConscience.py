@@ -31,6 +31,7 @@ import base64
 import time
 # from streamlit_extras.stoggle import stoggle
 from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
+from QueenBeeDagger import run__trigger_dag
 
 est = pytz.timezone("US/Eastern")
 
@@ -126,14 +127,6 @@ def set_prod_env(prod):
     st.sidebar.image(chess_piece_queen, width=23)
 
 
-# def welcome_to_hive_pollenq_page():
-#     # st.write(st.session_state)
-#     st.sidebar.write(f'Welcome {st.session_state["name"]}')
-#     admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-#     st.session_state['admin'] = True if admin else False
-#     client_user = st.session_state['username']
-#     authorized_user = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-
 with st.spinner("Buzz Buzz Where is my Honey"):
     # st.write( st.session_state['username'], st.session_state['authorized_user'])
 
@@ -151,12 +144,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         st.info("Welcome and Watch A QueenBot in Action")
     
     elif st.session_state['authentication_status'] != True:
+        st.write(st.session_state['authentication_status'])
         sneak_peak = False
         st.error("You Need to Log In")
         st.stop()
     
 
-
+    # if st.session_state['authentication_status']
     db_root = st.session_state['db_root']
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
@@ -309,7 +303,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     def queen_beeAction_theflash(Falseexpand=True):
    
         with st.expander("The Flash", False):
-            cols = st.columns((1,1,1,2,1))
+            cols = st.columns((1,1,1,2,1,1))
+            with cols[5]:
+                local_gif(power_gif)
+
             with cols[0]:
                 quick_buy_long = st.button("FLASH BUY TQQQ")
                 quick_sell_long = st.button("FLASH SELL TQQQ")
@@ -386,10 +383,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 ticker_wave_option = st.selectbox("Tickers", ticker_time_frame, index=ticker_time_frame.index(["SPY_1Minute_1Day" if "SPY_1Minute_1Day" in ticker_time_frame else ticker_time_frame[0]][0]))
             with cols[2]:
                 wave_button_sel = st.selectbox("Waves", ["buy_cross-0", "sell_cross-0"])
-            # with cols[3]:
-            #     local_gif(gif_path=runaway_bee_gif)
-            # pollen = return_pollen()
-            # ticker_time_frame = [set(i for i in STORY_bee.keys())][0]
+            with cols[3]:
+                local_gif(power_gif)
 
 
             if initiate_waveup:
@@ -607,7 +602,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
 
     def return_buying_power(api):
-        with st.sidebar.expander("Portfolio"):
+        with st.expander("Portfolio",  True):
             ac_info = refresh_account_info(api=api)['info_converted']
             num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
             mark_down_text(fontsize='18', text=num_text)
@@ -1326,7 +1321,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     st.dataframe(df_style)
 
         # with cols[1]:
-        return_buying_power(api=api)  # sidebar
+
 
         
         # page_line_seperator()
@@ -1424,7 +1419,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             cols = st.columns((1,1,5))
             with cols[0]:
                 st.error("Your Queen Is Asleep")
-                # st.snow()
+                with cols[1]:
+                    wake_up_queen_button = st.button("Wake Her Up")
+                    if wake_up_queen_button:
+                        if st.session_state['authorized_user']:
+                            dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
+                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id)
+                            st.snow()
             with cols[1]:
                 local_gif(gif_path=flyingbee_grey_gif_path)
             return False
@@ -1577,7 +1578,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         if authorized_user == False:
             return False
         view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
-        cols = st.columns((6,1,2))
+        cols = st.columns((4,1,4))
         # check if keys exist
         # st.write(QUEEN_KING['users_secrets'])
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
@@ -1585,13 +1586,16 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
         if sandbox_keys_confirmed == False:
             with cols[0]:
-                st.error(f'<<< Sandbox API Keys Not Detected, Add API Keys To Activate QueenTraderBot to trade all your trades for you >>>')
+                st.error(f'Enter Your Sandbox API Keys To Activate Paper.QueenTraderBot')
             with cols[1]:
                 # view_account_button = st.button("Update API Keys", key='main_key')
                 view_account_keys = True
-            with cols[2]:
+            # with cols[2]:
                 local_gif(gif_path=runaway_bee_gif, height=33, width=33)
-                time.sleep(.3)
+        
+        if prod_keys_confirmed == False:
+            with cols[2]:
+                st.warning("Enter Your Production API Keys To Activate LIVE.QueenTraderBot...Begin Your Queens Journey")
 
         else:
             view_account_keys = False
@@ -1605,10 +1609,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 st.session_state['account_keys'] = True
                 
                 with st.form("account keys"):
-                    if prod_keys_confirmed == False:
-                        st.warning("You Need to Add you LIVE API KEYS")
-                    if sandbox_keys_confirmed == False:
-                        st.warning("You Need to Add your Sandbox-PAPER API KEYS")
+                    # if prod_keys_confirmed == False:
+                    #     st.warning("You Need to Add you LIVE API KEYS")
+                    # if sandbox_keys_confirmed == False:
+                    #     st.warning("You Need to Add your Sandbox-PAPER API KEYS")
 
                     # st.write(st.session_state['username']) @ stefanstapinski@gmail.com
 
@@ -1810,28 +1814,28 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     STORY_bee = ticker_db['STORY_bee']
     tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
 
-    cols = st.columns((3,10,1,1))
-    with cols[1]:
-        if authorized_user:
-            option = st.sidebar.radio(
-                        label="",
-                options=["queen", "controls", "model_results", "pollen_engine"],
-                key="main_radio",
-                label_visibility='visible',
-                # disabled=st.session_state.disabled,
-                horizontal=False,
-            )
-        else:
-            option = st.sidebar.radio(
-                        label="",
-                options=["queen", "controls", "charts", "model_results"],
-                key="main_radio",
-                label_visibility='visible',
-                # disabled=st.session_state.disabled,
-                horizontal=False,
+    # cols = st.columns((3,10,1,1))
+    # with cols[1]:
+    if authorized_user:
+        option = st.sidebar.radio(
+                    label="",
+            options=["queen", "controls", "model_results", "pollen_engine"],
+            key="main_radio",
+            label_visibility='visible',
+            # disabled=st.session_state.disabled,
+            horizontal=False,
+        )
+    else:
+        option = st.sidebar.radio(
+                    label="",
+            options=["queen", "controls", "charts", "model_results"],
+            key="main_radio",
+            label_visibility='visible',
+            # disabled=st.session_state.disabled,
+            horizontal=False,
             ) 
-    with cols[2]:
-        bee_keeper = st.button("Refresh", key='gatekeeper')
+    # with cols[2]:
+    bee_keeper = st.sidebar.button("Refresh", key='gatekeeper')
 
 
 
@@ -1920,8 +1924,8 @@ if str(option).lower() == 'queen':
 
         # cols = st.columns((1,1))
 
-        queen_tabs = ["Orders", "Wave Stories", "Chess Board", "Trading Models", "Charts"]
-        order_tab, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
+        queen_tabs = ["Orders", "Portforlio", "Wave Stories", "Chess Board", "Trading Models", "Charts"]
+        order_tab, Portforlio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
 
 
         with cols[1]:
@@ -1929,6 +1933,8 @@ if str(option).lower() == 'queen':
         with cols[0]:
             queens_subconscious_Thoughts(QUEEN=QUEEN)
 
+        with Portforlio:
+            return_buying_power(api=api)  # sidebar
 
         with chessboard_tab:
             update_Workerbees(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, admin=admin)

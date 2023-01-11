@@ -8,7 +8,7 @@ est = pytz.timezone("US/Eastern")
 
 
 
-def run__trigger_dag(dag_id, run_id):
+def run__trigger_dag(dag_id, run_id, client_user):
     # dag_id='run_queenbee_prod'
     c = Client(None, None)
     c.trigger_dag(dag_id=dag_id, run_id=run_id, conf={})
@@ -41,12 +41,12 @@ def get_screen_processes():
 # print(processes)
 
 ### for everymorning check to see if workerbees is running, if its not turn the dag on
-def workerbees___the_beeManager():
+def workerbees___the_beeManager(client_user='QueenBeeDagger'):
     avail_dags = {'run_queenbee_prod': 'run_queenbee_prod', 'run_workerbees': 'run_workerbees'}
     
     processes = get_screen_processes()
     run_id = f'{datetime.datetime.now(est)}___run_workerbees'
     if 'run_workerbees' not in processes.keys():
-        run__trigger_dag(dag_id='run_workerbees', run_id=run_id)
+        run__trigger_dag(dag_id='run_workerbees', run_id=run_id, client_user='QueenBeeDagger')
 
 
