@@ -72,6 +72,8 @@ def pollenq():
     knight_png = MISC['knight_png']
     bishop_unscreen = MISC['bishop_unscreen']
     flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
+    alpaca_portfolio_keys_png = MISC['alpaca_portfolio_keys_png']
+    
 
     
     page_icon = Image.open(bee_image)

@@ -1424,7 +1424,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     if wake_up_queen_button:
                         if st.session_state['authorized_user']:
                             dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
-                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id)
+                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name)
                             st.snow()
             with cols[1]:
                 local_gif(gif_path=flyingbee_grey_gif_path)
@@ -1796,14 +1796,14 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     if st.session_state['authorized_user']:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
     
-    api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=prod)
+    api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
     
     portfolio = return_alpc_portolio(api)['portfolio']
     acct_info = refresh_account_info(api=api)
 
     # # if authorized_user: log type auth and none
     log_dir = os.path.join(db_root, 'logs')
-    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
+    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['production'])
 
     # db global
     coin_exchange = "CBSE"

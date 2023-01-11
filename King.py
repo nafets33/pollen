@@ -57,6 +57,7 @@ def local__filepaths_misc():
     floating_queen_gif = os.path.join(jpg_root, "floating-queen-unscreen.gif")
     chess_board__gif = os.path.join(jpg_root, "chess_board.gif")
     bishop_unscreen = os.path.join(jpg_root, "bishop_unscreen.gif")
+    alpaca_portfolio_keys_png = os.path.join(jpg_root, "alpaca_portfolio_snap_keys.PNG")
 
     return {
         'jpg_root': jpg_root,
@@ -85,4 +86,5 @@ def local__filepaths_misc():
         'floating_queen_gif': floating_queen_gif,
         'chess_board__gif': chess_board__gif,
         'bishop_unscreen': bishop_unscreen,
+        'alpaca_portfolio_keys_png':alpaca_portfolio_keys_png,
     }
