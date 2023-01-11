@@ -25,16 +25,14 @@ import os
 # from random import randint
 import sqlite3
 import streamlit as st
-from appHive import progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from appHive import live_sandbox__setup_switch, progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from app_auth import signin_main
 import base64
 import time
 # from streamlit_extras.stoggle import stoggle
-from King import hive_master_root, streamlit_config_colors
+from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
 
 est = pytz.timezone("US/Eastern")
-
-# _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 # import streamlit_authenticator as stauth
 # import smtplib
@@ -70,30 +68,34 @@ crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 main_root = hive_master_root() # os.getcwd()  # hive root
 
 # images
-jpg_root = os.path.join(main_root, 'misc')
-# chess_pic_1 = os.path.join(jpg_root, 'chess_pic_1.jpg')
-bee_image = os.path.join(jpg_root, 'bee.jpg')
-bee_power_image = os.path.join(jpg_root, 'power.jpg')
-hex_image = os.path.join(jpg_root, 'hex_design.jpg')
-hive_image = os.path.join(jpg_root, 'bee_hive.jpg')
-queen_image = os.path.join(jpg_root, 'queen.jpg')
-queen_angel_image = os.path.join(jpg_root, 'queen_angel.jpg')
-flyingbee_gif_path = os.path.join(jpg_root, 'flyingbee_gif_clean.gif')
-flyingbee_grey_gif_path = os.path.join(jpg_root, 'flying_bee_clean_grey.gif')
-bitcoin_gif = os.path.join(jpg_root, 'bitcoin_spinning.gif')
-power_gif = os.path.join(jpg_root, 'power_gif.gif')
-uparrow_gif = os.path.join(jpg_root, 'uparrows.gif')
-learningwalk_bee = os.path.join(jpg_root, 'learningwalks_bee_jq.png')
-learningwalk_bee = Image.open(learningwalk_bee)
-queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
-# queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
-chess_piece_queen = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
-runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
-castle_png = "https://images.vexels.com/media/users/3/255175/isolated/lists/3c6de0f0c883416d9b6bd981a4471092-rook-chess-piece-line-art.png"
-bishop_png = "https://images.vexels.com/media/users/3/255170/isolated/lists/efeb124323c55a60510564779c9e1d38-bishop-chess-piece-line-art.png"
-knight_png = "https://cdn2.iconfinder.com/data/icons/chess-set-pieces/100/Chess_Set_04-White-Classic-Knight-512.png"
-queen_png = "https://i.pinimg.com/originals/a8/95/e8/a895e8e96c08357bfeb92d3920cd7da0.png"
 
+MISC = local__filepaths_misc()
+jpg_root = MISC['jpg_root']
+bee_image = MISC['bee_image']
+castle_png = MISC['castle_png']
+bishop_png = MISC['bishop_png']
+queen_png = MISC['queen_png']
+knight_png = MISC['knight_png']
+mainpage_bee_png = MISC['mainpage_bee_png']
+floating_queen_gif = MISC['floating_queen_gif']
+chess_board__gif = MISC['chess_board__gif']
+bee_power_image = MISC['bee_power_image']
+hex_image = MISC['hex_image']
+hive_image = MISC['hive_image']
+queen_image = MISC['queen_image']
+queen_angel_image = MISC['queen_angel_image']
+flyingbee_gif_path = MISC['flyingbee_gif_path']
+flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
+bitcoin_gif = MISC['bitcoin_gif']
+power_gif = MISC['power_gif']
+uparrow_gif = MISC['uparrow_gif']
+learningwalk_bee = MISC['learningwalk_bee']
+queen_flair_gif = MISC['queen_flair_gif']
+chess_piece_queen = MISC['chess_piece_queen']
+runaway_bee_gif = MISC['runaway_bee_gif']
+
+
+learningwalk_bee = Image.open(learningwalk_bee)
 page_icon = Image.open(bee_image)
 
 ##### STREAMLIT ###
@@ -162,14 +164,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     authorized_user = st.session_state['authorized_user']
     db_client_user_name = st.session_state['username'].split("@")[0]
 
-    prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-    admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-    st.session_state['admin'] = True if admin else False
-    
-    prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
-    st.session_state['production'] = True if prod_option == 'LIVE' else False
-    prod = st.session_state['production']
-
+    prod, admin, prod_name = live_sandbox__setup_switch()
     
     if st.session_state['production']:
         from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
@@ -249,9 +244,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     df = df.rename(columns={0: 'ttf', 1: 'trig'})
                     df = df.sort_values('ttf')
                     st.write(df)
-
-        
-        queen_beeAction_theflash(False)
 
 
     def queen_QueenOrders():
@@ -414,7 +406,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                 with cols[3]:
                     return_image_upon_save(title="Wave Request Delivered to the Queen")
-            
 
     def create_guage_chart(title, value=.01):
 
@@ -610,7 +601,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
                     st.write(tic_group_df)
                 # submitted = st.form_submit_button("Save")
-        
+        # else:
+        #     st.write("Waiting for your First Trade")
         return return_dict
 
 
@@ -688,7 +680,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         all_workers = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING)['all_workers']
         name = str(view).replace("[", "").replace("]", "").replace('"', "")
 
-        with st.expander(f'WorkingBees Sybmols Chess Board: {name}'):
+        with st.expander(f'WorkingBees Sybmols Chess Board: {name}', True):
             with st.form("Update WorkerBees"):
 
                 cols = st.columns((1,1,1))
@@ -840,7 +832,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
         elif control_option.lower() == 'symbols_stars_tradingmodel':
             # add: ticker_family, short position and macd/hist story 
-            queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
+            # queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
             cols = st.columns((1,4))
             with cols[0]:
                 saved_avail = list(QUEEN_KING['saved_trading_models'].keys()) + ['select']
@@ -1442,7 +1434,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     
     def queen_chart(POLLENSTORY):
         # Main CHART Creation
-        with st.expander('chart', expanded=False):
+        with st.expander('chart', expanded=True):
             req = ticker_time_frame__option(req_key='charts')
             tickers = req['tickers']
             ticker_option = req['ticker_option']
@@ -1523,7 +1515,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     # ticker, value = package.items()
                         with cols[idx + 1]:
                             if write_type == 'checkbox':
-                                st.checkbox(ticker, v)  ## add as quick save to turn off and on Model
+                                st.checkbox(ticker, v, key=f'{ticker}')  ## add as quick save to turn off and on Model
                             if write_type == 'info':
                                 st.info(f'{ticker} {v}')
                                 local_gif(gif_path=uparrow_gif, height='23', width='23')
@@ -1541,7 +1533,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 # ticker, value = package.items()
                     with cols[idx + 1]:
                         if write_type == 'checkbox':
-                            st.checkbox(ticker, v)  ## add as quick save to turn off and on Model
+                            st.checkbox(ticker, v, key=f'{ticker}{v}')  ## add as quick save to turn off and on Model
                         if write_type == 'info':
                             st.info(f'{ticker} {v}')
                             flying_bee_gif(width='38', height='42')
@@ -1585,32 +1577,31 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         if authorized_user == False:
             return False
         view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
-        cols = st.columns((5,1,1,1,2))
+        cols = st.columns((6,1,2))
         # check if keys exist
         # st.write(QUEEN_KING['users_secrets'])
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
-        if prod_keys_confirmed == False or sandbox_keys_confirmed == False:
+        if sandbox_keys_confirmed == False:
             with cols[0]:
-                st.error(f'<<< You Need to Add your API Keys >>>')
-            with cols[2]:
+                st.error(f'<<< Sandbox API Keys Not Detected, Add API Keys To Activate QueenTraderBot to trade all your trades for you >>>')
+            with cols[1]:
                 # view_account_button = st.button("Update API Keys", key='main_key')
                 view_account_keys = True
-            with cols[3]:
+            with cols[2]:
                 local_gif(gif_path=runaway_bee_gif, height=33, width=33)
-        # elif 'account_keys' in st.session_state:
-        #     st.write("account_keys found in ss")
-        #     view_account_keys = True
+                time.sleep(.3)
+
         else:
             view_account_keys = False
         
 
-        # # stopper
-        # if view_account_keys == False:
-        #     return False
         if view_account_keys or view_account_button:
-            with st.expander("Account Keys", authorized_user):
+            # with cols[0]:
+            with st.expander("Add API Account Keys", authorized_user):
+                # with cols[0]:
+                local_gif(gif_path=runaway_bee_gif, height=33, width=33)
                 st.session_state['account_keys'] = True
                 
                 with st.form("account keys"):
@@ -1650,7 +1641,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 
                         QUEEN_KING['users_secrets'] = user_secrets
                         PickleData(PB_App_Pickle, QUEEN_KING)
-        
+
         return True
 
 
@@ -1667,6 +1658,112 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 st.info("Page Stopped")
                 st.stop()
 
+    
+    
+    def advanced_charts(POLLENSTORY):
+
+        tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
+        ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+        ticker = ticker_option
+        ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
+        ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
+        frame_option = st.sidebar.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
+        day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
+        slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
+        wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
+        fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
+        selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+
+        ticker_time_frame = selections[0]
+        df = POLLENSTORY[ticker_time_frame].copy()
+        st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+        # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+
+        if day_only_option == 'yes':
+            df_day = df['timestamp_est'].iloc[-1]
+            df['date'] = df['timestamp_est'] # test
+
+            df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+            df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+
+            df = df_today
+
+        min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+        min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+        min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+        min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+        min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+        min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+
+        option__ = st.radio(
+                                "",
+            ['1Min', '5Min', '30m', '1hr', '2hr', '1Yr', 'all'],
+            key="signal_radio",
+            label_visibility='visible',
+            # disabled=st.session_state.disabled,
+            horizontal=True,
+            # label=bee_image
+        )
+
+        if option__.lower() == 'all':
+            c1, c2 = st.columns(2)
+            with c1:
+                st.plotly_chart(create_main_macd_chart(min_1))
+            with c2:
+                st.plotly_chart(create_main_macd_chart(min_5))
+            c1, c2 = st.columns(2)
+            with c1:
+                st.plotly_chart(create_main_macd_chart(min_30m))
+            with c2:
+                st.plotly_chart(create_main_macd_chart(min_1hr))
+            c1, c2 = st.columns(2)
+            with c1:
+                st.plotly_chart(create_main_macd_chart(min_2hr))
+            with c2:
+                st.plotly_chart(create_main_macd_chart(min_1yr))
+        else:
+            # Main CHART Creation
+            radio_b_dict = {'1Min': '1Minute_1Day', 
+            '5Min': '5Minute_5Day', '30m': '30Minute_1Month', 
+            '1hr': '1Hour_3Month' , '2hr': '2Hour_6Month', '1Yr': '1Day_1Year'}
+            ticker_time_frame = f'{ticker}_{radio_b_dict[option__]}'
+            st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
+
+        if slope_option == 'yes':
+            slope_cols = [i for i in df.columns if "slope" in i]
+            slope_cols.append("close")
+            slope_cols.append("timestamp_est")
+            slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
+            fig = create_slope_chart(df=df)
+            st.plotly_chart(fig)
+            st.dataframe(slopes_df)
+            
+        if wave_option == "yes":
+            fig = create_wave_chart(df=df)
+            st.plotly_chart(fig)
+            
+            dft = split_today_vs_prior(df=df)
+            dft = dft['df_today']
+
+            fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
+            st.plotly_chart(fig)
+
+            st.write("current wave")
+            current_buy_wave = df['buy_cross-0__wave_number'].tolist()
+            current_buy_wave = [int(i) for i in current_buy_wave]
+            current_buy_wave = max(current_buy_wave)
+            st.write("current wave number")
+            st.write(current_buy_wave)
+            dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
+            st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
+            fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
+            st.plotly_chart(fig)
+        
+        return True
+
+
+    
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
     # @st.cache(allow_output_mutation=True, max_entries=1)
 
@@ -1688,7 +1785,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     # use API keys from user
     queen_online(QUEEN=QUEEN)
-    # queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
     
     prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
@@ -1717,57 +1813,25 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     cols = st.columns((3,10,1,1))
     with cols[1]:
         if authorized_user:
-            option = st.radio(
+            option = st.sidebar.radio(
                         label="",
-                options=["queen", "controls", "charts", "model_results", "pollen_engine", "playground"],
+                options=["queen", "controls", "model_results", "pollen_engine"],
                 key="main_radio",
                 label_visibility='visible',
                 # disabled=st.session_state.disabled,
-                horizontal=True,
+                horizontal=False,
             )
         else:
-            option = st.radio(
+            option = st.sidebar.radio(
                         label="",
                 options=["queen", "controls", "charts", "model_results"],
                 key="main_radio",
                 label_visibility='visible',
                 # disabled=st.session_state.disabled,
-                horizontal=True,
+                horizontal=False,
             ) 
     with cols[2]:
         bee_keeper = st.button("Refresh", key='gatekeeper')
-    with cols[2]:
-        st.image(learningwalk_bee, width=54)
-
-    # cols = st.columns((2,1,1,1,1,1,1,1,1,1,1,2))
-    # if option == 'queen':
-    #     with cols[2]:
-    #         # flying_bee_gif()
-    #         # local_gif(gif_path=queen_flair_gif, height='23', width='23')
-    #         st.image("https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png", width=23)
-    # elif option == "controls":
-    #     with cols[3]:
-    #         flying_bee_gif()
-    # # elif option == "signal":
-    # #     with cols[4]:
-    # #         flying_bee_gif()
-    # elif option == "charts":
-    #     with cols[4]:
-    #         flying_bee_gif()
-    # elif option == "model_results":
-    #     with cols[5]:
-    #         flying_bee_gif()
-    # elif option == "pollen_engine":
-    #     with cols[6]:
-    #         flying_bee_gif()
-    # with cols[10]:
-    #     g = local_gif(gif_path=runaway_bee_gif, height=33, width=33)
-        # placeholder = st.empty()
-        # isclick = placeholder.button('delete this button')
-        # if isclick:
-        #     placeholder.empty()
-    # with cols[8]:
-    #     create_todays_profit_header_information()
 
 
 
@@ -1792,6 +1856,38 @@ def chess_board(width='33', height='33'):
 
 # chess_board()
 
+def ticker_time_frame__option(req_key):
+    cols = st.columns(2)
+    with cols[0]:
+        if 'sel_tickers' not in st.session_state:
+            st.session_state['sel_tickers'] = 'SPY'
+        tickers = st.multiselect('Symbols', options=list(tickers_avail_op), default=st.session_state['sel_tickers'], help='View Groups of symbols to Inspect where to send the Bees', key=f'ticker{req_key}')
+        if len(tickers) == 0:
+            ticker_option = 'SPY'
+        else:
+            ticker_option = tickers[0]
+    with cols[1]:
+        if 'sel_stars' not in st.session_state:
+            st.session_state['sel_stars'] = [i for i in stars().keys()]
+        
+        ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
+        frames = st.multiselect('Stars', options=list(ttframe_list), default=st.session_state['sel_stars'], help='View Groups of Stars to Allocate Bees on where to go', key=f'frame{req_key}')
+        frame_option = frames[0]
+    # frame_option = st.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
+    return {'tickers': tickers, 'ticker_option': ticker_option, 'frame_option': frame_option}
+
+# req = ticker_time_frame__option()
+# tickers = req['tickers']
+# ticker_option = req['ticker_option']
+# frame_option = req['frame_option']
+
+# ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] in tickers}
+
+# ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
+
+# star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+
+today_day = datetime.datetime.now(est).day
 
 if str(option).lower() == 'queen':
     if st.session_state['authorized_user'] == False:
@@ -1805,91 +1901,65 @@ if str(option).lower() == 'queen':
                 st.success("Hive Master Notified and You should receive contact soon")
     
     with st.spinner("Waking Up the Hive"):
+
         progress_bar(value=100)
                     
         # page_line_seperator('1', color=default_yellow_color)
         if st.session_state['authorized_user'] == True:
+            # keys
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
+            # add new trading models if needed
             for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
                 for ticker in bees_data['tickers']:
                     QUEEN_KING = add_trading_model(PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee)
 
-
-        today_day = datetime.datetime.now().day
-        
-
-        # tickers_avail.update({"all"})
         tickers_avail_op = list(tickers_avail)
 
         # page_line_seperator(height='1')
         cols = st.columns(2)
 
         # cols = st.columns((1,1))
+
+        queen_tabs = ["Orders", "Wave Stories", "Chess Board", "Trading Models", "Charts"]
+        order_tab, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
+
+
         with cols[1]:
             return_total_profits(ORDERS=ORDERS)
         with cols[0]:
             queens_subconscious_Thoughts(QUEEN=QUEEN)
 
-        queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
 
-        def ticker_time_frame__option(req_key):
-            cols = st.columns(2)
-            with cols[0]:
-                if 'sel_tickers' not in st.session_state:
-                    st.session_state['sel_tickers'] = 'SPY'
-                tickers = st.multiselect('Symbols', options=list(tickers_avail_op), default=st.session_state['sel_tickers'], help='View Groups of symbols to Inspect where to send the Bees', key=f'ticker{req_key}')
-                if len(tickers) == 0:
-                    ticker_option = 'SPY'
-                else:
-                    ticker_option = tickers[0]
-            with cols[1]:
-                if 'sel_stars' not in st.session_state:
-                    st.session_state['sel_stars'] = [i for i in stars().keys()]
-                
-                ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-                frames = st.multiselect('Stars', options=list(ttframe_list), default=st.session_state['sel_stars'], help='View Groups of Stars to Allocate Bees on where to go', key=f'frame{req_key}')
-                frame_option = frames[0]
-            # frame_option = st.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
-            return {'tickers': tickers, 'ticker_option': ticker_option, 'frame_option': frame_option}
+        with chessboard_tab:
+            update_Workerbees(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, admin=admin)
         
-        # req = ticker_time_frame__option()
-        # tickers = req['tickers']
-        # ticker_option = req['ticker_option']
-        # frame_option = req['frame_option']
-
-        # ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] in tickers}
-
-        # ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
-
-        # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-
-
-        update_Workerbees(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, admin=admin)
-
-        queen_wavestories(QUEEN=QUEEN)
-        queen_triggerbees()
-        queen_order_flow(ORDERS=ORDERS, active_order_state_list=active_order_state_list)
-        queen_chart(POLLENSTORY=POLLENSTORY)
-
+        with wave_stories_tab:
+            queen_wavestories(QUEEN=QUEEN)
         
-    
+        with order_tab:
+            queen_order_flow(ORDERS=ORDERS, active_order_state_list=active_order_state_list)
+            queen_beeAction_theflash(False)
+            queen_triggerbees()
+        
+        with charts_tab:
+            # queen_chart(POLLENSTORY=POLLENSTORY)
+            advanced_charts(POLLENSTORY=POLLENSTORY)
+
+        with trading_models_tab:
+            queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
+            st.header("Select Control")
+            theme_list = list(pollen_theme.keys())
+            contorls = list(QUEEN['queen_controls'].keys())
+            control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
+            update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
+        
+        
+        
+        
         page_line_seperator(color=default_yellow_color)
 
-        # cols = st.columns(2)
-        # with cols[0]:
-        #     option_showaves = st.button("Show Waves")
-        # with cols[1]:
-        #     see_pollenstory = st.button("Show Me Pollenstory")
-        
-        # if see_pollenstory:
-        #     with st.expander('STORY_bee', False):
-        #         st.write(STORY_bee[ticker_time_frame]['story'])
-            
-        #     pollen__story(df=POLLENSTORY[ticker_time_frame].copy())
-        # if option_showaves:
-        #     with st.expaner("Waves", True):
-        #         show_waves(ticker_storys=ticker_storys, ticker_option=ticker_option, frame_option=frame_option)
-    
+        st.sidebar.image(learningwalk_bee, width=54)
+
 
 if str(option).lower() == 'controls':
 
@@ -1904,116 +1974,16 @@ if str(option).lower() == 'controls':
         
         # page_line_seperator()
 
-        st.header("Select Control")
-        theme_list = list(pollen_theme.keys())
-        contorls = list(QUEEN['queen_controls'].keys())
-        control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
-        update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
+        # st.header("Select Control")
+        # theme_list = list(pollen_theme.keys())
+        # contorls = list(QUEEN['queen_controls'].keys())
+        # control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
+        # update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
 
         clear_subconscious_Thought(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
 
         with st.expander('Heartbeat'):
             st.write(QUEEN['heartbeat'])
-
-
-if str(option).lower() == 'charts':
-    tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
-    ticker_option = st.sidebar.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
-    ticker = ticker_option
-    ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-    ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
-    frame_option = st.sidebar.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
-    day_only_option = st.sidebar.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
-    slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
-    wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-    fullstory_option = st.sidebar.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
-    selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
-
-    ticker_time_frame = selections[0]
-    df = POLLENSTORY[ticker_time_frame].copy()
-    st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
-
-    # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-
-    if day_only_option == 'yes':
-        df_day = df['timestamp_est'].iloc[-1]
-        df['date'] = df['timestamp_est'] # test
-
-        df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-        df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
-
-        df = df_today
-
-    min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
-    min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
-    min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
-    min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
-    min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
-    min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
-
-    option__ = st.radio(
-                            "",
-        ['1Min', '5Min', '30m', '1hr', '2hr', '1Yr', 'all'],
-        key="signal_radio",
-        label_visibility='visible',
-        # disabled=st.session_state.disabled,
-        horizontal=True,
-        # label=bee_image
-    )
-
-    if option__.lower() == 'all':
-        c1, c2 = st.columns(2)
-        with c1:
-            st.plotly_chart(create_main_macd_chart(min_1))
-        with c2:
-            st.plotly_chart(create_main_macd_chart(min_5))
-        c1, c2 = st.columns(2)
-        with c1:
-            st.plotly_chart(create_main_macd_chart(min_30m))
-        with c2:
-            st.plotly_chart(create_main_macd_chart(min_1hr))
-        c1, c2 = st.columns(2)
-        with c1:
-            st.plotly_chart(create_main_macd_chart(min_2hr))
-        with c2:
-            st.plotly_chart(create_main_macd_chart(min_1yr))
-    else:
-        # Main CHART Creation
-        radio_b_dict = {'1Min': '1Minute_1Day', 
-        '5Min': '5Minute_5Day', '30m': '30Minute_1Month', 
-        '1hr': '1Hour_3Month' , '2hr': '2Hour_6Month', '1Yr': '1Day_1Year'}
-        ticker_time_frame = f'{ticker}_{radio_b_dict[option__]}'
-        st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
-
-    if slope_option == 'yes':
-        slope_cols = [i for i in df.columns if "slope" in i]
-        slope_cols.append("close")
-        slope_cols.append("timestamp_est")
-        slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
-        fig = create_slope_chart(df=df)
-        st.plotly_chart(fig)
-        st.dataframe(slopes_df)
-        
-    if wave_option == "yes":
-        fig = create_wave_chart(df=df)
-        st.plotly_chart(fig)
-        
-        dft = split_today_vs_prior(df=df)
-        dft = dft['df_today']
-
-        fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
-        st.plotly_chart(fig)
-
-        st.write("current wave")
-        current_buy_wave = df['buy_cross-0__wave_number'].tolist()
-        current_buy_wave = [int(i) for i in current_buy_wave]
-        current_buy_wave = max(current_buy_wave)
-        st.write("current wave number")
-        st.write(current_buy_wave)
-        dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
-        st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
-        fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
-        st.plotly_chart(fig)
 
 
 if str(option).lower() == 'model_results':
@@ -2130,15 +2100,6 @@ if str(option).lower() == 'pollen_engine':
         users = cur.execute("SELECT * FROM users").fetchall()
         st.dataframe(pd.DataFrame(users))
     
-
-if str(option).lower() == 'playground':
-    page_tab_permission_denied(admin)
-    with st.expander("button on grid"):
-        click_button_grid()
-    
-    with st.expander("nested grid"):
-        nested_grid()
-
 
 st.session_state['option_sel'] = False
 st.session_state['sneak_peak'] = False

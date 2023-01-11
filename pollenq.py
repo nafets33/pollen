@@ -17,10 +17,11 @@ import streamlit as st
 from app_auth import signin_main
 import time
 from streamlit_extras.switch_page_button import switch_page
-from appHive import createParser_App, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from King import hive_master_root, streamlit_config_colors
+from appHive import live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
 import argparse
 from streamlit_extras.stoggle import stoggle
+
 
 def pollenq():
     # prod = True if prod.lower() == 'true' else False
@@ -59,28 +60,20 @@ def pollenq():
 
     # images
     jpg_root = os.path.join(main_root, 'misc')
-    chess_pic_1 = os.path.join(jpg_root, 'chess_pic_1.jpg')
-    bee_image = os.path.join(jpg_root, 'bee.jpg')
-    bee_power_image = os.path.join(jpg_root, 'power.jpg')
-    hex_image = os.path.join(jpg_root, 'hex_design.jpg')
-    hive_image = os.path.join(jpg_root, 'bee_hive.jpg')
-    queen_image = os.path.join(jpg_root, 'queen.jpg')
-    queen_angel_image = os.path.join(jpg_root, 'queen_angel.jpg')
-    flyingbee_gif_path = os.path.join(jpg_root, 'flyingbee_gif_clean.gif')
-    flyingbee_grey_gif_path = os.path.join(jpg_root, 'flying_bee_clean_grey.gif')
-    bitcoin_gif = os.path.join(jpg_root, 'bitcoin_spinning.gif')
-    power_gif = os.path.join(jpg_root, 'power_gif.gif')
-    uparrow_gif = os.path.join(jpg_root, 'uparrows.gif')
-    chess_piece_queen = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
-    castle_png = "https://images.vexels.com/media/users/3/255175/isolated/lists/3c6de0f0c883416d9b6bd981a4471092-rook-chess-piece-line-art.png"
-    bishop_png = "https://images.vexels.com/media/users/3/255170/isolated/lists/efeb124323c55a60510564779c9e1d38-bishop-chess-piece-line-art.png"
-    knight_png = "https://cdn2.iconfinder.com/data/icons/chess-set-pieces/100/Chess_Set_04-White-Classic-Knight-512.png"
-    queen_png = "https://cdn.shopify.com/s/files/1/0925/9070/products/160103_queen_chess_piece_wood_shape_600x.png?v=1461105893"
-    queen_flair_gif = os.path.join(jpg_root, 'queen_flair.gif')
-    mainpage_bee_png = "https://i.pinimg.com/originals/a8/95/e8/a895e8e96c08357bfeb92d3920cd7da0.png"
-    runaway_bee_gif = os.path.join(jpg_root, 'runaway_bee_gif.gif')
-    floating_queen_gif = os.path.join(jpg_root, "floating-queen-unscreen.gif")
 
+    MISC = local__filepaths_misc()
+    bee_image = MISC['bee_image']
+    castle_png = MISC['castle_png']
+    bishop_png = MISC['bishop_png']
+    queen_png = MISC['queen_png']
+    mainpage_bee_png = MISC['mainpage_bee_png']
+    floating_queen_gif = MISC['floating_queen_gif']
+    chess_board__gif = MISC['chess_board__gif']
+    knight_png = MISC['knight_png']
+    bishop_unscreen = MISC['bishop_unscreen']
+    flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
+
+    
     page_icon = Image.open(bee_image)
 
     ##### STREAMLIT ###
@@ -109,17 +102,13 @@ def pollenq():
     # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
         signin_main()
-        
+        # st.write(st.session_state)
         if st.session_state['authentication_status'] != None:
             if st.session_state['authorized_user'] == False:
                 st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
                 client_user_wants_a_queen = st.button("Yes I want a Queen!")
                 if client_user_wants_a_queen:
                     st.session_state['init_queen_request'] = True
-        
-        # parser = createParser_App()
-        # namespace = parser.parse_args()
-
 
         if st.session_state['authentication_status']:
             # if 'username' not in st.session_state:
@@ -131,13 +120,7 @@ def pollenq():
             authorized_user = st.session_state['authorized_user']
             db_client_user_name = st.session_state['username'].split("@")[0]
 
-            prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-            admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-            st.session_state['admin'] = True if admin else False
-
-            prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
-            st.session_state['production'] = True if prod_option == 'LIVE' else False
-            prod = st.session_state['production']
+            prod, admin, prod_name = live_sandbox__setup_switch()
 
             
             if st.session_state['production']:
@@ -181,136 +164,145 @@ def pollenq():
                 PickleData(PB_App_Pickle, QUEEN_KING)
                 st.success("Hive Master Notified and You should receive contact soon")
 
-            # hive_setup, QueenInfo, pollenq_account, = st.tabs(["Setup Your Hive", "QueenInfo", "MyAccount"])
-            cols = st.columns((3,1,5,1,1,1,1))
-            st.title("Create Yourself The QueenTrader")
-            with cols[0]:
-                st.text("Customize QueenTraderBot Settings!\nTrade based on how you feel&think" )
-            with cols[1]:
-                st.image(mainpage_bee_png, width=89)
-            with cols[2]:
-                st.text("Set an investment theme and watch your QueenTraderBot\nhandle everyone of your trades, trade along side her")
-            with cols[3]:
-                st.image(castle_png, width=133)
-            with cols[4]:
-                st.image(mainpage_bee_png, width=133)
+            tabs = ["Setup Steps", "Risk Parameters", "To The Hive", "Help"]
+            st.session_state['active_tab'] = tabs[0] if 'active_tab' not in st.session_state else st.session_state['active_tab']
+
+            hive_setup, settings_queen, to_hive, help_me = st.tabs(["Setup Steps", "Risk Parameters", "To The Hive", "Help"])
             
-            cols = st.columns((5,3,3,2,2,2))
-            with cols[0]:
-                st.subheader("Steps to get your QueenTraderBot")
-                stoggle("1. Select your Broker",
-                "Alpaca is only current supported broker (Alpaca is a free no-fee trading broker, they are FDIC 250k insured) create a FREE account at https://app.alpaca.markets/brokerage/new-account"
-                )
-            with cols[0]:
-                stoggle("2. Enter in your API Keys ",
-                """
-                (this allows the QueenTraderBot to place trades) Its going to change the way you trade forever...everyone needs an AI :bot:
-                """
-                )
-            with cols[0]:
-                stoggle("3. Set your Risk Parameters",
-                """
-                Go Start Building your QueenTradingBot! There is too much to dicuss now...we'll talk later
-                """
-                )
-            with cols[1]:
-                st.image(queen_png, width=250)
+            with hive_setup:
+                st.title("Create Yourself The QueenTrader")
+                cols = st.columns((3,1,1,1,1,1,1))
+                
+                # with cols[0]:
+                #     st.text("Customize QueenTraderBot Settings!\nTrade based on how you feel&think" )
+                # with cols[1]:
+                #     st.image(mainpage_bee_png, width=89)
+                # with cols[2]:
+                #     st.text("Set an investment theme and watch your QueenTraderBot\nhandle everyone of your trades, trade along side her")
 
-            with cols[3]:
-                # local_gif(gif_path=queen_flair_gif, height=254, width=450)
-                st.image(bishop_png, width=223)
 
-            with cols[2]:
-                # local_gif(gif_path=queen_flair_gif, height=254, width=450)
-                st.image(mainpage_bee_png, width=133)
-            # with cols[4]:
-            #     # local_gif(gif_path=queen_flair_gif, height=254, width=450)
-            #     st.image(knight_png, width=133)    
+                
+                # cols = st.columns((5,3,3,2,2,2))
+                with cols[0]:
+                    st.subheader("Steps to get your QueenTraderBot")
+                    stoggle("1. Select your Broker",
+                    "Alpaca is only current supported broker (Alpaca is a free no-fee trading broker, they are FDIC 250k insured) create a FREE account at https://app.alpaca.markets/brokerage/new-account"
+                    )
+                with cols[0]:
+                    stoggle("2. Enter in your API Keys ",
+                    """
+                    (this allows the QueenTraderBot to place trades) Its going to change the way you trade forever...everyone needs an AI :bot:
+                    """
+                    )
+                with cols[0]:
+                    stoggle("3. Set your Risk Parameters",
+                    """
+                    Go Start Building your QueenTradingBot! There is too much to dicuss now...we'll talk later
+                    """
+                    )
+                with cols[1]:
+                    st.image(mainpage_bee_png, width=133)
+                with cols[2]:
+                    st.image(queen_png, width=250)
+                    # local_gif(floating_queen_gif, '89', '89')
+
+                with cols[3]:
+                    # local_gif(gif_path=queen_flair_gif, height=254, width=450)
+                    st.image(bishop_png, width=223)
+                    # local_gif(bishop_unscreen, '133', '133')
+                with cols[4]:
+                    st.image(castle_png, width=133)
+
+                with cols[5]:
+                    st.image(mainpage_bee_png, width=133)
+                    # page_line_seperator('.5')
+
+                with cols[6]:
+                    page_line_seperator('.01')
+                    st.image(mainpage_bee_png, width=133)
             
             page_line_seperator('1')
-            st.subheader("QueenTraderBot Settings")
-            with st.expander("QueenTraderBot Settings"):
-                mark_down_text(align='left', color=default_text_color, fontsize='23', text='Ensure to Complete Step 1 and an Create Alpaca Account', font=default_font, hyperlink="https://app.alpaca.markets/brokerage/new-account")
-                cols = st.columns((3,4,1))
-                # with cols[0]:
-                #     st.error("1 Create Alpaca Account")
-                # with cols[1]:
-
-                # st.info("2 Request a queen and enter in Aplaca API credentials")
-                # st.info("3 Create Risk Settings")
-                # st.success("4 Start Trading")
-                def update_age():
-                    return True
-                # with st.expander("Risk Levels"):
-                with cols[0]:
-                    with st.form("Set How You Wish your Queen to Trade"):
+            
+            with settings_queen:
+                st.subheader("QueenTraderBot Settings")
+                with st.expander("QueenTraderBot Settings", True):
+                    mark_down_text(align='left', color=default_text_color, fontsize='23', text='Ensure to Complete Step 1 and an Create Alpaca Account', font=default_font, hyperlink="https://app.alpaca.markets/brokerage/new-account")
+                    
+                    # queen_controls__tabs = [""]
+                    
+                    cols = st.columns((3,4,1))
+ 
+                    # with st.expander("Risk Levels"):
+                    with cols[0]:
+                        # with st.form("Set How You Wish your Queen to Trade"):
                         st.subheader("Set Your Risk Level")
                     # st.write(QUEEN_KING.keys())
                         st.text("How Old are you?")
-                        birthday = st.date_input("Enter your birthday: YYYY/MM/DD")
+                        if 'QueenTraders_Bithday' in QUEEN_KING.keys():
+                            birthday = st.date_input("Enter your birthday: YYYY/MM/DD")
+                        else:
+                            birthday = st.date_input("Enter your birthday: YYYY/MM/DD", datetime.date(year=1989, month=4, day=11))
+                        
                         yrs_old = datetime.datetime.now().year - birthday.year
                         if QUEEN_KING['age'] == 0:
                             QUEEN_KING['age'] = yrs_old
-                        
-                        QUEEN_KING['risk_level'] = st.slider("Risk Level", min_value=1, max_value=10, value=int(QUEEN_KING['risk_level']), help="Shoot for the Moon or Steady as she goes")            
-                        QUEEN_KING['age'] = st.slider("Age..How you Feel to Risk", min_value=1, max_value=100, value=int(QUEEN_KING['age']))     
+                        with cols[1]:
+                            QUEEN_KING['risk_level'] = st.slider("Risk Level", min_value=1, max_value=10, value=int(QUEEN_KING['risk_level']), help="Shoot for the Moon or Steady as she goes")            
+                        with cols[1]:
+                            QUEEN_KING['age'] = st.slider("Age..How you Feel to Risk", min_value=1, max_value=100, value=int(QUEEN_KING['age']))     
                         QUEEN_KING['QueenTraders_Bithday'] = birthday
-                        if st.form_submit_button('Save Risk Settings'):
+                        
+                        
+                        # if st.form_submit_button('Save Risk Settings'):
+                        if st.button('Save Risk Settings'):
                             PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                             return_runningbee_gif__save(title='Risk Saved')
-                            
-                with cols[1]:
+                                
+                # with cols[1]:
+                with st.expander("Select a Theme, a Personality"):
                     update_queencontrol_theme(QUEEN_KING, theme_list)
 
-
-        
-            # QueenInfo, macc, infohelp = st.tabs(["To The Hive", "MyAccount", "Info Help Doc"])
-            option = st.radio(
-                        label="",
-                options=["to_the_hive", "help"],
-                key="main_radio",
-                label_visibility='visible',
-                # disabled=st.session_state.disabled,
-                horizontal=True,
-            )
-            if option == 'to_the_hive':
-                cols = st.columns((2,4,2))
-                with cols[0]:
-                    welcome = st.button("QueensConscience")
-                    # st.write("The Hive QueensConscience")
-                    pass
-                with cols[1]:
-                    local_gif(gif_path=flyingbee_gif_path, height=23, width=23)
-
-                # local_gif(gif_path=queen_flair_gif, height=450, width=500)
-                    # st.button("Show", key=1)
-                # with cols[1]:
-                #     local_gif(gif_path=queen_flair_gif, height=450, width=500)
-                
-                if welcome:
+            
+            
+            with to_hive: 
+                if st.button("QueensConscience"):
                     switch_page("QueensConscience")
 
-            if option == 'help':
-                mark_down_text(fontsize='22', text="No Soup for you! Go figure it out..Set a theme and let it handle your entire portfolio....it will beat you ;) ")
+            with help_me:
+                st.write("No Soup for You")
+                local_gif(gif_path=flyingbee_grey_gif_path)
+
         
         else:
             st.session_state['authorized_user'] = False
             st.session_state['admin'] = False
             st.session_state['prod'] = False
-            st.error("Create an Account! QUICK only a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
-            progress_bar(value=33, text=f'{100-33} Queens Remaining')
+            pct_queens_taken = 54
 
-            cols = st.columns((3,2,5))
-            with cols[0]:
-                sneak_peak = st.button("Take a sneak peak and watch a Queen Trade in Real Time")
-                if sneak_peak:
-                    st.session_state['sneak_peak'] = True
-                    switch_page("QueensConscience")
-                else:
-                    st.session_state['sneak_peak'] = False
-            with cols[1]:
-                local_gif(floating_queen_gif, '100', '123')
+            def display_for_unAuth_client_user():
+                cols = st.columns((5,2))
+                with cols[0]:
+                    progress_bar(value=pct_queens_taken, text=f'{100-pct_queens_taken} Queens Remaining')
+                with cols[0]:
+                    sneak_peak = st.button("Take a sneak peak and watch a Queen Trade in Real Time")
+                    if sneak_peak:
+                        st.session_state['sneak_peak'] = True
+                        switch_page("QueensConscience")
+                    else:
+                        st.session_state['sneak_peak'] = False
+                with cols[1]:
+                    st.image(mainpage_bee_png, width=54)
+                # with cols[1]:
+                #     local_gif(floating_queen_gif, '100', '123')
+                page_line_seperator('1')
+                
+                st.error("ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
+
+                page_line_seperator('1')
+
+                local_gif(chess_board__gif, 650, 400)
             
+            display_for_unAuth_client_user()
 if __name__ == '__main__':
     # def createParser():
     #     parser = argparse.ArgumentParser()

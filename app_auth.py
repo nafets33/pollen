@@ -7,7 +7,8 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from King import hive_master_root, init_clientUser_dbroot
+from King import hive_master_root, init_clientUser_dbroot, local__filepaths_misc
+from appHive import local_gif
 # from QueenHive import init_pollen_dbs
 
 def signin_main():
@@ -15,8 +16,10 @@ def signin_main():
 
     load_dotenv(os.path.join(os.getcwd(), ".env"))
     main_root = hive_master_root() # os.getcwd()  # hive root
-    jpg_root = os.path.join(main_root, 'misc')
-    queen_flair_gif_original = os.path.join(jpg_root, 'queen-flair.gif')
+    MISC = local__filepaths_misc()
+    floating_queen_gif = MISC['floating_queen_gif']
+
+
 
 
     def register_user():
@@ -251,20 +254,17 @@ def signin_main():
         update_db()
 
         authenticator.logout("Logout", "sidebar")
-        # detials_cols = st.columns(2)
-        # detials_cols[0].write(f"Welcome *{name}*")
-        # with detials_cols[1].expander("Reset Password"):
-        # st.sidebar.write(f"Welcome *{name}*")
+
         reset_password(email)
-        if st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com', 'adivergentthinker@gmail.com']:
-            st.session_state['authorized_user'] = True
-        else:
-            st.session_state['authorized_user'] = False
-        
-        st.session_state['admin'] = True if st.session_state['username'] in ['stefanstapinski@gmail.com'] else False
 
-
-        setup_user_pollenqdbs(main_root)
+        if st.session_state['logout'] != True:
+            if st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com', 'adivergentthinker@gmail.com']:
+                st.session_state['authorized_user'] = True
+            else:
+                st.session_state['authorized_user'] = False
+            
+            st.session_state['admin'] = True if st.session_state['username'] in ['stefanstapinski@gmail.com'] else False
+            setup_user_pollenqdbs(main_root)
 
         return True
 
@@ -280,8 +280,12 @@ def signin_main():
 
     # no login trial; create account
     elif authentication_status == None:
-        # st.warning("Please enter your email and password")
-        with st.expander("New User Get your Own Queen to Trade your Entire Portoflio"):
+        cols = st.columns((6,1,2))
+        with cols[0]:
+            st.subheader("Create an Account To Get a QueenTraderBot")
+        with cols[1]:
+            local_gif(gif_path=floating_queen_gif, width='123', height='123')
+        with st.expander("New User Create Account"):
             register_user()
         return False
 

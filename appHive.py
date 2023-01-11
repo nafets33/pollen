@@ -484,9 +484,17 @@ def queen_order_flow(ORDERS, active_order_state_list):
     return True
 
 
+def live_sandbox__setup_switch():
+    prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
+    prod_name = "LIVE" if 'production' in st.session_state and st.session_state['production'] == True else 'Sandbox'
+    admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
+    st.session_state['admin'] = True if admin else False
+    
+    prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'], index=['LIVE', 'Sandbox'].index(prod_name))#, on_change=save_change())
+    st.session_state['production'] = True if prod_option == 'LIVE' else False
+    prod = st.session_state['production']
 
-
-
+    return prod, admin, prod_name
 
 ############### Charts ##################
 

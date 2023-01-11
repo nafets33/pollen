@@ -55,7 +55,7 @@ prod = False if 'sandbox' in scriptname else True
 
 
 
-main_root = os.getcwd()
+main_root = hive_master_root() # os.getcwd()
 db_root = os.path.join(main_root, 'db')
 db_app_root = os.path.join(db_root, 'app')
 
@@ -2224,7 +2224,7 @@ def return_portfolio_ticker_allocation():
 
 
 
-def pollen_themes(KING, themes=['nuetral', 'strong', 'star__storywave'], waves_cycles=['waveup', 'wavedown'], wave_periods={'premarket': .01, 'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'afterhours': .01, 'Day': .01}):
+def pollen_themes(KING, themes=['nuetral', 'custom', 'long_star', 'short_star', 'day_shark', 'safe', 'star__storywave_AI'], waves_cycles=['waveup', 'wavedown'], wave_periods={'premarket': .01, 'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'afterhours': .01, 'Day': .01}):
     ## set the course for the day how you want to buy expecting more scalps vs long? this should update and change as new info comes into being
     # themes = ['nuetral', 'strong']
     # waves_cycles = ['waveup', 'wavedown']
@@ -2244,7 +2244,16 @@ def pollen_themes(KING, themes=['nuetral', 'strong', 'star__storywave'], waves_c
      
     return pollen_themes
 
-# how long have I been in a tier?
+def init_KING(pickle_file):
+    
+    king = {
+        'kingme': KINGME(),
+    }
+
+    PickleData(pickle_file=pickle_file, data_to_store=king)
+    
+    return True
+
 
 def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
     return_dict = {}
@@ -3232,6 +3241,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
     else:
         # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
+        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{"_sandbox"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
@@ -3263,9 +3273,9 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         print("You Need an QueenOrders")
         init_queen_orders(pickle_file=PB_Orders_Pickle)
 
-    # if os.path.exists(PB_users_secrets) == False:
-    #     print("You Need an QueenUsers")
-    #     init_queen_client_user(pickle_file=PB_users_secrets)
+    if os.path.exists(PB_KING_Pickle) == False:
+        print("You Need a King")
+        init_KING(pickle_file=PB_KING_Pickle)
 
     
     return {

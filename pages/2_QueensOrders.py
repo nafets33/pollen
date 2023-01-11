@@ -24,7 +24,7 @@ import os
 from random import randint
 import sqlite3
 import streamlit as st
-from appHive import queen_order_flow, grid_height, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from appHive import queen_order_flow, live_sandbox__setup_switch, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from app_auth import signin_main
 import base64
 import time
@@ -112,13 +112,7 @@ with st.spinner("QueensOrders pollenq"):
     authorized_user = st.session_state['authorized_user']
     db_client_user_name = st.session_state['username'].split("@")[0]
 
-    prod = True if 'production' in st.session_state and st.session_state['production'] == True else False
-    admin = True if st.session_state['username'] == 'stefanstapinski@gmail.com' else False
-    st.session_state['admin'] = True if admin else False
-    
-    prod_option = st.sidebar.selectbox('LIVE/Sandbox', ['LIVE', 'Sandbox'])#, on_change=save_change())
-    st.session_state['production'] = True if prod_option == 'LIVE' else False
-    prod = st.session_state['production']
+    prod, admin, prod_name = live_sandbox__setup_switch()
 
     
     if st.session_state['production']:
