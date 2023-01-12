@@ -39,7 +39,7 @@ est = pytz.timezone("US/Eastern")
 if prior day abs(change) > 1 ignore ticker for the day!
 """
 def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen'):
-    users_allowed_queen_email, users_allowed_queen_emailname = kingdom__grace_to_find_a_Queen()
+    users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
     # script arguments
     if bee_scheduler:
@@ -52,7 +52,7 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
             print("failsafe away from user running function")
             send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body="you forgot to same something")
             sys.exit()
-    st.write("the queen speaks")
+    # st.write("the queen speaks")
     if prod:
         from QueenHive import send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, print_line_of_error, add_key_to_QUEEN
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))

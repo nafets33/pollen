@@ -115,5 +115,6 @@ def kingdom__grace_to_find_a_Queen():
     ]
 
     users_allowed_queen_emailname = [client_user.split("@")[0] for client_user in users_allowed_queen_email]
+    users_allowed_queen_emailname__db = [f'db__{cu}' for cu in users_allowed_queen_emailname]
 
-    return users_allowed_queen_email, users_allowed_queen_emailname
+    return users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db
