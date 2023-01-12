@@ -45,7 +45,9 @@ def signin_main():
                     subject="PollenQ. Verify Email",
                     body=f"""
                 Your PollenQ verification code is {verification_code}
+
                 Please enter this code in the website to complete your registration
+
                 Thank you,
                 PollenQ
                 """,
@@ -60,6 +62,7 @@ def signin_main():
                     subject="Welcome On Board PollenQ!",
                     body=f"""
                 You have successful created a PollenQ account. Ensure you keep your login detials safe.
+
                 Thank you,
                 PollenQ
                 """,
@@ -78,6 +81,7 @@ def signin_main():
                             subject="Welcome On Board PollenQ!",
                             body=f"""
     You have successful created a PollenQ account. Ensure you keep your login detials safe.
+
     Thank you,
     PollenQ
     """,
@@ -101,8 +105,11 @@ def signin_main():
                     subject="PollenQ. Forgot Password",
                     body=f"""
     Dear {authenticator.credentials["usernames"][email_forgot_pw]["name"]},
+
     Your new password for pollenq.com is {random_password}
+
     Please keep this password safe.
+
     Thank you,
     PollenQ
     """,
@@ -124,8 +131,10 @@ def signin_main():
                     subject="PollenQ. Password Changed",
                     body=f"""
     Dear {authenticator.credentials["usernames"][email]["name"]},
+
     You are recieving this email because your password for pollenq.com has been changed.
     If you did not authorize this change please contact us immediately.
+
     Thank you,
     PollenQ
     """,

@@ -20,6 +20,7 @@ class Authenticate:
         preauthorized: list=None):
         """
         Create a new instance of "Authenticate".
+
         Parameters
         ----------
         credentials: dict
@@ -53,6 +54,7 @@ class Authenticate:
     def _token_encode(self) -> str:
         """
         Encodes the contents of the reauthentication cookie.
+
         Returns
         -------
         str
@@ -65,6 +67,7 @@ class Authenticate:
     def _token_decode(self) -> str:
         """
         Decodes the contents of the reauthentication cookie.
+
         Returns
         -------
         str
@@ -78,6 +81,7 @@ class Authenticate:
     def _set_exp_date(self) -> str:
         """
         Creates the reauthentication cookie's expiry date.
+
         Returns
         -------
         str
@@ -88,6 +92,7 @@ class Authenticate:
     def _check_pw(self) -> bool:
         """
         Checks the validity of the entered password.
+
         Returns
         -------
         bool
@@ -118,6 +123,7 @@ class Authenticate:
     def _check_credentials(self, inplace: bool=True) -> bool:
         """
         Checks the validity of the entered credentials.
+
         Parameters
         ----------
         inplace: bool
@@ -165,6 +171,7 @@ class Authenticate:
     def login(self, form_name: str, location: str='main') -> tuple:
         """
         Creates a login widget.
+
         Parameters
         ----------
         form_name: str
@@ -212,6 +219,7 @@ class Authenticate:
     def logout(self, button_name: str, location: str='main'):
         """
         Creates a logout button.
+
         Parameters
         ----------
         button_name: str
@@ -239,6 +247,7 @@ class Authenticate:
     def _update_password(self, username: str, password: str):
         """
         Updates credentials dictionary with user's reset hashed password.
+
         Parameters
         ----------
         username: str
@@ -251,6 +260,7 @@ class Authenticate:
     def reset_password(self, username: str, form_name: str, location: str='main') -> bool:
         """
         Creates a password reset widget.
+
         Parameters
         ----------
         username: str
@@ -296,6 +306,7 @@ class Authenticate:
     def _register_credentials(self, username: str, name: str, phone_no: str, password: str, signup_date: str, last_login_date: str,  login_count: int, preauthorization: bool):
         """
         Adds to credentials dictionary the new user's information.
+
         Parameters
         ----------
         username: str
@@ -323,6 +334,7 @@ class Authenticate:
     def register_user(self, form_name: str, location: str='main', preauthorization=True) -> bool:
         """
         Creates a password reset widget.
+
         Parameters
         ----------
         form_name: str
@@ -382,6 +394,7 @@ class Authenticate:
     def _set_random_password(self, username: str) -> str:
         """
         Updates credentials dictionary with user's hashed random password.
+
         Parameters
         ----------
         username: str
@@ -398,6 +411,7 @@ class Authenticate:
     def forgot_password(self, form_name: str, location: str='main') -> tuple:
         """
         Creates a forgot password widget.
+
         Parameters
         ----------
         form_name: str
@@ -436,6 +450,7 @@ class Authenticate:
     def _get_username(self, key: str, value: str) -> str:
         """
         Retrieves username based on a provided entry.
+
         Parameters
         ----------
         key: str
@@ -455,6 +470,7 @@ class Authenticate:
     def _forgot_username(self, form_name: str, location: str='main') -> tuple:
         """
         Creates a forgot username widget.
+
         Parameters
         ----------
         form_name: str
@@ -488,6 +504,7 @@ class Authenticate:
     def _update_entry(self, username: str, key: str, value: str):
         """
         Updates credentials dictionary with user's updated entry.
+
         Parameters
         ----------
         username: str
@@ -502,6 +519,7 @@ class Authenticate:
     def update_user_details(self, username: str, form_name: str, location: str='main') -> bool:
         """
         Creates a update user details widget.
+
         Parameters
         ----------
         username: str
@@ -542,18 +560,3 @@ class Authenticate:
                     raise UpdateError('New and current values are the same')
             if len(new_value) == 0:
                 raise UpdateError('New value not provided')
-Footer
-© 2023 GitHub, Inc.
-Footer navigation
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
-pollen/authenticate.py at c8544b55cdc2bea01f41b66095b873422768536a · nafets33/pollen
