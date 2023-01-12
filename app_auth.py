@@ -257,14 +257,14 @@ def signin_main():
 
         reset_password(email)
 
-        if st.session_state['logout'] != True:
-            if st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com', 'adivergentthinker@gmail.com']:
-                st.session_state['authorized_user'] = True
-            else:
-                st.session_state['authorized_user'] = False
-            
-            st.session_state['admin'] = True if st.session_state['username'] in ['stefanstapinski@gmail.com'] else False
-            setup_user_pollenqdbs(main_root)
+        # if st.session_state['logout'] != True:
+        if st.session_state['username'] in ['stevenweaver8@gmail.com', 'stefanstapinski@gmail.com', 'adivergentthinker@gmail.com']:
+            st.session_state['authorized_user'] = True
+        else:
+            st.session_state['authorized_user'] = False
+        
+        st.session_state['admin'] = True if st.session_state['username'] in ['stefanstapinski@gmail.com'] else False
+        setup_user_pollenqdbs(main_root)
 
         return True
 
