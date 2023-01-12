@@ -26,6 +26,7 @@ import aiohttp
 import asyncio
 from itertools import islice
 import ipdb
+from King import init_symbol_dbs__pollenstory, hive_master_root 
 
 # import tempfile
 # import shutil
@@ -86,7 +87,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
     est = pytz.timezone("US/Eastern")
 
     
-    main_root = os.getcwd()
+    main_root = hive_master_root() #os.getcwd()
     db_root = os.path.join(main_root, 'db')
 
     init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)

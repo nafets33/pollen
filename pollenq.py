@@ -123,6 +123,8 @@ def pollenq():
             db_client_user_name = st.session_state['username'].split("@")[0]
 
             prod, admin, prod_name = live_sandbox__setup_switch()
+            if admin:
+                st.write('admin:', admin)
 
             
             if st.session_state['production']:
@@ -169,7 +171,7 @@ def pollenq():
             tabs = ["Setup Steps", "Risk Parameters", "To The Hive", "Help"]
             st.session_state['active_tab'] = tabs[0] if 'active_tab' not in st.session_state else st.session_state['active_tab']
 
-            hive_setup, settings_queen, to_hive, help_me = st.tabs(["Setup Steps", "Risk Parameters", "To The Hive", "Help"])
+            hive_setup, settings_queen, BrokerAPIKeys, to_hive, help_me = st.tabs(["Setup Steps", "Risk Parameters", "BrokerAPIKeys", "To The Hive", "Help"])
             
             with hive_setup:
                 st.title("Create Yourself The QueenTrader")
@@ -222,6 +224,11 @@ def pollenq():
                 with cols[6]:
                     page_line_seperator('.01')
                     st.image(mainpage_bee_png, width=133)
+            
+            with BrokerAPIKeys:
+                # queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
+                st.error("Account Needs to be Authoirzed First, Add Keys in QueensConscience")
+                pass
             
             page_line_seperator('1')
             

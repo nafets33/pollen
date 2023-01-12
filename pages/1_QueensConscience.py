@@ -1426,6 +1426,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                             dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
                             run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name)
                             st.snow()
+                        else:
+                            st.warning("Your Account not Yet authorized")
             with cols[1]:
                 local_gif(gif_path=flyingbee_grey_gif_path)
             return False
@@ -1574,7 +1576,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         return True
 
 
-    def queen__account_keys(QUEEN_KING, authorized_user):
+    def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
         if authorized_user == False:
             return False
         view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
@@ -1601,7 +1603,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             view_account_keys = False
         
 
-        if view_account_keys or view_account_button:
+        if view_account_keys or view_account_button or show_form:
             # with cols[0]:
             with st.expander("Add API Account Keys", authorized_user):
                 # with cols[0]:
@@ -1615,9 +1617,11 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     #     st.warning("You Need to Add your Sandbox-PAPER API KEYS")
 
                     # st.write(st.session_state['username']) @ stefanstapinski@gmail.com
-
+                    st.write("SandBox Paper")
                     APCA_API_KEY_ID_PAPER = st.text_input(label=f'APCA_API_KEY_ID_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER'], key=f'APCA_API_KEY_ID_PAPER')
                     APCA_API_SECRET_KEY_PAPER = st.text_input(label=f'APCA_API_SECRET_KEY_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER'], key=f'APCA_API_SECRET_KEY_PAPER')
+                    
+                    st.write("LIVE")
                     APCA_API_KEY_ID = st.text_input(label=f'APCA_API_KEY_ID', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID'], key=f'APCA_API_KEY_ID')
                     APCA_API_SECRET_KEY = st.text_input(label=f'APCA_API_SECRET_KEY', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY'], key=f'APCA_API_SECRET_KEY')
 
@@ -1626,7 +1630,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         user_secrets = init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, client_user=st.session_state['username'], APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER, APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER, APCA_API_KEY_ID=APCA_API_KEY_ID, APCA_API_SECRET_KEY=APCA_API_SECRET_KEY)
 
                         # test keys
-                        # ipdb.set_trace()
                         test_keys = test_api_keys(user_secrets=user_secrets)
 
                         if test_keys['prod'] == False:
@@ -1795,8 +1798,18 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     if st.session_state['authorized_user']:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['workerbees', 'queen_controls', 'subconscious'])
-    
+    # ipdb.set_trace()
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
+    
+    try:
+        snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
+    except Exception as e:
+        # requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://data.alpaca.markets/v2/stocks/SPY/snapshot
+        st.write("your api failed you need to update your api keys from alpaca.broker... taking you there")
+        # time.sleep(5)
+        queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
+        st.stop()
+
     
     portfolio = return_alpc_portolio(api)['portfolio']
     acct_info = refresh_account_info(api=api)
@@ -1895,7 +1908,11 @@ today_day = datetime.datetime.now(est).day
 
 if str(option).lower() == 'queen':
     if st.session_state['authorized_user'] == False:
-        st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+        cols = st.columns(2)
+        with cols[0]:
+            st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+        with cols[1]:
+            st.info("Below is a Preview")
         client_user_wants_a_queen = st.button("Yes I want a Queen!")
         if client_user_wants_a_queen:
             st.session_state['init_queen_request'] = True
@@ -1911,7 +1928,7 @@ if str(option).lower() == 'queen':
         # page_line_seperator('1', color=default_yellow_color)
         if st.session_state['authorized_user'] == True:
             # keys
-            queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user)
+            queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=False)
             # add new trading models if needed
             for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
                 for ticker in bees_data['tickers']:

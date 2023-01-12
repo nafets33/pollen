@@ -42,9 +42,9 @@ import streamlit as st
 from King import hive_master_root
 
 
-import _locale
+# import _locale
 
-_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+# _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 est = pytz.timezone("America/New_York")
 
@@ -182,6 +182,7 @@ def return_alpaca_api_keys(prod):
             keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
             rest = keys_paper['rest']
             api = keys_paper['api']
+
     except Exception as e:
         print("Key Return failure default to HivesKeys")
         st.error("Key Return failure default to HivesKeys")
@@ -223,7 +224,8 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
             else:
                 api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID']
                 api_secret =QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY']
-                return return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
+                api = return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
+                return api
         else:
             if sandbox_keys_confirmed == False:
                 # st.error("You Need to Add you SandboxPAPER API KEYS")
@@ -231,7 +233,8 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
             else:
                 api_key_id = QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER']
                 api_secret =QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER']
-                return return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
+                api = return_client_user__alpaca_api_keys(api_key_id=api_key_id, api_secret=api_secret, prod=prod)['api']
+                return api
     else:
         return return_alpaca_api_keys(prod=False)['api']
 
@@ -279,6 +282,29 @@ def read_pollenstory(db_root, dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl'
             # db_names.append(chess_piece)
 
     return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
+
+
+def read_QUEENs__pollenstory(symbols): # return combined dataframes
+    # return beeworkers data
+    
+    pollenstory = {}
+    STORY_bee = {}
+    # KNIGHTSWORD = {}
+    # ANGEL_bee = {}
+    # db_names = []
+    # for db in dbs:
+    #     if os.path.exists(os.path.join(db_root, db)):
+    #         db_name = db.split(".pkl")[0]
+    #         chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
+    #         pollenstory = {**pollenstory, **chess_piece['pollenstory']}
+    #         STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
+            # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
+            # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
+            # dbs_[db_name] = chess_piece
+            # db_names.append(chess_piece)
+
+    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
+
 
 
 def read_queensmind(prod, db_root): # return active story workers
