@@ -316,7 +316,7 @@ def build_AGgrid_df__queenorders(data, active_order_state_list, reload_data=Fals
             <span>
                 <button id='click-button' 
                     class='btn-simple' 
-                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>Click!</button>
+                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>OrderRules</button>
             </span>
         `;
 
@@ -390,8 +390,8 @@ def build_AGgrid_df__queenorders(data, active_order_state_list, reload_data=Fals
         "header": "Clicked",
         "cellRenderer": BtnCellRenderer,
         "cellRendererParams": {
-            "color": "red",
-            "background_color": "black",
+            "color": "black",
+            "background_color": "green",
         },
     })
 

@@ -20,6 +20,17 @@ def init_clientUser_dbroot(client_user):
     return db_root
 
 
+def init_symbol_dbs__pollenstory():
+    main_root = hive_master_root() # os.getcwd()  # hive root
+    symbol_dbs = os.path.join(os.path.dirname(main_root), 'symbols_pollenstory_dbs')
+
+    if os.path.exists(symbol_dbs) == False:
+        print("Init symbols_dbs")
+        os.mkdir(symbol_dbs)
+
+    return symbol_dbs
+
+
 def streamlit_config_colors():
     # read config file and parse from there
     return {

@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 from pytz import timezone
 import extra_streamlit_components as stx
+import ipdb
 
 from .hasher import Hasher
 from .utils import generate_random_pw
@@ -116,8 +117,7 @@ class Authenticate:
                                 st.session_state['name'] = self.token['name']
                                 st.session_state['username'] = self.token['username']
                                 st.session_state['authentication_status'] = True
-                                
-                                self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
+                                self.credentials['usernames'][st.session_state['username']]['login_count'] = int(self.credentials['usernames'][st.session_state['username']]['login_count']) + 1
                                 self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now().strftime("%d/%m/%Y %H:%M")
                                 st.sidebar.write(f"Welcome *{st.session_state['name']}*")
     def _check_credentials(self, inplace: bool=True) -> bool:
@@ -210,7 +210,7 @@ class Authenticate:
                     self._check_credentials()
         
                     if st.session_state['authentication_status']:
-                        self.credentials['usernames'][st.session_state['username']]['login_count'] += 1
+                        self.credentials['usernames'][st.session_state['username']]['login_count'] = int(self.credentials['usernames'][st.session_state['username']]['login_count']) + 1
                         self.credentials['usernames'][st.session_state['username']]['last_login_date'] = datetime.now(timezone('EST')).strftime("%d/%m/%Y %H:%M")
                         st.sidebar.write(f"Welcome *{st.session_state['name']}*")
 
