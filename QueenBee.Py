@@ -14,11 +14,12 @@ import asyncio
 import aiohttp
 from tqdm import tqdm
 import argparse
-from King import hive_master_root
+from King import kingdom__grace_to_find_a_Queen, hive_master_root
+import streamlit as st
 
 
-import _locale
-_locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
+# import _locale
+# _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -38,17 +39,20 @@ est = pytz.timezone("US/Eastern")
 if prior day abs(change) > 1 ignore ticker for the day!
 """
 def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen'):
+    users_allowed_queen_email, users_allowed_queen_emailname = kingdom__grace_to_find_a_Queen()
+
     # script arguments
     if bee_scheduler:
         prod = prod
         queens_chess_piece = queens_chess_piece
     else:
-        if client_user == 'stefanstapinski':
+        if client_user in users_allowed_queen_emailname: ## this db name for client_user
             pass
         else:
             print("failsafe away from user running function")
+            send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body="you forgot to same something")
             sys.exit()
-    
+    st.write("the queen speaks")
     if prod:
         from QueenHive import send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, print_line_of_error, add_key_to_QUEEN
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
@@ -1422,6 +1426,23 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
         priceinfo = {'snapshot': snap, 'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
         
         return priceinfo
+
+
+    # def return_snap_priceinfo__pollenData(api, ticker, crypto, exclude_conditions):
+    #     # read
+    #     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+    #     current_price = snap.latest_trade.price
+    #     current_ask = snap.latest_quote.ask_price
+    #     current_bid = snap.latest_quote.bid_price
+
+    #     # best limit price
+    #     best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
+    #     maker_middle = best_limit_price['maker_middle']
+    #     ask_bid_variance = current_bid / current_ask
+        
+    #     priceinfo = {'snapshot': snap, 'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+        
+    #     return priceinfo
 
 
     def update_queen_order_profits(ticker, queen_order, queen_order_idx, priceinfo):

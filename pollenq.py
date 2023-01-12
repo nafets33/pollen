@@ -104,6 +104,7 @@ def pollenq():
     # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
         signin_main()
+        # st.write(st.session_state['authorized_user'])
         # st.write(st.session_state)
         if st.session_state['authentication_status'] != None:
             if st.session_state['authorized_user'] == False:
@@ -117,7 +118,7 @@ def pollenq():
             #     signin_auth = signin_main()
             
             st.sidebar.write(f'Welcome {st.session_state["name"]}')
-            st.sidebar.write(f'{st.session_state["username"]}')
+            # st.sidebar.write(f'{st.session_state["username"]}')
             client_user = st.session_state['username']
             authorized_user = st.session_state['authorized_user']
             db_client_user_name = st.session_state['username'].split("@")[0]
@@ -125,7 +126,10 @@ def pollenq():
             prod, admin, prod_name = live_sandbox__setup_switch()
             if admin:
                 st.write('admin:', admin)
-
+            if prod:
+                st.warning("The Stage is Live And the Queen will begin trading for you....Good Luck...honestly the best Queens i bet will be the storywave_ai")
+            else:
+                st.warning("Welcome to your Sandbox...Play around...create new Queenbots! Learn and Deploy Strategy!")
             
             if st.session_state['production']:
                 from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
@@ -151,7 +155,6 @@ def pollenq():
             QUEEN_KING['source'] = PB_App_Pickle
             QUEEN = ReadPickleData(PB_QUEEN_Pickle)
             ORDERS = ReadPickleData(PB_Orders_Pickle)
-            # st.write("using ", PB_App_Pickle)
 
             APP_req = add_key_to_app(QUEEN_KING)
             QUEEN_KING = APP_req['QUEEN_KING']

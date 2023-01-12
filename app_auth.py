@@ -7,7 +7,7 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from King import hive_master_root, init_clientUser_dbroot, local__filepaths_misc
+from King import kingdom__grace_to_find_a_Queen, hive_master_root, init_clientUser_dbroot, local__filepaths_misc
 from appHive import local_gif
 import ipdb
 # from QueenHive import init_pollen_dbs
@@ -228,7 +228,7 @@ def signin_main():
                     client_user=st.session_state["username"]
                 )  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
                 # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
-                st.warning("Your Queen is Awaiting")
+                st.sidebar.warning("Your Queen is Awaiting")
             else:
                 db_root = os.path.join(
                     main_root, "db"
@@ -277,12 +277,10 @@ def signin_main():
 
         reset_password(email)
         # ipdb.set_trace()
+        
         if st.session_state["logout"] != True:
-            if st.session_state["username"] in [
-                "stevenweaver8@gmail.com",
-                "stefanstapinski@gmail.com",
-                "adivergentthinker@gmail.com",
-            ]:
+            users_allowed_queen_email, users_allowed_queen_emailname = kingdom__grace_to_find_a_Queen()
+            if st.session_state["username"] in users_allowed_queen_email:
                 st.session_state["authorized_user"] = True
             else:
                 st.session_state["authorized_user"] = False

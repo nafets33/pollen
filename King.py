@@ -1,4 +1,6 @@
 import os
+import sqlite3
+
 
 def hive_master_root():
     return os.getcwd()
@@ -99,3 +101,19 @@ def local__filepaths_misc():
         'bishop_unscreen': bishop_unscreen,
         'alpaca_portfolio_keys_png':alpaca_portfolio_keys_png,
     }
+
+def kingdom__grace_to_find_a_Queen():
+    # create list for userdb
+    con = sqlite3.connect("db/users.db")
+    cur = con.cursor()
+    users = cur.execute("SELECT * FROM users").fetchall()
+    
+    users_allowed_queen_email = [
+        "stevenweaver8@gmail.com",
+        "stefanstapinski@gmail.com",
+        "adivergentthinker@gmail.com",
+    ]
+
+    users_allowed_queen_emailname = [client_user.split("@")[0] for client_user in users_allowed_queen_email]
+
+    return users_allowed_queen_email, users_allowed_queen_emailname
