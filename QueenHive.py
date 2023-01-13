@@ -2361,7 +2361,8 @@ def generate_TradingModel(theme='custom', portfolio_name='Jq', ticker='SPY', sta
             star_kings_order_rules_dict = {}
             star_default_rules = star__DEFAULT_kings_order_rules_mapping()
             trigbee__default_settings = trigbees__DEFAULT_keys()
-
+            # theme
+            # for theme in themes
             for star in stars().keys():
                 star_kings_order_rules_dict[star] = {}
                 for trigbee in trigbees:

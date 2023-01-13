@@ -46,7 +46,7 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
         prod = prod
         queens_chess_piece = queens_chess_piece
     else:
-        if client_user in users_allowed_queen_emailname: ## this db name for client_user
+        if client_user in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
             pass
         else:
             print("failsafe away from user running function")
@@ -2413,20 +2413,8 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
         coin_exchange = "CBSE"
 
 
-        # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-        # api = return_alpaca_api_keys(prod=prod)['api']
-        api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod)
-
-
         """# Dates """
-        # current_day = api.get_clock().timestamp.date().isoformat()
-        # trading_days = api.get_calendar()
         trading_days = hive_dates()['trading_days']
-        
-        trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-        current_day = datetime.datetime.now(est).day
-        current_month = datetime.datetime.now(est).month
-        current_year = datetime.datetime.now(est).year
 
         # misc
         exclude_conditions = [
@@ -2460,17 +2448,20 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
         # PB_users_secrets = init_pollen['PB_users_secrets']
         # PB_queen_Archives_Pickle = init_pollen['PB_queen_Archives_Pickle']
 
-        # init orders
-        init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
-        init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
-
         # QUEEN Databases
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
         QUEEN = ReadPickleData(PB_QUEEN_Pickle)
         QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
         QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
         ORDERS = ReadPickleData(PB_Orders_Pickle)
+        
+        # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
+        # api = return_alpaca_api_keys(prod=prod)['api']
+        api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod)
+        # init orders
+        init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
+        init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
 
         # Ticker database of pollenstory ## Need to seperate out into tables
         QUEENBEE = master_swarm_QUEENBEE()

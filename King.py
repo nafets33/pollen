@@ -151,6 +151,7 @@ def kingdom__grace_to_find_a_Queen():
         "stapinski89@gmail.com",
         "jehddie@gmail.com",
         "conrad.studzinski@yahoo.com",
+        "jamesliess@icloud.com",
     ]
 
     users_allowed_queen_emailname = [client_user.split("@")[0] for client_user in users_allowed_queen_email]
