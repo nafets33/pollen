@@ -1627,6 +1627,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
+        view_account_keys = False
         if sandbox_keys_confirmed == False:
             with cols[0]:
                 st.error(f'Enter Your Sandbox API Keys To Activate Paper.QueenTraderBot')
@@ -1640,9 +1641,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             with cols[2]:
                 st.warning("Enter Your Production API Keys To Activate LIVE.QueenTraderBot...Begin Your Queens Journey")
 
-        else:
-            view_account_keys = False
-        
 
         if view_account_keys or view_account_button or show_form:
             # with cols[0]:
