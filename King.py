@@ -1,14 +1,49 @@
 import os
 import sqlite3
+import time
+import pickle
+import datetime
+import pytz
+
+est = pytz.timezone("US/Eastern")
 
 
 def hive_master_root():
     return os.getcwd()
 
+def master_swarm_QUEENBEE():
+    return os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl')
+
+def client_dbs_root():
+    main_root = hive_master_root()
+    client_dbs = os.path.join(os.path.dirname(main_root), 'client_user_dbs')
+    return client_dbs
+
+def return_list_of_all__Queens__pkl():
+    queen_files = []
+    client_dbs = client_dbs_root()
+    for db__client_users in os.listdir(client_dbs_root()):
+        for files_ in os.listdir(os.path.join(client_dbs, db__client_users)):
+            if files_ == 'queen.pkl' or files_ == 'queen_sandbox.pkl':
+                queen_files.append(os.path.join(client_dbs, os.path.join(db__client_users, files_)))
+    
+    return queen_files
+
+def return_list_of_all__QueenKing__pkl():
+    queen_files = []
+    client_dbs = client_dbs_root()
+    for db__client_users in os.listdir(client_dbs_root()):
+        for files_ in os.listdir(os.path.join(client_dbs, db__client_users)):
+            if files_ == 'queen_App_.pkl' or files_ == 'queen_App__sandbox.pkl':
+                queen_files.append(os.path.join(client_dbs, os.path.join(db__client_users, files_)))
+    
+    return queen_files
+
+
 
 def init_clientUser_dbroot(client_user):
     main_root = hive_master_root() # os.getcwd()  # hive root
-    client_user_db_dir = os.path.join(os.path.dirname(main_root), 'client_user_dbs')
+    client_user_db_dir = client_dbs_root()
 
     if client_user in ['stefanstapinski@gmail.com', 'pollen']:  ## admin
         db_root = os.path.join(main_root, 'db')
@@ -102,6 +137,7 @@ def local__filepaths_misc():
         'alpaca_portfolio_keys_png':alpaca_portfolio_keys_png,
     }
 
+
 def kingdom__grace_to_find_a_Queen():
     # create list for userdb
     con = sqlite3.connect("db/users.db")
@@ -112,9 +148,102 @@ def kingdom__grace_to_find_a_Queen():
         "stevenweaver8@gmail.com",
         "stefanstapinski@gmail.com",
         "adivergentthinker@gmail.com",
+        "stapinski89@gmail.com",
+        "jehddie@gmail.com",
+        "conrad.studzinski@yahoo.com",
     ]
 
     users_allowed_queen_emailname = [client_user.split("@")[0] for client_user in users_allowed_queen_email]
     users_allowed_queen_emailname__db = [f'db__{cu}' for cu in users_allowed_queen_emailname]
 
     return users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db
+
+
+def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
+    QUEENBEE = ReadPickleData(queen_db)
+    queens_master_tickers = []
+    queens_chess_pieces = [] 
+    for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+        for ticker in qcp_vars['tickers']:
+            if qcp in qcp_s:
+            # if qcp in ['knight']:
+                queens_master_tickers.append(ticker)
+                queens_chess_pieces.append(qcp)
+    queens_chess_pieces = list(set(queens_chess_pieces))
+
+    return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
+
+
+def return_QUEEN_masterSymbols(master_swarm_QUEENBEE=master_swarm_QUEENBEE, qcp_s=['castle', 'bishop', 'knight']):
+    QUEENBEE_db = master_swarm_QUEENBEE() # os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl') # MasterSwarmQueen 
+    QUEENBEE = ReadPickleData(QUEENBEE_db)
+    queens_master_tickers = []
+    queens_chess_pieces = [] 
+    for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+        for ticker in qcp_vars['tickers']:
+            if qcp in qcp_s:
+            # if qcp in ['knight']:
+                queens_master_tickers.append(ticker)
+                queens_chess_pieces.append(qcp)
+    queens_chess_pieces = list(set(queens_chess_pieces))
+
+    return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
+
+
+
+def PickleData(pickle_file, data_to_store):
+
+    p_timestamp = {'pq_last_modified': datetime.datetime.now(est)}
+    root, name = os.path.split(pickle_file)
+    pickle_file_temp = os.path.join(root, ("temp" + name))
+    with open(pickle_file_temp, 'wb+') as dbfile:
+        db = data_to_store
+        db['pq_last_modified'] = p_timestamp
+        pickle.dump(db, dbfile)
+    
+    with open(pickle_file, 'wb+') as dbfile:
+        db = data_to_store
+        db['pq_last_modified'] = p_timestamp
+        pickle.dump(db, dbfile)
+     
+    return True
+
+
+def ReadPickleData(pickle_file): 
+
+    # Check the file's size and modification time
+    prev_size = os.stat(pickle_file).st_size
+    prev_mtime = os.stat(pickle_file).st_mtime
+    while True:
+        stop = 0
+        # Get the current size and modification time of the file
+        curr_size = os.stat(pickle_file).st_size
+        curr_mtime = os.stat(pickle_file).st_mtime
+        
+        # Check if the size or modification time has changed
+        if curr_size != prev_size or curr_mtime != prev_mtime:
+            print(f'{pickle_file} is currently being written to')
+            # logging.info(f'{pickle_file} is currently being written to')
+        else:
+            if stop > 3:
+                print("pickle error")
+                # logging.critical(f'{e} error is pickle load')
+                # send_email(subject='CRITICAL Read Pickle Break')
+                break
+            try:
+                with open(pickle_file, "rb") as f:
+                    return pickle.load(f)
+            except Exception as e:
+                print(e)
+                # logging.error(f'{e} error is pickle load')
+                stop+=1
+                time.sleep(0.033)
+
+        # Update the previous size and modification time
+        prev_size = curr_size
+        prev_mtime = curr_mtime
+        
+        # Wait a short amount of time before checking again
+        time.sleep(0.033)
+
+

@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 # from QueenHive import PickleData, queen_orders_view
 import pickle
-from King import hive_master_root, streamlit_config_colors
+from King import hive_master_root, streamlit_config_colors, ReadPickleData
 
 from dotenv import load_dotenv
 
@@ -495,6 +495,23 @@ def live_sandbox__setup_switch():
     prod = st.session_state['production']
 
     return prod, admin, prod_name
+
+
+def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
+    QUEENBEE = ReadPickleData(queen_db)
+    queens_master_tickers = []
+    queens_chess_pieces = [] 
+    for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+        for ticker in qcp_vars['tickers']:
+            if qcp in qcp_s:
+            # if qcp in ['knight']:
+                queens_master_tickers.append(ticker)
+                queens_chess_pieces.append(qcp)
+    queens_chess_pieces = list(set(queens_chess_pieces))
+
+    return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
+
+
 
 ############### Charts ##################
 

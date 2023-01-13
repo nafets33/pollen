@@ -14,8 +14,8 @@ import asyncio
 import aiohttp
 from tqdm import tqdm
 import argparse
-from King import kingdom__grace_to_find_a_Queen, hive_master_root
-import streamlit as st
+from King import kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE 
+# import streamlit as st
 
 
 # import _locale
@@ -54,10 +54,10 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
             sys.exit()
     # st.write("the queen speaks")
     if prod:
-        from QueenHive import send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, print_line_of_error, add_key_to_QUEEN
+        from QueenHive import hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, print_line_of_error, add_key_to_QUEEN
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
     else:
-        from QueenHive_sandbox import send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, print_line_of_error, add_key_to_QUEEN
+        from QueenHive_sandbox import hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, return_alpaca_api_keys, read_pollenstory, init_clientUser_dbroot, init_logging, convert_to_float, order_vars__queen_order_items, generate_TradingModel, return_queen_controls, stars, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_index_tickers, return_alpc_portolio, return_market_hours, add_key_to_app, pollen_themes, init_app, check_order_status,  timestamp_string, read_queensmind,  submit_order, return_timestamp_string, pollen_story, ReadPickleData, PickleData, print_line_of_error, add_key_to_QUEEN
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
@@ -2414,14 +2414,16 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
 
 
         # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-        api = return_alpaca_api_keys(prod=prod)['api']
+        # api = return_alpaca_api_keys(prod=prod)['api']
+        api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod)
 
 
         """# Dates """
         # current_day = api.get_clock().timestamp.date().isoformat()
-        trading_days = api.get_calendar()
+        # trading_days = api.get_calendar()
+        trading_days = hive_dates()['trading_days']
+        
         trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-
         current_day = datetime.datetime.now(est).day
         current_month = datetime.datetime.now(est).month
         current_year = datetime.datetime.now(est).year
@@ -2471,6 +2473,7 @@ def queenbee(client_user, prod, bee_scheduler=False, queens_chess_piece='queen')
         ORDERS = ReadPickleData(PB_Orders_Pickle)
 
         # Ticker database of pollenstory ## Need to seperate out into tables
+        QUEENBEE = master_swarm_QUEENBEE()
         ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']

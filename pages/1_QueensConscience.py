@@ -152,6 +152,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     # if st.session_state['authentication_status']
     db_root = st.session_state['db_root']
+    # st.write(st.session_state['db_root'])
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
     client_user = st.session_state['username']
@@ -1413,6 +1414,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
 
     def queen_online(QUEEN):
+        # from airflow.dags.dag_queenbee_prod import run_trigger_dag
         now = datetime.datetime.now(est)
         if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
             # st.write("YOUR QUEEN if OFFLINE")
@@ -1422,9 +1424,11 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 with cols[1]:
                     wake_up_queen_button = st.button("Wake Her Up")
                     if wake_up_queen_button:
-                        if st.session_state['authorized_user']:
+                        if st.session_state['authorized_user'] and st.session_state['admin']:
                             dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
-                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name)
+                            # st.write(run__trigger_dag())
+                            # run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name) # stefanstapinski  @gmail.com
+                            QUEEN_KING['trigger_queen'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
                             st.snow()
                         else:
                             st.warning("Your Account not Yet authorized")
@@ -1434,7 +1438,44 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         else:
             return True
 
-    
+    def workerbees_online(QUEEN):
+        # from airflow.dags.dag_queenbee_prod import run_trigger_dag
+        now = datetime.datetime.now() # no est
+        CASTLE = os.path.join(main_root, 'db')
+        CASTLE = os.path.join(CASTLE, 'castle.pkl')
+        CASTLE_lastmod = datetime.datetime.fromtimestamp(os.path.getmtime(CASTLE))
+        if (now - CASTLE_lastmod).total_seconds() > 60:
+            # st.write("YOUR QUEEN if OFFLINE")
+            cols = st.columns((1,1,5))
+            with cols[0]:
+                st.error("Your Castle Is Falling")
+                with cols[1]:
+                    wake_up_queen_button = st.button("Wake up Castle workerbees")
+                    if wake_up_queen_button:
+                        if st.session_state['authorized_user']:
+                            dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
+                            # st.write(run__trigger_dag())
+                            # run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name) # stefanstapinski  @gmail.com
+                            # QUEEN_KING['trigger_workerbees'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
+                            # create file in folder
+                            pollen_dir = os.path.dirname(main_root)
+                            client_db = os.path.join(pollen_dir, 'client_user_dbs')
+                            client_db_path = os.path.join(client_db, f'db__{client_user}')
+                            file_path = os.path.join(client_db_path, f'{client_user}__workerbee.txt')
+                            if os.path.exists(file_path) == True:
+                                pass
+                            else:
+                                with open(file_path, 'w'):
+                                    pass
+                                st.snow()
+                        else:
+                            st.warning("Your Account not Yet authorized")
+            with cols[1]:
+                local_gif(gif_path=flyingbee_grey_gif_path)
+            return False
+        else:
+            return True
+
     def queen_chart(POLLENSTORY):
         # Main CHART Creation
         with st.expander('chart', expanded=True):

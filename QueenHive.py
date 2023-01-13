@@ -39,7 +39,7 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 import streamlit as st
-from King import hive_master_root
+from King import hive_master_root, PickleData, ReadPickleData
 
 
 # import _locale
@@ -242,6 +242,14 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 api = return_alpaca_api_keys(prod=prod)['api']
 
 # """# Dates """
+def hive_dates():
+    current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+    trading_days = api.get_calendar()
+    trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+    trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
+
+    return {'trading_days': trading_days}
+
 current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
 trading_days = api.get_calendar()
 trading_days_df = pd.DataFrame([day._raw for day in trading_days])
@@ -425,6 +433,8 @@ def init_QUEEN_App():
                     'tickers': main_symbols_full_list[:100],
                     'stars': stars(),},
         },
+    'trigger_queen': {'last_trig_date': datetime.datetime.now(est), 'client_user': 'init'},
+    'trigger_workerbees': {'last_trig_date': datetime.datetime.now(est), 'client_user': 'init'},
     'bee_lounge': [],
     'users_secrets': init_client_user_secrets(),
     'risk_level': 0,
@@ -2257,8 +2267,6 @@ def pollen_themes(KING, themes=['nuetral', 'custom', 'long_star', 'short_star', 
     # wave_periods = {'morning_9-11': .01, 'lunch_11-2': .01, 'afternoon_2-4': .01, 'Day': .01, 'afterhours': .01}
 
     # star__storywave: auto_adjusting_with_starwave: using story
-
-    
     star_times = KING['star_times']
     pollen_themes = {}
     for theme in themes:
@@ -2298,6 +2306,10 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
 
 def generate_TradingModel(theme='custom', portfolio_name='Jq', ticker='SPY', stars=stars, trigbees=['buy_cross-0', 'sell_cross-0', 'ready_buy_cross'], trading_model_name='MACD', status='active', portforlio_weight_ask=.01):
 
+    # theme level settings
+    themes = ['nuetral', 'custom', 'long_star', 'short_star', 'day_shark', 'safe', 'star__storywave_AI']
+    star__storywave_AI = 'star__storywave_AI'
+    
     def kings_order_rules(status, doubledown_timeduration, trade_using_limits, max_profit_waveDeviation, max_profit_waveDeviation_timeduration, timeduration, take_profit, sellout, sell_trigbee_trigger, stagger_profits, scalp_profits, scalp_profits_timeduration, stagger_profits_tiers, limitprice_decay_timeduration=1,  skip_sell_trigbee_distance_frequency=0, ignore_trigbee_at_power=.01, ignore_trigbee_in_macdstory_tier=[],ignore_trigbee_in_histstory_tier=[], ignore_trigbee_in_vwap_range={'low_range': -.05, 'high_range': .05}, take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}, short_position=False):
         return { # 1 trade if exists, double allows for 1 more trade to occur while in existance
         'theme': theme,
@@ -3318,8 +3330,9 @@ def init_clientUser_dbroot(client_user):
     if client_user in ['stefanstapinski@gmail.com', 'pollen']:
         db_root = os.path.join(main_root, 'db')
     else:
+        client_dbs = os.path.join(os.path.dirname(main_root), 'client_user_dbs')
         client_user = client_user.split("@")[0]
-        db_root = os.path.join(main_root, f'db__{client_user}')
+        db_root = os.path.join(client_dbs, f'db__{client_user}')
         if os.path.exists(db_root) == False:
             os.mkdir(db_root)
             os.mkdir(os.path.join(db_root, 'logs'))

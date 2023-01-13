@@ -50,7 +50,7 @@ def pollenq():
     # https://extras.streamlit.app
     # https://www.freeformatter.com/cron-expression-generator-quartz.html
     # http://34.162.236.105:8080/home # dags
-
+    # https://docs.google.com/spreadsheets/d/1ddqj-EkO1MluAjDg-U-DyCzJvtFjRN-9SfEYXkB8eNo/edit#gid=0 # track hours
     pd.options.mode.chained_assignment = None
 
     scriptname = os.path.basename(__file__)

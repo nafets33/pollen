@@ -26,7 +26,7 @@ import aiohttp
 import asyncio
 from itertools import islice
 import ipdb
-from King import init_symbol_dbs__pollenstory, hive_master_root 
+from King import init_symbol_dbs__pollenstory, hive_master_root, read_QUEEN
 
 # import tempfile
 # import shutil
@@ -603,19 +603,19 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
             print("qtf", e, print_line_of_error())
 
 
-    def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
-        QUEENBEE = ReadPickleData(queen_db)
-        queens_master_tickers = []
-        queens_chess_pieces = [] 
-        for qcp, qcp_vars in QUEENBEE['workerbees'].items():
-            for ticker in qcp_vars['tickers']:
-                if qcp in qcp_s:
-                # if qcp in ['knight']:
-                    queens_master_tickers.append(ticker)
-                    queens_chess_pieces.append(qcp)
-        queens_chess_pieces = list(set(queens_chess_pieces))
+    # def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
+    #     QUEENBEE = ReadPickleData(queen_db)
+    #     queens_master_tickers = []
+    #     queens_chess_pieces = [] 
+    #     for qcp, qcp_vars in QUEENBEE['workerbees'].items():
+    #         for ticker in qcp_vars['tickers']:
+    #             if qcp in qcp_s:
+    #             # if qcp in ['knight']:
+    #                 queens_master_tickers.append(ticker)
+    #                 queens_chess_pieces.append(qcp)
+    #     queens_chess_pieces = list(set(queens_chess_pieces))
 
-        return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
+    #     return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
     
     
     def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces):
