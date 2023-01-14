@@ -18,6 +18,10 @@ import numpy as np
 # from QueenHive import PickleData, queen_orders_view
 import pickle
 from King import hive_master_root, streamlit_config_colors, ReadPickleData
+from alpaca_trade_api.rest import TimeFrame, URL
+from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
+import alpaca_trade_api as tradeapi
+
 
 from dotenv import load_dotenv
 
@@ -206,6 +210,38 @@ def local_gif(gif_path, width='33', height='33'):
         contents = file_.read()
         data_url = base64.b64encode(contents).decode("utf-8")
         st.markdown(f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">', unsafe_allow_html=True)
+
+
+    def markdown_logo(LOGO_IMAGE):
+        st.markdown(
+            """
+            <style>
+            .container {
+                display: flex;
+            }
+            .logo-text {
+                font-weight:700 !important;
+                font-size:50px !important;
+                color: #f9a01b !important;
+                padding-top: 75px !important;
+            }
+            .logo-img {
+                float:right;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"""
+            <div class="container">
+                <img class="logo-img" src="data:image/png;base64,{base64.b64encode(open(LOGO_IMAGE, "rb").read()).decode()}">
+                <p class="logo-text">Logo Much ?</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 
 def flying_bee_gif(width='33', height='33'):
@@ -512,7 +548,129 @@ def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
     return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
 
 
+def init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, client_user='init', APCA_API_KEY_ID_PAPER='init', APCA_API_SECRET_KEY_PAPER='init', APCA_API_KEY_ID='init', APCA_API_SECRET_KEY='init', datetimestamp_est=datetime.datetime.now(est)):
+    return {
+    'prod_keys_confirmed': prod_keys_confirmed,
+    'sandbox_keys_confirmed': sandbox_keys_confirmed,
+    'client_user': client_user,
+    'APCA_API_KEY_ID_PAPER': APCA_API_KEY_ID_PAPER,
+    'APCA_API_SECRET_KEY_PAPER': APCA_API_SECRET_KEY_PAPER,
+    'APCA_API_KEY_ID': APCA_API_KEY_ID,
+    'APCA_API_SECRET_KEY': APCA_API_SECRET_KEY,
+    'datetimestamp_est': datetimestamp_est,
+    }
 
+
+def test_api_keys(user_secrets):
+    APCA_API_KEY_ID_PAPER = user_secrets['APCA_API_KEY_ID_PAPER']
+    APCA_API_SECRET_KEY_PAPER = user_secrets['APCA_API_SECRET_KEY_PAPER']
+    APCA_API_KEY_ID = user_secrets['APCA_API_KEY_ID']
+    APCA_API_SECRET_KEY = user_secrets['APCA_API_SECRET_KEY']
+    # ipdb.set_trace()
+    try:
+        base_url = "https://api.alpaca.markets"
+        rest = AsyncRest(key_id=APCA_API_KEY_ID,
+                    secret_key=APCA_API_SECRET_KEY)
+
+        api = tradeapi.REST(key_id=APCA_API_KEY_ID,
+                    secret_key=APCA_API_SECRET_KEY,
+                    base_url=URL(base_url), api_version='v2')
+        api.get_snapshot("SPY")
+        prod = True
+        prod_er = False
+    except Exception as e:
+        prod_er = e
+        prod = False
+
+    try:
+        base_url = "https://paper-api.alpaca.markets"
+        rest = AsyncRest(key_id=APCA_API_KEY_ID_PAPER,
+                            secret_key=APCA_API_SECRET_KEY_PAPER)
+
+        api = tradeapi.REST(key_id=APCA_API_KEY_ID_PAPER,
+                            secret_key=APCA_API_SECRET_KEY_PAPER,
+                            base_url=URL(base_url), api_version='v2')
+        api.get_snapshot("SPY")
+        sandbox = True
+        sb_er = False
+    except Exception as e:
+        sb_er = e
+        sandbox = False
+    return {'prod': prod, 'sandbox': sandbox, 'prod_er': str(prod_er), 'sb_er': str(sb_er)}
+
+
+def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False):
+    if authorized_user == False:
+        return False
+    view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
+    cols = st.columns((4,1,4))
+    # check if keys exist
+    # st.write(QUEEN_KING['users_secrets'])
+    prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
+    sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
+
+    view_account_keys = False
+    if sandbox_keys_confirmed == False:
+        with cols[0]:
+            st.error(f'Enter Your Sandbox API Keys To Activate Paper.QueenTraderBot')
+        with cols[1]:
+            # view_account_button = st.button("Update API Keys", key='main_key')
+            view_account_keys = True
+        # with cols[2]:
+            local_gif(gif_path=runaway_bee_gif, height=33, width=33)
+    
+    if prod_keys_confirmed == False:
+        with cols[2]:
+            st.warning("Enter Your Production API Keys To Activate LIVE.QueenTraderBot...Begin Your Queens Journey")
+
+
+    if view_account_keys or view_account_button or show_form:
+        # with cols[0]:
+        with st.expander("Add API Account Keys", authorized_user):
+            # with cols[0]:
+            local_gif(gif_path=runaway_bee_gif, height=33, width=33)
+            st.session_state['account_keys'] = True
+            
+            with st.form("account keys"):
+                # if prod_keys_confirmed == False:
+                #     st.warning("You Need to Add you LIVE API KEYS")
+                # if sandbox_keys_confirmed == False:
+                #     st.warning("You Need to Add your Sandbox-PAPER API KEYS")
+
+                # st.write(st.session_state['username']) @ stefanstapinski@gmail.com
+                st.write("SandBox Paper")
+                APCA_API_KEY_ID_PAPER = st.text_input(label=f'APCA_API_KEY_ID_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER'], key=f'APCA_API_KEY_ID_PAPER')
+                APCA_API_SECRET_KEY_PAPER = st.text_input(label=f'APCA_API_SECRET_KEY_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER'], key=f'APCA_API_SECRET_KEY_PAPER')
+                
+                st.write("LIVE")
+                APCA_API_KEY_ID = st.text_input(label=f'APCA_API_KEY_ID', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID'], key=f'APCA_API_KEY_ID')
+                APCA_API_SECRET_KEY = st.text_input(label=f'APCA_API_SECRET_KEY', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY'], key=f'APCA_API_SECRET_KEY')
+
+                if st.form_submit_button("Save API Keys"):
+                    
+                    user_secrets = init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, client_user=st.session_state['username'], APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER, APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER, APCA_API_KEY_ID=APCA_API_KEY_ID, APCA_API_SECRET_KEY=APCA_API_SECRET_KEY)
+
+                    # test keys
+                    test_keys = test_api_keys(user_secrets=user_secrets)
+
+                    if test_keys['prod'] == False:
+                        st.error("Production Keys Not Valid")
+                        st.info(test_keys['prod_er'])
+                    else:
+                        st.success("Production Keys Added")
+                        user_secrets['prod_keys_confirmed'] = True
+
+                    if test_keys['sandbox'] == False:
+                        st.error("Sandbox Keys Not Valid")
+                        st.info(test_keys['sb_er'])
+                    else:
+                        st.success("Sandbox Keys Added")
+                        user_secrets['sandbox_keys_confirmed'] = True
+            
+                    QUEEN_KING['users_secrets'] = user_secrets
+                    PickleData(PB_App_Pickle, QUEEN_KING)
+
+    return True
 ############### Charts ##################
 
 def example__subPlot():

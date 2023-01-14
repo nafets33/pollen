@@ -3,15 +3,17 @@ import subprocess
 import datetime
 import pytz
 est = pytz.timezone("US/Eastern")
+import streamlit as st
 
 
 
 
 
-def run__trigger_dag(dag_id, run_id, client_user):
+def run__trigger_dag(dag_id, run_id, client_user, prod):
     # dag_id='run_queenbee_prod'
     c = Client(None, None)
-    c.trigger_dag(dag_id=dag_id, run_id=run_id, conf={})
+    c.trigger_dag(dag_id=dag_id, run_id=run_id, conf={'client_user': client_user, 'prod': prod})
+    # st.info(client_user)
 
 
 def get_screen_processes():

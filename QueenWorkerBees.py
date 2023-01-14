@@ -26,7 +26,8 @@ import aiohttp
 import asyncio
 from itertools import islice
 import ipdb
-from King import init_symbol_dbs__pollenstory, hive_master_root, read_QUEEN
+from King import PickleData, workerbee_dbs_root, hive_master_root, read_QUEEN, workerbee_dbs_root__STORY_bee
+
 
 # import tempfile
 # import shutil
@@ -70,11 +71,11 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
 
     if prod:
         print("Production")
-        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData,  return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
     else:
         print("Sandbox")
-        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData,  return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
     # if windows:
@@ -566,6 +567,18 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
         
         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
+        # for every ticker ticker write pickle file to db
+        symbols_pollenstory_dbs = workerbee_dbs_root()
+        symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
+        for ttf in pollens_honey['pollen_story']:
+            ttf_db = os.path.join(symbols_pollenstory_dbs, f'{ttf}.pkl')
+            PickleData(ttf_db, {'pollen_story': pollens_honey['pollen_story'][ttf]}, write_temp=False)
+
+        for ttf in pollens_honey['conscience']['STORY_bee']:
+            ttf_db = os.path.join(symbols_STORY_bee_root, f'{ttf}.pkl')
+            PickleData(ttf_db, {'STORY_bee': pollens_honey['conscience']['STORY_bee'][ttf]}, write_temp=False)
+
+
         return True
 
 
@@ -602,22 +615,7 @@ def queen_workerbees(prod, bee_scheduler=False, queens_chess_piece='bees_manager
         except Exception as e:
             print("qtf", e, print_line_of_error())
 
-
-    # def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
-    #     QUEENBEE = ReadPickleData(queen_db)
-    #     queens_master_tickers = []
-    #     queens_chess_pieces = [] 
-    #     for qcp, qcp_vars in QUEENBEE['workerbees'].items():
-    #         for ticker in qcp_vars['tickers']:
-    #             if qcp in qcp_s:
-    #             # if qcp in ['knight']:
-    #                 queens_master_tickers.append(ticker)
-    #                 queens_chess_pieces.append(qcp)
-    #     queens_chess_pieces = list(set(queens_chess_pieces))
-
-    #     return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
-    
-    
+  
     def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces):
 
         speed_gauges = {}

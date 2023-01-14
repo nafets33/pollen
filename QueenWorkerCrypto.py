@@ -14,15 +14,11 @@ import pytz
 from collections import defaultdict, deque
 import ipdb
 import argparse
-# import tempfile
-# import shutil
-# from scipy.stats import linregress
-# from scipy import stats
-# import hashlib
-# import json
+from King import workerbee_dbs_root, workerbee_dbs_root__STORY_bee, PickleData, ReadPickleData
 
 
-def queen_workerbee_coins():
+
+def queen_workerbee_coins(prod):
 
     def createParser():
         parser = argparse.ArgumentParser()
@@ -34,8 +30,12 @@ def queen_workerbee_coins():
     parser = createParser()
     namespace = parser.parse_args()
     queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
-    prod = True if str(namespace.prod).lower() == 'true' else False
+    if prod:
+        prod = True
+    else:
+        prod = True if str(namespace.prod).lower() == 'true' else False
 
+    print("Production",  prod)
 
     # script arguments
     # queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
@@ -44,10 +44,10 @@ def queen_workerbee_coins():
     est = pytz.timezone("US/Eastern")
 
     if prod:
-        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
     else:
-        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, ReadPickleData, PickleData, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
         load_dotenv(os.path.join(os.getcwd(), '.env'))
 
     main_root = os.getcwd()
@@ -552,11 +552,19 @@ def queen_workerbee_coins():
                 QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
                 # God Save The QUEEN
-                if PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN) == False:
-                    msg=("Pickle Data Failed")
-                    print(msg)
-                    logging.critical(msg)
-                    continue
+                PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN, write_temp=False)
+
+
+                symbols_pollenstory_dbs = workerbee_dbs_root()
+                symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
+                for ttf in pollens_honey['pollen_story']:
+                    ttf_db = os.path.join(symbols_pollenstory_dbs, f'{ttf}.pkl')
+                    PickleData(ttf_db, {'pollen_story': pollens_honey['pollen_story'][ttf]}, write_temp=False)
+
+                for ttf in pollens_honey['conscience']['STORY_bee']:
+                    ttf_db = os.path.join(symbols_STORY_bee_root, f'{ttf}.pkl')
+                    PickleData(ttf_db, {'STORY_bee': pollens_honey['conscience']['STORY_bee'][ttf]}, write_temp=False)
+
 
                 e = datetime.datetime.now(est)
                 cycle_run_time = (e-s)
@@ -575,5 +583,5 @@ def queen_workerbee_coins():
         logging.critical(log_msg)
 
 if __name__ == '__main__':
-    queen_workerbee_coins()
+    queen_workerbee_coins(prod=True)
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

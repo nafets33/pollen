@@ -17,7 +17,7 @@ import streamlit as st
 from app_auth import signin_main
 import time
 from streamlit_extras.switch_page_button import switch_page
-from appHive import live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from appHive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
 import argparse
 from streamlit_extras.stoggle import stoggle
@@ -132,10 +132,10 @@ def pollenq():
                 st.warning("Welcome to your Sandbox...Play around...create new Queenbots! Learn and Deploy Strategy!")
             
             if st.session_state['production']:
-                from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+                from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
                 load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
             else:
-                from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+                from QueenHive_sandbox import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
                 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
             # if db__name exists use db__name else use db
@@ -229,8 +229,8 @@ def pollenq():
                     st.image(mainpage_bee_png, width=133)
             
             with BrokerAPIKeys:
-                # queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
-                st.error("Account Needs to be Authoirzed First, Add Keys in QueensConscience")
+                queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
+                # st.error("Account Needs to be Authoirzed First, Add Keys in QueensConscience")
                 pass
             
             page_line_seperator('1')
