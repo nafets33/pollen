@@ -70,7 +70,6 @@ crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 main_root = hive_master_root() # os.getcwd()  # hive root
 
 # images
-
 MISC = local__filepaths_misc()
 jpg_root = MISC['jpg_root']
 bee_image = MISC['bee_image']
@@ -95,7 +94,8 @@ learningwalk_bee = MISC['learningwalk_bee']
 queen_flair_gif = MISC['queen_flair_gif']
 chess_piece_queen = MISC['chess_piece_queen']
 runaway_bee_gif = MISC['runaway_bee_gif']
-purple_heartbeat_gif = MISC['purple_heartbeat_gif']
+# purple_heartbeat_gif = MISC['purple_heartbeat_gif'] MISC.get('puprple')
+
 # moving_ticker_gif = MISC['moving_ticker_gif']
 # heart_bee_gif = MISC['heart_bee_gif']
 
@@ -125,7 +125,7 @@ st.set_page_config(
     #  }
  )
 
-local_gif(gif_path=purple_heartbeat_gif, height='33', width='1000')
+# local_gif(gif_path=purple_heartbeat_gif, height='33', width='1000')
 
 def set_prod_env(prod):
     st.session_state['production'] = prod
