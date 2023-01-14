@@ -7,17 +7,71 @@ import pytz
 
 est = pytz.timezone("US/Eastern")
 
+def init_logging(queens_chess_piece, db_root, prod):
+    log_dir = os.path.join(db_root, 'logs')
+    log_dir_logs = os.path.join(log_dir, 'logs')
+    
+    if os.path.exists(log_dir) == False:
+        os.mkdir(log_dir)
+    if os.path.exists(log_dir_logs) == False:
+        os.mkdir(log_dir_logs)
+    
+    if prod:
+        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
+    else:
+        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
+
+    log_file = os.path.join(log_dir, log_name)
+    # print("logging",log_file)
+    logging.basicConfig(filename=log_file,
+                        filemode='a',
+                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO,
+                        force=True)
+    
+    return True
+
+
+
 
 def hive_master_root():
     return os.getcwd()
 
-def master_swarm_QUEENBEE():
-    return os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl')
+
+def master_swarm_QUEENBEE(prod):
+    if prod:
+        return os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl')
+    else:
+        return os.path.join(os.path.join(hive_master_root(), 'db'), 'queen_sandbox.pkl')
+
 
 def client_dbs_root():
     main_root = hive_master_root()
     client_dbs = os.path.join(os.path.dirname(main_root), 'client_user_dbs')
     return client_dbs
+
+
+def workerbee_dbs_root():
+    symbols_pollenstory_dbs = os.path.join(os.path.join(os.path.dirname(hive_master_root()), "symbols_pollenstory_dbs"))
+    return symbols_pollenstory_dbs
+
+
+def workerbee_dbs_root__STORY_bee():
+    symbols_pollenstory_dbs = os.path.join(os.path.join(os.path.dirname(hive_master_root()), "symbols_STORY_bee_dbs"))
+    return symbols_pollenstory_dbs
+
+
+def init_symbol_dbs__pollenstory():
+    main_root = hive_master_root() # os.getcwd()  # hive root
+    symbol_dbs = os.path.join(os.path.dirname(main_root), 'symbols_pollenstory_dbs')
+
+    if os.path.exists(symbol_dbs) == False:
+        print("Init symbols_dbs")
+        os.mkdir(symbol_dbs)
+
+    return symbol_dbs
+
 
 def return_list_of_all__Queens__pkl():
     queen_files = []
@@ -29,6 +83,7 @@ def return_list_of_all__Queens__pkl():
     
     return queen_files
 
+
 def return_list_of_all__QueenKing__pkl():
     queen_files = []
     client_dbs = client_dbs_root()
@@ -38,7 +93,6 @@ def return_list_of_all__QueenKing__pkl():
                 queen_files.append(os.path.join(client_dbs, os.path.join(db__client_users, files_)))
     
     return queen_files
-
 
 
 def init_clientUser_dbroot(client_user):
@@ -55,17 +109,6 @@ def init_clientUser_dbroot(client_user):
             os.mkdir(os.path.join(db_root, 'logs'))
 
     return db_root
-
-
-def init_symbol_dbs__pollenstory():
-    main_root = hive_master_root() # os.getcwd()  # hive root
-    symbol_dbs = os.path.join(os.path.dirname(main_root), 'symbols_pollenstory_dbs')
-
-    if os.path.exists(symbol_dbs) == False:
-        print("Init symbols_dbs")
-        os.mkdir(symbol_dbs)
-
-    return symbol_dbs
 
 
 def streamlit_config_colors():
@@ -106,6 +149,9 @@ def local__filepaths_misc():
     chess_board__gif = os.path.join(jpg_root, "chess_board.gif")
     bishop_unscreen = os.path.join(jpg_root, "bishop_unscreen.gif")
     alpaca_portfolio_keys_png = os.path.join(jpg_root, "alpaca_portfolio_snap_keys.PNG")
+    purple_heartbeat_gif = os.path.join(jpg_root, "purple_heartbeat.gif")
+    moving_ticker_gif = os.path.join(jpg_root, "moving_ticker.gif")
+    heart_bee_gif = os.path.join(jpg_root, "heart_bee.gif")
 
     return {
         'jpg_root': jpg_root,
@@ -135,6 +181,9 @@ def local__filepaths_misc():
         'chess_board__gif': chess_board__gif,
         'bishop_unscreen': bishop_unscreen,
         'alpaca_portfolio_keys_png':alpaca_portfolio_keys_png,
+        'purple_heartbeat_gif': purple_heartbeat_gif,
+        'moving_ticker_gif': moving_ticker_gif,
+        'heart_bee_gif': heart_bee_gif,
     }
 
 
@@ -175,9 +224,9 @@ def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
     return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
 
 
-def return_QUEEN_masterSymbols(master_swarm_QUEENBEE=master_swarm_QUEENBEE, qcp_s=['castle', 'bishop', 'knight']):
-    QUEENBEE_db = master_swarm_QUEENBEE() # os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl') # MasterSwarmQueen 
-    QUEENBEE = ReadPickleData(QUEENBEE_db)
+def return_QUEEN_masterSymbols(prod=False, master_swarm_QUEENBEE=master_swarm_QUEENBEE, qcp_s=['castle', 'bishop', 'knight']):
+    # QUEENBEE_db =  # os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl') # MasterSwarmQueen 
+    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
     queens_master_tickers = []
     queens_chess_pieces = [] 
     for qcp, qcp_vars in QUEENBEE['workerbees'].items():
@@ -191,21 +240,29 @@ def return_QUEEN_masterSymbols(master_swarm_QUEENBEE=master_swarm_QUEENBEE, qcp_
     return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
 
 
+def handle__ttf_notactive__datastream(info='if ticker stream offline pull latest price by MasterApi'):
 
-def PickleData(pickle_file, data_to_store):
+    return True
+
+
+
+#### GLOBAL ####
+def PickleData(pickle_file, data_to_store, write_temp=True):
 
     p_timestamp = {'pq_last_modified': datetime.datetime.now(est)}
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
-    with open(pickle_file_temp, 'wb+') as dbfile:
-        db = data_to_store
-        db['pq_last_modified'] = p_timestamp
-        pickle.dump(db, dbfile)
+    if write_temp:
+        with open(pickle_file_temp, 'wb+') as dbfile:
+            db = data_to_store
+            db['pq_last_modified'] = p_timestamp
+            pickle.dump(db, dbfile)
     
     with open(pickle_file, 'wb+') as dbfile:
         db = data_to_store
         db['pq_last_modified'] = p_timestamp
         pickle.dump(db, dbfile)
+
      
     return True
 
@@ -247,4 +304,10 @@ def ReadPickleData(pickle_file):
         # Wait a short amount of time before checking again
         time.sleep(0.033)
 
+#### GLOBAL ####
 
+
+
+
+
+#### #### if __name__ == '__main__'  ###
