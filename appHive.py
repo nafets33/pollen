@@ -724,7 +724,7 @@ def queen_order_flow(ORDERS, active_order_state_list):
         )
 
         if ordertables__agrid.selected_rows:
-            st.success("Thankyou for clicking the Buttonß")
+            st.success("Thankyou for clicking the Button")
             st.write(ordertables__agrid.selected_rows)
 
     return True
