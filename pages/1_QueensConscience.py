@@ -26,12 +26,12 @@ import os
 # from random import randint
 import sqlite3
 import streamlit as st
-from appHive import init_client_user_secrets, live_sandbox__setup_switch, progress_bar, queen_order_flow, grid_height, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from appHive import url_gif, queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from app_auth import signin_main
 import base64
 import time
 # from streamlit_extras.stoggle import stoggle
-from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
+from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from QueenBeeDagger import run__trigger_dag
 
 est = pytz.timezone("US/Eastern")
@@ -94,9 +94,10 @@ learningwalk_bee = MISC['learningwalk_bee']
 queen_flair_gif = MISC['queen_flair_gif']
 chess_piece_queen = MISC['chess_piece_queen']
 runaway_bee_gif = MISC['runaway_bee_gif']
+# hexagon_loop = MISC['hexagon_loop']
 # purple_heartbeat_gif = MISC['purple_heartbeat_gif'] MISC.get('puprple')
 
-# moving_ticker_gif = MISC['moving_ticker_gif']
+moving_ticker_gif = MISC['moving_ticker_gif']
 # heart_bee_gif = MISC['heart_bee_gif']
 
 learningwalk_bee = Image.open(learningwalk_bee)
@@ -205,14 +206,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         if APP_req['update']:
             PickleData(PB_App_Pickle, QUEEN_KING)
 
-
-    def grid_height(len_of_rows):
-        if len_of_rows > 10:
-            grid_height = 333
-        else:
-            grid_height = round(len_of_rows * 33, 0)
-        
-        return grid_height
 
     def chunk(it, size):
         it = iter(it)
@@ -472,29 +465,32 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         st.plotly_chart(fig)
     
     def create_main_macd_chart(df):
-        title = df.iloc[-1]['name']
-        # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1999, row_heights=[0.7, 0.3])
-        # df.set_index('timestamp_est')
-        # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-        df=df.copy()
-        df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-        fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
-        # fig.add_scatter(x=df['chartdate'], y=df['close'], mode="lines", row=1, col=1)
-        # if '1Minute_1Day' in df.iloc[0]['name']:
-        fig.add_scatter(x=df['chartdate'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
+        try:
+            title = df.iloc[-1]['name']
+            # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+            fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1999, row_heights=[0.7, 0.3])
+            # df.set_index('timestamp_est')
+            # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+            df=df.copy()
+            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+            fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
+            # fig.add_scatter(x=df['chartdate'], y=df['close'], mode="lines", row=1, col=1)
+            # if '1Minute_1Day' in df.iloc[0]['name']:
+            fig.add_scatter(x=df['chartdate'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
 
-        fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
-        fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
-        fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
-        fig.update_layout(title_text=title)
-        df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
-        fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
-        # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
-        fig.update_xaxes(showgrid=False)
-        fig.update_yaxes(showgrid=False)
-        # fig.update_layout(sliders=False)
-        return fig
+            fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
+            fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
+            fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
+            fig.update_layout(title_text=title)
+            df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
+            fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
+            # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
+            fig.update_xaxes(showgrid=False)
+            fig.update_yaxes(showgrid=False)
+            # fig.update_layout(sliders=False)
+            return fig
+        except Exception as e:
+            print(e)
 
 
     def create_slope_chart(df):
@@ -549,19 +545,22 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
 
     def create_wave_chart_all(df, wave_col):
-        title = df.iloc[-1]['name']
-        # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-        fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-        # df.set_index('timestamp_est')
-        # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-        df = df.copy()
-        # df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-        # df[f'{wave_col}{"_number"}'] = df[f'{wave_col}{"_number"}'].astype(str)
-        # dft = df[df[f'{wave_col}{"_number"}'] == '1'].copy()
-        fig.add_bar(x=df[f'{wave_col}{"_number"}'], y=df[wave_col].values,  row=1, col=1, name=wave_col)
-        fig.update_layout(height=600, width=900, title_text=title)
-        return fig
-
+        try:
+            title = df.iloc[-1]['name']
+            # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+            fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+            # df.set_index('timestamp_est')
+            # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+            df = df.copy()
+            # df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+            # df[f'{wave_col}{"_number"}'] = df[f'{wave_col}{"_number"}'].astype(str)
+            # dft = df[df[f'{wave_col}{"_number"}'] == '1'].copy()
+            fig.add_bar(x=df[f'{wave_col}{"_number"}'], y=df[wave_col].values,  row=1, col=1, name=wave_col)
+            fig.update_layout(height=600, width=900, title_text=title)
+            return fig
+        except Exception as e:
+            print(e)
+            print_line_of_error()
 
     def return_total_profits(ORDERS):
         
@@ -581,7 +580,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             pct_profits = df.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
             # total_dolla = round(sum(pct_profits['profit_loss']), 2)
             # total_honey = round(sum(pct_profits['honey']), 2)
-            # ipdb.set_trace()
             if len(orders_today) > 0:
                 today_pl_df = orders_today.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
                 total_dolla = round(sum(orders_today['profit_loss']), 2)
@@ -616,9 +614,23 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         #     st.write("Waiting for your First Trade")
         return return_dict
 
+    def check_API__send_user_to_pollenq__with_message(api_failed, msg, errmsg=False):
+        if api_failed:
+            if errmsg:
+                st.error(errmsg)
+            
+            st.write("Taking you back to pollenq")
+            time.sleep(5)
+
+            st.session_state['QueenConscience_msg'] = msg
+            switch_page("pollenq")
+        
+        return True
 
     def return_buying_power(api):
         with st.expander("Portfolio",  True):
+            check_API__send_user_to_pollenq__with_message(api_failed, msg='You were not allowed there', errmsg="Your API Failed, Please Update in pollenq")
+
             ac_info = refresh_account_info(api=api)['info_converted']
             num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
             mark_down_text(fontsize='18', text=num_text)
@@ -872,7 +884,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             else:
                 trading_model = QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc]
             
-            # ipdb.set_trace()
             star_avail = list(trading_model['stars_kings_order_rules'].keys())
             trigbees_avail = list(trading_model['trigbees'].keys())
             blocktime_avail = list(trading_model['time_blocks'].keys())
@@ -1632,80 +1643,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         return True
 
 
-    def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
-        if authorized_user == False:
-            return False
-        view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
-        cols = st.columns((4,1,4))
-        # check if keys exist
-        # st.write(QUEEN_KING['users_secrets'])
-        prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
-        sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
-
-        view_account_keys = False
-        if sandbox_keys_confirmed == False:
-            with cols[0]:
-                st.error(f'Enter Your Sandbox API Keys To Activate Paper.QueenTraderBot')
-            with cols[1]:
-                # view_account_button = st.button("Update API Keys", key='main_key')
-                view_account_keys = True
-            # with cols[2]:
-                local_gif(gif_path=runaway_bee_gif, height=33, width=33)
-        
-        if prod_keys_confirmed == False:
-            with cols[2]:
-                st.warning("Enter Your Production API Keys To Activate LIVE.QueenTraderBot...Begin Your Queens Journey")
-
-
-        if view_account_keys or view_account_button or show_form:
-            # with cols[0]:
-            with st.expander("Add API Account Keys", authorized_user):
-                # with cols[0]:
-                local_gif(gif_path=runaway_bee_gif, height=33, width=33)
-                st.session_state['account_keys'] = True
-                
-                with st.form("account keys"):
-                    # if prod_keys_confirmed == False:
-                    #     st.warning("You Need to Add you LIVE API KEYS")
-                    # if sandbox_keys_confirmed == False:
-                    #     st.warning("You Need to Add your Sandbox-PAPER API KEYS")
-
-                    # st.write(st.session_state['username']) @ stefanstapinski@gmail.com
-                    st.write("SandBox Paper")
-                    APCA_API_KEY_ID_PAPER = st.text_input(label=f'APCA_API_KEY_ID_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER'], key=f'APCA_API_KEY_ID_PAPER')
-                    APCA_API_SECRET_KEY_PAPER = st.text_input(label=f'APCA_API_SECRET_KEY_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER'], key=f'APCA_API_SECRET_KEY_PAPER')
-                    
-                    st.write("LIVE")
-                    APCA_API_KEY_ID = st.text_input(label=f'APCA_API_KEY_ID', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID'], key=f'APCA_API_KEY_ID')
-                    APCA_API_SECRET_KEY = st.text_input(label=f'APCA_API_SECRET_KEY', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY'], key=f'APCA_API_SECRET_KEY')
-
-                    if st.form_submit_button("Save API Keys"):
-                        
-                        user_secrets = init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, client_user=st.session_state['username'], APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER, APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER, APCA_API_KEY_ID=APCA_API_KEY_ID, APCA_API_SECRET_KEY=APCA_API_SECRET_KEY)
-
-                        # test keys
-                        test_keys = test_api_keys(user_secrets=user_secrets)
-
-                        if test_keys['prod'] == False:
-                            st.error("Production Keys Not Valid")
-                            st.info(test_keys['prod_er'])
-                        else:
-                            st.success("Production Keys Added")
-                            user_secrets['prod_keys_confirmed'] = True
-
-                        if test_keys['sandbox'] == False:
-                            st.error("Sandbox Keys Not Valid")
-                            st.info(test_keys['sb_er'])
-                        else:
-                            st.success("Sandbox Keys Added")
-                            user_secrets['sandbox_keys_confirmed'] = True
-                
-                        QUEEN_KING['users_secrets'] = user_secrets
-                        PickleData(PB_App_Pickle, QUEEN_KING)
-
-        return True
-
-
     def refresh_tickers_TradingModels(QUEEN_KING, ticker):
         tradingmodel1 = generate_TradingModel(ticker=ticker, status='active')['MACD']
         QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(tradingmodel1)
@@ -1722,125 +1659,130 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     
     
     def advanced_charts(POLLENSTORY):
-        
-        stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
-        '2hr':"2Hour_6Month", '1Yr':"1Day_1Year", 'all':"all",}
-        charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
+        try:
+            stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
+            '2hr':"2Hour_6Month", '1Yr':"1Day_1Year", 'all':"all",}
+            charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
 
 
-        tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
-        ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-        ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
+            tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
+            ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
+            ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
 
-        cols = st.columns((1,10,1,1))
-        # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
-        with cols[0]:
-            ticker_option = st.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
-            ticker = ticker_option
-        
-        with charts__view:
-            
+            cols = st.columns((1,10,1,1))
+            # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
             with cols[0]:
-                option__ = st.radio(
-                                        "",
-                    list(stars_radio_dict.keys()),
-                    key="signal_radio",
-                    label_visibility='visible',
-                    # disabled=st.session_state.disabled,
-                    horizontal=True,
-                    # label=bee_image
-                )
-            # with cols[1]:
-                # frame_option = st.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
-            with cols[0]:
-                day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
-            # with cols[2]:
-                # wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-                # slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
+                ticker_option = st.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+                ticker = ticker_option
             
+            with charts__view:
+                try:
+                    with cols[0]:
+                        option__ = st.radio(
+                                                "",
+                            list(stars_radio_dict.keys()),
+                            key="signal_radio",
+                            label_visibility='visible',
+                            # disabled=st.session_state.disabled,
+                            horizontal=True,
+                            # label=bee_image
+                        )
+                    # with cols[1]:
+                        # frame_option = st.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
+                    with cols[0]:
+                        day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
+                    # with cols[2]:
+                        # wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
+                        # slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
+                    
 
-            # selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
-            # ticker_time_frame = selections[0]
-            ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
-            df = POLLENSTORY[ticker_time_frame].copy()
-            st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+                    # selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
+                    # ticker_time_frame = selections[0]
+                    ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
+                    df = POLLENSTORY[ticker_time_frame].copy()
+                    st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-            # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
+                    # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
 
-            if day_only_option == 'yes':
-                df_day = df['timestamp_est'].iloc[-1]
-                df['date'] = df['timestamp_est'] # test
+                    if day_only_option == 'yes':
+                        df_day = df['timestamp_est'].iloc[-1]
+                        df['date'] = df['timestamp_est'] # test
 
-                df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-                df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+                        df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                        df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
 
-                df = df_today
+                        df = df_today
 
-            min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
-            min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
-            min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
-            min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
-            min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
-            min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+                    min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+                    min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+                    min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+                    min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+                    min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+                    min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
 
 
-        
-            if option__.lower() == 'all':
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.plotly_chart(create_main_macd_chart(min_1))
-                with c2:
-                    st.plotly_chart(create_main_macd_chart(min_5))
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.plotly_chart(create_main_macd_chart(min_30m))
-                with c2:
-                    st.plotly_chart(create_main_macd_chart(min_1hr))
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.plotly_chart(create_main_macd_chart(min_2hr))
-                with c2:
-                    st.plotly_chart(create_main_macd_chart(min_1yr))
-            else:
-                # Main CHART Creation
-                radio_b_dict = {'1Min': '1Minute_1Day', 
-                '5Min': '5Minute_5Day', '30m': '30Minute_1Month', 
-                '1hr': '1Hour_3Month' , '2hr': '2Hour_6Month', '1Yr': '1Day_1Year'}
-                ticker_time_frame = f'{ticker}_{radio_b_dict[option__]}'
-                with cols[1]:
-                    st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
+                
+                    if option__.lower() == 'all':
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.plotly_chart(create_main_macd_chart(min_1))
+                        with c2:
+                            st.plotly_chart(create_main_macd_chart(min_5))
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.plotly_chart(create_main_macd_chart(min_30m))
+                        with c2:
+                            st.plotly_chart(create_main_macd_chart(min_1hr))
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.plotly_chart(create_main_macd_chart(min_2hr))
+                        with c2:
+                            st.plotly_chart(create_main_macd_chart(min_1yr))
+                    else:
+                        # Main CHART Creation
+                        radio_b_dict = {'1Min': '1Minute_1Day', 
+                        '5Min': '5Minute_5Day', '30m': '30Minute_1Month', 
+                        '1hr': '1Hour_3Month' , '2hr': '2Hour_6Month', '1Yr': '1Day_1Year'}
+                        ticker_time_frame = f'{ticker}_{radio_b_dict[option__]}'
+                        with cols[1]:
+                            st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
+                except Exception as e:
+                    print(e)
+                    print_line_of_error()
 
-        # if slope_option == 'yes':
-        with slopes__view:
-            slope_cols = [i for i in df.columns if "slope" in i]
-            slope_cols.append("close")
-            slope_cols.append("timestamp_est")
-            slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
-            fig = create_slope_chart(df=df)
-            st.plotly_chart(fig)
-            st.dataframe(slopes_df)
-            
-        # if wave_option == "yes":
-        with waves__view:
-            fig = create_wave_chart(df=df)
-            st.plotly_chart(fig)
-            
-            dft = split_today_vs_prior(df=df)
-            dft = dft['df_today']
+            # if slope_option == 'yes':
+            with slopes__view:
+                slope_cols = [i for i in df.columns if "slope" in i]
+                slope_cols.append("close")
+                slope_cols.append("timestamp_est")
+                slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
+                fig = create_slope_chart(df=df)
+                st.plotly_chart(fig)
+                st.dataframe(slopes_df)
+                
+            # if wave_option == "yes":
+            with waves__view:
+                fig = create_wave_chart(df=df)
+                st.plotly_chart(fig)
+                
+                # dft = split_today_vs_prior(df=df)
+                # dft = dft['df_today']
+                fig=create_wave_chart_all(df=df, wave_col='buy_cross-0__wave')
+                st.plotly_chart(fig)
 
-            fig=create_wave_chart_all(df=dft, wave_col='buy_cross-0__wave')
-            st.plotly_chart(fig)
-
-            st.write("current wave")
-            current_buy_wave = df['buy_cross-0__wave_number'].tolist()
-            current_buy_wave = [int(i) for i in current_buy_wave]
-            current_buy_wave = max(current_buy_wave)
-            st.write("current wave number")
-            st.write(current_buy_wave)
-            dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
-            st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
-            fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
-            st.plotly_chart(fig)
+                st.write("current wave")
+                current_buy_wave = df['buy_cross-0__wave_number'].tolist()
+                current_buy_wave = [int(i) for i in current_buy_wave]
+                current_buy_wave = max(current_buy_wave)
+                st.write("current wave number")
+                st.write(current_buy_wave)
+                dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
+                st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
+                fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
+                st.plotly_chart(fig)
+        except Exception as e:
+            print(e)
+            print_line_of_error()
         
         return True
 
@@ -1873,21 +1815,21 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     if st.session_state['authorized_user']:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious'])
-    # ipdb.set_trace()
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
     
     try:
+        api_failed = False
         snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
     except Exception as e:
         # requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://data.alpaca.markets/v2/stocks/SPY/snapshot
         st.write("your api failed you need to update your api keys from alpaca.broker... taking you there")
         # time.sleep(5)
         queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
-        st.stop()
+        api_failed = True
 
-    
-    portfolio = return_alpc_portolio(api)['portfolio']
-    acct_info = refresh_account_info(api=api)
+    if api_failed == True:
+        portfolio = return_alpc_portolio(api)['portfolio']
+        acct_info = refresh_account_info(api=api)
 
     # # if authorized_user: log type auth and none
     log_dir = os.path.join(db_root, 'logs')
@@ -1994,7 +1936,6 @@ if str(option).lower() == 'queen':
         # page_line_seperator('1', color=default_yellow_color)
         if st.session_state['authorized_user'] == True:
             # keys
-            queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=False)
             # add new trading models if needed
             for workerbee, bees_data in QUEEN_KING['qcp_workerbees'].items():
                 for ticker in bees_data['tickers']:
@@ -2047,7 +1988,10 @@ if str(option).lower() == 'queen':
         
         page_line_seperator(color=default_yellow_color)
 
-        st.sidebar.image(learningwalk_bee, width=54)
+        # st.sidebar.image(learningwalk_bee, width=54)
+        # local_gif(gif_path=floating_queen_gif, height='54', width='51', sidebar=True)
+        # url_gif(gif_path=)
+        
 
 
 if str(option).lower() == 'controls':

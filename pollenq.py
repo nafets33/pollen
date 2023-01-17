@@ -51,6 +51,9 @@ def pollenq():
     # https://www.freeformatter.com/cron-expression-generator-quartz.html
     # http://34.162.236.105:8080/home # dags
     # https://docs.google.com/spreadsheets/d/1ddqj-EkO1MluAjDg-U-DyCzJvtFjRN-9SfEYXkB8eNo/edit#gid=0 # track hours
+    # https://unicode.org/emoji/charts/full-emoji-list.html#1fae0
+
+
     pd.options.mode.chained_assignment = None
 
     scriptname = os.path.basename(__file__)
@@ -101,6 +104,8 @@ def pollenq():
         #      'About': "# This is a header. This is an *extremely* cool app!"
         #  }
     )
+    # st.tabs([":owl:"])
+
     # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
         signin_main()
@@ -174,8 +179,9 @@ def pollenq():
             tabs = ["Setup Steps", "Risk Parameters", "To The Hive", "Help"]
             st.session_state['active_tab'] = tabs[0] if 'active_tab' not in st.session_state else st.session_state['active_tab']
 
-            hive_setup, settings_queen, BrokerAPIKeys, to_hive, help_me = st.tabs(["Setup Steps", "Risk Parameters", "BrokerAPIKeys", "To The Hive", "Help"])
-            
+            hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "YourCharacter:octopus:", "Help:dizzy:"])
+            if st.button("QueensConscience:honeybee:"):
+                switch_page("QueensConscience")
             with hive_setup:
                 st.title("Create Yourself The QueenTrader")
                 cols = st.columns((3,1,1,1,1,1,1))
@@ -208,6 +214,7 @@ def pollenq():
                     """
                     )
                 with cols[1]:
+
                     st.image(mainpage_bee_png, width=133)
                 with cols[2]:
                     st.image(queen_png, width=250)
@@ -276,9 +283,7 @@ def pollenq():
 
             
             
-            with to_hive: 
-                if st.button("QueensConscience"):
-                    switch_page("QueensConscience")
+
 
             with help_me:
                 st.write("No Soup for You")

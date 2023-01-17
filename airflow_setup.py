@@ -1,5 +1,5 @@
 
-
+# http://34.162.236.105:8080/home
 # airflow users create -r Admin -u pollenq -p PollenQueen33! -f stefan -l stapinski -e pollenq.queen@gmail.com
 # airflow users create -r Admin -u pollenq -p PollenQueen33! -f stefan -l stapinski -e pollenq.queen@gmail.com
 # screen -S stefanstapinski python QueenBee.Py -prod true -client_user stefanstapinski

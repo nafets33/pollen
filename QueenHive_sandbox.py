@@ -39,9 +39,11 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 import streamlit as st
-from King import hive_master_root, PickleData, ReadPickleData
+from King import workerbee_dbs_root__STORY_bee, hive_master_root, PickleData, ReadPickleData, workerbee_dbs_root, return_QUEEN_masterSymbols
 from appHive import init_client_user_secrets
 
+import asyncio
+import aiohttp
 
 # import _locale
 
@@ -100,6 +102,9 @@ exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
     'P','Q','R','T','V','Z'
 ] # 'U' afterhours
+
+
+
 
 
 
@@ -291,29 +296,6 @@ def read_pollenstory(db_root, dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl'
             # db_names.append(chess_piece)
 
     return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
-
-
-def read_QUEENs__pollenstory(symbols): # return combined dataframes
-    # return beeworkers data
-    
-    pollenstory = {}
-    STORY_bee = {}
-    # KNIGHTSWORD = {}
-    # ANGEL_bee = {}
-    # db_names = []
-    # for db in dbs:
-    #     if os.path.exists(os.path.join(db_root, db)):
-    #         db_name = db.split(".pkl")[0]
-    #         chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-    #         pollenstory = {**pollenstory, **chess_piece['pollenstory']}
-    #         STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
-            # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
-            # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
-            # dbs_[db_name] = chess_piece
-            # db_names.append(chess_piece)
-
-    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
-
 
 
 def read_queensmind(prod, db_root): # return active story workers

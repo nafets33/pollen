@@ -39,8 +39,11 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 import streamlit as st
-from King import hive_master_root, PickleData, ReadPickleData
+from King import workerbee_dbs_root__STORY_bee, hive_master_root, PickleData, ReadPickleData, workerbee_dbs_root, return_QUEEN_masterSymbols
+from appHive import init_client_user_secrets
 
+import asyncio
+import aiohttp
 
 # import _locale
 
@@ -99,6 +102,9 @@ exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
     'P','Q','R','T','V','Z'
 ] # 'U' afterhours
+
+
+
 
 
 
@@ -292,29 +298,6 @@ def read_pollenstory(db_root, dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl'
     return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
 
 
-def read_QUEENs__pollenstory(symbols): # return combined dataframes
-    # return beeworkers data
-    
-    pollenstory = {}
-    STORY_bee = {}
-    # KNIGHTSWORD = {}
-    # ANGEL_bee = {}
-    # db_names = []
-    # for db in dbs:
-    #     if os.path.exists(os.path.join(db_root, db)):
-    #         db_name = db.split(".pkl")[0]
-    #         chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-    #         pollenstory = {**pollenstory, **chess_piece['pollenstory']}
-    #         STORY_bee = {**STORY_bee, **chess_piece['conscience']['STORY_bee']}
-            # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
-            # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
-            # dbs_[db_name] = chess_piece
-            # db_names.append(chess_piece)
-
-    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
-
-
-
 def read_queensmind(prod, db_root): # return active story workers
     if prod:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
@@ -326,83 +309,139 @@ def read_queensmind(prod, db_root): # return active story workers
     return {'queen': QUEEN, 'orders': ORDERS}
 
 
-def init_QUEEN(queens_chess_piece):
+def init_symbols_db():
+    ticker_universe = return_Ticker_Universe()
+    index_ticker_db = ticker_universe['index_ticker_db']
+    main_index_dict = ticker_universe['main_index_dict']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
+    main_tale = pd.DataFrame(main_symbols_full_list)
+    symbols_db = {'main_table': main_tale, 'ticker_universe': ticker_universe}
+
+    return symbols_db
+
+
+def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
 
     ticker_universe = return_Ticker_Universe()
     index_ticker_db = ticker_universe['index_ticker_db']
     main_index_dict = ticker_universe['main_index_dict']
     main_symbols_full_list = ticker_universe['main_symbols_full_list']
     not_avail_in_alpaca = ticker_universe['not_avail_in_alpaca']
-
-    QUEEN = { # The Queens Mind
-        'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
-        'prod': "",
-        'source': "na",
-        'last_modified': datetime.datetime.now(est),
-        'command_conscience': {},
-        'queen_orders': pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
-        'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
-        'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
-        'kings_order_rules': {},
-        'queen_controls': return_queen_controls(stars),
-        
-        'symbol_universe': {
-        'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
-        'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca},
-        
-        'workerbees': {
-            'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['SPY'],
-                        'stars': stars(),},
-            'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['GOOG', 'AAPL', 'TSLA'],
-                        'stars': stars(),},
-            'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['AMZN', 'OXY', 'SOFI'],
-                        'stars': stars(),},
-            'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': ['BTCUSD', 'ETHUSD'],
-                        'stars': stars(),},
-            'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
-                        'tickers': main_symbols_full_list[:100],
-                        'stars': stars(),},
-            },
-        'auth_users': {'stefanstapinski@gmail.com': {}, 'stevenweaver8@gmail.com': {}},
-        'errors': {},
-        'client_order_ids_qgen': [],
-        'app_requests__bucket': [],
-        # 'triggerBee_frequency': {}, # hold a star and the running trigger
-        'saved_pollenThemes': [], # bucket of saved star settings to choose from
-        'saved_powerRangers': [], # bucket of saved star settings to choose from
-        'subconscious': {'app_info': []},
-        # Worker Bees
-        queens_chess_piece: {
-        'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
-        'pollenstory': {}, # latest story of dataframes castle and bishop
-        'pollencharts': {}, # latest chart rebuild
-        'pollencharts_nectar': {}, # latest chart rebuild with indicators
-        'pollenstory_info': {}, # Misc Info,
-        'client': {},
-        # 'heartbeat': {},
-        'last_modified' : datetime.datetime.now(est),
+    if swarmQUEEN:
+        QUEEN = { # The Queens Mind
+            'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
+            'prod': "",
+            'source': "na",
+            'last_modified': datetime.datetime.now(est),
+            'command_conscience': {},
+            'queen_orders': pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
+            'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+            'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
+            'kings_order_rules': {},
+            'queen_controls': return_queen_controls(stars),
+            
+            'symbol_universe': {
+            'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
+            'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca},
+            
+            'workerbees': {
+                'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['SPY'],
+                            'stars': stars(),},
+                'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['GOOG', 'AAPL', 'TSLA'],
+                            'stars': stars(),},
+                'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['AMZN', 'OXY', 'SOFI'],
+                            'stars': stars(),},
+                'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['BTCUSD', 'ETHUSD'],
+                            'stars': stars(),},
+                'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': main_symbols_full_list[:100],
+                            'stars': stars(),},
+                },
+            # 'auth_users': {'stefanstapinski@gmail.com': {}, 'stevenweaver8@gmail.com': {}},
+            'errors': {},
+            'client_order_ids_qgen': [],
+            'app_requests__bucket': [],
+            # 'triggerBee_frequency': {}, # hold a star and the running trigger
+            'saved_pollenThemes': [], # bucket of saved star settings to choose from
+            'saved_powerRangers': [], # bucket of saved star settings to choose from
+            'subconscious': {'app_info': []},
+            # Worker Bees
+            queens_chess_piece: {
+            'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+            'pollenstory': {}, # latest story of dataframes castle and bishop
+            'pollencharts': {}, # latest chart rebuild
+            'pollencharts_nectar': {}, # latest chart rebuild with indicators
+            'pollenstory_info': {}, # Misc Info,
+            'client': {},
+            # 'heartbeat': {},
+            'last_modified' : datetime.datetime.now(est),
+            }
         }
-    }
+        
     
-    
+    else:
+        QUEEN = { # The Queens Mind
+            'init_id': f'{"queen"}{"_"}{return_timestamp_string()}',
+            'prod': "",
+            'source': "na",
+            'last_modified': datetime.datetime.now(est),
+            'command_conscience': {},
+            'queen_orders': pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
+            'portfolios': {'Jq': {'total_investment': 0, 'currnet_value': 0}},
+            'heartbeat': {'active_tickerStars': {}, 'available_tickers': [], 'active_tickers': [], 'available_triggerbees': []}, # ticker info ... change name
+            'kings_order_rules': {},
+            'queen_controls': return_queen_controls(stars),
+            
+            'symbol_universe': {
+            'index_ticker_db': index_ticker_db, 'main_index_dict': main_index_dict, 
+            'main_symbols_full_list': main_symbols_full_list, 'not_avail_in_alpaca': not_avail_in_alpaca},
+            
+            'workerbees': {
+                'castle': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['SPY'],
+                            'stars': stars(),},
+                'bishop': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['GOOG', 'AAPL', 'TSLA'],
+                            'stars': stars(),},
+                'knight': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['AMZN', 'OXY', 'SOFI'],
+                            'stars': stars(),},
+                'castle_coin': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': ['BTCUSD', 'ETHUSD'],
+                            'stars': stars(),},
+                'pawns': {'MACD_fast_slow_smooth': {'fast': 12, 'slow': 26, 'smooth': 9},
+                            'tickers': main_symbols_full_list[:100],
+                            'stars': stars(),},
+                },
+            # 'auth_users': {'stefanstapinski@gmail.com': {}, 'stevenweaver8@gmail.com': {}},
+            'errors': {},
+            'client_order_ids_qgen': [],
+            'app_requests__bucket': [],
+            # 'triggerBee_frequency': {}, # hold a star and the running trigger
+            'saved_pollenThemes': [], # bucket of saved star settings to choose from
+            'saved_powerRangers': [], # bucket of saved star settings to choose from
+            'subconscious': {'app_info': []},
+            # Worker Bees
+            queens_chess_piece: {
+            'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+            'pollenstory': {}, # latest story of dataframes castle and bishop
+            'pollencharts': {}, # latest chart rebuild
+            'pollencharts_nectar': {}, # latest chart rebuild with indicators
+            'pollenstory_info': {}, # Misc Info,
+            'client': {},
+            # 'heartbeat': {},
+            'last_modified' : datetime.datetime.now(est),
+            }
+        }
+        
+        
     return QUEEN
 
-
-def init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, client_user='init', APCA_API_KEY_ID_PAPER='init', APCA_API_SECRET_KEY_PAPER='init', APCA_API_KEY_ID='init', APCA_API_SECRET_KEY='init', datetimestamp_est=datetime.datetime.now(est)):
-    return {
-    'prod_keys_confirmed': prod_keys_confirmed,
-    'sandbox_keys_confirmed': sandbox_keys_confirmed,
-    'client_user': client_user,
-    'APCA_API_KEY_ID_PAPER': APCA_API_KEY_ID_PAPER,
-    'APCA_API_SECRET_KEY_PAPER': APCA_API_SECRET_KEY_PAPER,
-    'APCA_API_KEY_ID': APCA_API_KEY_ID,
-    'APCA_API_SECRET_KEY': APCA_API_SECRET_KEY,
-    'datetimestamp_est': datetimestamp_est,
-    }
 
 def init_QUEEN_App():
 
@@ -2763,7 +2802,6 @@ def createParser_QUEEN():
     parser.add_argument ('-user', default='pollen')
 
     return parser
-
 
 
 def return_queen_controls(stars=stars):
