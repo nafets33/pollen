@@ -7,9 +7,15 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from King import kingdom__grace_to_find_a_Queen, hive_master_root, init_clientUser_dbroot, local__filepaths_misc
+from King import (
+    kingdom__grace_to_find_a_Queen,
+    hive_master_root,
+    init_clientUser_dbroot,
+    local__filepaths_misc,
+)
 from appHive import local_gif
 import ipdb
+
 # from QueenHive import init_pollen_dbs
 
 
@@ -24,22 +30,26 @@ def signin_main():
     def register_user():
         # write_flying_bee(54, 54)
 
-        if "verification_code" not in st.session_state:
-            st.session_state["verification_code"] = randint(100000, 999999)
-
         try:
             register_status = authenticator.register_user(
                 form_name="Sign Up", preauthorization=False, location="main"
             )
 
+            if ("register_status" not in st.session_state) or (
+                st.session_state["register_status"] == None
+            ):
+                st.session_state["register_status"] = register_status
+
+            # generate and store verification code
+            if "verification_code" not in st.session_state:
+                st.session_state["verification_code"] = randint(100000, 999999)
+            verification_code = st.session_state["verification_code"]
+
             if register_status:
-                register_email = register_status[0]
-                register_password = register_status[1]
-                print(register_email)
 
-                verification_code = st.session_state["verification_code"]
+                register_email = st.session_state["register_status"][0]
 
-                # verify email
+                # send user verification code
                 send_email(
                     recipient=register_email,
                     subject="PollenQ. Verify Email",
@@ -52,42 +62,38 @@ def signin_main():
                 PollenQ
                 """,
                 )
-                # TODO user activiation code
-                update_db(register_email, append_db=True)
+                st.success("A verification code has been sent to your email")
 
-                authenticator.direct_login(register_email, register_password)
+            entered_code = st.text_input("Verification Code", max_chars=6)
 
-                send_email(
-                    recipient=register_email,
-                    subject="Welcome On Board PollenQ!",
-                    body=f"""
-                You have successful created a PollenQ account. Ensure you keep your login detials safe.
+            if st.button("Submit"):
 
-                Thank you,
-                PollenQ
-                """,
-                )
-                st.info(
-                    "A verification code has been sent to your email. Please enter the code below"
-                )
-                entered_code = st.text_input("Verification Code", max_chars=6)
+                if int(entered_code) == verification_code:
 
-                if st.button("Submit"):
-                    if int(entered_code) == st.session_state["verification_code"]:
+                    register_email = st.session_state["register_status"][0]
+                    register_password = st.session_state["register_status"][1]
 
-                        # verification successful
-                        send_email(
-                            recipient=register_email,
-                            subject="Welcome On Board PollenQ!",
-                            body=f"""
-    You have successful created a PollenQ account. Ensure you keep your login detials safe.
+                    # verification successful
+                    update_db(register_email, append_db=True)
+                    send_email(
+                        recipient=register_email,
+                        subject="Welcome On Board PollenQ!",
+                        body=f"""
+                     You have successful created a PollenQ account. Ensure you keep your login detials safe.
 
-    Thank you,
-    PollenQ
-    """,
-                        )
-                    else:
-                        st.error("Incorrect Code")
+                     Thank you,
+                     PollenQ
+                     """,
+                    )
+
+                    authenticator.direct_login(register_email, register_password)
+
+                    # st.session_state["username"] = register_email
+                    # self.password = register_password,
+
+                else:
+                    st.error("Incorrect Code")
+
             # write_flying_bee(54, 54)
         except Exception as e:
             st.error(e)
@@ -167,7 +173,11 @@ def signin_main():
     def update_db(email_to_update, append_db=False):
         """Update a user's record, or add a new user"""
 
-        detials = credentials["usernames"][email_to_update]
+        # new user detials are stored in session state
+        if append_db:
+            detials = st.session_state["new_user_creds"]
+        else:
+            detials = credentials["usernames"][email_to_update]
 
         password = detials["password"]
         name = detials["name"]
@@ -176,6 +186,7 @@ def signin_main():
         last_login_date = detials["last_login_date"]
         login_count = detials["login_count"]
 
+        # add new user
         if append_db:
             cur.execute(
                 "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?)",
@@ -190,6 +201,7 @@ def signin_main():
                 ),
             )
 
+        # update value
         else:
             cur.execute(
                 f"""
@@ -206,6 +218,7 @@ def signin_main():
             )
 
         con.commit()
+        authenticator.credentials = read_user_db()
 
     def write_flying_bee(width="45", height="45", frameBorder="0"):
         return st.markdown(
@@ -237,25 +250,27 @@ def signin_main():
         st.session_state["db_root"] = db_root
         return db_root
 
+    # Read usernames and convert to nested dict
+
     con = sqlite3.connect("db/users.db")
     cur = con.cursor()
 
-    # cur.execute("DROP TABLE users")
-    # cur.execute("CREATE TABLE users(email, password, name, phone_no, signup_date, last_login_date, login_count)")
+    def read_user_db():
+        users = cur.execute("SELECT * FROM users").fetchall()
 
-    # Read usernames and convert to nested dict
-    users = cur.execute("SELECT * FROM users").fetchall()
-    credentials = {}
-    for user in users:
-        credentials[user[0]] = {
-            "password": user[1],
-            "name": user[2],
-            "phone_no": user[3],
-            "signup_date": user[4],
-            "last_login_date": user[5],
-            "login_count": user[6],
-        }
-    credentials = {"usernames": credentials}
+        creds = {}
+        for user in users:
+            creds[user[0]] = {
+                "password": user[1],
+                "name": user[2],
+                "phone_no": user[3],
+                "signup_date": user[4],
+                "last_login_date": user[5],
+                "login_count": user[6],
+            }
+        return {"usernames": creds}
+
+    credentials = read_user_db()
 
     # Create authenticator object
     authenticator = stauth.Authenticate(
@@ -277,9 +292,13 @@ def signin_main():
 
         reset_password(email)
         # ipdb.set_trace()
-        
+
         if st.session_state["logout"] != True:
-            users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+            (
+                users_allowed_queen_email,
+                users_allowed_queen_emailname,
+                users_allowed_queen_emailname__db,
+            ) = kingdom__grace_to_find_a_Queen()
             if st.session_state["username"] in users_allowed_queen_email:
                 st.session_state["authorized_user"] = True
             else:
@@ -317,4 +336,5 @@ def signin_main():
 
 
 if __name__ == "__main__":
+    st.session_state["logout"] = True
     signin_main()
