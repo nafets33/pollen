@@ -36,3 +36,8 @@ def surf_Wave(star):
 # 6. Working meetings or walk through on how the setup. 
 
 # **should db convert to postgres or mongo ?
+
+# lixux commands
+# screen -S stefanstapinski python QueenBee.Py -prod true -client_user stefanstapinski
+# screen -S stevenweaver8 python QueenBee.Py -prod true -client_user stevenweaver8
+

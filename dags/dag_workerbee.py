@@ -3,9 +3,31 @@ from airflow.sensors.python import PythonSensor
 import datetime
 import os
 from airflow.models import DAG
+import subprocess
 
 import os
 
+def get_screen_processes():
+    # Run the "screen -ls" command to get a list of screen processes
+    output = subprocess.run(["screen", "-ls"], stdout=subprocess.PIPE).stdout.decode("utf-8")
+
+    # Split the output into lines
+    lines = output.strip().split("\n")
+
+    # The first line is a header, so skip it
+    lines = lines[1:]
+
+    # Initialize an empty dictionary
+    screen_processes = {}
+
+    # Iterate over the lines and extract the process name and PID
+    for line in lines:
+        parts = line.split()
+        name = parts[0]
+        pid = parts[1]
+        screen_processes[name] = pid
+
+    return screen_processes
 
 # Parameteres
 WORFKLOW_DAG_ID = "run_workerbees"
@@ -29,13 +51,16 @@ dag = DAG(
 )
 # Define functions
 def job_1():
-    print("Perform job 1")
-    bees = 'workerbees'
-    cmd = f'screen -S {bees} python QueenWorkerBees.py -prod true'
-    os.system(cmd)
 
-    cmd = f'screen -d {bees}'
-    os.system(cmd)
+    bees = 'workerbees'
+    processes_ = get_screen_processes()
+    if bees not in processes_:
+        print("Perform job 1")
+        cmd = f'screen -S {bees} python QueenWorkerBees.py -prod true'
+        os.system(cmd)
+
+        cmd = f'screen -d {bees}'
+        os.system(cmd)
 
 
 def job_2():
@@ -53,17 +78,17 @@ job_1_operator = PythonOperator(
     dag=dag,
 )
 
-job_2_sensor = PythonSensor(
-    task_id="task_job_2_sensor",
-    python_callable=sensor_job,
-    dag=dag,
-    poke_interval=180,
-)
+# job_2_sensor = PythonSensor(
+#     task_id="task_job_2_sensor",
+#     python_callable=sensor_job,
+#     dag=dag,
+#     poke_interval=180,
+# )
 
-job_2_operator = PythonOperator(
-    task_id="task_job_2",
-    python_callable=job_2,
-    dag=dag,
-)
+# job_2_operator = PythonOperator(
+#     task_id="task_job_2",
+#     python_callable=job_2,
+#     dag=dag,
+# )
 
-job_1_operator >> job_2_sensor >> job_2_operator
+job_1_operator # >> job_2_sensor >> job_2_operator

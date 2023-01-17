@@ -4,6 +4,9 @@ import time
 import pickle
 import datetime
 import pytz
+import asyncio
+import aiohttp
+import sys
 
 est = pytz.timezone("US/Eastern")
 
@@ -152,6 +155,8 @@ def local__filepaths_misc():
     purple_heartbeat_gif = os.path.join(jpg_root, "purple_heartbeat.gif")
     moving_ticker_gif = os.path.join(jpg_root, "moving_ticker.gif")
     heart_bee_gif = os.path.join(jpg_root, "heart_bee.gif")
+    hexagon_loop = os.path.join(jpg_root, "hexagon_loop.gif")
+    
 
     return {
         'jpg_root': jpg_root,
@@ -184,6 +189,7 @@ def local__filepaths_misc():
         'purple_heartbeat_gif': purple_heartbeat_gif,
         'moving_ticker_gif': moving_ticker_gif,
         'heart_bee_gif': heart_bee_gif,
+        'hexagon_loop': hexagon_loop,
     }
 
 
@@ -209,7 +215,16 @@ def kingdom__grace_to_find_a_Queen():
     return users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db
 
 
+def return_QUEENs_workerbees_chessboard(QUEEN):
+    queens_master_tickers = []
+    for qcp, qcp_vars in QUEEN['workerbees'].items():
+        for ticker in qcp_vars['tickers']:
+            queens_master_tickers.append(ticker)
+
+    return {'queens_master_tickers': queens_master_tickers}
+
 def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
+    # queen_db = os.path.join(db_root, "queen_sandbox.pkl")
     QUEENBEE = ReadPickleData(queen_db)
     queens_master_tickers = []
     queens_chess_pieces = [] 
@@ -238,6 +253,69 @@ def return_QUEEN_masterSymbols(prod=False, master_swarm_QUEENBEE=master_swarm_QU
     queens_chess_pieces = list(set(queens_chess_pieces))
 
     return {'QUEENBEE': QUEENBEE, 'queens_chess_pieces': queens_chess_pieces, 'queens_master_tickers':queens_master_tickers}
+
+
+def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, info='function uses async'): # return combined dataframes
+    ### updates return ticker db and path to db ###
+    def async__read_symbol_data(ttf_file_paths): # re-initiate for i timeframe 
+
+        async def get_changelog(session, ttf_file_name):
+            async with session:
+                try:
+                    db = ReadPickleData(ttf_file_name)
+                    ttf = os.path.basename(ttf_file_name).split(".pkl")[0]
+                    return {'ttf': ttf, 'db': db}
+                except Exception as e:
+                    raise e
+        
+        async def main(ttf_file_paths):
+            async with aiohttp.ClientSession() as session:
+                return_list = []
+                tasks = []
+                for ttf_file_name in ttf_file_paths: # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
+                    tasks.append(asyncio.ensure_future(get_changelog(session, ttf_file_name)))
+                original_pokemon = await asyncio.gather(*tasks)
+                for pokemon in original_pokemon:
+                    return_list.append(pokemon)
+                
+                return return_list
+
+        list_of_status = asyncio.run(main(ttf_file_paths))
+        # ipdb.set_trace()
+        return list_of_status
+    
+    # return beeworkers data
+    if read_swarmQueen:
+        qb = return_QUEEN_masterSymbols()
+        symbols = qb['queens_master_tickers']
+    else:
+        symbols = symbols
+
+    main_dir = workerbee_dbs_root()
+    main_story_dir = workerbee_dbs_root__STORY_bee()
+    
+    # Final Return
+    pollenstory = {}
+    STORY_bee = {}
+
+    # pollen story // # story bee
+    ps_all_files_names = []
+    sb_all_files_names = []
+    for symbol in symbols:
+        ps_all_files_names = ps_all_files_names + [os.path.join(main_dir, i) for i in os.listdir(main_dir) if symbol in i and 'temp' not in i] #SPY SPY_1Minute_1Day
+        sb_all_files_names = sb_all_files_names + [os.path.join(main_story_dir, i) for i in os.listdir(main_story_dir) if symbol in i and 'temp' not in i] #SPY SPY_1Minute_1Day
+
+    # async read data
+    pollenstory_data = async__read_symbol_data(ttf_file_paths=ps_all_files_names)
+    storybee_data = async__read_symbol_data(ttf_file_paths=sb_all_files_names)
+
+    # put into dictionary
+    for package_ in pollenstory_data:
+        pollenstory[package_['ttf']] = package_['db']
+    for package_ in storybee_data:
+        STORY_bee[package_['ttf']] = package_['db']
+
+    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
 
 
 def handle__ttf_notactive__datastream(info='if ticker stream offline pull latest price by MasterApi'):
@@ -304,6 +382,9 @@ def ReadPickleData(pickle_file):
         # Wait a short amount of time before checking again
         time.sleep(0.033)
 
+def print_line_of_error():
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    print(exc_type, exc_tb.tb_lineno)
 #### GLOBAL ####
 
 
