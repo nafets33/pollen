@@ -922,15 +922,15 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                     st.write("Production LIVE")
                     APCA_API_KEY_ID = st.text_input(label=f'APCA_API_KEY_ID', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID'], key=f'APCA_API_KEY_ID')
                     APCA_API_SECRET_KEY = st.text_input(label=f'APCA_API_SECRET_KEY', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY'], key=f'APCA_API_SECRET_KEY')
+                    user_secrets = init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, APCA_API_KEY_ID_PAPER=None, APCA_API_SECRET_KEY_PAPER=None, APCA_API_KEY_ID=APCA_API_KEY_ID, APCA_API_SECRET_KEY=APCA_API_SECRET_KEY)
+
                 else:
                     st.write("SandBox Paper")
                     APCA_API_KEY_ID_PAPER = st.text_input(label=f'APCA_API_KEY_ID_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_KEY_ID_PAPER'], key=f'APCA_API_KEY_ID_PAPER')
                     APCA_API_SECRET_KEY_PAPER = st.text_input(label=f'APCA_API_SECRET_KEY_PAPER', value=QUEEN_KING['users_secrets']['APCA_API_SECRET_KEY_PAPER'], key=f'APCA_API_SECRET_KEY_PAPER')
+                    user_secrets = init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER, APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER, APCA_API_KEY_ID=None, APCA_API_SECRET_KEY=None)
                     
                 if st.form_submit_button("Save API Keys"):
-                    
-                    user_secrets = init_client_user_secrets(prod_keys_confirmed=False, sandbox_keys_confirmed=False, APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER, APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER, APCA_API_KEY_ID=APCA_API_KEY_ID, APCA_API_SECRET_KEY=APCA_API_SECRET_KEY)
-
                     # test keys
                     if test_api_keys(user_secrets=user_secrets, prod=prod):
                         st.success(f'{user_env_instance} Keys Added')
