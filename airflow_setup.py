@@ -3,6 +3,9 @@
 # airflow users create -r Admin -u pollenq -p PollenQueen33! -f stefan -l stapinski -e pollenq.queen@gmail.com
 # airflow users create -r Admin -u pollenq -p PollenQueen33! -f stefan -l stapinski -e pollenq.queen@gmail.com
 # screen -S stefanstapinski python QueenBee.Py -prod true -client_user stefanstapinski
+
+# screen -XS 826038.workerbees quit
+
 import shutil
 import os
 

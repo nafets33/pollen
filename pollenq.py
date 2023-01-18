@@ -17,13 +17,15 @@ import streamlit as st
 from app_auth import signin_main
 import time
 from streamlit_extras.switch_page_button import switch_page
-from appHive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
 import argparse
 from streamlit_extras.stoggle import stoggle
+from appHive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from King import hive_master_root, streamlit_config_colors, local__filepaths_misc
+from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
 
 
-def pollenq():
+
+def pollenq(admin_pq):
     # prod = True if prod.lower() == 'true' else False
 
     # if prod:
@@ -109,6 +111,8 @@ def pollenq():
     # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
         signin_main()
+
+
         # st.write(st.session_state['authorized_user'])
         # st.write(st.session_state)
         if st.session_state['authentication_status'] != None:
@@ -136,12 +140,9 @@ def pollenq():
             else:
                 st.warning("Welcome to your Sandbox...Play around...create new Queenbots! Learn and Deploy Strategy!")
             
-            if st.session_state['production']:
-                from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-                load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-            else:
-                from QueenHive_sandbox import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-                load_dotenv(os.path.join(os.getcwd(), '.env'))
+            if admin_pq:
+                admin = True
+                st.session_state['admin'] = True
 
             # if db__name exists use db__name else use db
             db_root = st.session_state['db_root']
@@ -321,12 +322,11 @@ def pollenq():
             
             display_for_unAuth_client_user()
 if __name__ == '__main__':
-    # def createParser():
-    #     parser = argparse.ArgumentParser()
-    #     parser.add_argument ('--qcp', default="queen")
-    #     parser.add_argument ('--prod', default='false')
-    #     return parser
-    # parser = createParser()
-    # namespace = parser.parse_args()
-    # prod = namespace.prod
-    pollenq()
+    def createParser():
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-admin', default=False)
+        return parser
+    parser = createParser()
+    namespace = parser.parse_args()
+    admin_pq = namespace.admin
+    pollenq(admin_pq)

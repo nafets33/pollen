@@ -365,7 +365,7 @@ def grid_height(len_of_rows):
     if len_of_rows > 10:
         grid_height = 333
     else:
-        grid_height = round(len_of_rows * 33, 0)
+        grid_height = round(len_of_rows * 67, 0)
 
     return grid_height
 
@@ -674,6 +674,35 @@ def build_AGgrid_df__queenorders(
     )
     # grid_response = grid_response.set_filter("symbol", "contains", "SPY")
 
+    return grid_response
+
+
+def standard_AGgrid(data, reload_data=False, configure_side_bar=False,  fit_columns_on_grid_load=False, height=500, update_mode_value='NO_UPDATE', paginationOn=False, use_checkbox=True, oth_cols_hidden=False):
+    # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
+    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
+    if paginationOn:
+        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+    if configure_side_bar:
+        gb.configure_side_bar() #Add a sidebar
+
+    #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$", aggFunc='max')
+
+    gridOptions = gb.build()
+    gridOptions['rememberGroupStateWhenNewData'] = 'true'
+    gridOptions['resizable'] = 'true'
+    gridOptions['wrapHeaderText'] = 'true'
+
+    grid_response = AgGrid(
+        data,
+        gridOptions=gridOptions,
+        data_return_mode='AS_INPUT', 
+        update_mode=update_mode_value, 
+        fit_columns_on_grid_load=fit_columns_on_grid_load,
+        enable_enterprise_modules=True,
+        height=height, 
+        reload_data=reload_data,
+        allow_unsafe_jscode=True,
+    )
     return grid_response
 
 

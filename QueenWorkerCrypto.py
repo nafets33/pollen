@@ -150,7 +150,7 @@ def queen_workerbee_coins(prod):
         error_dict = {}
         s = datetime.datetime.now(est)
         dfs_index_tickers = {}
-        bars = return_bars_list(ticker_list, chart_times, exchange='CBSE', trading_days_df=trading_days_df)
+        bars = return_bars_list(api=api, ticker_list, chart_times, exchange='CBSE', trading_days_df=trading_days_df)
         if bars['resp']: # rebuild and split back to ticker_time with market hours only
             bars_dfs = bars['return']
             for timeframe, df in bars_dfs.items():
@@ -186,7 +186,7 @@ def queen_workerbee_coins(prod):
         dfs_index_tickers = {}
         try:
             # return market hours data from bars
-            bars_data = return_bars(symbol=ticker, timeframe=timeframe, ndays=0, exchange='CBSE', trading_days_df=trading_days_df)
+            bars_data = return_bars(api=api, symbol=ticker, timeframe=timeframe, ndays=0, exchange='CBSE', trading_days_df=trading_days_df)
             df_bars_data = bars_data['df'] # mkhrs if in minutes
             dfs_index_tickers[ticker_time] = df_bars_data
         except Exception as e:

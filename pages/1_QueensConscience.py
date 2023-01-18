@@ -33,6 +33,7 @@ import time
 # from streamlit_extras.stoggle import stoggle
 from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from QueenBeeDagger import run__trigger_dag
+from QueenHive import init_qcp, return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
 
 est = pytz.timezone("US/Eastern")
 
@@ -94,6 +95,9 @@ learningwalk_bee = MISC['learningwalk_bee']
 queen_flair_gif = MISC['queen_flair_gif']
 chess_piece_queen = MISC['chess_piece_queen']
 runaway_bee_gif = MISC['runaway_bee_gif']
+queen_crown_url = MISC['queen_crown_url']
+
+
 # hexagon_loop = MISC['hexagon_loop']
 # purple_heartbeat_gif = MISC['purple_heartbeat_gif'] MISC.get('puprple')
 
@@ -177,12 +181,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     prod, admin, prod_name = live_sandbox__setup_switch()
     
-    if st.session_state['production']:
-        from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    else:
-        from QueenHive_sandbox import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-        load_dotenv(os.path.join(os.getcwd(), '.env'))
+    # if st.session_state['production']:
+    #     from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    # else:
+    #     from QueenHive_sandbox import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
@@ -200,6 +204,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     QUEEN = ReadPickleData(PB_QUEEN_Pickle)
     ORDERS = ReadPickleData(PB_Orders_Pickle)
     # st.write("using ", PB_App_Pickle)
+    # st.write("using ", PB_QUEEN_Pickle)
     if st.session_state['authorized_user']:
         APP_req = add_key_to_app(QUEEN_KING)
         QUEEN_KING = APP_req['QUEEN_KING']
@@ -691,8 +696,32 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
 
     def update_Workerbees(QUEEN_KING, QUEEN, admin):
-        #### SPEED THIS UP AND CHANGE TO DB CALL FOR ALLOWED ACTIVE TICKERS ###
         
+        def add_new_qcp__to_Queens_workerbees():
+            with st.form('add new qcp'):
+                avail_qcp = ['pawn1', 'pawn2', 'pawn3', 'pawn4']
+                avail_tickers = ['QQQ']
+                # tickers_to_add = st.multiselect(label=f'Add Symbols', options=avail_tickers, help=f'Try not to Max out number of piecesm, only ~10 allowed')
+                cols = st.columns((1,2,10,3,2,2))
+                with cols[1]:                
+                    qcp = st.selectbox(label='qcp', key=f'qcp_new', options=avail_qcp)
+                    QUEEN_KING['qcp_workerbees'][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
+                with cols[0]:
+                    st.image("https://cdn0.iconfinder.com/data/icons/project-management-1-1/24/14-512.png", width=64)
+                with cols[2]:
+                    QUEEN_KING['qcp_workerbees'][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=avail_tickers, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+                with cols[3]:
+                    QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast')
+                with cols[4]:
+                    QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
+                with cols[5]:
+                    QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')            
+
+                if st.form_submit_button('Save New qcp'):
+                    PickleData(PB_App_Pickle, QUEEN_KING)
+
+
+        #### SPEED THIS UP AND CHANGE TO DB CALL FOR ALLOWED ACTIVE TICKERS ###
         all_alpaca_tickers = api.list_assets()
         alpaca_symbols_dict = {}
         for n, v in enumerate(all_alpaca_tickers):
@@ -736,6 +765,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                             QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
                         with cols[5]:
                             QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')
+                    
                     if qcp == 'castle':
                         with cols[0]:
                             st.image(castle_png, width=54)
@@ -786,30 +816,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     #         show = QUEEN_KING["qcp_workerbees"][qcp]["tickers"]
                     #     st.write(f'{qcp} {show}')
 
-            # wrkerbees_list = list(QUEEN_KING['qcp_workerbees'].keys())
-            # # for workerbee in wrkerbees_list:
-            # #     for ticker in workerbee['tickers']:
-            # #         QUEEN_KING = add_trading_model(PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker)
-            
-            # c1, c2, c3 = st.columns((1,5,1))
-            # with c1:
-            #     workerbee = st.selectbox('select worker', wrkerbees_list, index=wrkerbees_list.index('castle'))
-            # with c2:
-            #     QUEEN_KING['qcp_workerbees'][workerbee]['tickers'] = st.multiselect(label='workers', options=list(alpaca_symbols_dict.keys()) + crypto_symbols__tickers_avail, default=QUEEN_KING['qcp_workerbees'][workerbee]['tickers'])
-            # with c3:
-            #     flying_bee_gif()
-
-            # with st.form("Update WorkerBees"):
-                
-            #     st.write("MACD Model Settings")
-            #     c1, c2, c3 = st.columns(3)
-            #     with c1:
-            #         QUEEN_KING['qcp_workerbees'][workerbee]['MACD_fast_slow_smooth']['fast'] = st.slider("fast", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][workerbee]['MACD_fast_slow_smooth']['fast']))
-            #     with c2:
-            #         QUEEN_KING['qcp_workerbees'][workerbee]['MACD_fast_slow_smooth']['slow'] = st.slider("slow", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][workerbee]['MACD_fast_slow_smooth']['slow']))
-            #     with c3:
-            #         QUEEN_KING['qcp_workerbees'][workerbee]['MACD_fast_slow_smooth']['smooth'] = st.slider("smooth", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][workerbee]['MACD_fast_slow_smooth']['smooth']))
-
 
 
                 if st.form_submit_button('Save Workers'):
@@ -824,6 +830,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         return_image_upon_save(title="Workers Saved")
                         return True
 
+            if admin:
+                if st.button('add new qcp'):
+                    add_new_qcp__to_Queens_workerbees()
         return True
         
 
@@ -1826,10 +1835,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         # time.sleep(5)
         queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
         api_failed = True
-
-    if api_failed == True:
-        portfolio = return_alpc_portolio(api)['portfolio']
-        acct_info = refresh_account_info(api=api)
+        
+    portfolio = return_alpc_portolio(api)['portfolio']
+    acct_info = refresh_account_info(api=api)
 
     # # if authorized_user: log type auth and none
     log_dir = os.path.join(db_root, 'logs')
@@ -2094,6 +2102,7 @@ if str(option).lower() == 'model_results':
 
 
 if str(option).lower() == 'pollen_engine':
+    db_root = os.path.join(hive_master_root(), 'db')
     cols = st.columns(3)
     # with cols[1]:
     #     local_gif(gif_path=queen_flair_gif, height=350, width=400)

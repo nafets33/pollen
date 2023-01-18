@@ -7,35 +7,10 @@ import pytz
 import asyncio
 import aiohttp
 import sys
+import ipdb
+# import logging
 
 est = pytz.timezone("US/Eastern")
-
-def init_logging(queens_chess_piece, db_root, prod):
-    log_dir = os.path.join(db_root, 'logs')
-    log_dir_logs = os.path.join(log_dir, 'logs')
-    
-    if os.path.exists(log_dir) == False:
-        os.mkdir(log_dir)
-    if os.path.exists(log_dir_logs) == False:
-        os.mkdir(log_dir_logs)
-    
-    if prod:
-        log_name = f'{"log_"}{queens_chess_piece}{".log"}'
-    else:
-        log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
-
-    log_file = os.path.join(log_dir, log_name)
-    # print("logging",log_file)
-    logging.basicConfig(filename=log_file,
-                        filemode='a',
-                        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO,
-                        force=True)
-    
-    return True
-
-
 
 
 def hive_master_root():
@@ -102,7 +77,7 @@ def init_clientUser_dbroot(client_user):
     main_root = hive_master_root() # os.getcwd()  # hive root
     client_user_db_dir = client_dbs_root()
 
-    if client_user in ['stefanstapinski@gmail.com', 'pollen']:  ## admin
+    if client_user in ['stefanstapinski']:  ## admin
         db_root = os.path.join(main_root, 'db')
     else:
         client_user = client_user.split("@")[0]
@@ -156,6 +131,7 @@ def local__filepaths_misc():
     moving_ticker_gif = os.path.join(jpg_root, "moving_ticker.gif")
     heart_bee_gif = os.path.join(jpg_root, "heart_bee.gif")
     hexagon_loop = os.path.join(jpg_root, "hexagon_loop.gif")
+    queen_crown_url = "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
     
 
     return {
@@ -190,6 +166,7 @@ def local__filepaths_misc():
         'moving_ticker_gif': moving_ticker_gif,
         'heart_bee_gif': heart_bee_gif,
         'hexagon_loop': hexagon_loop,
+        'queen_crown_url': queen_crown_url,
     }
 
 
@@ -222,6 +199,7 @@ def return_QUEENs_workerbees_chessboard(QUEEN):
             queens_master_tickers.append(ticker)
 
     return {'queens_master_tickers': queens_master_tickers}
+
 
 def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
     # queen_db = os.path.join(db_root, "queen_sandbox.pkl")
@@ -264,9 +242,9 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, info='function uses
                 try:
                     db = ReadPickleData(ttf_file_name)
                     ttf = os.path.basename(ttf_file_name).split(".pkl")[0]
-                    return {'ttf': ttf, 'db': db}
+                    return {'ttf_file_name': ttf_file_name, 'ttf': ttf, 'db': db}
                 except Exception as e:
-                    raise e
+                    return {'ttf_file_name': ttf_file_name, 'ttf': ttf, 'error': e}
         
         async def main(ttf_file_paths):
             async with aiohttp.ClientSession() as session:
@@ -281,7 +259,6 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, info='function uses
                 return return_list
 
         list_of_status = asyncio.run(main(ttf_file_paths))
-        # ipdb.set_trace()
         return list_of_status
     
     # return beeworkers data
@@ -301,7 +278,7 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, info='function uses
     # pollen story // # story bee
     ps_all_files_names = []
     sb_all_files_names = []
-    for symbol in symbols:
+    for symbol in set(symbols):
         ps_all_files_names = ps_all_files_names + [os.path.join(main_dir, i) for i in os.listdir(main_dir) if symbol in i and 'temp' not in i] #SPY SPY_1Minute_1Day
         sb_all_files_names = sb_all_files_names + [os.path.join(main_story_dir, i) for i in os.listdir(main_story_dir) if symbol in i and 'temp' not in i] #SPY SPY_1Minute_1Day
 
@@ -310,12 +287,19 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, info='function uses
     storybee_data = async__read_symbol_data(ttf_file_paths=sb_all_files_names)
 
     # put into dictionary
+    errors = {}
     for package_ in pollenstory_data:
-        pollenstory[package_['ttf']] = package_['db']
+        if 'error' not in package_.keys():
+            pollenstory[package_['ttf']] = package_['db']['pollen_story']
+        else:
+            errors[package_['ttf']] = package_['error']
     for package_ in storybee_data:
-        STORY_bee[package_['ttf']] = package_['db']
+        if 'error' not in package_.keys():
+            STORY_bee[package_['ttf']] = package_['db']['STORY_bee']
+        else:
+            errors[package_['ttf']] = package_['error']
 
-    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee}
+    return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee, 'errors': errors}
 
 
 def handle__ttf_notactive__datastream(info='if ticker stream offline pull latest price by MasterApi'):

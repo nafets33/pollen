@@ -103,7 +103,24 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U' afterhours
 
+current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+# trading_days = api.get_calendar()
+# trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+# trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
 
+
+""" Global VARS"""
+crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+macd_tiers = 8
+MACD_WORLDS = {
+    'crypto': 
+        {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
+        'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
+    
+    'default': 
+        {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
+        'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
+    }
 
 
 
@@ -170,8 +187,6 @@ def test_api_keys(user_secrets):
         sandbox = False
     return {'prod': prod, 'sandbox': sandbox, 'prod_er': str(prod_er), 'sb_er': str(sb_er)}
 
-
-# """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
 
 def return_alpaca_api_keys(prod):
 
@@ -245,10 +260,10 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
         return return_alpaca_api_keys(prod=False)['api']
 
 
-api = return_alpaca_api_keys(prod=prod)['api']
+# api = return_alpaca_api_keys(prod=False)['api']
 
 # """# Dates """
-def hive_dates():
+def hive_dates(api):
     current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
     trading_days = api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
@@ -256,26 +271,7 @@ def hive_dates():
 
     return {'trading_days': trading_days}
 
-current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
-trading_days = api.get_calendar()
-trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
 
-
-""" Global VARS"""
-crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-macd_tiers = 8
-MACD_WORLDS = {
-    'crypto': 
-        {'macd': {"1Minute": 10, "5Minute": 10, "30Minute": 20, "1Hour": 50, "2Hour": 50, "1Day": 50},
-        'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 5, "1Hour": 5, "2Hour": 10, "1Day": 10}},
-    
-    'default': 
-        {'macd': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5},
-        'hist': {"1Minute": 1, "5Minute": 1, "30Minute": 2, "1Hour": 5, "2Hour": 5, "1Day": 5}},
-    }
-
-""" VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>VAR >>>>>>>>>>"""
 def read_pollenstory(db_root, dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl']): # return combined dataframes
     # return beeworkers data
     
@@ -442,6 +438,12 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
         
     return QUEEN
 
+def init_qcp(init_macd_vars, ticker_list):
+    return {'MACD_fast_slow_smooth': init_macd_vars,
+            'tickers': ticker_list,
+            'stars': stars(),
+            }
+
 
 def init_QUEEN_App():
 
@@ -456,21 +458,11 @@ def init_QUEEN_App():
     'theme': 'nuetral', 
     'king_controls_queen': return_queen_controls(stars),
     'qcp_workerbees': {
-        'castle': {'MACD_fast_slow_smooth': init_macd_vars,
-                    'tickers': ['SPY'],
-                    'stars': stars(),},
-        'bishop': {'MACD_fast_slow_smooth': init_macd_vars,
-                    'tickers': ['GOOG', 'AAPL', 'TSLA'],
-                    'stars': stars(),},
-        'knight': {'MACD_fast_slow_smooth': init_macd_vars,
-                    'tickers': ['AMZN', 'OXY', 'SOFI'],
-                    'stars': stars(),},
-        'castle_coin': {'MACD_fast_slow_smooth': init_macd_vars,
-                    'tickers': ['BTCUSD', 'ETHUSD'],
-                    'stars': stars(),},
-        'pawns': {'MACD_fast_slow_smooth': init_macd_vars,
-                    'tickers': main_symbols_full_list[:100],
-                    'stars': stars(),},
+        'castle': init_qcp(init_macd_vars=init_macd_vars, ticker_list=['SPY']),
+        'bishop': init_qcp(init_macd_vars=init_macd_vars, ticker_list=['GOOG', 'AAPL', 'TSLA']),
+        'knight': init_qcp(init_macd_vars=init_macd_vars, ticker_list=['AMZN', 'OXY', 'SOFI']),
+        'castle_coin': init_qcp(init_macd_vars=init_macd_vars, ticker_list=['BTCUSD', 'ETHUSD']),
+        'pawns': init_qcp(init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]),
         },
     'trigger_queen': {'last_trig_date': datetime.datetime.now(est), 'client_user': 'init'},
     'trigger_workerbees': {'last_trig_date': datetime.datetime.now(est), 'client_user': 'init'},
@@ -1453,7 +1445,7 @@ def return_degree_angle(x, y): #
     return degree
 
 ### BARS
-def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
+def return_bars(api, symbol, timeframe, ndays, trading_days_df, sdate_input=False, edate_input=False, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now(est)
         error_dict = {}
@@ -1526,7 +1518,7 @@ def return_bars(symbol, timeframe, ndays, trading_days_df, sdate_input=False, ed
         # ipdb.set_trace()
 
 
-def return_bars_list(ticker_list, chart_times, trading_days_df, crypto=False, exchange=False):
+def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False):
     try:
         s = datetime.datetime.now(est)
         # ticker_list = ['SPY', 'QQQ']
@@ -1586,7 +1578,7 @@ def return_bars_list(ticker_list, chart_times, trading_days_df, crypto=False, ex
         # ipdb.set_trace()
 
 
-def rebuild_timeframe_bars(ticker_list, build_current_minute=False, min_input=False, sec_input=False):
+def rebuild_timeframe_bars(api, ticker_list, build_current_minute=False, min_input=False, sec_input=False):
     # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
     try:
         # First get the current time
@@ -1965,106 +1957,6 @@ def return_index_tickers(index_dir, ext):
     return [index_dict, list(set(full_ticker_list))]
 
 
-
-
-
-##################################################
-##################################################
-################ NOT IN USE ######################
-##################################################
-
-
-
-
-
-
-def return_snapshots(ticker_list):
-    # ticker_list = ['SPY', 'AAPL'] # TEST
-    """ The Following will convert get_snapshots into a dict"""
-    snapshots = api.get_snapshots(ticker_list)
-    # snapshots['AAPL'].latest_trade.price # FYI This also avhices same goal
-    return_dict = {}
-
-    # handle errors
-    error_dict = {}
-    for i in snapshots:
-        if snapshots[i] == None:
-            error_dict[i] = None
-
-    try:    
-        for ticker in snapshots:
-            if ticker not in error_dict.keys():
-                    di = {ticker: {}}
-                    token_dict = vars(snapshots[ticker])
-                    temp_dict = {}
-                    # for k, v in token_dict.items():
-                    #     snapshots[ticker]
-
-
-                    for i in token_dict:
-                        unpack_dict = vars(token_dict[i])
-                        data = unpack_dict["_raw"] # raw data
-                        dataname = unpack_dict["_reversed_mapping"] # data names
-                        temp_dict = {i : {}} # revised dict with datanames
-                        for k, v in dataname.items():
-                            if v in data.keys():
-                                t = {}
-                                t[str(k)] = data[v]
-                                temp_dict[i].update(t)
-                                # if v == 't':
-                                #     temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
-                                #     # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
-                                #     # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
-                            di[ticker].update(temp_dict)                       
-                    return_dict.update(di)
-
-    except Exception as e:
-        print("logme", ticker, e)
-        error_dict[ticker] = "Failed To Unpack"
-
-    return [return_dict, error_dict]
-# data = return_snapshots(ticker_list=['SPY', 'AAPL'])
-
-
-def log_script(log_file, loginfo_dict):
-    loginfo_dict = {'type': 'info', 'lognote': 'someones note'}
-    df = pd.read_csv(log_file, dtype=str, encoding='utf8')
-    for k,v in  loginfo_dict.items():
-        df[k] = v.fillna(df[k])
-
-
-
-def datestr_UTC_to_EST(date_string, return_string=False):
-    # In [94]: date_string
-    # Out[94]: '2022-03-11T19:41:50.649448Z'
-    # In [101]: date_string[:19]
-    # Out[101]: '2022-03-11T19:41:50'
-    d = datetime.datetime.fromisoformat(date_string[:19])
-    j = d.replace(tzinfo=datetime.timezone.utc)
-    fmt = '%Y-%m-%dT%H:%M:%S'
-    if return_string:
-        est_date = j.astimezone(pytz.timezone('US/Eastern')).strftime(fmt)
-    else:
-        est_date = j.astimezone(pytz.timezone('US/Eastern'))
-    
-    return est_date
-
-
-def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
-    digit_trc_time = 1644523144856422000
-    digit_trc_time=1656785012.538478
-    dt = datetime.datetime.utcfromtimestamp(digit_trc_time // 1000000000) # 9 zeros
-    dt = dt.strftime('%Y-%m-%d %H:%M:%S')
-    return dt
-
-
-def read_wiki_index():
-    table=pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
-    df = table[0]
-    # sp500 = df['Symbol'].tolist()
-    # df.to_csv('S&P500-Info.csv')
-    # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
-    return df
 
 
 ###### >>>>>>>>>>>>>>>> CASTLE BISHOP FUNCTIONS <<<<<<<<<<<<<<<#########
@@ -2822,6 +2714,7 @@ def return_queen_controls(stars=stars):
 
 
 def return_Ticker_Universe(): # Return Ticker and Acct Info
+    api = return_alpaca_api_keys(prod=False)['api']
     # Initiate Code File Creation
     index_list = [
         'DJA', 'DJI', 'DJT', 'DJUSCL', 'DJU',
@@ -2920,6 +2813,7 @@ def return_Best_Waves(df, rankname='maxprofit', top=False):
     else:
         df = df.sort_values(rankname)
         return df
+
 
 def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
     # len and profits
@@ -3292,9 +3186,6 @@ def init_PowerRangers(ranger_dimensions=False):
     return r_dict
 
 
-
-
-
 def init_pollen_dbs(db_root, prod, queens_chess_piece):
     
     def init_queen_orders(pickle_file):
@@ -3366,7 +3257,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
 
 def init_clientUser_dbroot(client_user):
     main_root = hive_master_root() # os.getcwd()  # hive root
-    if client_user in ['stefanstapinski@gmail.com', 'pollen']:
+    if client_user in ['stefanstapinski']:
+        print(f'admin {client_user}' )
         db_root = os.path.join(main_root, 'db')
     else:
         client_dbs = os.path.join(os.path.dirname(main_root), 'client_user_dbs')
@@ -3403,28 +3295,135 @@ def send_email(recipient='stapinski89@gmail.com', subject="you forgot a subject"
     return True
 
 
-### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
-def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
-    ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
 
-    s = datetime.datetime.now(est)
-    r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
-    resp = r['resp'] # return slope of collective tics
-    speedybee_dict = {}
-    slope_dict = {}
-    for symbol in set(resp['symbol'].to_list()):
-        df = resp[resp['symbol']==symbol].copy()
-        df = df.reset_index()
-        df_len = len(df)
-        if df_len > 2:
-            slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
-            slope_dict[df.iloc[0].symbol] = slope
-    speedybee_dict['slope'] = slope_dict
+
+
+##################################################
+##################################################
+################ NOT IN USE ######################
+##################################################
+
+
+
+# ### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
+# def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
+#     ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
+
+#     s = datetime.datetime.now(est)
+#     r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
+#     resp = r['resp'] # return slope of collective tics
+#     speedybee_dict = {}
+#     slope_dict = {}
+#     for symbol in set(resp['symbol'].to_list()):
+#         df = resp[resp['symbol']==symbol].copy()
+#         df = df.reset_index()
+#         df_len = len(df)
+#         if df_len > 2:
+#             slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
+#             slope_dict[df.iloc[0].symbol] = slope
+#     speedybee_dict['slope'] = slope_dict
     
-    # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
+#     # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
 
-    print("cum.slope", sum([v for k,v in slope_dict.items()]))
-    return {'speedybee': speedybee_dict}
+#     print("cum.slope", sum([v for k,v in slope_dict.items()]))
+#     return {'speedybee': speedybee_dict}
+
+
+
+
+
+
+# def return_snapshots(ticker_list):
+#     # ticker_list = ['SPY', 'AAPL'] # TEST
+#     """ The Following will convert get_snapshots into a dict"""
+#     snapshots = api.get_snapshots(ticker_list)
+#     # snapshots['AAPL'].latest_trade.price # FYI This also avhices same goal
+#     return_dict = {}
+
+#     # handle errors
+#     error_dict = {}
+#     for i in snapshots:
+#         if snapshots[i] == None:
+#             error_dict[i] = None
+
+#     try:    
+#         for ticker in snapshots:
+#             if ticker not in error_dict.keys():
+#                     di = {ticker: {}}
+#                     token_dict = vars(snapshots[ticker])
+#                     temp_dict = {}
+#                     # for k, v in token_dict.items():
+#                     #     snapshots[ticker]
+
+
+#                     for i in token_dict:
+#                         unpack_dict = vars(token_dict[i])
+#                         data = unpack_dict["_raw"] # raw data
+#                         dataname = unpack_dict["_reversed_mapping"] # data names
+#                         temp_dict = {i : {}} # revised dict with datanames
+#                         for k, v in dataname.items():
+#                             if v in data.keys():
+#                                 t = {}
+#                                 t[str(k)] = data[v]
+#                                 temp_dict[i].update(t)
+#                                 # if v == 't':
+#                                 #     temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
+#                                 #     # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
+#                                 #     # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
+#                             di[ticker].update(temp_dict)                       
+#                     return_dict.update(di)
+
+#     except Exception as e:
+#         print("logme", ticker, e)
+#         error_dict[ticker] = "Failed To Unpack"
+
+#     return [return_dict, error_dict]
+# # data = return_snapshots(ticker_list=['SPY', 'AAPL'])
+
+
+def log_script(log_file, loginfo_dict):
+    loginfo_dict = {'type': 'info', 'lognote': 'someones note'}
+    df = pd.read_csv(log_file, dtype=str, encoding='utf8')
+    for k,v in  loginfo_dict.items():
+        df[k] = v.fillna(df[k])
+
+
+
+def datestr_UTC_to_EST(date_string, return_string=False):
+    # In [94]: date_string
+    # Out[94]: '2022-03-11T19:41:50.649448Z'
+    # In [101]: date_string[:19]
+    # Out[101]: '2022-03-11T19:41:50'
+    d = datetime.datetime.fromisoformat(date_string[:19])
+    j = d.replace(tzinfo=datetime.timezone.utc)
+    fmt = '%Y-%m-%dT%H:%M:%S'
+    if return_string:
+        est_date = j.astimezone(pytz.timezone('US/Eastern')).strftime(fmt)
+    else:
+        est_date = j.astimezone(pytz.timezone('US/Eastern'))
+    
+    return est_date
+
+
+def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
+    digit_trc_time = 1644523144856422000
+    digit_trc_time=1656785012.538478
+    dt = datetime.datetime.utcfromtimestamp(digit_trc_time // 1000000000) # 9 zeros
+    dt = dt.strftime('%Y-%m-%d %H:%M:%S')
+    return dt
+
+
+def read_wiki_index():
+    table=pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+    df = table[0]
+    # sp500 = df['Symbol'].tolist()
+    # df.to_csv('S&P500-Info.csv')
+    # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
+    return df
+
+
+
+
 
 """##################REFERENCEs############################""" 
 #     """ Return Index Charts & Data for All Tickers Wanted"""

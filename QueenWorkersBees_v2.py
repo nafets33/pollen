@@ -497,7 +497,7 @@ def queen_workerbees(prod,  queens_chess_piece='bees_manager'):
         return iter(lambda: tuple(islice(it, size)), ())
 
 
-    def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges):
+    def ticker_star_hunter_bee__async(WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges):
         s = datetime.datetime.now(est)
         
         QUEEN = WORKERBEE_queens[queens_chess_piece] # castle [spy, qqq], knight,
@@ -506,7 +506,8 @@ def queen_workerbees(prod,  queens_chess_piece='bees_manager'):
         # MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
         # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
         MACD_settings = QUEENBEE['workerbees'][queens_chess_piece]['MACD_fast_slow_smooth']
-        # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
+
+        
 
         # change the script to pull for each ticker, inifinite pawns pw1: [10] ... write out the pollenstory to the local db pickle file
         # aysnc needs to happen here as well: change from async full chess piece to group of tickers and async the pollen_hunt & pollen_story
@@ -560,39 +561,6 @@ def queen_workerbees(prod,  queens_chess_piece='bees_manager'):
 
         return True
 
-
-    def qcp_QUEENWorker__pollenstory(qcp_s, QUEENBEE, WORKERBEE_queens, speed_gauges):
-        try:
-            s = datetime.datetime.now(est)
-            async def get_changelog(session, qcp):
-                async with session:
-                    try:
-                        ticker_star_hunter_bee(WORKERBEE_queens=WORKERBEE_queens, QUEENBEE=QUEENBEE, queens_chess_piece=qcp, speed_gauges=speed_gauges)
-                        return {qcp: ''} # return Charts Data based on Queen's Query Params, (stars())
-                    except Exception as e:
-                        print(e, qcp)
-                        logging.error((str(qcp), str(e)))
-                        return {qcp: e}
-                        
-            async def main(qcp_s):
-
-                async with aiohttp.ClientSession() as session:
-                    return_list = []
-                    tasks = []
-                    for qcp in qcp_s: # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
-                        # print(qcp)
-                        tasks.append(asyncio.ensure_future(get_changelog(session, qcp)))
-                    original_pokemon = await asyncio.gather(*tasks)
-                    for pokemon in original_pokemon:
-                        return_list.append(pokemon)
-                    return return_list
-
-            x = asyncio.run(main(qcp_s))
-            e = datetime.datetime.now(est)
-            print(f'All Workers Refreshed {qcp_s} --- {(e - s)} seconds ---')
-            return x
-        except Exception as e:
-            print("qtf", e, print_line_of_error())
 
   
     def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces):
@@ -657,8 +625,8 @@ def queen_workerbees(prod,  queens_chess_piece='bees_manager'):
             # 1. async pollen_hunt # pulling api close data create the initial setting
             # 2. async pollen story 
             # 3. async write
-
-            queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=queens_chess_pieces)
+            main_chess_pieces = 'main_chess_pieces'
+            queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=main_chess_pieces) # main_node_1=['castle', 'bishop', 'knight']
             WORKERBEE_queens = queen_workers['WORKERBEE_queens']
             speed_gauges = queen_workers['speed_gauges']
             
@@ -669,11 +637,11 @@ def queen_workerbees(prod,  queens_chess_piece='bees_manager'):
                 latest__queens_master_tickers = pq['queens_master_tickers']
                 if latest__queens_master_tickers != queens_master_tickers:
                     print("Revised Ticker List ReInitiate")
-                    queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces)
+                    queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=main_chess_pieces)
                     WORKERBEE_queens = queen_workers['WORKERBEE_queens']
                     speed_gauges = queen_workers['speed_gauges']
                 
-                qcp_QUEENWorker__pollenstory(qcp_s=WORKERBEE_queens.keys(), QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
+                qcp_QUEENWorker__pollenstory(tickers=latest__queens_master_tickers, QUEENBEE=QUEENBEE, WORKERBEE_queens=WORKERBEE_queens, speed_gauges=speed_gauges)
 
                 if close_worker():
                     break
@@ -705,7 +673,7 @@ if __name__ == '__main__':
     parser = createParser_workerbees()
     namespace = parser.parse_args()
     queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
-    prod = True if str(namespace.prod).lower() == 'true' else False
+    prod = True if namespace.prod.lower() == 'true' else False
     queen_workerbees(prod=prod)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
