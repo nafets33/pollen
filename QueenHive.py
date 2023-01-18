@@ -3255,22 +3255,6 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
     }
 
 
-def init_clientUser_dbroot(client_user):
-    main_root = hive_master_root() # os.getcwd()  # hive root
-    if client_user in ['stefanstapinski']:
-        print(f'admin {client_user}' )
-        db_root = os.path.join(main_root, 'db')
-    else:
-        client_dbs = os.path.join(os.path.dirname(main_root), 'client_user_dbs')
-        client_user = client_user.split("@")[0]
-        db_root = os.path.join(client_dbs, f'db__{client_user}')
-        if os.path.exists(db_root) == False:
-            os.mkdir(db_root)
-            os.mkdir(os.path.join(db_root, 'logs'))
-
-    return db_root
-
-
 
 def send_email(recipient='stapinski89@gmail.com', subject="you forgot a subject", body="you forgot to same something"):
 

@@ -773,7 +773,12 @@ def queen_order_flow(ORDERS, active_order_state_list):
             set_grid_height = st.number_input(
                 label=f"Set Orders Grid Height", value=g_height
             )
-
+        cols = st.columns((1,1,10))
+        with cols[0]:
+            st.write(f'% {round(sum(df["honey"]) * 100,2)}')
+        with cols[1]:
+            st.write(f'$ {round(sum(df["$honey"]) * 100,2)}')
+        
         ordertables__agrid = build_AGgrid_df__queenorders(
             data=df.astype(str),
             active_order_state_list=active_order_state_list,
@@ -803,6 +808,7 @@ def live_sandbox__setup_switch():
         if "production" in st.session_state and st.session_state["production"] == True
         else "Sandbox"
     )
+    st.session_state["prod_name"] = prod_name
     admin = (
         True if st.session_state["username"] == "stefanstapinski@gmail.com" else False
     )
@@ -888,7 +894,7 @@ def test_api_keys(user_secrets, prod=False):
     return api_true
 
 
-def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False, prod=False):
+def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False):
     if authorized_user == False:
         return False
     # view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
@@ -897,10 +903,11 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
     # st.write(QUEEN_KING['users_secrets'])
     # prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     # sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
-
-    user_env_instance = 'prod' if prod else 'sandbox'
+    prod = st.session_state['production']
+    user_env_instance = 'prod' if st.session_state['production'] else 'sandbox'
     keys_confirmed = QUEEN_KING['users_secrets'][f'{user_env_instance}_keys_confirmed']
     view_account_keys = False
+    st.write(user_env_instance)
     
     if keys_confirmed == False:
         with cols[0]:

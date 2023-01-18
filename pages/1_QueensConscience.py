@@ -33,7 +33,7 @@ import time
 # from streamlit_extras.stoggle import stoggle
 from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from QueenBeeDagger import run__trigger_dag
-from QueenHive import init_qcp, return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
+from QueenHive import init_qcp, return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
 
 est = pytz.timezone("US/Eastern")
 
@@ -167,6 +167,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         sneak_peak = False
         st.error("You Need to Log In to pollenq")
         switch_page("pollenq")
+        st.session_state['sneak_peak'] == False
         st.stop()
     
 
@@ -180,6 +181,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     db_client_user_name = st.session_state['username'].split("@")[0]
 
     prod, admin, prod_name = live_sandbox__setup_switch()
+    # prod, admin, prod_name = st.session_state["production"], st.session_state['admin'], st.session_state['prod_name']
     
     # if st.session_state['production']:
     #     from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
@@ -1958,7 +1960,6 @@ if str(option).lower() == 'queen':
 
         queen_tabs = ["Orders", "Portforlio", "Wave Stories", "Chess Board", "Trading Models", "Charts"]
         order_tab, Portforlio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
-
 
         with cols[1]:
             return_total_profits(ORDERS=ORDERS)

@@ -80,7 +80,6 @@ def init_clientUser_dbroot(client_user):
     if client_user in ['stefanstapinski']:  ## admin
         db_root = os.path.join(main_root, 'db')
     else:
-        client_user = client_user.split("@")[0]
         db_root = os.path.join(client_user_db_dir, f'db__{client_user}')
         if os.path.exists(db_root) == False:
             os.mkdir(db_root)

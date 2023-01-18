@@ -13,7 +13,7 @@ from King import (
     init_clientUser_dbroot,
     local__filepaths_misc,
 )
-from appHive import local_gif
+from appHive import local_gif, live_sandbox__setup_switch
 import ipdb
 
 # from QueenHive import init_pollen_dbs
@@ -231,23 +231,26 @@ def signin_main():
     def setup_user_pollenqdbs(main_root):
         # if db__name exists use db__name else use db
         db_client_user_name = st.session_state["username"].split("@")[0]
-        db_name = os.path.join(main_root, db_client_user_name)
-        db_root = db_name
-        if os.path.exists(db_name) == True:
-            db_root = db_name
+        # db_name = os.path.join(main_root, db_client_user_name)
+        # db_root = db_name
+        # if os.path.exists(db_name) == True:
+        #     db_root = db_name
+        # else:
+        if st.session_state["authorized_user"]:
+            db_root = init_clientUser_dbroot(
+                client_user=db_client_user_name
+            )  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+            # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
+            st.sidebar.warning("Your Queen is Awaiting")
         else:
-            if st.session_state["authorized_user"]:
-                db_root = init_clientUser_dbroot(
-                    client_user=st.session_state["username"]
-                )  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-                # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
-                st.sidebar.warning("Your Queen is Awaiting")
-            else:
-                db_root = os.path.join(
-                    main_root, "db"
-                )  ## Force to Main db and Sandbox API
+            db_root = os.path.join(
+                main_root, "db"
+            )  ## Force to Main db and Sandbox API
 
         st.session_state["db_root"] = db_root
+
+        # live_sandbox__setup_switch()
+
         return db_root
 
     # Read usernames and convert to nested dict
