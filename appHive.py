@@ -714,6 +714,17 @@ def kings_order_rules__forum(order_rules):
     # order_rules
     return True
 
+def download_df_as_CSV(df, file_name='name.csv'):
+    def convert_df_to_csv(df):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
+        return df.to_csv().encode('utf-8')
+    st.download_button(label="Download as CSV", 
+    data=convert_df_to_csv(df), 
+    file_name=file_name, mime='text/csv',
+    )
+
+    return True
+
 def queen_order_flow(ORDERS, active_order_state_list):
     # st.write(QUEEN['source'])
     # if st.session_state['admin'] == False:
@@ -725,17 +736,20 @@ def queen_order_flow(ORDERS, active_order_state_list):
     # ipdb.set_trace()
     with st.expander("Portfolio Orders", expanded=True):
         now_time = datetime.datetime.now(est)
-        cols = st.columns((1, 1, 1, 1, 1))
+        cols = st.columns((1, 1, 1, 1, 1,1,5))
         with cols[0]:
-            refresh_b = st.button("Refresh Orders", key="r1")
+            refresh_b = st.button("Refresh", key="r1")
         with cols[1]:
-            today_orders = st.checkbox("Today Orders", False)
+            today_orders = st.checkbox("Today", False)
         with cols[2]:
-            completed_orders = st.checkbox("Completed orders")
+            completed_orders = st.checkbox("Completed")
         with cols[3]:
-            all_orders = st.checkbox("All Orders", False)
+            all_orders = st.checkbox("All", False)
         with cols[4]:
+            best_orders = st.checkbox("Best Bees")
+        with cols[5]:
             show_errors = st.checkbox("Lost Bees")
+        
 
         order_states = set(ORDERS["queen_orders"]["queen_order_state"].tolist())
 
@@ -748,13 +762,13 @@ def queen_order_flow(ORDERS, active_order_state_list):
         else:
             order_states = ["submitted", "running", "running_close"]
 
-        cols = st.columns((3, 1))
-        with cols[0]:
+        with cols[6]:
             queen_order_states = st.multiselect(
                 "queen order states",
                 options=list(active_order_state_list),
                 default=order_states,
             )
+        cols = st.columns((1, 1, 10, 5))
 
         df = queen_orders_view(
             QUEEN=ORDERS, queen_order_state=queen_order_states, return_str=False
@@ -768,16 +782,16 @@ def queen_order_flow(ORDERS, active_order_state_list):
                 df["datetime"] > now_time.replace(hour=1, minute=1, second=1)
             ].copy()
 
-        with cols[1]:
-            g_height = grid_height(len_of_rows=len(df))
-            set_grid_height = st.number_input(
-                label=f"Set Orders Grid Height", value=g_height
-            )
-        cols = st.columns((1,1,10))
+        g_height = grid_height(len_of_rows=len(df))
+        set_grid_height = st.sidebar.number_input(
+            label=f"Set Orders Grid Height", value=g_height
+        )
+        # with cols[1]:
         with cols[0]:
-            st.write(f'% {round(sum(df["honey"]) * 100,2)}')
+            mark_down_text(text=f'% {round(sum(df["honey"]) * 100,2)}', fontsize='18')
         with cols[1]:
-            st.write(f'$ {round(sum(df["$honey"]) * 100,2)}')
+            mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize='18')
+        cols = st.columns((1,1,10))
         
         ordertables__agrid = build_AGgrid_df__queenorders(
             data=df.astype(str),
@@ -793,7 +807,9 @@ def queen_order_flow(ORDERS, active_order_state_list):
             order_rules = queen_order[0]['order_rules']
             # run function to shown rule
             kings_order_rules__forum(order_rules)
-
+        
+        # with cols[0]:
+        download_df_as_CSV(df=ordertables__agrid['data'], file_name='orders.csv')
     return True
 
 

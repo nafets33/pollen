@@ -92,6 +92,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return {'qty_correction': qty}
         else: # sel == sell
             # print("check portfolio has enough shares to sell")
+            if ticker not in portfolio.keys():
+                msg = {"submit order validation()": {'msg': "MISSING_TICKER", 'ticker': ticker}}
+                logging.error(msg)
+                print(msg)
+                QUEEN['queen_orders'].at[run_order_idx, 'queen_order_state'] = 'completed_alpaca'
+                return {'validation': 'MISSING_TICKER'}
             position = float(portfolio[ticker]['qty_available'])
             if position > 0 and position < qty: # long
                 msg = {"submit order validation()": {'#of shares avail': position,  'msg': "not enough shares avail to sell, updating sell qty", 'ticker': ticker}}
@@ -581,6 +587,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
 
                     send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
+                    if 'validation' in send_order_val.keys():
+                        print("Order Did not pass to execute")
+                        msg = ("Order Did not pass to execute")
+                        return{'executed': False, 'msg': msg}
+
+                    
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
 
                     # ORDER TYPES Enter the Market
@@ -629,8 +641,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # Generate Client Order Id
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig, sellside_client_order_id=run_order_client_order_id)
                     
-                    # Validate Order
-                    send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=run_order_idx)
                     
                     # order_vars
                     sell_qty = send_order_val['qty_correction']
@@ -646,6 +656,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             limit_price = round(limit_price, 2)                    
                         crypto = False
 
+                    # Validate Order
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=run_order_idx)
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
                     
