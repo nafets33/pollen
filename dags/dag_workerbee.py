@@ -32,7 +32,7 @@ def get_screen_processes():
 # Parameteres
 WORFKLOW_DAG_ID = "run_workerbees"
 WORFKFLOW_START_DATE = datetime.datetime(2023, 1, 1)
-WORKFLOW_SCHEDULE_INTERVAL = "0 30 9 * * ? *"
+WORKFLOW_SCHEDULE_INTERVAL = None
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
 
 WORKFLOW_DEFAULT_ARGS = {
