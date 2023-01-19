@@ -176,11 +176,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     # st.write(st.session_state['db_root'])
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
-    client_user = st.session_state['username']
     authorized_user = st.session_state['authorized_user']
-    db_client_user_name = st.session_state['username'].split("@")[0]
+    client_user = st.session_state['username'].split("@")[0]
 
-    prod, admin, prod_name = live_sandbox__setup_switch()
+    prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
 
     # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
     # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
@@ -1459,7 +1458,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         if st.session_state['authorized_user'] and st.session_state['admin']:
                             dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
                             # st.write(run__trigger_dag())
-                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name, prod=prod) # stefanstapinski  @gmail.com
+                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=client_user, prod=prod) # stefanstapinski  @gmail.com
                             QUEEN_KING['trigger_queen'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
                             st.snow()
                         else:
@@ -1487,7 +1486,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         if st.session_state['authorized_user']:
                             dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
                             # st.write(run__trigger_dag())
-                            # run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=db_client_user_name) # stefanstapinski  @gmail.com
+                            # run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=client_user) # stefanstapinski  @gmail.com
                             # QUEEN_KING['trigger_workerbees'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
                             # create file in folder
                             pollen_dir = os.path.dirname(main_root)

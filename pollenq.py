@@ -102,17 +102,19 @@ def pollenq(admin_pq):
             
             # st.sidebar.write(f'Welcome {st.session_state["name"]}')
             # st.sidebar.write(f'{st.session_state["username"]}')
-            client_user = st.session_state['username']
-            authorized_user = st.session_state['authorized_user']
-            db_client_user_name = st.session_state['username'].split("@")[0]
+            # return_to_last_page()
 
-            prod, admin, prod_name = live_sandbox__setup_switch()
+            client_user = st.session_state['username']
+            authorized_user = st.session_state['authorized_user']            
+            client_user = st.session_state['username'].split("@")[0]
+
+            prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
             
             if admin: ### Need to Store admin password encrypted
                 st.write('admin:', admin)
                 d = list(os.listdir(client_dbs_root()))
                 d = [i.split("db__")[1] for i in d]
-                admin_client_user = st.sidebar.selectbox('admin client_users', options=d, index=d.index(db_client_user_name))
+                admin_client_user = st.sidebar.selectbox('admin client_users', options=d, index=d.index(client_user))
                 if st.sidebar.button('admin change user'):
                     st.session_state['admin__client_user'] = admin_client_user
                     switch_page("pollenq")

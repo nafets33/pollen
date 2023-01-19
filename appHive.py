@@ -812,8 +812,14 @@ def queen_order_flow(ORDERS, active_order_state_list):
         download_df_as_CSV(df=ordertables__agrid['data'], file_name='orders.csv')
     return True
 
+def close_sesstion_states__pages():
+    # queens conscience
+    st.session_state['option_sel'] = False
+    st.session_state['sneak_peak'] = False
 
-def live_sandbox__setup_switch():
+    return True
+
+def live_sandbox__setup_switch(client_user=False):
     prod = (
         True
         if "production" in st.session_state and st.session_state["production"] == True
@@ -825,8 +831,14 @@ def live_sandbox__setup_switch():
         else "Sandbox"
     )
     st.session_state["prod_name"] = prod_name
+    
+    if client_user:
+        client_user = client_user
+    else:
+        client_user = st.session_state['client_user']
+
     admin = (
-        True if st.session_state["client_user"] == "stefanstapinski" else False
+        True if client_user == "stefanstapinski" else False
     )
     st.session_state["admin"] = True if admin else False
 
