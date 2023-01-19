@@ -44,9 +44,9 @@ db_app_root = os.path.join(db_root, "app")
 
 """# Dates """
 
-current_day = datetime.datetime.now(est).day
-current_month = datetime.datetime.now(est).month
-current_year = datetime.datetime.now(est).year
+current_day = datetime.now(est).day
+current_month = datetime.now(est).month
+current_year = datetime.now(est).year
 
 
 def init_logging(queens_chess_piece, db_root, prod):
@@ -99,7 +99,7 @@ exclude_conditions = [
     "Z",
 ]  # 'U' afterhours
 
-current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+current_date = datetime.now(est).strftime("%Y-%m-%d")
 # trading_days = api.get_calendar()
 # trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 # trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
@@ -328,7 +328,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 
 # """# Dates """
 def hive_dates(api):
-    current_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+    current_date = datetime.now(est).strftime("%Y-%m-%d")
     trading_days = api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
     trading_days_df["date"] = pd.to_datetime(trading_days_df["date"])
@@ -396,7 +396,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
             "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
             "prod": "",
             "source": "na",
-            "last_modified": datetime.datetime.now(est),
+            "last_modified": datetime.now(est),
             "command_conscience": {},
             "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
             "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
@@ -460,7 +460,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
                 "pollenstory_info": {},  # Misc Info,
                 "client": {},
                 # 'heartbeat': {},
-                "last_modified": datetime.datetime.now(est),
+                "last_modified": datetime.now(est),
             },
         }
 
@@ -469,7 +469,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
             "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
             "prod": "",
             "source": "na",
-            "last_modified": datetime.datetime.now(est),
+            "last_modified": datetime.now(est),
             "command_conscience": {},
             "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
             "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
@@ -533,7 +533,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
                 "pollenstory_info": {},  # Misc Info,
                 "client": {},
                 # 'heartbeat': {},
-                "last_modified": datetime.datetime.now(est),
+                "last_modified": datetime.now(est),
             },
         }
 
@@ -575,11 +575,11 @@ def init_QUEEN_App():
             ),
         },
         "trigger_queen": {
-            "last_trig_date": datetime.datetime.now(est),
+            "last_trig_date": datetime.now(est),
             "client_user": "init",
         },
         "trigger_workerbees": {
-            "last_trig_date": datetime.datetime.now(est),
+            "last_trig_date": datetime.now(est),
             "client_user": "init",
         },
         "bee_lounge": [],
@@ -589,7 +589,7 @@ def init_QUEEN_App():
         "app_order_requests": [],
         "sell_orders": [],
         "buy_orders": [],
-        "last_modified": {"last_modified": datetime.datetime.now(est)},
+        "last_modified": {"last_modified": datetime.now(est)},
         "queen_processed_orders": [],
         "wave_triggers": [],
         "app_wave_requests": [],
@@ -597,7 +597,7 @@ def init_QUEEN_App():
         "trading_models_requests": [],
         "power_rangers": [],
         "power_rangers_requests": [],
-        "power_rangers_lastupdate": datetime.datetime.now().astimezone(est),
+        "power_rangers_lastupdate": datetime.now().astimezone(est),
         "knight_bees_kings_rules": [],
         "knight_bees_kings_rules_requests": [],
         "queen_controls_reset": False,
@@ -610,7 +610,7 @@ def init_QUEEN_App():
         "subconscious_requests": [],
         "del_QUEEN_object": [],
         "del_QUEEN_object_requests": [],
-        "last_app_update": datetime.datetime.now(est),
+        "last_app_update": datetime.now(est),
         ## Update Time Zone... Low Priority
         "update_queen_order": [],
         "update_queen_order_requests": [],
@@ -676,7 +676,7 @@ def add_key_to_QUEEN(QUEEN, queens_chess_piece):  # returns QUEEN
 
 
 def return_STORYbee_trigbees(QUEEN, STORY_bee, tickers_filter=False):
-    now_time = datetime.datetime.now(est)
+    now_time = datetime.now(est)
     # all_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and (now_time - i['story']['time_state']).seconds < 33}
     # active_trigs = {k: i['story']["macd_state"] for (k, i) in STORY_bee.items() if len(i['story']["macd_state"]) > 0 and i['story']["macd_state"] in QUEEN['heartbeat']['available_triggerbees'] and (now_time - i['story']['time_state']).seconds < 33}
 
@@ -719,7 +719,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
     # >/ create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
     # >/ what current macd tier values in comparison to max/min
     try:
-        s = datetime.datetime.now(est)
+        s = datetime.now(est)
         story = {}
         ANGEL_bee = {}  # add to QUEENS mind
         STORY_bee = {}
@@ -734,7 +734,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         ) in (
             pollen_nectar.items()
         ):  # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
-            s_ttfame_func_check = datetime.datetime.now(est).astimezone(est)
+            s_ttfame_func_check = datetime.now(est).astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
 
             trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
@@ -760,14 +760,14 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                 "macd_singal_deviation"
             ]
 
-            s_timetoken = datetime.datetime.now(est)
+            s_timetoken = datetime.now(est)
             # mac cross
             df = mark_macd_signal_cross(df=df)
             resp = knights_triggerbees(df=df)
             df = resp["df"]
             knights_word = resp["bee_triggers"]
             # how long does trigger stay profitable?
-            e_timetoken = datetime.datetime.now(est)
+            e_timetoken = datetime.now(est)
             betty_bee[ticker_time_frame]["macdcross"] = e_timetoken - s_timetoken
 
             """for every index(timeframe) calculate profit length, bell curve conclude with how well trigger is doing to then determine when next trigger will do well """
@@ -775,7 +775,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             # Queen to make understanding of trigger-profit waves
             # Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
 
-            s_timetoken = datetime.datetime.now(est)
+            s_timetoken = datetime.now(est)
 
             wave = return_knightbee_waves(
                 df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
@@ -796,7 +796,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             STORY_bee[ticker_time_frame]["waves"] = MACDWAVE_story
 
-            e_timetoken = datetime.datetime.now(est)
+            e_timetoken = datetime.now(est)
             betty_bee[ticker_time_frame]["waves"] = e_timetoken - s_timetoken
 
             knights_sight_word[ticker_time_frame] = knights_word
@@ -804,7 +804,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             # # return degree angle 0, 45, 90
             try:
-                s_timetoken = datetime.datetime.now(est)
+                s_timetoken = datetime.now(est)
                 var_list = ["macd", "hist", "signal", "close", "rsi_ema"]
                 var_timeframes = [3, 6, 8, 10, 25, 33]
                 for var in var_list:
@@ -815,7 +815,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                             y = [1, 2]
                             name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
                             ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
-                e_timetoken = datetime.datetime.now().astimezone(est)
+                e_timetoken = datetime.now().astimezone(est)
                 betty_bee[ticker_time_frame]["Angel_Bee"] = e_timetoken - s_timetoken
             except Exception as e:
                 msg = (
@@ -830,11 +830,11 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             # # add close price momentum
             # try:
-            #     s_timetoken = datetime.datetime.now().astimezone(est)
+            #     s_timetoken = datetime.now().astimezone(est)
             #     close = df['close']
             #     df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
             #     df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
-            #     e_timetoken = datetime.datetime.now().astimezone(est)
+            #     e_timetoken = datetime.now().astimezone(est)
             #     betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
             # except Exception as e:
             #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
@@ -843,7 +843,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             time_state = df["timestamp_est"].iloc[-1]  # current time
             STORY_bee[ticker_time_frame]["story"][
                 "time_state"
-            ] = datetime.datetime.now().astimezone(est)
+            ] = datetime.now().astimezone(est)
 
             # devation from vwap
             df["vwap_deviation"] = df["close"] - df["vwap"]
@@ -891,14 +891,12 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             # count number of Macd Crosses
             # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
-            s_timetoken = datetime.datetime.now().astimezone(est)
+            s_timetoken = datetime.now().astimezone(est)
             today_df = df[
                 df["timestamp_est"]
-                > (
-                    datetime.datetime.now(est).replace(hour=1, minute=1, second=1)
-                ).astimezone(est)
+                > (datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)
             ].copy()
-            # today_df = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
+            # today_df = df[df['timestamp_est'] > (datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
             STORY_bee[ticker_time_frame]["story"]["macd_cross_count"] = {
                 "buy_cross_total_running_count": sum(
                     np.where(df["macd_cross"] == "buy_cross-0", 1, 0)
@@ -913,7 +911,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                     np.where(today_df["macd_cross"] == "sell_cross-0", 1, 0)
                 ),
             }
-            e_timetoken = datetime.datetime.now().astimezone(est)
+            e_timetoken = datetime.now().astimezone(est)
             betty_bee[ticker_time_frame]["count_cross"] = e_timetoken - s_timetoken
 
             # latest_close_price
@@ -942,12 +940,12 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                 # # how did day start ## this could be moved to queen and calculated once only
                 # STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
 
-                e_timetoken = datetime.datetime.now().astimezone(est)
+                e_timetoken = datetime.now().astimezone(est)
                 slope, intercept, r_value, p_value, std_err = stats.linregress(
                     theme_today_df.index, theme_today_df["close"]
                 )
                 STORY_bee[ticker_time_frame]["story"]["current_slope"] = slope
-                e_timetoken = datetime.datetime.now().astimezone(est)
+                e_timetoken = datetime.now().astimezone(est)
                 betty_bee[ticker_time_frame]["slope"] = e_timetoken - s_timetoken
 
             # Measure MACD WAVES
@@ -981,7 +979,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             # df_lastrow_remaining = df_lastrow[[i for i in df_lastrow.index.tolist() if i not in STORY_bee[ticker_time_frame]['story'].keys()]].copy
             STORY_bee[ticker_time_frame]["story"]["current_mind"] = df_lastrow
 
-            e_ttfame_func_check = datetime.datetime.now().astimezone(est)
+            e_ttfame_func_check = datetime.now().astimezone(est)
             betty_bee[ticker_time_frame]["full_loop"] = (
                 e_ttfame_func_check - s_ttfame_func_check
             )
@@ -990,7 +988,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             # when did macd and signal share same tier?
 
-        e = datetime.datetime.now(est)
+        e = datetime.now(est)
         print("pollen_story", str((e - s)))
         return {
             "pollen_story": story,
@@ -1051,14 +1049,14 @@ def knights_triggerbees(df):  # adds all triggers to dataframe
             if len(bee_df) > 1:
                 trigger_dict[trigger]["prior_seen"] = bee_df["timestamp_est"].iloc[-2]
             else:
-                trigger_dict[trigger]["prior_seen"] = datetime.datetime.now(est).replace(
+                trigger_dict[trigger]["prior_seen"] = datetime.now(est).replace(
                     year=1989, month=4, day=11
                 )
         else:
-            trigger_dict[trigger]["last_seen"] = datetime.datetime.now(est).replace(
+            trigger_dict[trigger]["last_seen"] = datetime.now(est).replace(
                 year=1989, month=4, day=11
             )
-            trigger_dict[trigger]["prior_seen"] = datetime.datetime.now(est).replace(
+            trigger_dict[trigger]["prior_seen"] = datetime.now(est).replace(
                 year=1989, month=4, day=11
             )
 
@@ -1690,7 +1688,7 @@ def split_today_vs_prior(df, timestamp="timestamp_est"):
 
     df_today = df[
         df[timestamp]
-        > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)
+        > (datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)
     ].copy()
     df_prior = df[~(df[timestamp].isin(df_today[timestamp].to_list()))].copy()
 
@@ -1729,20 +1727,20 @@ def return_bars(
     exchange=False,
 ):
     try:
-        s = datetime.datetime.now(est)
+        s = datetime.now(est)
         error_dict = {}
         # Fetch bars for prior ndays and then add on today
-        # s_fetch = datetime.datetime.now()
+        # s_fetch = datetime.now()
         if edate_input != False:
             end_date = edate_input
         else:
-            end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+            end_date = datetime.now(est).strftime("%Y-%m-%d")
 
         if sdate_input != False:
             start_date = sdate_input
         else:
             if ndays == 0:
-                start_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+                start_date = datetime.now(est).strftime("%Y-%m-%d")
             else:
                 start_date = (
                     trading_days_df.query("date < @current_day").tail(ndays).head(1).date
@@ -1792,11 +1790,11 @@ def return_bars(
 
         symbol_data = symbol_data.reset_index(drop=True)
 
-        e = datetime.datetime.now(est)
-        # print(str((e - s)) + ": " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        e = datetime.now(est)
+        # print(str((e - s)) + ": " + datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         # if ndays == 1:
-        #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+        #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
         # if symbol_data.iloc[-1]["timestamp_est"] == 0:
         #     ipdb.set_trace()
@@ -1823,7 +1821,7 @@ def return_bars_list(
     api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False
 ):
     try:
-        s = datetime.datetime.now(est)
+        s = datetime.now(est)
         # ticker_list = ['SPY', 'QQQ']
         # chart_times = {
         #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18,
@@ -1841,7 +1839,7 @@ def return_bars_list(
             ]  # less then current date
             start_date = trading_days_df_.tail(ndays).head(1).date
             start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-            end_date = datetime.datetime.now(est).strftime("%Y-%m-%d")
+            end_date = datetime.now(est).strftime("%Y-%m-%d")
 
             if exchange:
                 symbol_data = api.get_crypto_bars(
@@ -1870,7 +1868,7 @@ def return_bars_list(
 
             symbol_data = symbol_data.reset_index(drop=True)
             # if ndays == 1:
-            #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+            #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
             return_dict[charttime] = symbol_data
 
@@ -1878,7 +1876,7 @@ def return_bars_list(
                 error_dict[ticker_list] = {"msg": "no data returned", "time": time}
                 return False
 
-        e = datetime.datetime.now(est)
+        e = datetime.now(est)
 
         return {"resp": True, "return": return_dict}
 
@@ -1900,22 +1898,20 @@ def rebuild_timeframe_bars(
     try:
         # First get the current time
         if build_current_minute:
-            current_time = datetime.datetime.now(est)
+            current_time = datetime.now(est)
             current_sec = current_time.second
             if current_sec < 5:
                 time.sleep(1)
-                current_time = datetime.datetime.now(est)
+                current_time = datetime.now(est)
                 sec_input = current_time.second
                 min_input = 0
         else:
             sec_input = sec_input
             min_input = min_input
 
-        current_time = datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        current_time = datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         previous_time = (
-            datetime.datetime.now(datetime.timezone.utc)
+            datetime.now(datetime.timezone.utc)
             - datetime.timedelta(minutes=min_input, seconds=sec_input)
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -2195,7 +2191,7 @@ def init_index_ticker(index_list, db_root, init=True):
                     encoding="utf8",
                 )
             except Exception as e:
-                print(tic_index, e, datetime.datetime.now(est))
+                print(tic_index, e, datetime.now(est))
 
     # examples:
     # symbol_list_us = ss.get_symbol_list(market="US")
@@ -2244,7 +2240,7 @@ def init_index_ticker(index_list, db_root, init=True):
 
 
 def PickleData(pickle_file, data_to_store):
-    p_timestamp = {"pq_last_modified": datetime.datetime.now(est)}
+    p_timestamp = {"pq_last_modified": datetime.now(est)}
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
     with open(pickle_file_temp, "wb+") as dbfile:
@@ -2298,11 +2294,11 @@ def ReadPickleData(pickle_file):
 
 
 def timestamp_string(format="%m-%d-%Y %I.%M%p", tz=est):
-    return datetime.datetime.now(tz).strftime(format)
+    return datetime.now(tz).strftime(format)
 
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
-    return datetime.datetime.now(tz).strftime(format)
+    return datetime.now(tz).strftime(format)
 
 
 def print_line_of_error():
@@ -2311,7 +2307,7 @@ def print_line_of_error():
 
 
 def return_index_tickers(index_dir, ext):
-    s = datetime.datetime.now(est)
+    s = datetime.now(est)
     # ext = '.csv'
     # index_dir = os.path.join(db_root, 'index_tickers')
 
@@ -2506,7 +2502,7 @@ def createParser():
 def return_market_hours(trading_days, crypto):
     # trading_days = api_cal # api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-    s = datetime.datetime.now(est)
+    s = datetime.now(est)
     s_iso = s.isoformat()[:10]
     mk_open_today = s_iso in trading_days_df["date"].tolist()
     mk_open = s.replace(hour=1, minute=1, second=1)
@@ -3254,7 +3250,7 @@ def create_QueenOrderBee(
         priceinfo=priceinfo,
         queen_init=False,
     ):
-        date_mark = datetime.datetime.now().astimezone(est)
+        date_mark = datetime.now().astimezone(est)
         if queen_init:
             return {
                 name: "init"
@@ -3405,7 +3401,7 @@ def return_queen_controls(stars=stars):
     # num_of_stars = len(stars())
     queen_controls_dict = {
         "theme": "nuetral",
-        "last_read_app": datetime.datetime.now(est),
+        "last_read_app": datetime.now(est),
         "stars": stars(),
         "ticker_settings": generate_queen_ticker_settings(),
         "buying_powers": generate_queen_buying_powers_settings(),
@@ -3466,7 +3462,7 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
 
     """ Return Index Charts & Data for All Tickers Wanted"""
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
-    # s = datetime.datetime.now()
+    # s = datetime.now()
     all_alpaca_tickers = api.list_assets()
     alpaca_symbols_dict = {}
     for n, v in enumerate(all_alpaca_tickers):
@@ -4292,7 +4288,7 @@ def send_email(
 # def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
 #     ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
 
-#     s = datetime.datetime.now(est)
+#     s = datetime.now(est)
 #     r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
 #     resp = r['resp'] # return slope of collective tics
 #     speedybee_dict = {}
@@ -4372,7 +4368,7 @@ def datestr_UTC_to_EST(date_string, return_string=False):
     # Out[94]: '2022-03-11T19:41:50.649448Z'
     # In [101]: date_string[:19]
     # Out[101]: '2022-03-11T19:41:50'
-    d = datetime.datetime.fromisoformat(date_string[:19])
+    d = datetime.fromisoformat(date_string[:19])
     j = d.replace(tzinfo=datetime.timezone.utc)
     fmt = "%Y-%m-%dT%H:%M:%S"
     if return_string:
@@ -4386,7 +4382,7 @@ def datestr_UTC_to_EST(date_string, return_string=False):
 def convert_nano_utc_timestamp_to_est_datetime(digit_trc_time):
     digit_trc_time = 1644523144856422000
     digit_trc_time = 1656785012.538478
-    dt = datetime.datetime.utcfromtimestamp(digit_trc_time // 1000000000)  # 9 zeros
+    dt = datetime.utcfromtimestamp(digit_trc_time // 1000000000)  # 9 zeros
     dt = dt.strftime("%Y-%m-%d %H:%M:%S")
     return dt
 
