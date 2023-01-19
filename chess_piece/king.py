@@ -7,10 +7,7 @@ import time
 from datetime import datetime
 
 import aiohttp
-import ipdb
 import pytz
-
-# import logging
 
 est = pytz.timezone("US/Eastern")
 

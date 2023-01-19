@@ -10,7 +10,6 @@ from datetime import datetime
 from email.message import EmailMessage
 
 import alpaca_trade_api as tradeapi
-import ipdb
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -18,11 +17,10 @@ import pytz
 import streamlit as st
 from alpaca_trade_api.rest import URL
 from alpaca_trade_api.rest_async import AsyncRest
-from dotenv import load_dotenv
 from PIL import Image
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
-from King import ReadPickleData, hive_master_root, streamlit_config_colors
+from chess_piece.king import ReadPickleData, hive_master_root, streamlit_config_colors
 
 est = pytz.timezone("US/Eastern")
 

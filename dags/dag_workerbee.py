@@ -55,20 +55,6 @@ dag = DAG(
     default_args=WORKFLOW_DEFAULT_ARGS,
     catchup=False,
 )
-# Define functions
-def job_1():
-
-    bees = "workerbees"
-    processes_ = get_screen_processes()
-    if bees not in processes_:
-        print("Perform job 1")
-        cmd = f"screen -S {bees} python QueenWorkerBees.py -prod true"
-        os.system(cmd)
-
-        cmd = f"screen -d {bees}"
-        os.system(cmd)
-
-
 # Define jobs
 start = EmptyOperator(task_id="start", dag=dag)
 
