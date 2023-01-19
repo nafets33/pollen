@@ -5,11 +5,9 @@ import os
 # from QueenHive import PickleData, queen_orders_view
 import pickle
 import smtplib
-import sqlite3
 import ssl
 from datetime import datetime
 from email.message import EmailMessage
-from random import randint
 
 import alpaca_trade_api as tradeapi
 import ipdb
@@ -18,17 +16,15 @@ import numpy as np
 import pandas as pd
 import pytz
 import streamlit as st
-from alpaca_trade_api.rest import URL, TimeFrame
-from alpaca_trade_api.rest_async import AsyncRest, gather_with_concurrency
+from alpaca_trade_api.rest import URL
+from alpaca_trade_api.rest_async import AsyncRest
 from dotenv import load_dotenv
 from PIL import Image
-from st_aggrid import AgGrid, DataReturnMode, GridOptionsBuilder, GridUpdateMode, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
-import streamlit_authenticator as stauth
-from chess_piece.king import ReadPickleData, hive_master_root, streamlit_config_colors
+from King import ReadPickleData, hive_master_root, streamlit_config_colors
 
 est = pytz.timezone("US/Eastern")
-
 
 main_root = hive_master_root()  # os.getcwd()  # hive root
 
@@ -63,6 +59,7 @@ default_text_color = k_colors["default_text_color"]  # = '#59490A'
 default_font = k_colors["default_font"]  # = "sans serif"
 default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 
+
 ## IMPROVE GLOBAL VARIABLES
 
 
@@ -75,7 +72,6 @@ def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
 
 
 def send_email(recipient, subject, body):
-
     # Define email sender and receiver
     pollenq_gmail = os.environ.get("pollenq_gmail")
     pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
@@ -162,7 +158,6 @@ def queen_orders_view(
 
 
 def PickleData(pickle_file, data_to_store):
-
     p_timestamp = {"pq_last_modified": datetime.now(est)}
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
@@ -234,7 +229,6 @@ def mark_down_text(
 
 
 def progress_bar(value, sleeptime=0.000003, text=False, pct=False):
-
     status_text = st.empty()
     if pct:
         value = int(round((value * 100), 0))
@@ -731,6 +725,21 @@ def kings_order_rules__forum(order_rules):
     return True
 
 
+def download_df_as_CSV(df, file_name="name.csv"):
+    def convert_df_to_csv(df):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
+        return df.to_csv().encode("utf-8")
+
+    st.download_button(
+        label="Download as CSV",
+        data=convert_df_to_csv(df),
+        file_name=file_name,
+        mime="text/csv",
+    )
+
+    return True
+
+
 def queen_order_flow(ORDERS, active_order_state_list):
     # st.write(QUEEN['source'])
     # if st.session_state['admin'] == False:
@@ -742,16 +751,18 @@ def queen_order_flow(ORDERS, active_order_state_list):
     # ipdb.set_trace()
     with st.expander("Portfolio Orders", expanded=True):
         now_time = datetime.now(est)
-        cols = st.columns((1, 1, 1, 1, 1))
+        cols = st.columns((1, 1, 1, 1, 1, 1, 5))
         with cols[0]:
-            refresh_b = st.button("Refresh Orders", key="r1")
+            refresh_b = st.button("Refresh", key="r1")
         with cols[1]:
-            today_orders = st.checkbox("Today Orders", False)
+            today_orders = st.checkbox("Today", False)
         with cols[2]:
-            completed_orders = st.checkbox("Completed orders")
+            completed_orders = st.checkbox("Completed")
         with cols[3]:
-            all_orders = st.checkbox("All Orders", False)
+            all_orders = st.checkbox("All", False)
         with cols[4]:
+            best_orders = st.checkbox("Best Bees")
+        with cols[5]:
             show_errors = st.checkbox("Lost Bees")
 
         order_states = set(ORDERS["queen_orders"]["queen_order_state"].tolist())
@@ -765,13 +776,13 @@ def queen_order_flow(ORDERS, active_order_state_list):
         else:
             order_states = ["submitted", "running", "running_close"]
 
-        cols = st.columns((3, 1))
-        with cols[0]:
+        with cols[6]:
             queen_order_states = st.multiselect(
                 "queen order states",
                 options=list(active_order_state_list),
                 default=order_states,
             )
+        cols = st.columns((1, 1, 10, 5))
 
         df = queen_orders_view(
             QUEEN=ORDERS, queen_order_state=queen_order_states, return_str=False
@@ -783,11 +794,16 @@ def queen_order_flow(ORDERS, active_order_state_list):
         if today_orders:
             df = df[df["datetime"] > now_time.replace(hour=1, minute=1, second=1)].copy()
 
+        g_height = grid_height(len_of_rows=len(df))
+        set_grid_height = st.sidebar.number_input(
+            label=f"Set Orders Grid Height", value=g_height
+        )
+        # with cols[1]:
+        with cols[0]:
+            mark_down_text(text=f'% {round(sum(df["honey"]) * 100, 2)}', fontsize="18")
         with cols[1]:
-            g_height = grid_height(len_of_rows=len(df))
-            set_grid_height = st.number_input(
-                label=f"Set Orders Grid Height", value=g_height
-            )
+            mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
+        cols = st.columns((1, 1, 10))
 
         ordertables__agrid = build_AGgrid_df__queenorders(
             data=df.astype(str),
@@ -804,10 +820,20 @@ def queen_order_flow(ORDERS, active_order_state_list):
             # run function to shown rule
             kings_order_rules__forum(order_rules)
 
+        # with cols[0]:
+        download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
     return True
 
 
-def live_sandbox__setup_switch():
+def close_sesstion_states__pages():
+    # queens conscience
+    st.session_state["option_sel"] = False
+    st.session_state["sneak_peak"] = False
+
+    return True
+
+
+def live_sandbox__setup_switch(client_user=False):
     prod = (
         True
         if "production" in st.session_state and st.session_state["production"] == True
@@ -818,7 +844,14 @@ def live_sandbox__setup_switch():
         if "production" in st.session_state and st.session_state["production"] == True
         else "Sandbox"
     )
-    admin = True if st.session_state["username"] == "stefanstapinski@gmail.com" else False
+    st.session_state["prod_name"] = prod_name
+
+    if client_user:
+        client_user = client_user
+    else:
+        client_user = st.session_state["client_user"]
+
+    admin = True if client_user == "stefanstapinski" else False
     st.session_state["admin"] = True if admin else False
 
     prod_option = st.sidebar.selectbox(
@@ -914,9 +947,7 @@ def test_api_keys(user_secrets, prod=False):
     return api_true
 
 
-def queen__account_keys(
-    PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False, prod=False
-):
+def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False):
     if authorized_user == False:
         return False
     # view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
@@ -925,10 +956,11 @@ def queen__account_keys(
     # st.write(QUEEN_KING['users_secrets'])
     # prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     # sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
-
-    user_env_instance = "prod" if prod else "sandbox"
+    prod = st.session_state["production"]
+    user_env_instance = "prod" if st.session_state["production"] else "sandbox"
     keys_confirmed = QUEEN_KING["users_secrets"][f"{user_env_instance}_keys_confirmed"]
     view_account_keys = False
+    st.write(user_env_instance)
 
     if keys_confirmed == False:
         with cols[0]:
@@ -959,6 +991,15 @@ def queen__account_keys(
                         value=QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"],
                         key=f"APCA_API_SECRET_KEY",
                     )
+                    user_secrets = init_client_user_secrets(
+                        prod_keys_confirmed=False,
+                        sandbox_keys_confirmed=False,
+                        APCA_API_KEY_ID_PAPER=None,
+                        APCA_API_SECRET_KEY_PAPER=None,
+                        APCA_API_KEY_ID=APCA_API_KEY_ID,
+                        APCA_API_SECRET_KEY=APCA_API_SECRET_KEY,
+                    )
+
                 else:
                     st.write("SandBox Paper")
                     APCA_API_KEY_ID_PAPER = st.text_input(
@@ -971,18 +1012,16 @@ def queen__account_keys(
                         value=QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY_PAPER"],
                         key=f"APCA_API_SECRET_KEY_PAPER",
                     )
-
-                if st.form_submit_button("Save API Keys"):
-
                     user_secrets = init_client_user_secrets(
                         prod_keys_confirmed=False,
                         sandbox_keys_confirmed=False,
                         APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER,
                         APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER,
-                        APCA_API_KEY_ID=APCA_API_KEY_ID,
-                        APCA_API_SECRET_KEY=APCA_API_SECRET_KEY,
+                        APCA_API_KEY_ID=None,
+                        APCA_API_SECRET_KEY=None,
                     )
 
+                if st.form_submit_button("Save API Keys"):
                     # test keys
                     if test_api_keys(user_secrets=user_secrets, prod=prod):
                         st.success(f"{user_env_instance} Keys Added")

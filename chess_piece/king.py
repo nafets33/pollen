@@ -15,29 +15,121 @@ import pytz
 est = pytz.timezone("US/Eastern")
 
 
+def kingdom__global_vars():
+    # ###### GLOBAL # ######
+    ARCHIVE_queenorder = "archived"
+    active_order_state_list = [
+        "running",
+        "running_close",
+        "submitted",
+        "error",
+        "pending",
+        "completed",
+        "completed_alpaca",
+        "running_open",
+        "archived_bee",
+    ]
+    active_queen_order_states = [
+        "submitted",
+        "accetped",
+        "pending",
+        "running",
+        "running_close",
+        "running_open",
+    ]
+    CLOSED_queenorders = ["running_close", "completed", "completed_alpaca"]
+    RUNNING_Orders = ["running", "running_open"]
+    RUNNING_CLOSE_Orders = ["running_close"]
+    # crypto
+    crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
+    coin_exchange = "CBSE"
+
+    # misc
+    exclude_conditions = [
+        "B",
+        "W",
+        "4",
+        "7",
+        "9",
+        "C",
+        "G",
+        "H",
+        "I",
+        "M",
+        "N",
+        "P",
+        "Q",
+        "R",
+        "T",
+        "V",
+        "Z",
+    ]  # 'U'
+
+
+# ###### GLOBAL # ######
+ARCHIVE_queenorder = "archived"
+active_order_state_list = [
+    "running",
+    "running_close",
+    "submitted",
+    "error",
+    "pending",
+    "completed",
+    "completed_alpaca",
+    "running_open",
+    "archived_bee",
+]
+active_queen_order_states = [
+    "submitted",
+    "accetped",
+    "pending",
+    "running",
+    "running_close",
+    "running_open",
+]
+CLOSED_queenorders = ["running_close", "completed", "completed_alpaca"]
+RUNNING_Orders = ["running", "running_open"]
+RUNNING_CLOSE_Orders = ["running_close"]
+# crypto
+crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
+coin_exchange = "CBSE"
+
+# misc
+exclude_conditions = [
+    "B",
+    "W",
+    "4",
+    "7",
+    "9",
+    "C",
+    "G",
+    "H",
+    "I",
+    "M",
+    "N",
+    "P",
+    "Q",
+    "R",
+    "T",
+    "V",
+    "Z",
+]  # 'U'
+
+
 def hive_master_root():
     return os.getcwd()
 
 
 def master_swarm_QUEENBEE(prod):
     if prod:
-        path = os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl")
+        return os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl")
     else:
-        print("Test")
-        path = os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
-        print(path)
-    if os.path.exists(path) == False:
-        print("Init client_dbs")
-        os.mkdir(path, mode=0o777)
-    return path
+        return os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
 
 
 def client_dbs_root():
     main_root = hive_master_root()
     client_dbs = os.path.join(os.path.dirname(main_root), "client_user_dbs")
-    if os.path.exists(client_dbs) == False:
-        print("Init client_dbs")
-        os.mkdir(client_dbs, mode=0o777)
     return client_dbs
 
 
@@ -45,10 +137,6 @@ def workerbee_dbs_root():
     symbols_pollenstory_dbs = os.path.join(
         os.path.join(os.path.dirname(hive_master_root()), "symbols_pollenstory_dbs")
     )
-    if os.path.exists(symbols_pollenstory_dbs) == False:
-        print("Init symbols_pollenstory_dbs")
-        os.umask(0)
-        os.mkdir(symbols_pollenstory_dbs, mode=0o777)
     return symbols_pollenstory_dbs
 
 
@@ -56,9 +144,6 @@ def workerbee_dbs_root__STORY_bee():
     symbols_pollenstory_dbs = os.path.join(
         os.path.join(os.path.dirname(hive_master_root()), "symbols_STORY_bee_dbs")
     )
-    if os.path.exists(symbols_pollenstory_dbs) == False:
-        print("Init symbols_STORY_bee_dbs")
-        os.mkdir(symbols_pollenstory_dbs, mode=0o777)
     return symbols_pollenstory_dbs
 
 
@@ -68,7 +153,7 @@ def init_symbol_dbs__pollenstory():
 
     if os.path.exists(symbol_dbs) == False:
         print("Init symbols_dbs")
-        os.mkdir(symbol_dbs, mode=0o777)
+        os.mkdir(symbol_dbs)
 
     return symbol_dbs
 
@@ -106,7 +191,6 @@ def init_clientUser_dbroot(client_user):
     if client_user in ["stefanstapinski"]:  ## admin
         db_root = os.path.join(main_root, "db")
     else:
-        client_user = client_user.split("@")[0]
         db_root = os.path.join(client_user_db_dir, f"db__{client_user}")
         if os.path.exists(db_root) == False:
             os.mkdir(db_root)
@@ -125,7 +209,6 @@ def streamlit_config_colors():
 
 
 def local__filepaths_misc():
-
     jpg_root = os.path.join(hive_master_root(), "misc")
     bee_image = os.path.join(jpg_root, "bee.jpg")
     bee_power_image = os.path.join(jpg_root, "power.jpg")
@@ -229,15 +312,6 @@ def kingdom__grace_to_find_a_Queen():
         users_allowed_queen_emailname,
         users_allowed_queen_emailname__db,
     )
-
-
-def return_QUEENs_workerbees_chessboard(QUEEN):
-    queens_master_tickers = []
-    for qcp, qcp_vars in QUEEN["workerbees"].items():
-        for ticker in qcp_vars["tickers"]:
-            queens_master_tickers.append(ticker)
-
-    return {"queens_master_tickers": queens_master_tickers}
 
 
 def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
@@ -368,16 +442,45 @@ def read_QUEENs__pollenstory(
     return {"pollenstory": pollenstory, "STORY_bee": STORY_bee, "errors": errors}
 
 
+def return_QUEENs_workerbees_chessboard(QUEEN):
+    queens_master_tickers = []
+    for qcp, qcp_vars in QUEEN["workerbees"].items():
+        for ticker in qcp_vars["tickers"]:
+            queens_master_tickers.append(ticker)
+
+    return {"queens_master_tickers": queens_master_tickers}
+
+
+def return_QUEENs__symbols_data(
+    QUEEN, info="returns all ticker_time_frame data for open orders and chessboard"
+):
+    def return_active_orders(QUEEN):
+        df = QUEEN["queen_orders"]
+        df["index"] = df.index
+        df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
+
+        return df_active
+
+    # symbol ticker data # 1 all current pieces on chess board && all current running orders
+    current_active_orders = return_active_orders(QUEEN=QUEEN)
+    active_order_symbols = list(set(current_active_orders["symbol"].tolist()))
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN=QUEEN)[
+        "queens_master_tickers"
+    ]
+    ticker_db = read_QUEENs__pollenstory(
+        symbols=active_order_symbols + chessboard_symbols
+    )
+
+    return ticker_db
+
+
 def handle__ttf_notactive__datastream(
     info="if ticker stream offline pull latest price by MasterApi",
 ):
-
     return True
 
 
-#### GLOBAL ####
 def PickleData(pickle_file, data_to_store, write_temp=True):
-
     p_timestamp = {"pq_last_modified": datetime.now(est)}
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
@@ -396,7 +499,6 @@ def PickleData(pickle_file, data_to_store, write_temp=True):
 
 
 def ReadPickleData(pickle_file):
-
     # Check the file's size and modification time
     prev_size = os.stat(pickle_file).st_size
     prev_mtime = os.stat(pickle_file).st_mtime
