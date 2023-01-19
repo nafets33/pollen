@@ -12,6 +12,42 @@ import ipdb
 
 est = pytz.timezone("US/Eastern")
 
+def kingdom__global_vars():
+    # ###### GLOBAL # ######
+    ARCHIVE_queenorder = 'archived'
+    active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+    active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+    CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
+    RUNNING_Orders = ['running', 'running_open']
+    RUNNING_CLOSE_Orders = ['running_close']
+    # crypto
+    crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+    coin_exchange = "CBSE"
+
+
+    # misc
+    exclude_conditions = [
+        'B','W','4','7','9','C','G','H','I','M','N',
+        'P','Q','R','T','V','Z'
+    ] # 'U'
+
+# ###### GLOBAL # ######
+ARCHIVE_queenorder = 'archived'
+active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
+RUNNING_Orders = ['running', 'running_open']
+RUNNING_CLOSE_Orders = ['running_close']
+# crypto
+crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+coin_exchange = "CBSE"
+
+
+# misc
+exclude_conditions = [
+    'B','W','4','7','9','C','G','H','I','M','N',
+    'P','Q','R','T','V','Z'
+] # 'U'
 
 def hive_master_root():
     return os.getcwd()
@@ -191,13 +227,7 @@ def kingdom__grace_to_find_a_Queen():
     return users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db
 
 
-def return_QUEENs_workerbees_chessboard(QUEEN):
-    queens_master_tickers = []
-    for qcp, qcp_vars in QUEEN['workerbees'].items():
-        for ticker in qcp_vars['tickers']:
-            queens_master_tickers.append(ticker)
 
-    return {'queens_master_tickers': queens_master_tickers}
 
 
 def read_QUEEN(queen_db, qcp_s=['castle', 'bishop', 'knight']):
@@ -300,6 +330,31 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, info='function uses
 
     return {'pollenstory': pollenstory, 'STORY_bee': STORY_bee, 'errors': errors}
 
+def return_QUEENs_workerbees_chessboard(QUEEN):
+    queens_master_tickers = []
+    for qcp, qcp_vars in QUEEN['workerbees'].items():
+        for ticker in qcp_vars['tickers']:
+            queens_master_tickers.append(ticker)
+
+    return {'queens_master_tickers': queens_master_tickers}
+
+
+def return_QUEENs__symbols_data(QUEEN, info='returns all ticker_time_frame data for open orders and chessboard'):
+
+    def return_active_orders(QUEEN):
+        df = QUEEN['queen_orders']
+        df['index'] = df.index
+        df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
+
+        return df_active
+    # symbol ticker data # 1 all current pieces on chess board && all current running orders
+    current_active_orders = return_active_orders(QUEEN=QUEEN)
+    active_order_symbols = list(set(current_active_orders['symbol'].tolist()))
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN=QUEEN)['queens_master_tickers']
+    ticker_db = read_QUEENs__pollenstory(symbols=active_order_symbols + chessboard_symbols)
+
+    return ticker_db
+
 
 def handle__ttf_notactive__datastream(info='if ticker stream offline pull latest price by MasterApi'):
 
@@ -307,7 +362,6 @@ def handle__ttf_notactive__datastream(info='if ticker stream offline pull latest
 
 
 
-#### GLOBAL ####
 def PickleData(pickle_file, data_to_store, write_temp=True):
 
     p_timestamp = {'pq_last_modified': datetime.datetime.now(est)}

@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 from tqdm import tqdm
 import argparse
-from King import return_QUEENs_workerbees_chessboard, read_QUEENs__pollenstory, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData, init_clientUser_dbroot
+from King import return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData, init_clientUser_dbroot
 from QueenHive import hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
 
 
@@ -637,28 +637,29 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     sell_reason = king_eval_order['order_vars']['sell_reason']
                     limit_price = king_eval_order['order_vars']['limit_price']
 
-
                     # Generate Client Order Id
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig, sellside_client_order_id=run_order_client_order_id)
+
+                    def update_qty_price__crypto(crypto, limit_price, sell_qty):
+                        # flag crypto
+                        if crypto:
+                            if limit_price:
+                                limit_price = round(limit_price)
+                                sell_qty = round(sell_qty)
+                            crypto = True
+                        else:
+                            if limit_price:
+                                limit_price = round(limit_price, 2)                    
+                            crypto = False
+                        
+                        return limit_price, sell_qty
                     
-                    
-                    # order_vars
-                    sell_qty = send_order_val['qty_correction']
-                    
-                    # flag crypto
-                    if crypto:
-                        if limit_price:
-                            limit_price = round(limit_price)
-                            sell_qty = round(sell_qty)
-                        crypto = True
-                    else:
-                        if limit_price:
-                            limit_price = round(limit_price, 2)                    
-                        crypto = False
+                    limit_price, sell_qty = update_qty_price__crypto(crypto, limit_price, sell_qty)
 
                     # Validate Order
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=run_order_idx)
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
+                    sell_qty = send_order_val['qty_correction']
                     
                     send_close_order = submit_order(api=api, side=q_side, symbol=ticker, qty=sell_qty, type=q_type, client_order_id=client_order_id__gen, limit_price=limit_price) 
                     send_close_order = vars(send_close_order)['_raw']
@@ -1411,11 +1412,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
 
     # def return_snap_priceinfo__pollenData(api, ticker, crypto, exclude_conditions):
-    #     # read
-    #     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
-    #     current_price = snap.latest_trade.price
-    #     current_ask = snap.latest_quote.ask_price
-    #     current_bid = snap.latest_quote.bid_price
+    #     # read check if ticker is active...if it is return into from db ELSE if user data Pa
+    #     current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+    #     current_ask = 1
+    #     current_bid = 1
+    #     # current_price = snap.latest_trade.price
+    #     # current_ask = snap.latest_quote.ask_price
+    #     # current_bid = snap.latest_quote.bid_price
 
     #     # best limit price
     #     best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
@@ -2384,21 +2387,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     #################################################################
     ################################################################# pollen
 
-    def return_QUEENs__symbols_data(QUEEN, info='returns all ticker_time_frame data for open orders and chessboard'):
-
-        def return_active_orders(QUEEN):
-            df = QUEEN['queen_orders']
-            df['index'] = df.index
-            df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
-
-            return df_active
-        # symbol ticker data # 1 all current pieces on chess board && all current running orders
-        current_active_orders = return_active_orders(QUEEN=QUEEN)
-        active_order_symbols = list(set(current_active_orders['symbol'].tolist()))
-        chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN=QUEEN)['queens_master_tickers']
-        ticker_db = read_QUEENs__pollenstory(symbols=active_order_symbols + chessboard_symbols)
-
-        return ticker_db
 
     # if '__name__' == '__main__':
     try:
@@ -2436,6 +2424,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
         init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
+        
+        ## !! Reconcile all orders processed in alpaca vs queen_order !! ##
 
         # Ticker database of pollenstory ## Need to seperate out into tables
         QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod)) # wrapped in func bc it not allowed to be saved
@@ -2528,9 +2518,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 portfolio = return_alpc_portolio(api)['portfolio']
 
                 # symbol ticker data # 1 all current pieces on chess board && all current running orders
-                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
-                
-                # ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])                
+                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)                
                 POLLENSTORY = ticker_db['pollenstory']
                 STORY_bee = ticker_db['STORY_bee']
 

@@ -206,13 +206,14 @@ def return_alpaca_api_keys(prod):
 
     except Exception as e:
         print("Key Return failure default to HivesKeys")
-        st.error("Key Return failure default to HivesKeys")
+        # st.error("Key Return failure default to HivesKeys")
         load_dotenv(os.path.join(os.getcwd(), '.env'))
         keys_paper = return_api_keys(base_url="https://paper-api.alpaca.markets", api_key_id=os.environ.get('APCA_API_KEY_ID_PAPER'), api_secret=os.environ.get('APCA_API_SECRET_KEY_PAPER'), prod=False)
         rest = keys_paper['rest']
         api = keys_paper['api']
     
     return {'rest': rest, 'api': api}
+
 
 def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 
@@ -3245,7 +3246,11 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         print("You Need a King")
         init_KING(pickle_file=PB_KING_Pickle)
 
-    
+    st.session_state['PB_QUEEN_Pickle'] = PB_QUEEN_Pickle
+    st.session_state['PB_App_Pickle'] = PB_App_Pickle
+    st.session_state['PB_Orders_Pickle'] = PB_Orders_Pickle
+    st.session_state['PB_queen_Archives_Pickle'] = PB_queen_Archives_Pickle
+
     return {
     'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 
     'PB_App_Pickle': PB_App_Pickle, 

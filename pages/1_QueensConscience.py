@@ -31,7 +31,7 @@ from app_auth import signin_main
 import base64
 import time
 # from streamlit_extras.stoggle import stoggle
-from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
+from King import return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from QueenBeeDagger import run__trigger_dag
 from QueenHive import init_qcp, return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
 
@@ -181,20 +181,15 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     db_client_user_name = st.session_state['username'].split("@")[0]
 
     prod, admin, prod_name = live_sandbox__setup_switch()
-    # prod, admin, prod_name = st.session_state["production"], st.session_state['admin'], st.session_state['prod_name']
-    
-    # if st.session_state['production']:
-    #     from QueenHive import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    # else:
-    #     from QueenHive_sandbox import return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
-
-    init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
-    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    PB_App_Pickle = init_pollen['PB_App_Pickle']
-    PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
+    # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
+    # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+    # PB_App_Pickle = init_pollen['PB_App_Pickle']
+    # PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
+    PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
+    PB_App_Pickle = st.session_state['PB_App_Pickle'] 
+    PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
+    PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle'] 
 
     QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
     # def run_main_page():
@@ -1848,10 +1843,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     # db global
     coin_exchange = "CBSE"
 
-    # Ticker DataBase
-    ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
+    ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
     POLLENSTORY = ticker_db['pollenstory']
     STORY_bee = ticker_db['STORY_bee']
+    # Ticker DataBase
     tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
 
     # cols = st.columns((3,10,1,1))

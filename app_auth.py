@@ -14,6 +14,7 @@ from King import (
     local__filepaths_misc,
 )
 from appHive import local_gif, live_sandbox__setup_switch
+from QueenHive import init_pollen_dbs
 import ipdb
 
 # from QueenHive import init_pollen_dbs
@@ -242,6 +243,8 @@ def signin_main():
             )  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
             # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
             st.sidebar.warning("Your Queen is Awaiting")
+            # update and add in first user setup check
+            init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
         else:
             db_root = os.path.join(
                 main_root, "db"
@@ -249,7 +252,7 @@ def signin_main():
 
         st.session_state["db_root"] = db_root
 
-        # live_sandbox__setup_switch()
+
 
         return db_root
 

@@ -1,16 +1,28 @@
 import streamlit as st
 from streamlit_extras.stoggle import stoggle
-from appHive import click_button_grid, nested_grid, page_tab_permission_denied
-from King import hive_master_root, local__filepaths_misc
+from appHive import click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
+from King import hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
 from PIL import Image
+from app_auth import signin_main
 
 # https://extras.streamlit.app/Annotated%20text
 
-# st.set_page_config(
-#     page_title="Hello",
-#     page_icon="👋",
+st.set_page_config(
+    page_title="pollenq",
+    # page_icon=page_icon,
+    layout="wide",
+    # initial_sidebar_state=sidebar_hide,
+    #  menu_items={
+    #      'Get Help': 'https://www.extremelycoolapp.com/help',
+    #      'Report a bug': "https://www.extremelycoolapp.com/bug",
+    #      'About': "# This is a header. This is an *extremely* cool app!"
+    #  }
+)
 
-# )
+st.write("# Welcome to Playground! 👋")
+
+if 'username' not in st.session_state:
+    signin_main()
 
 main_root = hive_master_root() # os.getcwd()  # hive root
 
@@ -60,59 +72,66 @@ with st.expander("button on grid"):
 with st.expander("nested grid"):
     nested_grid()
 
+QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
+POLLENSTORY = ticker_db['pollenstory']
+STORY_bee = ticker_db['STORY_bee']
+
+with st.expander("pollenstory"):
+  ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
+
+  grid = standard_AGgrid(data=POLLENSTORY[ttf], configure_side_bar=True)
 
 
-st.write("# Welcome to Streamlit! 👋")
+
+# stoggle(
+#     "Click me!",
+#     """🥷 Surprise! Here's some additional content""",
+# )
 
 
-stoggle(
-    "Click me!",
-    """🥷 Surprise! Here's some additional content""",
-)
+# html = """
+#   <style>
+#     /* Disable overlay (fullscreen mode) buttons */
+#     .overlayBtn {
+#       display: none;
+#     }
 
+#     /* Remove horizontal scroll */
+#     .element-container {
+#       width: auto !important;
+#     }
 
-html = """
-  <style>
-    /* Disable overlay (fullscreen mode) buttons */
-    .overlayBtn {
-      display: none;
-    }
+#     .fullScreenFrame > div {
+#       width: auto !important;
+#     }
 
-    /* Remove horizontal scroll */
-    .element-container {
-      width: auto !important;
-    }
+#     /* 2nd thumbnail */
+#     .element-container:nth-child(4) {
+#       top: -266px;
+#       left: 350px;
+#     }
 
-    .fullScreenFrame > div {
-      width: auto !important;
-    }
+#     /* 1st button */
+#     .element-container:nth-child(3) {
+#       left: 10px;
+#       top: -60px;
+#     }
 
-    /* 2nd thumbnail */
-    .element-container:nth-child(4) {
-      top: -266px;
-      left: 350px;
-    }
+#     /* 2nd button */
+#     .element-container:nth-child(5) {
+#       left: 360px;
+#       top: -326px;
+#     }
+#   </style>
+# """
+# st.markdown(html, unsafe_allow_html=True)
 
-    /* 1st button */
-    .element-container:nth-child(3) {
-      left: 10px;
-      top: -60px;
-    }
+# st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
+# st.button("Show", key=1)
 
-    /* 2nd button */
-    .element-container:nth-child(5) {
-      left: 360px;
-      top: -326px;
-    }
-  </style>
-"""
-st.markdown(html, unsafe_allow_html=True)
-
-st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
-st.button("Show", key=1)
-
-# img=st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
-st.button("Show:key:", key=2)
+# # img=st.image("https://www.w3schools.com/howto/img_forest.jpg", width=300)
+# st.button("Show:key:", key=2)
 
 # st.button('name', st.image(learningwalk_bee, width=33))
 
