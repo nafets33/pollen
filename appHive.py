@@ -826,7 +826,7 @@ def live_sandbox__setup_switch():
     )
     st.session_state["prod_name"] = prod_name
     admin = (
-        True if st.session_state["username"] == "stefanstapinski@gmail.com" else False
+        True if st.session_state["client_user"] == "stefanstapinski" else False
     )
     st.session_state["admin"] = True if admin else False
 

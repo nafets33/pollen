@@ -83,6 +83,15 @@ with st.expander("pollenstory"):
   grid = standard_AGgrid(data=POLLENSTORY[ttf], configure_side_bar=True)
 
 
+# admin_user_swap = st.number_input("fast", min_value=1, max_value=10000, value=0)
+# if st.button("swap"): 
+#     if admin_user_swap == 89:
+#         d = list(os.listdir(client_dbs_root()))
+#         d = [i.split("db__")[1] for i in d]
+#         admin_client_user = st.sidebar.selectbox('admin client_users', options=d, index=d.index(db_client_user_name))
+#         if st.sidebar.button('admin change user'):
+#             st.session_state['admin__client_user'] = admin_client_user
+#             switch_page("pollenq")
 
 # stoggle(
 #     "Click me!",

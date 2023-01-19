@@ -230,21 +230,24 @@ def signin_main():
         )
 
     def setup_user_pollenqdbs(main_root):
-        # if db__name exists use db__name else use db
-        db_client_user_name = st.session_state["username"].split("@")[0]
-        # db_name = os.path.join(main_root, db_client_user_name)
-        # db_root = db_name
-        # if os.path.exists(db_name) == True:
-        #     db_root = db_name
-        # else:
+
         if st.session_state["authorized_user"]:
-            db_root = init_clientUser_dbroot(
-                client_user=db_client_user_name
-            )  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-            # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
+            st.session_state["client_user"] = st.session_state["username"].split("@")[0]
+            
+            if 'admin__client_user' in st.session_state:
+                st.session_state["client_user"] = st.session_state['admin__client_user']
+                db_client_user_name = st.session_state['admin__client_user']
+                st.sidebar.write(f"Swarm *{db_client_user_name}*")
+            else:
+                db_client_user_name = st.session_state["username"].split("@")[0]
+
+            # st.sidebar.write(f"Welcome *{st.session_state['name']}*")
+            
+            db_root = init_clientUser_dbroot(client_user=db_client_user_name)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+            prod = True if 'Production' in st.session_state and st.session_stat['Production'] == True else False
+            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
+
             st.sidebar.warning("Your Queen is Awaiting")
-            # update and add in first user setup check
-            init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
         else:
             db_root = os.path.join(
                 main_root, "db"

@@ -275,7 +275,7 @@ class Authenticate:
                         self.credentials["usernames"][st.session_state["username"]][
                             "last_login_date"
                         ] = datetime.now(timezone("EST")).strftime("%d/%m/%Y %H:%M")
-                        st.sidebar.write(f"Welcome *{st.session_state['name']}*")
+                        # st.sidebar.write(f"Welcome *{st.session_state['name']}*")
                         st.session_state["logout"] = False
 
         return (

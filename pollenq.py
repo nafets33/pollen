@@ -20,52 +20,29 @@ from streamlit_extras.switch_page_button import switch_page
 import argparse
 from streamlit_extras.stoggle import stoggle
 from appHive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
+from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
 from QueenHive import add_key_to_app, init_pollen_dbs,  KINGME, pollen_themes
 
+pd.options.mode.chained_assignment = None
+# https://blog.streamlit.io/a-new-streamlit-theme-for-altair-and-plotly/
+# https://discuss.streamlit.io/t/how-to-animate-a-line-chart/164/6 ## animiate the Bees Images : )
+# https://blog.streamlit.io/introducing-theming/  # change theme colors
+# https://extras.streamlit.app
+# https://www.freeformatter.com/cron-expression-generator-quartz.html
+# http://34.162.236.105:8080/home # dags
+# https://docs.google.com/spreadsheets/d/1ddqj-EkO1MluAjDg-U-DyCzJvtFjRN-9SfEYXkB8eNo/edit#gid=0 # track hours
+# https://unicode.org/emoji/charts/full-emoji-list.html#1fae0
 
-
+# scriptname = os.path.basename(__file__)
+# queens_chess_piece = os.path.basename(__file__)
 def pollenq(admin_pq):
-    # prod = True if prod.lower() == 'true' else False
 
-    # if prod:
-    #     from QueenHive import  init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    # else:
-    #     from QueenHive_sandbox import init_clientUser_dbroot, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData, add_key_to_app
-    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
+
     est = pytz.timezone("US/Eastern")
-
-    # _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
-
-    # import streamlit_authenticator as stauth
-    # import smtplib
-    # import ssl
-    # from email.message import EmailMessage
-    # from streamlit.web.server.websocket_headers import _get_websocket_headers
-
-    # headers = _get_websocket_headers()
-
-    # https://blog.streamlit.io/a-new-streamlit-theme-for-altair-and-plotly/
-    # https://discuss.streamlit.io/t/how-to-animate-a-line-chart/164/6 ## animiate the Bees Images : )
-    # https://blog.streamlit.io/introducing-theming/  # change theme colors
-    # https://extras.streamlit.app
-    # https://www.freeformatter.com/cron-expression-generator-quartz.html
-    # http://34.162.236.105:8080/home # dags
-    # https://docs.google.com/spreadsheets/d/1ddqj-EkO1MluAjDg-U-DyCzJvtFjRN-9SfEYXkB8eNo/edit#gid=0 # track hours
-    # https://unicode.org/emoji/charts/full-emoji-list.html#1fae0
-
-
-    pd.options.mode.chained_assignment = None
-
-    scriptname = os.path.basename(__file__)
-    queens_chess_piece = os.path.basename(__file__)
 
     main_root = hive_master_root() # os.getcwd()  # hive root
 
     # images
-    jpg_root = os.path.join(main_root, 'misc')
-
     MISC = local__filepaths_misc()
     bee_image = MISC['bee_image']
     castle_png = MISC['castle_png']
@@ -79,9 +56,19 @@ def pollenq(admin_pq):
     flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
     alpaca_portfolio_keys_png = MISC['alpaca_portfolio_keys_png']
     
-
-    
     page_icon = Image.open(bee_image)
+
+    st.set_page_config(
+        page_title="pollenq",
+        page_icon=page_icon,
+        layout="wide",
+        initial_sidebar_state='collapsed',
+        #  menu_items={
+        #      'Get Help': 'https://www.extremelycoolapp.com/help',
+        #      'Report a bug': "https://www.extremelycoolapp.com/bug",
+        #      'About': "# This is a header. This is an *extremely* cool app!"
+        #  }
+    )
 
     ##### STREAMLIT ###
     k_colors = streamlit_config_colors()
@@ -95,24 +82,11 @@ def pollenq(admin_pq):
     else:
         sidebar_hide = 'expanded'
 
-    st.set_page_config(
-        page_title="pollenq",
-        page_icon=page_icon,
-        layout="wide",
-        initial_sidebar_state=sidebar_hide,
-        #  menu_items={
-        #      'Get Help': 'https://www.extremelycoolapp.com/help',
-        #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-        #      'About': "# This is a header. This is an *extremely* cool app!"
-        #  }
-    )
-    # st.tabs([":owl:"])
 
-    # st.write(st.session_state)
     with st.spinner("Hello Welcome To pollenq"):
         signin_main()
 
-
+        
         # st.write(st.session_state['authorized_user'])
         # st.write(st.session_state)
         if st.session_state['authentication_status'] != None:
@@ -126,16 +100,23 @@ def pollenq(admin_pq):
             # if 'username' not in st.session_state:
             #     signin_auth = signin_main()
             
-            st.sidebar.write(f'Welcome {st.session_state["name"]}')
+            # st.sidebar.write(f'Welcome {st.session_state["name"]}')
             # st.sidebar.write(f'{st.session_state["username"]}')
             client_user = st.session_state['username']
             authorized_user = st.session_state['authorized_user']
             db_client_user_name = st.session_state['username'].split("@")[0]
 
             prod, admin, prod_name = live_sandbox__setup_switch()
-
-            if admin:
+            
+            if admin: ### Need to Store admin password encrypted
                 st.write('admin:', admin)
+                d = list(os.listdir(client_dbs_root()))
+                d = [i.split("db__")[1] for i in d]
+                admin_client_user = st.sidebar.selectbox('admin client_users', options=d, index=d.index(db_client_user_name))
+                if st.sidebar.button('admin change user'):
+                    st.session_state['admin__client_user'] = admin_client_user
+                    switch_page("pollenq")
+
             if prod:
                 st.warning("The Stage is Live And the Queen will begin trading for you....Good Luck...honestly the best Queens i bet will be the storywave_ai")
             else:

@@ -3187,7 +3187,7 @@ def init_PowerRangers(ranger_dimensions=False):
     return r_dict
 
 
-def init_pollen_dbs(db_root, prod, queens_chess_piece):
+def init_pollen_dbs(db_root, prod, queens_chess_piece, queenKING=False):
     
     def init_queen_orders(pickle_file):
         db = {}
@@ -3246,10 +3246,11 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece):
         print("You Need a King")
         init_KING(pickle_file=PB_KING_Pickle)
 
-    st.session_state['PB_QUEEN_Pickle'] = PB_QUEEN_Pickle
-    st.session_state['PB_App_Pickle'] = PB_App_Pickle
-    st.session_state['PB_Orders_Pickle'] = PB_Orders_Pickle
-    st.session_state['PB_queen_Archives_Pickle'] = PB_queen_Archives_Pickle
+    if queenKING:
+        st.session_state['PB_QUEEN_Pickle'] = PB_QUEEN_Pickle
+        st.session_state['PB_App_Pickle'] = PB_App_Pickle
+        st.session_state['PB_Orders_Pickle'] = PB_Orders_Pickle
+        st.session_state['PB_queen_Archives_Pickle'] = PB_queen_Archives_Pickle
 
     return {
     'PB_QUEEN_Pickle': PB_QUEEN_Pickle, 
