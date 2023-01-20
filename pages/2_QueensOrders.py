@@ -19,17 +19,16 @@ from PIL import Image
 from dotenv import load_dotenv
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 import time
-import _locale
 import os
 from random import randint
 import sqlite3
-import streamlit as st
-from appHive import queen_order_flow, live_sandbox__setup_switch, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
-from app_auth import signin_main
 import base64
 import time
-from King import hive_master_root, streamlit_config_colors
-from QueenHive import add_key_to_app, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData
+import streamlit as st
+from chess_piece.king import hive_master_root, streamlit_config_colors
+from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData
+from from chess_piece.app_hive import queen_order_flow, live_sandbox__setup_switch, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from app_auth import signin_main
 
 
 est = pytz.timezone("US/Eastern")

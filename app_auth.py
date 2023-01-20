@@ -7,14 +7,14 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from King import (
+from chess_piece.king import (
     kingdom__grace_to_find_a_Queen,
     hive_master_root,
     init_clientUser_dbroot,
     local__filepaths_misc,
 )
-from appHive import local_gif, live_sandbox__setup_switch
-from QueenHive import init_pollen_dbs
+from chess_piece.app_hive import local_gif, live_sandbox__setup_switch
+from chess_piece.queen_hive import init_pollen_dbs
 import ipdb
 
 # from QueenHive import init_pollen_dbs

@@ -19,9 +19,9 @@ import time
 from streamlit_extras.switch_page_button import switch_page
 import argparse
 from streamlit_extras.stoggle import stoggle
-from appHive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from King import hive_master_root, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
-from QueenHive import add_key_to_app, init_pollen_dbs,  KINGME, pollen_themes
+from chess_piece.app_hive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.king import hive_master_root, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
+from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs,  KINGME, pollen_themes
 
 pd.options.mode.chained_assignment = None
 # https://blog.streamlit.io/a-new-streamlit-theme-for-altair-and-plotly/

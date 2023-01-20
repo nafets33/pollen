@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_extras.stoggle import stoggle
-from appHive import click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
-from King import hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
+from chess_piece.app_hive import click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
+from chess_piece.king import hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
 from PIL import Image
 from app_auth import signin_main
 
