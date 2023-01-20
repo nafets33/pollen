@@ -3,13 +3,22 @@
 
 # how to surf a wave?
 
-stars = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Hour', '1Hour_3Month', '2Hour_6Month', '1Day_1Year']
+stars = [
+    "1Minute_1Day",
+    "5Minute_5Day",
+    "30Minute_1Hour",
+    "1Hour_3Month",
+    "2Hour_6Month",
+    "1Day_1Year",
+]
 
 # when you enter a wave you either have to catch wave before or when it starts(i.e. buy_cross)
+
 
 def surf_Wave(star):
     # are you entering before wave starts (Y/N)
     pass
+
 
 """pollen app"""
 # python engine pulls real-time stock market data and programmatically manages portfolio(s)
@@ -33,11 +42,10 @@ def surf_Wave(star):
 # 4. Host the Streamlit App
 # 5. sscertificate and domainname "pollenq.com"
 
-# 6. Working meetings or walk through on how the setup. 
+# 6. Working meetings or walk through on how the setup.
 
 # **should db convert to postgres or mongo ?
 
 # lixux commands
 # screen -S stefanstapinski python QueenBee.Py -prod true -client_user stefanstapinski
 # screen -S stevenweaver8 python QueenBee.Py -prod true -client_user stevenweaver8
-
