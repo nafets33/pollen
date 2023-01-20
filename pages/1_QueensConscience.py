@@ -130,11 +130,6 @@ st.set_page_config(
     #  }
  )
 
-# local_gif(gif_path=purple_heartbeat_gif, height='33', width='1000')
-
-def set_prod_env(prod):
-    st.session_state['production'] = prod
-    st.sidebar.image(chess_piece_queen, width=23)
 
 # if st.button("sw"):
 #     switch_page("QueensConscience#no-ones-flying")
@@ -143,8 +138,6 @@ def set_prod_env(prod):
 # st.header("Section 1")
 # st.markdown("[Section 1](#section-1)")
 
-# if st.button("Go to page 1", url_param='playground'):
-#     pass
 
 with st.spinner("Buzz Buzz Where is my Honey"):
     # st.write( st.session_state['username'], st.session_state['authorized_user'])
@@ -170,6 +163,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         st.session_state['sneak_peak'] == False
         st.stop()
     
+    elif st.session_state['authentication_status']:
+        pass
+    else:
+        st.error("Stopping page")
+        st.stop()
+    
 
     # if st.session_state['authentication_status']
     db_root = st.session_state['db_root']
@@ -177,7 +176,8 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
     authorized_user = st.session_state['authorized_user']
-    client_user = st.session_state['username'].split("@")[0]
+    client_user = st.session_state["client_user"]
+    st.write("*", client_user)
 
     prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
 

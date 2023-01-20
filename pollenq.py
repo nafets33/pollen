@@ -119,7 +119,7 @@ def pollenq(admin_pq):
                     st.session_state['admin__client_user'] = admin_client_user
                     switch_page("pollenq")
 
-            if prod:
+            if prod and authorized_user == True:
                 st.warning("The Stage is Live And the Queen will begin trading for you....Good Luck...honestly the best Queens i bet will be the storywave_ai")
             else:
                 st.warning("Welcome to your Sandbox...Play around...create new Queenbots! Learn and Deploy Strategy!")

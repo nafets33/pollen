@@ -832,6 +832,7 @@ def close_sesstion_states__pages():
 
 
 def live_sandbox__setup_switch(client_user=False):
+    
     prod = (
         True
         if "production" in st.session_state and st.session_state["production"] == True
@@ -843,6 +844,12 @@ def live_sandbox__setup_switch(client_user=False):
         else "Sandbox"
     )
     st.session_state["prod_name"] = prod_name
+    # prod_name_oppiste = "LIVE" if "production" in st.session_state and st.session_state["production"] == True else "Sandbox"
+    
+    # if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+    #     st.session_state["production"] = True if prod_name == "LIVE" else False
+    #     prod = st.session_state["production"]
+
 
     if client_user:
         client_user = client_user
@@ -852,11 +859,6 @@ def live_sandbox__setup_switch(client_user=False):
     admin = True if client_user == "stefanstapinski" else False
     st.session_state["admin"] = True if admin else False
 
-    prod_option = st.sidebar.selectbox(
-        "LIVE/Sandbox", ["LIVE", "Sandbox"], index=["LIVE", "Sandbox"].index(prod_name)
-    )  # , on_change=save_change())
-    st.session_state["production"] = True if prod_option == "LIVE" else False
-    prod = st.session_state["production"]
 
     return prod, admin, prod_name
 

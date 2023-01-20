@@ -4183,12 +4183,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece, queenKING=False):
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
-        PB_Orders_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}'
-        )
-        PB_queen_Archives_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}'
-        )
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
         # PB_users_secrets = os.path.join(db_root, f'{"_users_secrets_"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
@@ -4238,6 +4234,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece, queenKING=False):
         init_KING(pickle_file=PB_KING_Pickle)
 
     if queenKING:
+        st.write("prod", prod)
         st.session_state["PB_QUEEN_Pickle"] = PB_QUEEN_Pickle
         st.session_state["PB_App_Pickle"] = PB_App_Pickle
         st.session_state["PB_Orders_Pickle"] = PB_Orders_Pickle

@@ -244,8 +244,31 @@ def signin_main():
             # st.sidebar.write(f"Welcome *{st.session_state['name']}*")
             
             db_root = init_clientUser_dbroot(client_user=db_client_user_name)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-            prod = True if 'Production' in st.session_state and st.session_stat['Production'] == True else False
+            # prod = True if 'production' in st.session_state and st.session_stat['production'] == True else False
+            prod = (
+                True
+                if "production" in st.session_state and st.session_state["production"] == True
+                else False
+            )
+            prod_name = (
+                "LIVE"
+                if "production" in st.session_state and st.session_state["production"] == True
+                else "Sandbox"
+            )
+            st.session_state["prod_name"] = prod_name
+            prod_name_oppiste = "Sandbox" if prod  else "LIVE"
+            
+            st.session_state["production"] = prod
+            
+            if st.sidebar.button(f'Switch to {"sb"}'):
+                st.session_state["production"] = False
+                prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"])
+            if st.sidebar.button(f'Switch to {"prod"}'):
+                st.session_state["production"] = True
+                prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"])
+            
             init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
+
 
             st.sidebar.warning("Your Queen is Awaiting")
         else:

@@ -119,9 +119,9 @@ def hive_master_root():
 
 def master_swarm_QUEENBEE(prod):
     if prod:
-        return os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl")
+        return os.path.join(os.path.dirname(hive_master_root(), "db"), "queen.pkl") # pollen/db
     else:
-        return os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
+        return os.path.join(os.path.dirname(hive_master_root(), "db"), "queen_sandbox.pkl")
 
 
 def client_dbs_root():
