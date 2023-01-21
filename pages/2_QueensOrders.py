@@ -18,6 +18,7 @@ from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
+from streamlit_extras.switch_page_button import switch_page
 import time
 import os
 from random import randint
@@ -107,12 +108,16 @@ with st.spinner("QueensOrders pollenq"):
 
     db_root = st.session_state['db_root']
 
-    st.sidebar.write(f'Welcome {st.session_state["name"]}')
-    client_user = st.session_state['username']
+    st.sidebar.write(f'{st.session_state["name"]} Playgound')
     authorized_user = st.session_state['authorized_user']
-    db_client_user_name = st.session_state['username'].split("@")[0]
+    client_user = st.session_state["client_user"]
+    st.write("*", client_user)
 
-    prod, admin, prod_name = live_sandbox__setup_switch()
+    prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
+    prod_name_oppiste = "Sandbox" if prod  else "LIVE"
+    if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+        switch_page('QueensOrders')
 
     
     # if st.session_state['production']:

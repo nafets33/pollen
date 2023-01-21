@@ -19,10 +19,10 @@ import sqlite3
 import streamlit as st
 import time
 from polleq_app_auth import signin_main
-from chess_piece.app_hive import url_gif, queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import  queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
+from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
 from QueenBeeDagger import run__trigger_dag
-from chess_piece.queen_hive import init_qcp, return_alpaca_user_apiKeys, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
 # import random
 # from tqdm import tqdm
 # from collections import defaultdict
@@ -136,7 +136,6 @@ st.set_page_config(
 
 
 with st.spinner("Buzz Buzz Where is my Honey"):
-    # st.write( st.session_state['username'], st.session_state['authorized_user'])
 
     if 'username' not in st.session_state:
         signin_main()
@@ -145,11 +144,17 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     
     if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
         sneak_peak = True
-        st.session_state['production'] = True
+        st.session_state['production'] = False
         st.session_state['username'] = 'stefanstapinski@gmail.com'
+        st.session_state['client_user'] = 'Johnny Quest'
         st.session_state['authorized_user'] = False
         st.session_state['db_root'] = os.path.join(main_root, 'db')
         st.info("Welcome and Watch A QueenBot in Action")
+        
+        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=False)            
+        
+        init_pollen_dbs(db_root=st.session_state['db_root'], prod=prod, queens_chess_piece='queen', queenKING=True)
+
     
     elif st.session_state['authentication_status'] != True:
         st.write(st.session_state['authentication_status'])
@@ -164,11 +169,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     else:
         st.error("Stopping page")
         st.stop()
+
     
 
-    # if st.session_state['authentication_status']
+
+
     db_root = st.session_state['db_root']
-    # st.write(st.session_state['db_root'])
 
     st.sidebar.write(f'Welcome {st.session_state["name"]}')
     authorized_user = st.session_state['authorized_user']
@@ -176,11 +182,18 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     st.write("*", client_user)
 
     prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
+    prod_name_oppiste = "Sandbox" if prod  else "LIVE"
+    if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+        switch_page('QueensConscience')
+    cols = st.columns((3,1,3))
+    if prod:
+        with cols[1]:
+            st.warning("QUEEN IS LIVE")
+    else:
+        with cols[1]:
+            st.info("SandBox")
 
-    # init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
-    # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    # PB_App_Pickle = init_pollen['PB_App_Pickle']
-    # PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
     PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
     PB_App_Pickle = st.session_state['PB_App_Pickle'] 
     PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
@@ -195,13 +208,28 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     QUEEN_KING['source'] = PB_App_Pickle
     QUEEN = ReadPickleData(PB_QUEEN_Pickle)
     ORDERS = ReadPickleData(PB_Orders_Pickle)
-    # st.write("using ", PB_App_Pickle)
-    # st.write("using ", PB_QUEEN_Pickle)
+
+
     if st.session_state['authorized_user']:
         APP_req = add_key_to_app(QUEEN_KING)
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
             PickleData(PB_App_Pickle, QUEEN_KING)
+
+
+    if st.session_state['authorized_user'] == False and sneak_peak == False:
+        cols = st.columns(2)
+        with cols[0]:
+            st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+        with cols[1]:
+            st.info("Below is a Preview")
+        client_user_wants_a_queen = st.button("Yes I want a Queen!")
+        if client_user_wants_a_queen:
+            st.session_state['init_queen_request'] = True
+            if 'init_queen_request' in st.session_state:
+                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
+                PickleData(PB_App_Pickle, QUEEN_KING)
+                st.success("Hive Master Notified and You should receive contact soon")
 
 
     def chunk(it, size):
@@ -304,7 +332,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
             data = ReadPickleData(pickle_file=PB_App_Pickle)
             st.write(data['update_queen_order'])
-            
 
     def queen_beeAction_theflash(Falseexpand=True):
    
@@ -559,6 +586,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             print(e)
             print_line_of_error()
 
+    
     def return_total_profits(ORDERS):
         
         df = ORDERS['queen_orders']
@@ -611,6 +639,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         #     st.write("Waiting for your First Trade")
         return return_dict
 
+    
     def check_API__send_user_to_pollenq__with_message(api_failed, msg, errmsg=False):
         if api_failed:
             if errmsg:
@@ -624,6 +653,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         
         return True
 
+    
     def return_buying_power(api):
         with st.expander("Portfolio",  True):
             check_API__send_user_to_pollenq__with_message(api_failed, msg='You were not allowed there', errmsg="Your API Failed, Please Update in pollenq")
@@ -1680,13 +1710,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                 try:
                     with cols[0]:
                         option__ = st.radio(
-                                                "",
-                            list(stars_radio_dict.keys()),
+                            label="stars_radio",
+                            options=list(stars_radio_dict.keys()),
                             key="signal_radio",
                             label_visibility='visible',
                             # disabled=st.session_state.disabled,
                             horizontal=True,
-                            # label=bee_image
                         )
                     # with cols[1]:
                         # frame_option = st.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
@@ -1848,7 +1877,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     # with cols[1]:
     if authorized_user:
         option = st.sidebar.radio(
-                    label="",
+            label="main_radio",
             options=["queen", "controls", "model_results", "pollen_engine"],
             key="main_radio",
             label_visibility='visible',
@@ -1857,7 +1886,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         )
     else:
         option = st.sidebar.radio(
-                    label="",
+            label="PendingAuth",
             options=["queen", "controls", "charts", "model_results"],
             key="main_radio",
             label_visibility='visible',
@@ -1915,19 +1944,8 @@ def ticker_time_frame__option(req_key):
 today_day = datetime.datetime.now(est).day
 current_radio_sel = str(option).lower()
 if str(option).lower() == 'queen':
-    if st.session_state['authorized_user'] == False:
-        cols = st.columns(2)
-        with cols[0]:
-            st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-        with cols[1]:
-            st.info("Below is a Preview")
-        client_user_wants_a_queen = st.button("Yes I want a Queen!")
-        if client_user_wants_a_queen:
-            st.session_state['init_queen_request'] = True
-            if 'init_queen_request' in st.session_state:
-                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
-                PickleData(PB_App_Pickle, QUEEN_KING)
-                st.success("Hive Master Notified and You should receive contact soon")
+    
+
     
     with st.spinner("Waking Up the Hive"):
 
@@ -1948,8 +1966,8 @@ if str(option).lower() == 'queen':
 
         # cols = st.columns((1,1))
 
-        queen_tabs = ["Orders", "Portforlio", "Wave Stories", "Chess Board", "Trading Models", "Charts"]
-        order_tab, Portforlio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
+        queen_tabs = ["Orders", "Portforlio", "Wave Stories", "Chess Board", "Trading Models", "Charts", "Logs"]
+        order_tab, Portforlio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
 
         with cols[1]:
             return_total_profits(ORDERS=ORDERS)
@@ -1981,16 +1999,33 @@ if str(option).lower() == 'queen':
             contorls = list(QUEEN['queen_controls'].keys())
             control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
             update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
-        
+        with log_tab:
+            # option__log = st.radio(
+            #     label="log_radio",
+            #     options=["save space", "logs"],
+            #     key="log_radio",
+            #     label_visibility='visible',
+            #     # disabled=st.session_state.disabled,
+            #     horizontal=True,
+            # )
+            # if option__log == 'logs':
+            if st.button("Show Logs"):
+                with st.expander('queen logs', True):
+                    logs = os.listdir(log_dir)
+                    logs = [i for i in logs if i.endswith(".log")]
+                    log_file = st.selectbox('log files', list(logs))
+                    with open(os.path.join(log_dir, log_file), 'r') as f:
+                        content = f.readlines()
+                        # st.write(len(content))
+                        df = pd.DataFrame(content)
+                        st.dataframe(df, width=500)
+
+
         
         
         
         page_line_seperator(color=default_yellow_color)
 
-        # st.sidebar.image(learningwalk_bee, width=54)
-        # local_gif(gif_path=floating_queen_gif, height='54', width='51', sidebar=True)
-        # url_gif(gif_path=)
-        
 
 
 if str(option).lower() == 'controls':
@@ -2116,9 +2151,6 @@ if str(option).lower() == 'pollen_engine':
         df_charlie = df_charlie.astype(str)
         st.write(df_charlie)
     
-    if admin == False:
-        st.warning("End of the Line")
-        st.stop()
     with st.expander('queen logs'):
         logs = os.listdir(log_dir)
         logs = [i for i in logs if i.endswith(".log")]
@@ -2126,6 +2158,7 @@ if str(option).lower() == 'pollen_engine':
         with open(os.path.join(log_dir, log_file), 'r') as f:
             content = f.readlines()
             st.write(content)
+    
     with st.expander('users db'):
         con = sqlite3.connect("db/users.db")
         cur = con.cursor()

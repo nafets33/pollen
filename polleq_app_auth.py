@@ -7,13 +7,15 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
+from streamlit_extras.switch_page_button import switch_page
+
 from chess_piece.king import (
     kingdom__grace_to_find_a_Queen,
     hive_master_root,
     init_clientUser_dbroot,
     local__filepaths_misc,
 )
-from chess_piece.app_hive import local_gif, live_sandbox__setup_switch
+from chess_piece.app_hive import page_line_seperator, live_sandbox__setup_switch, display_for_unAuth_client_user
 from chess_piece.queen_hive import init_pollen_dbs
 import ipdb
 
@@ -129,9 +131,9 @@ def signin_main():
         except Exception as e:
             st.error(e)
 
-    def reset_password(email):
+    def reset_password(email, location):
         try:
-            if authenticator.reset_password(email, "", location="sidebar"):
+            if authenticator.reset_password(email, "", location=location):
                 update_db(email)
                 send_email(
                     recipient=email,
@@ -244,29 +246,16 @@ def signin_main():
             # st.sidebar.write(f"Welcome *{st.session_state['name']}*")
             
             db_root = init_clientUser_dbroot(client_user=db_client_user_name)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-            # prod = True if 'production' in st.session_state and st.session_stat['production'] == True else False
-            prod = (
-                True
-                if "production" in st.session_state and st.session_state["production"] == True
-                else False
-            )
-            prod_name = (
-                "LIVE"
-                if "production" in st.session_state and st.session_state["production"] == True
-                else "Sandbox"
-            )
-            st.session_state["prod_name"] = prod_name
+            
+            prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=False)            
+            
             prod_name_oppiste = "Sandbox" if prod  else "LIVE"
             
-            st.session_state["production"] = prod
-            
-            if st.sidebar.button(f'Switch to {"sb"}'):
-                st.session_state["production"] = False
-                prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"])
-            if st.sidebar.button(f'Switch to {"prod"}'):
-                st.session_state["production"] = True
-                prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"])
-            
+            if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+                prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+                switch_page('pollenq')
+
+
             init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
 
 
@@ -314,15 +303,16 @@ def signin_main():
     )
 
     # Check login. Automatically gets stored in session state
-    name, authentication_status, email = authenticator.login("Login", "sidebar")
+    name, authentication_status, email = authenticator.login("Login", "main")
 
     # login successful; proceed
     if authentication_status:
         update_db(email)
-
-        authenticator.logout("Logout", "sidebar")
-
-        reset_password(email)
+        cols = st.columns((8,1,2))
+        with cols[1]:
+            authenticator.logout("Logout", "main")
+        with cols[2]:
+            reset_password(email, location='main')
         # ipdb.set_trace()
 
         if st.session_state["logout"] != True:
@@ -357,13 +347,11 @@ def signin_main():
 
     # no login trial; create account
     elif authentication_status == None:
-        cols = st.columns((6, 1, 2))
-        with cols[0]:
-            st.subheader("Create an Account To Get a QueenTraderBot")
-        with cols[1]:
-            local_gif(gif_path=floating_queen_gif, width="123", height="123")
         with st.expander("New User Create Account"):
             register_user()
+
+        display_for_unAuth_client_user()
+
         return False
 
 

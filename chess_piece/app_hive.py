@@ -19,8 +19,10 @@ from alpaca_trade_api.rest import URL
 from alpaca_trade_api.rest_async import AsyncRest
 from PIL import Image
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
+from streamlit_extras.switch_page_button import switch_page
 
-from chess_piece.king import ReadPickleData, hive_master_root, streamlit_config_colors
+
+from chess_piece.king import ReadPickleData, hive_master_root, streamlit_config_colors, local__filepaths_misc
 
 est = pytz.timezone("US/Eastern")
 
@@ -28,6 +30,7 @@ main_root = hive_master_root()  # os.getcwd()  # hive root
 
 # images
 jpg_root = os.path.join(main_root, "misc")
+MISC = local__filepaths_misc()
 # chess_pic_1 = os.path.join(jpg_root, 'chess_pic_1.jpg')
 bee_image = os.path.join(jpg_root, "bee.jpg")
 bee_power_image = os.path.join(jpg_root, "power.jpg")
@@ -43,7 +46,8 @@ uparrow_gif = os.path.join(jpg_root, "uparrows.gif")
 learningwalk_bee = os.path.join(jpg_root, "learningwalks_bee_jq.png")
 learningwalk_bee = Image.open(learningwalk_bee)
 queen_flair_gif = os.path.join(jpg_root, "queen_flair.gif")
-# queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
+mainpage_bee_png = MISC['mainpage_bee_png']# queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
+
 chess_piece_queen = (
     "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
 )
@@ -235,6 +239,32 @@ def progress_bar(value, sleeptime=0.000003, text=False, pct=False):
         status_text.text(text)
 
     return True
+
+def display_for_unAuth_client_user(pct_queens_taken=47):
+    # newuser = st.button("New User")
+    # signin_button = st.button("SignIn")
+    
+    cols = st.columns((6,7,2,1))
+    with cols[0]:
+        st.subheader("Create an Account Get a QueenTraderBot")
+    with cols[1]:
+        progress_bar(value=pct_queens_taken, text=f'{100-pct_queens_taken} Queens Remaining')
+    with cols[2]:
+        sneak_peak = st.button("Take a sneak peak and watch a Queen Trade in Real Time :honeybee:")
+        if sneak_peak:
+            st.session_state['sneak_peak'] = True
+            switch_page("QueensConscience")
+        else:
+            st.session_state['sneak_peak'] = False
+    with cols[3]:
+        st.image(mainpage_bee_png, width=54)
+    # with cols[1]:
+    #     local_gif(floating_queen_gif, '100', '123')
+    page_line_seperator('25')
+    
+    st.error("ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
+
+    page_line_seperator('1')
 
 
 def page_tab_permission_denied(admin, st_stop=True):
@@ -831,7 +861,7 @@ def close_sesstion_states__pages():
     return True
 
 
-def live_sandbox__setup_switch(client_user=False):
+def live_sandbox__setup_switch(client_user, switch_env=False):
     
     prod = (
         True
@@ -844,17 +874,19 @@ def live_sandbox__setup_switch(client_user=False):
         else "Sandbox"
     )
     st.session_state["prod_name"] = prod_name
-    # prod_name_oppiste = "LIVE" if "production" in st.session_state and st.session_state["production"] == True else "Sandbox"
-    
-    # if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
-    #     st.session_state["production"] = True if prod_name == "LIVE" else False
-    #     prod = st.session_state["production"]
+    st.session_state["production"] = prod
 
-
-    if client_user:
-        client_user = client_user
-    else:
-        client_user = st.session_state["client_user"]
+    if switch_env:
+        if prod:
+            prod = False
+            st.session_state["production"] = prod
+            prod_name = "Sanbox"
+            st.session_state["prod_name"] = prod_name
+        else:
+            prod = True
+            st.session_state["production"] = prod
+            prod_name = "LIVE"
+            st.session_state["prod_name"] = prod_name      
 
     admin = True if client_user == "stefanstapinski" else False
     st.session_state["admin"] = True if admin else False

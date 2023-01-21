@@ -62,7 +62,7 @@ def pollenq(admin_pq):
         page_title="pollenq",
         page_icon=page_icon,
         layout="wide",
-        initial_sidebar_state='collapsed',
+        initial_sidebar_state='expanded',
         #  menu_items={
         #      'Get Help': 'https://www.extremelycoolapp.com/help',
         #      'Report a bug': "https://www.extremelycoolapp.com/bug",
@@ -75,12 +75,6 @@ def pollenq(admin_pq):
     default_text_color = k_colors['default_text_color'] # = '#59490A'
     default_font = k_colors['default_font'] # = "sans serif"
     default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-
-
-    if 'sidebar_hide' in st.session_state:
-        sidebar_hide = 'collapsed'
-    else:
-        sidebar_hide = 'expanded'
 
 
     with st.spinner("Hello Welcome To pollenq"):
@@ -122,7 +116,7 @@ def pollenq(admin_pq):
             if prod and authorized_user == True:
                 st.warning("The Stage is Live And the Queen will begin trading for you....Good Luck...honestly the best Queens i bet will be the storywave_ai")
             else:
-                st.warning("Welcome to your Sandbox...Play around...create new Queenbots! Learn and Deploy Strategy!")
+                st.info("Welcome to your Sandbox...Play around...create new Queenbots! Learn and Deploy Strategy!")
             
             if admin_pq:
                 admin = True
@@ -169,7 +163,8 @@ def pollenq(admin_pq):
                 switch_page("QueensConscience")
             with hive_setup:
                 st.title("Create Yourself The QueenTrader")
-                cols = st.columns((3,1,1,1,1,1,1))
+                # st.subheader("Steps to get your QueenTraderBot")
+                cols = st.columns((3,3,3,1,1,1,1))
                 
                 # with cols[0]:
                 #     st.text("Customize QueenTraderBot Settings!\nTrade based on how you feel&think" )
@@ -182,43 +177,50 @@ def pollenq(admin_pq):
                 
                 # cols = st.columns((5,3,3,2,2,2))
                 with cols[0]:
-                    st.subheader("Steps to get your QueenTraderBot")
                     stoggle("1. Select your Broker",
                     "Alpaca is only current supported broker (Alpaca is a free no-fee trading broker, they are FDIC 250k insured) create a FREE account at https://app.alpaca.markets/brokerage/new-account"
                     )
-                with cols[0]:
+                with cols[1]:
                     stoggle("2. Enter in your API Keys ",
                     """
                     (this allows the QueenTraderBot to place trades) Its going to change the way you trade forever...everyone needs an AI :bot:
                     """
                     )
-                with cols[0]:
+                with cols[2]:
                     stoggle("3. Set your Risk Parameters",
                     """
                     Go Start Building your QueenTradingBot! There is too much to dicuss now...we'll talk later
                     """
                     )
-                with cols[1]:
 
-                    st.image(mainpage_bee_png, width=133)
+                cols = st.columns((3,3,3,1,1,1,1))
+
+                with cols[0]:
+                    page_line_seperator('.5')
+                    st.image(mainpage_bee_png, width=100)
+                with cols[1]:
+                    page_line_seperator('.5')
+                    st.image(mainpage_bee_png, width=100)
                 with cols[2]:
-                    st.image(queen_png, width=250)
+                    page_line_seperator('.5')
+                    st.image(mainpage_bee_png, width=100)
+                # with cols[2]:
+                #     st.image(queen_png, width=250)
                     # local_gif(floating_queen_gif, '89', '89')
 
-                with cols[3]:
-                    # local_gif(gif_path=queen_flair_gif, height=254, width=450)
-                    st.image(bishop_png, width=223)
+                # with cols[3]:
+                #     # local_gif(gif_path=queen_flair_gif, height=254, width=450)
+                #     st.image(bishop_png, width=223)
                     # local_gif(bishop_unscreen, '133', '133')
                 with cols[4]:
                     st.image(castle_png, width=133)
 
-                with cols[5]:
-                    st.image(mainpage_bee_png, width=133)
-                    # page_line_seperator('.5')
+                # with cols[5]:
+                #     st.image(mainpage_bee_png, width=133)
+                #     # page_line_seperator('.5')
 
-                with cols[6]:
-                    page_line_seperator('.01')
-                    st.image(mainpage_bee_png, width=133)
+                # with cols[1]:
+                #     st.image(mainpage_bee_png, width=133)
             
             with BrokerAPIKeys:
                 queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
@@ -282,6 +284,9 @@ def pollenq(admin_pq):
             pct_queens_taken = 54
 
             def display_for_unAuth_client_user():
+                # newuser = st.button("New User")
+                # signin_button = st.button("SignIn")
+                
                 cols = st.columns((5,2))
                 with cols[0]:
                     progress_bar(value=pct_queens_taken, text=f'{100-pct_queens_taken} Queens Remaining')
@@ -302,9 +307,9 @@ def pollenq(admin_pq):
 
                 page_line_seperator('1')
 
-                local_gif(chess_board__gif, 650, 400)
+                # local_gif(chess_board__gif, 650, 400)
             
-            display_for_unAuth_client_user()
+            # display_for_unAuth_client_user()
 if __name__ == '__main__':
     def createParser():
         parser = argparse.ArgumentParser()
