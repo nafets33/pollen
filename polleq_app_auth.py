@@ -284,7 +284,7 @@ def signin_main():
 
     # Read usernames and convert to nested dict
 
-    con = sqlite3.connect("db/users.db")
+    con = sqlite3.connect("db/client_users.db")
     cur = con.cursor()
 
     def read_user_db():

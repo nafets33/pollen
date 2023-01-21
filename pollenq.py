@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import os
 # from random import randint
 import streamlit as st
-from app_auth import signin_main
+from polleq_app_auth import signin_main
 import time
 from streamlit_extras.switch_page_button import switch_page
 import argparse

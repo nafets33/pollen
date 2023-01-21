@@ -5,9 +5,11 @@ import sqlite3
 import sys
 import time
 from datetime import datetime
+import streamlit as st
 
 import aiohttp
 import pytz
+import ipdb
 
 est = pytz.timezone("US/Eastern")
 
@@ -111,42 +113,41 @@ exclude_conditions = [
     "V",
     "Z",
 ]  # 'U'
-
+# script_path = os.path.abspath(__file__)
+# print(script_path)
 
 def hive_master_root():
-    return os.getcwd()
+    script_path = os.path.abspath(__file__)
+    return os.path.dirname(os.path.dirname(script_path))
 
+def pollen_root():
+    script_path = os.path.abspath(__file__)
+    return os.path.dirname(os.path.dirname(script_path))
 
 def master_swarm_QUEENBEE(prod):
     if prod:
-        return os.path.join(os.path.dirname(hive_master_root(), "db"), "queen.pkl") # pollen/db
+        return os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl") # pollen/db
     else:
-        return os.path.join(os.path.dirname(hive_master_root(), "db"), "queen_sandbox.pkl")
+        return os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
 
 
 def client_dbs_root():
-    main_root = hive_master_root()
-    client_dbs = os.path.join(os.path.dirname(main_root), "client_user_dbs")
+    client_dbs = os.path.join(hive_master_root(), "client_user_dbs")
     return client_dbs
 
 
 def workerbee_dbs_root():
-    symbols_pollenstory_dbs = os.path.join(
-        os.path.join(os.path.dirname(hive_master_root()), "symbols_pollenstory_dbs")
-    )
+    symbols_pollenstory_dbs = os.path.join(os.path.join(hive_master_root(), "symbols_pollenstory_dbs"))
     return symbols_pollenstory_dbs
 
 
 def workerbee_dbs_root__STORY_bee():
-    symbols_pollenstory_dbs = os.path.join(
-        os.path.join(os.path.dirname(hive_master_root()), "symbols_STORY_bee_dbs")
-    )
+    symbols_pollenstory_dbs = os.path.join(hive_master_root(), "symbols_STORY_bee_dbs")
     return symbols_pollenstory_dbs
 
 
 def init_symbol_dbs__pollenstory():
-    main_root = hive_master_root()  # os.getcwd()  # hive root
-    symbol_dbs = os.path.join(os.path.dirname(main_root), "symbols_pollenstory_dbs")
+    symbol_dbs = os.path.join(hive_master_root(), "symbols_pollenstory_dbs")
 
     if os.path.exists(symbol_dbs) == False:
         print("Init symbols_dbs")
@@ -182,11 +183,10 @@ def return_list_of_all__QueenKing__pkl():
 
 
 def init_clientUser_dbroot(client_user):
-    main_root = hive_master_root()  # os.getcwd()  # hive root
     client_user_db_dir = client_dbs_root()
 
     if client_user in ["stefanstapinski"]:  ## admin
-        db_root = os.path.join(main_root, "db")
+        db_root = os.path.join(hive_master_root(), "db")
     else:
         db_root = os.path.join(client_user_db_dir, f"db__{client_user}")
         if os.path.exists(db_root) == False:
