@@ -144,7 +144,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     
     if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
         sneak_peak = True
-        st.session_state['production'] = False
+        st.session_state['production'] = True
         st.session_state['username'] = 'stefanstapinski@gmail.com'
         st.session_state['client_user'] = 'Johnny Quest'
         st.session_state['authorized_user'] = False
@@ -169,9 +169,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     else:
         st.error("Stopping page")
         st.stop()
-
-    
-
 
 
     db_root = st.session_state['db_root']
