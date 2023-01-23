@@ -1,6 +1,4 @@
 import argparse
-# import datetime
-from datetime import datetime, timedelta
 import logging
 import os
 import pickle
@@ -9,6 +7,9 @@ import ssl
 import sys
 import time
 from collections import defaultdict, deque
+
+# import datetime
+from datetime import datetime, timedelta
 from email.message import EmailMessage
 from typing import Callable
 
@@ -26,13 +27,13 @@ from scipy import stats
 from stocksymbol import StockSymbol
 from tqdm import tqdm
 
-from app_hive import init_client_user_secrets
-from king import PickleData, ReadPickleData, hive_master_root
+from chess_piece.app_hive import init_client_user_secrets
+from chess_piece.king import PickleData, ReadPickleData, hive_master_root
 
 # _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 est = pytz.timezone("America/New_York")
-utc = pytz.timezone('UTC')
+utc = pytz.timezone("UTC")
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -721,7 +722,12 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         knights_sight_word = {}
         # knight_sight_df = {}
 
-        for (ticker_time_frame, df_i,) in (pollen_nectar.items()):  # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+        for (
+            ticker_time_frame,
+            df_i,
+        ) in (
+            pollen_nectar.items()
+        ):  # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
             s_ttfame_func_check = datetime.now(est).astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
 
@@ -765,9 +771,13 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             s_timetoken = datetime.now(est)
 
-            wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
+            wave = return_knightbee_waves(
+                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
+            )
             e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves_return_knightbee_waves"] = e_timetoken - s_timetoken
+            betty_bee[ticker_time_frame]["waves_return_knightbee_waves"] = (
+                e_timetoken - s_timetoken
+            )
 
             s_timetoken = datetime.now(est)
             MACDWAVE_story = return_macd_wave_story(
@@ -777,13 +787,18 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                 tframe=tframe,
             )
             e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves_return_macd_wave_story"] = e_timetoken - s_timetoken
+            betty_bee[ticker_time_frame]["waves_return_macd_wave_story"] = (
+                e_timetoken - s_timetoken
+            )
 
             s_timetoken = datetime.now(est)
             resp = return_waves_measurements(
-                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
+                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
+            )
             e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = e_timetoken - s_timetoken
+            betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (
+                e_timetoken - s_timetoken
+            )
 
             df = resp["df"]
             MACDWAVE_story["story"] = resp["df_waves"]
@@ -1635,11 +1650,17 @@ def return_waves_measurements(
     # set wave num
     df_waves = df[df["macd_cross"].isin(trigbees)].copy().reset_index()
     df_waves["wave_n"] = df_waves.index
-    df_waves["length"] = df_waves["wave_n"].apply(lambda x: macd_cross_WaveLength(df_waves, x))
+    df_waves["length"] = df_waves["wave_n"].apply(
+        lambda x: macd_cross_WaveLength(df_waves, x)
+    )
     df_waves["profits"] = df_waves["wave_n"].apply(lambda x: profit_loss(df_waves, x))
     # df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
-    df_waves["active_wave"] = np.where(df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active")
-    df_waves["wave_blocktime"] = df_waves["wave_n"].apply(lambda x: macd_cross_WaveBlocktime(df_waves, x))
+    df_waves["active_wave"] = np.where(
+        df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active"
+    )
+    df_waves["wave_blocktime"] = df_waves["wave_n"].apply(
+        lambda x: macd_cross_WaveBlocktime(df_waves, x)
+    )
 
     index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_n"]))
     df["wave_n"] = df["story_index"].map(index_wave_series).fillna("0")
@@ -1887,13 +1908,15 @@ def return_bars_list(
         )
         # ipdb.set_trace()
 
+
 def get_best_limit_price(ask, bid):
-    maker_dif =  ask - bid
+    maker_dif = ask - bid
     maker_delta = (maker_dif / ask) * 100
     # check to ensure bid / ask not far
     maker_middle = round(ask - (maker_dif / 2), 2)
 
-    return {'maker_middle': maker_middle, 'maker_delta': maker_delta}
+    return {"maker_middle": maker_middle, "maker_delta": maker_delta}
+
 
 def return_snap_priceinfo(api, ticker, crypto, exclude_conditions, coin_exchange):
     ## update to query ticker by last 30 seconds if snapshot not available
@@ -1902,15 +1925,15 @@ def return_snap_priceinfo(api, ticker, crypto, exclude_conditions, coin_exchange
     else:
         snap = api.get_snapshot(ticker)
         conditions = snap.latest_quote.conditions
-        c=0
+        c = 0
         while True:
             # print(conditions)
             valid = [j for j in conditions if j in exclude_conditions]
             if len(valid) == 0 or c > 10:
                 break
             else:
-                snap = api.get_snapshot(ticker) # return_last_quote from snapshot
-                c+=1 
+                snap = api.get_snapshot(ticker)  # return_last_quote from snapshot
+                c += 1
 
     # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
     current_price = snap.latest_trade.price
@@ -1919,12 +1942,20 @@ def return_snap_priceinfo(api, ticker, crypto, exclude_conditions, coin_exchange
 
     # best limit price
     best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
-    maker_middle = best_limit_price['maker_middle']
+    maker_middle = best_limit_price["maker_middle"]
     ask_bid_variance = current_bid / current_ask
-    
-    priceinfo = {'snapshot': snap, 'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
-    
+
+    priceinfo = {
+        "snapshot": snap,
+        "price": current_price,
+        "bid": current_bid,
+        "ask": current_ask,
+        "maker_middle": maker_middle,
+        "ask_bid_variance": ask_bid_variance,
+    }
+
     return priceinfo
+
 
 def rebuild_timeframe_bars(
     api, ticker_list, build_current_minute=False, min_input=False, sec_input=False
@@ -2029,16 +2060,16 @@ def rebuild_timeframe_bars(
         return {"resp": False, "msg": [e, current_time, previous_time]}
 
 
-def return__snapshot__latest_PriceInfo(api, ticker_list, crypto=False, coin_exchange=False, min_input=0, sec_input=30):
+def return__snapshot__latest_PriceInfo(
+    api, ticker_list, crypto=False, coin_exchange=False, min_input=0, sec_input=30
+):
     def has_condition(condition_list, condition_check):
         if type(condition_list) is not list:
             # Assume none is a regular trade?
             in_list = False
         else:
             # There are one or more conditions in the list
-            in_list = any(
-                condition in condition_list for condition in condition_check
-            )
+            in_list = any(condition in condition_list for condition in condition_check)
 
         return in_list
 
@@ -2047,13 +2078,11 @@ def return__snapshot__latest_PriceInfo(api, ticker_list, crypto=False, coin_exch
         # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
         # sec_input = 30
         # min_input = 0
-        
+
         current_time = datetime.now(utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         previous_time = (
-            datetime.now(utc)
-            - timedelta(minutes=min_input, seconds=sec_input)
+            datetime.now(utc) - timedelta(minutes=min_input, seconds=sec_input)
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
-
 
         exclude_conditions = [
             "B",
@@ -2078,10 +2107,9 @@ def return__snapshot__latest_PriceInfo(api, ticker_list, crypto=False, coin_exch
         trades_df = api.get_trades(
             ticker_list, start=previous_time, end=current_time, limit=30000
         ).df
-        
 
-        # check if empty to call further away 
-        
+        # check if empty to call further away
+
         # convert to market time for easier reading
         trades_df = trades_df.tz_convert("America/New_York")
 
@@ -2092,11 +2120,12 @@ def return__snapshot__latest_PriceInfo(api, ticker_list, crypto=False, coin_exch
 
         # filter to only look at trades which aren't excluded
         valid_trades = trades_df.query("not exclude")
-    
+
     except Exception as e:
         print(e)
-        
+
         return True
+
 
 ### Orders ###
 def return_alpc_portolio(api):
@@ -4284,8 +4313,12 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece, queenKING=False):
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
-        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
-        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(
+            db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}'
+        )
+        PB_queen_Archives_Pickle = os.path.join(
+            db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}'
+        )
         # PB_users_secrets = os.path.join(db_root, f'{"_users_secrets_"}{".pkl"}')
     else:
         # print("My Queen Sandbox")

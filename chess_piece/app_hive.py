@@ -21,11 +21,15 @@ from PIL import Image
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from streamlit_extras.switch_page_button import switch_page
 
-
-from king import ReadPickleData, hive_master_root, streamlit_config_colors, local__filepaths_misc
+from chess_piece.king import (
+    ReadPickleData,
+    hive_master_root,
+    local__filepaths_misc,
+    streamlit_config_colors,
+)
 
 est = pytz.timezone("US/Eastern")
-utc = pytz.timezone('UTC')
+utc = pytz.timezone("UTC")
 
 main_root = hive_master_root()  # os.getcwd()  # hive root
 
@@ -47,7 +51,9 @@ uparrow_gif = os.path.join(jpg_root, "uparrows.gif")
 learningwalk_bee = os.path.join(jpg_root, "learningwalks_bee_jq.png")
 learningwalk_bee = Image.open(learningwalk_bee)
 queen_flair_gif = os.path.join(jpg_root, "queen_flair.gif")
-mainpage_bee_png = MISC['mainpage_bee_png']# queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
+mainpage_bee_png = MISC[
+    "mainpage_bee_png"
+]  # queen_flair_gif_original = os.path.join(jpg_root, 'queen_flair.gif')
 
 chess_piece_queen = (
     "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
@@ -241,31 +247,38 @@ def progress_bar(value, sleeptime=0.000003, text=False, pct=False):
 
     return True
 
+
 def display_for_unAuth_client_user(pct_queens_taken=47):
     # newuser = st.button("New User")
     # signin_button = st.button("SignIn")
-    
-    cols = st.columns((6,7,2,1))
+
+    cols = st.columns((6, 7, 2, 1))
     with cols[0]:
         st.subheader("Create an Account Get a QueenTraderBot")
     with cols[1]:
-        progress_bar(value=pct_queens_taken, text=f'{100-pct_queens_taken} Queens Remaining')
+        progress_bar(
+            value=pct_queens_taken, text=f"{100-pct_queens_taken} Queens Remaining"
+        )
     with cols[2]:
-        sneak_peak = st.button("Take a sneak peak and watch a Queen Trade in Real Time :honeybee:")
+        sneak_peak = st.button(
+            "Take a sneak peak and watch a Queen Trade in Real Time :honeybee:"
+        )
         if sneak_peak:
-            st.session_state['sneak_peak'] = True
+            st.session_state["sneak_peak"] = True
             switch_page("QueensConscience")
         else:
-            st.session_state['sneak_peak'] = False
+            st.session_state["sneak_peak"] = False
     with cols[3]:
         st.image(mainpage_bee_png, width=54)
     # with cols[1]:
     #     local_gif(floating_queen_gif, '100', '123')
-    page_line_seperator('25')
-    
-    st.error("ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
+    page_line_seperator("25")
 
-    page_line_seperator('1')
+    st.error(
+        "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
+    )
+
+    page_line_seperator("1")
 
 
 def page_tab_permission_denied(admin, st_stop=True):
@@ -863,7 +876,7 @@ def close_sesstion_states__pages():
 
 
 def live_sandbox__setup_switch(client_user, switch_env=False):
-    
+
     prod = (
         True
         if "production" in st.session_state and st.session_state["production"] == True
@@ -887,11 +900,10 @@ def live_sandbox__setup_switch(client_user, switch_env=False):
             prod = True
             st.session_state["production"] = prod
             prod_name = "LIVE"
-            st.session_state["prod_name"] = prod_name      
+            st.session_state["prod_name"] = prod_name
 
     admin = True if client_user == "stefanstapinski" else False
     st.session_state["admin"] = True if admin else False
-
 
     return prod, admin, prod_name
 
