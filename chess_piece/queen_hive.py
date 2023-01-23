@@ -26,8 +26,8 @@ from scipy import stats
 from stocksymbol import StockSymbol
 from tqdm import tqdm
 
-from app_hive import init_client_user_secrets
-from king import PickleData, ReadPickleData, hive_master_root
+from pollen.chess_piece.app_hive import init_client_user_secrets
+from pollen.chess_piece.king import PickleData, ReadPickleData, hive_master_root
 
 # _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 

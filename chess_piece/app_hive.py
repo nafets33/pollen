@@ -22,7 +22,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from streamlit_extras.switch_page_button import switch_page
 
 
-from king import ReadPickleData, hive_master_root, streamlit_config_colors, local__filepaths_misc
+from pollen.chess_piece.king import ReadPickleData, hive_master_root, streamlit_config_colors, local__filepaths_misc
 
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
