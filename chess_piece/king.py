@@ -138,7 +138,7 @@ def client_dbs_root():
 
 
 def workerbee_dbs_root():
-    symbols_pollenstory_dbs = os.path.join(os.path.join(hive_master_root(), "symbols_pollenstory_dbs"))
+    symbols_pollenstory_dbs = os.path.join(hive_master_root(), "symbols_pollenstory_dbs")
     return symbols_pollenstory_dbs
 
 

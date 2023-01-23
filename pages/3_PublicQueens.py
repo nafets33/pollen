@@ -12,15 +12,14 @@ from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
 import os
-# from random import randint
-import streamlit as st
-from polleq_app_auth import signin_main
 import time
+import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
-from app_hive import live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from king import return_list_of_all__Queens__pkl, hive_master_root, streamlit_config_colors, local__filepaths_misc
-import argparse
 from streamlit_extras.stoggle import stoggle
+import argparse
+from polleq_app_auth import signin_main
+from chess_piece.king import return_list_of_all__Queens__pkl, hive_master_root, streamlit_config_colors, local__filepaths_misc
+from chess_piece.app_hive import live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 
 
 ### Read All Queens that have enabled public ### display as list of charcaters by category of investment strategy ###

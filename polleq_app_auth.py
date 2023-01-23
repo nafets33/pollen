@@ -9,9 +9,9 @@ import ssl
 from email.message import EmailMessage
 from streamlit_extras.switch_page_button import switch_page
 import ipdb
-from king import kingdom__grace_to_find_a_Queen,  hive_master_root, init_clientUser_dbroot, local__filepaths_misc
-from app_hive import page_line_seperator, live_sandbox__setup_switch, display_for_unAuth_client_user
-from queen_hive import init_pollen_dbs
+from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, init_clientUser_dbroot, local__filepaths_misc
+from chess_piece.app_hive import page_line_seperator, live_sandbox__setup_switch, display_for_unAuth_client_user
+from chess_piece.queen_hive import init_pollen_dbs
 
 # from QueenHive import init_pollen_dbs
 
