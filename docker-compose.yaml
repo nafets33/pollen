@@ -64,7 +64,7 @@ x-airflow-common:
     - .env
   volumes:
     -  /home/stapinski89/pollen/symbols_pollenstory_dbs:/opt/symbols_pollenstory_dbs # for cloud
-    -  /home/stapinski89/pollen//symbols_STORY_bee_dbs:/opt/symbols_STORY_bee_dbs # for cloud
+    -  /home/stapinski89/pollen/symbols_STORY_bee_dbs:/opt/symbols_STORY_bee_dbs # for cloud
     -  /home/stapinski89/pollen/client_user_dbs:/opt/client_user_dbs # for cloud
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
