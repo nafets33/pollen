@@ -182,7 +182,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     prod_name_oppiste = "Sandbox" if prod  else "LIVE"
     if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
         prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
         switch_page('QueensConscience')
+    
     cols = st.columns((3,1,3))
     if prod:
         with cols[1]:
@@ -1963,15 +1965,15 @@ if str(option).lower() == 'queen':
 
         # cols = st.columns((1,1))
 
-        queen_tabs = ["Orders", "Portforlio", "Wave Stories", "Chess Board", "Trading Models", "Charts", "Logs"]
-        order_tab, Portforlio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
+        queen_tabs = ["Orders", "Portfolio", "Wave Stories", "Chess Board", "Trading Models", "Charts", "Logs"]
+        order_tab, Portfolio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
 
         with cols[1]:
             return_total_profits(ORDERS=ORDERS)
         with cols[0]:
             queens_subconscious_Thoughts(QUEEN=QUEEN)
 
-        with Portforlio:
+        with Portfolio:
             return_buying_power(api=api)  # sidebar
 
         with chessboard_tab:

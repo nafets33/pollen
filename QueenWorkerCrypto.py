@@ -14,7 +14,8 @@ import pytz
 from collections import defaultdict, deque
 import ipdb
 import argparse
-from King import workerbee_dbs_root, workerbee_dbs_root__STORY_bee, PickleData, ReadPickleData
+from chess_piece.king import workerbee_dbs_root, workerbee_dbs_root__STORY_bee, PickleData, ReadPickleData
+from chess_piece.queen_hive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 
 
 
@@ -43,12 +44,12 @@ def queen_workerbee_coins(prod):
     pd.options.mode.chained_assignment = None
     est = pytz.timezone("US/Eastern")
 
-    if prod:
-        from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
-        load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    else:
-        from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
-        load_dotenv(os.path.join(os.getcwd(), '.env'))
+    # if prod:
+    #     from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
+    # else:
+    #     from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
     main_root = os.getcwd()
     db_root = os.path.join(main_root, 'db')
@@ -150,7 +151,7 @@ def queen_workerbee_coins(prod):
         error_dict = {}
         s = datetime.datetime.now(est)
         dfs_index_tickers = {}
-        bars = return_bars_list(api=api, ticker_list, chart_times, exchange='CBSE', trading_days_df=trading_days_df)
+        bars = return_bars_list(api=api, ticker_list=ticker_list, chart_times=chart_times, exchange='CBSE', trading_days_df=trading_days_df)
         if bars['resp']: # rebuild and split back to ticker_time with market hours only
             bars_dfs = bars['return']
             for timeframe, df in bars_dfs.items():

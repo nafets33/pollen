@@ -117,6 +117,7 @@ with st.spinner("QueensOrders pollenq"):
     prod_name_oppiste = "Sandbox" if prod  else "LIVE"
     if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
         prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
         switch_page('QueensOrders')
 
     
