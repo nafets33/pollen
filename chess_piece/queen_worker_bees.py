@@ -667,7 +667,9 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
 
         # for every ticker ticker write pickle file to db
         symbols_pollenstory_dbs = workerbee_dbs_root()
+        print("Pollen story path", symbols_pollenstory_dbs)
         symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
+        print("Story bee path", symbols_STORY_bee_root)
         for ttf in pollens_honey["pollen_story"]:
             ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}.pkl")
             PickleData(
