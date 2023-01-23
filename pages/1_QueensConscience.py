@@ -2157,7 +2157,7 @@ if str(option).lower() == 'pollen_engine':
             st.write(content)
     
     with st.expander('users db'):
-        con = sqlite3.connect("db/users.db")
+        con = sqlite3.connect("db/client_users.db")
         cur = con.cursor()
 
         users = cur.execute("SELECT * FROM users").fetchall()

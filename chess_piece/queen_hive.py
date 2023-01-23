@@ -1,5 +1,6 @@
 import argparse
-import datetime
+# import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 import pickle
@@ -8,7 +9,6 @@ import ssl
 import sys
 import time
 from collections import defaultdict, deque
-from datetime import datetime
 from email.message import EmailMessage
 from typing import Callable
 
@@ -26,12 +26,13 @@ from scipy import stats
 from stocksymbol import StockSymbol
 from tqdm import tqdm
 
-from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import PickleData, ReadPickleData, hive_master_root
+from app_hive import init_client_user_secrets
+from king import PickleData, ReadPickleData, hive_master_root
 
 # _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
 est = pytz.timezone("America/New_York")
+utc = pytz.timezone('UTC')
 
 queens_chess_piece = os.path.basename(__file__)
 
@@ -40,10 +41,8 @@ prod = False if "sandbox" in scriptname else True
 
 main_root = hive_master_root()  # os.getcwd()
 db_root = os.path.join(main_root, "db")
-db_app_root = os.path.join(db_root, "app")
 
 """# Dates """
-
 current_day = datetime.now(est).day
 current_month = datetime.now(est).month
 current_year = datetime.now(est).year
@@ -100,10 +99,6 @@ exclude_conditions = [
 ]  # 'U' afterhours
 
 current_date = datetime.now(est).strftime("%Y-%m-%d")
-# trading_days = api.get_calendar()
-# trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-# trading_days_df['date'] = pd.to_datetime(trading_days_df['date'])
-
 
 """ Global VARS"""
 crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
@@ -229,7 +224,7 @@ def return_alpaca_api_keys(prod):
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
     try:
         if prod:
-            load_dotenv(os.path.join(os.getcwd(), ".env_jq"))
+            load_dotenv(os.path.join(hive_master_root(), ".env_jq"))
             keys = return_api_keys(
                 base_url="https://api.alpaca.markets",
                 api_key_id=os.environ.get("APCA_API_KEY_ID"),
@@ -240,7 +235,7 @@ def return_alpaca_api_keys(prod):
             api = keys["api"]
         else:
             # Paper
-            load_dotenv(os.path.join(os.getcwd(), ".env"))
+            load_dotenv(os.path.join(hive_master_root(), ".env"))
             keys_paper = return_api_keys(
                 base_url="https://paper-api.alpaca.markets",
                 api_key_id=os.environ.get("APCA_API_KEY_ID_PAPER"),
@@ -253,7 +248,7 @@ def return_alpaca_api_keys(prod):
     except Exception as e:
         print("Key Return failure default to HivesKeys")
         # st.error("Key Return failure default to HivesKeys")
-        load_dotenv(os.path.join(os.getcwd(), ".env"))
+        load_dotenv(os.path.join(hive_master_root(), ".env"))
         keys_paper = return_api_keys(
             base_url="https://paper-api.alpaca.markets",
             api_key_id=os.environ.get("APCA_API_KEY_ID_PAPER"),
@@ -271,7 +266,6 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 
         # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
         if prod:
-            # load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
             keys = return_api_keys(
                 base_url="https://api.alpaca.markets",
                 api_key_id=api_key_id,
@@ -282,7 +276,6 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
             api = keys["api"]
         else:
             # Paper
-            # load_dotenv(os.path.join(os.getcwd(), '.env'))
             keys_paper = return_api_keys(
                 base_url="https://paper-api.alpaca.markets",
                 api_key_id=api_key_id,
@@ -336,28 +329,28 @@ def hive_dates(api):
     return {"trading_days": trading_days}
 
 
-def read_pollenstory(
-    db_root, dbs=["castle.pkl", "bishop.pkl", "castle_coin.pkl", "knight.pkl"]
-):  # return combined dataframes
-    # return beeworkers data
+# def read_pollenstory(
+#     db_root, dbs=["castle.pkl", "bishop.pkl", "castle_coin.pkl", "knight.pkl"]
+# ):  # return combined dataframes
+#     # return beeworkers data
 
-    pollenstory = {}
-    STORY_bee = {}
-    # KNIGHTSWORD = {}
-    # ANGEL_bee = {}
-    # db_names = []
-    for db in dbs:
-        if os.path.exists(os.path.join(db_root, db)):
-            db_name = db.split(".pkl")[0]
-            chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-            pollenstory = {**pollenstory, **chess_piece["pollenstory"]}
-            STORY_bee = {**STORY_bee, **chess_piece["conscience"]["STORY_bee"]}
-            # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
-            # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
-            # dbs_[db_name] = chess_piece
-            # db_names.append(chess_piece)
+#     pollenstory = {}
+#     STORY_bee = {}
+#     # KNIGHTSWORD = {}
+#     # ANGEL_bee = {}
+#     # db_names = []
+#     for db in dbs:
+#         if os.path.exists(os.path.join(db_root, db)):
+#             db_name = db.split(".pkl")[0]
+#             chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
+#             pollenstory = {**pollenstory, **chess_piece["pollenstory"]}
+#             STORY_bee = {**STORY_bee, **chess_piece["conscience"]["STORY_bee"]}
+#             # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
+#             # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
+#             # dbs_[db_name] = chess_piece
+#             # db_names.append(chess_piece)
 
-    return {"pollenstory": pollenstory, "STORY_bee": STORY_bee}
+#     return {"pollenstory": pollenstory, "STORY_bee": STORY_bee}
 
 
 def read_queensmind(prod, db_root):  # return active story workers
@@ -728,12 +721,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         knights_sight_word = {}
         # knight_sight_df = {}
 
-        for (
-            ticker_time_frame,
-            df_i,
-        ) in (
-            pollen_nectar.items()
-        ):  # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
+        for (ticker_time_frame, df_i,) in (pollen_nectar.items()):  # CHARLIE_bee: # create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
             s_ttfame_func_check = datetime.now(est).astimezone(est)
             ticker, tframe, frame = ticker_time_frame.split("_")
 
@@ -777,20 +765,26 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
             s_timetoken = datetime.now(est)
 
-            wave = return_knightbee_waves(
-                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
-            )
+            wave = return_knightbee_waves(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
+            e_timetoken = datetime.now(est)
+            betty_bee[ticker_time_frame]["waves_return_knightbee_waves"] = e_timetoken - s_timetoken
 
+            s_timetoken = datetime.now(est)
             MACDWAVE_story = return_macd_wave_story(
                 df=df,
                 trigbees=trigbees,
                 ticker_time_frame=ticker_time_frame,
                 tframe=tframe,
             )
+            e_timetoken = datetime.now(est)
+            betty_bee[ticker_time_frame]["waves_return_macd_wave_story"] = e_timetoken - s_timetoken
 
+            s_timetoken = datetime.now(est)
             resp = return_waves_measurements(
-                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
-            )
+                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
+            e_timetoken = datetime.now(est)
+            betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = e_timetoken - s_timetoken
+
             df = resp["df"]
             MACDWAVE_story["story"] = resp["df_waves"]
 
@@ -1538,6 +1532,15 @@ def return_waves_measurements(
     # trigbees = ["macd_cross"]
     # length and height of wave
 
+    # """ use shift to get row index"""
+    # # Create a sample DataFrame
+    # df = pd.DataFrame({'col1': [1, 4, 7, 10], 'col2': [10, 20, 30, 40]})
+    # # Create a new column 'new_column' that calculates the difference between 'col1' and the previous row's value of 'col1'
+    # df['new_column'] = np.where(df['col1'] - df['col1'].shift(1) != 0, df['col1'] - df['col1'].shift(1), 0)
+
+    # ipdb.set_trace()
+    # df['new_column'] = np.where(df['close'] > 0, ((df['close'] - df['close'].shift(1))/ df['close']), 0)
+
     ticker, tframe, frame = ticker_time_frame.split("_")
 
     def profit_loss(df_waves, x):
@@ -1632,17 +1635,11 @@ def return_waves_measurements(
     # set wave num
     df_waves = df[df["macd_cross"].isin(trigbees)].copy().reset_index()
     df_waves["wave_n"] = df_waves.index
-    df_waves["length"] = df_waves["wave_n"].apply(
-        lambda x: macd_cross_WaveLength(df_waves, x)
-    )
+    df_waves["length"] = df_waves["wave_n"].apply(lambda x: macd_cross_WaveLength(df_waves, x))
     df_waves["profits"] = df_waves["wave_n"].apply(lambda x: profit_loss(df_waves, x))
     # df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
-    df_waves["active_wave"] = np.where(
-        df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active"
-    )
-    df_waves["wave_blocktime"] = df_waves["wave_n"].apply(
-        lambda x: macd_cross_WaveBlocktime(df_waves, x)
-    )
+    df_waves["active_wave"] = np.where(df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active")
+    df_waves["wave_blocktime"] = df_waves["wave_n"].apply(lambda x: macd_cross_WaveBlocktime(df_waves, x))
 
     index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_n"]))
     df["wave_n"] = df["story_index"].map(index_wave_series).fillna("0")
@@ -1890,6 +1887,44 @@ def return_bars_list(
         )
         # ipdb.set_trace()
 
+def get_best_limit_price(ask, bid):
+    maker_dif =  ask - bid
+    maker_delta = (maker_dif / ask) * 100
+    # check to ensure bid / ask not far
+    maker_middle = round(ask - (maker_dif / 2), 2)
+
+    return {'maker_middle': maker_middle, 'maker_delta': maker_delta}
+
+def return_snap_priceinfo(api, ticker, crypto, exclude_conditions, coin_exchange):
+    ## update to query ticker by last 30 seconds if snapshot not available
+    if crypto:
+        snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
+    else:
+        snap = api.get_snapshot(ticker)
+        conditions = snap.latest_quote.conditions
+        c=0
+        while True:
+            # print(conditions)
+            valid = [j for j in conditions if j in exclude_conditions]
+            if len(valid) == 0 or c > 10:
+                break
+            else:
+                snap = api.get_snapshot(ticker) # return_last_quote from snapshot
+                c+=1 
+
+    # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+    current_price = snap.latest_trade.price
+    current_ask = snap.latest_quote.ask_price
+    current_bid = snap.latest_quote.bid_price
+
+    # best limit price
+    best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
+    maker_middle = best_limit_price['maker_middle']
+    ask_bid_variance = current_bid / current_ask
+    
+    priceinfo = {'snapshot': snap, 'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+    
+    return priceinfo
 
 def rebuild_timeframe_bars(
     api, ticker_list, build_current_minute=False, min_input=False, sec_input=False
@@ -1994,8 +2029,74 @@ def rebuild_timeframe_bars(
         return {"resp": False, "msg": [e, current_time, previous_time]}
 
 
-# r = rebuild_timeframe_bars(ticker_list, sec_input=30)
+def return__snapshot__latest_PriceInfo(api, ticker_list, crypto=False, coin_exchange=False, min_input=0, sec_input=30):
+    def has_condition(condition_list, condition_check):
+        if type(condition_list) is not list:
+            # Assume none is a regular trade?
+            in_list = False
+        else:
+            # There are one or more conditions in the list
+            in_list = any(
+                condition in condition_list for condition in condition_check
+            )
 
+        return in_list
+
+    try:
+        # api = return_alpaca_api_keys(prod=False)['api']
+        # ticker_list = ['IBM', 'AAPL', 'GOOG', 'TSLA', 'MSFT', 'FB']
+        # sec_input = 30
+        # min_input = 0
+        
+        current_time = datetime.now(utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        previous_time = (
+            datetime.now(utc)
+            - timedelta(minutes=min_input, seconds=sec_input)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+        exclude_conditions = [
+            "B",
+            "W",
+            "4",
+            "7",
+            "9",
+            "C",
+            "G",
+            "H",
+            "I",
+            "M",
+            "N",
+            "P",
+            "Q",
+            "R",
+            "T",
+            "V",
+            "Z",
+        ]  # 'U'
+        # Fetch trades for the X seconds before the current time
+        trades_df = api.get_trades(
+            ticker_list, start=previous_time, end=current_time, limit=30000
+        ).df
+        
+
+        # check if empty to call further away 
+        
+        # convert to market time for easier reading
+        trades_df = trades_df.tz_convert("America/New_York")
+
+        # add a column to easily identify the trades to exclude using our function from above
+        trades_df["exclude"] = trades_df.conditions.apply(
+            has_condition, condition_check=exclude_conditions
+        )
+
+        # filter to only look at trades which aren't excluded
+        valid_trades = trades_df.query("not exclude")
+    
+    except Exception as e:
+        print(e)
+        
+        return True
 
 ### Orders ###
 def return_alpc_portolio(api):

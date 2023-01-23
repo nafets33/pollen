@@ -12,6 +12,7 @@ import pytz
 import ipdb
 
 est = pytz.timezone("US/Eastern")
+utc = pytz.timezone('UTC')
 
 
 def kingdom__global_vars():
