@@ -6,6 +6,7 @@ __pycache__/Hive_Utils.cpython-39.pyc
 .idea/
 **/*.pkl
 db/*
+logs/*
 **/*.db
 *.csv
 *.ipynb
