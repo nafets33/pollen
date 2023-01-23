@@ -2559,7 +2559,7 @@ def return_RSI(df, length):
         rsi.name = "rsi"
 
         # Assert range
-        valid_rsi = rsi[length - 1 :]
+        valid_rsi = rsi.iloc[length - 1 :]
         assert ((0 <= valid_rsi) & (valid_rsi <= 100)).all()
         # Note: rsi[:length - 1] is excluded from above assertion because it is NaN for SMA.
         return rsi
