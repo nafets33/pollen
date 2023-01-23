@@ -228,7 +228,6 @@ def signin_main():
     def setup_user_pollenqdbs(main_root):
 
         if st.session_state["authorized_user"]:
-            st.session_state["client_user"] = st.session_state["username"].split("@")[0]
             
             if 'admin__client_user' in st.session_state:
                 st.session_state["client_user"] = st.session_state['admin__client_user']
@@ -302,6 +301,7 @@ def signin_main():
     # login successful; proceed
     if authentication_status:
         update_db(email)
+        st.session_state["client_user"] = st.session_state["username"].split("@")[0]
         cols = st.columns((8,1,2))
         with cols[1]:
             authenticator.logout("Logout", "main")

@@ -23,3 +23,9 @@ docker ps # show status
 rm -r -v Example ## remove dir
 sudo -su root ## username
 
+sudo chown stapinski89:stapinski89 symbols_pollenstory_dbs
+sudo chown stapinski89:stapinski89 symbols_STORY_bee_dbs  # fix root
+sudo chown stapinski89:stapinski89 client_user_dbs  # fix root
+
+sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
+
