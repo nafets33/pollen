@@ -182,8 +182,11 @@ def return_list_of_all__QueenKing__pkl():
     return queen_files
 
 
-def init_clientUser_dbroot(client_user):
+def init_clientUser_dbroot(client_user, force_db_root=False):
     client_user_db_dir = client_dbs_root()
+
+    if force_db_root:
+        db_root = os.path.join(hive_master_root(), "db")
 
     if client_user in ["stefanstapinski"]:  ## admin
         db_root = os.path.join(hive_master_root(), "db")

@@ -226,9 +226,9 @@ def signin_main():
         )
 
     def setup_user_pollenqdbs(main_root):
+        st.session_state["client_user"] = st.session_state["username"].split("@")[0]
 
         if st.session_state["authorized_user"]:
-            
             if 'admin__client_user' in st.session_state:
                 st.session_state["client_user"] = st.session_state['admin__client_user']
                 db_client_user_name = st.session_state['admin__client_user']
@@ -236,31 +236,25 @@ def signin_main():
             else:
                 db_client_user_name = st.session_state["username"].split("@")[0]
 
-            # st.sidebar.write(f"Welcome *{st.session_state['name']}*")
-            
-            db_root = init_clientUser_dbroot(client_user=db_client_user_name)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-            
-            prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=False)            
-            
-            prod_name_oppiste = "Sandbox" if prod  else "LIVE"
-            
-            if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
-                prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
-                switch_page('pollenq')
-
-
-            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
-
-
             st.sidebar.warning("Your Queen is Awaiting")
+            force_db_root = False
         else:
-            db_root = os.path.join(
-                main_root, "db"
-            )  ## Force to Main db and Sandbox API
+            st.sidebar.info("Request For a Queen")
+            force_db_root = True
+
+        db_root = init_clientUser_dbroot(client_user=st.session_state['client_user'], force_db_root=force_db_root)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+        
+        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=False)            
+        
+        prod_name_oppiste = "Sandbox" if prod  else "LIVE"
+        
+        if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+            prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+            switch_page('pollenq')
+
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
 
         st.session_state["db_root"] = db_root
-
-
 
         return db_root
 
@@ -301,7 +295,6 @@ def signin_main():
     # login successful; proceed
     if authentication_status:
         update_db(email)
-        st.session_state["client_user"] = st.session_state["username"].split("@")[0]
         cols = st.columns((8,1,2))
         with cols[1]:
             authenticator.logout("Logout", "main")
