@@ -40,8 +40,6 @@ def pollenq(admin_pq):
 
     est = pytz.timezone("US/Eastern")
 
-    main_root = hive_master_root() # os.getcwd()  # hive root
-
     # images
     MISC = local__filepaths_misc()
     bee_image = MISC['bee_image']
