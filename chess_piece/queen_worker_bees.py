@@ -1,4 +1,5 @@
 # QueenBee Workers
+import argparse
 import asyncio
 import logging
 import os
@@ -6,21 +7,20 @@ import sys
 from collections import deque
 from datetime import datetime
 from itertools import islice
-import argparse
 
 import aiohttp
 import ipdb
 import pandas as pd
 import pytz
 
-from king import (
+from chess_piece.king import (
     PickleData,
     hive_master_root,
     read_QUEEN,
     workerbee_dbs_root,
     workerbee_dbs_root__STORY_bee,
 )
-from queen_hive import (
+from chess_piece.queen_hive import (
     init_index_ticker,
     init_logging,
     init_pollen_dbs,
@@ -853,11 +853,12 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
     #     print("pending")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def createParser_workerbees():
         parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="workerbee")
-        parser.add_argument ('-prod', default=False)
+        parser.add_argument("-qcp", default="workerbee")
+        parser.add_argument("-prod", default=False)
         # parser.add_argument ('-windows', default=False)
 
         return parser
@@ -865,8 +866,8 @@ if __name__ == '__main__':
     # script arguments
     parser = createParser_workerbees()
     namespace = parser.parse_args()
-    queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
-    prod = True if str(namespace.prod).lower() == 'true' else False
+    queens_chess_piece = namespace.qcp  # 'castle', 'knight' 'queen'
+    prod = True if str(namespace.prod).lower() == "true" else False
     queen_workerbees(prod=prod)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
