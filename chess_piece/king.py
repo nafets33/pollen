@@ -283,7 +283,9 @@ def local__filepaths_misc():
 
 def kingdom__grace_to_find_a_Queen():
     # create list for userdb
-    con = sqlite3.connect("db/users.db")
+
+    # con = sqlite3.connect("db/client_users.db")
+    con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
     cur = con.cursor()
     users = cur.execute("SELECT * FROM users").fetchall()
 
@@ -295,6 +297,7 @@ def kingdom__grace_to_find_a_Queen():
         "jehddie@gmail.com",
         "conrad.studzinski@yahoo.com",
         "jamesliess@icloud.com",
+        "ng2654@columbia.edu",
     ]
 
     users_allowed_queen_emailname = [
