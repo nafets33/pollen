@@ -121,8 +121,8 @@ def hive_master_root():
     script_path = os.path.abspath(__file__)
     return os.path.dirname(os.path.dirname(script_path)) # \pollen\pollen
 
-def pollenmain_root():
-    return os.path.dirname(hive_master_root()) # \pollen
+# def pollenmain_root():
+#     return os.path.dirname(hive_master_root()) # \pollen
 
 def master_swarm_QUEENBEE(prod):
     if prod:
@@ -132,22 +132,22 @@ def master_swarm_QUEENBEE(prod):
 
 
 def client_dbs_root():
-    client_dbs = os.path.join(pollenmain_root(), "client_user_dbs")
+    client_dbs = os.path.join(hive_master_root(), "client_user_dbs")
     return client_dbs
 
 
 def workerbee_dbs_root():
-    symbols_pollenstory_dbs = os.path.join(pollenmain_root(), "symbols_pollenstory_dbs")
+    symbols_pollenstory_dbs = os.path.join(hive_master_root(), "symbols_pollenstory_dbs")
     return symbols_pollenstory_dbs
 
 
 def workerbee_dbs_root__STORY_bee():
-    symbols_pollenstory_dbs = os.path.join(pollenmain_root(), "symbols_STORY_bee_dbs")
+    symbols_pollenstory_dbs = os.path.join(hive_master_root(), "symbols_STORY_bee_dbs")
     return symbols_pollenstory_dbs
 
 
 def init_symbol_dbs__pollenstory():
-    symbol_dbs = os.path.join(pollenmain_root(), "symbols_pollenstory_dbs")
+    symbol_dbs = os.path.join(hive_master_root(), "symbols_pollenstory_dbs")
 
     if os.path.exists(symbol_dbs) == False:
         print("Init symbols_dbs")
