@@ -26,9 +26,9 @@ import sqlite3
 import base64
 import time
 import streamlit as st
-from chess_piece.king import hive_master_root, streamlit_config_colors
-from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData
-from chess_piece.app_hive import queen_order_flow, live_sandbox__setup_switch, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from king import hive_master_root, streamlit_config_colors
+from queen_hive import add_key_to_app, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData
+from app_hive import queen_order_flow, live_sandbox__setup_switch, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from polleq_app_auth import signin_main
 
 

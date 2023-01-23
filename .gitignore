@@ -8,6 +8,7 @@ __pycache__/Hive_Utils.cpython-39.pyc
 db/*
 logs/*
 **/*.db
+**/*.legal
 *.csv
 *.ipynb
 .env_jq
