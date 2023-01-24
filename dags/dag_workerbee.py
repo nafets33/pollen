@@ -13,7 +13,7 @@ from chess_piece.queen_worker_bees import queen_workerbees
 # Parameteres
 WORFKLOW_DAG_ID = "run_workerbees"
 WORFKFLOW_START_DATE = datetime.datetime(2023, 1, 1)
-WORKFLOW_SCHEDULE_INTERVAL = "30 14 * * *"  # UTC >>> 9:30 EST
+WORKFLOW_SCHEDULE_INTERVAL = "31 14 * * *"  # UTC >>> 9:30 EST
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
 
 WORKFLOW_DEFAULT_ARGS = {
