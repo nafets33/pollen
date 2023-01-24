@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_extras.stoggle import stoggle
 from PIL import Image
+import subprocess
 from polleq_app_auth import signin_main
 from chess_piece.app_hive import click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
 from chess_piece.king import hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
@@ -65,7 +66,7 @@ if view_ss_state:
     st.write(st.session_state)
 
 
-page_tab_permission_denied(st.session_state['admin'])
+# page_tab_permission_denied(st.session_state['admin'])
 with st.expander("button on grid"):
     click_button_grid()
 
@@ -147,3 +148,26 @@ with st.expander("pollenstory"):
 
 # st.image("https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png", width=33)
 
+def get_screen_processes():
+    # Run the "screen -ls" command to get a list of screen processes
+    output = subprocess.run(["screen", "-ls"], stdout=subprocess.PIPE).stdout.decode(
+        "utf-8"
+    )
+
+    # Split the output into lines
+    lines = output.strip().split("\n")
+
+    # The first line is a header, so skip it
+    lines = lines[1:]
+
+    # Initialize an empty dictionary
+    screen_processes = {}
+
+    # Iterate over the lines and extract the process name and PID
+    for line in lines:
+        parts = line.split()
+        name = parts[0]
+        pid = parts[1]
+        screen_processes[name] = pid
+
+    return screen_processes

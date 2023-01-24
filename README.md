@@ -9,6 +9,13 @@
 - python QueenBee_sandbox.py
 - python QueenBeeWorkerBees.py -prod False
 
+## Run Locally
+Create following Dir Manually inside pollen/
+symbols_pollenstory_dbs
+symbols_STORY_bee_dbs
+client_user_dbs
+# master_swarm_dbs
+
 ## Docker
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-$(uname -s)-$(uname -m)"  -o /usr/local/bin/docker-compose
 sudo mv /usr/local/bin/docker-compose /usr/bin/docker-compose
@@ -18,6 +25,9 @@ run as >>> sudo -su root
 docker-compose up
 
 docker ps # show status
+
+docker stop $(docker ps -a -q) # stop docker
+
 
 ## VM commands
 rm -r -v Example ## remove dir
@@ -30,3 +40,6 @@ chmod -R -777 folder_path/ # fix root
 
 sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 
+## check for all python paths
+export PYTHONPATH="${PYTHONPATH}:${HOME}/home/stapinski89/pollen/pollen"
+python -c "import sys; print(sys.path)"
