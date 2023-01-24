@@ -5,11 +5,12 @@ import subprocess
 from polleq_app_auth import signin_main
 from chess_piece.app_hive import click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
 from chess_piece.king import hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
+from custom_button import cust_Button
 
 # https://extras.streamlit.app/Annotated%20text
 
 st.set_page_config(
-    page_title="pollenq",
+    page_title="PlayGround",
     # page_icon=page_icon,
     layout="wide",
     # initial_sidebar_state=sidebar_hide,
@@ -21,6 +22,9 @@ st.set_page_config(
 )
 
 st.write("# Welcome to Playground! 👋")
+
+
+
 
 if 'username' not in st.session_state:
     signin_main()
@@ -60,6 +64,10 @@ moving_ticker_gif = MISC['moving_ticker_gif']
 
 learningwalk_bee = Image.open(learningwalk_bee)
 
+
+# cB = cust_Button(file_path_url=queen_angel_image, height='50px', key=None)
+# if cB:
+#     st.write("Thank you Akash")
 
 view_ss_state = st.sidebar.button("View Session State")
 if view_ss_state:

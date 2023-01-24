@@ -1483,7 +1483,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         if st.session_state['authorized_user'] and st.session_state['admin']:
                             dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
                             # st.write(run__trigger_dag())
-                            run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=client_user, prod=prod) # stefanstapinski  @gmail.com
+                            run__trigger_dag(dag_id='run_queenbee', run_id=dag_queen__run_id, client_user=client_user, prod=prod) # stefanstapinski  @gmail.com
                             QUEEN_KING['trigger_queen'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
                             st.snow()
                         else:
@@ -1818,7 +1818,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-    # @st.cache(allow_output_mutation=True, max_entries=1)
 
 
 
