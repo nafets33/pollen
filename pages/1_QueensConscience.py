@@ -1,6 +1,7 @@
 
 import pandas as pd
 import os
+import sys
 import pandas as pd
 import numpy as np
 import datetime
@@ -10,6 +11,7 @@ import plotly.graph_objects as go
 from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
+
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 from streamlit_extras.stoggle import stoggle
 from streamlit_extras.switch_page_button import switch_page
@@ -19,8 +21,10 @@ import sqlite3
 import streamlit as st
 import time
 from polleq_app_auth import signin_main
-from chess_piece.app_hive import  queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
-from chess_piece.king import return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
+# import requests
+# from requests.auth import HTTPBasicAuth
+from chess_piece.app_hive import trigger_airflow_dag, send_email, queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.king import kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
 from QueenBeeDagger import run__trigger_dag
 # import random
@@ -30,8 +34,10 @@ import ipdb
 # import matplotlib.pyplot as plt
 # import base64
 # from random import randint
-
+load_dotenv()
 est = pytz.timezone("US/Eastern")
+utc = pytz.timezone('UTC')
+
 
 # import streamlit_authenticator as stauth
 # import smtplib
@@ -158,9 +164,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     
     elif st.session_state['authentication_status'] != True:
         st.write(st.session_state['authentication_status'])
-        sneak_peak = False
         st.error("You Need to Log In to pollenq")
         switch_page("pollenq")
+        sneak_peak = False
         st.session_state['sneak_peak'] == False
         st.stop()
     
@@ -169,7 +175,6 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     else:
         st.error("Stopping page")
         st.stop()
-
 
     db_root = st.session_state['db_root']
 
@@ -1469,31 +1474,61 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     return True
 
 
-    def queen_online(QUEEN):
+
+
+    def trigger_queen_vars(dag, client_user, last_trig_date=datetime.datetime.now(est)):
+        return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_user}
+    def queenbee_online(QUEEN, admin, dag):
         # from airflow.dags.dag_queenbee_prod import run_trigger_dag
+        
+        users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
         now = datetime.datetime.now(est)
-        if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
-            # st.write("YOUR QUEEN if OFFLINE")
-            cols = st.columns((1,1,5))
-            with cols[0]:
-                st.error("Your Queen Is Asleep")
+
+        if dag =='run_queenbee':
+
+            if 'trigger_queen' in QUEEN_KING.keys():
+                if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
+                    st.write("Waking up your Queen")
+                    return False
+
+            if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
+                # st.write("YOUR QUEEN if OFFLINE")
+                cols = st.columns((1,1,5))
+                with cols[0]:
+                    st.error("Your Queen Is Asleep")
                 with cols[1]:
                     wake_up_queen_button = st.button("Wake Her Up")
-                    if wake_up_queen_button:
-                        if st.session_state['authorized_user'] and st.session_state['admin']:
-                            dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
-                            # st.write(run__trigger_dag())
-                            run__trigger_dag(dag_id='run_queenbee', run_id=dag_queen__run_id, client_user=client_user, prod=prod) # stefanstapinski  @gmail.com
-                            QUEEN_KING['trigger_queen'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
-                            st.snow()
-                        else:
-                            st.warning("Your Account not Yet authorized")
-            with cols[1]:
-                local_gif(gif_path=flyingbee_grey_gif_path)
-            return False
-        else:
+                    if wake_up_queen_button and st.session_state['authorized_user']:
+                        if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
+                            print("failsafe away from user running function")
+                            send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to say something')
+                            sys.exit()
+                        # execute trigger
+                        trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
+                        QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_user=client_user))
+                        st.write("My Queen")
+                        st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
+                    else:
+                        st.error("Your Account not Yet authorized")
+                with cols[1]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                return False
+            else:
+                return True
+        elif dag =='run_workerbees':
+            if admin:
+                if st.button("Flying Bees"):
+                    trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
             return True
+        elif dag =='run_workerbees_crypto':
+            if admin:
+                if st.button("Flying Crypto Bees"):
+                    trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
+            return True
+        else:
+            return False
 
+    
     def workerbees_online(QUEEN):
         # from airflow.dags.dag_queenbee_prod import run_trigger_dag
         now = datetime.datetime.now() # no est
@@ -1532,6 +1567,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         else:
             return True
 
+    
     def queen_chart(POLLENSTORY):
         # Main CHART Creation
         with st.expander('chart', expanded=True):
@@ -1836,7 +1872,10 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
 
     # use API keys from user
-    queen_online(QUEEN=QUEEN)
+    queenbee_online(QUEEN, dag='run_queenbee')
+    queenbee_online(QUEEN, dag='run_workerbees')
+    queenbee_online(QUEEN, dag='run_workerbees_crypto')
+
     
     prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']

@@ -20,6 +20,8 @@ from alpaca_trade_api.rest_async import AsyncRest
 from PIL import Image
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from streamlit_extras.switch_page_button import switch_page
+import requests
+from requests.auth import HTTPBasicAuth
 
 from chess_piece.king import (
     ReadPickleData,
@@ -101,6 +103,42 @@ def send_email(recipient, subject, body):
 
 
 ################ AUTH ###################
+
+def trigger_airflow_dag(dag, client_user, prod, airflow_password=False, airflow_username=False, airflow_host=False):
+    # http://34.162.91.146:8080/api/v1/dags ## dict visual of dags
+    airflow_host = airflow_host if airflow_host else os.environ.get("airflow_host")
+    airflow_password = airflow_password if airflow_password else os.environ.get("airflow_password")
+    airflow_username = airflow_username if airflow_username else os.environ.get("airflow_username")
+    # queens_chess_piece = queens_chess_piece if queens_chess_piece else None
+    
+    url = f'http://{airflow_host}/api/v1/dags/{dag}/dagRuns'
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    
+    if dag == 'run_queenbee':
+        data = {
+            "dag_run_id": f'{dag}__{datetime.datetime.now(utc)}',
+            "logical_date": datetime.datetime.now(utc),
+            "conf": {"client_user": client_user, "prod":prod}
+        }
+    elif dag =='run_workerbees':
+        data = {
+            "dag_run_id": f'{dag}__{datetime.datetime.now(utc)}',
+            "logical_date": datetime.datetime.now(utc),
+        }
+    elif dag =='run_workerbees_crypto':
+        data = {
+            "dag_run_id": f'{dag}__{datetime.datetime.now(utc)}',
+            "logical_date": datetime.datetime.now(utc),
+        }
+
+    result = requests.post(
+        url,
+        json=data,
+        headers=headers,
+        auth=HTTPBasicAuth(airflow_username, airflow_password)
+    )
+
+    return result
 
 
 def queen_orders_view(

@@ -6,11 +6,12 @@ from airflow.models import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
-from chess_piece.queen_bee import queenbee
+from chess_piece.queen_workerbee_crypto import queen_workerbee_crypto
 
+# bee better
 
 # Parameteres
-WORFKLOW_DAG_ID = "run_queenbee"
+WORFKLOW_DAG_ID = "run_workerbees_crypto"
 WORFKFLOW_START_DATE = datetime.datetime(2023, 1, 1)
 WORKFLOW_SCHEDULE_INTERVAL = None
 WORKFLOW_EMAIL = ["pollenq.queen@gmail.com"]
@@ -23,25 +24,6 @@ WORKFLOW_DEFAULT_ARGS = {
     "email_on_retry": False,
     "retries": 0,
 }
-
-def job_runqueen(**kwargs):
-
-    # read QueenDagger and check to see if there are any new queens to spin up
-    parameter = kwargs['dag_run'].conf["client_user"]
-    print(parameter)
-
-    client_user = kwargs['dag_run'].conf["client_user"]
-    prod = kwargs['dag_run'].conf["prod"]
-    prod_strname = 'true' if prod else 'false'
-    
-    try:
-        queenbee(client_user=client_user, prod=prod_strname, queens_chess_piece='queen')
-    except Exception as e:
-        print(e)
-        raise e
-    
-    return True
-
 # Initialize DAG
 dag = DAG(
     dag_id=WORFKLOW_DAG_ID,
@@ -53,10 +35,10 @@ dag = DAG(
 start = EmptyOperator(task_id="start", dag=dag)
 
 task_1_operator = PythonOperator(
-    task_id="queenbee_task_job_1",
-    python_callable=job_runqueen,
+    task_id="task_job_1",
+    python_callable=queen_workerbee_crypto,
     dag=dag,
-    # op_kwargs={"prod": "", "queens_chess_piece": "workerbee"},
+    op_kwargs={"prod": True, "queens_chess_piece": "workerbee_crypto"},
 )
 
 end = EmptyOperator(task_id="end", dag=dag)

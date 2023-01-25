@@ -28,7 +28,11 @@ from stocksymbol import StockSymbol
 from tqdm import tqdm
 
 from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import PickleData, ReadPickleData, hive_master_root
+from chess_piece.king import PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
+
+MISC = local__filepaths_misc()
+mainpage_bee_png = MISC['mainpage_bee_png']
+
 
 # _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
@@ -569,6 +573,7 @@ def init_QUEEN_App():
             ),
         },
         "trigger_queen": {
+            "dag": "init",
             "last_trig_date": datetime.now(est),
             "client_user": "init",
         },
@@ -578,6 +583,7 @@ def init_QUEEN_App():
         },
         "bee_lounge": [],
         "users_secrets": init_client_user_secrets(),
+        "character_image" : mainpage_bee_png,
         "risk_level": 0,
         "age": 0,
         "app_order_requests": [],
