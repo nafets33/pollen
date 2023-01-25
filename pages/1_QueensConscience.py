@@ -1488,7 +1488,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
             if 'trigger_queen' in QUEEN_KING.keys():
                 if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
-                    st.write("Waking up your Queen")
+                    st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
                     return False
 
             if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
@@ -1872,9 +1872,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
     ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
 
     # use API keys from user
-    queenbee_online(QUEEN, dag='run_queenbee')
-    queenbee_online(QUEEN, dag='run_workerbees')
-    queenbee_online(QUEEN, dag='run_workerbees_crypto')
+    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_queenbee')
+    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees')
+    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees_crypto')
 
     
     prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
