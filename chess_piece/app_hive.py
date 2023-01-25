@@ -117,18 +117,18 @@ def trigger_airflow_dag(dag, client_user, prod, airflow_password=False, airflow_
     if dag == 'run_queenbee':
         data = {
             "dag_run_id": f'{dag}__{datetime.now(utc)}',
-            "logical_date": datetime.now(utc),
+            "logical_date": f'{datetime.now(utc)}',
             "conf": {"client_user": client_user, "prod":prod}
         }
     elif dag =='run_workerbees':
         data = {
             "dag_run_id": f'{dag}__{datetime.now(utc)}',
-            "logical_date": datetime.now(utc),
+            "logical_date": f'{datetime.now(utc)}',
         }
     elif dag =='run_workerbees_crypto':
         data = {
             "dag_run_id": f'{dag}__{datetime.now(utc)}',
-            "logical_date": datetime.now(utc),
+            "logical_date": f'{datetime.now(utc)}',
         }
 
     result = requests.post(
