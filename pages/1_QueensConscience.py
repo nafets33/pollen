@@ -1502,14 +1502,14 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
                             print("failsafe away from user running function")
                             send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to say something')
+                            st.error("Your Account not Yet authorized")
                             sys.exit()
                         # execute trigger
                         trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
                         QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_user=client_user))
                         st.write("My Queen")
                         st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
-                    else:
-                        st.error("Your Account not Yet authorized")
+                
                 with cols[1]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
                 return False
@@ -1519,11 +1519,13 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             if admin:
                 if st.button("Flying Bees"):
                     trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
+                    st.write("Bees Fly")
             return True
         elif dag =='run_workerbees_crypto':
             if admin:
                 if st.button("Flying Crypto Bees"):
                     trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
+                    st.write("Crypto Bees Fly")
             return True
         else:
             return False
@@ -2068,7 +2070,7 @@ if str(option).lower() == 'queen':
 if str(option).lower() == 'controls':
 
     cols = st.columns((1,3))
-    if admin == False:
+    if authorized_user == False:
         st.write("permission denied")
         st.stop()
     else:
