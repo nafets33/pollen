@@ -73,9 +73,9 @@ x-airflow-common:
 #     - ./chess_piece:/opt/airflow/chess_piece
     - ./db:/opt/pollen/db
     - ./misc:/opt/pollen/misc
-    - ./symbols_pollenstory_dbs:/opt/symbols_pollenstory_dbs
-    - ./symbols_STORY_bee_dbs:/opt/symbols_STORY_bee_dbs
-    - ./client_user_dbs:/opt/client_user_dbs
+    - ./symbols_pollenstory_dbs:/opt/pollen/symbols_pollenstory_dbs
+    - ./symbols_STORY_bee_dbs:/opt/pollen/symbols_STORY_bee_dbs
+    - ./client_user_dbs:/opt/pollen/client_user_dbs
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
