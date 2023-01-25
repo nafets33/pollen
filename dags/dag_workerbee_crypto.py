@@ -6,7 +6,7 @@ from airflow.models import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
-from chess_piece.queen_workerbee_crypto import queen_workerbee_crypto
+from chess_piece.queen_worker_bees_crypto import queen_workerbee_crypto
 
 # bee better
 
