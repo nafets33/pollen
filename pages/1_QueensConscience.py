@@ -12,18 +12,20 @@ from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
 
+import streamlit as st
 from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
 from streamlit_extras.stoggle import stoggle
 from streamlit_extras.switch_page_button import switch_page
 import time
 import os
 import sqlite3
-import streamlit as st
 import time
+from custom_button import cust_Button
+
 from polleq_app_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import trigger_airflow_dag, send_email, queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
 from QueenBeeDagger import run__trigger_dag
@@ -98,7 +100,7 @@ queen_flair_gif = MISC['queen_flair_gif']
 chess_piece_queen = MISC['chess_piece_queen']
 runaway_bee_gif = MISC['runaway_bee_gif']
 queen_crown_url = MISC['queen_crown_url']
-
+pawn_png_url = MISC['pawn_png_url']
 
 # hexagon_loop = MISC['hexagon_loop']
 # purple_heartbeat_gif = MISC['purple_heartbeat_gif'] MISC.get('puprple')
@@ -131,7 +133,7 @@ st.set_page_config(
     #      'About': "# This is a header. This is an *extremely* cool app!"
     #  }
  )
-
+page = 'QueensConscience'
 
 # if st.button("sw"):
 #     switch_page("QueensConscience#no-ones-flying")
@@ -141,11 +143,12 @@ st.set_page_config(
 # st.markdown("[Section 1](#section-1)")
 
 
-with st.spinner("Buzz Buzz Where is my Honey"):
+with st.spinner("Welcome to the QueensMind"):
 
-    if 'username' not in st.session_state:
-        signin_main()
+    signin_main()
     
+    progress_bar(value=89)  ## show user completion of user flow interaction
+
     # return page last visited 
     
     if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
@@ -177,26 +180,29 @@ with st.spinner("Buzz Buzz Where is my Honey"):
         st.stop()
 
     db_root = st.session_state['db_root']
+    prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
 
-    st.sidebar.write(f'Welcome {st.session_state["name"]}')
+    st.sidebar.write(f'*Welcome {st.session_state["name"]}')
     authorized_user = st.session_state['authorized_user']
     client_user = st.session_state["client_user"]
-    st.write("*", client_user)
+    # st.write("*", client_user)
 
-    prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
-    prod_name_oppiste = "Sandbox" if prod  else "LIVE"
-    if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
-        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
-        switch_page('QueensConscience')
+    # prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
+    # prod_name_oppiste = "Sandbox" if prod  else "LIVE"
+    # if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+    #     prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+    #     init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
+    #     switch_page('QueensConscience')
     
-    cols = st.columns((3,1,3))
+    cols = st.columns((4,8,4))
     if prod:
         with cols[1]:
-            st.warning("QUEEN IS LIVE")
+            # st.warning("LIVE ENVIORMENT The RealWorld")
+            mark_down_text(text='LIVE ENVIORMENT The RealWorld', fontsize='23', align='center')
     else:
         with cols[1]:
-            st.info("SandBox")
+            # st.info("SandBox")
+            mark_down_text(text='SandBox ENVIORMENT Play and Learn', fontsize='23', align='center')
 
     PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
     PB_App_Pickle = st.session_state['PB_App_Pickle'] 
@@ -233,7 +239,9 @@ with st.spinner("Buzz Buzz Where is my Honey"):
             if 'init_queen_request' in st.session_state:
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
                 PickleData(PB_App_Pickle, QUEEN_KING)
+                send_email(recipient=os.environ('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["client_user"]} Asking for a Queen')
                 st.success("Hive Master Notified and You should receive contact soon")
+
 
 
     def chunk(it, size):
@@ -733,7 +741,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                     qcp = st.selectbox(label='qcp', key=f'qcp_new', options=avail_qcp)
                     QUEEN_KING['qcp_workerbees'][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
                 with cols[0]:
-                    st.image("https://cdn0.iconfinder.com/data/icons/project-management-1-1/24/14-512.png", width=64)
+                    st.image(queen_crown_url, width=64)
                 with cols[2]:
                     QUEEN_KING['qcp_workerbees'][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=avail_tickers, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
                 with cols[3]:
@@ -763,7 +771,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
                 cols = st.columns((1,1,1))
                 with cols[0]:
-                    st.image("https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png", width=23)
+                    st.image(pawn_png_url, width=23)
                     # st.markdown(f'<img src="{image}"', unsafe_allow_html=True)
                 #     image = "https://p7.hiclipart.com/preview/221/313/319/chess-piece-knight-rook-board-game-chess.jpg"
                 #     st.markdown(f'<img src="{image}" style="background-color:transparent">', unsafe_allow_html=True)
@@ -1478,6 +1486,7 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
     def trigger_queen_vars(dag, client_user, last_trig_date=datetime.datetime.now(est)):
         return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_user}
+    
     def queenbee_online(QUEEN, admin, dag):
         # from airflow.dags.dag_queenbee_prod import run_trigger_dag
         
@@ -1493,11 +1502,12 @@ with st.spinner("Buzz Buzz Where is my Honey"):
 
             if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
                 # st.write("YOUR QUEEN if OFFLINE")
-                cols = st.columns((1,1,5))
+                cols = st.columns((3,3,1,1,1,1,1,1,1,1))
                 with cols[0]:
-                    st.error("Your Queen Is Asleep")
+                    st.error("Your Queen Is Asleep Wake Her UP!")
                 with cols[1]:
-                    wake_up_queen_button = st.button("Wake Her Up")
+                    # wake_up_queen_button = st.button("Wake Her Up")
+                    wake_up_queen_button = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
                     if wake_up_queen_button and st.session_state['authorized_user']:
                         if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
                             print("failsafe away from user running function")
@@ -1510,66 +1520,57 @@ with st.spinner("Buzz Buzz Where is my Honey"):
                         st.write("My Queen")
                         st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
                 
-                with cols[1]:
+                with cols[2]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[3]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[4]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[5]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[6]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[7]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[8]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                with cols[9]:
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    local_gif(gif_path=flyingbee_grey_gif_path)
+
                 return False
             else:
                 return True
         elif dag =='run_workerbees':
             if admin:
-                if st.button("Flying Bees"):
+                if st.sidebar.button("Flying Bees"):
                     trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
                     st.write("Bees Fly")
             return True
         elif dag =='run_workerbees_crypto':
             if admin:
-                if st.button("Flying Crypto Bees"):
+                if st.sidebar.button("Flying Crypto Bees"):
                     trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
                     st.write("Crypto Bees Fly")
             return True
         else:
             return False
 
-    
-    def workerbees_online(QUEEN):
-        # from airflow.dags.dag_queenbee_prod import run_trigger_dag
-        now = datetime.datetime.now() # no est
-        CASTLE = os.path.join(main_root, 'db')
-        CASTLE = os.path.join(CASTLE, 'castle.pkl')
-        CASTLE_lastmod = datetime.datetime.fromtimestamp(os.path.getmtime(CASTLE))
-        if (now - CASTLE_lastmod).total_seconds() > 60:
-            # st.write("YOUR QUEEN if OFFLINE")
-            cols = st.columns((1,1,5))
-            with cols[0]:
-                st.error("Your Castle Is Falling")
-                with cols[1]:
-                    wake_up_queen_button = st.button("Wake up Castle workerbees")
-                    if wake_up_queen_button:
-                        if st.session_state['authorized_user']:
-                            dag_queen__run_id = f'dag_queen__run_id___{datetime.datetime.now(est)}___pq'
-                            # st.write(run__trigger_dag())
-                            # run__trigger_dag(dag_id='run_queenbee_prod', run_id=dag_queen__run_id, client_user=client_user) # stefanstapinski  @gmail.com
-                            # QUEEN_KING['trigger_workerbees'] = {'last_trig_date': datetime.datetime.now(est), 'client_user': client_user}
-                            # create file in folder
-                            pollen_dir = os.path.dirname(main_root)
-                            client_db = os.path.join(pollen_dir, 'client_user_dbs')
-                            client_db_path = os.path.join(client_db, f'db__{client_user}')
-                            file_path = os.path.join(client_db_path, f'{client_user}__workerbee.txt')
-                            if os.path.exists(file_path) == True:
-                                pass
-                            else:
-                                with open(file_path, 'w'):
-                                    pass
-                                st.snow()
-                        else:
-                            st.warning("Your Account not Yet authorized")
-            with cols[1]:
-                local_gif(gif_path=flyingbee_grey_gif_path)
-            return False
-        else:
-            return True
-
-    
+   
     def queen_chart(POLLENSTORY):
         # Main CHART Creation
         with st.expander('chart', expanded=True):
@@ -1984,11 +1985,8 @@ today_day = datetime.datetime.now(est).day
 current_radio_sel = str(option).lower()
 if str(option).lower() == 'queen':
     
-
-    
     with st.spinner("Waking Up the Hive"):
 
-        progress_bar(value=100)
                     
         # page_line_seperator('1', color=default_yellow_color)
         if st.session_state['authorized_user'] == True:
@@ -2005,7 +2003,7 @@ if str(option).lower() == 'queen':
 
         # cols = st.columns((1,1))
 
-        queen_tabs = ["Orders", "Portfolio", "Wave Stories", "Chess Board", "Trading Models", "Charts", "Logs"]
+        queen_tabs = ["Orders", "Chess Board", "Portfolio", "Wave Stories", "Trading Models", "Charts", "Logs"]
         order_tab, Portfolio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
 
         with cols[1]:
@@ -2064,8 +2062,6 @@ if str(option).lower() == 'queen':
         
         
         page_line_seperator(color=default_yellow_color)
-
-
 
 if str(option).lower() == 'controls':
 
@@ -2206,6 +2202,6 @@ if str(option).lower() == 'pollen_engine':
         st.dataframe(pd.DataFrame(users))
     
 
-st.session_state['option_sel'] = False
-st.session_state['sneak_peak'] = False
+
+page_session_state__cleanUp(page=page)
 ##### END ####

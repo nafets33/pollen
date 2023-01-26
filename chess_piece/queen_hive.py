@@ -546,6 +546,24 @@ def init_qcp(init_macd_vars, ticker_list):
     }
 
 
+def generate_chess_board(chess_pieces, init_macd_vars = {"fast": 12, "slow": 26, "smooth": 9}):
+
+    chess_board = {
+        "castle": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["SPY"]),
+        "bishop": init_qcp(
+            init_macd_vars=init_macd_vars, ticker_list=["GOOG", "AAPL", "TSLA"]
+        ),
+        "knight": init_qcp(
+            init_macd_vars=init_macd_vars, ticker_list=["AMZN", "OXY", "SOFI"]
+        ),
+        "castle_coin": init_qcp(
+            init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]
+        ),
+    }
+
+
+    return chess_board
+
 def init_QUEEN_App():
     ticker_universe = return_Ticker_Universe()
     index_ticker_db = ticker_universe["index_ticker_db"]
@@ -553,6 +571,9 @@ def init_QUEEN_App():
     main_symbols_full_list = ticker_universe["main_symbols_full_list"]
     not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
     init_macd_vars = {"fast": 12, "slow": 26, "smooth": 9}
+
+
+
     app = {
         "prod": False,
         "theme": "nuetral",
@@ -572,6 +593,24 @@ def init_QUEEN_App():
                 init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]
             ),
         },
+        
+        "chess_board": {
+            "castle": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["SPY"]),
+            "bishop": init_qcp(
+                init_macd_vars=init_macd_vars, ticker_list=["GOOG", "AAPL", "TSLA"]
+            ),
+            "knight": init_qcp(
+                init_macd_vars=init_macd_vars, ticker_list=["AMZN", "OXY", "SOFI"]
+            ),
+            "castle_coin": init_qcp(
+                init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]
+            ),
+            "pawns": init_qcp(
+                init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]
+            ),
+        },
+
+
         "trigger_queen": {
             "dag": "init",
             "last_trig_date": datetime.now(est),
@@ -4374,7 +4413,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece, queenKING=False):
         init_KING(pickle_file=PB_KING_Pickle)
 
     if queenKING:
-        st.write("prod", prod)
+        # st.write("prod", prod)
         st.session_state["PB_QUEEN_Pickle"] = PB_QUEEN_Pickle
         st.session_state["PB_App_Pickle"] = PB_App_Pickle
         st.session_state["PB_Orders_Pickle"] = PB_Orders_Pickle

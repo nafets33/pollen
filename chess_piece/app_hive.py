@@ -22,6 +22,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from streamlit_extras.switch_page_button import switch_page
 import requests
 from requests.auth import HTTPBasicAuth
+import ipdb
 
 from chess_piece.king import (
     ReadPickleData,
@@ -375,10 +376,13 @@ def url_gif(
     return True
 
 
-def local_gif(gif_path, width="33", height="33", sidebar=False):
-    with open(gif_path, "rb") as file_:
-        contents = file_.read()
-        data_url = base64.b64encode(contents).decode("utf-8")
+def local_gif(gif_path, width="33", height="33", sidebar=False, url=False):
+    if url:
+        data_url = data_url
+    else:
+        with open(gif_path, "rb") as file_:
+            contents = file_.read()
+            data_url = base64.b64encode(contents).decode("utf-8")
         if sidebar:
             st.sidebar.markdown(
                 f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">',
@@ -445,7 +449,7 @@ def grid_height(len_of_rows):
     if len_of_rows > 10:
         grid_height = 333
     else:
-        grid_height = round(len_of_rows * 67, 0)
+        grid_height = round(len_of_rows * 46, 0)
 
     return grid_height
 
@@ -460,13 +464,17 @@ def build_AGgrid_df__queenorders(
     paginationOn=False,
     allow_unsafe_jscode=True,
 ):
+    # ipdb.set_trace()
     # Color Code Honey
-    data["$honey"] = (
-        data["$honey"].apply(lambda x: round(float(x), 2)).fillna(data["honey"])
-    )
-    data["honey"] = (
-        data["honey"].apply(lambda x: round((float(x) * 100), 2)).fillna(data["honey"])
-    )
+    # data["$honey"] = (
+    #     data["$honey"].apply(lambda x: round(float(x), 2)).fillna(data["honey"])
+    # )
+    # data["honey"] = (
+    #     data["honey"].apply(lambda x: round((float(x) * 100), 2)).fillna(data["honey"])
+    # )
+    data["$honey"] = pd.to_numeric(data["$honey"], errors='coerce')
+    data["honey"] = pd.to_numeric(data["honey"], errors='coerce')
+
     data["color"] = np.where(data["honey"] > 0, "green", "white")
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
 
@@ -493,36 +501,17 @@ def build_AGgrid_df__queenorders(
     };
     """
     )
-    # 'backgroundColor': '#177311'
-    # 'backgroundColor': '#F03811',
 
-    honey_colors_dollar = JsCode(
-        """
-    function(params) {
-        if (params.value > 0) {
-            return {
-                'color': '#027500',
-            }
-        }
-        else if (params.value < 0) {
-            return {
-                'color': '#c70c0c',
-            }
-        }
-    };
-    """
-    )
 
     # Config Columns
-    gb.configure_column(
-        "queen_order_state",
+    gb.configure_column("queen_order_state",
         header_name="State",
         editable=True,
         cellEditor="agSelectCellEditor",
         cellEditorParams={"values": active_order_state_list},
     )
-    gb.configure_column(
-        "datetime",
+    gb.configure_column("datetime",
+        pinned='right',
         header_name="Date",
         type=["dateColumnFilter", "customDateTimeFormat"],
         custom_format_string="MM/dd/yy",
@@ -531,17 +520,15 @@ def build_AGgrid_df__queenorders(
         maxWidth=110,
         autoSize=True,
     )
-    gb.configure_column(
-        "symbol",
+    gb.configure_column("symbol",
         pinned="left",
         pivot=True,
         resizable=True,
         initialWidth=89,
         autoSize=True,
     )
-    gb.configure_column(
-        "trigname",
-        pinned="left",
+    gb.configure_column("trigname",
+        # pinned="left",
         header_name="TrigBee",
         pivot=True,
         wrapText=True,
@@ -550,8 +537,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=120,
         autoSize=True,
     )
-    gb.configure_column(
-        "ticker_time_frame",
+    gb.configure_column("ticker_time_frame",
         pinned="left",
         header_name="Star",
         pivot=True,
@@ -559,8 +545,7 @@ def build_AGgrid_df__queenorders(
         initialWidth=138,
         autoSize=True,
     )
-    gb.configure_column(
-        "honey",
+    gb.configure_column("honey",
         header_name="Honey%",
         pinned="left",
         cellStyle=honey_colors,
@@ -571,8 +556,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=100,
         autoSize=True,
     )
-    gb.configure_column(
-        "$honey",
+    gb.configure_column("$honey",
         header_name="Money$",
         pinned="left",
         cellStyle=honey_colors,
@@ -583,24 +567,21 @@ def build_AGgrid_df__queenorders(
         maxWidth=100,
         autoSize=True,
     )
-    gb.configure_column(
-        "honey_time_in_profit",
+    gb.configure_column("honey_time_in_profit",
         header_name="Time.In.Honey",
         resizable=True,
         initialWidth=89,
         maxWidth=120,
         autoSize=True,
     )
-    gb.configure_column(
-        "filled_qty",
+    gb.configure_column("filled_qty",
         wrapText=True,
         resizable=True,
         initialWidth=95,
         maxWidth=100,
         autoSize=True,
     )
-    gb.configure_column(
-        "qty_available",
+    gb.configure_column("qty_available",
         header_name="available_qty",
         autoHeight=True,
         wrapText=True,
@@ -609,8 +590,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=130,
         autoSize=True,
     )
-    gb.configure_column(
-        "filled_avg_price",
+    gb.configure_column("filled_avg_price",
         type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
         custom_currency_symbol="$",
         header_name="filled_avg_price",
@@ -621,8 +601,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=130,
         autoSize=True,
     )
-    gb.configure_column(
-        "limit_price",
+    gb.configure_column("limit_price",
         type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
         custom_currency_symbol="$",
         resizable=True,
@@ -630,8 +609,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=100,
         autoSize=True,
     )
-    gb.configure_column(
-        "cost_basis",
+    gb.configure_column("cost_basis",
         type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
         custom_currency_symbol="$",
         autoHeight=True,
@@ -641,8 +619,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=120,
         autoSize=True,
     )
-    gb.configure_column(
-        "wave_amo",
+    gb.configure_column("wave_amo",
         type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
         custom_currency_symbol="$",
         autoHeight=True,
@@ -652,8 +629,7 @@ def build_AGgrid_df__queenorders(
         maxWidth=120,
         autoSize=True,
     )
-    gb.configure_column(
-        "order_rules",
+    gb.configure_column("order_rules",
         header_name="OrderRules",
         wrapText=True,
         resizable=True,
@@ -690,8 +666,7 @@ def build_AGgrid_df__queenorders(
                 e.node.setSelected(true);}
         """
 
-    gb.configure_column(
-        "clicked",
+    gb.configure_column("clicked",
         headerTooltip="Clicked",
         editable=False,
         filter=False,
@@ -831,19 +806,34 @@ def queen_order_flow(ORDERS, active_order_state_list):
     # ipdb.set_trace()
     with st.expander("Portfolio Orders", expanded=True):
         now_time = datetime.now(est)
-        cols = st.columns((1, 1, 1, 1, 1, 1, 5))
+        cols = st.columns((1,3, 1, 1, 1, 1, 1))
         with cols[0]:
             refresh_b = st.button("Refresh", key="r1")
-        with cols[1]:
-            today_orders = st.checkbox("Today", False)
         with cols[2]:
-            completed_orders = st.checkbox("Completed")
+            today_orders = st.checkbox("Today", False)
+            page_line_seperator(.2)
+            if today_orders:
+                st.image(mainpage_bee_png, width=33)
         with cols[3]:
-            all_orders = st.checkbox("All", False)
+            completed_orders = st.checkbox("Completed")
+            page_line_seperator(.2)
+            if completed_orders:
+                st.image(mainpage_bee_png, width=33)
         with cols[4]:
-            best_orders = st.checkbox("Best Bees")
+            all_orders = st.checkbox("All", False)
+            page_line_seperator(.2)
+            if all_orders:
+                st.image(mainpage_bee_png, width=33)
         with cols[5]:
+            best_orders = st.checkbox("Best Bees")
+            page_line_seperator(.2)
+            if best_orders:
+                st.image(mainpage_bee_png, width=33)
+        with cols[6]:
             show_errors = st.checkbox("Lost Bees")
+            page_line_seperator(.2)
+            if show_errors:
+                st.image(mainpage_bee_png, width=33)
 
         order_states = set(ORDERS["queen_orders"]["queen_order_state"].tolist())
 
@@ -856,7 +846,7 @@ def queen_order_flow(ORDERS, active_order_state_list):
         else:
             order_states = ["submitted", "running", "running_close"]
 
-        with cols[6]:
+        with cols[1]:
             queen_order_states = st.multiselect(
                 "queen order states",
                 options=list(active_order_state_list),
@@ -904,25 +894,29 @@ def queen_order_flow(ORDERS, active_order_state_list):
         download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
     return True
 
-
-def close_sesstion_states__pages():
-    # queens conscience
-    st.session_state["option_sel"] = False
-    st.session_state["sneak_peak"] = False
-
+def page_session_state__cleanUp(page):
+    if page == 'QueensConscience':
+        st.session_state['option_sel'] = False
+        st.session_state['sneak_peak'] = False
+        st.session_state['last_page'] = page
+    
     return True
 
 
-def live_sandbox__setup_switch(client_user, switch_env=False):
-
-    prod = (
-        True
-        if "production" in st.session_state and st.session_state["production"] == True
-        else False
-    )
+def live_sandbox__setup_switch(client_user, QUEEN_KING=False, switch_env=False):
+    if QUEEN_KING:
+        if 'last_env' in QUEEN_KING.keys():
+            prod = QUEEN_KING['last_env']
+    else:
+        prod = (
+            True
+            if "production" in st.session_state and st.session_state["production"] == True
+            else False
+        )
+    
     prod_name = (
         "LIVE"
-        if "production" in st.session_state and st.session_state["production"] == True
+        if prod
         else "Sandbox"
     )
     st.session_state["prod_name"] = prod_name
@@ -942,6 +936,10 @@ def live_sandbox__setup_switch(client_user, switch_env=False):
 
     admin = True if client_user == "stefanstapinski" else False
     st.session_state["admin"] = True if admin else False
+    
+    if QUEEN_KING:
+        if st.session_state['authoirzed_user']:
+            QUEEN_KING['last_env'] = prod
 
     return prod, admin, prod_name
 

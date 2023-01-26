@@ -2,31 +2,6 @@ import os
 import streamlit.components.v1 as components
 import streamlit as st
 
-st.markdown(
-    """
-        <style>
-            .css-18e3th9 {
-                    padding-top: 0rem;
-                    padding-bottom: 0rem;
-                    padding-left: 0rem;
-                    padding-right: 0rem;
-                }
-            .css-1d391kg {
-                    padding-top: 0rem;
-                    padding-right: 0rem;
-                    padding-bottom: 0rem;
-                    padding-left: 0rem;
-                }
-                
-                #MainMenu {visibility: hidden;}
-                header {visibility: hidden;}
-                footer {visibility : hidden;}
-                body{ background : "black";}
-
-        </style>
-        """,
-    unsafe_allow_html=True,
-)
 
 _RELEASE = True
 if not _RELEASE:

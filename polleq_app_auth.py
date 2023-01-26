@@ -225,7 +225,7 @@ def signin_main():
             unsafe_allow_html=True,
         )
 
-    def setup_user_pollenqdbs(main_root):
+    def setup_user_pollenqdbs(key):
         st.session_state["client_user"] = st.session_state["username"].split("@")[0]
 
         if st.session_state["authorized_user"]:
@@ -241,6 +241,9 @@ def signin_main():
         else:
             st.sidebar.info("Request For a Queen")
             force_db_root = True
+            if st.button("Request A Queen"):
+                send_email(recipient=os.environ('pollenq_gmail'), subject="NotAllowedQueen", body=f'{st.session_state["client_user"]} Asking for a Queen')
+                st.success("Send Note To Hive Master, We'll talk soon")
 
         db_root = init_clientUser_dbroot(client_user=st.session_state['client_user'], force_db_root=force_db_root)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
         
@@ -248,17 +251,44 @@ def signin_main():
         
         prod_name_oppiste = "Sandbox" if prod  else "LIVE"
         
-        if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
+        if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
             prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
-            switch_page('pollenq')
+            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
+            if 'last_page' in st.session_state and st.session_state['last_page'] != False:
+                switch_page(st.session_state['last_page'])
+            else:
+                switch_page('pollenq')
 
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
-
-        st.session_state["db_root"] = db_root
 
         return db_root
 
     # Read usernames and convert to nested dict
+
+    def define_authorized_user(key):
+        if 'logout' in st.session_state and st.session_state["logout"] != True:
+            (
+                users_allowed_queen_email,
+                users_allowed_queen_emailname,
+                users_allowed_queen_emailname__db,
+            ) = kingdom__grace_to_find_a_Queen()
+            if st.session_state["username"] in users_allowed_queen_email:
+                st.session_state["authorized_user"] = True
+            else:
+                st.session_state["authorized_user"] = False
+
+            st.session_state["admin"] = (
+                True
+                if st.session_state["username"] in ["stefanstapinski@gmail.com"]
+                else False
+            )
+            setup_user_pollenqdbs(key)
+
+            return True
+
+    if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
+        if 'logout' in st.session_state and st.session_state["logout"] != True:
+            define_authorized_user(key='11')
+            return True
 
     con = sqlite3.connect("db/client_users.db")
     cur = con.cursor()
@@ -300,25 +330,8 @@ def signin_main():
             authenticator.logout("Logout", "main")
         with cols[2]:
             reset_password(email, location='main')
-        # ipdb.set_trace()
-
-        if st.session_state["logout"] != True:
-            (
-                users_allowed_queen_email,
-                users_allowed_queen_emailname,
-                users_allowed_queen_emailname__db,
-            ) = kingdom__grace_to_find_a_Queen()
-            if st.session_state["username"] in users_allowed_queen_email:
-                st.session_state["authorized_user"] = True
-            else:
-                st.session_state["authorized_user"] = False
-
-            st.session_state["admin"] = (
-                True
-                if st.session_state["username"] in ["stefanstapinski@gmail.com"]
-                else False
-            )
-            setup_user_pollenqdbs(main_root)
+        
+        define_authorized_user(key='12')
 
         return True
 

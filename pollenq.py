@@ -22,6 +22,7 @@ from streamlit_extras.stoggle import stoggle
 from chess_piece.app_hive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import hive_master_root, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
 from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs,  KINGME, pollen_themes
+from custom_button import cust_Button
 
 pd.options.mode.chained_assignment = None
 # https://blog.streamlit.io/a-new-streamlit-theme-for-altair-and-plotly/
@@ -100,6 +101,7 @@ def pollenq(admin_pq):
             authorized_user = st.session_state['authorized_user']            
             client_user = st.session_state['username'].split("@")[0]
 
+
             prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
             
             if admin: ### Need to Store admin password encrypted
@@ -146,7 +148,7 @@ def pollenq(admin_pq):
            
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
-            # Return True
+
 
             if 'init_queen_request' in st.session_state:
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
@@ -157,22 +159,13 @@ def pollenq(admin_pq):
             st.session_state['active_tab'] = tabs[0] if 'active_tab' not in st.session_state else st.session_state['active_tab']
 
             hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "YourCharacter:octopus:", "Help:dizzy:"])
-            if st.button("QueensConscience:honeybee:"):
-                switch_page("QueensConscience")
+            # if st.button("QueensConscience:honeybee:"):
+            #     switch_page("QueensConscience")
             with hive_setup:
                 st.title("Create Yourself The QueenTrader")
                 # st.subheader("Steps to get your QueenTraderBot")
-                cols = st.columns((3,3,3,1,1,1,1))
-                
-                # with cols[0]:
-                #     st.text("Customize QueenTraderBot Settings!\nTrade based on how you feel&think" )
-                # with cols[1]:
-                #     st.image(mainpage_bee_png, width=89)
-                # with cols[2]:
-                #     st.text("Set an investment theme and watch your QueenTraderBot\nhandle everyone of your trades, trade along side her")
-
-
-                
+                cols = st.columns((3,3,3,3,2,1))
+                             
                 # cols = st.columns((5,3,3,2,2,2))
                 with cols[0]:
                     stoggle("1. Select your Broker",
@@ -190,8 +183,14 @@ def pollenq(admin_pq):
                     Go Start Building your QueenTradingBot! There is too much to dicuss now...we'll talk later
                     """
                     )
+                with cols[3]:
+                    stoggle("4. Go To QueensConscience",
+                    """
+                    Setup your ChessBoard, Edit your TradingModel Settings...Sit Back and watch your Queen Make You Money $$$
+                    """
+                    )
 
-                cols = st.columns((3,3,3,1,1,1,1))
+                cols = st.columns((3,3,3,3,2,1))
 
                 with cols[0]:
                     page_line_seperator('.5')
@@ -202,23 +201,14 @@ def pollenq(admin_pq):
                 with cols[2]:
                     page_line_seperator('.5')
                     st.image(mainpage_bee_png, width=100)
-                # with cols[2]:
-                #     st.image(queen_png, width=250)
-                    # local_gif(floating_queen_gif, '89', '89')
-
-                # with cols[3]:
-                #     # local_gif(gif_path=queen_flair_gif, height=254, width=450)
-                #     st.image(bishop_png, width=223)
-                    # local_gif(bishop_unscreen, '133', '133')
+                with cols[3]:
+                    page_line_seperator('.5')
+                    cBq = cust_Button(file_path_url="misc/queen_flair.gif", height='150px', key='b')
+                    # mark_down_text(align='center', fontsize='11', text='Enter')
+                    if cBq:
+                        switch_page("QueensConscience")
                 with cols[4]:
-                    st.image(castle_png, width=133)
-
-                # with cols[5]:
-                #     st.image(mainpage_bee_png, width=133)
-                #     # page_line_seperator('.5')
-
-                # with cols[1]:
-                #     st.image(mainpage_bee_png, width=133)
+                    st.write(":honeybee:")
             
             with BrokerAPIKeys:
                 queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
@@ -266,14 +256,9 @@ def pollenq(admin_pq):
                 with st.expander("Select a Theme, a Personality"):
                     update_queencontrol_theme(QUEEN_KING, theme_list)
 
-            
-            
-
-
             with help_me:
                 st.write("No Soup for You")
                 local_gif(gif_path=flyingbee_grey_gif_path)
-
         
         else:
             st.session_state['authorized_user'] = False

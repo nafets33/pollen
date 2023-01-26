@@ -92,3 +92,6 @@ def public():
 # all_queens = return_list_of_all__Queens__pkl()
 
 # use async to read all queens data to show
+page = 'PublicQueens'
+
+signin_main()

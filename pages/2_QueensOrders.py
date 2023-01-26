@@ -98,9 +98,11 @@ default_text_color = k_colors['default_text_color'] # = '#59490A'
 default_font = k_colors['default_font'] # = "sans serif"
 default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
+page = 'QueensOrders'
+
 with st.spinner("QueensOrders pollenq"):
-    if 'username' not in st.session_state:
-        signin_auth = signin_main()
+
+    signin_main()
 
     if st.session_state['authentication_status'] != True:
         st.error("You Need to Log In")

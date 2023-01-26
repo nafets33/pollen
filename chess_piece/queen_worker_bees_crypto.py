@@ -14,44 +14,22 @@ import pytz
 from collections import defaultdict, deque
 import ipdb
 import argparse
-from chess_piece.king import workerbee_dbs_root, workerbee_dbs_root__STORY_bee, PickleData, ReadPickleData
+from chess_piece.king import hive_master_root, workerbee_dbs_root, workerbee_dbs_root__STORY_bee, PickleData, ReadPickleData
 from chess_piece.queen_hive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 
 
 
-def queen_workerbee_crypto(prod):
+def queen_workerbee_crypto(prod, queens_chess_piece):
 
-    def createParser():
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-qcp', default="castle_coin")
-        parser.add_argument ('-prod', default=True)
-        return parser
-    
-    # script arguments
-    parser = createParser()
-    namespace = parser.parse_args()
-    queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
-    if prod:
-        prod = True
-    else:
-        prod = True if str(namespace.prod).lower() == 'true' else False
+
 
     print("Production",  prod)
 
-    # script arguments
-    # queens_chess_piece = sys.argv[1] # 'castle', 'knight' 'queen'
-    # queens_chess_piece = 'castle_coin'
+
     pd.options.mode.chained_assignment = None
     est = pytz.timezone("US/Eastern")
 
-    # if prod:
-    #     from QueenHive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
-    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    # else:
-    #     from QueenHive_sandbox import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
-    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
-
-    main_root = os.getcwd()
+    main_root = hive_master_root()
     db_root = os.path.join(main_root, 'db')
 
     init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
@@ -475,16 +453,6 @@ def queen_workerbee_crypto(prod):
 
     # init files needed
     PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-    if queens_chess_piece == 'castle_coin':
-        # if os.path.exists(PB_Story_Pickle):
-        #     os.remove(PB_Story_Pickle)
-        chart_times_castle = {
-                "1Minute_1Day": 1, "5Minute_5Day": 5,
-                "30Minute_1Month": 18, 
-                "1Hour_3Month": 48, "2Hour_6Month": 72, 
-                "1Day_1Year": 250}
-
-
 
     # Pollen QUEEN
     if prod:
@@ -584,5 +552,16 @@ def queen_workerbee_crypto(prod):
         logging.critical(log_msg)
 
 if __name__ == '__main__':
-    queen_workerbee_crypto(prod=True)
+    def createParser():
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-qcp', default="castle_coin")
+        parser.add_argument ('-prod', default=True)
+        return parser
+    
+    # script arguments
+    parser = createParser()
+    namespace = parser.parse_args()
+    queens_chess_piece = namespace.qcp # 'castle', 'knight' 'queen'
+    prod = True if str(namespace.prod).lower() == 'true' else False
+    queen_workerbee_crypto(prod=True, queens_chess_piece=queens_chess_piece)
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

@@ -196,6 +196,8 @@ def init_clientUser_dbroot(client_user, force_db_root=False):
             os.mkdir(db_root)
             os.mkdir(os.path.join(db_root, "logs"))
 
+    st.session_state["db_root"] = db_root
+
     return db_root
 
 
@@ -231,7 +233,6 @@ def local__filepaths_misc():
     castle_png = "https://images.vexels.com/media/users/3/255175/isolated/lists/3c6de0f0c883416d9b6bd981a4471092-rook-chess-piece-line-art.png"
     bishop_png = "https://images.vexels.com/media/users/3/255170/isolated/lists/efeb124323c55a60510564779c9e1d38-bishop-chess-piece-line-art.png"
     knight_png = "https://cdn2.iconfinder.com/data/icons/chess-set-pieces/100/Chess_Set_04-White-Classic-Knight-512.png"
-    queen_flair_gif = os.path.join(jpg_root, "queen_flair.gif")
     mainpage_bee_png = (
         "https://i.pinimg.com/originals/a8/95/e8/a895e8e96c08357bfeb92d3920cd7da0.png"
     )
@@ -247,6 +248,7 @@ def local__filepaths_misc():
     queen_crown_url = (
         "https://cdn.pixabay.com/photo/2012/04/18/00/42/chess-36311_960_720.png"
     )
+    pawn_png_url = "https://cdn0.iconfinder.com/data/icons/project-management-1-1/24/14-512.png"
 
     return {
         "jpg_root": jpg_root,
@@ -262,7 +264,6 @@ def local__filepaths_misc():
         "power_gif": power_gif,
         "uparrow_gif": uparrow_gif,
         "learningwalk_bee": learningwalk_bee,
-        "queen_flair_gif": queen_flair_gif,
         "chess_piece_queen": chess_piece_queen,
         "runaway_bee_gif": runaway_bee_gif,
         "castle_png": castle_png,
@@ -281,6 +282,7 @@ def local__filepaths_misc():
         "heart_bee_gif": heart_bee_gif,
         "hexagon_loop": hexagon_loop,
         "queen_crown_url": queen_crown_url,
+        "pawn_png_url": pawn_png_url,
     }
 
 
@@ -301,6 +303,7 @@ def kingdom__grace_to_find_a_Queen():
         "conrad.studzinski@yahoo.com",
         "jamesliess@icloud.com",
         "ng2654@columbia.edu",
+        "mrubin2724@gmail.com",
     ]
 
     users_allowed_queen_emailname = [

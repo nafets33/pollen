@@ -38,7 +38,7 @@ task_1_operator = PythonOperator(
     task_id="task_job_1",
     python_callable=queen_workerbee_crypto,
     dag=dag,
-    op_kwargs={"prod": True, "queens_chess_piece": "workerbee_crypto"},
+    op_kwargs={"prod": True, "queens_chess_piece": "castle_coin"},
 )
 
 end = EmptyOperator(task_id="end", dag=dag)

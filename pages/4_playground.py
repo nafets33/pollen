@@ -3,7 +3,7 @@ from streamlit_extras.stoggle import stoggle
 from PIL import Image
 import subprocess
 from polleq_app_auth import signin_main
-from chess_piece.app_hive import click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
+from chess_piece.app_hive import local_gif, click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
 from chess_piece.king import hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
 
@@ -22,8 +22,6 @@ st.set_page_config(
 )
 
 st.write("# Welcome to Playground! 👋")
-
-
 
 
 if 'username' not in st.session_state:
@@ -62,16 +60,23 @@ runaway_bee_gif = MISC['runaway_bee_gif']
 moving_ticker_gif = MISC['moving_ticker_gif']
 # heart_bee_gif = MISC['heart_bee_gif']
 
-learningwalk_bee = Image.open(learningwalk_bee)
+st.image(mainpage_bee_png)
+# learningwalk_bee = C:\Users\sstapinski\pollen\pollen\custom_button\frontend\build\misc\learningwalks_bee_jq.png
+learningwalk_bee = "misc/learningwalks_bee_jq.png"
 
 
-# cB = cust_Button(file_path_url=queen_angel_image, height='50px', key=None)
-# if cB:
-#     st.write("Thank you Akash")
+cB = cust_Button(file_path_url="misc/flyingbee_gif_clean.gif", height='50px', key=None)
+if cB:
+    st.write("Thank you Akash")
+"https://giphy.com/embed/jTBtILj257PTZSU9g8"
+cBq = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
+# local_gif(gif_path=)
+
 
 view_ss_state = st.sidebar.button("View Session State")
 if view_ss_state:
     st.write(st.session_state)
+    # st.sidebar.collapse()
 
 
 # page_tab_permission_denied(st.session_state['admin'])
@@ -91,6 +96,10 @@ with st.expander("pollenstory"):
 
   grid = standard_AGgrid(data=POLLENSTORY[ttf], configure_side_bar=True)
 
+
+cB = cust_Button(file_path_url=learningwalk_bee, height='50px', key='b1')
+if cB:
+    st.write("Thank you Akash")
 
 # admin_user_swap = st.number_input("fast", min_value=1, max_value=10000, value=0)
 # if st.button("swap"): 
