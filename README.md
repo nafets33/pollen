@@ -25,8 +25,8 @@ run as >>> sudo -su root
 docker-compose up
 
 docker ps # show status
-
-docker stop $(docker ps -a -q) # stop docker
+## stop docker
+docker stop $(docker ps -a -q)
 
 
 ## VM commands

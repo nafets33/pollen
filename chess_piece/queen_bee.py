@@ -92,7 +92,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # if crypto check avail cash to buy
                 # check against buying power validate not buying too much of total portfolio
                 return {'qty_correction': qty}
-            else: # sel == sell
+            elif side == 'sell': # sel == sell
                 # print("check portfolio has enough shares to sell")
                 if ticker not in portfolio.keys():
                     msg = {"submit order validation()": {'msg': "MISSING_TICKER", 'ticker': ticker}}
@@ -116,6 +116,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     return {'qty_correction': qty_correction}
                 else:
                     return {'qty_correction': qty}
+            else:
+                return {'stop_order': 'MISSING_SIDE'}
         except Exception as e:
             print(e)
             ipdb.set_trace()
@@ -600,11 +602,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
 
                     send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
-                    if 'stop_order' in send_order_val.keys():
-                        print("Order Did not pass to execute")
-                        msg = ("Order Did not pass to execute")
-                        logging.error(msg)
-                        return{'executed': False, 'msg': msg}
+                    # if 'stop_order' in send_order_val.keys():
+                    #     print("Order Did not pass to execute")
+                    #     msg = ("Order Did not pass to execute")
+                    #     logging.error(msg)
+                    #     return{'executed': False, 'msg': msg}
 
                     
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
@@ -659,9 +661,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     # Validate Order
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=run_order_idx)
-                    if 'validation'
-                    qty_order = send_order_val['qty_correction'] # same return unless more validation done here
-                    sell_qty = send_order_val['qty_correction']
+                    if 'stop_order' in send_order_val.keys():
+                        print("Order Did not pass to execute")
+                        msg = ("Order Did not pass to execute")
+                        logging.error(msg)
+                        return{'executed': False, 'msg': msg}
                     
                     send_close_order = submit_order(api=api, side=q_side, symbol=ticker, qty=sell_qty, type=q_type, client_order_id=client_order_id__gen, limit_price=limit_price) 
                     send_close_order = vars(send_close_order)['_raw']
