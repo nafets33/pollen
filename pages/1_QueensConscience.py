@@ -198,11 +198,11 @@ with st.spinner("Welcome to the QueensMind"):
     if prod:
         with cols[1]:
             # st.warning("LIVE ENVIORMENT The RealWorld")
-            mark_down_text(text='LIVE ENVIORMENT The RealWorld', fontsize='23', align='center')
+            mark_down_text(text='LIVE ENVIRONMENT The RealWorld', fontsize='23', align='center')
     else:
         with cols[1]:
             # st.info("SandBox")
-            mark_down_text(text='SandBox ENVIORMENT Play and Learn', fontsize='23', align='center')
+            mark_down_text(text='SandBox ENVIRONMENT Play and Learn', fontsize='23', align='center')
 
     PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
     PB_App_Pickle = st.session_state['PB_App_Pickle'] 

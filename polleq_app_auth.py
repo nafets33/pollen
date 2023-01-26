@@ -256,7 +256,7 @@ def signin_main():
 
         prod_name_oppiste = "Sandbox" if prod  else "LIVE"        
         if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
-            setup_instance(switch_env=False, force_db_root=force_db_root)
+            setup_instance(switch_env=True, force_db_root=force_db_root)
             if 'last_page' in st.session_state and st.session_state['last_page'] != False:
                 switch_page(st.session_state['last_page'])
             else:
