@@ -835,8 +835,11 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager", backtesting = Fals
                     speed_gauges=speed_gauges,
                 )
 
-                if close_worker():
-                    break
+                if backtesting:
+                    break 
+                else:
+                    if close_worker():
+                        break
 
         except Exception as errbuz:
             print(errbuz)
