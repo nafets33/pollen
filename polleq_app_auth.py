@@ -245,22 +245,25 @@ def signin_main():
                 send_email(recipient=os.environ('pollenq_gmail'), subject="NotAllowedQueen", body=f'{st.session_state["client_user"]} Asking for a Queen')
                 st.success("Send Note To Hive Master, We'll talk soon")
 
-        db_root = init_clientUser_dbroot(client_user=st.session_state['client_user'], force_db_root=force_db_root)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-        
-        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=False)            
-        
-        prod_name_oppiste = "Sandbox" if prod  else "LIVE"
-        
-        if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
-            prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
+        ## SETUP 
+        def setup_instance(switch_env, force_db_root):
+            db_root = init_clientUser_dbroot(client_user=st.session_state['client_user'], force_db_root=force_db_root)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+            prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=switch_env)            
             init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
+            return prod
+        
+        prod = setup_instance(switch_env=False, force_db_root=force_db_root)
+
+        prod_name_oppiste = "Sandbox" if prod  else "LIVE"        
+        if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
+            setup_instance(switch_env=False, force_db_root=force_db_root)
             if 'last_page' in st.session_state and st.session_state['last_page'] != False:
                 switch_page(st.session_state['last_page'])
             else:
                 switch_page('pollenq')
 
 
-        return db_root
+        return True
 
     # Read usernames and convert to nested dict
 

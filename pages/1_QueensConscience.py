@@ -1522,35 +1522,35 @@ with st.spinner("Welcome to the QueensMind"):
                 
                 with cols[2]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
+                    # local_gif(gif_path=flyingbee_grey_gif_path)
+                    # local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[3]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[4]:
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
                     local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[5]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[6]:
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
                     local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                with cols[7]:
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                with cols[8]:
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                with cols[9]:
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
-                    local_gif(gif_path=flyingbee_grey_gif_path)
+                # with cols[7]:
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                # with cols[8]:
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                # with cols[9]:
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
+                #     local_gif(gif_path=flyingbee_grey_gif_path)
 
                 return False
             else:
