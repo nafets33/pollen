@@ -44,7 +44,15 @@ os.environ["no_proxy"] = "*"
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
-def queen_workerbees(prod, queens_chess_piece="bees_manager", backtesting = False):
+def queen_workerbees(prod, 
+                     queens_chess_piece="bees_manager", 
+                     backtesting = False,
+                     macd = None):
+    
+    if backtesting:
+        assert macd is not None 
+    else:
+        assert macd is None
 
     # script arguments
     if prod:
@@ -747,7 +755,12 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager", backtesting = Fals
 
         WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
         for qcp_worker in WORKERBEE_queens.keys():
-            MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
+            if backtesting:
+                MACD_settings = macd 
+            else:
+                MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
+                print(MACD_settings)
+                assert False
             master_tickers = QUEENBEE["workerbees"][qcp_worker]["tickers"]
             star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
             WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(
