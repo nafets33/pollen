@@ -18,7 +18,9 @@ from chess_piece.king import (
     hive_master_root,
     read_QUEEN,
     workerbee_dbs_root,
+    workerbee_dbs_backtesting_root,
     workerbee_dbs_root__STORY_bee,
+    workerbee_dbs_backtesting_root__STORY_bee
 )
 from chess_piece.queen_hive import (
     init_index_ticker,
@@ -666,9 +668,15 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager", backtesting = Fals
         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         # for every ticker ticker write pickle file to db
-        symbols_pollenstory_dbs = workerbee_dbs_root()
+        if backtesting:
+            symbols_pollenstory_dbs = workerbee_dbs_backtesting_root()
+        else:
+            symbols_pollenstory_dbs = workerbee_dbs_root()
         # print("Pollen story path", symbols_pollenstory_dbs)
-        symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
+        if backtesting:
+            symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee()
+        else:
+            symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
         # print("Story bee path", symbols_STORY_bee_root)
         for ttf in pollens_honey["pollen_story"]:
             ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}.pkl")

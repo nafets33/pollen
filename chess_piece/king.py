@@ -141,9 +141,19 @@ def workerbee_dbs_root():
     return symbols_pollenstory_dbs
 
 
+def workerbee_dbs_backtesting_root():
+    symbols_pollenstory_dbs_backtesting = os.path.join(hive_master_root(), "symbols_pollenstory_dbs_backtesting")
+    return symbols_pollenstory_dbs_backtesting
+
+
 def workerbee_dbs_root__STORY_bee():
     symbols_pollenstory_dbs = os.path.join(hive_master_root(), "symbols_STORY_bee_dbs")
     return symbols_pollenstory_dbs
+
+
+def workerbee_dbs_backtesting_root__STORY_bee():
+    symbols_pollenstory_dbs_backtesting = os.path.join(hive_master_root(), "symbols_STORY_bee_dbs_backtesting")
+    return symbols_pollenstory_dbs_backtesting
 
 
 def init_symbol_dbs__pollenstory():
