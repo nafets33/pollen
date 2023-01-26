@@ -15,11 +15,13 @@ import aiohttp
 from tqdm import tqdm
 import argparse
 from chess_piece.king import return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData, init_clientUser_dbroot
-from chess_piece.queen_hive import hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
+from chess_piece.queen_hive import get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
 
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
+utc = pytz.timezone('UTC')
+
 
 # ###### GLOBAL # ######
 ARCHIVE_queenorder = 'archived'
@@ -58,7 +60,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
         print("failsafe away from user running function")
-        send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body="you forgot to same something")
+        send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to same something')
         sys.exit()
 
 
@@ -85,36 +87,38 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
 
     def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False):
-        
-        if side == 'buy':
-            # if crypto check avail cash to buy
-            # check against buying power validate not buying too much of total portfolio
-            return {'qty_correction': qty}
-        else: # sel == sell
-            # print("check portfolio has enough shares to sell")
-            if ticker not in portfolio.keys():
-                msg = {"submit order validation()": {'msg': "MISSING_TICKER", 'ticker': ticker}}
-                logging.error(msg)
-                print(msg)
-                QUEEN['queen_orders'].at[run_order_idx, 'queen_order_state'] = 'completed_alpaca'
-                return {'validation': 'MISSING_TICKER'}
-            position = float(portfolio[ticker]['qty_available'])
-            if position > 0 and position < qty: # long
-                msg = {"submit order validation()": {'#of shares avail': position,  'msg': "not enough shares avail to sell, updating sell qty", 'ticker': ticker}}
-                logging.error(msg)
-                print(msg)
-                # QUEEN["errors"].update({f'{symbol}{"_portfolio!=queen"}': {'msg': msg}})
-                
-                qty_correction = position
-                if run_order_idx:
-                    # update run_order
-                    print('Correcting Run Order Qty with avail qty: ', qty_correction)
-                    QUEEN['queen_orders'].at[run_order_idx, 'validation_correction'] = 'true'
-            
-                return {'qty_correction': qty_correction}
-            else:
+        try:
+            if side == 'buy':
+                # if crypto check avail cash to buy
+                # check against buying power validate not buying too much of total portfolio
                 return {'qty_correction': qty}
-
+            else: # sel == sell
+                # print("check portfolio has enough shares to sell")
+                if ticker not in portfolio.keys():
+                    msg = {"submit order validation()": {'msg': "MISSING_TICKER", 'ticker': ticker}}
+                    logging.error(msg)
+                    print(msg)
+                    QUEEN['queen_orders'].at[run_order_idx, 'queen_order_state'] = 'completed_alpaca'
+                    return {'stop_order': 'MISSING_TICKER'}
+                position = float(portfolio[ticker]['qty_available'])
+                if position > 0 and position < qty: # long
+                    msg = {"submit order validation()": {'#of shares avail': position,  'msg': "not enough shares avail to sell, updating sell qty", 'ticker': ticker}}
+                    logging.error(msg)
+                    print(msg)
+                    # QUEEN["errors"].update({f'{symbol}{"_portfolio!=queen"}': {'msg': msg}})
+                    
+                    qty_correction = position
+                    if run_order_idx:
+                        # update run_order
+                        print('Correcting Run Order Qty with avail qty: ', qty_correction)
+                        QUEEN['queen_orders'].at[run_order_idx, 'validation_correction'] = 'true'
+                
+                    return {'qty_correction': qty_correction}
+                else:
+                    return {'qty_correction': qty}
+        except Exception as e:
+            print(e)
+            ipdb.set_trace()
 
     def generate_client_order_id(QUEEN, ticker, trig, sellside_client_order_id=False): # generate using main_order table and trig count
         main_orders_table = QUEEN['queen_orders']
@@ -531,16 +535,43 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     def execute_order(QUEEN, king_resp, king_eval_order, ticker, ticker_time_frame, trig, portfolio, run_order_idx=False, crypto=False):
         try:
-            portfolio = return_alpc_portolio(api)['portfolio']
-
             logging.info({'ex_order()': ticker_time_frame})
+            def update__sell_qty(crypto, limit_price, sell_qty):
+                # flag crypto
+                if crypto:
+                    if limit_price:
+                        limit_price = round(limit_price)
+                        sell_qty = round(sell_qty)
+                else:
+                    if limit_price:
+                        limit_price = round(limit_price, 2)                    
+                
+                return limit_price, sell_qty
 
-            # flag crypto
+            def update__validate__qty(crypto, limit_price, wave_amo):
+                if crypto:
+                    limit_price = round(limit_price) if limit_price else limit_price
+                    qty_order = float(round(wave_amo / current_price, 8))
+                else:
+                    limit_price = round(limit_price, 2) if limit_price else limit_price
+                    qty_order = float(round(wave_amo / current_price, 0))
+
+                return limit_price, qty_order
+
+            portfolio = return_alpc_portolio(api)['portfolio']
+            
+            # priceinfo = return_snap_priceinfo__pollenData(ticker=ticker)
+
+            # priceinfo
             if crypto:
                 snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
             else:
                 snap = api.get_snapshot(ticker)
 
+            # get latest pricing
+            priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 'ask': snap.latest_quote.ask_price}
+            # priceinfo_order = {'price': priceinfo['current_price'], 'bid': priceinfo['current_bid'], 'ask': priceinfo['current_ask']}
+            
             if king_resp:
                 side = 'buy'
                 # if app order get order vars its way
@@ -562,34 +593,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if side == 'buy':
                     limit_price = [limit_price if limit_price != False else False][0]
 
-                    # get latest pricing
-                    current_price = snap.latest_trade.price
-                    current_bid = snap.latest_quote.bid_price
-                    current_ask = snap.latest_quote.ask_price
-                    priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
 
-                    # flag crypto
-                    if crypto:
-                        if limit_price:
-                            limit_price = round(limit_price)
-        
-                        qty_order = float(round(wave_amo / current_price, 8))
-                        crypto = True
-                    else:
-                        if limit_price:
-                            limit_price = round(limit_price, 2)
+                    limit_price, qty_order = update__validate__qty(crypto=crypto, limit_price=limit_price, wave_amo=wave_amo)
 
-                        qty_order = float(round(wave_amo / current_price, 0))
-                        crypto = False
-
-                    
                     # return num of trig for client_order_id
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
 
                     send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
-                    if 'validation' in send_order_val.keys():
+                    if 'stop_order' in send_order_val.keys():
                         print("Order Did not pass to execute")
                         msg = ("Order Did not pass to execute")
+                        logging.error(msg)
                         return{'executed': False, 'msg': msg}
 
                     
@@ -607,10 +621,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     order_vars=king_resp['order_vars'], 
                     trig=trig, 
                     ticker_time_frame=ticker_time_frame, 
-                    priceinfo=priceinfo)
+                    priceinfo=priceinfo_order)
 
                     PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
                     refresh_queen_orders__save_ORDERS(QUEEN=QUEEN, ORDERS=ORDERS)
+                    logging.info({'ex__order__confirmed': ticker_time_frame})
                     
                     
                     msg = {'execute order()': {'msg': f'{"order submitted"}{" : at : "}{return_timestamp_string()}', 'ticker': ticker, 'ticker_time_frame': ticker_time_frame, 'trig': trig, 'crypto': crypto, 'wave_amo': wave_amo}}
@@ -630,7 +645,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     order_vars = king_eval_order['order_vars']
 
                     # close out order variables
-                    priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
+                    # priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
                     sell_qty = float(king_eval_order['order_vars']['sell_qty']) # float(order_obj['filled_qty'])
                     q_side = king_eval_order['order_vars']['order_side'] # 'sell' Unless it short then it will be a 'buy'
                     q_type = king_eval_order['order_vars']['order_type'] # 'market'
@@ -640,24 +655,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # Generate Client Order Id
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig, sellside_client_order_id=run_order_client_order_id)
 
-                    def update_qty_price__crypto(crypto, limit_price, sell_qty):
-                        # flag crypto
-                        if crypto:
-                            if limit_price:
-                                limit_price = round(limit_price)
-                                sell_qty = round(sell_qty)
-                            crypto = True
-                        else:
-                            if limit_price:
-                                limit_price = round(limit_price, 2)                    
-                            crypto = False
-                        
-                        return limit_price, sell_qty
-                    
-                    limit_price, sell_qty = update_qty_price__crypto(crypto, limit_price, sell_qty)
+                    limit_price, sell_qty = update__sell_qty(crypto, limit_price, sell_qty)
 
                     # Validate Order
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=run_order_idx)
+                    if 'validation'
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
                     sell_qty = send_order_val['qty_correction']
                     
@@ -676,7 +678,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     trig=trig, 
                     exit_order_link=run_order_client_order_id, 
                     ticker_time_frame=ticker_time_frame, 
-                    priceinfo=priceinfo)
+                    priceinfo=priceinfo_order)
 
                     # new_queen_order_index = new_queen_order['new_queen_order_index']
                     # update Origin RUN Order
@@ -698,8 +700,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             print(ticker_time_frame)
             log_error_dict = logging_log_message(log_type='error', msg='Failed to Execute Order', error=str(e), origin_func='Execute Order', ticker=ticker)
             logging.error(log_error_dict)
-            ipdb.set_trace()
-            sys.exit()
 
 
     def buying_Power_cc(api, client_args="TBD", daytrade=True):
@@ -1371,14 +1371,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return False
 
 
-    def get_best_limit_price(ask, bid):
-        maker_dif =  ask - bid
-        maker_delta = (maker_dif / ask) * 100
-        # check to ensure bid / ask not far
-        maker_middle = round(ask - (maker_dif / 2), 2)
-
-        return {'maker_middle': maker_middle, 'maker_delta': maker_delta}
-
 
     def return_snap_priceinfo(api, ticker, crypto, exclude_conditions):
         if crypto:
@@ -1411,43 +1403,38 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         return priceinfo
 
 
-    # def return_snap_priceinfo__pollenData(api, ticker, crypto, exclude_conditions):
-    #     # read check if ticker is active...if it is return into from db ELSE if user data Pa
-    #     current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
-    #     current_ask = 1
-    #     current_bid = 1
-    #     # current_price = snap.latest_trade.price
-    #     # current_ask = snap.latest_quote.ask_price
-    #     # current_bid = snap.latest_quote.bid_price
+    def return_snap_priceinfo__pollenData(STORY_bee, ticker):
+        # read check if ticker is active...if it is return into from db ELSE if user data Pa
+        current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+        current_ask = current_price + (current_price * .01)
+        current_bid = current_price - (current_price * .01)
+        # current_price = snap.latest_trade.price
+        # current_ask = snap.latest_quote.ask_price
+        # current_bid = snap.latest_quote.bid_price
 
-    #     # best limit price
-    #     best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
-    #     maker_middle = best_limit_price['maker_middle']
-    #     ask_bid_variance = current_bid / current_ask
+        # best limit price
+        best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
+        maker_middle = best_limit_price['maker_middle']
+        ask_bid_variance = current_bid / current_ask
         
-    #     priceinfo = {'snapshot': snap, 'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+        priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
         
-    #     return priceinfo
+        return priceinfo
 
 
     def update_queen_order_profits(ticker, queen_order, queen_order_idx, priceinfo):
-        try:
-            # queen_order = queen_order
-            # return trade info
-            # if priceinfo != False:
-            #     snap = priceinfo['snapshot']
-            # else:
-            #     if ticker in crypto_currency_symbols:
-            #         snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-            #     else:
-            #         snap = api.get_snapshot(ticker)
-            
-            snap = priceinfo['snapshot']
+        try:            
+            # snap = priceinfo['snapshot']
 
-            # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
-            current_price = snap.latest_trade.price
-            current_ask = snap.latest_quote.ask_price
-            current_bid = snap.latest_quote.bid_price
+            # # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+            # current_price = snap.latest_trade.price
+            # current_ask = snap.latest_quote.ask_price
+            # current_bid = snap.latest_quote.bid_price
+
+            current_price = priceinfo['current_price']
+            current_ask = priceinfo['current_ask']
+            current_bid = priceinfo['current_bid']
+            
             # priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
             order_price = float(queen_order['filled_avg_price'])
             if order_price > 0:
@@ -1662,8 +1649,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 max_profit_waveDeviation_timeduration = 500 # Minutes
 
             # Only if there are available shares
-
-            # priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
 
             sell_order = False # #### >>> convince me to sell  $$
 
@@ -1897,7 +1882,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return True
         else:
             return False
-
 
 
     def queen_orders_main(QUEEN, ORDERS, STORY_bee, portfolio, QUEEN_KING):
@@ -2196,7 +2180,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             charlie_bee['queen_cyle_times']['async api alpaca__queenOrders__om'] = (datetime.datetime.now(est) - s_time_qOrders).total_seconds()
             
             s_time = datetime.datetime.now(est)
-            priceinfo_info = async_api_alpaca__snapshots_priceinfo(queen_order__s=queen_order__s)
+            # priceinfo_info = async_api_alpaca__snapshots_priceinfo(queen_order__s=queen_order__s)
             charlie_bee['queen_cyle_times']['api_priceinfo_QUEENORDERS_om'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             s_time = datetime.datetime.now(est)
@@ -2206,18 +2190,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 run_order = QUEEN['queen_orders'].iloc[idx].to_dict()
                 # Queen Order Local Vars
                 runorder_client_order_id = run_order['client_order_id']
-                ticker = run_order['ticker']
+                ticker = run_order['ticker_time_frame'].split("_")[0]
                 crypto = True if ticker in crypto_currency_symbols else False
-                priceinfo = [i for i in priceinfo_info if i['client_order_id'] == run_order['client_order_id']] ## return the priceinfo for route and update order
-                if len(priceinfo) > 0:
-                    priceinfo = priceinfo[0]['priceinfo']
-                else:
-                    # print("priceinfo not found in async due to market hours?")
-                    priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
-                # ipdb.set_trace()
-                
+                # priceinfo = [i for i in priceinfo_info if i['client_order_id'] == run_order['client_order_id']] ## return the priceinfo for route and update order
+                # if len(priceinfo) > 0:
+                #     priceinfo = priceinfo[0]['priceinfo']
+                # else:
+                #     # print("priceinfo not found in async due to market hours?")
+                #     priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
+                priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=ticker)
                 try:
-
                     # Process Queen Order States
                     order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
                     if len(order_status) > 0:
@@ -2242,16 +2224,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                         if stop_queen_order_from_kingbishop(run_order):
                             continue
-
-                        # ## this should be async'd as well ###
-                        # s_time = datetime.datetime.now(est)
-                        # priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
-                        # charlie_bee['queen_cyle_times']['return__apisnapshots__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
-
-                        # #### Returning snapshots 3 different times here I need to 
-                        # s_time = datetime.datetime.now(est) #### IMPROVE THIS IS CALLING GET SNAPSHOTS EACH TIME
-                        # resp = update_queen_order_profits(ticker=ticker, queen_order=run_order, queen_order_idx=idx)
-                        # charlie_bee['queen_cyle_times']['refresh_profits_queenorder__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
                         ## subconsicous here ###
                         if run_order['ticker_time_frame'] not in STORY_bee.keys():
