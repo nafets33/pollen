@@ -42,7 +42,7 @@ os.environ["no_proxy"] = "*"
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
-def queen_workerbees(prod, queens_chess_piece="bees_manager"):
+def queen_workerbees(prod, queens_chess_piece="bees_manager", backtesting = False):
 
     # script arguments
     if prod:
