@@ -91,6 +91,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if side == 'buy':
                 # if crypto check avail cash to buy
                 # check against buying power validate not buying too much of total portfolio
+                if qty < 1:
+                    print("Qty Value Not Valid (less then 1) setting to 1")
+                    qty = 1
                 return {'qty_correction': qty}
             elif side == 'sell': # sel == sell
                 # print("check portfolio has enough shares to sell")
@@ -2058,7 +2061,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         except Exception as e:
                             print(e, client_order_id)
                             logging.error((str(client_order_id), str(e)))
-                            raise e
+                            return {'client_order_id': client_order_id, 'order_status': 'failed', 'ticker': ticker}
                 
                 async def main(queen_order__s):
                     async with aiohttp.ClientSession() as session:
@@ -2080,6 +2083,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         return return_list
 
                 list_of_status = asyncio.run(main(queen_order__s))
+                
                 return list_of_status
 
             
@@ -2192,7 +2196,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             s_time = datetime.datetime.now(est)
             queen_orders__dict = {}
-            # for idx in tqdm(df_active['index'].to_list()):
+            # ipdb.set_trace()
             for idx in df_active['index'].to_list():
                 run_order = QUEEN['queen_orders'].iloc[idx].to_dict()
                 # Queen Order Local Vars
@@ -2205,10 +2209,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # else:
                 #     # print("priceinfo not found in async due to market hours?")
                 #     priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
-                priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'])
                 try:
-                    # Process Queen Order States
+                    priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'])
                     order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
+                    
+                    if order_status[0]['order_status'] == 'failed':
+                        print("Order Failed To Turn From Alpaca, Archving Order to Error")
+                        QUEEN['queen_orders'].at[idx, 'queen_order_state'] = "failed"
+                        continue
+
+                    # Process Queen Order States
                     if len(order_status) > 0:
                         s_time = datetime.datetime.now(est)
                         run_order = route_queen_order(QUEEN=QUEEN, queen_order=run_order, queen_order_idx=idx, order_status=order_status[0]['order_status'], priceinfo=priceinfo) ## send in order_status

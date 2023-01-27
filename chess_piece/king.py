@@ -520,7 +520,7 @@ def ReadPickleData(pickle_file):
             # logging.info(f'{pickle_file} is currently being written to')
         else:
             if stop > 3:
-                print("pickle error")
+                print("read pickle failed")
                 # logging.critical(f'{e} error is pickle load')
                 # send_email(subject='CRITICAL Read Pickle Break')
                 break

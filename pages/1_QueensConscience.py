@@ -1519,6 +1519,7 @@ with st.spinner("Welcome to the QueensMind"):
                         QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_user=client_user))
                         st.write("My Queen")
                         st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
+                        switch_page("QueensConscience")
                 
                 with cols[2]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
