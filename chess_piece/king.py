@@ -528,7 +528,7 @@ def ReadPickleData(pickle_file):
                 with open(pickle_file, "rb") as f:
                     return pickle.load(f)
             except Exception as e:
-                print(e)
+                print('pickleerror ', pickle_file, e)
                 # logging.error(f'{e} error is pickle load')
                 stop += 1
                 time.sleep(0.033)

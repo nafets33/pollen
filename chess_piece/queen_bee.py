@@ -1399,19 +1399,35 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     def return_snap_priceinfo__pollenData(STORY_bee, ticker):
         # read check if ticker is active...if it is return into from db ELSE if user data Pa
-        current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['story']['last_close_price']
-        current_ask = current_price + (current_price * .01)
-        current_bid = current_price - (current_price * .01)
-        # current_price = snap.latest_trade.price
-        # current_ask = snap.latest_quote.ask_price
-        # current_bid = snap.latest_quote.bid_price
+        ttf = f'{ticker}{"_1Minute_1Day"}'
+        if ttf not in STORY_bee.keys():
+            snap = api.get_snapshot(ticker)
+            conditions = snap.latest_quote.conditions
+            c=0
+            while True:
+                # print(conditions)
+                valid = [j for j in conditions if j in exclude_conditions]
+                if len(valid) == 0 or c > 5:
+                    break
+                else:
+                    snap = api.get_snapshot(ticker) # return_last_quote from snapshot
+                    c+=1 
+            
+            current_price = snap.latest_trade.price
+            current_ask = snap.latest_quote.ask_price
+            current_bid = snap.latest_quote.bid_price
+        
+        else:
+            current_price = STORY_bee[ttf]['story']['last_close_price']
+            current_ask = current_price + (current_price * .01)
+            current_bid = current_price - (current_price * .01)
 
         # best limit price
         best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
         maker_middle = best_limit_price['maker_middle']
         ask_bid_variance = current_bid / current_ask
         
-        priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+        priceinfo = {'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
         
         return priceinfo
 
