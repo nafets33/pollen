@@ -2004,7 +2004,7 @@ if str(option).lower() == 'queen':
         # cols = st.columns((1,1))
 
         queen_tabs = ["Orders", "Chess Board", "Portfolio", "Wave Stories", "Trading Models", "Charts", "Logs"]
-        order_tab, Portfolio, wave_stories_tab, chessboard_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
+        order_tab, chessboard_tab, Portfolio, wave_stories_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
 
         with cols[1]:
             return_total_profits(ORDERS=ORDERS)
@@ -2037,15 +2037,6 @@ if str(option).lower() == 'queen':
             control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
             update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
         with log_tab:
-            # option__log = st.radio(
-            #     label="log_radio",
-            #     options=["save space", "logs"],
-            #     key="log_radio",
-            #     label_visibility='visible',
-            #     # disabled=st.session_state.disabled,
-            #     horizontal=True,
-            # )
-            # if option__log == 'logs':
             if st.button("Show Logs"):
                 with st.expander('queen logs', True):
                     logs = os.listdir(log_dir)
@@ -2057,10 +2048,6 @@ if str(option).lower() == 'queen':
                         df = pd.DataFrame(content)
                         st.dataframe(df, width=500)
 
-
-        
-        
-        
         page_line_seperator(color=default_yellow_color)
 
 if str(option).lower() == 'controls':

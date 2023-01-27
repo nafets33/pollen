@@ -548,7 +548,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 
                 return limit_price, sell_qty
 
-            def update__validate__qty(crypto, limit_price, wave_amo):
+            def update__validate__qty(crypto, current_price, limit_price, wave_amo):
                 if crypto:
                     limit_price = round(limit_price) if limit_price else limit_price
                     qty_order = float(round(wave_amo / current_price, 8))
@@ -594,19 +594,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     limit_price = [limit_price if limit_price != False else False][0]
 
 
-                    limit_price, qty_order = update__validate__qty(crypto=crypto, limit_price=limit_price, wave_amo=wave_amo)
+                    limit_price, qty_order = update__validate__qty(crypto=crypto, current_price=priceinfo_order['price'], limit_price=limit_price, wave_amo=wave_amo)
 
                     # return num of trig for client_order_id
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
 
-                    send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)
-                    # if 'stop_order' in send_order_val.keys():
-                    #     print("Order Did not pass to execute")
-                    #     msg = ("Order Did not pass to execute")
-                    #     logging.error(msg)
-                    #     return{'executed': False, 'msg': msg}
-
-                    
+                    send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)                    
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
 
                     # ORDER TYPES Enter the Market
@@ -1365,7 +1358,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return False
 
 
-
     def return_snap_priceinfo(api, ticker, crypto, exclude_conditions):
         if crypto:
             snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
@@ -1392,35 +1384,52 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         maker_middle = best_limit_price['maker_middle']
         ask_bid_variance = current_bid / current_ask
         
-        priceinfo = {'snapshot': snap, 'price': current_price, 'bid': current_bid, 'ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+        priceinfo = {'snapshot': snap, 'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
         
         return priceinfo
 
 
     def return_snap_priceinfo__pollenData(STORY_bee, ticker):
         # read check if ticker is active...if it is return into from db ELSE if user data Pa
-        ttf = f'{ticker}{"_1Minute_1Day"}'
-        if ttf not in STORY_bee.keys():
-            snap = api.get_snapshot(ticker)
-            conditions = snap.latest_quote.conditions
-            c=0
-            while True:
-                # print(conditions)
-                valid = [j for j in conditions if j in exclude_conditions]
-                if len(valid) == 0 or c > 5:
-                    break
-                else:
-                    snap = api.get_snapshot(ticker) # return_last_quote from snapshot
-                    c+=1 
+        # ttf = f'{ticker}{"_1Minute_1Day"}'
+        # if ttf not in STORY_bee.keys():
+        #     snap = api.get_snapshot(ticker)
+        #     conditions = snap.latest_quote.conditions
+        #     c=0
+        #     while True:
+        #         # print(conditions)
+        #         valid = [j for j in conditions if j in exclude_conditions]
+        #         if len(valid) == 0 or c > 5:
+        #             break
+        #         else:
+        #             snap = api.get_snapshot(ticker) # return_last_quote from snapshot
+        #             c+=1 
             
-            current_price = snap.latest_trade.price
-            current_ask = snap.latest_quote.ask_price
-            current_bid = snap.latest_quote.bid_price
+        #     current_price = snap.latest_trade.price
+        #     current_ask = snap.latest_quote.ask_price
+        #     current_bid = snap.latest_quote.bid_price
         
-        else:
-            current_price = STORY_bee[ttf]['story']['last_close_price']
-            current_ask = current_price + (current_price * .01)
-            current_bid = current_price - (current_price * .01)
+        # else:
+        #     current_price = STORY_bee[ttf]['story']['last_close_price']
+        #     current_ask = current_price + (current_price * .01)
+        #     current_bid = current_price - (current_price * .01)
+
+        snap = api.get_snapshot(ticker)
+        conditions = snap.latest_quote.conditions
+        c=0
+        while True:
+            # print(conditions)
+            valid = [j for j in conditions if j in exclude_conditions]
+            if len(valid) == 0 or c > 5:
+                break
+            else:
+                snap = api.get_snapshot(ticker) # return_last_quote from snapshot
+                c+=1 
+        
+        current_price = snap.latest_trade.price
+        current_ask = snap.latest_quote.ask_price
+        current_bid = snap.latest_quote.bid_price
+
 
         # best limit price
         best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
@@ -2177,9 +2186,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             order_status_info = async_api_alpaca__queenOrders(queen_order__s=queen_order__s)  ## Returns Status Info IF Market is Open For Ticker
             charlie_bee['queen_cyle_times']['async api alpaca__queenOrders__om'] = (datetime.datetime.now(est) - s_time_qOrders).total_seconds()
             
-            s_time = datetime.datetime.now(est)
+            # s_time = datetime.datetime.now(est)
             # priceinfo_info = async_api_alpaca__snapshots_priceinfo(queen_order__s=queen_order__s)
-            charlie_bee['queen_cyle_times']['api_priceinfo_QUEENORDERS_om'] = (datetime.datetime.now(est) - s_time).total_seconds()
+            # charlie_bee['queen_cyle_times']['api_priceinfo_QUEENORDERS_om'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             s_time = datetime.datetime.now(est)
             queen_orders__dict = {}
@@ -2196,7 +2205,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # else:
                 #     # print("priceinfo not found in async due to market hours?")
                 #     priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
-                priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=ticker)
+                priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'])
                 try:
                     # Process Queen Order States
                     order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
@@ -2291,21 +2300,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         #### MAIN ####
         # >for every ticker position join in running-positions to account for total position
         # >for each running position determine to exit the position                
+        try:
+            # Submitted Orders First
+            s_loop = datetime.datetime.now(est)
+            queen_orders_main(QUEEN=QUEEN, ORDERS=ORDERS, STORY_bee=STORY_bee, portfolio=portfolio, QUEEN_KING=QUEEN_KING)
+            charlie_bee['queen_cyle_times']['queen_orders___main'] = (datetime.datetime.now(est) - s_loop).total_seconds()
 
-        # Submitted Orders First
-        s_loop = datetime.datetime.now(est)
-        queen_orders_main(QUEEN=QUEEN, ORDERS=ORDERS, STORY_bee=STORY_bee, portfolio=portfolio, QUEEN_KING=QUEEN_KING)
-        charlie_bee['queen_cyle_times']['queen_orders___main'] = (datetime.datetime.now(est) - s_loop).total_seconds()
+            # Reconcile QUEENs portfolio
+            # reconcile_portfolio()
 
-        # Reconcile QUEENs portfolio
-        # reconcile_portfolio()
-
-        # God Save the Queen
-        s_loop = datetime.datetime.now(est)
-        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-        refresh_queen_orders__save_ORDERS(QUEEN=QUEEN, ORDERS=ORDERS)
-        charlie_bee['queen_cyle_times']['God_Save_The_Queen__main'] = (datetime.datetime.now(est) - s_loop).total_seconds()
-
+            # God Save the Queen
+            s_loop = datetime.datetime.now(est)
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            refresh_queen_orders__save_ORDERS(QUEEN=QUEEN, ORDERS=ORDERS)
+            charlie_bee['queen_cyle_times']['God_Save_The_Queen__main'] = (datetime.datetime.now(est) - s_loop).total_seconds()
+        except Exception as e:
+            print(e)
+            print_line_of_error()
+            raise e
         return True
 
 
