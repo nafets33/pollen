@@ -449,7 +449,7 @@ def grid_height(len_of_rows):
     if len_of_rows > 10:
         grid_height = 333
     else:
-        grid_height = round(len_of_rows * 46, 0)
+        grid_height = round(len_of_rows * 63, 0)
 
     return grid_height
 
