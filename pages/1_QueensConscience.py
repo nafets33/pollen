@@ -1499,9 +1499,9 @@ with st.spinner("Welcome to the QueensMind"):
                     st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
                     return False
             
-            if api_failed:
-                st.write("you need to setup your Broker Queens to Turn on your Queen")
-                return False
+            # if api_failed:
+            #     st.write("you need to setup your Broker Queens to Turn on your Queen")
+            #     return False
 
             if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
                 # st.write("YOUR QUEEN if OFFLINE")
