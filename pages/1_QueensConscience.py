@@ -198,11 +198,11 @@ with st.spinner("Welcome to the QueensMind"):
     if prod:
         with cols[1]:
             # st.warning("LIVE ENVIORMENT The RealWorld")
-            mark_down_text(text='LIVE ENVIRONMENT The RealWorld', fontsize='23', align='center')
+            mark_down_text(text='LIVE ENVIRONMENT The RealWorld', fontsize='23', align='center', color="Green")
     else:
         with cols[1]:
             # st.info("SandBox")
-            mark_down_text(text='SandBox ENVIRONMENT Play and Learn', fontsize='23', align='center')
+            mark_down_text(text='SandBox ENVIRONMENT Play and Learn', fontsize='23', align='center', color="Red")
 
     PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
     PB_App_Pickle = st.session_state['PB_App_Pickle'] 
@@ -1494,7 +1494,7 @@ with st.spinner("Welcome to the QueensMind"):
         now = datetime.datetime.now(est)
 
         if dag =='run_queenbee':
-
+            # ipdb.set_trace()
             if 'trigger_queen' in QUEEN_KING.keys():
                 if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
                     st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
@@ -1506,8 +1506,8 @@ with st.spinner("Welcome to the QueensMind"):
                 with cols[0]:
                     st.error("Your Queen Is Asleep Wake Her UP!")
                 with cols[1]:
-                    # wake_up_queen_button = st.button("Wake Her Up")
-                    wake_up_queen_button = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
+                    wake_up_queen_button = st.button("Wake Her Up")
+                    # wake_up_queen_button = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
                     if wake_up_queen_button and st.session_state['authorized_user']:
                         if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
                             print("failsafe away from user running function")
