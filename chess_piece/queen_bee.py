@@ -120,7 +120,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return {'stop_order': 'MISSING_SIDE'}
         except Exception as e:
             print(e)
-            ipdb.set_trace()
 
     def generate_client_order_id(QUEEN, ticker, trig, sellside_client_order_id=False): # generate using main_order table and trig count
         main_orders_table = QUEEN['queen_orders']
@@ -529,7 +528,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return QUEEN['queen_orders'].iloc[run_order_idx].to_dict()
         except Exception as e:
             print(e, print_line_of_error())
-            ipdb.set_trace()
 
 
         return True
@@ -852,7 +850,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return power_up
             except Exception as e:
                 print("power up failed ", e)
-                ipdb.set_trace()
 
 
         try:
@@ -1028,7 +1025,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         except Exception as e:
             print(e, print_line_of_error(), ticker_time_frame)
             print("logme")
-            ipdb.set_trace()
 
 
     def command_conscience(api, QUEEN, STORY_bee, QUEEN_KING):
@@ -1104,7 +1100,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 continue
                             if trig in trading_model['trigbees'].keys():
                                 if str(trading_model['trigbees'][trig]).lower() != 'true':
-                                    # ipdb.set_trace()
                                     print("trig bee model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
                                     continue
                                 
@@ -1240,7 +1235,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         
     def validate_portfolio_with_RUNNING(ticker, run_index, run_order, portfolio): # check if there are enough shares in portfolio IF NOT Archive RUNNING ORDER AS IT WAS SOLD ALREADY
-        # ipdb.set_trace()
         # if totals don't match with alpaca
         # df_links = return_all_linked_queen_orders(exit_order_link=run_order['client_order_id'])
         # qos_qty = sum(df_links['qty'])
@@ -1258,7 +1252,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     logging_log_message(log_type='critical', msg=msg, ticker=run_order['ticker_time_frame'])
                     print("CRITICAL ERROR SHORT POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
 
-                    ipdb.set_trace()
                     QUEEN['queen_orders'].at[run_index, 'filled_qty'] = qty_avail
                     QUEEN['queen_orders'].at[run_index, 'qty_available'] = qty_avail
                     QUEEN['queen_orders'].at[run_index, 'qty_validation'] = 'true'
@@ -1270,7 +1263,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     logging_log_message(log_type='critical', msg=msg, ticker=run_order['ticker_time_frame'])
                     print("CRITICAL ERROR LONG POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
 
-                    ipdb.set_trace()
                     QUEEN['queen_orders'].at[run_index, 'filled_qty'] = qty_avail
                     QUEEN['queen_orders'].at[run_index, 'qty_available'] = qty_avail
                     QUEEN['queen_orders'].at[run_index, 'qty_validation'] = 'true'
@@ -1283,7 +1275,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     print(ticker, "tagging CRITICAL ERROR PORTFOLIO DOES NOT HAVE TICKER ARCHVIE RUNNING ORDER Tagged to be archived")
                     logging.critical({'msg': f'{ticker}{" :Ticker not in Portfolio 1"}'})
 
-                    ipdb.set_trace()
                     order_status = check_order_status(api=api, client_order_id=run_order['client_order_id'], queen_order=run_order)
                     queen_order = update_latest_queen_order_status(order_status=order_status, queen_order_idx=run_index)
                     QUEEN['queen_orders'].at[run_index, 'queen_order_state'] = "completed_alpaca"        
@@ -1291,7 +1282,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         
         except Exception as e:
             print(e, print_line_of_error())
-            ipdb.set_trace()
 
 
     def return_closing_orders_df(QUEEN, exit_order_link): # returns linking order
@@ -1409,7 +1399,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     def return_snap_priceinfo__pollenData(STORY_bee, ticker):
         # read check if ticker is active...if it is return into from db ELSE if user data Pa
-        current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
+        current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['story']['last_close_price']
         current_ask = current_price + (current_price * .01)
         current_bid = current_price - (current_price * .01)
         # current_price = snap.latest_trade.price
@@ -1522,7 +1512,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return {'metrics': d_return}
         except Exception as e:
             print(e, print_line_of_error())
-            ipdb.set_trace()
 
 
     def update_runCLOSE__queen_order_honey(queen_order, origin_order, queen_order_idx):
@@ -1587,7 +1576,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 except Exception as e:
                     print(e, print_line_of_error())
-                    ipdb.set_trace()
 
         return True
 
@@ -1598,7 +1586,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # # """ all scenarios if run_order should be closed out """
             
             # if run_order['client_order_id'] == 'run__TSLA-buy_cross-0-127-22-10-31 17.14':
-            #     ipdb.set_trace()
+            #     ipdb.
 
             # Stars in Heaven
             # stars_df = story_view(STORY_bee=STORY_bee, ticker=ticker)['df'] ## story view is slow needs improvement before implementation
@@ -1872,7 +1860,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             print(e, print_line_of_error())
             log_error_dict = logging_log_message(log_type='error', msg=f'{runorder_client_order_id}{": unable to process kings read on queen order"}', error=str(e), origin_func='king Evaluate QueenOrder')
             logging.error(log_error_dict)
-            ipdb.set_trace()
 
 
     def stop_queen_order_from_kingbishop(run_order):
@@ -1897,7 +1884,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 
                 def alpaca_queen_order_state(QUEEN, order_status, queen_order, queen_order_idx, priceinfo):
                     try:
-                        # ipdb.set_trace()
                         """ Alpcaca Order States """
                         cancel_expired = ['canceled', 'expired']
                         pending = ['pending_cancel', 'pending_replace']
@@ -1906,9 +1892,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         filled = ['filled']
                         partially_filled = ['partially_filled']
                         alp_order_status = order_status['status']
-
-                        # if run_order['client_order_id'] == 'run__ETHUSD-buy_cross-0-72-22-11-24 23.18':
-                        #     ipdb.set_trace()
                     
                         # handle updates. cancels updates
                         if alp_order_status in cancel_expired:
@@ -1964,7 +1947,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 print('closing filled: ', profit_loss_value, 'profit_loss: ', profit_loss)
                                 
                                 update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=queen_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
-                                # ipdb.set_trace()
+
                                 # Check to complete Queen Order
                                 origin_closed = check_origin_order_status(QUEEN=QUEEN, origin_order=origin_order, origin_idx=origin_order_idx, closing_filled=closing_filled)
                                 if origin_closed:
@@ -2008,7 +1991,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     except Exception as e:
                         print('queen router failed', e, print_line_of_error())
-                        ipdb.set_trace()
                 
                 """ 
                 1. assign queen order state
@@ -2073,7 +2055,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         return return_list
 
                 list_of_status = asyncio.run(main(queen_order__s))
-                # ipdb.set_trace()
                 return list_of_status
 
             
@@ -2109,7 +2090,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         return return_list
 
                 list_of_status = asyncio.run(main(queen_order__s))
-                # ipdb.set_trace()
                 return list_of_status
             
 
@@ -2140,7 +2120,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         return return_list
 
                 list_of_kingbishop_evals = asyncio.run(main(queen_orders__dict))
-                # ipdb.set_trace()
                 return list_of_kingbishop_evals
 
             charlie_bee['queen_cyle_times']['read_funcs__QUEENORDERS_om'] = (datetime.datetime.now(est) - s_loop).total_seconds()
@@ -2159,7 +2138,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 print('APP: Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
                 log_error_dict = logging_log_message(log_type='error', msg='APP: Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
                 logging.error(log_error_dict)
-                ipdb.set_trace()
 
 
             """ ALL Active SUBMITTED & RUNNING & RUNNING_CLOSE SWITCH TO ASYNC to call all snapshots and orders"""
@@ -2241,7 +2219,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
                     log_error_dict = logging_log_message(log_type='error', msg='Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
                     logging.error(log_error_dict)
-                    ipdb.set_trace()
                     # archive order?
                     QUEEN['queen_orders'].at[idx, 'queen_order_state'] = 'error'
 
@@ -2272,7 +2249,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         except Exception as e:
             print(e)
             print_line_of_error()
-            ipdb.set_trace()
 
 
     def refresh_queen_orders__save_ORDERS(QUEEN, ORDERS):
