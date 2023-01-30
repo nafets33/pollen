@@ -16,7 +16,7 @@ from chess_piece.queen_hive import init_pollen_dbs
 # from QueenHive import init_pollen_dbs
 
 
-def signin_main():
+def signin_main(page):
     """Return True or False if the user is signed in"""
 
     load_dotenv(os.path.join(os.getcwd(), ".env"))
@@ -225,16 +225,22 @@ def signin_main():
             unsafe_allow_html=True,
         )
 
+    def setup_instance(client_username, switch_env, force_db_root, queenKING):
+        # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
+        db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+        prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env)            
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
+        
+        return prod
+
     def setup_user_pollenqdbs(key):
-        st.session_state["client_user"] = st.session_state["username"].split("@")[0]
 
         if st.session_state["authorized_user"]:
-            if 'admin__client_user' in st.session_state:
-                st.session_state["client_user"] = st.session_state['admin__client_user']
-                db_client_user_name = st.session_state['admin__client_user']
-                st.sidebar.write(f"Swarm *{db_client_user_name}*")
-            else:
-                db_client_user_name = st.session_state["username"].split("@")[0]
+            if st.session_state["admin"]:
+                st.write('admin:', st.session_state["admin"])
+            if 'admin__client_user' in st.session_state and st.session_state['admin__client_user'] != False:
+                st.session_state["username"] = st.session_state['admin__client_user']
+                st.sidebar.write(f'Swarm *{st.session_state["username"]}')
 
             st.sidebar.warning("Your Queen is Awaiting")
             force_db_root = False
@@ -243,20 +249,13 @@ def signin_main():
             force_db_root = True
             if st.button("Request A Queen"):
                 send_email(recipient=os.environ('pollenq_gmail'), subject="NotAllowedQueen", body=f'{st.session_state["client_user"]} Asking for a Queen')
-                st.success("Send Note To Hive Master, We'll talk soon")
+                st.success("Message Sent To Hive Master, We'll talk soon")
 
-        ## SETUP 
-        def setup_instance(switch_env, force_db_root):
-            db_root = init_clientUser_dbroot(client_user=st.session_state['client_user'], force_db_root=force_db_root)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-            prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=switch_env)            
-            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
-            return prod
-        
-        prod = setup_instance(switch_env=False, force_db_root=force_db_root)
+        prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True)
 
         prod_name_oppiste = "Sandbox" if prod  else "LIVE"        
         if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
-            setup_instance(switch_env=True, force_db_root=force_db_root)
+            setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=force_db_root, queenKING=True)
             if 'last_page' in st.session_state and st.session_state['last_page'] != False:
                 switch_page(st.session_state['last_page'])
             else:
@@ -288,10 +287,7 @@ def signin_main():
 
             return True
 
-    if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
-        if 'logout' in st.session_state and st.session_state["logout"] != True:
-            define_authorized_user(key='11')
-            return True
+
 
     con = sqlite3.connect("db/client_users.db")
     cur = con.cursor()
@@ -325,16 +321,31 @@ def signin_main():
     # Check login. Automatically gets stored in session state
     name, authentication_status, email = authenticator.login("Login", "main")
 
+    if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
+        if 'logout' in st.session_state and st.session_state["logout"] != True:
+            cols = st.columns((8,1,2))
+            if page == 'pollenq':
+                with cols[1]:
+                    authenticator.logout("Logout", "main")
+                with cols[2]:
+                    reset_password(email, location='main')
+            
+            define_authorized_user(key='12')
+            
+            return True
+
     # login successful; proceed
     if authentication_status:
-        update_db(email)
-        cols = st.columns((8,1,2))
-        with cols[1]:
-            authenticator.logout("Logout", "main")
-        with cols[2]:
-            reset_password(email, location='main')
-        
-        define_authorized_user(key='12')
+        if 'logout' in st.session_state and st.session_state["logout"] != True:
+            update_db(email)
+            cols = st.columns((8,1,2))
+            if page == 'pollenq':
+                with cols[1]:
+                    authenticator.logout("Logout", "main")
+                with cols[2]:
+                    reset_password(email, location='main')
+            
+            define_authorized_user(key='12')
 
         return True
 
@@ -346,6 +357,7 @@ def signin_main():
             forgot_password()
         with st.expander("New User"):
             register_user()
+        
         return False
 
     # no login trial; create account
@@ -360,4 +372,4 @@ def signin_main():
 
 if __name__ == "__main__":
     st.session_state["logout"] = True
-    signin_main()
+    signin_main(page='home')

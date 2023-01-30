@@ -575,7 +575,8 @@ def init_QUEEN_App():
 
 
     app = {
-        "prod": False,
+        "prod": 'init',
+        "db__client_user": 'init',
         "theme": "nuetral",
         "king_controls_queen": return_queen_controls(stars),
         "qcp_workerbees": {
@@ -4344,7 +4345,7 @@ def init_PowerRangers(ranger_dimensions=False):
     return r_dict
 
 
-def init_pollen_dbs(db_root, prod, queens_chess_piece, queenKING=False):
+def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
     def init_queen_orders(pickle_file):
         db = {}
         db["queen_orders"] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])

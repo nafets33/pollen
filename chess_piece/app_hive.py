@@ -1,14 +1,11 @@
 import argparse
 import base64
 import os
-
-# from QueenHive import PickleData, queen_orders_view
 import pickle
 import smtplib
 import ssl
 from datetime import datetime
 from email.message import EmailMessage
-
 import alpaca_trade_api as tradeapi
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,6 +19,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from streamlit_extras.switch_page_button import switch_page
 import requests
 from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
 import ipdb
 
 from chess_piece.king import (
@@ -31,6 +29,7 @@ from chess_piece.king import (
     streamlit_config_colors,
 )
 
+load_dotenv()
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone("UTC")
 
@@ -105,7 +104,7 @@ def send_email(recipient, subject, body):
 
 ################ AUTH ###################
 
-def trigger_airflow_dag(dag, client_user, prod, airflow_password=False, airflow_username=False, airflow_host=False):
+def trigger_airflow_dag(dag, client_username, prod, airflow_password=False, airflow_username=False, airflow_host=False):
     # http://34.162.91.146:8080/api/v1/dags ## dict visual of dags
     airflow_host = airflow_host if airflow_host else os.environ.get("airflow_host")
     airflow_password = airflow_password if airflow_password else os.environ.get("airflow_password")
@@ -119,7 +118,7 @@ def trigger_airflow_dag(dag, client_user, prod, airflow_password=False, airflow_
         data = {
             "dag_run_id": f'{dag}__{datetime.now(utc)}',
             "logical_date": f'{datetime.now(utc)}',
-            "conf": {"client_user": client_user, "prod":prod}
+            "conf": {"client_user": client_username, "prod":prod}
         }
     elif dag =='run_workerbees':
         data = {
@@ -903,7 +902,7 @@ def page_session_state__cleanUp(page):
     return True
 
 
-def live_sandbox__setup_switch(client_user, QUEEN_KING=False, switch_env=False):
+def live_sandbox__setup_switch(client_username, QUEEN_KING=False, switch_env=False):
     if QUEEN_KING:
         if 'last_env' in QUEEN_KING.keys():
             prod = QUEEN_KING['last_env']
@@ -934,14 +933,13 @@ def live_sandbox__setup_switch(client_user, QUEEN_KING=False, switch_env=False):
             prod_name = "LIVE"
             st.session_state["prod_name"] = prod_name
 
-    admin = True if client_user == "stefanstapinski" else False
-    st.session_state["admin"] = True if admin else False
+    st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
     
     if QUEEN_KING:
         if st.session_state['authoirzed_user']:
             QUEEN_KING['last_env'] = prod
 
-    return prod, admin, prod_name
+    return prod
 
 
 def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
@@ -1101,6 +1099,8 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                         APCA_API_KEY_ID=None,
                         APCA_API_SECRET_KEY=None,
                     )
+                
+                st.warning("NEVER Share your API KEYS WITH ANYONE!")
 
                 if st.form_submit_button("Save API Keys"):
                     # test keys

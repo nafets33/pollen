@@ -4,17 +4,11 @@
 - pip install -r requirements.txt <<< may need fix >>>
 - pre-commit install
 
-## Commands to execute:
-- streamlit run pollenq.py
-- python QueenBee_sandbox.py
-- python QueenBeeWorkerBees.py -prod False
-
-## Run Locally
+## Run Locally  ## use folders from local_db_refence
 Create following Dir Manually inside pollen/
 symbols_pollenstory_dbs
 symbols_STORY_bee_dbs
 client_user_dbs
-# master_swarm_dbs
 
 ## Docker
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-$(uname -s)-$(uname -m)"  -o /usr/local/bin/docker-compose
@@ -23,8 +17,8 @@ sudo chmod +x /usr/bin/docker-compose
 
 run as >>> sudo -su root 
 docker-compose up
-
-docker ps # show status
+# show status
+docker ps 
 ## stop docker
 docker stop $(docker ps -a -q)
 
@@ -36,7 +30,7 @@ sudo -su root ## username
 sudo chown stapinski89:stapinski89 symbols_pollenstory_dbs
 sudo chown stapinski89:stapinski89 symbols_STORY_bee_dbs  # fix root
 sudo chown stapinski89:stapinski89 client_user_dbs  # fix root
-chmod -R -777 folder_path/ # fix root
+chmod -R 777 queen.pkl
 
 sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 

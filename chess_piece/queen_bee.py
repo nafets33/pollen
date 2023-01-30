@@ -58,7 +58,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     prod = True if str(prod).lower() == 'true' else False
 
-    if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
+    if client_user not in users_allowed_queen_email: ## this db name for client_user # stefanstapinski
         print("failsafe away from user running function")
         send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to same something')
         sys.exit()
@@ -2382,7 +2382,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     try:
         # s_time = datetime.datetime.now().astimezone(est)
 
-        db_root = init_clientUser_dbroot(client_user=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+        db_root = init_clientUser_dbroot(client_useremail=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
 
         print(
         """

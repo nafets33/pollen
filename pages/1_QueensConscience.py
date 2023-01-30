@@ -25,10 +25,9 @@ from custom_button import cust_Button
 from polleq_app_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, live_sandbox__setup_switch, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
-from QueenBeeDagger import run__trigger_dag
 # import random
 # from tqdm import tqdm
 # from collections import defaultdict
@@ -145,24 +144,21 @@ page = 'QueensConscience'
 
 with st.spinner("Welcome to the QueensMind"):
 
-    signin_main()
+    signin_main(page='QueensConscience')
     
     progress_bar(value=89)  ## show user completion of user flow interaction
 
     # return page last visited 
-    
+    sneak_peak = False
     if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
         sneak_peak = True
         st.session_state['production'] = True
         st.session_state['username'] = 'stefanstapinski@gmail.com'
-        st.session_state['client_user'] = 'Johnny Quest'
         st.session_state['authorized_user'] = False
         st.session_state['db_root'] = os.path.join(main_root, 'db')
         st.info("Welcome and Watch A QueenBot in Action")
-        
-        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=False)            
-        
-        init_pollen_dbs(db_root=st.session_state['db_root'], prod=prod, queens_chess_piece='queen', queenKING=True)
+                
+        init_pollen_dbs(db_root=st.session_state['db_root'], prod=True, queens_chess_piece='queen', queenKING=True)
 
     
     elif st.session_state['authentication_status'] != True:
@@ -174,6 +170,7 @@ with st.spinner("Welcome to the QueensMind"):
         st.stop()
     
     elif st.session_state['authentication_status']:
+        sneak_peak = False
         pass
     else:
         st.error("Stopping page")
@@ -184,15 +181,8 @@ with st.spinner("Welcome to the QueensMind"):
 
     st.sidebar.write(f'*Welcome {st.session_state["name"]}')
     authorized_user = st.session_state['authorized_user']
-    client_user = st.session_state["client_user"]
+    client_user = st.session_state["username"]
     # st.write("*", client_user)
-
-    # prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
-    # prod_name_oppiste = "Sandbox" if prod  else "LIVE"
-    # if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
-    #     prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
-    #     init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
-    #     switch_page('QueensConscience')
     
     cols = st.columns((4,8,4))
     if prod:
@@ -239,7 +229,7 @@ with st.spinner("Welcome to the QueensMind"):
             if 'init_queen_request' in st.session_state:
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
                 PickleData(PB_App_Pickle, QUEEN_KING)
-                send_email(recipient=os.environ('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["client_user"]} Asking for a Queen')
+                send_email(recipient=os.environ('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
                 st.success("Hive Master Notified and You should receive contact soon")
 
 
@@ -248,6 +238,7 @@ with st.spinner("Welcome to the QueensMind"):
         it = iter(it)
         return iter(lambda: tuple(islice(it, size)), ())
 
+    
     def queen_triggerbees():
         # cols = st.columns((1,5))
         now_time = datetime.datetime.now(est)
@@ -263,12 +254,14 @@ with st.spinner("Welcome to the QueensMind"):
             df = df.sort_values('ttf')
             # st.write(df)
             list_of_dicts = dict(zip(df['ttf'], df['trig']))
-            list_of_dicts_ = [{k:v} for (k,v) in list_of_dicts.items()]
+            list_of_dicts_ = [{k:v} for (k,v) in list_of_dicts.items() if 'buy' in v]
+            list_of_dicts_sell = [{k:v} for (k,v) in list_of_dicts.items() if 'sell' in v]
 
-            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_, title="Active Bees", write_type="info")
+            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_, title="Active Buy Bees", write_type="info")
+            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_sell, title="Active Sell Bees", write_type="info")
             # g = {write_flying_bee() for i in range(len(df))}
         else:
-            st.subheader("No ones flying")
+            st.subheader("No one's flying")
             # mark_down_text(fontsize=12, color=default_text_color, text="No Active TriggerBees")
             local_gif(gif_path=flyingbee_grey_gif_path)     
             
@@ -284,7 +277,6 @@ with st.spinner("Welcome to the QueensMind"):
                     df = df.rename(columns={0: 'ttf', 1: 'trig'})
                     df = df.sort_values('ttf')
                     st.write(df)
-
 
     def queen_QueenOrders():
         if admin == False:
@@ -1370,7 +1362,7 @@ with st.spinner("Welcome to the QueensMind"):
         
         
         with st.expander("Wave Stories", True):
-            req = ticker_time_frame__option(req_key='wavestories')
+            req = ticker_time_frame__option(tickers_avail_op=tickers_avail_op, req_key='wavestories')
             tickers = req['tickers']
             ticker_option = req['ticker_option']
             frame_option = req['frame_option']
@@ -1384,17 +1376,12 @@ with st.spinner("Welcome to the QueensMind"):
                 df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
                 df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
                 with cols[0]:
-                    st.plotly_chart(create_guage_chart(title=f'{ticker_option} Wave Gauge', value=float(star__view["macd_tier_guage_value"])))
+                    st.plotly_chart(create_guage_chart(title=f'{symbol} Wave Gauge', value=float(star__view["macd_tier_guage_value"])))
                 with cols[1]:
-                    mark_down_text(fontsize=25, text=f'{ticker_option} {"MACD Gauge "}{star__view["macd_tier_guage"]}{" Hist Gauge "}{star__view["hist_tier_guage"]}')
+                    mark_down_text(fontsize=25, text=f'{symbol} {"MACD Gauge "}{star__view["macd_tier_guage"]}{" Hist Gauge "}{star__view["hist_tier_guage"]}')
 
                     st.dataframe(df_style)
 
-        # with cols[1]:
-
-
-        
-        # page_line_seperator()
 
         return True
         
@@ -1482,10 +1469,9 @@ with st.spinner("Welcome to the QueensMind"):
                     return True
 
 
-
-
-    def trigger_queen_vars(dag, client_user, last_trig_date=datetime.datetime.now(est)):
-        return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_user}
+    def trigger_queen_vars(dag, client_username, last_trig_date=datetime.datetime.now(est)):
+        return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
+    
     
     def queenbee_online(QUEEN, admin, dag):
         # from airflow.dags.dag_queenbee_prod import run_trigger_dag
@@ -1497,6 +1483,7 @@ with st.spinner("Welcome to the QueensMind"):
             if 'trigger_queen' in QUEEN_KING.keys():
                 if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
                     st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
+                    st.image(QUEEN_KING['character_image'], width=100)
                     return False
             
             # if api_failed:
@@ -1512,16 +1499,17 @@ with st.spinner("Welcome to the QueensMind"):
                     wake_up_queen_button = st.button("Wake Her Up")
                     # wake_up_queen_button = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
                     if wake_up_queen_button and st.session_state['authorized_user']:
-                        if client_user not in users_allowed_queen_emailname: ## this db name for client_user # stefanstapinski
+                        if st.session_state['username'] not in users_allowed_queen_email: ## this db name for client_user # stefanstapinski
                             print("failsafe away from user running function")
-                            send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to say something')
+                            send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{st.session_state["username"]} you forgot to say something')
                             st.error("Your Account not Yet authorized")
                             sys.exit()
                         # execute trigger
-                        trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
-                        QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_user=client_user))
+                        trigger_airflow_dag(dag=dag, client_user=st.session_state['username'], prod=prod)
+                        QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
                         st.write("My Queen")
                         st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
+                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                         switch_page("QueensConscience")
                 
                 with cols[2]:
@@ -1562,13 +1550,13 @@ with st.spinner("Welcome to the QueensMind"):
         elif dag =='run_workerbees':
             if admin:
                 if st.sidebar.button("Flying Bees"):
-                    trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
+                    trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
                     st.write("Bees Fly")
             return True
         elif dag =='run_workerbees_crypto':
             if admin:
                 if st.sidebar.button("Flying Crypto Bees"):
-                    trigger_airflow_dag(dag=dag, client_user=client_user, prod=prod)
+                    trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
                     st.write("Crypto Bees Fly")
             return True
         else:
@@ -1578,7 +1566,7 @@ with st.spinner("Welcome to the QueensMind"):
     def queen_chart(POLLENSTORY):
         # Main CHART Creation
         with st.expander('chart', expanded=True):
-            req = ticker_time_frame__option(req_key='charts')
+            req = ticker_time_frame__option(tickers_avail_op=tickers_avail_op, req_key='charts')
             tickers = req['tickers']
             ticker_option = req['ticker_option']
             frame_option = req['frame_option']
@@ -1729,18 +1717,12 @@ with st.spinner("Welcome to the QueensMind"):
                 st.info("Page Stopped")
                 st.stop()
 
-    
-    
-    def advanced_charts(POLLENSTORY):
+
+    def advanced_charts(tickers_avail, POLLENSTORY):
         try:
             stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
             '2hr':"2Hour_6Month", '1Yr':"1Day_1Year", 'all':"all",}
             charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
-
-
-            tickers_avail = list([set(i.split("_")[0] for i in POLLENSTORY.keys())][0])
-            ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-            ttframe_list.append(["short_star", "mid_star", "long_star", "retire_star"])
 
             cols = st.columns((1,10,1,1))
             # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
@@ -1759,17 +1741,9 @@ with st.spinner("Welcome to the QueensMind"):
                             # disabled=st.session_state.disabled,
                             horizontal=True,
                         )
-                    # with cols[1]:
-                        # frame_option = st.selectbox("ttframes", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
                     with cols[0]:
                         day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
-                    # with cols[2]:
-                        # wave_option = st.sidebar.selectbox('Show Waves', ['no', 'yes'], index=['no'].index('no'))
-                        # slope_option = st.sidebar.selectbox('Show Slopes', ['no', 'yes'], index=['no'].index('no'))
-                    
-
-                    # selections = [i for i in POLLENSTORY.keys() if i.split("_")[0] in ticker_option and i.split("_")[1] in frame_option]
-                    # ticker_time_frame = selections[0]
+  
                     ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
                     df = POLLENSTORY[ticker_time_frame].copy()
                     st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
@@ -1859,10 +1833,6 @@ with st.spinner("Welcome to the QueensMind"):
         return True
 
 
-    
-    # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
-
-
 
     ########################################################
     ########################################################
@@ -1873,10 +1843,6 @@ with st.spinner("Welcome to the QueensMind"):
 
 
     # """ if "__name__" == "__main__": """
-
-    # st.image(chess_piece_queen, width=23)
-
-    ## answer the question what to show to a User when they first Sign On OR whats a Preview to Show? I.E. if User Not allowed then show Sandbox Data?
 
     # use API keys from user
     queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_queenbee')
@@ -1916,9 +1882,8 @@ with st.spinner("Welcome to the QueensMind"):
     STORY_bee = ticker_db['STORY_bee']
     # Ticker DataBase
     tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
+    tickers_avail = tickers_avail if len(tickers_avail) > 0 else 'SPY'
 
-    # cols = st.columns((3,10,1,1))
-    # with cols[1]:
     if authorized_user:
         option = st.sidebar.radio(
             label="main_radio",
@@ -1954,11 +1919,12 @@ def ticker_time_frame_UI_rename(ticker_time_frame):
     return new_ttf
 
 
-def ticker_time_frame__option(req_key):
+def ticker_time_frame__option(tickers_avail_op, req_key):
     cols = st.columns(2)
     with cols[0]:
         if 'sel_tickers' not in st.session_state:
-            st.session_state['sel_tickers'] = 'SPY'
+            st.session_state['sel_tickers'] = tickers_avail_op[0]
+
         tickers = st.multiselect('Symbols', options=list(tickers_avail_op), default=st.session_state['sel_tickers'], help='View Groups of symbols to Inspect where to send the Bees', key=f'ticker{req_key}')
         if len(tickers) == 0:
             ticker_option = 'SPY'
@@ -1974,16 +1940,7 @@ def ticker_time_frame__option(req_key):
     # frame_option = st.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
     return {'tickers': tickers, 'ticker_option': ticker_option, 'frame_option': frame_option}
 
-# req = ticker_time_frame__option()
-# tickers = req['tickers']
-# ticker_option = req['ticker_option']
-# frame_option = req['frame_option']
 
-# ticker_storys = {k:v for (k,v) in STORY_bee.items() if k.split("_")[0] in tickers}
-
-# ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
-
-# star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
 
 today_day = datetime.datetime.now(est).day
 current_radio_sel = str(option).lower()
@@ -2007,8 +1964,8 @@ if str(option).lower() == 'queen':
 
         # cols = st.columns((1,1))
 
-        queen_tabs = ["Orders", "Chess Board", "Portfolio", "Wave Stories", "Trading Models", "Charts", "Logs"]
-        order_tab, chessboard_tab, Portfolio, wave_stories_tab, trading_models_tab, charts_tab, log_tab = st.tabs(queen_tabs)
+        queen_tabs = ["Orders", "Chess Board", "Portfolio", "Wave Stories", "Trading Models", "Charts"]
+        order_tab, chessboard_tab, Portfolio, wave_stories_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
 
         with cols[1]:
             return_total_profits(ORDERS=ORDERS)
@@ -2031,7 +1988,7 @@ if str(option).lower() == 'queen':
         
         with charts_tab:
             # queen_chart(POLLENSTORY=POLLENSTORY)
-            advanced_charts(POLLENSTORY=POLLENSTORY)
+            advanced_charts(tickers_avail=tickers_avail_op, POLLENSTORY=POLLENSTORY)
 
         with trading_models_tab:
             queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
@@ -2040,17 +1997,7 @@ if str(option).lower() == 'queen':
             contorls = list(QUEEN['queen_controls'].keys())
             control_option = st.selectbox('control', contorls, index=contorls.index('theme'))
             update_QueenControls(QUEEN_KING=QUEEN_KING, control_option=control_option, theme_list=theme_list)
-        with log_tab:
-            if st.button("Show Logs"):
-                with st.expander('queen logs', True):
-                    logs = os.listdir(log_dir)
-                    logs = [i for i in logs if i.endswith(".log")]
-                    log_file = st.selectbox('log files', list(logs))
-                    with open(os.path.join(log_dir, log_file), 'r') as f:
-                        content = f.readlines()
-                        # st.write(len(content))
-                        df = pd.DataFrame(content)
-                        st.dataframe(df, width=500)
+
 
         page_line_seperator(color=default_yellow_color)
 
@@ -2081,10 +2028,9 @@ if str(option).lower() == 'controls':
 
 if str(option).lower() == 'model_results':
     model_wave_results(STORY_bee)
-    # tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
-    # tickers_avail.update({"all"})
+
     cols = st.columns(2)
-    tickers_avail_op = list(tickers_avail)
+
     with cols[0]:
         if 'sel_tickers' not in st.session_state:
             st.session_state['sel_tickers'] = 'SPY'
@@ -2154,7 +2100,7 @@ if str(option).lower() == 'model_results':
 
 
 if str(option).lower() == 'pollen_engine':
-    db_root = os.path.join(hive_master_root(), 'db')
+    # db_root = os.path.join(hive_master_root(), 'db')
     cols = st.columns(3)
     # with cols[1]:
     #     local_gif(gif_path=queen_flair_gif, height=350, width=400)
@@ -2164,11 +2110,19 @@ if str(option).lower() == 'pollen_engine':
     with st.expander("alpaca account info"):
         st.write(acct_info['info'])
 
-    with st.expander('betty_bee'):
-        betty_bee = ReadPickleData(os.path.join(db_root, 'betty_bee.pkl'))
-        df_betty = pd.DataFrame(betty_bee)
-        df_betty = df_betty.astype(str)
-        st.write(df_betty)
+    if admin:
+        with st.expander('betty_bee'):
+            betty_bee = ReadPickleData(os.path.join(os.path.join(hive_master_root(), 'db'), 'betty_bee.pkl'))
+            df_betty = pd.DataFrame(betty_bee)
+            df_betty = df_betty.astype(str)
+            st.write(df_betty)
+        
+        with st.expander('users db'):
+            con = sqlite3.connect("db/client_users.db")
+            cur = con.cursor()
+
+            users = cur.execute("SELECT * FROM users").fetchall()
+            st.dataframe(pd.DataFrame(users))
 
     with st.expander('charlie_bee'):
 
@@ -2185,12 +2139,6 @@ if str(option).lower() == 'pollen_engine':
             content = f.readlines()
             st.write(content)
     
-    with st.expander('users db'):
-        con = sqlite3.connect("db/client_users.db")
-        cur = con.cursor()
-
-        users = cur.execute("SELECT * FROM users").fetchall()
-        st.dataframe(pd.DataFrame(users))
     
 
 

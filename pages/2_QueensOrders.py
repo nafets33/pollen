@@ -29,7 +29,7 @@ import streamlit as st
 from polleq_app_auth import signin_main
 from chess_piece.king import hive_master_root, streamlit_config_colors
 from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, KINGME, ReadPickleData, pollen_themes, PickleData
-from chess_piece.app_hive import queen_order_flow, live_sandbox__setup_switch, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import queen_order_flow, createParser_App, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 
 
 est = pytz.timezone("US/Eastern")
@@ -102,7 +102,7 @@ page = 'QueensOrders'
 
 with st.spinner("QueensOrders pollenq"):
 
-    signin_main()
+    signin_main(page='QueensOrders')
 
     if st.session_state['authentication_status'] != True:
         st.error("You Need to Log In")
@@ -112,29 +112,12 @@ with st.spinner("QueensOrders pollenq"):
 
     st.sidebar.write(f'{st.session_state["name"]} Playgound')
     authorized_user = st.session_state['authorized_user']
-    client_user = st.session_state["client_user"]
-    st.write("*", client_user)
-
-    prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
-    prod_name_oppiste = "Sandbox" if prod  else "LIVE"
-    if st.sidebar.button(f'Switch to {prod_name_oppiste}'):
-        prod, admin, prod_name = live_sandbox__setup_switch(client_user=st.session_state["client_user"], switch_env=True)
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=True)
-        switch_page('QueensOrders')
-
-    
-    # if st.session_state['production']:
-    #     from QueenHive import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-    #     load_dotenv(os.path.join(os.getcwd(), '.env_jq'))
-    # else:
-    #     from QueenHive_sandbox import return_alpaca_user_apiKeys, init_client_user_secrets, test_api_keys, return_queen_controls, return_STORYbee_trigbees, return_alpaca_api_keys, add_key_to_app, read_pollenstory, init_clientUser_dbroot, init_pollen_dbs, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, queen_orders_view, story_view, return_alpc_portolio, return_dfshaped_orders, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, return_api_keys, read_queensmind, split_today_vs_prior, init_logging
-    #     load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
-    init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
-    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    PB_App_Pickle = init_pollen['PB_App_Pickle']
-    PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
+    PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
+    PB_App_Pickle = st.session_state['PB_App_Pickle'] 
+    PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
+    # PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle'] 
 
     QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
     # def run_main_page():

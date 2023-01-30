@@ -21,7 +21,7 @@ from chess_piece.king import (
     workerbee_dbs_root__STORY_bee,
 )
 from chess_piece.queen_hive import (
-    init_index_ticker,
+    return_market_hours,
     init_logging,
     init_pollen_dbs,
     pollen_story,
@@ -61,7 +61,6 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
 
     main_root = hive_master_root()  # os.getcwd()
     db_root = os.path.join(main_root, "db")
-    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
     # Macd Settings
     # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
@@ -98,6 +97,13 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
     current_month = datetime.now(est).month
     current_year = datetime.now(est).year
 
+    mkhrs = return_market_hours(trading_days=trading_days, crypto=False)
+    if mkhrs != 'open':
+        print("Market Not Open Closing Down")
+        sys.exit()
+
+
+    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
     # misc
     exclude_conditions = [
         "B",
@@ -559,8 +565,6 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
             "pollencharts": chart_rebuild_dict,
         }
 
-    """ Initiate your Charts with Indicators """
-
     def initiate_ttframe_charts(
         QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings
     ):
@@ -771,21 +775,11 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
     """
     )
 
-    # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
-    # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    # ipdb.set_trace()
-    # if os.path.exists(PB_QUEEN_Pickle) == False:
-    #     print("WorkerBee Needs a Queen")
-    #     sys.exit()
-
-    # Pollen QUEEN
 
     if prod:
         queen_db = os.path.join(db_root, "queen.pkl")
-        # QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
     else:
         queen_db = os.path.join(db_root, "queen_sandbox.pkl")
-        # QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
     ticker_universe = return_Ticker_Universe()
     main_index_dict = ticker_universe["main_index_dict"]
@@ -816,6 +810,7 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
             speed_gauges = queen_workers["speed_gauges"]
 
             while True:
+                ## Re-Read QUEEN Look for New qcp_Tickers
                 pq = read_QUEEN(queen_db=queen_db, qcp_s=["castle", "bishop", "knight"])
                 QUEENBEE = pq["QUEENBEE"]
                 latest__queens_chess_pieces = pq["queens_chess_pieces"]
@@ -827,7 +822,7 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
                     )
                     WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
                     speed_gauges = queen_workers["speed_gauges"]
-
+                # PollenStory
                 qcp_QUEENWorker__pollenstory(
                     qcp_s=WORKERBEE_queens.keys(),
                     QUEENBEE=QUEENBEE,

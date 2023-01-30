@@ -19,7 +19,7 @@ from streamlit_extras.stoggle import stoggle
 import argparse
 from polleq_app_auth import signin_main
 from chess_piece.king import return_list_of_all__Queens__pkl, hive_master_root, streamlit_config_colors, local__filepaths_misc
-from chess_piece.app_hive import live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.app_hive import mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 
 
 ### Read All Queens that have enabled public ### display as list of charcaters by category of investment strategy ###
@@ -94,4 +94,4 @@ def public():
 # use async to read all queens data to show
 page = 'PublicQueens'
 
-signin_main()
+signin_main(page='PublicQueens')

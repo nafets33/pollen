@@ -19,9 +19,9 @@ import time
 from streamlit_extras.switch_page_button import switch_page
 import argparse
 from streamlit_extras.stoggle import stoggle
-from chess_piece.app_hive import queen__account_keys, live_sandbox__setup_switch, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from chess_piece.king import hive_master_root, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
-from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs,  KINGME, pollen_themes
+from chess_piece.app_hive import queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.king import kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
+from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, KINGME, pollen_themes
 from custom_button import cust_Button
 
 pd.options.mode.chained_assignment = None
@@ -61,7 +61,7 @@ def pollenq(admin_pq):
         page_title="pollenq",
         page_icon=page_icon,
         layout="wide",
-        initial_sidebar_state='expanded',
+        initial_sidebar_state='collapsed',
         #  menu_items={
         #      'Get Help': 'https://www.extremelycoolapp.com/help',
         #      'Report a bug': "https://www.extremelycoolapp.com/bug",
@@ -77,11 +77,8 @@ def pollenq(admin_pq):
 
 
     with st.spinner("Hello Welcome To pollenq"):
-        signin_main()
+        signin_main(page="pollenq")
 
-        
-        # st.write(st.session_state['authorized_user'])
-        # st.write(st.session_state)
         if st.session_state['authentication_status'] != None:
             if st.session_state['authorized_user'] == False:
                 st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
@@ -89,26 +86,14 @@ def pollenq(admin_pq):
                 if client_user_wants_a_queen:
                     st.session_state['init_queen_request'] = True
 
-        if st.session_state['authentication_status']:
-            # if 'username' not in st.session_state:
-            #     signin_auth = signin_main()
-            
-            # st.sidebar.write(f'Welcome {st.session_state["name"]}')
-            # st.sidebar.write(f'{st.session_state["username"]}')
-            # return_to_last_page()
+        if st.session_state['authentication_status'] == True:
 
-            client_user = st.session_state['username']
+            prod = st.session_state['production']
             authorized_user = st.session_state['authorized_user']            
-            client_user = st.session_state['username'].split("@")[0]
-
-
-            prod, admin, prod_name = live_sandbox__setup_switch(client_user=client_user)
             
-            if admin: ### Need to Store admin password encrypted
-                st.write('admin:', admin)
-                d = list(os.listdir(client_dbs_root()))
-                d = [i.split("db__")[1] for i in d]
-                admin_client_user = st.sidebar.selectbox('admin client_users', options=d, index=d.index(client_user))
+            if st.session_state['admin'] == True:
+                users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+                admin_client_user = st.sidebar.selectbox('admin client_users', options=users_allowed_queen_email, index=users_allowed_queen_email.index(st.session_state['username']))
                 if st.sidebar.button('admin change user'):
                     st.session_state['admin__client_user'] = admin_client_user
                     switch_page("pollenq")
@@ -158,7 +143,7 @@ def pollenq(admin_pq):
             tabs = ["Setup Steps", "Risk Parameters", "To The Hive", "Help"]
             st.session_state['active_tab'] = tabs[0] if 'active_tab' not in st.session_state else st.session_state['active_tab']
 
-            hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "YourCharacter:octopus:", "Help:dizzy:"])
+            hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "Choose A Queen:crown:", "Help:dizzy:"])
             # if st.button("QueensConscience:honeybee:"):
             #     switch_page("QueensConscience")
             with hive_setup:
@@ -260,39 +245,7 @@ def pollenq(admin_pq):
                 st.write("No Soup for You")
                 local_gif(gif_path=flyingbee_grey_gif_path)
         
-        else:
-            st.session_state['authorized_user'] = False
-            st.session_state['admin'] = False
-            st.session_state['prod'] = False
-            pct_queens_taken = 54
 
-            def display_for_unAuth_client_user():
-                # newuser = st.button("New User")
-                # signin_button = st.button("SignIn")
-                
-                cols = st.columns((5,2))
-                with cols[0]:
-                    progress_bar(value=pct_queens_taken, text=f'{100-pct_queens_taken} Queens Remaining')
-                with cols[0]:
-                    sneak_peak = st.button("Take a sneak peak and watch a Queen Trade in Real Time")
-                    if sneak_peak:
-                        st.session_state['sneak_peak'] = True
-                        switch_page("QueensConscience")
-                    else:
-                        st.session_state['sneak_peak'] = False
-                with cols[1]:
-                    st.image(mainpage_bee_png, width=54)
-                # with cols[1]:
-                #     local_gif(floating_queen_gif, '100', '123')
-                page_line_seperator('1')
-                
-                st.error("ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions")
-
-                page_line_seperator('1')
-
-                # local_gif(chess_board__gif, 650, 400)
-            
-            # display_for_unAuth_client_user()
 if __name__ == '__main__':
     def createParser():
         parser = argparse.ArgumentParser()

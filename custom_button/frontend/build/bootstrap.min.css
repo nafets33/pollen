@@ -213,6 +213,10 @@ label {
 button {
   border-radius: 0;
 }
+button{
+  background: transparent;
+  border: none;
+}
 button:focus {
   outline: 1px dotted;
   outline: 5px auto -webkit-focus-ring-color;
