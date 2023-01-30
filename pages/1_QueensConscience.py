@@ -179,7 +179,6 @@ with st.spinner("Welcome to the QueensMind"):
     db_root = st.session_state['db_root']
     prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
 
-    st.sidebar.write(f'*Welcome {st.session_state["name"]}')
     authorized_user = st.session_state['authorized_user']
     client_user = st.session_state["username"]
     # st.write("*", client_user)
@@ -1505,7 +1504,7 @@ with st.spinner("Welcome to the QueensMind"):
                             st.error("Your Account not Yet authorized")
                             sys.exit()
                         # execute trigger
-                        trigger_airflow_dag(dag=dag, client_user=st.session_state['username'], prod=prod)
+                        trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
                         QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
                         st.write("My Queen")
                         st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character

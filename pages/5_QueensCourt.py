@@ -66,6 +66,7 @@ with st.form('Copy Directory'):
     dst = st.text_input(label=f'dst', value='/home/stapinski89/pollen/pollen/client_user_dbs/2', key='src_dst')
     if st.form_submit_button('replace files from src to dst directory'):
         copy_directory(src=src, dst=dst)
+        st.write("Copy Completed")
 
 
 # if admin:

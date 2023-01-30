@@ -2382,7 +2382,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     try:
         # s_time = datetime.datetime.now().astimezone(est)
 
-        db_root = init_clientUser_dbroot(client_useremail=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+        db_root = init_clientUser_dbroot(client_username=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
 
         print(
         """
