@@ -199,13 +199,14 @@ def return_db_root(client_username):
 
     return db_root
 
-def init_clientUser_dbroot(client_username, admin_permission_list=[], force_db_root=False, queenKING=False):
+def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
 
     if force_db_root:
         db_root = os.path.join(hive_master_root(), "db")
 
-    if client_username in admin_permission_list:  ## admin
+    if client_username in ['stefanstapinski@gmail.com']:  ## admin
         db_root = os.path.join(hive_master_root(), "db")
+    
     else:
         db_root = return_db_root(client_username=client_username)
         if os.path.exists(db_root) == False:

@@ -233,23 +233,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 return {'app_flag': False}
         
-        elif request_name == "update_queen_order": # test
-            app_order_base = [i for i in QUEEN_KING[request_name]]
-            if app_order_base:
-                for app_request in app_order_base:
-                    if app_request['app_requests_id'] in QUEEN[app_requests__bucket]:
-                        # print("queen update order trigger request Id already received")
-
-                        return {'app_flag': False}
-                    else:
-                        print("queen update order trigger gather", app_request['queen_order_update_package'], " : ", app_request['ticker_time_frame'])
-                        QUEEN[app_requests__bucket].append(app_request['app_requests_id'])
-                        
-                        return {'app_flag': True, 'app_request': app_request, 'ticker_time_frame': app_request['ticker_time_frame']}
-            else:
-                return {'app_flag': False}    
-
-        elif request_name == "update_queen_order_batch": # redo Don't save App ???
+        elif request_name == "update_queen_order": # redo Don't save App ???
             app_order_base = [i for i in QUEEN_KING[request_name]]
             if app_order_base:
                 for app_request in app_order_base:
@@ -355,17 +339,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 sys.exit()
             else:
                 return {'app_flag': False}
-        
-        # elif request_name == 'queen_controls_reset':
-        #     if QUEEN_KING[request_name] == 'true':
-        #         print("All Queen Controls Reset")
-        #         logging.info(("refreshed queen controls"))
-        #         # save app
-        #         QUEEN_KING[request_name] = 'false'
-        #         PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-        #         # save queen
-        #         QUEEN['queen_controls'] = return_queen_controls()
-        #         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
             
         elif request_name == "queen_controls": # redo Don't save App
             # archive_bucket = 'queen_controls_requests'
@@ -374,15 +347,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 for app_request in app_order_base:
                     if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
                         print("queen update order trigger request Id already received")
-                        QUEEN_KING[archive_bucket].append(app_request)
-                        QUEEN_KING[request_name].remove(app_request)
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
                         return {'app_flag': False}
                     else:
                         print("queen control gather", app_request['request_name'],)
-                        QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                        QUEEN_KING[archive_bucket].append(app_request)
-                        QUEEN_KING[request_name].remove(app_request)
+
                         PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
                         # update control
@@ -391,7 +359,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         msg = ('control updated:: ', control_name)
                         print(msg)
                         logging.info(msg)
-
                         
                         return {'app_flag': True, 'app_request': app_request}
             else:
@@ -2410,6 +2377,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         
         """ Keys """ 
         api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod)
+        if api == False:
+            print("API Keys Failed, Queen goes back to Sleep")
+            QUEEN['queens_messages'].update({"api_status": 'failed'})
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            sys.exit()
+
         trading_days = hive_dates(api=api)['trading_days']
         init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
         init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")

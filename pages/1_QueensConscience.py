@@ -253,11 +253,12 @@ with st.spinner("Welcome to the QueensMind"):
             df = df.sort_values('ttf')
             # st.write(df)
             list_of_dicts = dict(zip(df['ttf'], df['trig']))
-            list_of_dicts_ = [{k:v} for (k,v) in list_of_dicts.items() if 'buy' in v]
-            list_of_dicts_sell = [{k:v} for (k,v) in list_of_dicts.items() if 'sell' in v]
-
-            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_, title="Active Buy Bees", write_type="info")
-            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_sell, title="Active Sell Bees", write_type="info")
+            list_of_dicts_ = [{k:v} for (k,v) in list_of_dicts.items() if 'buy_cross-0' in v]
+            list_of_dicts_sell = [{k:v} for (k,v) in list_of_dicts.items() if 'sell_cross-0' in v]
+            st.write("Active Buy Bees")
+            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_, title="Active Buy Bees", write_type="info", info_type='buy')
+            st.write("Active Sell Bees")
+            chunk_write_dictitems_in_row(chunk_list=list_of_dicts_sell, title="Active Sell Bees", write_type="info", info_type='sell')
             # g = {write_flying_bee() for i in range(len(df))}
         else:
             st.subheader("No one's flying")
@@ -1472,7 +1473,7 @@ with st.spinner("Welcome to the QueensMind"):
         return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
     
     
-    def queenbee_online(QUEEN, admin, dag):
+    def queenbee_online(QUEEN, admin, dag, api_failed):
         # from airflow.dags.dag_queenbee_prod import run_trigger_dag
         
         users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
@@ -1485,9 +1486,9 @@ with st.spinner("Welcome to the QueensMind"):
                     st.image(QUEEN_KING['character_image'], width=100)
                     return False
             
-            # if api_failed:
-            #     st.write("you need to setup your Broker Queens to Turn on your Queen")
-            #     return False
+            if api_failed:
+                st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
+                return False
 
             if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
                 # st.write("YOUR QUEEN if OFFLINE")
@@ -1613,7 +1614,7 @@ with st.spinner("Welcome to the QueensMind"):
             return QUEEN_KING
 
     
-    def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', title="Active Models", groupby_qcp=False):
+    def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', title="Active Models", groupby_qcp=False, info_type='buy'):
         # qcp_ticker_index = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING)['qcp_ticker_index']
         # if groupby_qcp:
         #     for qcp in set(qcp_ticker_index.values()):
@@ -1647,8 +1648,11 @@ with st.spinner("Welcome to the QueensMind"):
                             if write_type == 'checkbox':
                                 st.checkbox(ticker, v, key=f'{ticker}')  ## add as quick save to turn off and on Model
                             if write_type == 'info':
-                                st.info(f'{ticker} {v}')
-                                local_gif(gif_path=uparrow_gif, height='23', width='23')
+                                if info_type == 'buy':
+                                    st.warning(f'{ticker} {v}')
+                                    local_gif(gif_path=uparrow_gif, height='23', width='23')
+                                else:
+                                    st.info(f'{ticker} {v}')
                                 flying_bee_gif(width='43', height='40')
 
         else:
@@ -1665,8 +1669,12 @@ with st.spinner("Welcome to the QueensMind"):
                         if write_type == 'checkbox':
                             st.checkbox(ticker, v, key=f'{ticker}{v}')  ## add as quick save to turn off and on Model
                         if write_type == 'info':
-                            st.info(f'{ticker} {v}')
-                            flying_bee_gif(width='38', height='42')
+                            if info_type == 'buy':
+                                st.warning(f'{ticker} {v}')
+                                local_gif(gif_path=uparrow_gif, height='23', width='23')
+                            else:
+                                st.info(f'{ticker} {v}')
+                                flying_bee_gif(width='38', height='42')
         return True 
     
     
@@ -1843,17 +1851,13 @@ with st.spinner("Welcome to the QueensMind"):
 
     # """ if "__name__" == "__main__": """
 
-    # use API keys from user
-    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_queenbee')
-    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees')
-    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees_crypto')
-
-    
+ 
     prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
     if st.session_state['authorized_user']:
         clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious'])
+    
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
     
     try:
@@ -1865,7 +1869,12 @@ with st.spinner("Welcome to the QueensMind"):
         # time.sleep(5)
         queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
         api_failed = True
-        
+
+    # use API keys from user
+    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_queenbee', api_failed=api_failed)
+    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees', api_failed=api_failed)
+    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees_crypto', api_failed=api_failed)
+
     portfolio = return_alpc_portolio(api)['portfolio']
     acct_info = refresh_account_info(api=api)
 

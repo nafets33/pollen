@@ -252,16 +252,7 @@ def return_alpaca_api_keys(prod):
 
     except Exception as e:
         print("Key Return failure default to HivesKeys")
-        # st.error("Key Return failure default to HivesKeys")
-        load_dotenv(os.path.join(hive_master_root(), ".env"))
-        keys_paper = return_api_keys(
-            base_url="https://paper-api.alpaca.markets",
-            api_key_id=os.environ.get("APCA_API_KEY_ID_PAPER"),
-            api_secret=os.environ.get("APCA_API_SECRET_KEY_PAPER"),
-            prod=False,
-        )
-        rest = keys_paper["rest"]
-        api = keys_paper["api"]
+        print(e)
 
     return {"rest": rest, "api": api}
 
@@ -299,7 +290,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
         if prod:
             if prod_keys_confirmed == False:
                 # st.error("You Need to Add you PROD API KEYS")
-                return return_alpaca_api_keys(prod=prod)["api"]
+                return False
             else:
                 api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"]
                 api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"]
@@ -310,7 +301,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
         else:
             if sandbox_keys_confirmed == False:
                 # st.error("You Need to Add you SandboxPAPER API KEYS")
-                return return_alpaca_api_keys(prod=prod)["api"]
+                return False
             else:
                 api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID_PAPER"]
                 api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY_PAPER"]
@@ -322,9 +313,6 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
         return return_alpaca_api_keys(prod=False)["api"]
 
 
-# api = return_alpaca_api_keys(prod=False)['api']
-
-# """# Dates """
 def hive_dates(api):
     current_date = datetime.now(est).strftime("%Y-%m-%d")
     trading_days = api.get_calendar()
@@ -404,7 +392,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
                 "active_tickers": [],
                 "available_triggerbees": [],
             },
-            # ticker info ... change name
+            "queens_messages": {},
             "kings_order_rules": {},
             "queen_controls": return_queen_controls(stars),
             "symbol_universe": {
@@ -477,7 +465,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
                 "active_tickers": [],
                 "available_triggerbees": [],
             },
-            # ticker info ... change name
+            "queens_messages": {},
             "kings_order_rules": {},
             "queen_controls": return_queen_controls(stars),
             "symbol_universe": {
