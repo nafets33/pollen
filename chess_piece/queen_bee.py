@@ -2300,7 +2300,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # Save Heart to avoid saving Queen to improve speed
             QUEENsHeart['charlie_bee'] = charlie_bee
             QUEENsHeart = queens_heart(heart=QUEENsHeart)
-            PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=QUEENsHeart)
+            PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=QUEENsHeart, write_temp=False)
 
         except Exception as e:
             print(e)
