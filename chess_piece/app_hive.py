@@ -447,13 +447,15 @@ def pollen__story(df):
 def grid_height(len_of_rows):
     if len_of_rows > 10:
         grid_height = 333
+    elif len_of_rows == 1:
+        grid_height = 89
     else:
         grid_height = round(len_of_rows * 63, 0)
 
     return grid_height
 
 
-def aggrid__queens_orders(
+def queens_orders__aggrid(
     data,
     active_order_state_list,
     reload_data=False,
@@ -874,7 +876,7 @@ def queen_order_flow(ORDERS, active_order_state_list):
             mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
         cols = st.columns((1, 1, 10))
 
-        ordertables__agrid = aggrid__queens_orders(
+        ordertables__agrid = queens_orders__aggrid(
             data=df.astype(str),
             active_order_state_list=active_order_state_list,
             reload_data=False,

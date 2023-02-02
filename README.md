@@ -27,10 +27,8 @@ docker stop $(docker ps -a -q)
 rm -r -v Example ## remove dir
 sudo -su root ## username
 
-sudo chown stapinski89:stapinski89 symbols_pollenstory_dbs
-sudo chown stapinski89:stapinski89 symbols_STORY_bee_dbs  # fix root
-sudo chown stapinski89:stapinski89 client_user_dbs  # fix root
-chmod -R 777 queen.pkl
+## update permissions
+chmod -R 777 queen.pkl or dir client_user_dbs
 
 sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 
