@@ -15,7 +15,7 @@ import aiohttp
 from tqdm import tqdm
 import argparse
 from chess_piece.king import return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData, init_clientUser_dbroot
-from chess_piece.queen_hive import get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
+from chess_piece.queen_hive import queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
 
 
 pd.options.mode.chained_assignment = None
@@ -2177,6 +2177,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 #     # print("priceinfo not found in async due to market hours?")
                 #     priceinfo = return_snap_priceinfo(api=api, ticker=run_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
                 try:
+
+                    mkhrs = return_market_hours(trading_days=trading_days, crypto=crypto)
+                    if mkhrs != 'open':
+                        continue # markets are not open for you
+
                     priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'])
                     order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
                     
@@ -2272,7 +2277,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         return True
 
 
-    def order_management(STORY_bee, QUEEN, QUEEN_KING, ORDERS, portfolio): 
+    def order_management(STORY_bee, QUEEN, QUEEN_KING, ORDERS, portfolio, QUEENsHeart): 
 
         #### MAIN ####
         # >for every ticker position join in running-positions to account for total position
@@ -2291,6 +2296,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
             refresh_queen_orders__save_ORDERS(QUEEN=QUEEN, ORDERS=ORDERS)
             charlie_bee['queen_cyle_times']['God_Save_The_Queen__main'] = (datetime.datetime.now(est) - s_loop).total_seconds()
+            
+            # Save Heart to avoid saving Queen to improve speed
+            QUEENsHeart['charlie_bee'] = charlie_bee
+            QUEENsHeart = queens_heart(heart=QUEENsHeart)
+            PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=QUEENsHeart)
+
         except Exception as e:
             print(e)
             print_line_of_error()
@@ -2367,6 +2378,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
         PB_App_Pickle = init_pollen['PB_App_Pickle']
         PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
+        PB_QUEENsHeart_PICKLE = init_pollen['PB_QUEENsHeart_PICKLE']
 
         # QUEEN Databases
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
@@ -2387,7 +2399,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         init_api_orders_start_date =(datetime.datetime.now() - datetime.timedelta(days=100)).strftime("%Y-%m-%d")
         init_api_orders_end_date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
-        
+
+        queen_orders_open = api_orders.get('open')
+        queen_orders_closed = api_orders.get('closed')
+        num__queen_orders_today = len(queen_orders_open) + len(queen_orders_closed)
+
         ## !! Reconcile all orders processed in alpaca vs queen_order !! ##
 
         # Ticker database of pollenstory ## Need to seperate out into tables
@@ -2477,6 +2493,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
                 QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
                 QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
+                QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
+
                 
                 portfolio = return_alpc_portolio(api)['portfolio']
 
@@ -2502,7 +2520,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 # Process All Orders
                 s_time = datetime.datetime.now(est)
-                order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, ORDERS=ORDERS, portfolio=portfolio)
+                order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, ORDERS=ORDERS, portfolio=portfolio, QUEENsHeart=QUEENsHeart)
                 charlie_bee['queen_cyle_times']['order management'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
                 # Hunt for Triggers

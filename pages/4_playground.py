@@ -6,6 +6,9 @@ from polleq_app_auth import signin_main
 from chess_piece.app_hive import local_gif, click_button_grid, nested_grid, page_tab_permission_denied, standard_AGgrid
 from chess_piece.king import copy_directory, hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
+from streamlit_option_menu import option_menu
+from datetime import datetime, timedelta
+import hydralit_components as hc
 
 # https://extras.streamlit.app/Annotated%20text
 
@@ -21,8 +24,67 @@ st.set_page_config(
     #  }
 )
 
+
+
+def menu_bar_selection():
+    menu_data = [
+        {'icon': "far fa-copy", 'label':"Left End"},
+        {'id':'Copy','icon':"🐙",'label':"Copy"},
+        {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
+        {'icon': "far fa-chart-bar", 'label':"Chart"},#no tooltip message
+        {'id':' Crazy return value 💀','icon': "💀", 'label':"Calendar"},
+        {'icon': "fas fa-tachometer-alt", 'label':"Dashboard",'ttip':"I'm the Dashboard tooltip!"}, #can add a tooltip message
+        {'icon': "far fa-copy", 'label':"Right End"},
+        {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
+    ]
+
+    over_theme = {'txc_inactive': '#FFFFFF'}
+    menu_id = hc.nav_bar(
+        menu_definition=menu_data,
+        # override_theme=over_theme,
+        home_name='pollenq',
+        login_name='Logout',
+        hide_streamlit_markers=False, #will show the st hamburger as well as the navbar now!
+        sticky_nav=True, #at the top or not
+        sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+    )
+
+    # if st.button('click me'):
+    #     st.info('You clicked at: {}'.format(datetime.now()))
+
+    return menu_id
+
+menu_id = menu_bar_selection()
+
+st.write(menu_id)
+
+
+# define what option labels and icons to display
+option_data = [
+   {'icon': "bi bi-hand-thumbs-up", 'label':"Agree"},
+   {'icon':"fa fa-question-circle",'label':"Unsure"},
+   {'icon': "bi bi-hand-thumbs-down", 'label':"Disagree"},
+]
+
+# override the theme, else it will use the Streamlit applied theme
+over_theme = {'txc_inactive': 'white','menu_background':'purple','txc_active':'yellow','option_active':'blue'}
+font_fmt = {'font-class':'h2','font-size':'150%'}
+
+# display a horizontal version of the option bar
+op = hc.option_bar(option_definition=option_data,title='Feedback Response',key='PrimaryOption') #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+# display a version version of the option bar
+op2 = hc.option_bar(option_definition=option_data,title='Feedback Response',key='PrimaryOption2', horizontal_orientation=False) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=False)
+
+
 st.write("# Welcome to Playground! 👋")
 
+
+selected2 = option_menu(None, ["Home", "Upload", "Tasks", 'Settings'], 
+    icons=['house', 'cloud-upload', "list-task", 'gear'], 
+    menu_icon="cast", default_index=0, orientation="horizontal")
+
+st.write(selected2)
 
 signin_main(page="PlayGround")
 
@@ -65,7 +127,7 @@ st.image(mainpage_bee_png)
 learningwalk_bee = "misc/learningwalks_bee_jq.png"
 
 
-cB = cust_Button(file_path_url="misc/flyingbee_gif_clean.gif", height='50px', key=None)
+cB = cust_Button(file_path_url="misc/flyingbee_gif_clean.gif", height='50px', hoverText='restart', key=None)
 if cB:
     st.write("Thank you Akash")
     cB = False
@@ -98,6 +160,14 @@ with st.expander("pollenstory"):
 cB = cust_Button(file_path_url=learningwalk_bee, height='50px', key='b1')
 if cB:
     st.write("Thank you Akash")
+
+
+
+
+
+
+
+# show trading model
 
 # admin_user_swap = st.number_input("fast", min_value=1, max_value=10000, value=0)
 # if st.button("swap"): 

@@ -196,7 +196,9 @@ with st.spinner("Welcome to the QueensMind"):
     PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
     PB_App_Pickle = st.session_state['PB_App_Pickle'] 
     PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
-    PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle'] 
+    PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
+    PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
+
 
     QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
     # def run_main_page():
@@ -207,6 +209,7 @@ with st.spinner("Welcome to the QueensMind"):
     QUEEN_KING['source'] = PB_App_Pickle
     QUEEN = ReadPickleData(PB_QUEEN_Pickle)
     ORDERS = ReadPickleData(PB_Orders_Pickle)
+    QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
 
     if st.session_state['authorized_user']:
@@ -1473,7 +1476,7 @@ with st.spinner("Welcome to the QueensMind"):
         return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
     
     
-    def queenbee_online(QUEEN, admin, dag, api_failed):
+    def queenbee_online(QUEENsHeart, admin, dag, api_failed):
         # from airflow.dags.dag_queenbee_prod import run_trigger_dag
         
         users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
@@ -1490,9 +1493,14 @@ with st.spinner("Welcome to the QueensMind"):
                 st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
                 return False
 
-            if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
+            # if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
+            if 'heartbeat_time' not in QUEENsHeart.keys():
+                st.write("You Need a Queen")
+                return False
+            
+            if (now - QUEENsHeart['heartbeat_time']).total_seconds() > 60:
                 # st.write("YOUR QUEEN if OFFLINE")
-                cols = st.columns((3,3,1,1,1,1,1,1,1,1))
+                cols = st.columns((3,3,1,1,1,1,1,1))
                 with cols[0]:
                     st.error("Your Queen Is Asleep Wake Her UP!")
                 with cols[1]:
@@ -1514,35 +1522,16 @@ with st.spinner("Welcome to the QueensMind"):
                 
                 with cols[2]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
-                    # local_gif(gif_path=flyingbee_grey_gif_path)
-                    # local_gif(gif_path=flyingbee_grey_gif_path)
+
                 with cols[3]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[4]:
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
                     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[5]:
                     local_gif(gif_path=flyingbee_grey_gif_path)
                 with cols[6]:
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
                     local_gif(gif_path=flyingbee_grey_gif_path)
-                # with cols[7]:
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                # with cols[8]:
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                # with cols[9]:
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
-                #     local_gif(gif_path=flyingbee_grey_gif_path)
+
 
                 return False
             else:
@@ -1871,9 +1860,9 @@ with st.spinner("Welcome to the QueensMind"):
         api_failed = True
 
     # use API keys from user
-    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_queenbee', api_failed=api_failed)
-    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees', api_failed=api_failed)
-    queenbee_online(QUEEN=QUEEN, admin=admin, dag='run_workerbees_crypto', api_failed=api_failed)
+    queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_queenbee', api_failed=api_failed)
+    queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_workerbees', api_failed=api_failed)
+    queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_workerbees_crypto', api_failed=api_failed)
 
     portfolio = return_alpc_portolio(api)['portfolio']
     acct_info = refresh_account_info(api=api)

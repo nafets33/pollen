@@ -453,7 +453,7 @@ def grid_height(len_of_rows):
     return grid_height
 
 
-def build_AGgrid_df__queenorders(
+def aggrid__queens_orders(
     data,
     active_order_state_list,
     reload_data=False,
@@ -874,7 +874,7 @@ def queen_order_flow(ORDERS, active_order_state_list):
             mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
         cols = st.columns((1, 1, 10))
 
-        ordertables__agrid = build_AGgrid_df__queenorders(
+        ordertables__agrid = aggrid__queens_orders(
             data=df.astype(str),
             active_order_state_list=active_order_state_list,
             reload_data=False,

@@ -17,11 +17,12 @@ else:
     )
 
 
-def cust_Button(file_path_url, height, key=None):
-    # This is a custom button
-    # Parameter 1 = Enter the File Path or the URL
-    # Parameter 2 = Set the Height in PX
+def cust_Button(file_path_url, height, hoverText=None, key=None):
     component_value = _component_func(
-        file_path_url=file_path_url, height=height, key=key, default=0
+        file_path_url=file_path_url,
+        height=height,
+        hoverText=hoverText,
+        key=key,
+        default=0,
     )
     return component_value

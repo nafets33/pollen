@@ -29,6 +29,7 @@ from tqdm import tqdm
 
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
+load_dotenv(os.path.join(hive_master_root(), ".env"))
 
 MISC = local__filepaths_misc()
 mainpage_bee_png = MISC['mainpage_bee_png']
@@ -229,7 +230,6 @@ def return_alpaca_api_keys(prod):
     # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
     try:
         if prod:
-            load_dotenv(os.path.join(hive_master_root(), ".env_jq"))
             keys = return_api_keys(
                 base_url="https://api.alpaca.markets",
                 api_key_id=os.environ.get("APCA_API_KEY_ID"),
@@ -240,7 +240,6 @@ def return_alpaca_api_keys(prod):
             api = keys["api"]
         else:
             # Paper
-            load_dotenv(os.path.join(hive_master_root(), ".env"))
             keys_paper = return_api_keys(
                 base_url="https://paper-api.alpaca.markets",
                 api_key_id=os.environ.get("APCA_API_KEY_ID_PAPER"),
@@ -4332,6 +4331,9 @@ def init_PowerRangers(ranger_dimensions=False):
 
     return r_dict
 
+def queens_heart(heart):
+    heart.update({"heartbeat_time": datetime.now(est)})
+    return heart
 
 def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
     def init_queen_orders(pickle_file):
@@ -4347,31 +4349,23 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
         PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
-        PB_Orders_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}'
-        )
-        PB_queen_Archives_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}'
-        )
-        # PB_users_secrets = os.path.join(db_root, f'{"_users_secrets_"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
+        PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
-        PB_QUEEN_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}'
-        )
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
         PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{"_sandbox"}{".pkl"}')
-        PB_App_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}'
-        )
-        PB_Orders_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}'
-        )
-        PB_queen_Archives_Pickle = os.path.join(
-            db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}'
-        )
-        # PB_users_secrets = os.path.join(db_root, f'{"_users_secrets_sandbox"}{".pkl"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
+        PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}{".pkl"}')
 
-    # List by Necessity
+    if os.path.exists(PB_QUEENsHeart_PICKLE) == False:
+        print("Init PB_QUEENsHeart_PICKLE")
+        heart = {"heartbeat_time": datetime.now(est)}
+        PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=queens_heart(heart))
+
     if os.path.exists(PB_queen_Archives_Pickle) == False:
         print("Init queen archives")
         queens_archived = {"queens": [{"queen_id": 0}]}
@@ -4407,13 +4401,15 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         st.session_state["PB_App_Pickle"] = PB_App_Pickle
         st.session_state["PB_Orders_Pickle"] = PB_Orders_Pickle
         st.session_state["PB_queen_Archives_Pickle"] = PB_queen_Archives_Pickle
+        st.session_state["PB_QUEENsHeart_PICKLE"] = PB_QUEENsHeart_PICKLE
+
 
     return {
         "PB_QUEEN_Pickle": PB_QUEEN_Pickle,
         "PB_App_Pickle": PB_App_Pickle,
         "PB_Orders_Pickle": PB_Orders_Pickle,
         "PB_queen_Archives_Pickle": PB_queen_Archives_Pickle,
-        # 'PB_users_secrets': PB_users_secrets,
+        'PB_QUEENsHeart_PICKLE': PB_QUEENsHeart_PICKLE,
     }
 
 
