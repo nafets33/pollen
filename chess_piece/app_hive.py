@@ -303,7 +303,7 @@ def display_for_unAuth_client_user(pct_queens_taken=47):
         )
         if sneak_peak:
             st.session_state["sneak_peak"] = True
-            switch_page("QueensConscience")
+            # switch_page("QueensConscience")
         else:
             st.session_state["sneak_peak"] = False
     with cols[3]:

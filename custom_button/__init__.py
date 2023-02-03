@@ -17,7 +17,7 @@ else:
     )
 
 
-def cust_Button(file_path_url, height, hoverText=None, key=None):
+def cust_Button(file_path_url, height='50px', hoverText=None, key=None):
     component_value = _component_func(
         file_path_url=file_path_url,
         height=height,

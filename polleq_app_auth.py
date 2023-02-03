@@ -217,14 +217,6 @@ def signin_main(page):
         con.commit()
         authenticator.credentials = read_user_db()
 
-    def write_flying_bee(width="45", height="45", frameBorder="0"):
-        return st.markdown(
-            '<iframe src="https://giphy.com/embed/ksE4eFvxZM3oyaFEVo" width={} height={} frameBorder={} class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/bee-traveling-flying-into-next-week-like-ksE4eFvxZM3oyaFEVo"></a></p>'.format(
-                width, height, frameBorder
-            ),
-            unsafe_allow_html=True,
-        )
-
     def setup_instance(client_username, switch_env, force_db_root, queenKING):
         # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
         db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
@@ -256,10 +248,10 @@ def signin_main(page):
         prod_name_oppiste = "Sandbox" if prod  else "LIVE"        
         if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
             setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=force_db_root, queenKING=True)
-            if 'last_page' in st.session_state and st.session_state['last_page'] != False:
-                switch_page(st.session_state['last_page'])
-            else:
-                switch_page('pollenq')
+            # if 'last_page' in st.session_state and st.session_state['last_page'] != False:
+            #     switch_page(st.session_state['last_page'])
+            # else:
+            #     switch_page('pollenq')
 
 
         return True
@@ -321,16 +313,17 @@ def signin_main(page):
     # Check login. Automatically gets stored in session state
     name, authentication_status, email = authenticator.login("Login", "main")
 
+    # Returning Customer
     if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
         if 'logout' in st.session_state and st.session_state["logout"] != True:
             cols = st.columns((8,1,2))
-            if page == 'pollenq':
+            if page == 'Account':
                 with cols[1]:
                     authenticator.logout("Logout", "main")
                 with cols[2]:
                     reset_password(email, location='main')
             
-            define_authorized_user(key='12')
+            define_authorized_user(key='34')
             
             return True
 
@@ -339,13 +332,13 @@ def signin_main(page):
         if 'logout' in st.session_state and st.session_state["logout"] != True:
             update_db(email)
             cols = st.columns((8,1,2))
-            if page == 'pollenq':
+            if page == 'Account':
                 with cols[1]:
                     authenticator.logout("Logout", "main")
                 with cols[2]:
                     reset_password(email, location='main')
             
-            define_authorized_user(key='12')
+            define_authorized_user(key='33')
 
         return True
 
@@ -365,11 +358,11 @@ def signin_main(page):
         with st.expander("New User Create Account"):
             register_user()
 
-        display_for_unAuth_client_user()
+        # display_for_unAuth_client_user()
 
         return False
 
 
 if __name__ == "__main__":
     st.session_state["logout"] = True
-    signin_main(page='home')
+    signin_main(page='pollenq')

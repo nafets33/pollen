@@ -66,11 +66,12 @@ x-airflow-common:
 #     -  /Users/ngarg/Documents/symbols_pollenstory_dbs:/opt/pollen/symbols_pollenstory_dbs # for cloud
 #     -  /Users/ngarg/Documents/symbols_STORY_bee_dbs:/opt/pollen/symbols_STORY_bee_dbs # for cloud
 #     -  /Users/ngarg/Documents/client_user_dbs:/opt/pollen/client_user_dbs # for cloud
+#     - ./chess_piece:/opt/airflow/chess_piece
+    - ./ozz:/opt/pollen/ozz
     - ./chess_piece:/opt/pollen/chess_piece
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/pollen/plugins
-#     - ./chess_piece:/opt/airflow/chess_piece
     - ./db:/opt/pollen/db
     - ./misc:/opt/pollen/misc
     - ./symbols_pollenstory_dbs:/opt/pollen/symbols_pollenstory_dbs
