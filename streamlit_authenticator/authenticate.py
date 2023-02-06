@@ -298,20 +298,20 @@ class Authenticate:
         if location not in ["main", "sidebar"]:
             raise ValueError("Location must be one of 'main' or 'sidebar'")
         if location == "main":
-            with st.expander('Logout'):
-                if st.button(button_name):
-                    self.cookie_manager.delete(self.cookie_name)
-                    st.session_state["logout"] = True
-                    st.session_state["name"] = None
-                    st.session_state["username"] = None
-                    st.session_state["authentication_status"] = None
-                elif location == "sidebar":
-                    if st.sidebar.button(button_name):
-                        self.cookie_manager.delete(self.cookie_name)
-                        st.session_state["logout"] = True
-                        st.session_state["name"] = None
-                        st.session_state["username"] = None
-                        st.session_state["authentication_status"] = None
+            # with st.expander('Logout'):
+            if st.button(button_name):
+                self.cookie_manager.delete(self.cookie_name)
+                st.session_state["logout"] = True
+                st.session_state["name"] = None
+                st.session_state["username"] = None
+                st.session_state["authentication_status"] = None
+        elif location == "sidebar":
+            if st.sidebar.button(button_name):
+                self.cookie_manager.delete(self.cookie_name)
+                st.session_state["logout"] = True
+                st.session_state["name"] = None
+                st.session_state["username"] = None
+                st.session_state["authentication_status"] = None
 
     def _update_password(self, username: str, password: str):
         """

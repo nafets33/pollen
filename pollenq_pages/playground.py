@@ -15,7 +15,7 @@ from ozz.ozz_bee import send_ozz_call
 
 
 def PlayGround():
-
+    st.write(st.color_picker("colors"))
     # st.write("N")
     # define what option labels and icons to display
     option_data = [
@@ -84,10 +84,10 @@ def PlayGround():
     # learningwalk_bee = C:\Users\sstapinski\pollen\pollen\custom_button\frontend\build\misc\learningwalks_bee_jq.png
     learningwalk_bee = "misc/learningwalks_bee_jq.png"
 
-    if st.session_state['admin']:
-        query = st.text_input('ozz call')
-        if st.button("ozz"):
-            send_ozz_call(query=query)
+    # if st.session_state['admin']:
+    #     query = st.text_input('ozz call')
+    #     if st.button("ozz"):
+    #         send_ozz_call(query=query)
 
 
     cB = cust_Button(file_path_url="misc/floating-queen-unscreen.gif", height='50px', hoverText='restart', key=None)

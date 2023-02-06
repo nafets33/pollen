@@ -28,7 +28,7 @@ from stocksymbol import StockSymbol
 from tqdm import tqdm
 
 from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
+from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
 load_dotenv(os.path.join(hive_master_root(), ".env"))
 
 MISC = local__filepaths_misc()
@@ -4335,6 +4335,67 @@ def queens_heart(heart):
     heart.update({"heartbeat_time": datetime.now(est)})
     return heart
 
+
+def live_sandbox__setup_switch(client_username, QUEEN_KING=False, switch_env=False):
+    if QUEEN_KING:
+        if 'last_env' in QUEEN_KING.keys():
+            prod = QUEEN_KING['last_env']
+    else:
+        prod = (
+            True
+            if "production" in st.session_state and st.session_state["production"] == True
+            else False
+        )
+    
+    prod_name = (
+        "LIVE"
+        if prod
+        else "Sandbox"
+    )
+    st.session_state["prod_name"] = prod_name
+    st.session_state["production"] = prod
+
+    if switch_env:
+        if prod:
+            prod = False
+            st.session_state["production"] = prod
+            prod_name = "Sanbox"
+            st.session_state["prod_name"] = prod_name
+        else:
+            prod = True
+            st.session_state["production"] = prod
+            prod_name = "LIVE"
+            st.session_state["prod_name"] = prod_name
+
+    st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
+    
+    if QUEEN_KING:
+        if st.session_state['authoirzed_user']:
+            QUEEN_KING['last_env'] = prod
+
+    return prod
+
+
+def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
+
+    if force_db_root:
+        db_root = os.path.join(hive_master_root(), "db")
+
+    if client_username in ['stefanstapinski@gmail.com']:  ## admin
+        db_root = os.path.join(hive_master_root(), "db")
+    
+    else:
+        db_root = return_db_root(client_username=client_username)
+        if os.path.exists(db_root) == False:
+            os.mkdir(db_root)
+            os.mkdir(os.path.join(db_root, "logs"))
+    if queenKING:
+        st.session_state['db_root'] = db_root
+
+
+    return db_root
+
+
 def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
     def init_queen_orders(pickle_file):
         db = {}
@@ -4411,6 +4472,16 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         "PB_queen_Archives_Pickle": PB_queen_Archives_Pickle,
         'PB_QUEENsHeart_PICKLE': PB_QUEENsHeart_PICKLE,
     }
+
+
+def setup_instance(client_username, switch_env, force_db_root, queenKING):
+    # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
+    db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+    prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env)            
+    init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
+    
+    return prod
+
 
 
 def send_email(

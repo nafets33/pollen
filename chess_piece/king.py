@@ -126,16 +126,25 @@ exclude_conditions = [
 
 
 
-def menu_bar_selection(menu='main'):
+def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu):
+    
+    k_colors = streamlit_config_colors()
+    default_text_color = k_colors['default_text_color'] # = '#59490A'
+    default_font = k_colors['default_font'] # = "sans serif"
+    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+
     if menu == 'main':
+        
         menu_data = [
-            {'id':'QC','icon':"👑",'label':"QueensConscience"},
-            {'icon': "far fa-copy", 'label':"PlayGround"},
-            {'icon': "fa-solid fa-radar",'label':"HiveEngine", 'submenu':[{'label':"QUEEN", 'icon': "fa fa-meh"},{'label':"KING"}]},
+            {'id':'QC','icon':"fa fa-fire",'label':"Queen"},
+            {'icon': "fa fa-bug", 'label':"PlayGround"},
+            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
+            {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
+# 'submenu':[{'id': 'sb_liv_switch', 'label': f'Switch To {prod_name_oppiste}', 'icon': "fa fa-reply"}]
         ]
     elif menu == 'unAuth':
         menu_data = [
-            {'id':'unAuth','icon':"👑",'label':"QC"},
+            {'id':'unAuth','icon':"fa fa-tree",'Welcome':"welcome"},
 
             # {'id':'Copy','icon':"🐙",'label':"Copy"},
             # {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
@@ -146,19 +155,31 @@ def menu_bar_selection(menu='main'):
             # {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
         ]
 
-    over_theme = {'txc_inactive': '#FFFFFF'}
-    menu_id = hc.nav_bar(
-        menu_definition=menu_data,
-        # override_theme=over_theme,
-        home_name='pollenq',
-        login_name='Account',
-        hide_streamlit_markers=True, #will show the st hamburger as well as the navbar now!
-        sticky_nav=True, #at the top or not
-        sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
-    )
+    if prod:
 
-    # if st.button('click me'):
-    #     st.info('You clicked at: {}'.format(datetime.now()))
+        menu_id = hc.nav_bar(
+            menu_definition=menu_data,
+            home_name=f'pollenq {prod_name}',
+            login_name='Account',
+            hide_streamlit_markers=True, #will show the st hamburger as well as the navbar now!
+            sticky_nav=True, #at the top or not
+            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+        )
+    else:
+        over_theme = {'txc_inactive': 'white','menu_background':'black','txc_active':'yellow','option_active':'blue'}
+        font_fmt = {'font-class':'h2','font-size':'150%'}
+        # over_theme = {'txc_inactive': "#0D93FB"}
+        menu_id = hc.nav_bar(
+            menu_definition=menu_data,
+            override_theme=over_theme,
+            home_name=f'pollenq {prod_name}',
+            login_name='Account',
+            hide_streamlit_markers=True, #will show the st hamburger as well as the navbar now!
+            sticky_nav=True, #at the top or not
+            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+        )
+
+        st.session_state['menu_id']= menu_id
 
     return menu_id
 
@@ -240,25 +261,6 @@ def return_db_root(client_username):
     client_user = client_username.split("@")[0]
     db_name = f'db__{client_user}_{client_user_pqid}'
     db_root = os.path.join(client_dbs_root(), db_name)
-
-    return db_root
-
-def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
-
-    if force_db_root:
-        db_root = os.path.join(hive_master_root(), "db")
-
-    if client_username in ['stefanstapinski@gmail.com']:  ## admin
-        db_root = os.path.join(hive_master_root(), "db")
-    
-    else:
-        db_root = return_db_root(client_username=client_username)
-        if os.path.exists(db_root) == False:
-            os.mkdir(db_root)
-            os.mkdir(os.path.join(db_root, "logs"))
-    if queenKING:
-        st.session_state['db_root'] = db_root
-
 
     return db_root
 

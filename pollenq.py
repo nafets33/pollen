@@ -1,3 +1,4 @@
+# pollenq
 import pandas as pd
 import logging
 import os
@@ -21,14 +22,13 @@ import argparse
 from streamlit_extras.stoggle import stoggle
 from chess_piece.app_hive import display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
-from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, KINGME, pollen_themes
+from chess_piece.queen_hive import setup_instance, add_key_to_app, init_pollen_dbs, KINGME, pollen_themes
 from custom_button import cust_Button
 # import hydralit_components as hc
 from pollenq_pages.playground import PlayGround
 from pollenq_pages.queens_conscience import queens_conscience
 from pollenq_pages.account import account
 from ozz.ozz_bee import send_ozz_call
-
 # import sys, importlib
 # importlib.reload(sys.modules['pollenq_pages.queens_conscience'])
 
@@ -52,7 +52,9 @@ def pollenq(admin_pq):
         cBq = cust_Button(file_path_url=file_path_url, height=f'{height}px', hoverText=hoverText, key=key)
         if cBq:
             if key in ['queens_conscience', 'qc2']:
-                queens_conscience()
+                # queens_conscience() # not Working
+                st.write("Go To QueensConscience")
+                pass
         
         return True
 
@@ -87,8 +89,6 @@ def pollenq(admin_pq):
         #  }
     )
 
-
-
     # if menu_id == 'pollenq':
     #     pollenq_page()
     #     st.stop()
@@ -105,14 +105,27 @@ def pollenq(admin_pq):
     with st.spinner("Hello Welcome To pollenq a Kings Queen"):
         signin_main(page="pollenq")
 
+        prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
+        prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"        
 
+        switch_env = True if 'menu_id' in st.session_state and st.session_state['menu_id'] == 'sb_liv_switch' else False
+        
+        live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq')
+        if live_sb_button or switch_env:
+            st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+            prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
+            prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"
+            print('s', prod_name_oppiste)
+        
+        if st.session_state['authentication_status'] == False:
+            menu_id = menu_bar_selection(prod_name_oppiste=False, prod_name=False, prod=False, menu='unAuth')
+            display_for_unAuth_client_user()
+            st.stop()
+  
         if st.session_state['authentication_status'] == True:
-            menu_id = menu_bar_selection(menu='main') 
+            print('m', prod_name_oppiste)
+            menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main') 
 
-            # if st.session_state['admin']:
-            #     query = st.text_input('ozz call')
-            #     if st.button("ozz"):
-            #         send_ozz_call(query=query)
             # warning
             if st.session_state['authentication_status'] != None:
                 if st.session_state['authorized_user'] == False:
@@ -120,6 +133,8 @@ def pollenq(admin_pq):
                     client_user_wants_a_queen = st.button("Yes I want a Queen!")
                     if client_user_wants_a_queen:
                         st.session_state['init_queen_request'] = True
+            
+
             if menu_id == 'QC':
                 queens_conscience()
                 st.stop()
@@ -127,11 +142,9 @@ def pollenq(admin_pq):
                 PlayGround()
                 st.stop()
             if menu_id == 'Account':
-                account(st.session_state['admin'])
+                account(admin_pq=st.session_state['admin'])
                 st.stop()
-            
-            
-            
+
             prod = st.session_state['production']
             authorized_user = st.session_state['authorized_user']            
             
@@ -200,28 +213,31 @@ def pollenq(admin_pq):
                 # cols = st.columns((5,3,3,2,2,2))
                 with cols[0]:
                     stoggle("1. Select your Broker",
-                    "Alpaca is only current supported broker (Alpaca is a free no-fee trading broker, they are FDIC 250k insured) create a FREE account at https://app.alpaca.markets/brokerage/new-account"
+                    "Alpaca is only current supported broker, Create your FREE account at https://app.alpaca.markets/brokerage/new-account"
                     )
                 with cols[1]:
-                    stoggle("2. Enter in your API Keys ",
+                    stoggle("2. Add your Broker API keys",
                     """
-                    (this allows the QueenTraderBot to place trades) Its going to change the way you trade forever...everyone needs an AI :bot:
+                    This allows the Queen to place Trades for your portfolio. 
+                    This will change the way you trade forever...everyone needs an AI
                     """
                     )
                 with cols[2]:
-                    stoggle("3. Set your Risk Parameters",
+                    stoggle("3. Select A Queen",
                     """
-                    Go Start Building your QueenTradingBot! There is too much to dicuss now...we'll talk later
+                    Each Queen Offers different trading trading strategies with different levels of customization  
                     """
                     )
                 with cols[3]:
                     stoggle("4. Command",
                     """
-                    Go to QueensConscience, Turn on Your Queen! Setup the ChessBoard, Edit your TradingModels...Sit Back and watch your Queen Make You Money $$$
+                    Select a Queen.TradingModel 
+                    Trade alongside, make changes, talk with you Queen, Change strategy and Implement! 
+                    Sit Back and watch your Queen Make You Money $$$
                     """
                     )
 
-                cols = st.columns((3,3,3,3))
+                cols = st.columns((2,2,2,3))
 
                 with cols[0]:
                     page_line_seperator('.5')
@@ -236,7 +252,7 @@ def pollenq(admin_pq):
                     page_line_seperator('.5')
                     # st.write(":honeybee:")
                     # cust_Button(file_path_url='misc/chess_board.gif', hoverText=None, key=None)
-                    return_custom_button_nav(file_path_url='misc/chess_board.gif', height='200', hoverText='Queens Conscience', key='qc2')
+                    return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='200', hoverText='Queens Conscience', key='qc2')
 
                 # with cols[4]:
             
@@ -300,16 +316,7 @@ def pollenq(admin_pq):
                 st.write("No Soup for You")
                 local_gif(gif_path=flyingbee_grey_gif_path)
 
-            # cols = st.columns(3)
-            # with cols[1]:
-            #     # cBq = cust_Button(file_path_url="misc/queen_flair.gif", height='334px', hoverText="QueensConscience", key='b')
-            #     # if cBq:
-            #     return_custom_button_nav(file_path_url="misc/queen_flair.gif", height='334', hoverText="QueensConscience", key='queens_conscience')
-            #     st.stop() 
 
-        else:
-            menu_id = menu_bar_selection(menu='unAuth')
-            display_for_unAuth_client_user()
 
 if __name__ == '__main__':
     def createParser():
@@ -319,4 +326,7 @@ if __name__ == '__main__':
     parser = createParser()
     namespace = parser.parse_args()
     admin_pq = namespace.admin
-    pollenq(admin_pq)
+    try:
+        pollenq(admin_pq)
+    except Exception as e:
+        print(e)

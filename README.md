@@ -15,6 +15,8 @@ sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker
 sudo mv /usr/local/bin/docker-compose /usr/bin/docker-compose
 sudo chmod +x /usr/bin/docker-compose
 
+docker-compose build --no-cache
+
 run as >>> sudo -su root 
 docker-compose up
 # show status

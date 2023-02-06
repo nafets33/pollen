@@ -25,7 +25,7 @@ from custom_button import cust_Button
 from polleq_app_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
 from ozz.ozz_bee import send_ozz_call
@@ -188,14 +188,14 @@ def queens_conscience():
         if prod:
             with cols[1]:
                 # st.warning("LIVE ENVIORMENT The RealWorld")
-                mark_down_text(text='LIVE', fontsize='23', align='left', color="Green")
-                flying_bee_gif()
+                mark_down_text(text='LIVE', fontsize='23', align='left', color="Green", sidebar=True)
+                flying_bee_gif(sidebar=True)
 
         else:
             with cols[1]:
                 # st.info("SandBox")
-                mark_down_text(text='SandBox', fontsize='23', align='left', color="Red")
-                local_gif(gif_path=flyingbee_grey_gif_path)
+                mark_down_text(text='SandBox', fontsize='23', align='left', color="Red", sidebar=True)
+                local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
         
         PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
         PB_App_Pickle = st.session_state['PB_App_Pickle'] 
@@ -285,6 +285,7 @@ def queens_conscience():
                         df = df.sort_values('ttf')
                         st.write(df)
 
+
         def queen_QueenOrders():
             if admin == False:
                 st.write("You Do Not Have Access")
@@ -343,6 +344,7 @@ def queens_conscience():
                 PickleData(pickle_file=PB_App_Pickle, data_to_store=data)
                 data = ReadPickleData(pickle_file=PB_App_Pickle)
                 st.write(data['update_queen_order'])
+
 
         def queen_beeAction_theflash(Falseexpand=True):
     
@@ -446,208 +448,61 @@ def queens_conscience():
                     with cols[3]:
                         return_image_upon_save(title="Wave Request Delivered to the Queen")
 
-        def create_guage_chart(title, value=.01):
-
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = value,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': title, 'font': {'size': 25}},
-                delta = {'reference':.4 , 'increasing': {'color': "RebeccaPurple"}},
-                gauge = {
-                    'axis': {'range': [1, -1], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                    'bar': {'color': '#ffe680'},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "gray",
-                    'steps': [
-                        {'range': [-1, -.5], 'color': 'red'},
-                        {'range': [1, .6], 'color': 'royalblue'}],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 3},
-                        'thickness': 0.60,
-                        'value': 1}}))
-
-            # fig.update_layout(paper_bgcolor = "lavender", font = {'color': "darkblue", 'family': "Arial"})
-            fig.update_layout(height=289, width=350)
-
-            return fig
-
-        def create_todays_profit_header_information():
-            fig = go.Figure()
-
-            fig.add_trace(go.Indicator(
-                mode = "number+delta",
-                value = 200,
-                domain = {'x': [0, 0.5], 'y': [0, 0.5]},
-                delta = {'reference': 400, 'relative': True, 'position' : "top"}))
-
-            # fig.add_trace(go.Indicator(
-            #     mode = "number+delta",
-            #     value = 350,
-            #     delta = {'reference': 400, 'relative': True},
-            #     domain = {'x': [0, 0.5], 'y': [0.5, 1]}))
-
-            # fig.add_trace(go.Indicator(
-            #     mode = "number+delta",
-            #     value = 450,
-            #     title = {"text": "Accounts<br><span style='font-size:0.8em;color:gray'>Subtitle</span><br><span style='font-size:0.8em;color:gray'>Subsubtitle</span>"},
-            #     delta = {'reference': 400, 'relative': True},
-            #     domain = {'x': [0.6, 1], 'y': [0, 1]}))
-
-            # fig.show()
-            fig.update_layout(height=300, width=333)
-            st.plotly_chart(fig)
-        
-        def create_main_macd_chart(df):
-            try:
-                title = df.iloc[-1]['name']
-                # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-                fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1999, row_heights=[0.7, 0.3])
-                # df.set_index('timestamp_est')
-                # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-                df=df.copy()
-                df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-                fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
-                # fig.add_scatter(x=df['chartdate'], y=df['close'], mode="lines", row=1, col=1)
-                # if '1Minute_1Day' in df.iloc[0]['name']:
-                fig.add_scatter(x=df['chartdate'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
-
-                fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
-                fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
-                fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
-                fig.update_layout(title_text=title)
-                df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
-                fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
-                # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
-                fig.update_xaxes(showgrid=False)
-                fig.update_yaxes(showgrid=False)
-                # fig.update_layout(sliders=False)
-                return fig
-            except Exception as e:
-                print(e)
-
-
-        def create_slope_chart(df):
-            title = df.iloc[-1]['name']
-            # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-            fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-            # df.set_index('timestamp_est')
-            # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-            df = df.copy()
-            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-            slope_cols = [i for i in df.columns if 'slope' in i]
-            for col in slope_cols:
-                df[col] = pd.to_numeric(df[col])
-                df[col] = np.where(abs(df[col])>5, 0, df[col])
-            fig.add_scatter(x=df['chartdate'], y=df['hist_slope-3'], mode="lines", row=1, col=1, name='hist_slope-3')
-            fig.add_scatter(x=df['chartdate'], y=df['hist_slope-6'], mode="lines", row=1, col=1, name='hist_slope-6')
-            # fig.add_scatter(x=df['chartdate'], y=df['hist_slope-23'], mode="lines", row=1, col=1, name='hist_slope-23')
-            fig.add_scatter(x=df['chartdate'], y=df['macd_slope-3'], mode="lines", row=2, col=1, name='macd_slope-3')
-            fig.add_scatter(x=df['chartdate'], y=df['macd_slope-6'], mode="lines", row=2, col=1, name='macd_slope-6')
-            # fig.add_scatter(x=df['chartdate'], y=df['macd_slope-23'], mode="lines", row=2, col=1, name='macd_slope-23')
-            fig.update_layout(height=600, width=900, title_text=title)
-            return fig
-
-
-        def create_wave_chart(df):
-            title = f'buy+sell cross __waves {df.iloc[-1]["name"]}'
-            # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-            fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-            # df.set_index('timestamp_est')
-            # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-            df = df.copy()
-            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-
-            fig.add_bar(x=df['chartdate'], y=df['buy_cross-0__wave'],  row=1, col=1, name='buycross wave')
-            fig.add_bar(x=df['chartdate'], y=df['sell_cross-0__wave'],  row=1, col=1, name='sellcross wave')
-            fig.update_layout(height=600, width=900, title_text=title)
-            return fig
-
-
-        def create_wave_chart_single(df, wave_col):
-            title = df.iloc[-1]['name']
-            # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-            fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-            # df.set_index('timestamp_est')
-            # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-            df = df.copy()
-            df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-
-            fig.add_bar(x=df['chartdate'], y=df[wave_col],  row=1, col=1, name=wave_col)
-            fig.update_layout(height=600, width=900, title_text=title)
-            return fig
-
-
-        def create_wave_chart_all(df, wave_col):
-            try:
-                title = df.iloc[-1]['name']
-                # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
-                fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-                # df.set_index('timestamp_est')
-                # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
-                df = df.copy()
-                # df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-                # df[f'{wave_col}{"_number"}'] = df[f'{wave_col}{"_number"}'].astype(str)
-                # dft = df[df[f'{wave_col}{"_number"}'] == '1'].copy()
-                fig.add_bar(x=df[f'{wave_col}{"_number"}'], y=df[wave_col].values,  row=1, col=1, name=wave_col)
-                fig.update_layout(height=600, width=900, title_text=title)
-                return fig
-            except Exception as e:
-                print(e)
-                print_line_of_error()
-
         
         def return_total_profits(ORDERS):
-            
-            df = ORDERS['queen_orders']
-            ORDERS = df[(df['queen_order_state']== 'completed') & (df['side'] == 'sell')].copy()
-            return_dict = {}
-            if len(ORDERS) > 0:
-                now_ = datetime.datetime.now(est)
-                orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
-                
-                by_ticker = True if 'by_ticker' in st.session_state else False
-                group_by_value = ['symbol'] if by_ticker == True else ['symbol', 'ticker_time_frame']
-                tic_group_df = df.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
+            try:
+                df = ORDERS['queen_orders']
+                ORDERS = df[(df['queen_order_state']== 'completed') & (df['side'] == 'sell')].copy()
+                return_dict = {}
+                if len(ORDERS) > 0:
+                    now_ = datetime.datetime.now(est)
+                    orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
+                    
+                    by_ticker = True if 'by_ticker' in st.session_state else False
+                    group_by_value = ['symbol'] if by_ticker == True else ['symbol', 'ticker_time_frame']
+                    tic_group_df = df.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
 
-                return_dict['TotalProfitLoss'] = tic_group_df
-                
-                pct_profits = df.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
-                # total_dolla = round(sum(pct_profits['profit_loss']), 2)
-                # total_honey = round(sum(pct_profits['honey']), 2)
-                if len(orders_today) > 0:
-                    today_pl_df = orders_today.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
-                    total_dolla = round(sum(orders_today['profit_loss']), 2)
-                    total_honey = round((sum(orders_today['honey']) * 100), 2)
-                else:
-                    today_pl_df = 0
-                    total_dolla = 0
-                    total_honey = 0
-                
-                # st.write(sum(pct_profits['profit_loss']))
-                
-                if len(orders_today) > 0:
-                    title = f'P/L Todays Money {"$"} {total_dolla}, Honey {total_honey} %'
-                else:
-                    title = f'P/L Todays Money {"$"} {total_dolla}, Honey {total_honey} %'
-                with st.expander(title):
-                    by_ticker = st.checkbox('Group by Ticker', key='by_ticker')
-
+                    return_dict['TotalProfitLoss'] = tic_group_df
+                    
+                    pct_profits = df.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
+                    # total_dolla = round(sum(pct_profits['profit_loss']), 2)
+                    # total_honey = round(sum(pct_profits['honey']), 2)
                     if len(orders_today) > 0:
-                        # df = orders_today
-                        # today_pl_df = df.groupby(group_by_value)[['profit_loss']].sum().reset_index()
-                        mark_down_text(fontsize='25', text="Today Profit Loss")
-                        st.write(today_pl_df)
-                        mark_down_text(fontsize='25', text="Total Profit Loss")
-                        st.write(tic_group_df)
+                        today_pl_df = orders_today.groupby(group_by_value)[['profit_loss', 'honey']].sum().reset_index()
+                        total_dolla = round(sum(orders_today['profit_loss']), 2)
+                        total_honey = "" # round((sum(orders_today['honey']) * 100), 2) # this needs to be avg % per trade?
                     else:
-                        mark_down_text(fontsize='25', text="Total Profit Loss")
+                        today_pl_df = 0
+                        total_dolla = 0
+                        total_honey = ""
+                    
+                    # st.write(sum(pct_profits['profit_loss']))
+                    
+                    if len(orders_today) > 0:
+                        title = f'P/L Todays Money {"$"} {total_dolla}, Honey {total_honey} %'
+                    else:
+                        title = f'P/L Todays Money {"$"} {total_dolla}, Honey {total_honey} %'
+                    with st.expander(title):
+                        by_ticker = st.checkbox('Group by Ticker', key='by_ticker')
 
-                        st.write(tic_group_df)
-                    # submitted = st.form_submit_button("Save")
-            # else:
-            #     st.write("Waiting for your First Trade")
+                        if len(orders_today) > 0:
+                            # df = orders_today
+                            # today_pl_df = df.groupby(group_by_value)[['profit_loss']].sum().reset_index()
+                            mark_down_text(fontsize='25', text="Today Profit Loss")
+                            st.write(today_pl_df)
+                            mark_down_text(fontsize='25', text="Total Profit Loss")
+                            st.write(tic_group_df)
+                        else:
+                            mark_down_text(fontsize='25', text="Total Profit Loss")
+
+                            st.write(tic_group_df)
+                            chunk_list = dict(zip(tic_group_df['symbol'], tic_group_df['honey']))
+                            chunk_list = [{k:round(v,2)} for (k,v) in chunk_list.items() if k != 'init']
+                            chunk_write_dictitems_in_row(chunk_list=chunk_list, max_n=10, write_type='pl_profits', title="PL", groupby_qcp=False, info_type=False)
+            except Exception as e:
+                print(e, print_line_of_error())          # submitted = st.form_submit_button("Save")
+                # else:
+                #     st.write("Waiting for your First Trade")
             return return_dict
 
         
@@ -1612,11 +1467,12 @@ def queens_conscience():
             # if groupby_qcp:
             #     for qcp in set(qcp_ticker_index.values()):
             #         st.warning()
-
-            # chunk_list = chunk_list
-            num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
-            chunk_num = max_n
-            if num_rr > chunk_num:
+            try:
+                # chunk_list = chunk_list
+                num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
+                chunk_num = max_n if num_rr > max_n else num_rr
+                
+                # if num_rr > chunk_num:
                 chunks = list(chunk(range(num_rr), chunk_num))
                 for i in chunks:
                     if i[0] == 0:
@@ -1647,27 +1503,30 @@ def queens_conscience():
                                     else:
                                         st.info(f'{ticker} {v}')
                                     flying_bee_gif(width='43', height='40')
-
-            else:
-                cols = st.columns(len(chunk_list) + 1)
-                with cols[0]:
-                    if write_type == 'info':
-                        flying_bee_gif(width='53', height='53')
-                    else:
-                        st.write(title)
-                for idx, package in enumerate(chunk_list):
-                    for ticker, v in package.items():
-                    # ticker, value = package.items()
-                        with cols[idx + 1]:
-                            if write_type == 'checkbox':
-                                st.checkbox(ticker, v, key=f'{ticker}{v}')  ## add as quick save to turn off and on Model
-                            if write_type == 'info':
-                                if info_type == 'buy':
-                                    st.warning(f'{ticker} {v}')
-                                    local_gif(gif_path=uparrow_gif, height='23', width='23')
-                                else:
-                                    st.info(f'{ticker} {v}')
-                                    flying_bee_gif(width='38', height='42')
+                                if write_type == 'pl_profits':
+                                    st.write(ticker, v)
+            except Exception as e:
+                print(e, print_line_of_error())
+            # else:
+            #     cols = st.columns(len(chunk_list) + 1)
+            #     with cols[0]:
+            #         if write_type == 'info':
+            #             flying_bee_gif(width='53', height='53')
+            #         else:
+            #             st.write(title)
+            #     for idx, package in enumerate(chunk_list):
+            #         for ticker, v in package.items():
+            #         # ticker, value = package.items()
+            #             with cols[idx + 1]:
+            #                 if write_type == 'checkbox':
+            #                     st.checkbox(ticker, v, key=f'{ticker}{v}')  ## add as quick save to turn off and on Model
+            #                 if write_type == 'info':
+            #                     if info_type == 'buy':
+            #                         st.warning(f'{ticker} {v}')
+            #                         local_gif(gif_path=uparrow_gif, height='23', width='23')
+            #                     else:
+            #                         st.info(f'{ticker} {v}')
+            #                         flying_bee_gif(width='38', height='42')
             return True 
         
         
@@ -1844,10 +1703,11 @@ def queens_conscience():
 
         # """ if "__name__" == "__main__": """
         if st.session_state['admin']:
-            query = st.text_input('ozz call')
-            if st.button("ozz"):
-                send_ozz_call(query=query)
-    
+            with st.expander("ozz"):
+                query = st.text_input('ozz call')
+                if st.button("ozz"):
+                    send_ozz_call(query=query)
+        
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
@@ -1861,7 +1721,7 @@ def queens_conscience():
             snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
         except Exception as e:
             # requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://data.alpaca.markets/v2/stocks/SPY/snapshot
-            st.write("your api failed you need to update your api keys from alpaca.broker... taking you there")
+            st.write("API Keys failed! You need to update, Please Go to your Alpaca Broker Account to Generate API Keys")
             # time.sleep(5)
             queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
             api_failed = True
@@ -1971,10 +1831,10 @@ def queens_conscience():
             queen_tabs = ["Orders", "Chess Board", "Portfolio", "Wave Stories", "Trading Models", "Charts"]
             order_tab, chessboard_tab, Portfolio, wave_stories_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
 
-            with cols[1]:
-                return_total_profits(ORDERS=ORDERS)
-            with cols[0]:
-                queens_subconscious_Thoughts(QUEEN=QUEEN)
+            # with cols[1]:
+            return_total_profits(ORDERS=ORDERS)
+            # with cols[0]:
+            queens_subconscious_Thoughts(QUEEN=QUEEN)
 
             with Portfolio:
                 return_buying_power(api=api)  # sidebar

@@ -7,11 +7,10 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from streamlit_extras.switch_page_button import switch_page
+# from streamlit_extras.switch_page_button import switch_page
+from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc
+from chess_piece.queen_hive import setup_instance
 import ipdb
-from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, init_clientUser_dbroot, local__filepaths_misc
-from chess_piece.app_hive import page_line_seperator, live_sandbox__setup_switch, display_for_unAuth_client_user
-from chess_piece.queen_hive import init_pollen_dbs
 
 # from QueenHive import init_pollen_dbs
 
@@ -71,7 +70,7 @@ def signin_main(page):
                     register_password = st.session_state["register_status"][1]
 
                     # verification successful
-                    update_db(register_email, append_db=True)
+                    update_db(cur=cur, email=register_email, append_db=True)
                     send_email(
                         recipient=register_email,
                         subject="Welcome On Board PollenQ!",
@@ -117,7 +116,7 @@ def signin_main(page):
     PollenQ
     """,
                 )
-                update_db(email_forgot_pw)
+                update_db(cur=cur, email=email_forgot_pw)
                 st.success("Your new password has been sent your email!")
 
             elif email_forgot_pw == False:
@@ -125,10 +124,10 @@ def signin_main(page):
         except Exception as e:
             st.error(e)
 
-    def reset_password(email, location):
+    def reset_password(authenticator, email, location):
         try:
             if authenticator.reset_password(email, "", location=location):
-                update_db(email)
+                update_db(cur=cur, email=email)
                 send_email(
                     recipient=email,
                     subject="PollenQ. Password Changed",
@@ -167,14 +166,14 @@ def signin_main(page):
             smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
             smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
-    def update_db(email_to_update, append_db=False):
+    def update_db(cur, email, append_db=False):
         """Update a user's record, or add a new user"""
 
         # new user detials are stored in session state
         if append_db:
             detials = st.session_state["new_user_creds"]
         else:
-            detials = credentials["usernames"][email_to_update]
+            detials = credentials["usernames"][email]
 
         password = detials["password"]
         name = detials["name"]
@@ -188,7 +187,7 @@ def signin_main(page):
             cur.execute(
                 "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?)",
                 (
-                    email_to_update,
+                    email,
                     password,
                     name,
                     phone_no,
@@ -210,20 +209,12 @@ def signin_main(page):
                 last_login_date = "{last_login_date}",
                 login_count = "{login_count}"
             
-            WHERE email = "{email_to_update}"
+            WHERE email = "{email}"
             """
             )
 
         con.commit()
-        authenticator.credentials = read_user_db()
-
-    def setup_instance(client_username, switch_env, force_db_root, queenKING):
-        # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
-        db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-        prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env)            
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
-        
-        return prod
+        authenticator.credentials = read_user_db(cur=cur)
 
     def setup_user_pollenqdbs(key):
 
@@ -245,18 +236,7 @@ def signin_main(page):
 
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True)
 
-        prod_name_oppiste = "Sandbox" if prod  else "LIVE"        
-        if st.sidebar.button(f'Switch to {prod_name_oppiste}', key=key):
-            setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=force_db_root, queenKING=True)
-            # if 'last_page' in st.session_state and st.session_state['last_page'] != False:
-            #     switch_page(st.session_state['last_page'])
-            # else:
-            #     switch_page('pollenq')
-
-
         return True
-
-    # Read usernames and convert to nested dict
 
     def define_authorized_user(key):
         if 'logout' in st.session_state and st.session_state["logout"] != True:
@@ -279,12 +259,7 @@ def signin_main(page):
 
             return True
 
-
-
-    con = sqlite3.connect("db/client_users.db")
-    cur = con.cursor()
-
-    def read_user_db():
+    def read_user_db(cur):
         users = cur.execute("SELECT * FROM users").fetchall()
 
         creds = {}
@@ -299,7 +274,9 @@ def signin_main(page):
             }
         return {"usernames": creds}
 
-    credentials = read_user_db()
+    con = sqlite3.connect("db/client_users.db")
+    cur = con.cursor()
+    credentials = read_user_db(cur=cur)
 
     # Create authenticator object
     authenticator = stauth.Authenticate(
@@ -310,37 +287,26 @@ def signin_main(page):
         preauthorized={"emails": "na"},
     )
 
+
     # Check login. Automatically gets stored in session state
     name, authentication_status, email = authenticator.login("Login", "main")
 
-    # Returning Customer
-    if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
-        if 'logout' in st.session_state and st.session_state["logout"] != True:
-            cols = st.columns((8,1,2))
-            if page == 'Account':
-                with cols[1]:
-                    authenticator.logout("Logout", "main")
-                with cols[2]:
-                    reset_password(email, location='main')
             
-            define_authorized_user(key='34')
-            
-            return True
-
     # login successful; proceed
     if authentication_status:
         if 'logout' in st.session_state and st.session_state["logout"] != True:
-            update_db(email)
-            cols = st.columns((8,1,2))
-            if page == 'Account':
-                with cols[1]:
-                    authenticator.logout("Logout", "main")
-                with cols[2]:
-                    reset_password(email, location='main')
+            authenticator.logout("Logout", location='sidebar')
+            reset_password(authenticator, email, location='sidebar')
             
-            define_authorized_user(key='33')
-
-        return True
+            # Returning Customer
+            if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
+                if 'logout' in st.session_state and st.session_state["logout"] != True:
+                    define_authorized_user(key='34')
+                    return True
+            else:    
+                update_db(cur=cur, email=email)
+                define_authorized_user(key='33')
+                return True
 
     # login unsucessful; forgot password or create account
     elif authentication_status == False:

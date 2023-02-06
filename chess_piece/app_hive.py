@@ -20,6 +20,8 @@ from streamlit_extras.switch_page_button import switch_page
 import requests
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 import ipdb
 
 from chess_piece.king import (
@@ -256,6 +258,7 @@ def mark_down_text(
     text="Hello There",
     font=default_font,
     hyperlink=False,
+    sidebar=False
 ):
     if hyperlink:
         st.markdown(
@@ -266,12 +269,12 @@ def mark_down_text(
             unsafe_allow_html=True,
         )
     else:
-        st.markdown(
-            '<p style="text-align: {}; font-family:{}; color:{}; font-size: {}px;">{}</p>'.format(
-                align, font, color, fontsize, text
-            ),
-            unsafe_allow_html=True,
-        )
+        if sidebar:
+            st.sidebar.markdown(
+                '<p style="text-align: {}; font-family:{}; color:{}; font-size: {}px;">{}</p>'.format(align, font, color, fontsize, text),unsafe_allow_html=True,)
+        else:
+            st.markdown(
+            '<p style="text-align: {}; font-family:{}; color:{}; font-size: {}px;">{}</p>'.format(align, font, color, fontsize, text),unsafe_allow_html=True,)
     return True
 
 
@@ -427,15 +430,20 @@ def local_gif(gif_path, width="33", height="33", sidebar=False, url=False):
         )
 
 
-def flying_bee_gif(width="33", height="33"):
+def flying_bee_gif(width="33", height="33", sidebar=False):
     with open(os.path.join(jpg_root, "flyingbee_gif_clean.gif"), "rb") as file_:
         contents = file_.read()
         data_url = base64.b64encode(contents).decode("utf-8")
-        st.markdown(
-            f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">',
-            unsafe_allow_html=True,
-        )
-
+        if sidebar:
+            st.sidebar.markdown(
+                f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<img src="data:image/gif;base64,{data_url}" width={width} height={height} alt="bee">',
+                unsafe_allow_html=True,
+            )
 
 def pollen__story(df):
     with st.expander("pollen story", expanded=False):
@@ -895,6 +903,7 @@ def queen_order_flow(ORDERS, active_order_state_list):
         download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
     return True
 
+
 def page_session_state__cleanUp(page):
     if page == 'QueensConscience':
         st.session_state['option_sel'] = False
@@ -903,45 +912,6 @@ def page_session_state__cleanUp(page):
     
     return True
 
-
-def live_sandbox__setup_switch(client_username, QUEEN_KING=False, switch_env=False):
-    if QUEEN_KING:
-        if 'last_env' in QUEEN_KING.keys():
-            prod = QUEEN_KING['last_env']
-    else:
-        prod = (
-            True
-            if "production" in st.session_state and st.session_state["production"] == True
-            else False
-        )
-    
-    prod_name = (
-        "LIVE"
-        if prod
-        else "Sandbox"
-    )
-    st.session_state["prod_name"] = prod_name
-    st.session_state["production"] = prod
-
-    if switch_env:
-        if prod:
-            prod = False
-            st.session_state["production"] = prod
-            prod_name = "Sanbox"
-            st.session_state["prod_name"] = prod_name
-        else:
-            prod = True
-            st.session_state["production"] = prod
-            prod_name = "LIVE"
-            st.session_state["prod_name"] = prod_name
-
-    st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
-    
-    if QUEEN_KING:
-        if st.session_state['authoirzed_user']:
-            QUEEN_KING['last_env'] = prod
-
-    return prod
 
 
 def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
@@ -1121,7 +1091,126 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
 
 ############### Charts ##################
 
-############### Charts ##################
+def create_main_macd_chart(df, width=1200, height=550):
+    try:
+        title = df.iloc[-1]['name']
+
+        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.05, row_heights=[0.7, 0.3])
+
+        df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+        df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
+        
+        fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
+        fig.add_scatter(x=df['chartdate'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
+        fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
+        fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
+        fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
+        
+        fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
+        # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
+        fig.update_layout(title_text=title, width=width, height=height)
+        fig.update_xaxes(showgrid=False, rangeslider_visible=False)
+        fig.update_yaxes(showgrid=False)
+        # fig.update_layout(sliders=False)
+        return fig
+    except Exception as e:
+        print(e)
+
+
+def create_guage_chart(title, value=.01):
+
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number+delta",
+        value = value,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': title, 'font': {'size': 25}},
+        delta = {'reference':.4 , 'increasing': {'color': "RebeccaPurple"}},
+        gauge = {
+            'axis': {'range': [1, -1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+            'bar': {'color': '#ffe680'},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "gray",
+            'steps': [
+                {'range': [-1, -.5], 'color': 'red'},
+                {'range': [1, .6], 'color': 'royalblue'}],
+            'threshold': {
+                'line': {'color': "red", 'width': 3},
+                'thickness': 0.60,
+                'value': 1}}))
+
+    # fig.update_layout(paper_bgcolor = "lavender", font = {'color': "darkblue", 'family': "Arial"})
+    fig.update_layout(height=289, width=350)
+
+    return fig
+
+
+def create_wave_chart(df):
+    title = f'buy+sell cross __waves {df.iloc[-1]["name"]}'
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+
+    fig.add_bar(x=df['chartdate'], y=df['buy_cross-0__wave'],  row=1, col=1, name='buycross wave')
+    fig.add_bar(x=df['chartdate'], y=df['sell_cross-0__wave'],  row=1, col=1, name='sellcross wave')
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+def create_wave_chart_single(df, wave_col):
+    title = df.iloc[-1]['name']
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+
+    fig.add_bar(x=df['chartdate'], y=df[wave_col],  row=1, col=1, name=wave_col)
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+
+def create_slope_chart(df):
+    title = df.iloc[-1]['name']
+    # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+    # df.set_index('timestamp_est')
+    # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+    df = df.copy()
+    df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+    slope_cols = [i for i in df.columns if 'slope' in i]
+    for col in slope_cols:
+        df[col] = pd.to_numeric(df[col])
+        df[col] = np.where(abs(df[col])>5, 0, df[col])
+    fig.add_scatter(x=df['chartdate'], y=df['hist_slope-3'], mode="lines", row=1, col=1, name='hist_slope-3')
+    fig.add_scatter(x=df['chartdate'], y=df['hist_slope-6'], mode="lines", row=1, col=1, name='hist_slope-6')
+    # fig.add_scatter(x=df['chartdate'], y=df['hist_slope-23'], mode="lines", row=1, col=1, name='hist_slope-23')
+    fig.add_scatter(x=df['chartdate'], y=df['macd_slope-3'], mode="lines", row=2, col=1, name='macd_slope-3')
+    fig.add_scatter(x=df['chartdate'], y=df['macd_slope-6'], mode="lines", row=2, col=1, name='macd_slope-6')
+    # fig.add_scatter(x=df['chartdate'], y=df['macd_slope-23'], mode="lines", row=2, col=1, name='macd_slope-23')
+    fig.update_layout(height=600, width=900, title_text=title)
+    return fig
+
+
+def create_wave_chart_all(df, wave_col):
+    try:
+        title = df.iloc[-1]['name']
+        # st.markdown('<div style="text-align: center;">{}</div>'.format(title), unsafe_allow_html=True)
+        fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+        # df.set_index('timestamp_est')
+        # df['chartdate'] = f'{df["chartdate"].day}{df["chartdate"].hour}{df["chartdate"].minute}'
+        df = df.copy()
+        # df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+        # df[f'{wave_col}{"_number"}'] = df[f'{wave_col}{"_number"}'].astype(str)
+        # dft = df[df[f'{wave_col}{"_number"}'] == '1'].copy()
+        fig.add_bar(x=df[f'{wave_col}{"_number"}'], y=df[wave_col].values,  row=1, col=1, name=wave_col)
+        fig.update_layout(height=600, width=900, title_text=title)
+        return fig
+    except Exception as e:
+        print(e)
 
 
 def example__subPlot():
