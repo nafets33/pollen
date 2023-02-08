@@ -619,9 +619,12 @@ def queen_workerbees(prod,
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         # MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
         # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
-        MACD_settings = QUEENBEE["workerbees"][queens_chess_piece][
-            "MACD_fast_slow_smooth"
-        ]
+        if backtesting:
+            MACD_settings = macd 
+        else:
+            MACD_settings = QUEENBEE["workerbees"][queens_chess_piece][
+                "MACD_fast_slow_smooth"
+            ]
         # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
         # change the script to pull for each ticker, inifinite pawns pw1: [10] ... write out the pollenstory to the local db pickle file
@@ -686,8 +689,15 @@ def queen_workerbees(prod,
         else:
             symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
         # print("Story bee path", symbols_STORY_bee_root)
+        if backtesting:
+            macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], 
+                                                  MACD_settings["slow"], 
+                                                  MACD_settings["smooth"])
+        else:
+            macd_part_fname = ""
+            
         for ttf in pollens_honey["pollen_story"]:
-            ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}.pkl")
+            ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
             PickleData(
                 ttf_db,
                 {"pollen_story": pollens_honey["pollen_story"][ttf]},
@@ -695,7 +705,7 @@ def queen_workerbees(prod,
             )
 
         for ttf in pollens_honey["conscience"]["STORY_bee"]:
-            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}.pkl")
+            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}_.pkl")
             PickleData(
                 ttf_db,
                 {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},
@@ -756,11 +766,9 @@ def queen_workerbees(prod,
         WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
         for qcp_worker in WORKERBEE_queens.keys():
             if backtesting:
-                MACD_settings = macd 
+                MACD_settings = macd
             else:
                 MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
-                print(MACD_settings)
-                assert False
             master_tickers = QUEENBEE["workerbees"][qcp_worker]["tickers"]
             star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
             WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(
