@@ -1374,16 +1374,14 @@ def queens_conscience(QUEEN_KING=False, QUEEN=False, KING=False):
                                 send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{st.session_state["username"]} you forgot to say something')
                                 st.error("Your Account not Yet authorized")
                                 return False
-                            if KING['instance_pq']:                                
-                                # execute trigger
-                                trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                                QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
-                                st.write("My Queen")
-                                st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
-                                PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                                switch_page("QueensConscience")
-                            else:
-                                st.write("Nice Try")
+                            # execute trigger
+                            trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
+                            QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
+                            st.write("My Queen")
+                            st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
+                            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                            switch_page("QueensConscience")
+
                     
                     with cols[2]:
                         local_gif(gif_path=flyingbee_grey_gif_path)

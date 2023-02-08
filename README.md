@@ -28,6 +28,7 @@ docker stop $(docker ps -a -q)
 ## VM commands
 rm -r -v Example ## remove dir
 sudo -su root ## username
+screen -X -S SCREENID kill
 
 ## update permissions
 chmod -R 777 queen.pkl or dir client_user_dbs

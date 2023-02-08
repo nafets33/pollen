@@ -46,7 +46,7 @@ pd.options.mode.chained_assignment = None
 # queens_chess_piece = os.path.basename(__file__)
 
 
-def pollenq(instance_pq, admin_pq):
+def pollenq(admin_pq):
     
     def return_custom_button_nav(hoverText, key, file_path_url="misc/floating-queen-unscreen.gif", height='334'):
         cBq = cust_Button(file_path_url=file_path_url, height=f'{height}px', hoverText=hoverText, key=key)
@@ -308,7 +308,7 @@ def pollenq(instance_pq, admin_pq):
     theme_list = list(pollen_theme.keys())
 
     if menu_id == 'QC':
-        KING['instance_pq'] = instance_pq
+        # KING['instance_pq'] = instance_pq
         queens_conscience(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, KING=KING)
         st.stop()
     if menu_id == 'PlayGround':
@@ -331,13 +331,13 @@ if __name__ == '__main__':
     def createParser():
         parser = argparse.ArgumentParser()
         parser.add_argument ('-admin', default=False)
-        parser.add_argument ('-instance', default=False)
+        # parser.add_argument ('-instance', default=False)
         return parser
     parser = createParser()
     namespace = parser.parse_args()
     admin_pq = namespace.admin
-    instance_pq = namespace.instance
+    # instance_pq = namespace.instance
     try:
-        pollenq(instance_pq, admin_pq)
+        pollenq(admin_pq)
     except Exception as e:
         print(e)
