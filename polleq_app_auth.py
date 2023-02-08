@@ -242,7 +242,6 @@ def signin_main(page):
         if 'logout' in st.session_state and st.session_state["logout"] != True:
             (
                 users_allowed_queen_email,
-                users_allowed_queen_emailname,
                 users_allowed_queen_emailname__db,
             ) = kingdom__grace_to_find_a_Queen()
             if st.session_state["username"] in users_allowed_queen_email:

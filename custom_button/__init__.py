@@ -17,12 +17,12 @@ else:
     )
 
 
-def cust_Button(file_path_url, height='50px', hoverText=None, key=None):
+def cust_Button(file_path_url, height='50px', hoverText=None, key=None, default=0):
     component_value = _component_func(
         file_path_url=file_path_url,
         height=height,
         hoverText=hoverText,
         key=key,
-        default=0,
+        default=default,
     )
     return component_value

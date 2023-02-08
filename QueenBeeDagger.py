@@ -6,8 +6,19 @@ est = pytz.timezone("US/Eastern")
 import streamlit as st
 
 
+import requests
 
+def check_running_dags():
+    url = "http://<airflow_host>:<airflow_port>/api/experimental/dags"
+    response = requests.get(url).json()
+    running_dags = [dag["dag_id"] for dag in response if dag["is_paused"] == False and dag["is_subdag"] == False and dag["concurrency"] > 0]
+    return running_dags
 
+def check_running_dags():
+    url = "http://<airflow_host>:<airflow_port>/api/experimental/dags"
+    response = requests.get(url).json()
+    running_dags = [dag["dag_id"] for dag in response if dag["is_paused"] == False and dag["is_subdag"] == False and dag["concurrency"] > 0]
+    return running_dags
 
 def run__trigger_dag(dag_id, run_id, client_user, prod):
     # dag_id='run_queenbee_prod'

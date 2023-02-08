@@ -7,6 +7,7 @@ import ssl
 import sys
 import time
 from collections import defaultdict, deque
+import sqlite3
 
 # import datetime
 from datetime import datetime, timedelta
@@ -378,6 +379,7 @@ def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
     not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
     if swarmQUEEN:
         QUEEN = {  # The Queens Mind
+            "id": 'init',
             "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
             "prod": "",
             "source": "na",
@@ -551,6 +553,7 @@ def generate_chess_board(chess_pieces, init_macd_vars = {"fast": 12, "slow": 26,
 
     return chess_board
 
+
 def init_QUEEN_App():
     ticker_universe = return_Ticker_Universe()
     index_ticker_db = ticker_universe["index_ticker_db"]
@@ -565,6 +568,7 @@ def init_QUEEN_App():
         "prod": 'init',
         "db__client_user": 'init',
         "theme": "nuetral",
+        "queen_tier": "queen_1",
         "king_controls_queen": return_queen_controls(stars),
         "qcp_workerbees": {
             "castle": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["SPY"]),
@@ -624,7 +628,7 @@ def init_QUEEN_App():
         "trading_models_requests": [],
         "power_rangers": [],
         "power_rangers_requests": [],
-        "power_rangers_lastupdate": datetime.now().astimezone(est),
+        "power_rangers_lastupdate": datetime.now(est),
         "knight_bees_kings_rules": [],
         "knight_bees_kings_rules_requests": [],
         "queen_controls_reset": False,
@@ -647,6 +651,20 @@ def init_QUEEN_App():
         "stop_queen": False,
     }
     return app
+
+
+def add_key_to_KING(KING):  # returns QUEES
+    q_keys = KING.keys()
+    latest_init = init_KING()
+    update = False
+    for k, v in latest_init.items():
+        if k not in q_keys:
+            KING[k] = v
+            update = True
+            msg = f'{k}{" : Key Added"}'
+            print(msg)
+            logging.info(msg)
+    return {"KING": KING, "update": update}
 
 
 def add_key_to_app(APP_requests):  # returns QUEES
@@ -2402,60 +2420,6 @@ def init_index_ticker(index_list, db_root, init=True):
     return True
 
 
-def PickleData(pickle_file, data_to_store):
-    p_timestamp = {"pq_last_modified": datetime.now(est)}
-    root, name = os.path.split(pickle_file)
-    pickle_file_temp = os.path.join(root, ("temp" + name))
-    with open(pickle_file_temp, "wb+") as dbfile:
-        db = data_to_store
-        db["pq_last_modified"] = p_timestamp
-        pickle.dump(db, dbfile)
-
-    with open(pickle_file, "wb+") as dbfile:
-        db = data_to_store
-        db["pq_last_modified"] = p_timestamp
-        pickle.dump(db, dbfile)
-
-    return True
-
-
-def ReadPickleData(pickle_file):
-    # Check the file's size and modification time
-    prev_size = os.stat(pickle_file).st_size
-    prev_mtime = os.stat(pickle_file).st_mtime
-    while True:
-        stop = 0
-        # Get the current size and modification time of the file
-        curr_size = os.stat(pickle_file).st_size
-        curr_mtime = os.stat(pickle_file).st_mtime
-
-        # Check if the size or modification time has changed
-        if curr_size != prev_size or curr_mtime != prev_mtime:
-            print(f"{pickle_file} is currently being written to")
-            logging.info(f"{pickle_file} is currently being written to")
-        else:
-            if stop > 3:
-                print("pickle error")
-                logging.critical(f"{e} error is pickle load")
-                send_email(subject="CRITICAL Read Pickle Break")
-                break
-            try:
-                with open(pickle_file, "rb") as f:
-                    return pickle.load(f)
-            except Exception as e:
-                print(e)
-                logging.error(f"{e} error is pickle load")
-                stop += 1
-                time.sleep(0.033)
-
-        # Update the previous size and modification time
-        prev_size = curr_size
-        prev_mtime = curr_mtime
-
-        # Wait a short amount of time before checking again
-        time.sleep(0.033)
-
-
 def timestamp_string(format="%m-%d-%Y %I.%M%p", tz=est):
     return datetime.now(tz).strftime(format)
 
@@ -2795,14 +2759,38 @@ def pollen_themes(
     return pollen_themes
 
 
-def init_KING(pickle_file):
+def init_KING():
     king = {
         "kingme": KINGME(),
     }
+    
+    con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
+    with con:
+        cur = con.cursor()
+        users = cur.execute("SELECT * FROM users").fetchall()
 
-    PickleData(pickle_file=pickle_file, data_to_store=king)
+    users_allowed_queen_email = [
+        "stevenweaver8@gmail.com",
+        "stefanstapinski@gmail.com",
+        "adivergentthinker@gmail.com",
+        "stapinski89@gmail.com",
+        "jehddie@gmail.com",
+        "conrad.studzinski@yahoo.com",
+        "jamesliess@icloud.com",
+        "ng2654@columbia.edu",
+        "mrubin2724@gmail.com",
+        "pollenq.queen@gmail.com",
+    ]
 
-    return True
+    king['users'] = {
+        'client_users_db': users,
+        'client_user__allowed_queen_list': users_allowed_queen_email
+    }
+
+    king['active_order_state_list'] = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+
+
+    return king
 
 
 def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
@@ -4454,15 +4442,17 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
 
     if os.path.exists(PB_KING_Pickle) == False:
         print("You Need a King")
-        init_KING(pickle_file=PB_KING_Pickle)
+        KING = init_KING()
+        PickleData(pickle_file=PB_KING_Pickle, data_to_store=KING)
+
 
     if queenKING:
-        # st.write("prod", prod)
         st.session_state["PB_QUEEN_Pickle"] = PB_QUEEN_Pickle
         st.session_state["PB_App_Pickle"] = PB_App_Pickle
         st.session_state["PB_Orders_Pickle"] = PB_Orders_Pickle
         st.session_state["PB_queen_Archives_Pickle"] = PB_queen_Archives_Pickle
         st.session_state["PB_QUEENsHeart_PICKLE"] = PB_QUEENsHeart_PICKLE
+        st.session_state["PB_KING_Pickle"] = PB_KING_Pickle
 
 
     return {
@@ -4470,7 +4460,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         "PB_App_Pickle": PB_App_Pickle,
         "PB_Orders_Pickle": PB_Orders_Pickle,
         "PB_queen_Archives_Pickle": PB_queen_Archives_Pickle,
-        'PB_QUEENsHeart_PICKLE': PB_QUEENsHeart_PICKLE,
+        "PB_QUEENsHeart_PICKLE": PB_QUEENsHeart_PICKLE,
+        "PB_KING_Pickle": PB_KING_Pickle,
     }
 
 

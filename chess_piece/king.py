@@ -9,7 +9,7 @@ import streamlit as st
 import hashlib
 import shutil
 import hydralit_components as hc
-
+import pandas as pd
 import aiohttp
 import pytz
 import ipdb
@@ -179,7 +179,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu):
             sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
         )
 
-        st.session_state['menu_id']= menu_id
+    st.session_state['menu_id']= menu_id
 
     return menu_id
 
@@ -197,6 +197,13 @@ def master_swarm_QUEENBEE(prod):
     else:
         return os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
 
+def master_swarm_KING(prod):
+    if prod:
+        PB_KING_Pickle = os.path.join(hive_master_root(), "db/KING.pkl")
+    else:
+        PB_KING_Pickle = os.path.join(hive_master_root(), "db/KING_sandbox.pkl")
+
+    return PB_KING_Pickle
 
 def client_dbs_root():
     client_dbs = os.path.join(hive_master_root(), "client_user_dbs")
@@ -264,37 +271,35 @@ def return_db_root(client_username):
 
     return db_root
 
+def return_all_client_users__db(query="SELECT * FROM users"):
+    con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
+    cur = con.cursor()
+    users = cur.execute(query).fetchall()
+    df = pd.DataFrame(users)
+
+    df = df.rename(columns={
+                    0:'email',
+                    1:'password',
+                    2:'name',
+                    3:'phone_no',
+                    4:'signup_date',
+                    5:'last_login_date',
+                    6:'login_count',
+                    }
+                )
+
+    return df
 
 def kingdom__grace_to_find_a_Queen():
     # create list for userdb
+    PB_KING = master_swarm_KING(prod=True)
+    KING = ReadPickleData(PB_KING)
+    users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
 
-    # con = sqlite3.connect("db/client_users.db")
-    con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
-    cur = con.cursor()
-    users = cur.execute("SELECT * FROM users").fetchall()
-
-    users_allowed_queen_email = [
-        "stevenweaver8@gmail.com",
-        "stefanstapinski@gmail.com",
-        "adivergentthinker@gmail.com",
-        "stapinski89@gmail.com",
-        "jehddie@gmail.com",
-        "conrad.studzinski@yahoo.com",
-        "jamesliess@icloud.com",
-        "ng2654@columbia.edu",
-        "mrubin2724@gmail.com",
-    ]
-
-    users_allowed_queen_emailname = [
-        client_user.split("@")[0] for client_user in users_allowed_queen_email
-    ]
-    users_allowed_queen_emailname__db = [
-        return_db_root(client_username=cu) for cu in users_allowed_queen_email
-    ]
+    users_allowed_queen_emailname__db = [return_db_root(client_username=cu) for cu in users_allowed_queen_email]
 
     return (
         users_allowed_queen_email,
-        users_allowed_queen_emailname,
         users_allowed_queen_emailname__db,
     )
 
@@ -436,9 +441,7 @@ def return_QUEENs_workerbees_chessboard(QUEEN):
     return {"queens_master_tickers": queens_master_tickers}
 
 
-def return_QUEENs__symbols_data(
-    QUEEN, info="returns all ticker_time_frame data for open orders and chessboard"
-):
+def return_QUEENs__symbols_data(QUEEN, info="returns all ticker_time_frame data for open orders and chessboard"):
     def return_active_orders(QUEEN):
         df = QUEEN["queen_orders"]
         df["index"] = df.index
@@ -627,5 +630,5 @@ def local__filepaths_misc():
 
 
 
-
 #### #### if __name__ == '__main__'  ###
+

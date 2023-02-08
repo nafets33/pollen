@@ -1,6 +1,6 @@
 # QueenBee
 import logging
-from multiprocessing.pool import RUN
+# from multiprocessing.pool import RUN
 import os
 import pandas as pd
 import numpy as np
@@ -12,49 +12,38 @@ import pytz
 import ipdb
 import asyncio
 import aiohttp
-from tqdm import tqdm
+# from tqdm import tqdm
 import argparse
-from chess_piece.king import return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData
+from chess_piece.king import master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData
 from chess_piece.queen_hive import init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
-
-
-pd.options.mode.chained_assignment = None
-est = pytz.timezone("US/Eastern")
-utc = pytz.timezone('UTC')
-
-
-# ###### GLOBAL # ######
-ARCHIVE_queenorder = 'archived'
-active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
-CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
-RUNNING_Orders = ['running', 'running_open']
-RUNNING_CLOSE_Orders = ['running_close']
-# crypto
-crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-coin_exchange = "CBSE"
-
-
-# misc
-exclude_conditions = [
-    'B','W','4','7','9','C','G','H','I','M','N',
-    'P','Q','R','T','V','Z'
-] # 'U'
-
-
-# index_list = [
-#     'DJA', 'DJI', 'DJT', 'DJUSCL', 'DJU',
-#     'NDX', 'IXIC', 'IXCO', 'INDS', 'INSR', 'OFIN', 'IXTC', 'TRAN', 'XMI', 
-#     'XAU', 'HGX', 'OSX', 'SOX', 'UTY',
-#     'OEX', 'MID', 'SPX',
-#     'SCOND', 'SCONS', 'SPN', 'SPF', 'SHLTH', 'SINDU', 'SINFT', 'SMATR', 'SREAS', 'SUTIL']
 
 
 """ ideas 
 if prior day abs(change) > 1 ignore ticker for the day!
 """
+
 def queenbee(client_user, prod, queens_chess_piece='queen'):
-    users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    pd.options.mode.chained_assignment = None
+    est = pytz.timezone("US/Eastern")
+    utc = pytz.timezone('UTC')
+
+    # ###### GLOBAL # ######
+    ARCHIVE_queenorder = 'archived'
+    active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+    active_queen_order_states = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+    CLOSED_queenorders = ['running_close', 'completed', 'completed_alpaca']
+    RUNNING_Orders = ['running', 'running_open']
+    RUNNING_CLOSE_Orders = ['running_close']
+    # crypto
+    crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+    coin_exchange = "CBSE"
+    # misc
+    exclude_conditions = [
+        'B','W','4','7','9','C','G','H','I','M','N',
+        'P','Q','R','T','V','Z'
+    ] # 'U'
+    
+    users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
     prod = True if str(prod).lower() == 'true' else False
 
@@ -63,26 +52,28 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to same something')
         sys.exit()
 
-
     def update_queen_order(QUEEN, update_package):
         # pollen = read_queensmind(prod)
         # QUEEN = pollen['queen']
         # update_package client_order id and field updates {client_order_id: {'queen_order_status': 'running'}}
-        for c_order_id in update_package.keys():
-            # order_sel = {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_id}
-            df = QUEEN['queen_orders']
-            df_ = df[df['client_order_id'] == c_order_id].copy()
-            order_idx = df_.iloc[-1].name
-            # order_idx = list(order_sel.keys())[0]
-            for field_, new_value in update_package[c_order_id].items():
-                try:
-                    QUEEN['queen_orders'].at[order_idx, field_] = new_value
-                except Exception as e:
-                    print(e, 'failed to update QueenOrder')
-                    logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
-        
-        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN, write_temp=False)
-        
+        try:
+            for c_order_id in update_package.keys():
+                # order_sel = {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_id}
+                df = QUEEN['queen_orders']
+                df_ = df[df['client_order_id'] == c_order_id].copy()
+                order_idx = df_.iloc[-1].name
+                # order_idx = list(order_sel.keys())[0]
+                for field_, new_value in update_package[c_order_id].items():
+                    try:
+                        QUEEN['queen_orders'].at[order_idx, field_] = new_value
+                    except Exception as e:
+                        print(e, 'failed to update QueenOrder')
+                        logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
+            
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN, write_temp=False)
+        except Exception as e:
+            print(e, print_line_of_error())
+            logging.CRITICAL({'error': e, 'msg': 'update_queen_order', 'update_package': update_package})
         return True
 
 
@@ -124,6 +115,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         except Exception as e:
             print(e)
 
+    
     def generate_client_order_id(QUEEN, ticker, trig, sellside_client_order_id=False): # generate using main_order table and trig count
         main_orders_table = QUEEN['queen_orders']
         temp_date = datetime.datetime.now(est).strftime("%y-%m-%d %M.%S")
@@ -233,7 +225,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 return {'app_flag': False}
         
-        elif request_name == "update_queen_order": # redo Don't save App ???
+        elif request_name == "update_queen_order": # test
             app_order_base = [i for i in QUEEN_KING[request_name]]
             if app_order_base:
                 for app_request in app_order_base:
@@ -248,36 +240,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         update_queen_order(update_package=app_request)
                         
                         return {'app_flag': True}
-            else:
-                return {'app_flag': False}
-
-        elif request_name == "power_rangers": # redo Don't save App NOT NEEDED?
-            # archive_bucket = "power_rangers_requests"
-            # power rangers
-            all_items = [i for i in QUEEN_KING[request_name]]
-            if all_items:
-                for app_request in all_items:
-                    if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
-                        print("Power Rangers trigger request Id already received")
-                        QUEEN_KING[archive_bucket].append(app_request)
-                        QUEEN_KING[request_name].remove(app_request)
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                        return {'app_flag': False}
-                    else:
-                        print("Power Ranger Change")
-                        QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                        QUEEN_KING[archive_bucket].append(app_request)
-                        QUEEN_KING[request_name].remove(app_request)
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-
-                        #Update Rangers
-                        # control_name = app_request['control_name']
-                        
-                        for ranger, update_value in app_request['rangers_values'].items():
-                            QUEEN['queen_controls'][request_name][app_request['star']][app_request['wave_type']][app_request['wave_']][app_request['theme_token']][ranger] = update_value
-
-                        
-                        return {'app_flag': True, 'app_request': app_request}
             else:
                 return {'app_flag': False}
 
@@ -387,49 +349,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 return {'app_flag': False}
         
-        elif request_name == "workerbees": # NOT NEEDED ONLY for swarmQUEEN
-            app_order_base = [i for i in QUEEN_KING[request_name]]
-            if app_order_base:
-                for app_request in app_order_base:
-                    if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
-                        return {'app_flag': False}
-                    else:
-                        print("queen control gather", app_request['request_name'],)
-                        QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-
-                        # update control
-                        qcp = app_request['queens_chess_piece']
-                        if 'tickers' in app_request.keys():
-                            QUEEN[request_name][qcp]['tickers'] = app_request['tickers']
-                        if 'MACD_fast_slow_smooth' in app_request.keys():
-                            QUEEN[request_name][qcp]['MACD_fast_slow_smooth'] = app_request['MACD_fast_slow_smooth']
-                        
-                        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-                        msg = ('Updated Queen :: ', app_request)
-                        print(msg)
-                        logging.info(msg)
-
-                        return {'app_flag': True, 'app_request': app_request}  
         
-        # elif request_name == 'trading_models': # Changes to confirm queen sees request
-        #     app_order_base = [i for i in QUEEN_KING[request_name]]
-        #     if app_order_base:
-        #         for app_request in app_order_base:
-        #             if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
-        #                 return {'app_flag': False}
-        #             else:
-        #                 print("queen trading model update", app_request['request_name'],)
-        #                 QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
 
-        #                 # update trading model
-        #                 trading_model_update = app_request['trading_model']
-        #                 QUEEN['queen_controls']['symbols_stars_TradingModel'].update(trading_model_update)
-        #                 msg = ('trading model updated:: ', trading_model_update)
-        #                 print(msg)
-        #                 logging.info(msg)
-
-                        
-                        return {'app_flag': True, 'app_request': app_request}    
         else:
             return {'app_flag': False}
 
@@ -1956,7 +1877,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 
                                 update_queen_order_profits(ticker=ticker, queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
                                 
-                                update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=queen_order_idx)
+                                update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=queen_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
                                 
                                 return {'resp': "running_open"}
@@ -2380,6 +2301,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
         PB_QUEENsHeart_PICKLE = init_pollen['PB_QUEENsHeart_PICKLE']
 
+        KING = ReadPickleData(master_swarm_KING(prod=prod))
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
         # QUEEN Databases
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
         QUEEN = ReadPickleData(PB_QUEEN_Pickle)
@@ -2404,20 +2327,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         queen_orders_closed = api_orders.get('closed')
         num__queen_orders_today = len(queen_orders_open) + len(queen_orders_closed)
 
+        portfolio = return_alpc_portolio(api)['portfolio']
         ## !! Reconcile all orders processed in alpaca vs queen_order !! ##
 
-        # Ticker database of pollenstory ## Need to seperate out into tables
-        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod)) # wrapped in func bc it not allowed to be saved
-        
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
-        
-        # ticker_db = read_pollenstory(db_root=os.path.join(os.getcwd(), 'db'), dbs=['castle.pkl', 'bishop.pkl', 'castle_coin.pkl', 'knight.pkl'])
+        # Ticker database of pollenstory ## Need to seperate out into tables 
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN) ## async'd func
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
-
-        portfolio = return_alpc_portolio(api)['portfolio']
         
         QUEEN_KING['source'] = PB_App_Pickle
+        
+        # add key QUEEN_KING (not needed only needed in app?)
         APP_req = add_key_to_app(QUEEN_KING)
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
@@ -2432,8 +2352,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
 
         logging.info("My Queen")
-
-        KING = KINGME()
 
         QUEEN['heartbeat']['main_indexes'] = {
             'SPY': {'long1X': "SPY",
@@ -2490,7 +2408,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # refresh db
                 s_time = datetime.datetime.now(est)
                 # QUEEN Databases
-                QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+                KING = ReadPickleData(master_swarm_KING(prod=prod))
+                QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+                QUEEN_KING = ReadPickleData(PB_App_Pickle)
                 QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
                 QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
                 QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
@@ -2498,7 +2418,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 
                 portfolio = return_alpc_portolio(api)['portfolio']
 
-                # symbol ticker data # 1 all current pieces on chess board && all current running orders
+                # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
                 ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)                
                 POLLENSTORY = ticker_db['pollenstory']
                 STORY_bee = ticker_db['STORY_bee']
@@ -2510,10 +2430,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 s_time = datetime.datetime.now(est)
                 # Client
                 process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='stop_queen', archive_bucket=False)
-                # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_controls', archive_bucket='queen_controls_requests')
-                # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='power_rangers', archive_bucket='power_rangers_requests')
                 # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_controls_reset', archive_bucket=False)
-                # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='workerbees')
                 process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious', archive_bucket='subconscious_requests')
 
                 charlie_bee['queen_cyle_times']['app'] = (datetime.datetime.now(est) - s_time).total_seconds()
@@ -2527,19 +2444,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 s_time = datetime.datetime.now(est)
                 command_conscience(api=api, QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING) #####>   
                 charlie_bee['queen_cyle_times']['command conscience'] = (datetime.datetime.now(est) - s_time).total_seconds()
-
                 e = datetime.datetime.now(est)
-                # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
-
-                """
-                    > lets do this!!!!
-                    love: anchor on the 1 min macd crosses or better yet just return all triggers and base everything off the trigger
-                """
                 PickleData(queens_charlie_bee, charlie_bee)
                 
             e = datetime.datetime.now(est)
-            if (e - s).seconds > 10:
-                logging.info((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))
+            if (e - s).seconds > 20:
+                logging.info((queens_chess_piece, ": cycle time > 20 seconds:  SLOW cycle: ", (e - s).seconds ))
                 print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.datetime.now().strftime("%A,%d. %I:%M:%S%p"))
     except Exception as errbuz:
         print(errbuz)

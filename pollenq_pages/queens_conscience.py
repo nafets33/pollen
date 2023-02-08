@@ -25,8 +25,8 @@ from custom_button import cust_Button
 from polleq_app_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
-from chess_piece.king import kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
+from chess_piece.app_hive import standard_AGgrid, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
+from chess_piece.king import return_all_client_users__db, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
 from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, refresh_account_info, generate_TradingModel, stars, analyze_waves, KINGME, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
 from ozz.ozz_bee import send_ozz_call
 # import random
@@ -142,7 +142,7 @@ page = 'QueensConscience'
 # st.header("Section 1")
 # st.markdown("[Section 1](#section-1)")
 
-def queens_conscience():
+def queens_conscience(QUEEN_KING=False, QUEEN=False, KING=False):
     with st.spinner("Welcome to the QueensMind"):
 
         # signin_main(page='QueensConscience')
@@ -202,17 +202,17 @@ def queens_conscience():
         PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
         PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
         PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
+        PB_KING_Pickle = st.session_state['PB_KING_Pickle']
 
 
-        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
-        # def run_main_page():
-        KING = KINGME()
+        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+        # KING = ReadPickleData(pickle_file=PB_KING_Pickle)
         pollen_theme = pollen_themes(KING=KING)
         # QUEEN Databases
-        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
-        QUEEN_KING['source'] = PB_App_Pickle
-        QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-        ORDERS = ReadPickleData(PB_Orders_Pickle)
+        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+        # QUEEN_KING['source'] = PB_App_Pickle
+        # QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+        # ORDERS = ReadPickleData(PB_Orders_Pickle)
         QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
 
@@ -449,12 +449,12 @@ def queens_conscience():
                         return_image_upon_save(title="Wave Request Delivered to the Queen")
 
         
-        def return_total_profits(ORDERS):
+        def return_total_profits(QUEEN):
             try:
-                df = ORDERS['queen_orders']
-                ORDERS = df[(df['queen_order_state']== 'completed') & (df['side'] == 'sell')].copy()
+                df = QUEEN['queen_orders']
+                QUEEN = df[(df['queen_order_state']== 'completed') & (df['side'] == 'sell')].copy()
                 return_dict = {}
-                if len(ORDERS) > 0:
+                if len(QUEEN) > 0:
                     now_ = datetime.datetime.now(est)
                     orders_today = df[df['datetime'] > now_.replace(hour=1, minute=1, second=1)].copy()
                     
@@ -1338,15 +1338,18 @@ def queens_conscience():
         def queenbee_online(QUEENsHeart, admin, dag, api_failed):
             # from airflow.dags.dag_queenbee_prod import run_trigger_dag
             
-            users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+            # users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+            users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
             now = datetime.datetime.now(est)
 
             if dag =='run_queenbee':
-                if 'trigger_queen' in QUEEN_KING.keys():
-                    if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
-                        st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
-                        st.image(QUEEN_KING['character_image'], width=100)
-                        return False
+                if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
+                    st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
+                    st.image(QUEEN_KING['character_image'], width=100)
+                    return False
+                if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 86400:
+                    st.sidebar.write("Awaiting Queen")
+                    return False
                 
                 if api_failed:
                     st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
@@ -1370,14 +1373,17 @@ def queens_conscience():
                                 print("failsafe away from user running function")
                                 send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{st.session_state["username"]} you forgot to say something')
                                 st.error("Your Account not Yet authorized")
-                                sys.exit()
-                            # execute trigger
-                            trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                            QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
-                            st.write("My Queen")
-                            st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
-                            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                            switch_page("QueensConscience")
+                                return False
+                            if KING['instance_pq']:                                
+                                # execute trigger
+                                trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
+                                QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
+                                st.write("My Queen")
+                                st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
+                                PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                                switch_page("QueensConscience")
+                            else:
+                                st.write("Nice Try")
                     
                     with cols[2]:
                         local_gif(gif_path=flyingbee_grey_gif_path)
@@ -1832,7 +1838,7 @@ def queens_conscience():
             order_tab, chessboard_tab, Portfolio, wave_stories_tab, trading_models_tab, charts_tab = st.tabs(queen_tabs)
 
             # with cols[1]:
-            return_total_profits(ORDERS=ORDERS)
+            return_total_profits(QUEEN=QUEEN)
             # with cols[0]:
             queens_subconscious_Thoughts(QUEEN=QUEEN)
 
@@ -1841,12 +1847,33 @@ def queens_conscience():
 
             with chessboard_tab:
                 update_Workerbees(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, admin=admin)
+                with st.expander("QUEENS_ACTIVE"):
+                    df = return_all_client_users__db()
+                    # df = pd.DataFrame(KING['users'].get('client_users_db'))
+                    # ipdb.set_trace()
+                    allowed_list = KING['users']['client_user__allowed_queen_list']
+                    df_map = pd.DataFrame(allowed_list)
+                    df_map['queen_authorized'] = 'active'
+                    df_map = df_map.rename(columns={0: 'email'})
+                    
+                    df = pd.merge(df, df_map, how='outer', on='email').fillna('')
+                    grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
+                    grid_df = grid['data']
+                    # df_sel = grid['selected_rows']
+                    # if len(df_sel) > 0:
+                    allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
+                    allowed_list_new = allowed_list_new['email'].tolist()
+                    # ipdb.set_trace()
+                    if allowed_list != allowed_list_new:
+                        KING['users']['client_user__allowed_queen_list'] = allowed_list_new
+                        PickleData(PB_KING_Pickle, KING, write_temp=False)
+                        st.success("Auth Queen Users Updated")
             
             with wave_stories_tab:
                 queen_wavestories(QUEEN=QUEEN)
             
             with order_tab:
-                queen_order_flow(ORDERS=ORDERS, active_order_state_list=active_order_state_list)
+                queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
                 queen_beeAction_theflash(False)
                 queen_triggerbees()
             
