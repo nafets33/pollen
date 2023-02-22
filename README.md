@@ -4,6 +4,9 @@
 - pip install -r requirements.txt <<< may need fix >>>
 - pre-commit install
 
+## upgrade Google VM
+ensure to change IpAddress for google domain
+
 ## Run Locally  ## use folders from local_db_refence
 Create following Dir Manually inside pollen/
 symbols_pollenstory_dbs
@@ -38,3 +41,8 @@ sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 ## check for all python paths
 export PYTHONPATH="${PYTHONPATH}:${HOME}/home/stapinski89/pollen/pollen"
 python -c "import sys; print(sys.path)"
+
+
+## Setting Up Sever
+Ngnix
+docker

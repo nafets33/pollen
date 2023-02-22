@@ -18,10 +18,12 @@ from chess_piece.king import (
     hive_master_root,
     read_QUEEN,
     workerbee_dbs_root,
+    workerbee_dbs_backtesting_root,
     workerbee_dbs_root__STORY_bee,
+    workerbee_dbs_backtesting_root__STORY_bee
 )
 from chess_piece.queen_hive import (
-    return_market_hours,
+    init_index_ticker,
     init_logging,
     init_pollen_dbs,
     pollen_story,
@@ -42,7 +44,15 @@ os.environ["no_proxy"] = "*"
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
-def queen_workerbees(prod, queens_chess_piece="bees_manager"):
+def queen_workerbees(prod, 
+                     queens_chess_piece="bees_manager", 
+                     backtesting = False,
+                     macd = None):
+    
+    if backtesting:
+        assert macd is not None 
+    else:
+        assert macd is None
 
     # script arguments
     if prod:
@@ -61,6 +71,7 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
 
     main_root = hive_master_root()  # os.getcwd()
     db_root = os.path.join(main_root, "db")
+    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
 
     # Macd Settings
     # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
@@ -97,13 +108,6 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
     current_month = datetime.now(est).month
     current_year = datetime.now(est).year
 
-    mkhrs = return_market_hours(trading_days=trading_days, crypto=False)
-    if mkhrs != 'open':
-        print("Market Not Open Closing Down")
-        sys.exit()
-
-
-    init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
     # misc
     exclude_conditions = [
         "B",
@@ -537,18 +541,21 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
         # add back in snapshot init
         return {"ticker_time": return_dict, "rebuild_confirmation": rebuild_confirmation}
 
-    def pollen_hunt(df_tickers_data, MACD):
-        # Check to see if any charts need to be Recreate as times lapsed
-        df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-        if len(df_tickers_data_rebuilt["rebuild_confirmation"].keys()) > 0:
-            print(df_tickers_data_rebuilt["rebuild_confirmation"].keys())
-            print(datetime.now(est).strftime("%H:%M-%S"))
+    def pollen_hunt(df_tickers_data, MACD, live=False):
+        if live:
+            # Check to see if any charts need to be Recreate as times lapsed
+            df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
+            if len(df_tickers_data_rebuilt["rebuild_confirmation"].keys()) > 0:
+                print(df_tickers_data_rebuilt["rebuild_confirmation"].keys())
+                print(datetime.now(est).strftime("%H:%M-%S"))
 
-        # re-add snapshot
-        # ipdb.set_trace()
-        df_tickers_data_rebuilt = Return_Snapshots_Rebuild(
-            df_tickers_data=df_tickers_data_rebuilt["ticker_time"]
-        )
+            # re-add snapshot
+            # ipdb.set_trace()
+            df_tickers_data_rebuilt = Return_Snapshots_Rebuild(
+                df_tickers_data=df_tickers_data_rebuilt["ticker_time"]
+            )
+        else:
+            df_tickers_data_rebuilt = df_tickers_data
 
         main_rebuild_dict = {}  ##> only override current dict if memory becomes issues!
         chart_rebuild_dict = {}
@@ -564,6 +571,8 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
             "pollencharts_nectar": main_rebuild_dict,
             "pollencharts": chart_rebuild_dict,
         }
+
+    """ Initiate your Charts with Indicators """
 
     def initiate_ttframe_charts(
         QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings
@@ -613,9 +622,12 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
         # MACD_12_26_9 = QUEENBEE['queen_controls']['MACD_fast_slow_smooth']
         # master_tickers = QUEENBEE['workerbees'][queens_chess_piece]['tickers']
-        MACD_settings = QUEENBEE["workerbees"][queens_chess_piece][
-            "MACD_fast_slow_smooth"
-        ]
+        if backtesting:
+            MACD_settings = macd 
+        else:
+            MACD_settings = QUEENBEE["workerbees"][queens_chess_piece][
+                "MACD_fast_slow_smooth"
+            ]
         # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
         # change the script to pull for each ticker, inifinite pawns pw1: [10] ... write out the pollenstory to the local db pickle file
@@ -670,12 +682,25 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         # for every ticker ticker write pickle file to db
-        symbols_pollenstory_dbs = workerbee_dbs_root()
+        if backtesting:
+            symbols_pollenstory_dbs = workerbee_dbs_backtesting_root()
+        else:
+            symbols_pollenstory_dbs = workerbee_dbs_root()
         # print("Pollen story path", symbols_pollenstory_dbs)
-        symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
+        if backtesting:
+            symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee()
+        else:
+            symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
         # print("Story bee path", symbols_STORY_bee_root)
+        if backtesting:
+            macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], 
+                                                  MACD_settings["slow"], 
+                                                  MACD_settings["smooth"])
+        else:
+            macd_part_fname = ""
+            
         for ttf in pollens_honey["pollen_story"]:
-            ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}.pkl")
+            ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
             PickleData(
                 ttf_db,
                 {"pollen_story": pollens_honey["pollen_story"][ttf]},
@@ -683,7 +708,7 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
             )
 
         for ttf in pollens_honey["conscience"]["STORY_bee"]:
-            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}.pkl")
+            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
             PickleData(
                 ttf_db,
                 {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},
@@ -743,7 +768,10 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
 
         WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
         for qcp_worker in WORKERBEE_queens.keys():
-            MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
+            if backtesting:
+                MACD_settings = macd
+            else:
+                MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
             master_tickers = QUEENBEE["workerbees"][qcp_worker]["tickers"]
             star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
             WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(
@@ -775,11 +803,21 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
     """
     )
 
+    # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
+    # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
+    # ipdb.set_trace()
+    # if os.path.exists(PB_QUEEN_Pickle) == False:
+    #     print("WorkerBee Needs a Queen")
+    #     sys.exit()
+
+    # Pollen QUEEN
 
     if prod:
         queen_db = os.path.join(db_root, "queen.pkl")
+        # QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
     else:
         queen_db = os.path.join(db_root, "queen_sandbox.pkl")
+        # QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
 
     ticker_universe = return_Ticker_Universe()
     main_index_dict = ticker_universe["main_index_dict"]
@@ -810,20 +848,18 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
             speed_gauges = queen_workers["speed_gauges"]
 
             while True:
-                ## Re-Read QUEEN Look for New qcp_Tickers
                 pq = read_QUEEN(queen_db=queen_db, qcp_s=["castle", "bishop", "knight"])
                 QUEENBEE = pq["QUEENBEE"]
                 latest__queens_chess_pieces = pq["queens_chess_pieces"]
                 latest__queens_master_tickers = pq["queens_master_tickers"]
                 if latest__queens_master_tickers != queens_master_tickers:
                     print("Revised Ticker List ReInitiate")
-                    queens_master_tickers = latest__queens_master_tickers
                     queen_workers = init_QueenWorkersBees(
                         QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces
                     )
                     WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
                     speed_gauges = queen_workers["speed_gauges"]
-                # PollenStory
+
                 qcp_QUEENWorker__pollenstory(
                     qcp_s=WORKERBEE_queens.keys(),
                     QUEENBEE=QUEENBEE,
@@ -831,8 +867,11 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
                     speed_gauges=speed_gauges,
                 )
 
-                if close_worker():
-                    break
+                if backtesting:
+                    break 
+                else:
+                    if close_worker():
+                        break
 
         except Exception as errbuz:
             print(errbuz)

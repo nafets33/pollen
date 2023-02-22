@@ -17,7 +17,6 @@ import ipdb
 
 def signin_main(page):
     """Return True or False if the user is signed in"""
-
     load_dotenv(os.path.join(os.getcwd(), ".env"))
     main_root = hive_master_root()  # os.getcwd()  # hive root
     MISC = local__filepaths_misc()
@@ -75,11 +74,11 @@ def signin_main(page):
                         recipient=register_email,
                         subject="Welcome On Board PollenQ!",
                         body=f"""
-                     You have successful created a PollenQ account. Ensure you keep your login detials safe.
+                    You have successful created a PollenQ account. Ensure you keep your login detials safe.
 
-                     Thank you,
-                     PollenQ
-                     """,
+                    Thank you,
+                    PollenQ
+                    """,
                     )
 
                     authenticator.direct_login(register_email, register_password)
@@ -272,61 +271,64 @@ def signin_main(page):
                 "login_count": user[6],
             }
         return {"usernames": creds}
+    
+    # def main_func__signIn():
+    try:
+        con = sqlite3.connect("db/client_users.db")
+        cur = con.cursor()
+        credentials = read_user_db(cur=cur)
 
-    con = sqlite3.connect("db/client_users.db")
-    cur = con.cursor()
-    credentials = read_user_db(cur=cur)
-
-    # Create authenticator object
-    authenticator = stauth.Authenticate(
-        credentials=credentials,
-        cookie_name=os.environ.get("cookie_name"),
-        key=os.environ.get("cookie_key"),
-        cookie_expiry_days=int(os.environ.get("cookie_expiry_days")),
-        preauthorized={"emails": "na"},
-    )
+        # Create authenticator object
+        authenticator = stauth.Authenticate(
+            credentials=credentials,
+            cookie_name=os.environ.get("cookie_name"),
+            key=os.environ.get("cookie_key"),
+            cookie_expiry_days=int(os.environ.get("cookie_expiry_days")),
+            preauthorized={"emails": "na"},
+        )
 
 
-    # Check login. Automatically gets stored in session state
-    name, authentication_status, email = authenticator.login("Login", "main")
+        # Check login. Automatically gets stored in session state
+        name, authentication_status, email = authenticator.login("Login", "main")
 
-            
-    # login successful; proceed
-    if authentication_status:
-        if 'logout' in st.session_state and st.session_state["logout"] != True:
-            authenticator.logout("Logout", location='sidebar')
-            reset_password(authenticator, email, location='sidebar')
-            
-            # Returning Customer
-            if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
-                if 'logout' in st.session_state and st.session_state["logout"] != True:
-                    define_authorized_user(key='34')
+        # login successful; proceed
+        if authentication_status:
+            if 'logout' in st.session_state and st.session_state["logout"] != True:
+                authenticator.logout("Logout", location='sidebar')
+                reset_password(authenticator, email, location='sidebar')
+                
+                # Returning Customer
+                if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
+                    if 'logout' in st.session_state and st.session_state["logout"] != True:
+                        define_authorized_user(key='34')
+                        return True
+                else:    
+                    update_db(cur=cur, email=email)
+                    define_authorized_user(key='33')
                     return True
-            else:    
-                update_db(cur=cur, email=email)
-                define_authorized_user(key='33')
-                return True
 
-    # login unsucessful; forgot password or create account
-    elif authentication_status == False:
-        st.session_state["authorized_user"] = False
-        st.error("Email/password is incorrect")
-        with st.expander("Forgot Password", expanded=True):
-            forgot_password()
-        with st.expander("New User"):
-            register_user()
-        
-        return False
+        # login unsucessful; forgot password or create account
+        elif authentication_status == False:
+            st.session_state["authorized_user"] = False
+            st.error("Email/password is incorrect")
+            with st.expander("Forgot Password", expanded=True):
+                forgot_password()
+            with st.expander("New User"):
+                register_user()
+            
+            return False
 
-    # no login trial; create account
-    elif authentication_status == None:
-        with st.expander("New User Create Account"):
-            register_user()
+        # no login trial; create account
+        elif authentication_status == None:
+            with st.expander("New User Create Account"):
+                register_user()
 
-        # display_for_unAuth_client_user()
+            # display_for_unAuth_client_user()
 
-        return False
-
+            return False
+    
+    except Exception as e:
+        print('auth', e)
 
 if __name__ == "__main__":
     st.session_state["logout"] = True

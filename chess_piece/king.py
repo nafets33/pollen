@@ -21,6 +21,8 @@ import ipdb
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
 
+def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
+    return datetime.now(tz).strftime(format)
 
 def kingdom__global_vars():
     # ###### GLOBAL # ######
@@ -126,8 +128,11 @@ exclude_conditions = [
 
 
 
-def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu):
-    
+def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
+    buying_power = ac_info['buying_power']
+    buying_power = "TotalBuyingPower: " + '${:,.2f}'.format(ac_info['buying_power'])
+    num_text = (ac_info['portfolio_value'] - ac_info['last_equity']) / ac_info['portfolio_value']
+    honey = "Honey: " + '%{:,.2f}'.format(num_text)
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
     default_font = k_colors['default_font'] # = "sans serif"
@@ -137,9 +142,13 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu):
         
         menu_data = [
             {'id':'QC','icon':"fa fa-fire",'label':"Queen"},
+            {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
             {'icon': "fa fa-bug", 'label':"PlayGround"},
             {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
             {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
+            {'id':'buying_power', 'icon': "", 'label':f'{buying_power}'},
+            {'id':'honey', 'icon': "", 'label':f'{honey}'},
+
 # 'submenu':[{'id': 'sb_liv_switch', 'label': f'Switch To {prod_name_oppiste}', 'icon': "fa fa-reply"}]
         ]
     elif menu == 'unAuth':
@@ -229,6 +238,19 @@ def init_symbol_dbs__pollenstory():
 
     return symbol_dbs
 
+
+def workerbee_dbs_backtesting_root():
+    symbols_pollenstory_dbs_backtesting = os.path.join(hive_master_root(), "symbols_pollenstory_dbs_backtesting")
+    if os.path.exists(symbols_pollenstory_dbs_backtesting) == False:
+        os.mkdir(symbols_pollenstory_dbs_backtesting)
+    return symbols_pollenstory_dbs_backtesting
+
+
+def workerbee_dbs_backtesting_root__STORY_bee():
+    symbols_pollenstory_dbs_backtesting = os.path.join(hive_master_root(), "symbols_STORY_bee_dbs_backtesting")
+    if os.path.exists(symbols_pollenstory_dbs_backtesting) == False:
+        os.mkdir(symbols_pollenstory_dbs_backtesting)
+    return symbols_pollenstory_dbs_backtesting
 
 def return_list_of_all__Queens__pkl():
     queen_files = []
@@ -434,7 +456,7 @@ def read_QUEENs__pollenstory(
 
 def return_QUEENs_workerbees_chessboard(QUEEN):
     queens_master_tickers = []
-    for qcp, qcp_vars in QUEEN["workerbees"].items():
+    for qcp, qcp_vars in QUEEN["chess_board"].items():
         for ticker in qcp_vars["tickers"]:
             queens_master_tickers.append(ticker)
 
@@ -468,7 +490,7 @@ def handle__ttf_notactive__datastream(
     return True
 
 
-def PickleData(pickle_file, data_to_store, write_temp=True):
+def PickleData(pickle_file, data_to_store, write_temp=False):
     p_timestamp = {"pq_last_modified": datetime.now(est)}
     root, name = os.path.split(pickle_file)
     pickle_file_temp = os.path.join(root, ("temp" + name))
@@ -498,7 +520,8 @@ def ReadPickleData(pickle_file):
 
         # Check if the size or modification time has changed
         if curr_size != prev_size or curr_mtime != prev_mtime:
-            print(f"{pickle_file} is currently being written to")
+            pass
+            # print(f"{pickle_file} is currently being written to")
             # logging.info(f'{pickle_file} is currently being written to')
         else:
             if stop > 3:

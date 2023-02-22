@@ -15,7 +15,7 @@ import aiohttp
 # from tqdm import tqdm
 import argparse
 from chess_piece.king import master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData
-from chess_piece.queen_hive import init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, KINGME, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
+from chess_piece.queen_hive import init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, print_line_of_error, add_key_to_QUEEN
 
 
 """ ideas 
@@ -189,14 +189,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         app_requests__bucket = 'app_requests__bucket'
 
         if request_name == "buy_orders": # test
-            archive_bucket = 'app_order_requests'
+            # archive_bucket = 'buy_orders_requests'
             app_order_base = [i for i in QUEEN_KING[request_name]]
             if app_order_base:
                 for app_request in app_order_base:
                     if app_request['app_requests_id'] in QUEEN[app_requests__bucket]:
                         # print("buy trigger request Id already received")
 
-                        return {'order_flag': False,}
+                        return {'app_flag': False,}
                     else:
                         print("app buy order gather")
                         wave_amo = app_request['wave_amo']
@@ -206,9 +206,29 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         king_resp = {'side': r_side, 'type': r_type, 'wave_amo': wave_amo }
                         ticker_time_frame = f'{app_request["ticker"]}{"_app_bee"}'
                         
-                        return {'king_resp': king_resp, 'order_flag': True, 'app_request': app_request, 'ticker_time_frame': ticker_time_frame,} 
+                        return {'king_resp': king_resp, 'app_flag': True, 'app_request': app_request, 'ticker_time_frame': ticker_time_frame,} 
             else:
-                return {'order_flag': False}
+                return {'app_flag': False}
+
+        if request_name == "sell_orders": # test
+            app_order_base = [i for i in QUEEN_KING[request_name]]
+            if app_order_base:
+                for app_request in app_order_base:
+                    if app_request['app_requests_id'] in QUEEN[app_requests__bucket]:
+                        # print("buy trigger request Id already received")
+                        return {'app_flag': False,}
+                    else:
+                        print("Sell Order")
+                        sell_qty = app_request['sellable_qty']
+                        o_type = app_request['type']
+                        side = app_request['side']
+
+                        QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
+                        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN, write_temp=False)
+                                        
+                        return {'app_flag': True, 'sell_order': True, 'sell_qty': sell_qty, 'type': o_type, 'side': side} 
+            else:
+                return {'app_flag': False}
         
         elif request_name == "wave_triggers": # test
             app_order_base = [i for i in QUEEN_KING[request_name]]
@@ -1009,10 +1029,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             
             # App Buy Order Requests
             s_time = datetime.datetime.now(est)
-            app_resp = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='buy_orders', archive_bucket='app_order_requests')
+            app_resp = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='buy_orders')
             charlie_bee['queen_cyle_times']['app_req_loop__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
-
-            if app_resp['order_flag']:
+            if app_resp['app_flag']:
                 msg = {'process_app_buy_requests()': 'queen processed app request'}
                 print(msg)
                 # queen process
@@ -1615,26 +1634,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             stagger_profits = True if str(run_order['order_rules']['stagger_profits']).lower() == 'true' else False
             scalp_profits = True if str(run_order['order_rules']['scalp_profits']).lower() == 'true' else False
 
-            # # App Requests
-            app_request = False
-            # app_req = process_app_sell_signal(QUEEN=QUEEN, PB_App_Pickle=PB_App_Pickle, runorder_client_order_id=run_order['client_order_id'])
-            # if app_req['sell_order']:            
-            #     print("process app sell order")
-            #     sell_order = True
-            #     app_request = True
-                
-            #     sell_qty = app_req['sell_qty']
-            #     order_type = app_req['type']
-            #     order_side = app_req['side']
-
-            #     order_vars = order_vars__queen_order_items(trading_model=False, 
-            #     king_order_rules=False, order_side=order_side, wave_amo=False, maker_middle=False, 
-            #     origin_wave=False, power_up_rangers=False, ticker_time_frame_origin='app_app_app',
-            #     sell_reason='app', running_close_legs=False, sell_qty=app_req['sell_qty'], first_sell=first_sell)
-            #     return {'bee_sell': True, 'order_vars': order_vars, 'app_request': app_request, bishop_keys=bishop_keys}
-
-            # else:
-            #     app_request = False
 
             charlie_bee['queen_cyle_times']['bishop_block2_queenorder__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
             s_time = datetime.datetime.now(est)
@@ -1728,11 +1727,30 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             order_side = 'sell'
                             limit_price = [priceinfo['maker_middle'] if order_type == 'limit' else False][0]
 
-
+                    app_request = False
+                    app_request = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='sell_orders')
+                    if app_request['app_flag']:            
+                        print("QUEEN processing app sell order")
+                        sell_order = True
+                        app_request = True
+                        
+                        sell_qty = app_request['sell_qty']
+                        order_type = app_request['type']
+                        order_side = app_request['side']
+                        limit_price = False
+                    
+                    
                     if sell_order:
-                        return {'sell_order': True, 'sell_reason': sell_reason, 'order_side': order_side, 'order_type': order_type, 'sell_qty': sell_qty, 'limit_price': limit_price}    
+                        return {'sell_order': True, 
+                        'sell_reason': sell_reason, 
+                        'order_side': order_side, 
+                        'order_type': order_type, 
+                        'sell_qty': sell_qty, 
+                        'limit_price': limit_price, 
+                        'app_request': app_request,}    
                     else:
                         return {'sell_order': False}
+                
                 except Exception as e:
                     print('waterfall error', e, " er line>>", print_line_of_error())
 
@@ -1756,6 +1774,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             #     if portfolio[run_order['ticker']]['side'] == 'short':
             #         sell_qty = abs(sell_qty)
             #         side = 'buy'
+            # # App Requests
+
 
 
             if king_bishop['sell_order']:            
@@ -1768,7 +1788,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 ticker_time_frame_origin=ticker_time_frame,
                 first_sell=first_sell, 
                 time_intrade=time_in_trade)
-                return {'bee_sell': True, 'order_vars': order_vars, 'app_request': app_request, 'bishop_keys':bishop_keys}
+                return {'bee_sell': True, 'order_vars': order_vars, 'app_request': king_bishop['app_request'], 'bishop_keys':bishop_keys}
             else:
                 return {'bee_sell': False, 'run_order': run_order}
         
@@ -2159,12 +2179,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 for king_eval_order in king_bishop_queen_order__EvalOrder:
                         if king_eval_order['bee_sell']:
-                            # run_order_idx = df[df['client_order_id'] == king_eval_order['bishop_keys']['client_order_id']]
                             execute_order(QUEEN=QUEEN, 
                             king_resp=False, 
                             king_eval_order=king_eval_order, 
                             ticker=king_eval_order['bishop_keys']['ticker'], 
-                            ticker_time_frame=king_eval_order['bishop_keys']['ticker_time_frame'], 
+                            ticker_time_frame=king_eval_order['bishop_keys']['ticker_time_frame'],
                             trig=king_eval_order['bishop_keys']['trigname'], 
                             portfolio=portfolio, 
                             run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
@@ -2230,13 +2249,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         return True
 
 
-    def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed):
+    def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed, story_heartrate=54):
         
         now_time = datetime.datetime.now().astimezone(est)
 
         original_state = QUEEN['heartbeat']['available_tickers']
         
-        QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 54]
+        QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < story_heartrate]
         # create dict of allowed long term and short term of a given ticker so ticker as info for trading
         QUEEN['heartbeat']['active_tickerStars'] = {k: {'trade_type': ['long_term', 'short_term']} for k in QUEEN['heartbeat']['available_tickers']}
         ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['active_tickerStars'].keys()])
@@ -2262,6 +2281,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if len(dropped_list) > 0:
                 print("dropped ", dropped_list)
 
+            QUEEN['heartbeat']['added_list'] = added_list
+            QUEEN['heartbeat']['dropped_list'] = dropped_list
             PickleData(PB_QUEEN_Pickle, QUEEN)
 
         return QUEEN
@@ -2285,6 +2306,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         print(
         """
+        pollenq:
         We all shall prosper through the depths of our connected hearts,
         Not all will share my world,
         So I put forth my best mind of virtue and goodness, 
@@ -2364,20 +2386,21 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         QUEEN['heartbeat']['active_order_state_list'] = active_order_state_list
         
-        ticker_allowed = ['SPY', 'ETHUSD', 'BTCUSD', 'META', 'GOOG', 'AAPL', 'TSLA', 'SOFI']
+        # ticker_allowed = ['SPY', 'ETHUSD', 'BTCUSD', 'META', 'GOOG', 'AAPL', 'TSLA', 'SOFI']
+        ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys())
 
         QUEEN = refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
 
-        available_triggerbees = ["sell_cross-0", "buy_cross-0"]
-        
+        available_triggerbees = ["sell_cross-0", "buy_cross-0"]        
         QUEEN['heartbeat']['available_triggerbees'] = available_triggerbees
+        
         print("active trigs", available_triggerbees)
         print("active tickers", QUEEN['heartbeat']['active_tickers'])
 
 
         PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-        
         print(f'ProdEnv {prod} Here we go Mario')
+        
         pollen_theme_dict = pollen_themes(KING=KING)
         workerbee_run_times = []
 
@@ -2389,13 +2412,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ########################################################
         ########################################################
 
-        queens_charlie_bee = os.path.join(db_root, 'charlie_bee.pkl')
-        if os.path.exists(os.path.join(db_root, 'charlie_bee.pkl')) == False:
-            charlie_bee = {'queen_cyle_times': {}}
-            PickleData(queens_charlie_bee, charlie_bee)
-        else:
-            charlie_bee = ReadPickleData(queens_charlie_bee)
-
+        def init_charlie_bee():
+            queens_charlie_bee = os.path.join(db_root, 'charlie_bee.pkl')
+            if os.path.exists(os.path.join(db_root, 'charlie_bee.pkl')) == False:
+                charlie_bee = {'queen_cyle_times': {}}
+                PickleData(queens_charlie_bee, charlie_bee)
+            else:
+                charlie_bee = ReadPickleData(queens_charlie_bee)
+            
+            return queens_charlie_bee, charlie_bee
+        
+        queens_charlie_bee, charlie_bee = init_charlie_bee() # monitors queen order cycles, also seen in heart
 
         while True:
             s = datetime.datetime.now(est)
@@ -2413,8 +2440,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 QUEEN_KING = ReadPickleData(PB_App_Pickle)
                 QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
                 QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
+                QUEEN['chess_board'] = QUEEN_KING['chess_board']
                 QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
-
                 
                 portfolio = return_alpc_portolio(api)['portfolio']
 
@@ -2463,7 +2490,7 @@ if __name__ == '__main__':
     def createParser():
         parser = argparse.ArgumentParser()
         parser.add_argument ('-prod', default='false')
-        parser.add_argument ('-client_user', default='stefanstapinski')
+        parser.add_argument ('-client_user', default='stefanstapinski@gmail.com')
         return parser
     
     parser = createParser()

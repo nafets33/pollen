@@ -31,20 +31,16 @@ from tqdm import tqdm
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
 load_dotenv(os.path.join(hive_master_root(), ".env"))
+queens_chess_piece = os.path.basename(__file__)
 
 MISC = local__filepaths_misc()
 mainpage_bee_png = MISC['mainpage_bee_png']
 
-
-# _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
-
 est = pytz.timezone("America/New_York")
 utc = pytz.timezone("UTC")
 
-queens_chess_piece = os.path.basename(__file__)
 
-scriptname = os.path.basename(__file__)
-prod = False if "sandbox" in scriptname else True
+prod = True
 
 main_root = hive_master_root()  # os.getcwd()
 db_root = os.path.join(main_root, "db")
@@ -322,30 +318,6 @@ def hive_dates(api):
     return {"trading_days": trading_days}
 
 
-# def read_pollenstory(
-#     db_root, dbs=["castle.pkl", "bishop.pkl", "castle_coin.pkl", "knight.pkl"]
-# ):  # return combined dataframes
-#     # return beeworkers data
-
-#     pollenstory = {}
-#     STORY_bee = {}
-#     # KNIGHTSWORD = {}
-#     # ANGEL_bee = {}
-#     # db_names = []
-#     for db in dbs:
-#         if os.path.exists(os.path.join(db_root, db)):
-#             db_name = db.split(".pkl")[0]
-#             chess_piece = ReadPickleData(pickle_file=os.path.join(db_root, db))[db_name]
-#             pollenstory = {**pollenstory, **chess_piece["pollenstory"]}
-#             STORY_bee = {**STORY_bee, **chess_piece["conscience"]["STORY_bee"]}
-#             # KNIGHTSWORD = {**KNIGHTSWORD, **chess_piece['conscience']['KNIGHTSWORD']}
-#             # ANGEL_bee = {**ANGEL_bee, **chess_piece['conscience']['ANGEL_bee']}
-#             # dbs_[db_name] = chess_piece
-#             # db_names.append(chess_piece)
-
-#     return {"pollenstory": pollenstory, "STORY_bee": STORY_bee}
-
-
 def read_queensmind(prod, db_root):  # return active story workers
     if prod:
         QUEEN = ReadPickleData(pickle_file=os.path.join(db_root, "queen.pkl"))
@@ -359,195 +331,100 @@ def read_queensmind(prod, db_root):  # return active story workers
     return {"queen": QUEEN, "orders": ORDERS}
 
 
-def init_symbols_db():
-    ticker_universe = return_Ticker_Universe()
-    index_ticker_db = ticker_universe["index_ticker_db"]
-    main_index_dict = ticker_universe["main_index_dict"]
-    main_symbols_full_list = ticker_universe["main_symbols_full_list"]
-    not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
-    main_tale = pd.DataFrame(main_symbols_full_list)
-    symbols_db = {"main_table": main_tale, "ticker_universe": ticker_universe}
+def init_QUEEN(queens_chess_piece):
 
-    return symbols_db
-
-
-def init_QUEEN(queens_chess_piece, swarmQUEEN=False):
-    ticker_universe = return_Ticker_Universe()
-    index_ticker_db = ticker_universe["index_ticker_db"]
-    main_index_dict = ticker_universe["main_index_dict"]
-    main_symbols_full_list = ticker_universe["main_symbols_full_list"]
-    not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
-    if swarmQUEEN:
-        QUEEN = {  # The Queens Mind
-            "id": 'init',
-            "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
-            "prod": "",
-            "source": "na",
+    QUEEN = {  # The Queens Mind
+        "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
+        "prod": "",
+        "source": "na",
+        "last_modified": datetime.now(est),
+        "command_conscience": {},
+        "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
+        "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
+        "heartbeat": {
+            "active_tickerStars": {},
+            "available_tickers": [],
+            "active_tickers": [],
+            "available_triggerbees": [],
+        },
+        "queens_messages": {},
+        "kings_order_rules": {},
+        "queen_controls": return_queen_controls(stars),
+        # "symbol_universe": {
+        #     "index_ticker_db": index_ticker_db,
+        #     "main_index_dict": main_index_dict,
+        #     "main_symbols_full_list": main_symbols_full_list,
+        #     "not_avail_in_alpaca": not_avail_in_alpaca,
+        # },
+        "workerbees": {
+            "castle": {
+                "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
+                "tickers": ["SPY"],
+                "stars": stars(),
+            },
+            "bishop": {
+                "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
+                "tickers": ["GOOG", "AAPL", "TSLA"],
+                "stars": stars(),
+            },
+            "knight": {
+                "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
+                "tickers": ["AMZN", "OXY", "SOFI"],
+                "stars": stars(),
+            },
+            "castle_coin": {
+                "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
+                "tickers": ["BTCUSD", "ETHUSD"],
+                "stars": stars(),
+            },
+            # "pawns": {
+            #     "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
+            #     "tickers": main_symbols_full_list[:100],
+            #     "stars": stars(),
+            # },
+        },
+        "chess_board": {},
+        "errors": {},
+        "client_order_ids_qgen": [],
+        "app_requests__bucket": [],
+        # 'triggerBee_frequency': {}, # hold a star and the running trigger
+        "saved_pollenThemes": [],  # bucket of saved star settings to choose from
+        "saved_powerRangers": [],  # bucket of saved star settings to choose from
+        "subconscious": {"app_info": []},
+        # Worker Bees
+        queens_chess_piece: {
+            "conscience": {"STORY_bee": {}, "KNIGHTSWORD": {}, "ANGEL_bee": {}},
+            # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
+            "pollenstory": {},  # latest story of dataframes castle and bishop
+            "pollencharts": {},  # latest chart rebuild
+            "pollencharts_nectar": {},  # latest chart rebuild with indicators
+            "pollenstory_info": {},  # Misc Info,
+            "client": {},
+            # 'heartbeat': {},
             "last_modified": datetime.now(est),
-            "command_conscience": {},
-            "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
-            "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
-            "heartbeat": {
-                "active_tickerStars": {},
-                "available_tickers": [],
-                "active_tickers": [],
-                "available_triggerbees": [],
-            },
-            "queens_messages": {},
-            "kings_order_rules": {},
-            "queen_controls": return_queen_controls(stars),
-            "symbol_universe": {
-                "index_ticker_db": index_ticker_db,
-                "main_index_dict": main_index_dict,
-                "main_symbols_full_list": main_symbols_full_list,
-                "not_avail_in_alpaca": not_avail_in_alpaca,
-            },
-            "workerbees": {
-                "castle": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["SPY"],
-                    "stars": stars(),
-                },
-                "bishop": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["GOOG", "AAPL", "TSLA"],
-                    "stars": stars(),
-                },
-                "knight": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["AMZN", "OXY", "SOFI"],
-                    "stars": stars(),
-                },
-                "castle_coin": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["BTCUSD", "ETHUSD"],
-                    "stars": stars(),
-                },
-                "pawns": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": main_symbols_full_list[:100],
-                    "stars": stars(),
-                },
-            },
-            # 'auth_users': {'stefanstapinski@gmail.com': {}, 'stevenweaver8@gmail.com': {}},
-            "errors": {},
-            "client_order_ids_qgen": [],
-            "app_requests__bucket": [],
-            # 'triggerBee_frequency': {}, # hold a star and the running trigger
-            "saved_pollenThemes": [],  # bucket of saved star settings to choose from
-            "saved_powerRangers": [],  # bucket of saved star settings to choose from
-            "subconscious": {"app_info": []},
-            # Worker Bees
-            queens_chess_piece: {
-                "conscience": {"STORY_bee": {}, "KNIGHTSWORD": {}, "ANGEL_bee": {}},
-                # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
-                "pollenstory": {},  # latest story of dataframes castle and bishop
-                "pollencharts": {},  # latest chart rebuild
-                "pollencharts_nectar": {},  # latest chart rebuild with indicators
-                "pollenstory_info": {},  # Misc Info,
-                "client": {},
-                # 'heartbeat': {},
-                "last_modified": datetime.now(est),
-            },
-        }
-
-    else:
-        QUEEN = {  # The Queens Mind
-            "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
-            "prod": "",
-            "source": "na",
-            "last_modified": datetime.now(est),
-            "command_conscience": {},
-            "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
-            "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
-            "heartbeat": {
-                "active_tickerStars": {},
-                "available_tickers": [],
-                "active_tickers": [],
-                "available_triggerbees": [],
-            },
-            "queens_messages": {},
-            "kings_order_rules": {},
-            "queen_controls": return_queen_controls(stars),
-            "symbol_universe": {
-                "index_ticker_db": index_ticker_db,
-                "main_index_dict": main_index_dict,
-                "main_symbols_full_list": main_symbols_full_list,
-                "not_avail_in_alpaca": not_avail_in_alpaca,
-            },
-            "workerbees": {
-                "castle": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["SPY"],
-                    "stars": stars(),
-                },
-                "bishop": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["GOOG", "AAPL", "TSLA"],
-                    "stars": stars(),
-                },
-                "knight": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["AMZN", "OXY", "SOFI"],
-                    "stars": stars(),
-                },
-                "castle_coin": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": ["BTCUSD", "ETHUSD"],
-                    "stars": stars(),
-                },
-                "pawns": {
-                    "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
-                    "tickers": main_symbols_full_list[:100],
-                    "stars": stars(),
-                },
-            },
-            # 'auth_users': {'stefanstapinski@gmail.com': {}, 'stevenweaver8@gmail.com': {}},
-            "errors": {},
-            "client_order_ids_qgen": [],
-            "app_requests__bucket": [],
-            # 'triggerBee_frequency': {}, # hold a star and the running trigger
-            "saved_pollenThemes": [],  # bucket of saved star settings to choose from
-            "saved_powerRangers": [],  # bucket of saved star settings to choose from
-            "subconscious": {"app_info": []},
-            # Worker Bees
-            queens_chess_piece: {
-                "conscience": {"STORY_bee": {}, "KNIGHTSWORD": {}, "ANGEL_bee": {}},
-                # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
-                "pollenstory": {},  # latest story of dataframes castle and bishop
-                "pollencharts": {},  # latest chart rebuild
-                "pollencharts_nectar": {},  # latest chart rebuild with indicators
-                "pollenstory_info": {},  # Misc Info,
-                "client": {},
-                # 'heartbeat': {},
-                "last_modified": datetime.now(est),
-            },
-        }
+        },
+    }
 
     return QUEEN
 
 
-def init_qcp(init_macd_vars, ticker_list):
+def init_qcp(init_macd_vars, ticker_list, theme='nuetral'):
     return {
         "MACD_fast_slow_smooth": init_macd_vars,
         "tickers": ticker_list,
         "stars": stars(),
+        "theme": theme,
     }
 
 
-def generate_chess_board(chess_pieces, init_macd_vars = {"fast": 12, "slow": 26, "smooth": 9}):
+def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}):
 
     chess_board = {
         "castle": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["SPY"]),
-        "bishop": init_qcp(
-            init_macd_vars=init_macd_vars, ticker_list=["GOOG", "AAPL", "TSLA"]
-        ),
-        "knight": init_qcp(
-            init_macd_vars=init_macd_vars, ticker_list=["AMZN", "OXY", "SOFI"]
-        ),
-        "castle_coin": init_qcp(
-            init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]
-        ),
+        "bishop": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["GOOG", "AAPL", "TSLA"]),
+        "knight": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["AMZN", "OXY", "SOFI"]),
+        "castle_coin": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]),
+        # "pawns": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["WMT"])
     }
 
 
@@ -555,14 +432,8 @@ def generate_chess_board(chess_pieces, init_macd_vars = {"fast": 12, "slow": 26,
 
 
 def init_QUEEN_App():
-    ticker_universe = return_Ticker_Universe()
-    index_ticker_db = ticker_universe["index_ticker_db"]
-    main_index_dict = ticker_universe["main_index_dict"]
-    main_symbols_full_list = ticker_universe["main_symbols_full_list"]
-    not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
+
     init_macd_vars = {"fast": 12, "slow": 26, "smooth": 9}
-
-
 
     app = {
         "prod": 'init',
@@ -581,28 +452,12 @@ def init_QUEEN_App():
             "castle_coin": init_qcp(
                 init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]
             ),
-            "pawns": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]
-            ),
+            # "pawns": init_qcp(
+            #     init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]
+            # ),
         },
         
-        "chess_board": {
-            "castle": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["SPY"]),
-            "bishop": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=["GOOG", "AAPL", "TSLA"]
-            ),
-            "knight": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=["AMZN", "OXY", "SOFI"]
-            ),
-            "castle_coin": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]
-            ),
-            "pawns": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]
-            ),
-        },
-
-
+        "chess_board": generate_chess_board(),
         "trigger_queen": {
             "dag": "init",
             "last_trig_date": datetime.now(est),
@@ -617,9 +472,13 @@ def init_QUEEN_App():
         "character_image" : mainpage_bee_png,
         "risk_level": 0,
         "age": 0,
-        "app_order_requests": [],
+        "app_order_requests": [], # depr.
+        
         "sell_orders": [],
+        "sell_orders_requests": [],
         "buy_orders": [],
+        "buy_orders_requests": [],
+
         "last_modified": {"last_modified": datetime.now(est)},
         "queen_processed_orders": [],
         "wave_triggers": [],
@@ -642,7 +501,6 @@ def init_QUEEN_App():
         "del_QUEEN_object": [],
         "del_QUEEN_object_requests": [],
         "last_app_update": datetime.now(est),
-        ## Update Time Zone... Low Priority
         "update_queen_order": [],
         "update_queen_order_requests": [],
         "saved_trading_models": generate_TradingModel()["MACD"],
@@ -657,6 +515,7 @@ def add_key_to_KING(KING):  # returns QUEES
     q_keys = KING.keys()
     latest_init = init_KING()
     update = False
+    KING = update_king_users(KING, init=False)
     for k, v in latest_init.items():
         if k not in q_keys:
             KING[k] = v
@@ -2759,43 +2618,44 @@ def pollen_themes(
     return pollen_themes
 
 
-def init_KING():
-    king = {
-        "kingme": KINGME(),
-    }
-    
+def update_king_users(KING, init=False):
     con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
     with con:
         cur = con.cursor()
         users = cur.execute("SELECT * FROM users").fetchall()
+        df = pd.DataFrame(users)
 
     users_allowed_queen_email = [
-        "stevenweaver8@gmail.com",
         "stefanstapinski@gmail.com",
-        "adivergentthinker@gmail.com",
-        "stapinski89@gmail.com",
-        "jehddie@gmail.com",
-        "conrad.studzinski@yahoo.com",
-        "jamesliess@icloud.com",
         "ng2654@columbia.edu",
         "mrubin2724@gmail.com",
-        "pollenq.queen@gmail.com",
+        # "stevenweaver8@gmail.com",
+        # "adivergentthinker@gmail.com",
+        # "stapinski89@gmail.com",
+        # "jehddie@gmail.com",
+        # "conrad.studzinski@yahoo.com",
+        # "jamesliess@icloud.com",
+        # "pollenq.queen@gmail.com",
     ]
 
-    king['users'] = {
-        'client_users_db': users,
-        'client_user__allowed_queen_list': users_allowed_queen_email
-    }
+    if init:
+        KING['users'] = {
+            'client_users_db': df,
+            'client_user__allowed_queen_list': users_allowed_queen_email
+        }
+    else:
+        new_users = [i for i in df[0].tolist() if i not in KING['users'].get('client_users_db')[0].tolist()]
+        if len(new_users) > 0:
+            print("New Users to KING")
+            KING['users']['client_users_db'] = df
+    
+    return KING
 
-    king['active_order_state_list'] = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 
-
-    return king
-
-
-def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
-    return_dict = {}
-
+def init_KING():
+    king = {}
+    ticker_universe = return_Ticker_Universe()
+    
     trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
     waveBlocktimes = [
         "premarket",
@@ -2806,12 +2666,14 @@ def KINGME(trigbees=False, waveBlocktimes=False, stars=stars):
         "Day",
     ]
 
-    # add order rules
-    return_dict["star_times"] = stars()
-    return_dict["waveBlocktimes"] = waveBlocktimes
-    return_dict["trigbees"] = trigbees
+    king["star_times"] = stars()
+    king["waveBlocktimes"] = waveBlocktimes
+    king["trigbees"] = trigbees
+    king = update_king_users(KING=king, init=True)
+    king['ticker_universe'] = ticker_universe
+    king['active_order_state_list'] = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 
-    return return_dict
+    return king
 
 
 def generate_TradingModel(
@@ -3649,6 +3511,7 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
 
     return {
+        "alpaca_symbols_dict": alpaca_symbols_dict,
         "index_ticker_db": index_ticker_db,
         "main_index_dict": main_index_dict,
         "main_symbols_full_list": main_symbols_full_list,
@@ -4324,44 +4187,46 @@ def queens_heart(heart):
     return heart
 
 
-def live_sandbox__setup_switch(client_username, QUEEN_KING=False, switch_env=False):
-    if QUEEN_KING:
-        if 'last_env' in QUEEN_KING.keys():
-            prod = QUEEN_KING['last_env']
-    else:
+def live_sandbox__setup_switch(client_username, queenKING=False, switch_env=False):
+    # if queenKING:
+        # if 'authoirzed_user' in st.session_state and st.session_state['authoirzed_user'] == True:
+        #     if 'last_env' in st.session_state:
+        #         prod = st.session_state['last_env']
+    try:
+        # else:
         prod = (
             True
             if "production" in st.session_state and st.session_state["production"] == True
             else False
         )
-    
-    prod_name = (
-        "LIVE"
-        if prod
-        else "Sandbox"
-    )
-    st.session_state["prod_name"] = prod_name
-    st.session_state["production"] = prod
+        
+        prod_name = (
+            "LIVE"
+            if prod
+            else "Sandbox"
+        )
+        st.session_state["prod_name"] = prod_name
+        st.session_state["production"] = prod
 
-    if switch_env:
-        if prod:
-            prod = False
-            st.session_state["production"] = prod
-            prod_name = "Sanbox"
-            st.session_state["prod_name"] = prod_name
-        else:
-            prod = True
-            st.session_state["production"] = prod
-            prod_name = "LIVE"
-            st.session_state["prod_name"] = prod_name
+        if switch_env:
+            if prod:
+                prod = False
+                st.session_state["production"] = prod
+                prod_name = "Sanbox"
+                st.session_state["prod_name"] = prod_name
+            else:
+                prod = True
+                st.session_state["production"] = prod
+                prod_name = "LIVE"
+                st.session_state["prod_name"] = prod_name
 
-    st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
-    
-    if QUEEN_KING:
-        if st.session_state['authoirzed_user']:
-            QUEEN_KING['last_env'] = prod
+        st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
+        st.session_state['last_env'] = prod
 
-    return prod
+
+        return prod
+    except Exception as e:
+        print(e, print_line_of_error())
 
 
 def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
@@ -4468,7 +4333,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
 def setup_instance(client_username, switch_env, force_db_root, queenKING):
     # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
     db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-    prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env)            
+    prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env, queenKING=queenKING)            
     init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
     
     return prod
@@ -4617,6 +4482,7 @@ def read_wiki_index():
     # df.to_csv('S&P500-Info.csv')
     # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
     return df
+
 
 
 """##################REFERENCEs############################"""

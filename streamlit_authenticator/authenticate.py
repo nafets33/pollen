@@ -324,9 +324,7 @@ class Authenticate:
         password: str
             The updated plain text password.
         """
-        self.credentials["usernames"][username]["password"] = Hasher(
-            [password]
-        ).generate()[0]
+        self.credentials["usernames"][username]["password"] = Hasher([password]).generate()[0]
 
     def reset_password(
         self, username: str, form_name: str, location: str = "main"

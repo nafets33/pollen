@@ -21,10 +21,9 @@ import argparse
 from streamlit_extras.stoggle import stoggle
 from chess_piece.app_hive import display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
-from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, KINGME, pollen_themes
+from chess_piece.queen_hive import add_key_to_app, init_pollen_dbs, pollen_themes
 from custom_button import cust_Button
 # import hydralit_components as hc
-from pollenq_pages.playground import PlayGround
 from pollenq_pages.queens_conscience import queens_conscience
 from ozz.ozz_bee import send_ozz_call
 
@@ -55,7 +54,7 @@ def account(admin_pq):
 
 
     with st.spinner("Hello Welcome To pollenq a Kings Queen"):
-        # signin_main(page="Account")
+       
         st.write("# WORKER BEES WORKING")
     
 

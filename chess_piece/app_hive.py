@@ -29,6 +29,7 @@ from chess_piece.king import (
     hive_master_root,
     local__filepaths_misc,
     streamlit_config_colors,
+    return_timestamp_string,
 )
 
 load_dotenv()
@@ -75,6 +76,14 @@ default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 
 ## IMPROVE GLOBAL VARIABLES
 
+def create_AppRequest_package(request_name, archive_bucket=None):
+    now = datetime.now(est)
+    return {
+    'app_requests_id': f'{request_name}{"_app-request_id_"}{return_timestamp_string()}{now.microsecond}', 
+    'request_name': request_name,
+    'archive_bucket': archive_bucket,
+    'request_timestamp': now,
+    }
 
 def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
     local_gif(gif_path=gif)
@@ -163,7 +172,7 @@ def queen_orders_view(
             "limit_price",
             "cost_basis",
             "wave_amo",
-            "status_q",
+            # "status_q",
             "client_order_id",
             "origin_wave",
             "wave_at_creation",
@@ -797,6 +806,9 @@ def queens_orders__aggrid_v2(
         editable=True,
         cellEditor="agSelectCellEditor",
         cellEditorParams={"values": active_order_state_list},
+        pinned="right",
+        initialWidth=123,
+        autoSize=True,
     )
     gb.configure_column("datetime",
         pinned='right',
@@ -917,12 +929,12 @@ def queens_orders__aggrid_v2(
         maxWidth=120,
         autoSize=True,
     )
-    gb.configure_column("order_rules",
-        header_name="OrderRules",
-        wrapText=True,
-        resizable=True,
-        autoSize=True,
-    )
+    # gb.configure_column("order_rules",
+    #     header_name="OrderRules",
+    #     wrapText=True,
+    #     resizable=True,
+    #     autoSize=True,
+    # )
 
     # ## WHY IS IT NO WORKING???
     # k_sep_formatter = JsCode("""
@@ -948,7 +960,7 @@ def queens_orders__aggrid_v2(
             <span>
                 <button id='click-button'
                     class='btn-simple'
-                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>Click!</button>
+                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>OrderRules!</button>
             </span>
         `;
 
@@ -974,7 +986,7 @@ def queens_orders__aggrid_v2(
         }
 
         btnClickedHandler(event) {
-            if (confirm('Are you sure you want to CLICK?') == true) {
+            if (confirm(this.params.data.order_rules) == true) {
                 if(this.params.getValue() == 'clicked') {
                     this.refreshTable('');
                 } else {
@@ -992,17 +1004,85 @@ def queens_orders__aggrid_v2(
     """
     )
 
+    BtnCellRendererSell = JsCode(
+        """
+    class BtnCellRendererSell {
+        init(params) {
+            this.params = params;
+            this.eGui = document.createElement('div');
+            this.eGui.innerHTML = `
+            <span>
+                <button id='click-button_sell'
+                    class='btn-simple'
+                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>Sell</button>
+            </span>
+        `;
+
+            this.eButton = this.eGui.querySelector('#click-button_sell');
+
+            this.btnClickedHandler = this.btnClickedHandler.bind(this);
+            this.eButton.addEventListener('click', this.btnClickedHandler);
+
+        }
+
+        getGui() {
+            return this.eGui;
+        }
+
+        refresh() {
+            return true;
+        }
+
+        destroy() {
+            if (this.eButton) {
+                this.eGui.removeEventListener('click', this.btnClickedHandler);
+            }
+        }
+
+        btnClickedHandler(event) {
+            if (confirm('Are you sure you want to Sell?') == true) {
+                if(this.params.getValue() == 'clicked') {
+                    this.refreshTable('');
+                } else {
+                    this.refreshTable('clicked');
+                }
+                    console.log(this.params);
+                    console.log(this.params.getValue());
+                }
+            }
+
+        refreshTable(value) {
+            this.params.setValue(value);
+        }
+    };
+    """
+    )
 
     click_button_function = """function selectAllAmerican(e) {
                 e.node.setSelected(true);}
         """
-
-    gb.configure_column("clicked",
-        headerTooltip="Clicked",
+    
+    gb.configure_column("orderrules",
+        headerTooltip="OrderRules",
         editable=False,
         filter=False,
         onCellClicked=JsCode(click_button_function),
         cellRenderer=BtnCellRenderer,
+        autoHeight=True,
+        wrapText=False,
+        lockPosition="right",
+        pinned="right",
+        sorteable=True,
+        suppressMenu=True,
+        maxWidth=100,
+    )
+    
+    gb.configure_column("sell",
+        headerTooltip="SellAll",
+        editable=False,
+        filter=False,
+        onCellClicked=JsCode(click_button_function),
+        cellRenderer=BtnCellRendererSell,
         autoHeight=True,
         wrapText=False,
         lockPosition="right",
@@ -1019,7 +1099,6 @@ def queens_orders__aggrid_v2(
     gridOptions["rememberGroupStateWhenNewData"] = "true"
     gridOptions["enableCellTextSelection"] = "true"
     gridOptions["resizable"] = False
-
     gridOptions["getRowStyle"] = JsCode(
         """
     function(params) {
@@ -1035,17 +1114,7 @@ def queens_orders__aggrid_v2(
     };
     """
     )
-    # columnDefs = [
-    #     {colId: 'column1', newPosition: 2},
-    #     {colId: 'column2', newPosition: 0},
-    #     {colId: 'column3', newPosition: 1},
-    # ]
-    # grid_response.setColumnDefs([{'Clicked': 'column1'}, {'Money': 'column2'}])
 
-    # # Next, use the setColumnOrder method to rearrange the columns in the grid
-    # grid.setColumnOrder(columnDefs)
-    # gridOptions.moveColumn('Clicked', 5)
-    # ipdb.set_trace()
     grid_response = AgGrid(
         data,
         gridOptions=gridOptions,
@@ -1217,7 +1286,7 @@ def queen_order_flow(QUEEN, active_order_state_list):
             mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
         cols = st.columns((1, 1, 10))
 
-        ordertables__agrid = queens_orders__aggrid(
+        ordertables__agrid = queens_orders__aggrid_v2(
             data=df.astype(str),
             active_order_state_list=active_order_state_list,
             reload_data=False,

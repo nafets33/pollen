@@ -3,8 +3,8 @@ from streamlit_extras.stoggle import stoggle
 from PIL import Image
 import subprocess
 from polleq_app_auth import signin_main
-from chess_piece.app_hive import queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
-from chess_piece.king import copy_directory, hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
+from chess_piece.app_hive import create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
+from chess_piece.king import PickleData, hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
 from datetime import datetime, timedelta
@@ -14,7 +14,7 @@ import pytz
 
 # https://extras.streamlit.app/Annotated%20text
 
-def PlayGround(QUEEN):
+def PlayGround():
     est = pytz.timezone("US/Eastern")
     utc = pytz.timezone('UTC')
     st.write(st.color_picker("colors"))
@@ -174,8 +174,14 @@ def PlayGround(QUEEN):
                 df = df[df["datetime"] > now_time.replace(hour=1, minute=1, second=1)].copy()
 
             # g_height = grid_height(len_of_rows=len(df))
+
+            if len(df) <= 3:
+                g_height = 250
+            else:
+                g_height = 434
+
             set_grid_height = st.sidebar.number_input(
-                label=f"Set Orders Grid Height", value=500
+                label=f"Set Orders Grid Height", value=g_height
             )
             # with cols[1]:
             # with cols[0]:
@@ -192,20 +198,50 @@ def PlayGround(QUEEN):
             )
 
             if ordertables__agrid.selected_rows:
-                st.success("Thankyou for clicking the Button")
-                # st.write(ordertables__agrid.selected_rows)
-                queen_order = ordertables__agrid.selected_rows
-                order_rules = queen_order[0]["order_rules"]
-                st.write(queen_order)
-                st.write(order_rules)
-                # run function to shown rule
-                # kings_order_rules__forum(order_rules)
+                # st.write(queen_order[0]['client_order_id'])
+                queen_order = ordertables__agrid.selected_rows[0]
+                selection_id = queen_order.get('client_order_id')
+                st.write(ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"])
+                
+                # validate to continue with selection
+                try:
+                    df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
+                    if len(df) > 0:
+                        if selection_id in df['client_order_id'].tolist():
+                            st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
+                        else:
+                            sell_package = create_AppRequest_package(request_name='sell_orders')
+                            sell_package['sellable_qty'] = queen_order.get('available_qty')
+                            sell_package['side'] = 'sell'
+                            sell_package['type'] = 'market'
+                            QUEEN_KING['sell_orders'].append(sell_package)
+                            PickleData(PB_App_Pickle, QUEEN_KING)
+                            st.success("Selling Order Sent to Queen Please wait for Queen to process, Refresh Table")
+                    else:
+                        st.write("Nothing Sell clicked")
+
+                except:
+                    st.write("Nothing was clicked")
+                try:
+                    df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
+                    if len(df) > 0:
+                        st.write("KOR: ", selection_id)
+                    else:
+                        st.write("Nothing KOR clicked")
+                except:
+                    st.write("Nothing was clicked")
 
             # with cols[0]:
             # download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
         
         return True
 
+    QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+    PB_App_Pickle = st.session_state['PB_App_Pickle']
+    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+    ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
+    POLLENSTORY = ticker_db['pollenstory']
+    STORY_bee = ticker_db['STORY_bee']
     
     active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
     queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
@@ -217,10 +253,6 @@ def PlayGround(QUEEN):
     with st.expander("nested grid"):
         nested_grid()
 
-    QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-    ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
-    POLLENSTORY = ticker_db['pollenstory']
-    STORY_bee = ticker_db['STORY_bee']
 
     with st.expander("pollenstory"):
         ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
@@ -235,7 +267,7 @@ def PlayGround(QUEEN):
 
 
 
-
+    # st.session_state['menu_id_name'] = menu_id
 
 
     # show trading model
@@ -265,4 +297,4 @@ def PlayGround(QUEEN):
 
         return screen_processes
 if __name__ == '__main__':
-    PlayGround(QUEEN=False)
+    PlayGround()
