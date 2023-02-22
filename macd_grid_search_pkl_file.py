@@ -24,7 +24,7 @@ if __name__ == "__main__":
         res = pickle.load(f_story)
         print("pollen_story")
         print("------------")
-        print(res["STORY_bee"])
+        print(res)
         print("")
         #print(res["STORY_bee"]["waves"])
         #print("")

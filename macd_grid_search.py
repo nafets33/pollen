@@ -40,15 +40,8 @@ for fast_val in fast_vals:
                     print(filepath)
                     with open(folder + "/" + filepath, "rb") as f:
                         res = pickle.load(f)
-                        print(res.keys())
-                        #dict_list_ttf = analyze_waves(res["STORY_bee"], ttframe_wave_trigbee = False)["d_agg_view_return"]
-                        res = analyze_waves(res["STORY_bee"], ttframe_wave_trigbee = False)
-                        print(res.keys())
-                        print(res["df"])
-                        print(res["d_agg_view_return"])
-                        print(res["df_agg_view_return"])
-                        print(res["df_bestwaves"])
-                        #print(res["STORY_bee"])
+                        dict_list_ttf = analyze_waves(res["STORY_bee"], ttframe_wave_trigbee = "AAPL_1Day_1Year")["d_agg_view_return"]
+                        print(dict_list_ttf)
                         assert False
             assert False
 
