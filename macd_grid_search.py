@@ -27,7 +27,6 @@ for fast_val in fast_vals:
                 "smooth": smooth_val
             }
             print("macd = {}".format(macd))
-            """
             queen_workerbees(prod = False, 
                              backtesting = True, 
                              macd = macd)
@@ -44,5 +43,6 @@ for fast_val in fast_vals:
                         print(dict_list_ttf)
                         assert False
             assert False
+            """
 
 
