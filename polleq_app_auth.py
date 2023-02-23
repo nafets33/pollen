@@ -230,7 +230,7 @@ def signin_main(page):
             st.sidebar.info("Request For a Queen")
             force_db_root = True
             if st.button("Request A Queen"):
-                send_email(recipient=os.environ('pollenq_gmail'), subject="NotAllowedQueen", body=f'{st.session_state["client_user"]} Asking for a Queen')
+                send_email(recipient=os.environ('pollenq_gmail'), subject="QueenRequest", body=f'{st.session_state["client_user"]} Asking for a Queen')
                 st.success("Message Sent To Hive Master, We'll talk soon")
 
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True)

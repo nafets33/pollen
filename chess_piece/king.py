@@ -129,14 +129,20 @@ exclude_conditions = [
 
 
 def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
-    buying_power = ac_info['buying_power']
-    buying_power = "TotalBuyingPower: " + '${:,.2f}'.format(ac_info['buying_power'])
-    num_text = (ac_info['portfolio_value'] - ac_info['last_equity']) / ac_info['portfolio_value']
-    honey = "Honey: " + '%{:,.2f}'.format(num_text)
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
     default_font = k_colors['default_font'] # = "sans serif"
     default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+    
+    if ac_info != False:
+        buying_power = ac_info['buying_power']
+        buying_power = "TotalBuyingPower: " + '${:,.2f}'.format(ac_info['buying_power'])
+        num_text = (ac_info['portfolio_value'] - ac_info['last_equity']) / ac_info['portfolio_value']
+        honey = "Honey: " + '%{:,.2f}'.format(num_text)
+    else:
+        buying_power = ""
+        buying_power = ""
+        honey = ""
 
     if menu == 'main':
         
@@ -153,7 +159,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
         ]
     elif menu == 'unAuth':
         menu_data = [
-            {'id':'unAuth','icon':"fa fa-tree",'Welcome':"welcome"},
+            {'id':'unauth','icon':"fa fa-fire",'label':"Welcome to pollenq"},
 
             # {'id':'Copy','icon':"🐙",'label':"Copy"},
             # {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
@@ -163,6 +169,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
             # {'icon': "far fa-copy", 'label':"Right End"},
             # {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
         ]
+        prod_name = ""
 
     if prod:
 
@@ -175,12 +182,13 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
             sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
         )
     else:
-        over_theme = {'txc_inactive': 'white','menu_background':'black','txc_active':'yellow','option_active':'blue'}
-        font_fmt = {'font-class':'h2','font-size':'150%'}
+        over_theme = {'option_active':'#B7C8D6'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
+        # over_font = {'font-class':'h2','font-size':'100%'}
         # over_theme = {'txc_inactive': "#0D93FB"}
         menu_id = hc.nav_bar(
             menu_definition=menu_data,
             override_theme=over_theme,
+            # font_styling=over_font,
             home_name=f'pollenq {prod_name}',
             login_name='Account',
             hide_streamlit_markers=True, #will show the st hamburger as well as the navbar now!

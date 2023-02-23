@@ -478,7 +478,7 @@ def queens_orders__aggrid(
     reload_data=False,
     fit_columns_on_grid_load=False,
     height=200,
-    update_mode_value=GridUpdateMode.SELECTION_CHANGED,
+    update_mode_value=GridUpdateMode.MANUAL,
     paginationOn=False,
     allow_unsafe_jscode=True,
 ):
@@ -501,7 +501,7 @@ def queens_orders__aggrid(
 
     gb.configure_side_bar()  # Add a sidebar
 
-    # gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+    gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
 
     honey_colors = JsCode(
         """
@@ -806,9 +806,8 @@ def queens_orders__aggrid_v2(
         editable=True,
         cellEditor="agSelectCellEditor",
         cellEditorParams={"values": active_order_state_list},
-        pinned="right",
-        initialWidth=123,
-        autoSize=True,
+        pinned='right',
+        initialWidth=89,
     )
     gb.configure_column("datetime",
         pinned='right',
@@ -821,7 +820,7 @@ def queens_orders__aggrid_v2(
         autoSize=True,
     )
     gb.configure_column("symbol",
-        pinned="left",
+        # pinned="left",
         pivot=True,
         resizable=True,
         initialWidth=89,
@@ -960,7 +959,7 @@ def queens_orders__aggrid_v2(
             <span>
                 <button id='click-button'
                     class='btn-simple'
-                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>OrderRules!</button>
+                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>OrderRules</button>
             </span>
         `;
 
@@ -1058,10 +1057,79 @@ def queens_orders__aggrid_v2(
     """
     )
 
+    BtnCellRendererState = JsCode(
+        """
+    class BtnCellRendererState {
+        init(params) {
+            this.params = params;
+            this.eGui = document.createElement('div');
+            this.eGui.innerHTML = `
+            <span>
+                <button id='click-button_state'
+                    class='btn-simple'
+                    style='color: ${this.params.color}; background-color: ${this.params.background_color}'>Change</button>
+            </span>
+        `;
+
+            this.eButton = this.eGui.querySelector('#click-button_state');
+
+            this.btnClickedHandler = this.btnClickedHandler.bind(this);
+            this.eButton.addEventListener('click', this.btnClickedHandler);
+
+        }
+
+        getGui() {
+            return this.eGui;
+        }
+
+        refresh() {
+            return true;
+        }
+
+        destroy() {
+            if (this.eButton) {
+                this.eGui.removeEventListener('click', this.btnClickedHandler);
+            }
+        }
+
+        btnClickedHandler(event) {
+            if (confirm('Are you sure you want to Change State?') == true) {
+                if(this.params.getValue() == 'clicked') {
+                    this.refreshTable('');
+                } else {
+                    this.refreshTable('clicked');
+                }
+                    console.log(this.params);
+                    console.log(this.params.getValue());
+                }
+            }
+
+        refreshTable(value) {
+            this.params.setValue(value);
+        }
+    };
+    """
+    )
+
     click_button_function = """function selectAllAmerican(e) {
                 e.node.setSelected(true);}
         """
-    
+
+
+    gb.configure_column("orderstate",
+        headerTooltip="Change Order State",
+        editable=False,
+        filter=False,
+        onCellClicked=JsCode(click_button_function),
+        cellRenderer=BtnCellRendererState,
+        autoHeight=True,
+        wrapText=False,
+        lockPosition="right",
+        pinned="right",
+        sorteable=True,
+        suppressMenu=True,
+        maxWidth=100,
+    )
     gb.configure_column("orderrules",
         headerTooltip="OrderRules",
         editable=False,
@@ -1075,8 +1143,7 @@ def queens_orders__aggrid_v2(
         sorteable=True,
         suppressMenu=True,
         maxWidth=100,
-    )
-    
+    )   
     gb.configure_column("sell",
         headerTooltip="SellAll",
         editable=False,
@@ -1127,7 +1194,6 @@ def queens_orders__aggrid_v2(
         reload_data=reload_data,
         allow_unsafe_jscode=allow_unsafe_jscode,
     )
-    # grid_response = grid_response.set_filter("symbol", "contains", "SPY")
 
     return grid_response
 
@@ -1159,7 +1225,7 @@ def standard_AGgrid(
         gb.configure_column("queen_authorized",
             editable=True,
             cellEditor="agSelectCellEditor",
-            cellEditorParams={"values": ['acitve', 'not_active']},
+            cellEditorParams={"values": ['active', 'not_active']},
             lockPosition="left",
         )
 
@@ -1207,14 +1273,7 @@ def download_df_as_CSV(df, file_name="name.csv"):
 
 
 def queen_order_flow(QUEEN, active_order_state_list):
-    # st.write(QUEEN['source'])
-    # if st.session_state['admin'] == False:
-    #     return False
-    # page_line_seperator()
-    # with cols[1]:
-    #     orders_table = st.checkbox("show completed orders")
-    # import ipdb
-    # ipdb.set_trace()
+
     with st.expander("Portfolio Orders", expanded=True):
         now_time = datetime.now(est)
         cols = st.columns((1,3, 1, 1, 1, 1, 1))
@@ -1293,17 +1352,7 @@ def queen_order_flow(QUEEN, active_order_state_list):
             height=set_grid_height,
         )
 
-        if ordertables__agrid.selected_rows:
-            st.success("Thankyou for clicking the Button")
-            # st.write(ordertables__agrid.selected_rows)
-            queen_order = ordertables__agrid.selected_rows
-            order_rules = queen_order[0]["order_rules"]
-            # run function to shown rule
-            kings_order_rules__forum(order_rules)
-
-        # with cols[0]:
-        download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
-    return True
+    return ordertables__agrid
 
 
 def page_session_state__cleanUp(page):
@@ -1894,3 +1943,28 @@ def click_button_grid():
         st.write(response["data"][response["data"].clicked == "clicked"])
     except:
         st.write("Nothing was clicked")
+
+
+def show_waves(STORY_bee, ticker_option='SPY', frame_option='1Minute_1Day'):
+    ttframe = f'{ticker_option}{"_"}{frame_option}'
+    knowledge = STORY_bee[ttframe]
+
+    # mark_down_text(text=ttframe)
+    st.write("waves story -- investigate BACKEND functions")
+    df = knowledge['waves']['story']
+    df = df.astype(str)
+    st.dataframe(df)
+
+    st.write("buy cross waves")
+    m_sort = knowledge['waves']['buy_cross-0']
+    df_m_sort = pd.DataFrame(m_sort).T
+    df_m_sort = df_m_sort.astype(str)
+    st.dataframe(data=df_m_sort)
+
+    st.write("sell cross waves")
+    m_sort = knowledge['waves']['sell_cross-0']
+    df_m_sort = pd.DataFrame(m_sort).T
+    df_m_sort = df_m_sort.astype(str)
+    st.dataframe(data=df_m_sort)
+
+    return True
