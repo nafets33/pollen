@@ -96,7 +96,7 @@ def signin_main(page):
     def forgot_password():
         try:
             (email_forgot_pw, random_password,) = authenticator.forgot_password(
-                form_name="Reset Password", location="sidebar"
+                form_name="Reset Password", location="main"
             )
 
             if email_forgot_pw:
@@ -227,10 +227,11 @@ def signin_main(page):
             st.sidebar.warning("Your Queen is Awaiting")
             force_db_root = False
         else:
-            st.sidebar.info("Request For a Queen")
+            # st.sidebar.info("Request For a Queen")
+            st.info("Below is a Preview")
             force_db_root = True
             if st.button("Request A Queen"):
-                send_email(recipient=os.environ('pollenq_gmail'), subject="QueenRequest", body=f'{st.session_state["client_user"]} Asking for a Queen')
+                send_email(recipient=os.environ.get('pollenq_gmail'), subject="QueenRequest", body=f'{st.session_state["username"]} Asking for a Queen')
                 st.success("Message Sent To Hive Master, We'll talk soon")
 
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True)
@@ -299,9 +300,8 @@ def signin_main(page):
                 
                 # Returning Customer
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
-                    if 'logout' in st.session_state and st.session_state["logout"] != True:
-                        define_authorized_user(key='34')
-                        return True
+                    define_authorized_user(key='34')
+                    return True
                 else:    
                     update_db(cur=cur, email=email)
                     define_authorized_user(key='33')

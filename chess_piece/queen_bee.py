@@ -53,27 +53,27 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         sys.exit()
 
     def update_queen_order(QUEEN, update_package):
-        # pollen = read_queensmind(prod)
-        # QUEEN = pollen['queen']
         # update_package client_order id and field updates {client_order_id: {'queen_order_status': 'running'}}
         try:
-            for c_order_id in update_package.keys():
-                # order_sel = {idx: i for idx, i in enumerate(QUEEN['queen_orders']) if i['client_order_id'] == c_order_id}
+            save = False
+            for c_order_id, package in update_package['queen_order_updates'].items():
                 df = QUEEN['queen_orders']
                 df_ = df[df['client_order_id'] == c_order_id].copy()
                 order_idx = df_.iloc[-1].name
-                # order_idx = list(order_sel.keys())[0]
-                for field_, new_value in update_package[c_order_id].items():
+                for field_, new_value in package.items():
                     try:
                         QUEEN['queen_orders'].at[order_idx, field_] = new_value
+                        save = True
                     except Exception as e:
                         print(e, 'failed to update QueenOrder')
                         logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
-            
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN, write_temp=False)
+                        QUEEN['queens_messages'].update({c_order_id: {'date': return_timestamp_string(), 'error': e, 'updates': (field_, new_value)}})
+            if save:
+                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN, write_temp=False)
         except Exception as e:
             print(e, print_line_of_error())
             logging.CRITICAL({'error': e, 'msg': 'update_queen_order', 'update_package': update_package})
+            QUEEN['queens_messages'].update({'CRITICAL_QueenOrdersUpdates': {'date': return_timestamp_string(), 'error': e, 'update_package': update_package}})
         return True
 
 
@@ -249,12 +249,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             app_order_base = [i for i in QUEEN_KING[request_name]]
             if app_order_base:
                 for app_request in app_order_base:
-                    if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
+                    if app_request['app_requests_id'] in QUEEN['app_requests__bucket'] or 'queen_order_updates' not in app_request.keys():
                         # print("queen update order trigger request Id already received")
-                        
                         return {'app_flag': False}
                     else:
-                        print("queen update order trigger gather", app_request['queen_order_update_package'], " : ", app_request['ticker_time_frame'])
+                        print("queen update order trigger gather", app_request['queen_order_updates'])
                         QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
 
                         update_queen_order(update_package=app_request)
@@ -375,7 +374,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return {'app_flag': False}
 
 
-    """  >>>><<<< MAIN <<<<>>>> """
     def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
         
         if len(active_orders) > 0:
@@ -399,7 +397,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         else:
             if ticker == app_wave_trig_req['app_request']['ticker']:
                 active_trigs.update(app_wave_trig_req['app_request']['wave_trigger']) # test
-                msg = {'add_app_wave_trigger()': 'added wave drone'}
+                msg = {'added app_wave_trigger()': 'added wave drone'}
                 print(msg)
                 # queen process
                 logging.info(msg)
@@ -590,10 +588,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # update Origin RUN Order
                     # Limit Order
                     QUEEN['queen_orders'].at[run_order_idx, 'order_trig_sell_stop'] = True
-                    # return all linking orders and update qty available?
+                    QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'].update({client_order_id__gen: {'sell_reason': sell_reason}})
                     update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=run_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
-                    QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'].update({client_order_id__gen: {'sell_reason': sell_reason}})
 
                     PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
                     refresh_queen_orders__save_ORDERS(QUEEN=QUEEN, ORDERS=ORDERS)
@@ -957,6 +954,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             for ticker in active_tickers:
                 # Ensure Trading Model
                 if ticker not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
+                    QUEEN['queens_messages'].update({'model_does_not_exist': f'{ticker}'})
                     continue 
                 
                 crypto = True if ticker in crypto_currency_symbols else False
@@ -965,20 +963,19 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if mkhrs == 'open':
                     val_pass = True
                 else:
-                    print("Market Not Open Sorry")
+                    # print("Market Not Open Sorry")
                     continue # break loop
 
                 """ the hunt """
                 s_time = datetime.datetime.now(est)
                 req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=[ticker])
-                active_trigs = req['active_trigs']            
+                active_trigs = req.get('active_trigs')   
+                all_current_trigs = req.get('all_current_trigs')
                 active_trigs = add_app_wave_trigger(active_trigs=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)      
                 charlie_bee['queen_cyle_times']['thehunt__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
                 # Return Scenario based trades
                 
                 try:
-                    # enabled stars
-                    # QUEEN['heartbeat']
                     s_time = datetime.datetime.now(est)
                     for ticker_time_frame, avail_trigs in active_trigs.items():
                         if len(avail_trigs) == 0:
@@ -990,23 +987,27 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
                         
                         # check global ticker level
-                        if str(trading_model['status']) not in ['active']:
-                            print(str(trading_model['status']), "model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                        if str(trading_model['status']) not in ['active', 'true']:
+                            # print(str(trading_model['status']), "model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                            QUEEN['queens_messages'].update({'model_not_active': f'{ticker_time_frame}'})
                             continue
-
+                        if str(trading_model['power_rangers'].get(frame_block)).lower() not in ['active', 'true']:
+                            # global 1Minute_1Day is not active
+                            continue
                         # cycle through triggers and pass buy first logic for buy
                         # trigs =  all_current_triggers[f'{ticker}{"_1Minute_1Day"}']
                         for trig in avail_trigs:
                             if trig == 'sell_cross-0' and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
                                 # print("Wants to Short Stock Scenario")
                                 continue
-                            if trig not in available_triggerbees:
+                            if trig not in QUEEN['heartbeat']['available_triggerbees']: # buy_cross-0 <<< OLD >>> this is handled in return_STORYbee_trigbees()
                                 continue
                             if trig in trading_model['trigbees'].keys():
-                                if str(trading_model['trigbees'][trig]).lower() != 'true':
-                                    print("trig bee model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                                if str(trading_model['trigbees'][trig]).lower() not in ['active', 'true']:
+                                    # print("trig bee model not active", ticker_time_frame, " availtrigs: ", avail_trigs)
+                                    QUEEN['queens_messages'].update({'trigbee_not_active': f'{ticker_time_frame}_{trig}'})
                                     continue
-                                
+
                                 # check if you already placed order or if a workerbee in transit to place order
                                 trig_action = trig_In_Action_cc(active_orders=active_orders, trig=trig, ticker_time_frame=ticker_time_frame)
 
@@ -1016,14 +1017,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 if king_resp['kings_blessing']:
                                     execute_order(QUEEN=QUEEN, king_resp=king_resp, king_eval_order=False, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio, crypto=crypto)
                                 charlie_bee['queen_cyle_times']['knights_request__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
-
-
-                    # charlie_bee['queen_cyle_times']['knights_full_loop__cc'] = (datetime.datetime.now(est) - s_time_fullloop).total_seconds()
-
                     
                 except Exception as e:
-                    print(e, print_line_of_error())
-                    print(ticker_time_frame)
+                    msg = (ticker_time_frame, e, print_line_of_error())
+                    print(msg)
+                    QUEEN['queens_messages'].update({'commandconscience__failed': {'ticker_time_frame': f'{ticker_time_frame}', 'error': e, 'line_error': print_line_of_error()}})
                     sys.exit()
 
             
@@ -2065,11 +2063,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # route queen order >>>  process queen_order_states
             try: # App Requests
                 s_app = datetime.datetime.now(est)
-                app_req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order', archive_bucket='update_queen_order_requests')
-                if app_req['app_flag']:
-                    update_queen_order(ORDERS=ORDERS, update_package=app_req['app_request']['queen_order_update_package'])
-                    charlie_bee['queen_cyle_times']['app_req_updatequeenOrder_om'] = (datetime.datetime.now(est) - s_app).total_seconds()
-
+                process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order')
                 charlie_bee['queen_cyle_times']['app_req_om'] = (datetime.datetime.now(est) - s_app).total_seconds()
             except Exception as e:
                 print('APP: Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())

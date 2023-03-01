@@ -27,6 +27,7 @@ def PlayGround():
         # images
         MISC = local__filepaths_misc()
         learningwalk_bee = MISC['learningwalk_bee']
+        mainpage_bee_png = MISC['mainpage_bee_png']
 
         est = pytz.timezone("US/Eastern")
         utc = pytz.timezone('UTC')
@@ -96,6 +97,7 @@ def PlayGround():
                 cols = st.columns((1,3, 1, 1, 1, 1, 1))
                 with cols[0]:
                     refresh_b = st.button("Refresh", key="r1")
+                    edit_orders_button = st.checkbox("edit_orders_button", key='edit_orders_button')
                 with cols[2]:
                     today_orders = st.checkbox("Today", False)
                     # page_line_seperator(.2)
@@ -175,47 +177,23 @@ def PlayGround():
                     height=set_grid_height,
                 )
 
-                if ordertables__agrid.selected_rows:
-                    # ipdb.set_trace()
-                    queen_order = ordertables__agrid.selected_rows[0]
-                    st.write(queen_order['client_order_id'])
-                    selection_id = queen_order.get('client_order_id')
-                    # st.write(ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"])
-                    
-                    # validate to continue with selection
-                    try:
-                        df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
-                        if len(df) > 0:
-                            if selection_id in df['client_order_id'].tolist():
-                                st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
-                            else:
-                                sell_package = create_AppRequest_package(request_name='sell_orders')
-                                sell_package['sellable_qty'] = queen_order.get('available_qty')
-                                sell_package['side'] = 'sell'
-                                sell_package['type'] = 'market'
-                                # QUEEN_KING['sell_orders'].append(sell_package)
-                                # PickleData(PB_App_Pickle, QUEEN_KING)
-                                st.success("Selling Order Sent to Queen Please wait for Queen to process, Refresh Table")
-                        else:
-                            st.write("Nothing Sell clicked")
-
-                    except:
-                        st.write("Nothing was clicked")
-                    try:
-                        df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
-                        if len(df) > 0:
-                            st.write("KOR: ", selection_id)
-                        else:
-                            st.write("Nothing KOR clicked")
-                    except:
-                        st.write("Nothing was clicked")
-
                 # with cols[0]:
                 # download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
             
-            return True
+            return ordertables__agrid
 
-        QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        @st.cache(allow_output_mutation=True)
+        def return_QUEEN():
+            print("test cache")
+            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+
+
+        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        if 'edit_orders_button' in st.session_state and st.session_state['edit_orders_button'] == True:
+            QUEEN = return_QUEEN()
+        else:
+            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        
         PB_App_Pickle = st.session_state['PB_App_Pickle']
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
         ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
@@ -227,8 +205,61 @@ def PlayGround():
 
         
         active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-        queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+        # queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+        ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+        # ipdb.set_trace()
+        if st.session_state['authorized_user']:
+            if ordertables__agrid.selected_rows:
+                # st.write(queen_order[0]['client_order_id'])
+                queen_order = ordertables__agrid.selected_rows[0]
+                client_order_id = queen_order.get('client_order_id')
 
+                try: # OrderState
+                    df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
+                    if len(df) > 0:
+                        current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
+                        if len(current_requests) > 0:
+                            st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
+                        else:
+                            st.write("App Req Created")
+                            order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
+                            order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
+                            # QUEEN_KING['update_queen_order'].append(order_update_package)
+                            # PickleData(PB_App_Pickle, QUEEN_KING)
+                            # st.success("Changing QueenOrderState Please wait for Queen to process, Refresh Table")
+                except:
+                    st.write("OrderState nothing was clicked")
+                
+                # validate to continue with selection
+                try: ## SELL
+                    df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
+                    if len(df) > 0:
+                        current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
+                        if len(current_requests) > 0:
+                            st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
+                        else:
+                            st.write("Sell App Req Created")
+                            sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
+                            sell_package['sellable_qty'] = queen_order.get('available_qty')
+                            sell_package['side'] = 'sell'
+                            sell_package['type'] = 'market'
+                            # QUEEN_KING['sell_orders'].append(sell_package)
+                            # PickleData(PB_App_Pickle, QUEEN_KING)
+                            # st.success("Selling Order Sent to Queen Please wait for Queen to process, Refresh Table")
+                    else:
+                        st.write("Nothing Sell clicked")
+
+                except:
+                    st.write("Nothing was Sold")
+                try: ## KOR
+                    df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
+                    if len(df) > 0:
+                        st.write("KOR: ", client_order_id)
+                        # kings_order_rules__forum(order_rules)
+                    else:
+                        st.write("Nothing KOR clicked")
+                except:
+                    st.write("Nothing was KOR")
         # page_tab_permission_denied(st.session_state['admin'])
         with st.expander("button on grid"):
             click_button_grid()
@@ -276,6 +307,6 @@ def PlayGround():
     
     
     except Exception as e:
-        print(e,  print_line_of_error())
+        print("playground error: ", e,  print_line_of_error())
 if __name__ == '__main__':
     PlayGround()

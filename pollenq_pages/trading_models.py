@@ -200,23 +200,6 @@ def trading_models():
                 PickleData(PB_QUEEN_Pickle, QUEEN)
 
 
-        if st.session_state['authorized_user'] == False and sneak_peak == False:
-            cols = st.columns(2)
-            with cols[0]:
-                st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-            with cols[1]:
-                st.info("Below is a Preview")
-            client_user_wants_a_queen = st.button("Yes I want a Queen!")
-            if client_user_wants_a_queen:
-                st.session_state['init_queen_request'] = True
-                if 'init_queen_request' in st.session_state:
-                    QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
-                    PickleData(PB_App_Pickle, QUEEN_KING)
-                    send_email(recipient=os.environ('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
-                    st.success("Hive Master Notified and You should receive contact soon")
-
-
-
         def chunk(it, size):
             it = iter(it)
             return iter(lambda: tuple(islice(it, size)), ())

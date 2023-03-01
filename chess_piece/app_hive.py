@@ -76,9 +76,10 @@ default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 
 ## IMPROVE GLOBAL VARIABLES
 
-def create_AppRequest_package(request_name, archive_bucket=None):
+def create_AppRequest_package(request_name, archive_bucket=None, client_order_id=None):
     now = datetime.now(est)
     return {
+    'client_order_id': client_order_id,
     'app_requests_id': f'{request_name}{"_app-request_id_"}{return_timestamp_string()}{now.microsecond}', 
     'request_name': request_name,
     'archive_bucket': archive_bucket,
@@ -472,285 +473,6 @@ def grid_height(len_of_rows):
     return grid_height
 
 
-def queens_orders__aggrid(
-    data,
-    active_order_state_list,
-    reload_data=False,
-    fit_columns_on_grid_load=False,
-    height=200,
-    update_mode_value=GridUpdateMode.MANUAL,
-    paginationOn=False,
-    allow_unsafe_jscode=True,
-):
-    # ipdb.set_trace()
-    # Color Code Honey
-    # data["$honey"] = (
-    #     data["$honey"].apply(lambda x: round(float(x), 2)).fillna(data["honey"])
-    # )
-    # data["honey"] = (
-    #     data["honey"].apply(lambda x: round((float(x) * 100), 2)).fillna(data["honey"])
-    # )
-    data["$honey"] = pd.to_numeric(data["$honey"], errors='coerce')
-    data["honey"] = pd.to_numeric(data["honey"], errors='coerce')
-
-    data["color"] = np.where(data["honey"] > 0, "green", "white")
-    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
-
-    if paginationOn:
-        gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
-
-    gb.configure_side_bar()  # Add a sidebar
-
-    gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-
-    honey_colors = JsCode(
-        """
-    function(params) {
-        if (params.value > 0) {
-            return {
-                'color': '#168702',
-            }
-        }
-        else if (params.value < 0) {
-            return {
-                'color': '#F03811',
-            }
-        }
-    };
-    """
-    )
-
-
-    # Config Columns
-    gb.configure_column("queen_order_state",
-        header_name="State",
-        editable=True,
-        cellEditor="agSelectCellEditor",
-        cellEditorParams={"values": active_order_state_list},
-    )
-    gb.configure_column("datetime",
-        pinned='right',
-        header_name="Date",
-        type=["dateColumnFilter", "customDateTimeFormat"],
-        custom_format_string="MM/dd/yy",
-        pivot=True,
-        initialWidth=75,
-        maxWidth=110,
-        autoSize=True,
-    )
-    gb.configure_column("symbol",
-        pinned="left",
-        pivot=True,
-        resizable=True,
-        initialWidth=89,
-        autoSize=True,
-    )
-    gb.configure_column("trigname",
-        # pinned="left",
-        header_name="TrigBee",
-        pivot=True,
-        wrapText=True,
-        resizable=True,
-        initialWidth=100,
-        maxWidth=120,
-        autoSize=True,
-    )
-    gb.configure_column("ticker_time_frame",
-        pinned="left",
-        header_name="Star",
-        pivot=True,
-        resizable=True,
-        initialWidth=138,
-        autoSize=True,
-    )
-    gb.configure_column("honey",
-        header_name="Honey%",
-        pinned="left",
-        cellStyle=honey_colors,
-        type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        custom_currency_symbol="%",
-        resizable=True,
-        initialWidth=89,
-        maxWidth=100,
-        autoSize=True,
-    )
-    gb.configure_column("$honey",
-        header_name="Money$",
-        pinned="left",
-        cellStyle=honey_colors,
-        type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        custom_currency_symbol="$",
-        resizable=True,
-        initialWidth=89,
-        maxWidth=100,
-        autoSize=True,
-    )
-    gb.configure_column("honey_time_in_profit",
-        header_name="Time.In.Honey",
-        resizable=True,
-        initialWidth=89,
-        maxWidth=120,
-        autoSize=True,
-    )
-    gb.configure_column("filled_qty",
-        wrapText=True,
-        resizable=True,
-        initialWidth=95,
-        maxWidth=100,
-        autoSize=True,
-    )
-    gb.configure_column("qty_available",
-        header_name="available_qty",
-        autoHeight=True,
-        wrapText=True,
-        resizable=True,
-        initialWidth=105,
-        maxWidth=130,
-        autoSize=True,
-    )
-    gb.configure_column("filled_avg_price",
-        type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        custom_currency_symbol="$",
-        header_name="filled_avg_price",
-        autoHeight=True,
-        wrapText=True,
-        resizable=True,
-        initialWidth=120,
-        maxWidth=130,
-        autoSize=True,
-    )
-    gb.configure_column("limit_price",
-        type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        custom_currency_symbol="$",
-        resizable=True,
-        initialWidth=95,
-        maxWidth=100,
-        autoSize=True,
-    )
-    gb.configure_column("cost_basis",
-        type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        custom_currency_symbol="$",
-        autoHeight=True,
-        wrapText=True,
-        resizable=True,
-        initialWidth=110,
-        maxWidth=120,
-        autoSize=True,
-    )
-    gb.configure_column("wave_amo",
-        type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        custom_currency_symbol="$",
-        autoHeight=True,
-        wrapText=True,
-        resizable=True,
-        initialWidth=110,
-        maxWidth=120,
-        autoSize=True,
-    )
-    gb.configure_column("order_rules",
-        header_name="OrderRules",
-        wrapText=True,
-        resizable=True,
-        autoSize=True,
-    )
-
-    # ## WHY IS IT NO WORKING???
-    # k_sep_formatter = JsCode("""
-    # function(params) {
-    #     return (params.value == null) ? params.value : params.value.toLocaleString('en-US',{style: "currency", currency: "USD"});
-    # }
-    # """)
-
-    # int_cols = ['$honey', 'filled_avg_price', 'cost_basis', 'wave_amo', 'honey']
-    # gb.configure_columns(int_cols, valueFormatter=k_sep_formatter)
-    # for int_col in int_cols:
-    #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$")
-    # color code columns based on yourValue
-
-    BtnCellRenderer = JsCode(
-        """
-            function addBtn(params) { return '<button style="background-color:yellow;z-index: 1;
-            margin: 5px;
-            left: 0;
-            top: 0;
-            bottom:0;
-            right:0;
-            width: 100%;
-            height: 100%;">OrderRules</button>'; }
-        """
-    )
-
-    click_button_function = """function selectAllAmerican(e) {
-                e.node.setSelected(true);}
-        """
-
-    gb.configure_column("clicked",
-        headerTooltip="Clicked",
-        editable=False,
-        filter=False,
-        onCellClicked=JsCode(click_button_function),
-        cellRenderer=BtnCellRenderer,
-        autoHeight=True,
-        wrapText=False,
-        lockPosition="right",
-        pinned="right",
-        sorteable=True,
-        suppressMenu=True,
-        maxWidth=100,
-    )
-
-    gridOptions = gb.build()
-
-    gridOptions["wrapHeaderText"] = "true"
-    gridOptions["autoHeaderHeight"] = "true"
-    gridOptions["rememberGroupStateWhenNewData"] = "true"
-    gridOptions["enableCellTextSelection"] = "true"
-    gridOptions["resizable"] = False
-
-    gridOptions["getRowStyle"] = JsCode(
-        """
-    function(params) {
-        if (params.data["color"] == 'green') {
-            return {
-                'backgroundColor': '#C9A500'
-            }
-        } else if (params.data["color"] == 'white') {
-            return {
-                'backgroundColor': '#ffe680'
-            }
-        }
-    };
-    """
-    )
-    # columnDefs = [
-    #     {colId: 'column1', newPosition: 2},
-    #     {colId: 'column2', newPosition: 0},
-    #     {colId: 'column3', newPosition: 1},
-    # ]
-    # grid_response.setColumnDefs([{'Clicked': 'column1'}, {'Money': 'column2'}])
-
-    # # Next, use the setColumnOrder method to rearrange the columns in the grid
-    # grid.setColumnOrder(columnDefs)
-    # gridOptions.moveColumn('Clicked', 5)
-    # ipdb.set_trace()
-    grid_response = AgGrid(
-        data,
-        gridOptions=gridOptions,
-        data_return_mode="AS_INPUT",
-        update_mode=update_mode_value,
-        fit_columns_on_grid_load=fit_columns_on_grid_load,
-        # theme="streamlit", #Add theme color to the table
-        enable_enterprise_modules=True,
-        height=height,
-        reload_data=reload_data,
-        allow_unsafe_jscode=allow_unsafe_jscode,
-    )
-    # grid_response = grid_response.set_filter("symbol", "contains", "SPY")
-
-    return grid_response
-
-
-
 def queens_orders__aggrid_v2(
     data,
     active_order_state_list,
@@ -760,15 +482,8 @@ def queens_orders__aggrid_v2(
     update_mode_value=GridUpdateMode.SELECTION_CHANGED,
     paginationOn=False,
     allow_unsafe_jscode=True,
-):
-    # ipdb.set_trace()
-    # Color Code Honey
-    # data["$honey"] = (
-    #     data["$honey"].apply(lambda x: round(float(x), 2)).fillna(data["honey"])
-    # )
-    # data["honey"] = (
-    #     data["honey"].apply(lambda x: round((float(x) * 100), 2)).fillna(data["honey"])
-    # )
+    buttons=True):
+
     data["$honey"] = pd.to_numeric(data["$honey"], errors='coerce')
     data["honey"] = pd.to_numeric(data["honey"], errors='coerce')
 
@@ -947,7 +662,18 @@ def queens_orders__aggrid_v2(
     # for int_col in int_cols:
     #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$")
     # color code columns based on yourValue
-
+    # BtnCellRenderer = JsCode(
+    #     """
+    #         function addBtn(params) { return '<button style="background-color:yellow;z-index: 1;
+    #         margin: 5px;
+    #         left: 0;
+    #         top: 0;
+    #         bottom:0;
+    #         right:0;
+    #         width: 100%;
+    #         height: 100%;">OrderRules</button>'; }
+    #     """
+    # )
     # an example based on https://www.ag-grid.com/javascript-data-grid/component-cell-renderer/#simple-cell-renderer-example
     BtnCellRenderer = JsCode(
         """
@@ -1115,21 +841,6 @@ def queens_orders__aggrid_v2(
                 e.node.setSelected(true);}
         """
 
-
-    gb.configure_column("orderstate",
-        headerTooltip="Change Order State",
-        editable=False,
-        filter=False,
-        onCellClicked=JsCode(click_button_function),
-        cellRenderer=BtnCellRendererState,
-        autoHeight=True,
-        wrapText=False,
-        lockPosition="right",
-        pinned="right",
-        sorteable=True,
-        suppressMenu=True,
-        maxWidth=100,
-    )
     gb.configure_column("orderrules",
         headerTooltip="OrderRules",
         editable=False,
@@ -1144,20 +855,35 @@ def queens_orders__aggrid_v2(
         suppressMenu=True,
         maxWidth=100,
     )   
-    gb.configure_column("sell",
-        headerTooltip="SellAll",
-        editable=False,
-        filter=False,
-        onCellClicked=JsCode(click_button_function),
-        cellRenderer=BtnCellRendererSell,
-        autoHeight=True,
-        wrapText=False,
-        lockPosition="right",
-        pinned="right",
-        sorteable=True,
-        suppressMenu=True,
-        maxWidth=100,
-    )
+    if buttons:
+        gb.configure_column("orderstate",
+            headerTooltip="Change Order State",
+            editable=False,
+            filter=False,
+            onCellClicked=JsCode(click_button_function),
+            cellRenderer=BtnCellRendererState,
+            autoHeight=True,
+            wrapText=False,
+            lockPosition="right",
+            pinned="right",
+            sorteable=True,
+            suppressMenu=True,
+            maxWidth=100,
+        )
+        gb.configure_column("sell",
+            headerTooltip="SellAll",
+            editable=False,
+            filter=False,
+            onCellClicked=JsCode(click_button_function),
+            cellRenderer=BtnCellRendererSell,
+            autoHeight=True,
+            wrapText=False,
+            lockPosition="right",
+            pinned="right",
+            sorteable=True,
+            suppressMenu=True,
+            maxWidth=100,
+        )
 
     gridOptions = gb.build()
 
@@ -1245,6 +971,7 @@ def standard_AGgrid(
         reload_data=reload_data,
         allow_unsafe_jscode=True,
     )
+
     return grid_response
 
 
@@ -1272,13 +999,14 @@ def download_df_as_CSV(df, file_name="name.csv"):
     return True
 
 
-def queen_order_flow(QUEEN, active_order_state_list):
+def queen_order_flow(QUEEN, active_order_state_list, order_buttons):
 
     with st.expander("Portfolio Orders", expanded=True):
         now_time = datetime.now(est)
         cols = st.columns((1,3, 1, 1, 1, 1, 1))
         with cols[0]:
             refresh_b = st.button("Refresh", key="r1")
+            edit_orders= st.checkbox("edit_orders", key='edit_orders')
         with cols[2]:
             today_orders = st.checkbox("Today", False)
             page_line_seperator(.2)
@@ -1350,6 +1078,7 @@ def queen_order_flow(QUEEN, active_order_state_list):
             active_order_state_list=active_order_state_list,
             reload_data=False,
             height=set_grid_height,
+            buttons=order_buttons
         )
 
     return ordertables__agrid

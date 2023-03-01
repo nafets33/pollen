@@ -22,7 +22,7 @@ import argparse
 from streamlit_extras.stoggle import stoggle
 from chess_piece.app_hive import send_email, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
-from chess_piece.queen_hive import return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
+from chess_piece.queen_hive import kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
 from custom_button import cust_Button
 # import hydralit_components as hc
 from pollenq_pages.playground import PlayGround
@@ -67,7 +67,7 @@ def pollenq(admin_pq):
                 st.title("Automate Your Portfolio With a AI.BeeBot")
             with cols[1]:
                 # cust_Button(file_path_url='misc/queen_flair.gif', height='50px', hoverText='')
-                return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='120', hoverText='Queens Conscience', key='qc2')
+                return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='150', hoverText='Queens Conscience', key='qc2')
 
             hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "Choose A Queen:crown:", "Help:dizzy:"])
 
@@ -120,7 +120,7 @@ def pollenq(admin_pq):
                     # return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='200', hoverText='Queens Conscience', key='qc2')
             
             with BrokerAPIKeys:
-                queen__account_keys(PB_App_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
+                queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
                 # st.error("Account Needs to be Authoirzed First, Add Keys in QueensConscience")
                 pass
             
@@ -156,7 +156,7 @@ def pollenq(admin_pq):
                         
                         # if st.form_submit_button('Save Risk Settings'):
                         if st.button('Save Risk Settings'):
-                            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                            PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
                             return_runningbee_gif__save(title='Risk Saved')
                                 
                 # with cols[1]:
@@ -180,6 +180,29 @@ def pollenq(admin_pq):
                 st.write("No Soup for You")
                 local_gif(gif_path=flyingbee_grey_gif_path)
 
+        def add_new_trading_models_settings(QUEEN_KING):
+            all_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
+            latest_kors = kings_order_rules()
+            latest_rules = latest_kors.keys()
+            save = False
+            new_rules_confirmation = {}
+            for ticker, t_model in all_models.items():
+                missing_rules = [i for i in latest_rules if i not in t_model.keys()]
+                if len(missing_rules) > 0:
+                    save = True
+                    new_rules_confirmation[ticker] = []
+                    for new_rule in missing_rules:
+                        QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker].update({new_rule: latest_kors.get(new_rule)})
+                        new_rules_confirmation[ticker].append(new_rule)
+                        # print("New Rule Added: ", new_rule)
+                        # st.write("New Rule Added: ", new_rule)
+
+            if save:
+                st.write(new_rules_confirmation)
+                PickleData(st.session_state["PB_App_Pickle"], QUEEN_KING)
+            
+            return QUEEN_KING
+        
         est = pytz.timezone("US/Eastern")
 
         # images
@@ -217,9 +240,7 @@ def pollenq(admin_pq):
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-        # if 'name' in st.session_state and st.session_state['name'] != None:
-        #     auth = True
-        # else:
+
         with st.spinner("Verifying Your Scent, Hang Tight"):
             signin_main(page="pollenq")
         
@@ -275,18 +296,10 @@ def pollenq(admin_pq):
                         print("init KING")
                         KING = init_KING()
                         PickleData(PB_KING_Pickle, KING)
-            
-            ## chess_pieces
-            db_root = st.session_state['db_root']
-            init_pollen = init_pollen_dbs(db_root=db_root, prod=st.session_state['production'], queens_chess_piece='queen')
-            PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-            PB_App_Pickle = init_pollen['PB_App_Pickle']
-            PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-            PB_QUEENsHeart_PICKLE = init_pollen['PB_QUEENsHeart_PICKLE']
-            # PB_KING_Pickle = init_pollen['PB_KING_Pickle']
 
-            QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
-            QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+
+            QUEENsHeart = ReadPickleData(pickle_file=st.session_state['PB_QUEENsHeart_PICKLE'])
+            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
 
             try:
                 api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
@@ -297,31 +310,20 @@ def pollenq(admin_pq):
             
             menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info) 
 
-            if menu_id == 'QC':
-                queens_conscience()
-                st.stop()
-            if menu_id == 'TradingModels':
-                trading_models()
-                st.stop()
-            if menu_id == 'PlayGround':
-                PlayGround()
-                st.stop()  
-
-            if menu_id == 'Account':
-                account(admin_pq=st.session_state['admin'])
-                st.stop()
 
 
             # QUEEN = ReadPickleData(PB_QUEEN_Pickle)
             # ORDERS = ReadPickleData(PB_Orders_Pickle)
             
             ## add new keys
+            QUEEN_KING = add_new_trading_models_settings(QUEEN_KING)
+
             APP_req = add_key_to_app(QUEEN_KING)
             QUEEN_KING = APP_req['QUEEN_KING']
             if APP_req['update']:
-                PickleData(PB_App_Pickle, QUEEN_KING)
+                PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
             
-            QUEEN_KING['source'] = PB_App_Pickle
+            QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
             pollen_theme = pollen_themes(KING=KING)
             
             # add new keys
@@ -338,10 +340,27 @@ def pollenq(admin_pq):
             # if menu_id == 'setup':
             if 'init_queen_request' in st.session_state:
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
-                PickleData(PB_App_Pickle, QUEEN_KING)
                 st.success("Hive Master Notified and You should receive contact soon")
 
-            setup_page()
+            if authorized_user and 'pollenq' in menu_id: 
+                queens_conscience()
+                st.stop()
+            if menu_id == 'QC':
+                queens_conscience()
+                st.stop()
+            if menu_id == 'TradingModels':
+                trading_models()
+                st.stop()
+            if menu_id == 'PlayGround':
+                PlayGround()
+                st.stop()  
+
+            if menu_id == 'Account':
+                account(admin_pq=st.session_state['admin'])
+                setup_page()
+                st.stop()
+            else:
+                setup_page()
 
             page_line_seperator('5')
     except Exception as e:

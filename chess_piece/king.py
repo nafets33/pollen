@@ -501,8 +501,8 @@ def handle__ttf_notactive__datastream(
 def PickleData(pickle_file, data_to_store, write_temp=False):
     p_timestamp = {"pq_last_modified": datetime.now(est)}
     root, name = os.path.split(pickle_file)
-    pickle_file_temp = os.path.join(root, ("temp" + name))
     if write_temp:
+        pickle_file_temp = os.path.join(root, ("temp" + name))
         with open(pickle_file_temp, "wb+") as dbfile:
             db = data_to_store
             db["pq_last_modified"] = p_timestamp
@@ -541,7 +541,7 @@ def ReadPickleData(pickle_file):
                 with open(pickle_file, "rb") as f:
                     return pickle.load(f)
             except Exception as e:
-                print('pickleerror ', pickle_file, e)
+                # print('pickleerror ', pickle_file, e)
                 # logging.error(f'{e} error is pickle load')
                 stop += 1
                 time.sleep(0.033)

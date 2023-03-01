@@ -438,6 +438,7 @@ def init_QUEEN_App():
     app = {
         "prod": 'init',
         "db__client_user": 'init',
+        "pickle_file": 'init',
         "theme": "nuetral",
         "queen_tier": "queen_1",
         "king_controls_queen": return_queen_controls(stars),
@@ -594,10 +595,7 @@ def return_STORYbee_trigbees(QUEEN, STORY_bee, tickers_filter=False):
         if tickers_filter:
             if ticker not in tickers_filter:
                 continue  # next ttf
-        if (
-            story_["story"]["macd_state"] in QUEEN["heartbeat"]["available_triggerbees"]
-            and (now_time - story_["story"]["time_state"]).seconds < 33
-        ):
+        if (story_["story"]["macd_state"] in QUEEN["heartbeat"]["available_triggerbees"] and (now_time - story_["story"]["time_state"]).seconds < 33):
             if ttf not in active_trigs.keys():
                 active_trigs[ttf] = []
             active_trigs[ttf].append(story_["story"]["macd_state"])
@@ -1380,17 +1378,9 @@ def return_macd_wave_story(df, trigbees, ticker_time_frame, tframe):
                 wave_starttime_token = wave_starttime.replace(tzinfo=None)
                 if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
                     wave_blocktime = "morning_9-11"
-                elif wave_starttime_token > wave_starttime_token.replace(
-                    hour=11, minute=0
-                ) and wave_starttime_token < wave_starttime_token.replace(
-                    hour=14, minute=0
-                ):
+                elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
                     wave_blocktime = "lunch_11-2"
-                elif wave_starttime_token > wave_starttime_token.replace(
-                    hour=14, minute=0
-                ) and wave_starttime_token < wave_starttime_token.replace(
-                    hour=16, minute=1
-                ):
+                elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
                     wave_blocktime = "afternoon_2-4"
                 else:
                     wave_blocktime = "afterhours"
@@ -2675,6 +2665,57 @@ def init_KING():
 
     return king
 
+def kings_order_rules(
+    theme='nuetral',
+    status='active',
+    doubledown_timeduration=60,
+    trade_using_limits=False,
+    max_profit_waveDeviation=1,
+    max_profit_waveDeviation_timeduration=5,
+    timeduration=120,
+    take_profit=.01,
+    sellout=-.015,
+    sell_trigbee_trigger=True,
+    stagger_profits=False,
+    scalp_profits=False,
+    scalp_profits_timeduration=30,
+    stagger_profits_tiers=1,
+    limitprice_decay_timeduration=1,
+    skip_sell_trigbee_distance_frequency=0,
+    ignore_trigbee_at_power=0.01,
+    ignore_trigbee_in_macdstory_tier=[],
+    ignore_trigbee_in_histstory_tier=[],
+    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+    short_position=False,
+):
+    return {
+        # 1 trade if exists, double allows for 1 more trade to occur while in existance
+        "theme": theme,
+        "status": status,
+        "trade_using_limits": trade_using_limits,
+        "limitprice_decay_timeduration": limitprice_decay_timeduration,
+        # TimeHorizion: i.e. the further along time how to sell out of profit
+        "doubledown_timeduration": doubledown_timeduration,
+        "max_profit_waveDeviation": max_profit_waveDeviation,
+        "max_profit_waveDeviation_timeduration": max_profit_waveDeviation_timeduration,
+        "timeduration": timeduration,
+        "take_profit": take_profit,
+        "sellout": sellout,
+        "sell_trigbee_trigger": sell_trigbee_trigger,
+        "stagger_profits": stagger_profits,
+        "scalp_profits": scalp_profits,
+        "scalp_profits_timeduration": scalp_profits_timeduration,
+        "stagger_profits_tiers": stagger_profits_tiers,
+        "skip_sell_trigbee_distance_frequency": skip_sell_trigbee_distance_frequency,
+        # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
+        "ignore_trigbee_at_power": ignore_trigbee_at_power,
+        "ignore_trigbee_in_macdstory_tier": ignore_trigbee_in_macdstory_tier,
+        "ignore_trigbee_in_histstory_tier": ignore_trigbee_in_histstory_tier,
+        "ignore_trigbee_in_vwap_range": ignore_trigbee_in_vwap_range,
+        "take_profit_in_vwap_deviation_range": take_profit_in_vwap_deviation_range,
+        "short_position": short_position,
+    }
 
 def generate_TradingModel(
     theme="custom",
@@ -2698,56 +2739,7 @@ def generate_TradingModel(
     ]
     star__storywave_AI = "star__storywave_AI"
 
-    def kings_order_rules(
-        status,
-        doubledown_timeduration,
-        trade_using_limits,
-        max_profit_waveDeviation,
-        max_profit_waveDeviation_timeduration,
-        timeduration,
-        take_profit,
-        sellout,
-        sell_trigbee_trigger,
-        stagger_profits,
-        scalp_profits,
-        scalp_profits_timeduration,
-        stagger_profits_tiers,
-        limitprice_decay_timeduration=1,
-        skip_sell_trigbee_distance_frequency=0,
-        ignore_trigbee_at_power=0.01,
-        ignore_trigbee_in_macdstory_tier=[],
-        ignore_trigbee_in_histstory_tier=[],
-        ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-        take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-        short_position=False,
-    ):
-        return {
-            # 1 trade if exists, double allows for 1 more trade to occur while in existance
-            "theme": theme,
-            "status": status,
-            "trade_using_limits": trade_using_limits,
-            "limitprice_decay_timeduration": limitprice_decay_timeduration,
-            # TimeHorizion: i.e. the further along time how to sell out of profit
-            "doubledown_timeduration": doubledown_timeduration,
-            "max_profit_waveDeviation": max_profit_waveDeviation,
-            "max_profit_waveDeviation_timeduration": max_profit_waveDeviation_timeduration,
-            "timeduration": timeduration,
-            "take_profit": take_profit,
-            "sellout": sellout,
-            "sell_trigbee_trigger": sell_trigbee_trigger,
-            "stagger_profits": stagger_profits,
-            "scalp_profits": scalp_profits,
-            "scalp_profits_timeduration": scalp_profits_timeduration,
-            "stagger_profits_tiers": stagger_profits_tiers,
-            "skip_sell_trigbee_distance_frequency": skip_sell_trigbee_distance_frequency,
-            # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
-            "ignore_trigbee_at_power": ignore_trigbee_at_power,
-            "ignore_trigbee_in_macdstory_tier": ignore_trigbee_in_macdstory_tier,
-            "ignore_trigbee_in_histstory_tier": ignore_trigbee_in_histstory_tier,
-            "ignore_trigbee_in_vwap_range": ignore_trigbee_in_vwap_range,
-            "take_profit_in_vwap_deviation_range": take_profit_in_vwap_deviation_range,
-            "short_position": short_position,
-        }
+
 
     def star_trading_model_vars(stars=stars):
         def star__DEFAULT_kings_order_rules_mapping(stars=stars):
@@ -3418,7 +3410,8 @@ def return_queen_controls(stars=stars):
         "stars": stars(),
         "ticker_settings": generate_queen_ticker_settings(),
         "buying_powers": generate_queen_buying_powers_settings(),
-        "symbols_stars_TradingModel": generate_TradingModel()["MACD"],
+        # "symbols_stars_TradingModel": generate_TradingModel()["MACD"],
+        "symbols_stars_tradingmodel": generate_TradingModel()["MACD"],
         "power_rangers": init_PowerRangers(),
         "trigbees": {
             "buy_cross-0": "active",
@@ -4233,10 +4226,8 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
 
     if force_db_root:
         db_root = os.path.join(hive_master_root(), "db")
-
-    if client_username in ['stefanstapinski@gmail.com']:  ## admin
+    elif client_username in ['stefanstapinski@gmail.com']:  ## admin
         db_root = os.path.join(hive_master_root(), "db")
-    
     else:
         db_root = return_db_root(client_username=client_username)
         if os.path.exists(db_root) == False:

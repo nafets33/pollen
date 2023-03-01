@@ -195,8 +195,20 @@ def queens_conscience():
         pollen_theme = pollen_themes(KING=KING)
         # QUEEN Databases
         QUEEN_KING['source'] = PB_App_Pickle
-        QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-        ORDERS = ReadPickleData(PB_Orders_Pickle)
+        
+        @st.cache(allow_output_mutation=True)
+        def return_QUEEN():
+            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+
+        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
+            QUEEN = return_QUEEN()
+            order_buttons = True
+        else:
+            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+            order_buttons = False
+       
+        
+        # ORDERS = ReadPickleData(PB_Orders_Pickle)
         QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
 
@@ -213,20 +225,20 @@ def queens_conscience():
                 PickleData(PB_QUEEN_Pickle, QUEEN)
 
 
-        if st.session_state['authorized_user'] == False and sneak_peak == False:
-            cols = st.columns(2)
-            with cols[0]:
-                st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-            with cols[1]:
-                st.info("Below is a Preview")
-            client_user_wants_a_queen = st.button("Yes I want a Queen!")
-            if client_user_wants_a_queen:
-                st.session_state['init_queen_request'] = True
-                if 'init_queen_request' in st.session_state:
-                    QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
-                    PickleData(PB_App_Pickle, QUEEN_KING)
-                    send_email(recipient=os.environ('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
-                    st.success("Hive Master Notified and You should receive contact soon")
+        # if st.session_state['authorized_user'] == False and sneak_peak == False:
+        #     cols = st.columns(2)
+        #     with cols[0]:
+        #         st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
+        #     with cols[1]:
+        #         st.info("Below is a Preview")
+        #     client_user_wants_a_queen = st.button("Yes I want a Queen!")
+        #     if client_user_wants_a_queen:
+        #         st.session_state['init_queen_request'] = True
+        #         if 'init_queen_request' in st.session_state:
+        #             QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
+        #             PickleData(PB_App_Pickle, QUEEN_KING)
+        #             send_email(recipient=os.environ.get('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
+        #             st.success("Hive Master Notified and You should receive contact soon")
 
 
 
@@ -1398,24 +1410,43 @@ def queens_conscience():
                 if authorized_user:
                     return_total_profits(QUEEN=QUEEN)
                     queens_subconscious_Thoughts(QUEEN=QUEEN)
+                    stop_queenbee(QUEEN_KING=QUEEN_KING)
+                    refresh_queenbee_controls(QUEEN_KING=QUEEN_KING)
+                    clear_subconscious_Thought(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
                 
                 with order_tab:
-                    ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+                    ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list, order_buttons=order_buttons)
+                    # ipdb.set_trace()
                     if authorized_user:
                         if ordertables__agrid.selected_rows:
                             # st.write(queen_order[0]['client_order_id'])
                             queen_order = ordertables__agrid.selected_rows[0]
-                            selection_id = queen_order.get('client_order_id')
-                            st.write(ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"])
+                            client_order_id = queen_order.get('client_order_id')
+
+                            try: # OrderState
+                                df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
+                                if len(df) > 0:
+                                    current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
+                                    if len(current_requests) > 0:
+                                        st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
+                                    else:
+                                        order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
+                                        order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
+                                        QUEEN_KING['update_queen_order'].append(order_update_package)
+                                        PickleData(PB_App_Pickle, QUEEN_KING)
+                                        st.success("Changing QueenOrderState Please wait for Queen to process, Refresh Table")
+                            except:
+                                st.write("OrderState nothing was clicked")
                             
                             # validate to continue with selection
-                            try:
+                            try: ## SELL
                                 df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
                                 if len(df) > 0:
-                                    if selection_id in df['client_order_id'].tolist():
+                                    current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
+                                    if len(current_requests) > 0:
                                         st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
                                     else:
-                                        sell_package = create_AppRequest_package(request_name='sell_orders')
+                                        sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
                                         sell_package['sellable_qty'] = queen_order.get('available_qty')
                                         sell_package['side'] = 'sell'
                                         sell_package['type'] = 'market'
@@ -1427,12 +1458,11 @@ def queens_conscience():
 
                             except:
                                 st.write("Nothing was clicked")
-                            try:
+                            try: ## KOR
                                 df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
                                 if len(df) > 0:
-                                    st.write("KOR: ", selection_id)
+                                    st.write("KOR: ", client_order_id)
                                     # kings_order_rules__forum(order_rules)
-
                                 else:
                                     st.write("Nothing KOR clicked")
                             except:
@@ -1444,16 +1474,19 @@ def queens_conscience():
                     queen_triggerbees()
                 
                 with heart_tab:
-                    st.write(QUEEN['heartbeat'])
+                    cols = st.columns(3)
+                    with cols[0]:
+                        st.write(QUEEN['heartbeat'])
+                    with cols[1]:
+                        st.write(QUEEN['queens_messages'])
 
                 with Portfolio:
                     return_buying_power(api=api)  # sidebar
 
                 with chessboard_tab:
                     update_Workerbees(QUEEN_KING=QUEEN_KING, admin=False)
-
-                    update_Workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
                     if admin:
+                        update_Workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
                         with st.expander("admin QUEENS_ACTIVE"):
                             df = return_all_client_users__db()
                             # df = pd.DataFrame(KING['users'].get('client_users_db'))
@@ -1484,26 +1517,7 @@ def queens_conscience():
                     advanced_charts(tickers_avail=tickers_avail_op, POLLENSTORY=POLLENSTORY)
 
 
-
                 page_line_seperator(color=default_yellow_color)
-
-
-        if str(option).lower() == 'controls':
-
-            cols = st.columns((1,3))
-            if authorized_user == False:
-                st.write("permission denied")
-                st.stop()
-            else:
-                
-                stop_queenbee(QUEEN_KING=QUEEN_KING)
-                refresh_queenbee_controls(QUEEN_KING=QUEEN_KING)
-                
-
-                clear_subconscious_Thought(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
-
-                with st.expander('Heartbeat'):
-                    st.write(QUEEN['heartbeat'])
 
 
         if str(option).lower() == 'model_results':
