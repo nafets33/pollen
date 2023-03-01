@@ -27,6 +27,7 @@ from custom_button import cust_Button
 # import hydralit_components as hc
 from pollenq_pages.playground import PlayGround
 from pollenq_pages.queens_conscience import queens_conscience
+from pollenq_pages.queen import queen
 from pollenq_pages.account import account
 from pollenq_pages.trading_models import trading_models
 
@@ -208,16 +209,8 @@ def pollenq(admin_pq):
         # images
         MISC = local__filepaths_misc()
         bee_image = MISC['bee_image']
-        castle_png = MISC['castle_png']
-        bishop_png = MISC['bishop_png']
-        queen_png = MISC['queen_png']
         mainpage_bee_png = MISC['mainpage_bee_png']
-        floating_queen_gif = MISC['floating_queen_gif']
-        chess_board__gif = MISC['chess_board__gif']
-        knight_png = MISC['knight_png']
-        bishop_unscreen = MISC['bishop_unscreen']
         flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
-        alpaca_portfolio_keys_png = MISC['alpaca_portfolio_keys_png']
         
         page_icon = Image.open(bee_image)
 
@@ -254,15 +247,10 @@ def pollenq(admin_pq):
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
             prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"        
 
-            switch_env = True if 'menu_id' in st.session_state and st.session_state['menu_id'] == 'sb_liv_switch' else False
-            
             live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq')
-            if live_sb_button or switch_env:
-                # print(st.session_state['menu_id'])
+            if live_sb_button:
                 st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
-                prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"
-                # print('s', prod_name_oppiste)
+                st.experimental_rerun()
 
             prod = st.session_state['production']
             authorized_user = st.session_state['authorized_user']            
@@ -280,15 +268,6 @@ def pollenq(admin_pq):
                     st.session_state['admin__client_user'] = admin_client_user
                     st.session_state["production"] = False
                     st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
-
-            # # warning
-            # if st.session_state['authorized_user'] == False:
-            #     st.info("Your Need to have your account authorized before receiving a QueenTraderBot, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-            #     client_user_wants_a_queen = st.button("Yes I want a Queen!")
-            #     if client_user_wants_a_queen:
-            #         send_email(recipient=os.environ('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
-            #     # display for non auth users?
-            #     # st.stop()
 
             if st.session_state['admin']:
                 with st.sidebar:
@@ -309,8 +288,6 @@ def pollenq(admin_pq):
                 ac_info = False
             
             menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info) 
-
-
 
             # QUEEN = ReadPickleData(PB_QUEEN_Pickle)
             # ORDERS = ReadPickleData(PB_Orders_Pickle)
@@ -336,33 +313,31 @@ def pollenq(admin_pq):
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
 
-            ## Setup Page
-            # if menu_id == 'setup':
             if 'init_queen_request' in st.session_state:
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
                 st.success("Hive Master Notified and You should receive contact soon")
 
-            if authorized_user and 'pollenq' in menu_id: 
-                queens_conscience()
-                st.stop()
-            if menu_id == 'QC':
-                queens_conscience()
-                st.stop()
-            if menu_id == 'TradingModels':
-                trading_models()
-                st.stop()
-            if menu_id == 'PlayGround':
-                PlayGround()
-                st.stop()  
+        if authorized_user and 'pollenq' in menu_id: 
+            queens_conscience()
+            st.stop()
+        if menu_id == 'QC':
+            queen()
+            st.stop()
+        if menu_id == 'TradingModels':
+            trading_models()
+            st.stop()
+        if menu_id == 'PlayGround':
+            PlayGround()
+            st.stop()  
 
-            if menu_id == 'Account':
-                account(admin_pq=st.session_state['admin'])
-                setup_page()
-                st.stop()
-            else:
-                setup_page()
+        if menu_id == 'Account':
+            account(st=st)
+            setup_page()
+            st.stop()
+        # else:
+        #     setup_page()
 
-            page_line_seperator('5')
+        page_line_seperator('5')
     except Exception as e:
         print(e, print_line_of_error(), return_timestamp_string())
 

@@ -439,6 +439,7 @@ def init_QUEEN_App():
         "prod": 'init',
         "db__client_user": 'init',
         "pickle_file": 'init',
+        "source": "init",
         "theme": "nuetral",
         "queen_tier": "queen_1",
         "king_controls_queen": return_queen_controls(stars),
@@ -506,8 +507,9 @@ def init_QUEEN_App():
         "update_queen_order_requests": [],
         "saved_trading_models": generate_TradingModel()["MACD"],
         "misc_bucket": [],
-        "source": "na",
-        "stop_queen": False,
+        # "stop_queen": False,
+        "queen_sleep": [],
+        "queen_sleep_requests": [],
     }
     return app
 

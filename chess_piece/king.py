@@ -151,7 +151,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
             {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
             {'icon': "fa fa-bug", 'label':"PlayGround"},
             {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
-            {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
+            # {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
             {'id':'buying_power', 'icon': "", 'label':f'{buying_power}'},
             {'id':'honey', 'icon': "", 'label':f'{honey}'},
 
@@ -557,6 +557,7 @@ def ReadPickleData(pickle_file):
 def print_line_of_error():
     exc_type, exc_obj, exc_tb = sys.exc_info()
     print(exc_type, exc_tb.tb_lineno)
+    return exc_type, exc_tb.tb_lineno
 
 def streamlit_config_colors():
     # read config file and parse from there
