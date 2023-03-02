@@ -157,18 +157,6 @@ def queens_conscience():
         client_user = st.session_state["username"]
         # st.write("*", client_user)
         
-        cols = st.columns((4,8,4))
-        if prod:
-            with cols[1]:
-                # st.warning("LIVE ENVIORMENT The RealWorld")
-                mark_down_text(text='LIVE', fontsize='23', align='left', color="Green", sidebar=True)
-                flying_bee_gif(sidebar=True)
-
-        else:
-            with cols[1]:
-                # st.info("SandBox")
-                mark_down_text(text='SandBox', fontsize='23', align='left', color="Red", sidebar=True)
-                local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
         
         PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
         PB_App_Pickle = st.session_state['PB_App_Pickle'] 
@@ -489,10 +477,10 @@ def queens_conscience():
             return return_dict
 
 
-        def return_buying_power(api):
+        def return_buying_power(acct_info):
             with st.expander("Portfolio",  True):
 
-                ac_info = refresh_account_info(api=api)['info_converted']
+                ac_info = acct_info['info_converted']
                 num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
                 mark_down_text(fontsize='18', text=num_text)
                 # st.write(":heavy_minus_sign:" * 34)
@@ -511,24 +499,7 @@ def queens_conscience():
 
         def portfolio_header__QC(ac_info):
                 cols = st.columns((1,1,1,1,1,4,4,4))
-                # ac_info = refresh_account_info(api=api)['info_converted']
-                # num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
-                # with cols[1]:
-                #     mark_down_text(fontsize='18', text=num_text)
-                # # st.write(":heavy_minus_sign:" * 34)
 
-                # num_text = "last_equity: " + '${:,.2f}'.format(ac_info['last_equity'])
-                # with cols[2]:
-                #     mark_down_text(fontsize='15', text=num_text)
-                # num_text = "portfolio_value: " + '${:,.2f}'.format(ac_info['portfolio_value'])
-                # with cols[3]:
-                #     mark_down_text(fontsize='15', text=num_text)
-                # num_text = "Cash: " + '${:,.2f}'.format(ac_info['cash'])
-                # with cols[4]:
-                #     mark_down_text(fontsize='15', text=num_text)
-                # with cols[5]:
-                #     num_text = "Total Fees: " + '${:,.2f}'.format(ac_info['accrued_fees'])
-                #     mark_down_text(fontsize='12', text=num_text)
                 with cols[6]:
                     num_text = (ac_info['portfolio_value'] - ac_info['last_equity']) / ac_info['portfolio_value']
                     num_text = "Honey: " + '%{:,.4f}'.format(num_text)
@@ -782,99 +753,6 @@ def queens_conscience():
             return grid_response
 
 
-        def its_morphin_time_view(QUEEN, STORY_bee, ticker, POLLENSTORY, combine_story=False):
-
-            now_time = datetime.datetime.now(est)
-            active_ttf = QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < 86400]
-            
-            all_df = []
-            total_current_macd_tier = 0
-            total_current_hist_tier = 0
-            for ttf in active_ttf :
-                if ttf in POLLENSTORY.keys() and ticker in ttf.split("_")[0]:
-                    df = POLLENSTORY[ttf]
-                    df = df[['timestamp_est', 'chartdate', 'name', 'macd_tier', 'hist_tier', 'profits']].copy()
-                    total_current_macd_tier += df.iloc[-1]['macd_tier']
-                    total_current_hist_tier += df.iloc[-1]['hist_tier']
-                    
-                    all_df.append(df)
-            
-
-
-            t = '{:,.2%}'.format(total_current_macd_tier/ 64)
-            h = '{:,.2%}'.format(total_current_hist_tier / 64)
-
-
-            return {'macd_tier_guage': t, 'hist_tier_guage': h, 'macd_tier_guage_value': (total_current_macd_tier/ 64),
-            'hist_tier_guage_value': (total_current_hist_tier/ 64)
-            }
-
-
-        def queen_wavestories(QUEEN):
-            
-            try:
-                with st.expander("Wave Stories", True):
-                    req = ticker_time_frame__option(tickers_avail_op=tickers_avail_op, req_key='wavestories')
-                    tickers = req['tickers']
-                    ticker_option = req['ticker_option']
-                    frame_option = req['frame_option']
-
-                    if len(tickers) > 8:
-                        st.warning("Total MACD GUAGE Number reflects all tickers BUT you may only view 8 tickers")
-                    cols = st.columns((1, 2))
-                    # st.write("why")
-                    for symbol in tickers:
-                        star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=symbol, POLLENSTORY=POLLENSTORY) ## RETURN FASTER maybe cache?
-                        df = story_view(STORY_bee=STORY_bee, ticker=ticker_option)['df']
-                        df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
-                        with cols[0]:
-                            st.plotly_chart(create_guage_chart(title=f'{symbol} Wave Gauge', value=float(star__view["macd_tier_guage_value"])))
-                        with cols[1]:
-                            mark_down_text(fontsize=25, text=f'{symbol} {"MACD Gauge "}{star__view["macd_tier_guage"]}{" Hist Gauge "}{star__view["hist_tier_guage"]}')
-
-                            st.dataframe(df_style)
-
-
-                return True
-            except Exception as e:
-                print(e, print_line_of_error()) ## error should stop when you have data of bees?
-                return False
-            
-
-        def model_wave_results(STORY_bee):
-            with st.expander('model results of queens court'):
-                return_results = {}
-                dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
-
-                ticker_list = set([i.split("_")[0] for i in dict_list_ttf.keys()])
-                for ticker_option in ticker_list:
-                
-                    for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
-                        
-                        ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
-                        buys = [data[trigbee] for k, data in ticker_selection.items()]
-                        df_trigbee_waves = pd.concat(buys, axis=0)
-                        col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
-                        df_trigbee_waves = df_trigbee_waves[col_view]
-                        color = 'Green' if 'buy' in trigbee else 'Red'
-
-                        t_winners = sum(df_trigbee_waves['winners_n'])
-                        t_losers = sum(df_trigbee_waves['losers_n'])
-                        total_waves = t_winners + t_losers
-                        win_pct = 100 * round(t_winners / total_waves, 2)
-
-                        t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
-
-                        return_results[f'{ticker_option}{"_bee_"}{trigbee}'] = f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}{"  ~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}'
-                    # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
-
-                df = pd.DataFrame(return_results.items())
-                mark_down_text(color='#C5B743', text=f'{"Trigger Bee Model Results "}')
-                st.write(df) 
-
-                return True
-
-
         def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
             save = False
             for req_bucket in request_buckets:
@@ -883,8 +761,8 @@ def queens_conscience():
                     continue
                 for app_req in QUEEN_KING[req_bucket]:
                     if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
-                        print(f'{req_bucket} QUEEN Processed app Request {app_req["app_requests_id"]}')
-                        st.info(f'{req_bucket} QUEEN Processed app Request {app_req["app_requests_id"]}')
+                        print(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
+                        st.info(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
                         archive_bucket = f'{req_bucket}{"_requests"}'
                         QUEEN_KING[req_bucket].remove(app_req)
                         QUEEN_KING[archive_bucket].append(app_req)
@@ -893,21 +771,6 @@ def queens_conscience():
                 PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
             
             return True
-
-
-        def queens_subconscious_Thoughts(QUEEN, expand_=False):
-            write_sub = []
-            for key, bucket in QUEEN['subconscious'].items():
-                if len(bucket) > 0:
-                    write_sub.append(bucket)
-            if expand_ == False:
-                expand_ = expand_
-            else:
-                expand_ = True if len(write_sub) > 0 else False
-            
-            if len(write_sub) > 0:
-                with st.expander('subconscious alert thoughts', expand_):
-                    st.write(write_sub)
 
 
         def clear_subconscious_Thought(QUEEN, QUEEN_KING):
@@ -1323,37 +1186,6 @@ def queens_conscience():
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
         # __ = tickers_avail if len(tickers_avail) > 0 else 'SPY'
 
-        if authorized_user:
-            option = st.sidebar.radio(
-                label="main_radio",
-                options=["queen", "controls", "model_results", "pollen_engine"],
-                key="main_radio",
-                label_visibility='visible',
-                # disabled=st.session_state.disabled,
-                horizontal=False,
-            )
-        else:
-            option = st.sidebar.radio(
-                label="PendingAuth",
-                options=["queen", "controls", "charts", "model_results"],
-                key="main_radio",
-                label_visibility='visible',
-                # disabled=st.session_state.disabled,
-                horizontal=False,
-                ) 
-
-
-    def rename_trigbee_name(tribee_name):
-        return tribee_name
-
-
-    def ticker_time_frame_UI_rename(ticker_time_frame):
-        new_ttf = ticker_time_frame
-        # group tickers . i.e. if apart of index = index is a character
-        stars = stars() # 1Minute_1Day
-        rename = {'ticker': {}, 'time': {}, 'stars': {}}
-        return new_ttf
-
 
     def ticker_time_frame__option(tickers_avail_op, req_key):
         cols = st.columns(2)
@@ -1392,7 +1224,6 @@ def queens_conscience():
 
             if authorized_user:
                 return_total_profits(QUEEN=QUEEN)
-                # queens_subconscious_Thoughts(QUEEN=QUEEN)
                 stop_queenbee(QUEEN_KING=QUEEN_KING)
                 refresh_queenbee_controls(QUEEN_KING=QUEEN_KING)
                 clear_subconscious_Thought(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
@@ -1417,7 +1248,7 @@ def queens_conscience():
                                     order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
                                     QUEEN_KING['update_queen_order'].append(order_update_package)
                                     PickleData(PB_App_Pickle, QUEEN_KING)
-                                    st.success("Changing QueenOrderState Please wait for Queen to process, Refresh Table")
+                                    st.success(f'{client_order_id} Changing QueenOrderState Please wait for Queen to process, Refresh Table')
                         except:
                             st.write("OrderState nothing was clicked")
                         
@@ -1460,11 +1291,11 @@ def queens_conscience():
             with heart_tab:
                 cols = st.columns(3)
                 with cols[0]:
-                    st.write("sell_orders")
-                    st.write(QUEEN_KING['sell_orders'])
                     if st.button("clear all sell orders"):
                         QUEEN_KING['sell_orders'] = []
                         PickleData(PB_App_Pickle, QUEEN_KING)
+                    st.write("sell_orders")
+                    st.write(QUEEN_KING['sell_orders'])
                     
                     st.write("Heart")
                     st.write(QUEEN['heartbeat'])
@@ -1479,7 +1310,7 @@ def queens_conscience():
                     st.write(QUEEN_KING['update_queen_order'])
 
             with Portfolio:
-                return_buying_power(api=api)  # sidebar
+                return_buying_power(acct_info=acct_info)  # sidebar
 
 
             page_line_seperator(color=default_yellow_color)

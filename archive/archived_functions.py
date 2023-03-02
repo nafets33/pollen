@@ -1,5 +1,21 @@
 # archived_functions
+def refresh_queen_orders__save_ORDERS(QUEEN, ORDERS):
+    # Add back Old Orders to Queen
+    # QUEEN
+    df = QUEEN['queen_orders']
+    cloids = df['client_order_id'].to_list()
+    # ORDERS
+    df_orders = ORDERS['queen_orders']
+    df_add = df_orders[~df_orders['client_order_id'].isin(cloids)].copy()
+    
+    # Make Whole
+    ORDERS['queen_orders'] = pd.concat([df_add, df], axis=0, ignore_index=True) # was df_
+    QUEEN['queen_orders'] = pd.concat([df_add, df], axis=0, ignore_index=True) # was df_
+    # ORDERS['queen_orders'] = df_.to_dict("records")
+    # QUEEN['queen_orders'] = df_.to_dict("records")
+    PickleData(pickle_file=PB_Orders_Pickle, data_to_store=ORDERS)
 
+    return True
 
 def check_password():
     """Returns True if the user had a correct password."""

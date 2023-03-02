@@ -38,14 +38,14 @@ def queen_workerbee_crypto(prod, queens_chess_piece):
     # Macd Settings
     MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
     QUEEN = { # The Queens Mind
-        'command_conscience': {'memory': {'trigger_stopped': [], 'trigger_sell_stopped': [], 'orders_completed': []}, 
-                                'orders': { 'requests': [],
-                                            'submitted': [],
-                                            'running': [],
-                                            'running_close': []}
-                                            }, # ONLY for the Kings Eyes
-            'heartbeat': {}, # ticker info ... change name
-            'kings_order_rules': {},
+        # 'command_conscience': {'memory': {'trigger_stopped': [], 'trigger_sell_stopped': [], 'orders_completed': []}, 
+        #                         'orders': { 'requests': [],
+        #                                     'submitted': [],
+        #                                     'running': [],
+        #                                     'running_close': []}
+        #                                     }, # ONLY for the Kings Eyes
+        #     'heartbeat': {}, # ticker info ... change name
+        #     'kings_order_rules': {},
         # Worker Bees
         queens_chess_piece: {
         'conscience': {'STORY_bee': {},'KNIGHTSWORD': {}, 'ANGEL_bee': {}}, # 'command_conscience': {}, 'memory': {}, 'orders': []}, # change knightsword
@@ -64,10 +64,10 @@ def queen_workerbee_crypto(prod, queens_chess_piece):
         sys.exit()
 
 
-    QUEEN['heartbeat']['main_indexes'] = {
-        'SPY': {'long3X': 'SPXL', 'inverse': 'SH', 'inverse2X': 'SDS', 'inverse3X': 'SPXU'},
-        'QQQ': {'long3X': 'TQQQ', 'inverse': 'PSQ', 'inverse2X': 'QID', 'inverse3X': 'SQQQ'}
-        } 
+    # QUEEN['heartbeat']['main_indexes'] = {
+    #     'SPY': {'long3X': 'SPXL', 'inverse': 'SH', 'inverse2X': 'SDS', 'inverse3X': 'SPXU'},
+    #     'QQQ': {'long3X': 'TQQQ', 'inverse': 'PSQ', 'inverse2X': 'QID', 'inverse3X': 'SQQQ'}
+    #     } 
 
 
     # # """ Keys """ ### NEEDS TO BE FIXED TO PULL USERS API CREDS UNLESS USER IS PART OF MAIN.FUND.Account
@@ -521,7 +521,7 @@ def queen_workerbee_crypto(prod, queens_chess_piece):
                 QUEEN[queens_chess_piece]['conscience']['STORY_bee'] = STORY_bee
 
                 # God Save The QUEEN
-                PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN, write_temp=False)
+                # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN, write_temp=False)
 
 
                 symbols_pollenstory_dbs = workerbee_dbs_root()

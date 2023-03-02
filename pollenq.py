@@ -20,7 +20,7 @@ import time
 from streamlit_extras.switch_page_button import switch_page
 import argparse
 from streamlit_extras.stoggle import stoggle
-from chess_piece.app_hive import send_email, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.app_hive import send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
 from chess_piece.queen_hive import kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
 from custom_button import cust_Button
@@ -30,6 +30,7 @@ from pollenq_pages.queens_conscience import queens_conscience
 from pollenq_pages.queen import queen
 from pollenq_pages.account import account
 from pollenq_pages.trading_models import trading_models
+from pollenq_pages.pollen_engine import pollen_engine
 
 from ozz.ozz_bee import send_ozz_call
 # import sys, importlib
@@ -269,12 +270,12 @@ def pollenq(admin_pq):
                     st.session_state["production"] = False
                     st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
 
-            if st.session_state['admin']:
-                with st.sidebar:
-                    if st.button('Re-Init KING'):
-                        print("init KING")
-                        KING = init_KING()
-                        PickleData(PB_KING_Pickle, KING)
+            # if st.session_state['admin']:
+            #     with st.sidebar:
+            #         if st.button('Re-Init KING'):
+            #             print("init KING")
+            #             KING = init_KING()
+            #             PickleData(PB_KING_Pickle, KING)
 
 
             QUEENsHeart = ReadPickleData(pickle_file=st.session_state['PB_QUEENsHeart_PICKLE'])
@@ -287,10 +288,10 @@ def pollenq(admin_pq):
                 st.error(e)
                 ac_info = False
             
-            menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info) 
-
-            # QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-            # ORDERS = ReadPickleData(PB_Orders_Pickle)
+            hide_streamlit_markers = False if st.sidebar.button('show dev-ham') else True
+            menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info, hide_streamlit_markers=hide_streamlit_markers) 
+            if st.session_state["admin"]:
+                st.write('admin:', st.session_state["admin"])
             
             ## add new keys
             QUEEN_KING = add_new_trading_models_settings(QUEEN_KING)
@@ -317,6 +318,15 @@ def pollenq(admin_pq):
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
                 st.success("Hive Master Notified and You should receive contact soon")
 
+        # cols = st.columns((4,8,4))
+        if prod:
+            mark_down_text(text='LIVE', fontsize='23', align='left', color="Green", sidebar=True)
+            flying_bee_gif(sidebar=True)
+
+        else:
+            mark_down_text(text='SandBox', fontsize='23', align='left', color="Red", sidebar=True)
+            local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
+
         if authorized_user and 'pollenq' in menu_id: 
             queens_conscience()
             st.stop()
@@ -329,10 +339,14 @@ def pollenq(admin_pq):
         if menu_id == 'PlayGround':
             PlayGround()
             st.stop()  
-
         if menu_id == 'Account':
             account(st=st)
             setup_page()
+            st.stop()
+        if menu_id == 'pollen_engine':
+            acct_info = refresh_account_info(api=api)
+            log_dir = os.path.join(st.session_state['db_root'], 'logs')
+            pollen_engine(st=st, pd=pd, acct_info=acct_info, log_dir=log_dir)
             st.stop()
         # else:
         #     setup_page()

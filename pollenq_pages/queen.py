@@ -157,19 +157,6 @@ def queen():
         client_user = st.session_state["username"]
         # st.write("*", client_user)
         
-        cols = st.columns((4,8,4))
-        if prod:
-            with cols[1]:
-                # st.warning("LIVE ENVIORMENT The RealWorld")
-                mark_down_text(text='LIVE', fontsize='23', align='left', color="Green", sidebar=True)
-                flying_bee_gif(sidebar=True)
-
-        else:
-            with cols[1]:
-                # st.info("SandBox")
-                mark_down_text(text='SandBox', fontsize='23', align='left', color="Red", sidebar=True)
-                local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
-        
         PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
         PB_App_Pickle = st.session_state['PB_App_Pickle'] 
         PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
@@ -182,18 +169,7 @@ def queen():
         KING = ReadPickleData(pickle_file=PB_KING_Pickle)
         # QUEEN Databases
         QUEEN_KING['source'] = PB_App_Pickle
-        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-        
-        @st.cache(allow_output_mutation=True)
-        def return_QUEEN():
-            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-
-        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
-            QUEEN = return_QUEEN()
-            order_buttons = True
-        else:
-            order_buttons = False
-            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
        
         QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
@@ -204,68 +180,9 @@ def queen():
                 PickleData(PB_App_Pickle, QUEEN_KING)
 
 
-        # if st.session_state['authorized_user'] == False and sneak_peak == False:
-        #     cols = st.columns(2)
-        #     with cols[0]:
-        #         st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-        #     with cols[1]:
-        #         st.info("Below is a Preview")
-        #     client_user_wants_a_queen = st.button("Yes I want a Queen!")
-        #     if client_user_wants_a_queen:
-        #         st.session_state['init_queen_request'] = True
-        #         if 'init_queen_request' in st.session_state:
-        #             QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
-        #             PickleData(PB_App_Pickle, QUEEN_KING)
-        #             send_email(recipient=os.environ.get('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
-        #             st.success("Hive Master Notified and You should receive contact soon")
-
-
-
         def chunk(it, size):
             it = iter(it)
             return iter(lambda: tuple(islice(it, size)), ())
-
-        
-        def queen_triggerbees():
-            # cols = st.columns((1,5))
-            now_time = datetime.datetime.now(est)
-            req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=False)
-            active_trigs = req['active_trigs']
-            all_current_trigs = req['all_current_trigs']
-        
-            # with cols[0]:
-            if len(active_trigs) > 0:
-                st.subheader("Active Bees")
-                df = pd.DataFrame(active_trigs.items())
-                df = df.rename(columns={0: 'ttf', 1: 'trig'})
-                df = df.sort_values('ttf')
-                # st.write(df)
-                list_of_dicts = dict(zip(df['ttf'], df['trig']))
-                list_of_dicts_ = [{k:v} for (k,v) in list_of_dicts.items() if 'buy_cross-0' in v]
-                list_of_dicts_sell = [{k:v} for (k,v) in list_of_dicts.items() if 'sell_cross-0' in v]
-                st.write("Active Buy Bees")
-                chunk_write_dictitems_in_row(chunk_list=list_of_dicts_, title="Active Buy Bees", write_type="info", info_type='buy')
-                st.write("Active Sell Bees")
-                chunk_write_dictitems_in_row(chunk_list=list_of_dicts_sell, title="Active Sell Bees", write_type="info", info_type='sell')
-                # g = {write_flying_bee() for i in range(len(df))}
-            else:
-                st.subheader("No one's flying")
-                # mark_down_text(fontsize=12, color=default_text_color, text="No Active TriggerBees")
-                local_gif(gif_path=flyingbee_grey_gif_path)     
-                
-
-
-            cq1, cq2, cq3, cq4 = st.columns((4,1,1,4))
-
-            with cq4:
-                if len(all_current_trigs) > 0:
-                    with st.expander('All Available TriggerBees'):
-                        mark_down_text(fontsize=15, color=default_text_color, text="All Available TriggerBees")
-                        df = pd.DataFrame(all_current_trigs.items())
-                        df = df.rename(columns={0: 'ttf', 1: 'trig'})
-                        df = df.sort_values('ttf')
-                        st.write(df)
-
       
         def return_total_profits(QUEEN):
             try:
@@ -323,55 +240,6 @@ def queen():
                 #     st.write("Waiting for your First Trade")
             return return_dict
 
-
-        def return_buying_power(api):
-            with st.expander("Portfolio",  True):
-
-                ac_info = refresh_account_info(api=api)['info_converted']
-                num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
-                mark_down_text(fontsize='18', text=num_text)
-                # st.write(":heavy_minus_sign:" * 34)
-
-                num_text = "last_equity: " + '${:,.2f}'.format(ac_info['last_equity'])
-                mark_down_text(fontsize='15', text=num_text)
-
-                num_text = "portfolio_value: " + '${:,.2f}'.format(ac_info['portfolio_value'])
-                mark_down_text(fontsize='15', text=num_text)
-
-                num_text = "Cash: " + '${:,.2f}'.format(ac_info['cash'])
-                mark_down_text(fontsize='15', text=num_text)
-                
-                num_text = "Total Fees: " + '${:,.2f}'.format(ac_info['accrued_fees'])
-                mark_down_text(fontsize='12', text=num_text)
-
-        def portfolio_header__QC(ac_info):
-                cols = st.columns((1,1,1,1,1,4,4,4))
-                # ac_info = refresh_account_info(api=api)['info_converted']
-                # num_text = "Total Buying Power: " + '${:,.2f}'.format(ac_info['buying_power'])
-                # with cols[1]:
-                #     mark_down_text(fontsize='18', text=num_text)
-                # # st.write(":heavy_minus_sign:" * 34)
-
-                # num_text = "last_equity: " + '${:,.2f}'.format(ac_info['last_equity'])
-                # with cols[2]:
-                #     mark_down_text(fontsize='15', text=num_text)
-                # num_text = "portfolio_value: " + '${:,.2f}'.format(ac_info['portfolio_value'])
-                # with cols[3]:
-                #     mark_down_text(fontsize='15', text=num_text)
-                # num_text = "Cash: " + '${:,.2f}'.format(ac_info['cash'])
-                # with cols[4]:
-                #     mark_down_text(fontsize='15', text=num_text)
-                # with cols[5]:
-                #     num_text = "Total Fees: " + '${:,.2f}'.format(ac_info['accrued_fees'])
-                #     mark_down_text(fontsize='12', text=num_text)
-                with cols[6]:
-                    num_text = (ac_info['portfolio_value'] - ac_info['last_equity']) / ac_info['portfolio_value']
-                    num_text = "Honey: " + '%{:,.4f}'.format(num_text)
-                    mark_down_text(fontsize='18', text=num_text)
-                with cols[7]:
-                    num_text = ac_info['portfolio_value'] - ac_info['last_equity']
-                    num_text = "Money: " + '${:,.2f}'.format(num_text)
-                    mark_down_text(fontsize='18', text=num_text)
         
         def stop_queenbee(QUEEN_KING):
             checkbox_val = st.sidebar.button("Stop Queen")
@@ -580,43 +448,6 @@ def queen():
                 print(e, print_line_of_error())
             
 
-        def build_AGgrid_df(data, reload_data=False, fit_columns_on_grid_load=True, height=750, update_cols=['Update'], update_mode_value='MANUAL', paginationOn=True, dropdownlst=False, allow_unsafe_jscode=True):
-            gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
-            if paginationOn:
-                gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
-            gb.configure_side_bar() #Add a sidebar
-            gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
-            if update_cols:
-                for colName in update_cols:        
-                    if dropdownlst:
-                        gb.configure_column(f'{colName}{"_update"}', editable=True, cellEditor='agSelectCellEditor', cellEditorParams={'values': dropdownlst })
-                    else:
-                        gb.configure_column(f'{colName}{"_update"}', header_name=colName, editable=True, groupable=True)
-
-            
-            gridOptions = gb.build()
-
-            gridOptions['wrapHeaderText'] = 'true'
-            gridOptions['autoHeaderHeight'] = 'true'
-            gridOptions['rememberGroupStateWhenNewData'] = 'true'
-            gridOptions['enableCellTextSelection'] = 'true'
-
-            grid_response = AgGrid(
-                data,
-                gridOptions=gridOptions,
-                data_return_mode='AS_INPUT', 
-                update_mode=update_mode_value, 
-                fit_columns_on_grid_load=fit_columns_on_grid_load,
-                # theme='blue', #Add theme color to the table
-                enable_enterprise_modules=True,
-                height=height, 
-                # width='100%',
-                reload_data=reload_data,
-                allow_unsafe_jscode=allow_unsafe_jscode
-            )
-            return grid_response
-
-
         def its_morphin_time_view(QUEEN, STORY_bee, ticker, POLLENSTORY, combine_story=False):
 
             now_time = datetime.datetime.now(est)
@@ -730,21 +561,6 @@ def queen():
             return True
 
 
-        def queens_subconscious_Thoughts(QUEEN, expand_=False):
-            write_sub = []
-            for key, bucket in QUEEN['subconscious'].items():
-                if len(bucket) > 0:
-                    write_sub.append(bucket)
-            if expand_ == False:
-                expand_ = expand_
-            else:
-                expand_ = True if len(write_sub) > 0 else False
-            
-            if len(write_sub) > 0:
-                with st.expander('subconscious alert thoughts', expand_):
-                    st.write(write_sub)
-
-
         def clear_subconscious_Thought(QUEEN, QUEEN_KING):
             with st.sidebar.expander("clear subconscious thought"):
                 with st.form('clear subconscious'):
@@ -845,36 +661,6 @@ def queen():
             else:
                 return False
 
-    
-        def queen_chart(POLLENSTORY):
-            # Main CHART Creation
-            with st.expander('chart', expanded=True):
-                req = ticker_time_frame__option(tickers_avail_op=tickers_avail_op, req_key='charts')
-                tickers = req['tickers']
-                ticker_option = req['ticker_option']
-                frame_option = req['frame_option']
-                ticker_time_frame = f'{ticker_option}{"_"}{frame_option}'
-                df = POLLENSTORY[ticker_time_frame].copy()
-
-                st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
-
-                # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-                
-                day_only_option = st.checkbox("Only Today")
-                
-                if day_only_option:
-                    df_day = df['timestamp_est'].iloc[-1]
-                    df['date'] = df['timestamp_est'] # test
-
-                    df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-                    df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
-
-                    df = df_today
-                fig = create_main_macd_chart(df)
-                st.plotly_chart(fig)
-
-                return True
-
         
         def add_trading_model(PB_APP_Pickle, QUEEN_KING, ticker, model='MACD', status='not_active', workerbee=False):
             trading_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
@@ -964,16 +750,6 @@ def queen():
             #                         flying_bee_gif(width='38', height='42')
             return True 
         
-        
-        def queen__write_active_symbols(QUEEN_KING):
-
-            active_ticker_models = [{i: v['status']} for i, v in QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].items() if v['status'] == 'active']
-            chunk_write_dictitems_in_row(active_ticker_models)
-            for k,v in st.session_state.items():
-                print(k, v)
-
-            return True
-
 
         def refresh_tickers_TradingModels(QUEEN_KING, ticker):
             tradingmodel1 = generate_TradingModel(ticker=ticker, status='active')['MACD']
@@ -1141,9 +917,9 @@ def queen():
             queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_workerbees', api_failed=api_failed)
             queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_workerbees_crypto', api_failed=api_failed)
 
-        portfolio = return_alpc_portolio(api)['portfolio']
+        # portfolio = return_alpc_portolio(api)['portfolio']
         acct_info = refresh_account_info(api=api)
-        ac_info = refresh_account_info(api=api)['info_converted']
+        # ac_info = refresh_account_info(api=api)['info_converted']
 
         # # if authorized_user: log type auth and none
         log_dir = os.path.join(db_root, 'logs')
@@ -1209,7 +985,6 @@ def queen():
 
                 tickers_avail_op = list(tickers_avail)
 
-                portfolio_header__QC(ac_info=ac_info)
                 cols = st.columns(2)
 
                 queen_tabs = ["Chess Board","Wave Stories", "Charts"]

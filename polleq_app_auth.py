@@ -17,8 +17,8 @@ import ipdb
 
 def signin_main(page):
     """Return True or False if the user is signed in"""
-    load_dotenv(os.path.join(os.getcwd(), ".env"))
     main_root = hive_master_root()  # os.getcwd()  # hive root
+    load_dotenv(os.path.join(main_root, ".env"))
     MISC = local__filepaths_misc()
     floating_queen_gif = MISC["floating_queen_gif"]
 
@@ -218,8 +218,6 @@ def signin_main(page):
     def setup_user_pollenqdbs(key):
 
         if st.session_state["authorized_user"]:
-            if st.session_state["admin"]:
-                st.write('admin:', st.session_state["admin"])
             if 'admin__client_user' in st.session_state and st.session_state['admin__client_user'] != False:
                 st.session_state["username"] = st.session_state['admin__client_user']
                 st.sidebar.write(f'Swarm *{st.session_state["username"]}')

@@ -128,7 +128,7 @@ exclude_conditions = [
 
 
 
-def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
+def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info, hide_streamlit_markers=True):
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
     default_font = k_colors['default_font'] # = "sans serif"
@@ -150,7 +150,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
             {'id':'QC','icon':"fa fa-fire",'label':"Queen"},
             {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
             {'icon': "fa fa-bug", 'label':"PlayGround"},
-            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
+            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'id':'pollen_engine', 'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
             # {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
             {'id':'buying_power', 'icon': "", 'label':f'{buying_power}'},
             {'id':'honey', 'icon': "", 'label':f'{honey}'},
@@ -177,7 +177,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
             menu_definition=menu_data,
             home_name=f'pollenq {prod_name}',
             login_name='Account',
-            hide_streamlit_markers=True, #will show the st hamburger as well as the navbar now!
+            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
             sticky_nav=True, #at the top or not
             sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
         )
@@ -191,7 +191,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info):
             # font_styling=over_font,
             home_name=f'pollenq {prod_name}',
             login_name='Account',
-            hide_streamlit_markers=True, #will show the st hamburger as well as the navbar now!
+            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
             sticky_nav=True, #at the top or not
             sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
         )

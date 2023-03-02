@@ -32,11 +32,11 @@ from chess_piece.king import (
     return_timestamp_string,
 )
 
-load_dotenv()
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone("UTC")
 
 main_root = hive_master_root()  # os.getcwd()  # hive root
+load_dotenv(os.path.join(main_root, ".env"))
 
 # images
 jpg_root = os.path.join(main_root, "misc")

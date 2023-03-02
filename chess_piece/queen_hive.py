@@ -30,7 +30,6 @@ from tqdm import tqdm
 
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
-load_dotenv(os.path.join(hive_master_root(), ".env"))
 queens_chess_piece = os.path.basename(__file__)
 
 MISC = local__filepaths_misc()
@@ -43,6 +42,7 @@ utc = pytz.timezone("UTC")
 prod = True
 
 main_root = hive_master_root()  # os.getcwd()
+load_dotenv(os.path.join(main_root, ".env"))
 db_root = os.path.join(main_root, "db")
 
 """# Dates """
@@ -338,7 +338,8 @@ def init_QUEEN(queens_chess_piece):
         "prod": "",
         "source": "na",
         "last_modified": datetime.now(est),
-        "command_conscience": {},
+        "command_conscience": {}, ## ?
+        "crypto_temp": {"trigbees": {}},
         "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
         "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
         "heartbeat": {

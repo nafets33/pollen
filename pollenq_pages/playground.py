@@ -4,7 +4,7 @@ from PIL import Image
 import subprocess
 from polleq_app_auth import signin_main
 from chess_piece.queen_hive import print_line_of_error
-from chess_piece.app_hive import show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
+from chess_piece.app_hive import queen_order_flow, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
 from chess_piece.king import master_swarm_KING, PickleData, hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
@@ -82,117 +82,18 @@ def PlayGround():
         if view_ss_state:
             st.write(st.session_state)
 
-
-        def queen_order_flow(QUEEN, active_order_state_list):
-            # st.write(QUEEN['source'])
-            # if st.session_state['admin'] == False:
-            #     return False
-            # page_line_seperator()
-            # with cols[1]:
-            #     orders_table = st.checkbox("show completed orders")
-            # import ipdb
-            # ipdb.set_trace()
-            with st.expander("Portfolio Orders", expanded=True):
-                now_time = datetime.now(est)
-                cols = st.columns((1,3, 1, 1, 1, 1, 1))
-                with cols[0]:
-                    refresh_b = st.button("Refresh", key="r1")
-                    edit_orders_button = st.checkbox("edit_orders_button", key='edit_orders_button')
-                with cols[2]:
-                    today_orders = st.checkbox("Today", False)
-                    # page_line_seperator(.2)
-                    if today_orders:
-                        st.image(mainpage_bee_png, width=33)
-                with cols[3]:
-                    completed_orders = st.checkbox("Completed")
-                    # page_line_seperator(.2)
-                    if completed_orders:
-                        st.image(mainpage_bee_png, width=33)
-                with cols[4]:
-                    all_orders = st.checkbox("All", False)
-                    page_line_seperator(.2)
-                    if all_orders:
-                        st.image(mainpage_bee_png, width=33)
-                with cols[5]:
-                    best_orders = st.checkbox("Best Bees")
-                    page_line_seperator(.2)
-                    if best_orders:
-                        st.image(mainpage_bee_png, width=33)
-                with cols[6]:
-                    show_errors = st.checkbox("Lost Bees")
-                    page_line_seperator(.2)
-                    if show_errors:
-                        st.image(mainpage_bee_png, width=33)
-
-                order_states = set(QUEEN["queen_orders"]["queen_order_state"].tolist())
-
-                if all_orders:
-                    order_states = order_states
-                elif completed_orders:
-                    order_states = ["completed", "completed_alpaca"]
-                elif show_errors:
-                    order_states = ["error"]
-                else:
-                    order_states = ["submitted", "running", "running_close"]
-
-                with cols[1]:
-                    queen_order_states = st.multiselect(
-                        "queen order states",
-                        options=list(active_order_state_list),
-                        default=order_states,
-                    )
-                cols = st.columns((1, 1, 10, 5))
-
-                df = queen_orders_view(
-                    QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False
-                )["df"]
-                if len(df) == 0:
-                    st.info("No Orders to View")
-                    return False
-
-                if today_orders:
-                    df = df[df["datetime"] > now_time.replace(hour=1, minute=1, second=1)].copy()
-
-                # g_height = grid_height(len_of_rows=len(df))
-
-                if len(df) <= 3:
-                    g_height = 250
-                else:
-                    g_height = 434
-
-                set_grid_height = st.sidebar.number_input(
-                    label=f"Set Orders Grid Height", value=g_height
-                )
-                # with cols[1]:
-                # with cols[0]:
-                #     mark_down_text(text=f'% {round(sum(df["honey"]) * 100, 2)}', fontsize="18")
-                # with cols[1]:
-                #     mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
-                # cols = st.columns((1, 1, 10))
-
-                ordertables__agrid = queens_orders__aggrid_v2(
-                    data=df.astype(str),
-                    active_order_state_list=active_order_state_list,
-                    reload_data=False,
-                    height=set_grid_height,
-                )
-
-                # with cols[0]:
-                # download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
-            
-            return ordertables__agrid
-
         @st.cache(allow_output_mutation=True)
-        def return_QUEEN():
-            print("test cache")
-            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        def return_ORDERS():
+            return ReadPickleData(st.session_state['PB_Orders_Pickle'])
 
-
-        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-        if 'edit_orders_button' in st.session_state and st.session_state['edit_orders_button'] == True:
-            QUEEN = return_QUEEN()
+        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
+            ORDERS = return_ORDERS()
+            order_buttons = True
         else:
-            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+            order_buttons = False
+            ORDERS = ReadPickleData(st.session_state['PB_Orders_Pickle'])
+        
+        QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
         PB_App_Pickle = st.session_state['PB_App_Pickle']
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
@@ -206,7 +107,7 @@ def PlayGround():
         
         active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
         # queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
-        ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
+        ordertables__agrid = queen_order_flow(QUEEN=ORDERS, active_order_state_list=active_order_state_list, order_buttons=order_buttons)
         # ipdb.set_trace()
         if st.session_state['authorized_user']:
             if ordertables__agrid.selected_rows:
