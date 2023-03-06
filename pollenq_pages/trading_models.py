@@ -723,14 +723,6 @@ def trading_models():
         ########################################################
 
 
-        # """ if "__name__" == "__main__": """
-        if st.session_state['admin']:
-            with st.expander("ozz"):
-                query = st.text_input('ozz call')
-                if st.button("ozz"):
-                    send_ozz_call(query=query)
-            with st.sidebar:    
-                OZZ = ozz_bot(api_key=os.environ.get("ozz_api_key"), username=st.session_state['username'])
         
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']

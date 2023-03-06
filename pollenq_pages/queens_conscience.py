@@ -172,14 +172,16 @@ def queens_conscience():
         QUEEN_KING['source'] = PB_App_Pickle
         # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
-        @st.cache(allow_output_mutation=True)
+        @st.cache_data()
         def return_QUEEN():
+            st.info("Cache QUEEN")
             return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
 
         if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
             QUEEN = return_QUEEN()
             order_buttons = True
         else:
+            st.cache_data.clear()
             order_buttons = False
             QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
        
@@ -797,7 +799,6 @@ def queens_conscience():
         def queenbee_online(QUEENsHeart, admin, dag, api_failed):
             # from airflow.dags.dag_queenbee_prod import run_trigger_dag
             
-            # users_allowed_queen_email, users_allowed_queen_emailname, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
             users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
             now = datetime.datetime.now(est)
 

@@ -163,18 +163,23 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         try:
             # Create Running Order
-            new_queen_order = create_QueenOrderBee(trading_model=trading_model,
-            KING=KING, order_vars=order_vars, order=order, ticker_time_frame=ticker_time_frame, 
+            new_queen_order = create_QueenOrderBee(
+            trading_model=trading_model,
+            KING=KING, 
+            order_vars=order_vars, 
+            order=order, 
+            ticker_time_frame=ticker_time_frame, 
             portfolio_name=portfolio_name, 
             status_q=status_q, 
             trig=trig, 
             exit_order_link=exit_order_link, 
-            priceinfo=priceinfo)
+            priceinfo=priceinfo
+            )
 
             # Append Order
             new_queen_order_df = pd.DataFrame([new_queen_order])
 
-            ORDERS['queen_orders'] = pd.concat([ORDERS['queen_orders'], new_queen_order_df], axis=0, ignore_index=True)
+            # ORDERS['queen_orders'] = pd.concat([ORDERS['queen_orders'], new_queen_order_df], axis=0, ignore_index=True)
             QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0, ignore_index=True)
             
 
@@ -438,8 +443,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             portfolio = return_alpc_portolio(api)['portfolio']
             
             # priceinfo = return_snap_priceinfo__pollenData(ticker=ticker)
-
-            # priceinfo
             if crypto:
                 snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
             else:
@@ -513,7 +516,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     order_vars = king_eval_order['order_vars']
 
                     # close out order variables
-                    # priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
                     sell_qty = float(king_eval_order['order_vars']['sell_qty']) # float(order_obj['filled_qty'])
                     q_side = king_eval_order['order_vars']['order_side'] # 'sell' Unless it short then it will be a 'buy'
                     q_type = king_eval_order['order_vars']['order_type'] # 'market'
@@ -1545,7 +1547,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             """ Trading Models Kings Order Rules """ 
             # Trading Model Sell Vars
             current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
-            run_order_wave_changed = [True if run_order['origin_wave']['wave_id'] in trigbees_wave_id_list else False][0]
+            run_order_wave_changed = True if run_order['origin_wave']['wave_id'] in trigbees_wave_id_list else False
 
             # trade is past excepted duration time 
             past_trade_duration = order_past_duration(queen_order=run_order)
@@ -1569,10 +1571,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     client_order_id = run_order.get('client_order_id')
                     
                     if scalp_profits:
-
-                        
                         scalp_profits = run_order['order_rules']['scalp_profits_timeduration']
-                        
                         if time_in_trade.total_seconds() > float(scalp_profits):
                             if honey_gauge['last_30_avg']:
                                 # store message and compare trading model against distance from breakeven
@@ -1609,7 +1608,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         sell_order = True
                         
                         order_side = 'sell'
-                        limit_price = [priceinfo['maker_middle'] if order_type == 'limit' else False][0]
+                        limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     elif honey <= run_order['order_rules']['sellout']:
                         print("selling out due STOP LOSS")
@@ -1617,25 +1616,23 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         sell_order = True
 
                         order_side = 'sell'
-                        limit_price = [priceinfo['maker_middle'] if order_type == 'limit' else False][0]
+                        limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     elif past_trade_duration:
                         print("selling out due to TIME DURATION")
                         sell_reason = 'order_rules__timeDuration'
                         sell_order = True
 
-
                         order_side = 'sell'
-                        limit_price = [priceinfo['maker_middle'] if order_type == 'limit' else False][0]
+                        limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     elif time_in_trade > datetime.timedelta(minutes=max_profit_waveDeviation_timeduration) and wave_past_max_profit:
                         print("Selling Out from max_profit_waveDeviation: deviation>> ", current_wave_maxprofit_stat)
                         sell_reason = 'order_rules__max_profit_waveDeviation'
                         sell_order = True
 
-
                         order_side = 'sell'
-                        limit_price = [priceinfo['maker_middle'] if order_type == 'limit' else False][0]
+                        limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     if sell_trigbee_trigger:
                         if run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 500 and macd_gauge['metrics']['sell_cross-0'][24]['avg'] > .5 and macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
@@ -1652,7 +1649,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             sell_order = True
 
                             order_side = 'sell'
-                            limit_price = [priceinfo['maker_middle'] if order_type == 'limit' else False][0]
+                            limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     app_request = False
                     app_req = process_sell_app_request(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, run_order=run_order)

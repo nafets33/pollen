@@ -767,55 +767,48 @@ def queen():
 
         def advanced_charts(tickers_avail, POLLENSTORY):
             try:
+                cols = st.columns((1,5,1,1))
+                # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
                 stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
                 '2hr':"2Hour_6Month", '1Yr':"1Day_1Year", 'all':"all",}
-                charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
-
-                cols = st.columns((1,10,1,1))
-                # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
                 with cols[0]:
                     ticker_option = st.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
                     ticker = ticker_option
+                with cols[1]:
+                    option__ = st.radio(
+                        label="stars_radio",
+                        options=list(stars_radio_dict.keys()),
+                        key="signal_radio",
+                        label_visibility='visible',
+                        # disabled=st.session_state.disabled,
+                        horizontal=True,
+                    )
+                
+                with cols[2]:
+                    day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
+                
+                if option__ != 'all':
+                    ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
+                else:
+                    ticker_time_frame = f'{ticker}_{"1Minute_1Day"}'
+
+                df = POLLENSTORY[ticker_time_frame].copy()
+
+                charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
                 
                 with charts__view:
                     try:
-                        with cols[0]:
-                            option__ = st.radio(
-                                label="stars_radio",
-                                options=list(stars_radio_dict.keys()),
-                                key="signal_radio",
-                                label_visibility='visible',
-                                # disabled=st.session_state.disabled,
-                                horizontal=True,
-                            )
-                        with cols[0]:
-                            day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
     
-                        ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
-                        df = POLLENSTORY[ticker_time_frame].copy()
                         st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
 
-                        # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker_option, POLLENSTORY=POLLENSTORY)
-
-                        if day_only_option == 'yes':
-                            df_day = df['timestamp_est'].iloc[-1]
-                            df['date'] = df['timestamp_est'] # test
-
-                            df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
-                            df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
-
-                            df = df_today
-
-                        min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
-                        min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
-                        min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
-                        min_1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
-                        min_2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
-                        min_1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
-
-
-                    
                         if option__.lower() == 'all':
+                            min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+                            min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+                            min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+                            _1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+                            _2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+                            _1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+
                             c1, c2 = st.columns(2)
                             with c1:
                                 st.plotly_chart(create_main_macd_chart(min_1))
@@ -825,26 +818,31 @@ def queen():
                             with c1:
                                 st.plotly_chart(create_main_macd_chart(min_30m))
                             with c2:
-                                st.plotly_chart(create_main_macd_chart(min_1hr))
+                                st.plotly_chart(create_main_macd_chart(_1hr))
                             c1, c2 = st.columns(2)
                             with c1:
-                                st.plotly_chart(create_main_macd_chart(min_2hr))
+                                st.plotly_chart(create_main_macd_chart(_2hr))
                             with c2:
-                                st.plotly_chart(create_main_macd_chart(min_1yr))
+                                st.plotly_chart(create_main_macd_chart(_1yr))
                         else:
-                            # Main CHART Creation
-                            radio_b_dict = {'1Min': '1Minute_1Day', 
-                            '5Min': '5Minute_5Day', '30m': '30Minute_1Month', 
-                            '1hr': '1Hour_3Month' , '2hr': '2Hour_6Month', '1Yr': '1Day_1Year'}
-                            ticker_time_frame = f'{ticker}_{radio_b_dict[option__]}'
-                            with cols[1]:
-                                st.write(create_main_macd_chart(POLLENSTORY[ticker_time_frame].copy()))
+                            if day_only_option == 'yes':
+                                df_day = df['timestamp_est'].iloc[-1]
+                                df['date'] = df['timestamp_est'] # test
+
+                                df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                                df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+
+                                df = df_today
+                            
+                            st.plotly_chart(create_main_macd_chart(df=df, width=1500, height=550))
+                    
                     except Exception as e:
                         print(e)
                         print_line_of_error()
 
                 # if slope_option == 'yes':
                 with slopes__view:
+                    # df = POLLENSTORY[ticker_time_frame].copy()
                     slope_cols = [i for i in df.columns if "slope" in i]
                     slope_cols.append("close")
                     slope_cols.append("timestamp_est")
@@ -855,6 +853,7 @@ def queen():
                     
                 # if wave_option == "yes":
                 with waves__view:
+                    # df = POLLENSTORY[ticker_time_frame].copy()
                     fig = create_wave_chart(df=df)
                     st.plotly_chart(fig)
                     

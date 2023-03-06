@@ -667,7 +667,7 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
         QUEEN[queens_chess_piece]["conscience"]["STORY_bee"] = STORY_bee
         QUEEN[queens_chess_piece]["conscience"]["SPEEDY_bee"] = SPEEDY_bee
 
-        PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+        # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         # for every ticker ticker write pickle file to db
         symbols_pollenstory_dbs = workerbee_dbs_root()

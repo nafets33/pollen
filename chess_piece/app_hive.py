@@ -1271,22 +1271,22 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
 
 ############### Charts ##################
 
-def create_main_macd_chart(df, width=1200, height=550):
+def create_main_macd_chart(df, width=850, height=450):
     try:
         title = df.iloc[-1]['name']
 
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.05, row_heights=[0.7, 0.3])
 
-        df['chartdate'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+        df['chartdate_'] = df['chartdate'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
         df['cross'] = np.where(df['macd_cross'].str.contains('cross'), df['macd'], 0)
         
-        fig.add_ohlc(x=df['chartdate'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
-        fig.add_scatter(x=df['chartdate'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
-        fig.add_scatter(x=df['chartdate'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
-        fig.add_scatter(x=df['chartdate'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
-        fig.add_bar(x=df['chartdate'], y=df['hist'], row=2, col=1, name='hist')
+        fig.add_ohlc(x=df['chartdate_'], close=df['close'], open=df['open'], low=df['low'], high=df['high'], name='price')
+        fig.add_scatter(x=df['chartdate_'], y=df['vwap'], mode="lines", row=1, col=1, name='vwap')
+        fig.add_scatter(x=df['chartdate_'], y=df['macd'], mode="lines", row=2, col=1, name='mac')
+        fig.add_scatter(x=df['chartdate_'], y=df['signal'], mode="lines", row=2, col=1, name='signal')
+        fig.add_bar(x=df['chartdate_'], y=df['hist'], row=2, col=1, name='hist')
         
-        fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
+        fig.add_scatter(x=df['chartdate_'], y=df['cross'], mode='lines', row=2, col=1, name='cross',) # line_color='#00CC96')
         # fig.add_scatter(x=df['chartdate'], y=df['cross'], mode='markers', row=1, col=1, name='cross',) # line_color='#00CC96')
         fig.update_layout(title_text=title, width=width, height=height)
         fig.update_xaxes(showgrid=False, rangeslider_visible=False)
