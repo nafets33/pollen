@@ -999,30 +999,29 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     sys.exit()
 
             
-            # App Buy Order Requests
-            s_time = datetime.datetime.now(est)
-            app_resp = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='buy_orders')
-            charlie_bee['queen_cyle_times']['app_req_loop__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
-            if app_resp['app_flag']:
-                msg = {'process_app_buy_requests()': 'queen processed app request'}
-                print(msg)
-                # queen process
-                logging.info(msg)
-                QUEEN_KING['queen_processed_orders'].append(app_resp['app_request']['app_requests_id'])
-                QUEEN['app_requests__bucket'].append(app_resp['app_request']['app_requests_id'])
-                PickleData(PB_App_Pickle, QUEEN_KING)
+            # # App Buy Order Requests
+            # s_time = datetime.datetime.now(est)
+            # app_resp = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='buy_orders')
+            # charlie_bee['queen_cyle_times']['app_req_loop__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
+            # if app_resp['app_flag']:
+            #     msg = {'process_app_buy_requests()': 'queen processed app request'}
+            #     print(msg)
+            #     # queen process
+            #     logging.info(msg)
+            #     QUEEN_KING['queen_processed_orders'].append(app_resp['app_request']['app_requests_id'])
+            #     QUEEN['app_requests__bucket'].append(app_resp['app_request']['app_requests_id'])
 
-                crypto = [True if app_resp['app_request']['ticker'] in crypto_currency_symbols else False][0]
+            #     crypto = [True if app_resp['app_request']['ticker'] in crypto_currency_symbols else False][0]
                 
-                # execute order
-                bzzz = execute_order(QUEEN=QUEEN, 
-                trig=app_resp['app_request']['trig'], 
-                king_resp=app_resp['king_resp'],
-                king_eval_order=False,
-                ticker=app_resp['app_request']['ticker'], 
-                ticker_time_frame=app_resp['ticker_time_frame'],
-                portfolio=portfolio,
-                crypto=crypto)
+            #     # execute order
+            #     bzzz = execute_order(QUEEN=QUEEN, 
+            #     trig=app_resp['app_request']['trig'], 
+            #     king_resp=app_resp['king_resp'],
+            #     king_eval_order=False,
+            #     ticker=app_resp['app_request']['ticker'], 
+            #     ticker_time_frame=app_resp['ticker_time_frame'],
+            #     portfolio=portfolio,
+            #     crypto=crypto)
 
 
             return True
@@ -2265,7 +2264,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         APP_req = add_key_to_app(QUEEN_KING)
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
-            # PickleData(PB_App_Pickle, QUEEN_KING)
             print("App DB needs update")
 
         # add new keys

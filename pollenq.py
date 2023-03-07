@@ -246,25 +246,17 @@ def pollenq(admin_pq):
         with st.spinner("Hello Welcome To pollenq a Kings Queen"):
             prod = st.session_state['production']
             authorized_user = st.session_state['authorized_user']
-            PB_KING_Pickle = master_swarm_KING(prod=prod)
-            KING = ReadPickleData(PB_KING_Pickle)
-            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
-            QUEEN_KING['prod'] = st.session_state['production']          
-
-            if QUEEN_KING['prod'] != 'init':
-                 st.session_state['production'] = QUEEN_KING['prod']
-            
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
             prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"        
 
             live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
             if live_sb_button:
                 st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                QUEEN_KING['prod'] = st.session_state['production']
-                PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
                 st.experimental_rerun()
-
             
+
+            # if QUEEN_KING['prod'] != 'init':
+            #      st.session_state['production'] = QUEEN_KING['prod']
             if admin_pq:
                 admin = True
                 st.session_state['admin'] = True
@@ -276,15 +268,17 @@ def pollenq(admin_pq):
                     st.session_state["production"] = False
                     st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
 
+            PB_KING_Pickle = master_swarm_KING(prod=prod)
+            KING = ReadPickleData(PB_KING_Pickle)
+            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
+            QUEEN_KING['prod'] = st.session_state['production']          
+            
             # if st.session_state['admin']:
             #     with st.sidebar:
             #         if st.button('Re-Init KING'):
             #             print("init KING")
             #             KING = init_KING()
             #             PickleData(PB_KING_Pickle, KING)
-
-
-            # QUEENsHeart = ReadPickleData(pickle_file=st.session_state['PB_QUEENsHeart_PICKLE'])
 
             try:
                 api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
