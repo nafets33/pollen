@@ -244,20 +244,26 @@ def pollenq(admin_pq):
             st.stop()
 
         with st.spinner("Hello Welcome To pollenq a Kings Queen"):
+            prod = st.session_state['production']
+            authorized_user = st.session_state['authorized_user']
+            PB_KING_Pickle = master_swarm_KING(prod=prod)
+            KING = ReadPickleData(PB_KING_Pickle)
+            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
+            QUEEN_KING['prod'] = st.session_state['production']          
 
+            if QUEEN_KING['prod'] != 'init':
+                 st.session_state['production'] = QUEEN_KING['prod']
+            
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
             prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"        
 
-            live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq')
+            live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
             if live_sb_button:
                 st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                QUEEN_KING['prod'] = st.session_state['production']
+                PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
                 st.experimental_rerun()
 
-            prod = st.session_state['production']
-            authorized_user = st.session_state['authorized_user']            
-            
-            PB_KING_Pickle = master_swarm_KING(prod=prod)
-            KING = ReadPickleData(PB_KING_Pickle)
             
             if admin_pq:
                 admin = True
@@ -265,7 +271,7 @@ def pollenq(admin_pq):
             if st.session_state['admin'] == True:
                 users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
                 admin_client_user = st.sidebar.selectbox('admin client_users', options=users_allowed_queen_email, index=users_allowed_queen_email.index(st.session_state['username']))
-                if st.sidebar.button('admin change user'):
+                if st.sidebar.button('admin change user', use_container_width=True):
                     st.session_state['admin__client_user'] = admin_client_user
                     st.session_state["production"] = False
                     st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
@@ -278,8 +284,7 @@ def pollenq(admin_pq):
             #             PickleData(PB_KING_Pickle, KING)
 
 
-            QUEENsHeart = ReadPickleData(pickle_file=st.session_state['PB_QUEENsHeart_PICKLE'])
-            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
+            # QUEENsHeart = ReadPickleData(pickle_file=st.session_state['PB_QUEENsHeart_PICKLE'])
 
             try:
                 api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
@@ -288,7 +293,7 @@ def pollenq(admin_pq):
                 st.error(e)
                 ac_info = False
             
-            hide_streamlit_markers = False if st.sidebar.button('show dev-ham') else True
+            hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
             menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info, hide_streamlit_markers=hide_streamlit_markers) 
             if st.session_state["admin"]:
                 st.write('admin:', st.session_state["admin"])
@@ -328,7 +333,7 @@ def pollenq(admin_pq):
             local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
 
         if authorized_user and 'pollenq' in menu_id: 
-            queens_conscience()
+            queens_conscience(KING=KING, QUEEN_KING=QUEEN_KING)
             st.stop()
         if menu_id == 'QC':
             queen()

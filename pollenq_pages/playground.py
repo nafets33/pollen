@@ -162,6 +162,15 @@ def PlayGround():
                 except:
                     st.write("Nothing was KOR")
         # page_tab_permission_denied(st.session_state['admin'])
+        
+        st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
+        cols = st.columns(2)
+        with cols[0]:
+            with st.expander('nested columns'):
+                cols_2 = st.columns(2)
+                with cols_2[1]:
+                    st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
+        
         with st.expander("button on grid"):
             click_button_grid()
 

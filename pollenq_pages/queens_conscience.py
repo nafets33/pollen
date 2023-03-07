@@ -35,10 +35,6 @@ from ozz.ozz_bee import send_ozz_call
 import ipdb
 # import matplotlib.pyplot as plt
 # import base64
-# from random import randint
-load_dotenv()
-est = pytz.timezone("US/Eastern")
-utc = pytz.timezone('UTC')
 
 
 # import streamlit_authenticator as stauth
@@ -87,7 +83,12 @@ page = 'QueensConscience'
 # st.header("Section 1")
 # st.markdown("[Section 1](#section-1)")
 
-def queens_conscience():
+def queens_conscience(KING, QUEEN_KING):
+    # from random import randint
+    main_root = hive_master_root() # os.getcwd()  # hive root
+    load_dotenv(os.path.join(main_root, ".env"))
+    est = pytz.timezone("US/Eastern")
+    utc = pytz.timezone('UTC')
     # ###### GLOBAL # ######
     active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 
@@ -95,7 +96,6 @@ def queens_conscience():
     crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
     crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 
-    main_root = hive_master_root() # os.getcwd()  # hive root
 
     # images
     MISC = local__filepaths_misc()
@@ -163,13 +163,12 @@ def queens_conscience():
         PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
         PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
         PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
-        PB_KING_Pickle = st.session_state['PB_KING_Pickle']
+        # PB_KING_Pickle = st.session_state['PB_KING_Pickle']
 
 
-        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
-        KING = ReadPickleData(pickle_file=PB_KING_Pickle)
+        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+        # KING = ReadPickleData(pickle_file=PB_KING_Pickle)
         # QUEEN Databases
-        QUEEN_KING['source'] = PB_App_Pickle
         # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
         @st.cache_data()
@@ -512,7 +511,7 @@ def queens_conscience():
                     mark_down_text(fontsize='18', text=num_text)
         
         def stop_queenbee(QUEEN_KING):
-            checkbox_val = st.sidebar.button("Stop Queen")
+            checkbox_val = st.sidebar.button("Stop Queen", use_container_width=True)
             if checkbox_val:
                 stop_queen = create_AppRequest_package(request_name='queen_sleep')
 
@@ -807,9 +806,9 @@ def queens_conscience():
                     st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
                     st.image(QUEEN_KING['character_image'], width=100)
                     return False
-                if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 86400:
-                    st.sidebar.write("Awaiting Queen")
-                    return False
+                # if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 86400:
+                #     st.sidebar.write("Awaiting Queen")
+                #     return False
                 
                 if api_failed:
                     st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
@@ -861,13 +860,13 @@ def queens_conscience():
                     return True
             elif dag =='run_workerbees':
                 if admin:
-                    if st.sidebar.button("Flying Bees"):
+                    if st.sidebar.button("Flying Bees", use_container_width=True):
                         trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
                         st.write("Bees Fly")
                 return True
             elif dag =='run_workerbees_crypto':
                 if admin:
-                    if st.sidebar.button("Flying Crypto Bees"):
+                    if st.sidebar.button("Flying Crypto Bees", use_container_width=True):
                         trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
                         st.write("Crypto Bees Fly")
                 return True
@@ -1326,6 +1325,4 @@ def queens_conscience():
         ##### END ####
     except Exception as e:
         print(e, print_line_of_error(), return_timestamp_string())
-        # switch_page('pollenq')
-if __name__ == '__main__':
-    queens_conscience()
+

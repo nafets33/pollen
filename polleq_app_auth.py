@@ -222,7 +222,7 @@ def signin_main(page):
                 st.session_state["username"] = st.session_state['admin__client_user']
                 st.sidebar.write(f'Swarm *{st.session_state["username"]}')
 
-            st.sidebar.warning("Your Queen is Awaiting")
+            # st.sidebar.warning("Your Queen is Awaiting")
             force_db_root = False
         else:
             # st.sidebar.info("Request For a Queen")

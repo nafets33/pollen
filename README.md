@@ -46,4 +46,4 @@ python -c "import sys; print(sys.path)"
 
 ## Setting Up Sever
 Ngnix
-docker
+docker >> Q: pythonpath missing?, airflow UID missing?
