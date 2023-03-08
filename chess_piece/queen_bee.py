@@ -557,8 +557,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # Limit Order
 
                     QUEEN['queen_orders'].at[run_order_idx, 'order_trig_sell_stop'] = True
-                    # QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'].update({client_order_id__gen: {'sell_reason': sell_reason}})
-                    QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'] = {client_order_id__gen: {'sell_reason': sell_reason}}
+                    QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'].update({client_order_id__gen: {'sell_reason': sell_reason}})
+                    # QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'] = {client_order_id__gen: {'sell_reason': sell_reason}}
                     update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=run_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
 
@@ -2254,7 +2254,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ## !! Reconcile all orders processed in alpaca vs queen_order !! ##
 
         # Ticker database of pollenstory ## Need to seperate out into tables 
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN) ## async'd func
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING) ## async'd func
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
         
@@ -2346,7 +2346,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 portfolio = return_alpc_portolio(api)['portfolio']
 
                 # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
-                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)                
+                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)                
                 POLLENSTORY = ticker_db['pollenstory']
                 STORY_bee = ticker_db['STORY_bee']
 

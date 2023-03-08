@@ -22,14 +22,12 @@ import sqlite3
 import time
 from custom_button import cust_Button
 
-from polleq_app_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import create_AppRequest_package, standard_AGgrid, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
-from chess_piece.king import menu_bar_selection, return_all_client_users__db, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
-from chess_piece.queen_hive import init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, add_key_to_QUEEN, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
-from ozz.ozz_bee import send_ozz_call
-from chat_bot import ozz_bot
+from chess_piece.app_hive import create_AppRequest_package, page_session_state__cleanUp, queen__account_keys, page_line_seperator, local_gif, flying_bee_gif
+from chess_piece.king import hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
+from chess_piece.queen_hive import return_alpaca_user_apiKeys, add_key_to_app, generate_TradingModel, ReadPickleData, pollen_themes, PickleData, init_logging
+
 # from tqdm import tqdm
 # from collections import defaultdict
 import ipdb
@@ -122,82 +120,7 @@ def trading_models():
         # progress_bar(value=89)  ## show user completion of user flow interaction
 
         # return page last visited 
-        sneak_peak = False
-        if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
-            sneak_peak = True
-            st.session_state['production'] = True
-            st.session_state['username'] = 'stefanstapinski@gmail.com'
-            st.session_state['authorized_user'] = False
-            st.session_state['db_root'] = os.path.join(main_root, 'db')
-            st.info("Welcome and Watch A QueenBot in Action")
-                    
-            init_pollen_dbs(db_root=st.session_state['db_root'], prod=True, queens_chess_piece='queen', queenKING=True)
 
-        
-        elif st.session_state['authentication_status'] != True:
-            st.write(st.session_state['authentication_status'])
-            st.error("You Need to Log In to pollenq")
-            # switch_page("pollenq")
-            sneak_peak = False
-            st.session_state['sneak_peak'] == False
-            st.stop()
-        
-        elif st.session_state['authentication_status']:
-            sneak_peak = False
-            pass
-        else:
-            st.error("Stopping page")
-            st.stop()
-
-        db_root = st.session_state['db_root']
-        prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
-
-        authorized_user = st.session_state['authorized_user']
-        client_user = st.session_state["username"]
-        # st.write("*", client_user)
-        
-        cols = st.columns((4,8,4))
-        if prod:
-            with cols[1]:
-                # st.warning("LIVE ENVIORMENT The RealWorld")
-                mark_down_text(text='LIVE', fontsize='23', align='left', color="Green", sidebar=True)
-                flying_bee_gif(sidebar=True)
-
-        else:
-            with cols[1]:
-                # st.info("SandBox")
-                mark_down_text(text='SandBox', fontsize='23', align='left', color="Red", sidebar=True)
-                local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
-        
-        PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
-        PB_App_Pickle = st.session_state['PB_App_Pickle'] 
-        PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
-        PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
-        PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
-        PB_KING_Pickle = st.session_state['PB_KING_Pickle']
-
-
-        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
-        KING = ReadPickleData(pickle_file=PB_KING_Pickle)
-        pollen_theme = pollen_themes(KING=KING)
-        # QUEEN Databases
-        QUEEN_KING['source'] = PB_App_Pickle
-        QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-        # ORDERS = ReadPickleData(PB_Orders_Pickle)
-        # QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
-
-
-        if st.session_state['authorized_user']:
-            APP_req = add_key_to_app(QUEEN_KING)
-            QUEEN_KING = APP_req['QUEEN_KING']
-            if APP_req['update']:
-                PickleData(PB_App_Pickle, QUEEN_KING)
-
-            # add new keys
-            QUEEN_req = add_key_to_QUEEN(QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
-            if QUEEN_req['update']:
-                QUEEN = QUEEN_req['QUEEN']
-                PickleData(PB_QUEEN_Pickle, QUEEN)
 
 
         def chunk(it, size):
@@ -722,6 +645,36 @@ def trading_models():
         ########################################################
         ########################################################
 
+        db_root = st.session_state['db_root']
+        prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
+
+        authorized_user = st.session_state['authorized_user']
+        client_user = st.session_state["username"]
+        # st.write("*", client_user)
+                
+        PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
+        PB_App_Pickle = st.session_state['PB_App_Pickle'] 
+        PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
+        PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
+        PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
+        PB_KING_Pickle = st.session_state['PB_KING_Pickle']
+
+
+        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+        KING = ReadPickleData(pickle_file=PB_KING_Pickle)
+        pollen_theme = pollen_themes(KING=KING)
+        # QUEEN Databases
+        QUEEN_KING['source'] = PB_App_Pickle
+        QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+        # ORDERS = ReadPickleData(PB_Orders_Pickle)
+        # QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
+
+
+        if st.session_state['authorized_user']:
+            APP_req = add_key_to_app(QUEEN_KING)
+            QUEEN_KING = APP_req['QUEEN_KING']
+            if APP_req['update']:
+                PickleData(PB_App_Pickle, QUEEN_KING)
 
         
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']

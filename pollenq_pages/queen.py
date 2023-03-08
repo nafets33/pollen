@@ -927,7 +927,7 @@ def queen():
         # db global
         # Ticker DataBase
         coin_exchange = "CBSE"
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]

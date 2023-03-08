@@ -115,93 +115,6 @@ def queens_conscience(KING, QUEEN_KING):
     
     with st.spinner("Welcome to the QueensMind"):
 
-        # return page last visited 
-        sneak_peak = False
-        if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
-            sneak_peak = True
-            st.session_state['production'] = True
-            st.session_state['username'] = 'stefanstapinski@gmail.com'
-            st.session_state['authorized_user'] = False
-            st.session_state['db_root'] = os.path.join(main_root, 'db')
-            st.info("Welcome and Watch A QueenBot in Action")
-                    
-            init_pollen_dbs(db_root=st.session_state['db_root'], prod=True, queens_chess_piece='queen', queenKING=True)
-
-        
-        elif st.session_state['authentication_status'] != True:
-            st.write(st.session_state['authentication_status'])
-            st.error("You Need to Log In to pollenq")
-            # switch_page("pollenq")
-            sneak_peak = False
-            st.session_state['sneak_peak'] == False
-            st.stop()
-        
-        elif st.session_state['authentication_status']:
-            sneak_peak = False
-            pass
-        else:
-            st.error("Stopping page")
-            st.stop()
-
-        db_root = st.session_state['db_root']
-        prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
-
-        authorized_user = st.session_state['authorized_user']
-        client_user = st.session_state["username"]
-        # st.write("*", client_user)
-        
-        
-        PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
-        PB_App_Pickle = st.session_state['PB_App_Pickle'] 
-        PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
-        PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
-        PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
-        # PB_KING_Pickle = st.session_state['PB_KING_Pickle']
-
-
-        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
-        # KING = ReadPickleData(pickle_file=PB_KING_Pickle)
-        # QUEEN Databases
-        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-        
-        @st.cache_data()
-        def return_QUEEN():
-            st.info("Cache QUEEN")
-            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-
-        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
-            QUEEN = return_QUEEN()
-            order_buttons = True
-        else:
-            st.cache_data.clear()
-            order_buttons = False
-            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-       
-        QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
-
-        if st.session_state['authorized_user']:
-            APP_req = add_key_to_app(QUEEN_KING)
-            QUEEN_KING = APP_req['QUEEN_KING']
-            if APP_req['update']:
-                PickleData(PB_App_Pickle, QUEEN_KING)
-
-
-        # if st.session_state['authorized_user'] == False and sneak_peak == False:
-        #     cols = st.columns(2)
-        #     with cols[0]:
-        #         st.info("You Don't have a QueenTraderBot yet! Need authorization, Please contact pollenq.queen@gmail.com or click the button below to send a Request")
-        #     with cols[1]:
-        #         st.info("Below is a Preview")
-        #     client_user_wants_a_queen = st.button("Yes I want a Queen!")
-        #     if client_user_wants_a_queen:
-        #         st.session_state['init_queen_request'] = True
-        #         if 'init_queen_request' in st.session_state:
-        #             QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
-        #             PickleData(PB_App_Pickle, QUEEN_KING)
-        #             send_email(recipient=os.environ.get('pollenq_gmail'), subject="RequestingQueen", body=f'{st.session_state["username"]} Asking for a Queen')
-        #             st.success("Hive Master Notified and You should receive contact soon")
-
-
 
         def chunk(it, size):
             it = iter(it)
@@ -674,6 +587,78 @@ def queens_conscience(KING, QUEEN_KING):
         ########################################################
         ########################################################
 
+    try:
+        # return page last visited 
+        sneak_peak = False
+        if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
+            sneak_peak = True
+            st.session_state['production'] = True
+            st.session_state['username'] = 'stefanstapinski@gmail.com'
+            st.session_state['authorized_user'] = False
+            st.session_state['db_root'] = os.path.join(main_root, 'db')
+            st.info("Welcome and Watch A QueenBot in Action")
+                    
+            init_pollen_dbs(db_root=st.session_state['db_root'], prod=True, queens_chess_piece='queen', queenKING=True)
+
+        
+        elif st.session_state['authentication_status'] != True:
+            st.write(st.session_state['authentication_status'])
+            st.error("You Need to Log In to pollenq")
+            # switch_page("pollenq")
+            sneak_peak = False
+            st.session_state['sneak_peak'] == False
+            st.stop()
+        
+        elif st.session_state['authentication_status']:
+            sneak_peak = False
+            pass
+        else:
+            st.error("Stopping page")
+            st.stop()
+
+        db_root = st.session_state['db_root']
+        prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
+
+        authorized_user = st.session_state['authorized_user']
+        client_user = st.session_state["username"]
+        # st.write("*", client_user)
+        
+        
+        PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
+        PB_App_Pickle = st.session_state['PB_App_Pickle'] 
+        PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
+        PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
+        PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
+        # PB_KING_Pickle = st.session_state['PB_KING_Pickle']
+
+
+        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
+        # KING = ReadPickleData(pickle_file=PB_KING_Pickle)
+        # QUEEN Databases
+        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        
+        @st.cache_data()
+        def return_QUEEN():
+            st.info("Cache QUEEN")
+            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+
+        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
+            QUEEN = return_QUEEN()
+            order_buttons = True
+        else:
+            st.cache_data.clear()
+            order_buttons = False
+            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+    
+        QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
+
+        if st.session_state['authorized_user']:
+            APP_req = add_key_to_app(QUEEN_KING)
+            QUEEN_KING = APP_req['QUEEN_KING']
+            if APP_req['update']:
+                PickleData(PB_App_Pickle, QUEEN_KING)
+
+
         
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
@@ -709,38 +694,13 @@ def queens_conscience(KING, QUEEN_KING):
         # db global
         # Ticker DataBase
         coin_exchange = "CBSE"
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
         # __ = tickers_avail if len(tickers_avail) > 0 else 'SPY'
 
 
-    def ticker_time_frame__option(tickers_avail_op, req_key):
-        cols = st.columns(2)
-        with cols[0]:
-            if 'sel_tickers' not in st.session_state:
-                st.session_state['sel_tickers'] = tickers_avail_op[0]
-
-            tickers = st.multiselect('Symbols', options=list(tickers_avail_op), default=tickers_avail_op[0], help='View Groups of symbols to Inspect where to send the Bees', key=f'ticker{req_key}')
-            if len(tickers) == 0:
-                ticker_option = 'SPY'
-            else:
-                ticker_option = tickers[0]
-        with cols[1]:
-            if 'sel_stars' not in st.session_state:
-                st.session_state['sel_stars'] = [i for i in stars().keys()]
-            
-            ttframe_list = list(set([i.split("_")[1] + "_" + i.split("_")[2] for i in POLLENSTORY.keys()]))
-            frames = st.multiselect('Stars', options=list(ttframe_list), default=st.session_state['sel_stars'], help='View Groups of Stars to Allocate Bees on where to go', key=f'frame{req_key}')
-            frame_option = frames[0]
-        # frame_option = st.selectbox("Ticker_Stars", ttframe_list, index=ttframe_list.index(["1Minute_1Day" if "1Minute_1Day" in ttframe_list else ttframe_list[0]][0]))
-        return {'tickers': tickers, 'ticker_option': ticker_option, 'frame_option': frame_option}
-
-
-    try:
-
-        
         with st.spinner("Waking Up the Hive"):
 
             tickers_avail_op = list(tickers_avail)

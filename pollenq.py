@@ -289,8 +289,13 @@ def pollenq(admin_pq):
             
             hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
             menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info, hide_streamlit_markers=hide_streamlit_markers) 
-            if st.session_state["admin"]:
+            if st.session_state['admin'] == True:
                 st.write('admin:', st.session_state["admin"])
+                # add new keys
+                KING_req = add_key_to_KING(KING=KING)
+                if KING_req.get('update'):
+                    KING = KING_req['KING']
+                    PickleData(PB_KING_Pickle, KING)
             
             ## add new keys
             QUEEN_KING = add_new_trading_models_settings(QUEEN_KING)
@@ -303,12 +308,6 @@ def pollenq(admin_pq):
             QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
             pollen_theme = pollen_themes(KING=KING)
             
-            # add new keys
-            if st.session_state['admin'] == True:
-                KING_req = add_key_to_KING(KING=KING)
-                if KING_req.get('update'):
-                    KING = KING_req['KING']
-                    PickleData(PB_KING_Pickle, KING)
             
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
@@ -317,14 +316,6 @@ def pollenq(admin_pq):
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
                 st.success("Hive Master Notified and You should receive contact soon")
 
-        # cols = st.columns((4,8,4))
-        if prod:
-            mark_down_text(text='LIVE', fontsize='23', align='left', color="Green", sidebar=True)
-            flying_bee_gif(sidebar=True)
-
-        else:
-            mark_down_text(text='SandBox', fontsize='23', align='left', color="Red", sidebar=True)
-            local_gif(gif_path=flyingbee_grey_gif_path, sidebar=True)
 
         if authorized_user and 'pollenq' in menu_id: 
             queens_conscience(KING=KING, QUEEN_KING=QUEEN_KING)

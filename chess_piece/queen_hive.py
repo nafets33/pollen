@@ -538,7 +538,7 @@ def add_key_to_app(APP_requests):  # returns QUEES
         if k not in q_keys:
             APP_requests[k] = v
             update = True
-            msg = f'{k}{" : Key Added"}'
+            msg = f'{k}{" : Key Added to QUEEN_KING"}'
             print(msg)
             logging.info(msg)
     return {"QUEEN_KING": APP_requests, "update": update}

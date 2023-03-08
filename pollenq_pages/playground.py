@@ -97,7 +97,7 @@ def PlayGround():
         
         PB_App_Pickle = st.session_state['PB_App_Pickle']
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN)
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]

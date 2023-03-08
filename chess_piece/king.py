@@ -462,16 +462,16 @@ def read_QUEENs__pollenstory(
     return {"pollenstory": pollenstory, "STORY_bee": STORY_bee, "errors": errors}
 
 
-def return_QUEENs_workerbees_chessboard(QUEEN):
+def return_QUEENs_workerbees_chessboard(QUEEN_KING):
     queens_master_tickers = []
-    for qcp, qcp_vars in QUEEN["chess_board"].items():
+    for qcp, qcp_vars in QUEEN_KING["chess_board"].items():
         for ticker in qcp_vars["tickers"]:
             queens_master_tickers.append(ticker)
 
     return {"queens_master_tickers": queens_master_tickers}
 
 
-def return_QUEENs__symbols_data(QUEEN, info="returns all ticker_time_frame data for open orders and chessboard"):
+def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, info="returns all ticker_time_frame data for open orders and chessboard"):
     def return_active_orders(QUEEN):
         df = QUEEN["queen_orders"]
         df["index"] = df.index
@@ -482,7 +482,7 @@ def return_QUEENs__symbols_data(QUEEN, info="returns all ticker_time_frame data 
     # symbol ticker data # 1 all current pieces on chess board && all current running orders
     current_active_orders = return_active_orders(QUEEN=QUEEN)
     active_order_symbols = list(set(current_active_orders["symbol"].tolist()))
-    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN=QUEEN)[
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING)[
         "queens_master_tickers"
     ]
     ticker_db = read_QUEENs__pollenstory(
