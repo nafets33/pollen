@@ -431,22 +431,7 @@ def init_QUEEN_App():
         "theme": "nuetral",
         "queen_tier": "queen_1",
         "king_controls_queen": return_queen_controls(stars),
-        "qcp_workerbees": { ## REPLACES BY CHESSBOARD
-            "castle": init_qcp(init_macd_vars=init_macd_vars, ticker_list=["SPY"]),
-            "bishop": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=["GOOG", "AAPL", "TSLA"]
-            ),
-            "knight": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=["AMZN", "OXY", "SOFI"]
-            ),
-            "castle_coin": init_qcp(
-                init_macd_vars=init_macd_vars, ticker_list=["BTCUSD", "ETHUSD"]
-            ),
-            # "pawns": init_qcp(
-            #     init_macd_vars=init_macd_vars, ticker_list=main_symbols_full_list[88:89]
-            # ),
-        },
-        
+        "qcp_workerbees": generate_chess_board(),
         "chess_board": generate_chess_board(),
         "trigger_queen": {
             "dag": "init",

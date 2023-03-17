@@ -563,33 +563,178 @@ def queens_conscience(KING, QUEEN_KING):
                 if st_stop:
                     st.info("Page Stopped")
                     st.stop()
-
-
-        def chess_board__workerbees(QUEEN_KING, admin):
             
-            def add_new_qcp__to_Queens_workerbees(qcp_bees_key):
-                with st.form('add new qcp'):
-                    avail_qcp = ['pawn1', 'pawn2', 'pawn3', 'pawn4']
-                    avail_tickers = ['QQQ']
-                    # tickers_to_add = st.multiselect(label=f'Add Symbols', options=avail_tickers, help=f'Try not to Max out number of piecesm, only ~10 allowed')
-                    cols = st.columns((1,2,10,3,2,2))
-                    with cols[1]:                
-                        qcp = st.selectbox(label='qcp', key=f'qcp_new', options=avail_qcp)
-                        QUEEN_KING[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
-                    with cols[0]:
-                        st.image(MISC.get('queen_crown_url'), width=64)
-                    with cols[2]:
-                        QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=avail_tickers, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
-                    with cols[3]:
-                        QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast')
-                    with cols[4]:
-                        QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
-                    with cols[5]:
-                        QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')            
+        def add_new_qcp__to_Queens_workerbees(qcp_bees_key):
+            with st.form('add new qcp'):
+                avail_qcp = ['pawn1', 'pawn2', 'pawn3', 'pawn4']
+                avail_tickers = ['QQQ']
+                # tickers_to_add = st.multiselect(label=f'Add Symbols', options=avail_tickers, help=f'Try not to Max out number of piecesm, only ~10 allowed')
+                cols = st.columns((1,2,10,3,2,2))
+                with cols[1]:                
+                    qcp = st.selectbox(label='qcp', key=f'qcp_new', options=avail_qcp)
+                    QUEEN_KING[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
+                with cols[0]:
+                    st.image(MISC.get('queen_crown_url'), width=64)
+                with cols[2]:
+                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=avail_tickers, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+                with cols[3]:
+                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast')
+                with cols[4]:
+                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
+                with cols[5]:
+                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')            
 
-                    if st.form_submit_button('Save New qcp'):
-                        PickleData(PB_App_Pickle, QUEEN_KING)
+                if st.form_submit_button('Save New qcp'):
+                    PickleData(PB_App_Pickle, QUEEN_KING)
 
+
+        def on_click_ss_value_bool(name):
+            st.session_state[name] = True
+
+
+        def chessboard(QUEEN_KING, admin=False):
+            ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
+            
+            current_setup = QUEEN_KING['chess_board']
+            chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING)
+            view = chess_pieces.get('view')
+            all_workers = chess_pieces.get('all_workers')
+            qcp_ticker_index = chess_pieces.get('qcp_ticker_index')
+            current_tickers = qcp_ticker_index.keys()
+            # st.write(current_tickers)
+            
+            name = 'Workerbees_Admin' if admin else 'Chess Board'
+            qcp_bees_key = 'qcp_workerbees' if admin else 'chess_board'
+
+            with st.expander(name, True):
+                with st.form(f'Update WorkerBees{admin}'):
+                    
+                    ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
+
+                    cols = st.columns((1,1,1))
+                    # with cols[0]:
+                    #     if cust_Button("https://p7.hiclipart.com/preview/221/313/319/chess-piece-knight-rook-board-game-chess.jpg", height='34px', key='k12', hoverText="Game of Chess, Allocate your portoflio, Each Theme is the Overall Trading Stratergy"):
+                    #         st.info("Game of Chess, Allocate your portoflio, Each Theme is the Overall Trading Stratergy")
+                        # if cust_Button(MISC.get('pawn_png_url'), height='34px', key='k11'):
+                        # st.write(st.session_state['chess_board'])
+                        # if st.session_state['chess_board'] == True:
+                            # st.info("Game of Chess, Allocate your portoflio, Each Theme is the Overall Trading Stratergy")
+                        ## generate info messages with click ok to exit message
+                        # st.markdown(f'<img src="{image}"', unsafe_allow_html=True)
+                    #     image = "https://p7.hiclipart.com/preview/221/313/319/chess-piece-knight-rook-board-game-chess.jpg"
+                    #     st.markdown(f'<img src="{image}" style="background-color:transparent">', unsafe_allow_html=True)
+                    themes = list(pollen_themes(KING).keys())
+                    with cols[1]:
+                        st.subheader(name)
+                    cols = st.columns((1,4,2,2,1,1,1,1))
+                    for qcp in all_workers:
+                        if qcp == 'castle_coin':
+                            with cols[0]:
+                                st.image("https://s3.us-east-2.amazonaws.com/nomics-api/static/images/currencies/BSV.png", width=54)
+                                
+                            with cols[1]:
+                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                            with cols[2]:
+                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
+                            with cols[3]:
+                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+                            with cols[4]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                            with cols[5]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                            with cols[6]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+                                
+                        if qcp == 'castle':
+                            with cols[0]:
+                                st.image(MISC.get('castle_png'), width=54)
+
+                            with cols[1]:
+                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                            with cols[2]:
+                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
+                            with cols[3]:
+                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+                            with cols[4]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                            with cols[5]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                            with cols[6]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+
+
+                        if qcp == 'bishop':
+                            with cols[0]:
+                                st.image(MISC.get('bishop_png'), width=74)
+
+                            with cols[1]:
+                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                            with cols[2]:
+                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
+                            with cols[3]:
+                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+                            with cols[4]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                            with cols[5]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                            with cols[6]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+
+
+                        if qcp == 'knight':
+                            with cols[0]:
+                                st.image(MISC.get('knight_png'), width=74)
+                            
+                            with cols[1]:
+                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                            with cols[2]:
+                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
+                            with cols[3]:
+                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+                            with cols[4]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                            with cols[5]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                            with cols[6]:
+                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+                
+
+
+                    if st.form_submit_button('Save Workers'):
+                        if authorized_user == False:
+                            st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
+                            return False
+                    if st.form_submit_button('Reset ChessBoards Trading Models With Theme', on_click=on_click_ss_value_bool('reset_chessboard_theme')):
+                        if authorized_user == False:
+                            st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
+                            return False
+
+
+                        def handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=False):
+                            # add new trading models if needed
+                            # Castle 
+                            for workerbee, bees_data in QUEEN_KING[qcp_bees_key].items():
+                                for ticker in bees_data.get('tickers'):
+                                    print("UPDATE MODELS")
+                                    theme = bees_data.get('theme')
+                                    QUEEN_KING = add_trading_model(status='active', PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee, theme=theme, reset_theme=reset_theme)
+                            
+                            return QUEEN_KING
+                        
+
+                        reset_theme = True if 'reset_chessboard_theme' in st.session_state and st.session_state['reset_chessboard_theme'] else False
+                        print(reset_theme)
+                        QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING, reset_theme=reset_theme)
+                        
+                        app_req = create_AppRequest_package(request_name='workerbees')
+                        QUEEN_KING['workerbees_requests'].append(app_req)
+                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                        st.success("New Move Saved")
+                        
+                        return True
+
+
+        def chess_board__workerbees(QUEEN_KING, admin=True):
 
             try:
 
@@ -605,11 +750,10 @@ def queens_conscience(KING, QUEEN_KING):
                 
                 name = 'Workerbees_Admin' if admin else 'Chess Board'
                 qcp_bees_key = 'qcp_workerbees' if admin else 'chess_board'
+                
+                add_new_qcp__to_Queens_workerbees(qcp_bees_key)
 
                 with st.expander(name, True):
-                    if admin:
-                        if st.button('add new qcp'):
-                            add_new_qcp__to_Queens_workerbees(qcp_bees_key)
 
                     with st.form(f'Update WorkerBees{admin}'):
                         
@@ -702,9 +846,6 @@ def queens_conscience(KING, QUEEN_KING):
                                 with cols[6]:
                                     QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
                     
-                        def on_click_ss_value_bool(name):
-                            st.session_state[name] = True
-
                         if st.form_submit_button('Save Workers'):
                             if authorized_user == False:
                                 st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
@@ -750,6 +891,9 @@ def queens_conscience(KING, QUEEN_KING):
             # QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(tradingmodel1)
             QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
             return QUEEN_KING
+
+
+
 
         
         def update_trading_models(QUEEN_KING, pollen_themes_selections):
@@ -1225,7 +1369,8 @@ def queens_conscience(KING, QUEEN_KING):
                 if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
                     chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
                 else:
-                    chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=False)
+                    # chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=False)
+                    chessboard(QUEEN_KING=QUEEN_KING, admin=False)
             
             if st.session_state['queens_mind']:
                 update_trading_models(QUEEN_KING=QUEEN_KING, pollen_themes_selections=pollen_themes_selections)

@@ -241,6 +241,16 @@ def pollenq(admin_pq):
                     
             return True
 
+
+        def refresh_swarmqueen_workerbees(QUEEN_KING, chessboard=False):
+            refresh = st.sidebar.button("Reset All Workerbees to chessboard", use_container_width=True)
+
+            if refresh:
+                chessboard = generate_chess_board() if chessboard==False else chessboard
+                QUEEN_KING['qcp_workerbees'] = chessboard
+                
+                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+                st.success("Workerbees Reset")
         
         def queenbee_online(QUEENsHeart, admin, dag, api_failed, prod):
             # from airflow.dags.dag_queenbee_prod import run_trigger_dag
@@ -397,6 +407,7 @@ def pollenq(admin_pq):
                 refresh_chess_board__button(QUEEN_KING)
                 refresh_queen_controls_button(QUEEN_KING)
                 refresh_trading_models_button(QUEEN_KING)
+                refresh_swarmqueen_workerbees(QUEEN_KING)
             
             option_data = [
             {'icon': "fas fa-chess-board", 'label':"chess_board"},
@@ -426,16 +437,15 @@ def pollenq(admin_pq):
             
             print("MENU")
             with cols[0]:
-                cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Orders', key='orders', default=True, height='134px')
+                cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders', default=True, height='134px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
                 if st.session_state['orders']:
                     hc.option_bar(option_definition=option_data_orders,title='Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                    
             with cols[1]:
-                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Chess Board', key='chess_board', height='134px')
+                cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height='134px')
                 if st.session_state['chess_board']:
                     hc.option_bar(option_definition=option_data,title='Chess Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
             with cols[2]:
-                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-PNG.png", hoverText='Trading Models', key='queens_mind', height='134px')
+                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height='134px')
                 if st.session_state['queens_mind']:
                     hc.option_bar(option_definition=option_data_qm,title='Trading Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                     
