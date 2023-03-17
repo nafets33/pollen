@@ -173,13 +173,6 @@ def queen():
        
         QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
-        if st.session_state['authorized_user']:
-            APP_req = add_key_to_app(QUEEN_KING)
-            QUEEN_KING = APP_req['QUEEN_KING']
-            if APP_req['update']:
-                PickleData(PB_App_Pickle, QUEEN_KING)
-
-
         def chunk(it, size):
             it = iter(it)
             return iter(lambda: tuple(islice(it, size)), ())
@@ -266,6 +259,8 @@ def queen():
             return True
 
 
+
+
         def return_image_upon_save(title="Saved", width=33, gif=power_gif):
             local_gif(gif_path=gif)
             st.success(title)
@@ -288,7 +283,7 @@ def queen():
             return {'qcp_ticker_index': qcp_ticker_index, 'view': view, 'all_workers': all_workers}
 
 
-        def update_Workerbees(QUEEN_KING, admin):
+        def chess_board__workerbees(QUEEN_KING, admin):
             
             def add_new_qcp__to_Queens_workerbees():
                 with st.form('add new qcp'):
@@ -313,18 +308,15 @@ def queen():
                     if st.form_submit_button('Save New qcp'):
                         PickleData(PB_App_Pickle, QUEEN_KING)
 
+            
+            def update_qcp_chessboard():
+                return True
 
             try:
-                #### SPEED THIS UP AND CHANGE TO DB CALL FOR ALLOWED ACTIVE TICKERS ###
-                # all_alpaca_tickers = api.list_assets()
-                # alpaca_symbols_dict = {}
-                # for n, v in enumerate(all_alpaca_tickers):
-                #     if all_alpaca_tickers[n].status == 'active':
-                #         alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(all_alpaca_tickers[n])
-                # ipdb.set_trace()
+
                 ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
                 
-                current_setup = QUEEN_KING['qcp_workerbees']
+                current_setup = QUEEN_KING['chess_board']
                 chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING)
                 view = chess_pieces.get('view')
                 all_workers = chess_pieces.get('all_workers')
@@ -333,20 +325,26 @@ def queen():
                 # st.write(current_tickers)
                 
                 name = 'Workerbees_Admin' if admin else 'Chess Board'
+                qcp_bees_key = 'qcp_workerbees' if admin else 'chess_board'
 
                 with st.expander(name, True):
                     with st.form(f'Update WorkerBees{admin}'):
+                        
+                        ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
 
                         cols = st.columns((1,1,1))
                         with cols[0]:
-                            st.image(pawn_png_url, width=23) ## generate info messages with click ok to exit message
+                            if cust_Button(pawn_png_url, height='34px', key='k11'):
+                                st.info("Game of Chess, Allocate your portoflio, Each Theme is the Overall Trading Stratergy")
+                            if cust_Button("https://p7.hiclipart.com/preview/221/313/319/chess-piece-knight-rook-board-game-chess.jpg", height='34px', key='k12'):
+                                st.info("Game of Chess, Allocate your portoflio, Each Theme is the Overall Trading Stratergy")
+                            ## generate info messages with click ok to exit message
                             # st.markdown(f'<img src="{image}"', unsafe_allow_html=True)
                         #     image = "https://p7.hiclipart.com/preview/221/313/319/chess-piece-knight-rook-board-game-chess.jpg"
                         #     st.markdown(f'<img src="{image}" style="background-color:transparent">', unsafe_allow_html=True)
                         with cols[1]:
                             st.subheader(name)
                         cols = st.columns((1,10,3,2,2,2))
-                        # all_workers = list(QUEEN_KING['qcp_workerbees'].keys())
                         for qcp in all_workers:
                             if qcp == 'castle_coin':
                                 with cols[0]:
@@ -362,7 +360,7 @@ def queen():
                                     QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
                                 with cols[5]:
                                     QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING['qcp_workerbees'][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                            
+                                    
                             if qcp == 'castle':
                                 with cols[0]:
                                     st.image(castle_png, width=54)
@@ -911,10 +909,6 @@ def queen():
         if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
             clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
         
-            # use API keys from user
-            queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_queenbee', api_failed=api_failed)
-            queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_workerbees', api_failed=api_failed)
-            queenbee_online(QUEENsHeart=QUEENsHeart, admin=admin, dag='run_workerbees_crypto', api_failed=api_failed)
 
         # portfolio = return_alpc_portolio(api)['portfolio']
         acct_info = refresh_account_info(api=api)
@@ -998,9 +992,9 @@ def queen():
                 
 
                 with chessboard_tab:
-                    update_Workerbees(QUEEN_KING=QUEEN_KING, admin=False)
+                    chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=False)
                     if admin:
-                        update_Workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
+                        chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
                         with st.expander("admin QUEENS_ACTIVE"):
                             df = return_all_client_users__db()
                             # df = pd.DataFrame(KING['users'].get('client_users_db'))

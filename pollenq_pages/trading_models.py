@@ -245,9 +245,10 @@ def trading_models():
                 }
                     
                 kor_option_mapping = {
+                'theme': 'theme',
                 'take_profit': 'number',
                 'sellout': 'number',
-                # 'status': 'checkbox',
+                'status': 'checkbox',
                 'trade_using_limits': 'checkbox',
                 'doubledown_timeduration': 'number',
                 'max_profit_waveDeviation': 'number',
@@ -283,7 +284,10 @@ def trading_models():
                         for kor_option, kor_v in trading_model.items():
                             if kor_option in ticker_model_level_1.keys():
                                 item_type = ticker_model_level_1[kor_option]['type']
-                                # st.write(kor_option, kor_v, item_type)
+                                if kor_option == 'status':
+                                    st.write(kor_v)
+                                if kor_option == 'theme':
+                                    st.write(kor_v)
                                 if item_type == None:
                                     continue # not allowed edit
 
@@ -414,6 +418,10 @@ def trading_models():
                         for kor_option, kor_v in king_order_rules_update.items():
                             if kor_option in kor_option_mapping.keys():
                                 st_func = kor_option_mapping[kor_option]
+                                if kor_option == 'status':
+                                    st.write(kor_v)
+                                if kor_option == 'theme':
+                                    st.write(kor_v)
                                 if kor_option == 'take_profit_in_vwap_deviation_range':
                                     # with cols[0]:
                                     #     st.write("vwap_deviation_range")
@@ -669,14 +677,7 @@ def trading_models():
         # ORDERS = ReadPickleData(PB_Orders_Pickle)
         # QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
-
-        if st.session_state['authorized_user']:
-            APP_req = add_key_to_app(QUEEN_KING)
-            QUEEN_KING = APP_req['QUEEN_KING']
-            if APP_req['update']:
-                PickleData(PB_App_Pickle, QUEEN_KING)
-
-        
+       
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
@@ -715,7 +716,7 @@ def trading_models():
             tickers_avail = list(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].keys())
 
             with trading_models_tab:
-                queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
+                # queen__write_active_symbols(QUEEN_KING=QUEEN_KING)
                 with cols[0]:
                     st.header("Select Control")
                 with cols[1]:

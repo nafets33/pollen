@@ -128,21 +128,13 @@ exclude_conditions = [
 
 
 
-def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info, hide_streamlit_markers=True):
+def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_markers=True):
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
     default_font = k_colors['default_font'] # = "sans serif"
     default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
     
-    if ac_info != False:
-        buying_power = ac_info['buying_power']
-        buying_power = "TotalBuyingPower: " + '${:,.2f}'.format(ac_info['buying_power'])
-        num_text = (ac_info['portfolio_value'] - ac_info['last_equity']) / ac_info['portfolio_value']
-        honey = "Honey: " + '%{:,.2f}'.format(num_text)
-    else:
-        buying_power = ""
-        buying_power = ""
-        honey = ""
+
 
     if menu == 'main':
         
@@ -152,9 +144,6 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu, ac_info, hide_s
             {'icon': "fa fa-bug", 'label':"PlayGround"},
             {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'id':'pollen_engine', 'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
             # {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
-            {'id':'buying_power', 'icon': "", 'label':f'{buying_power}'},
-            {'id':'honey', 'icon': "", 'label':f'{honey}'},
-
 # 'submenu':[{'id': 'sb_liv_switch', 'label': f'Switch To {prod_name_oppiste}', 'icon': "fa fa-reply"}]
         ]
     elif menu == 'unAuth':
@@ -585,8 +574,8 @@ def copy_directory(src, dst):
     return True
 
 
-def local__filepaths_misc():
-    jpg_root = os.path.join(hive_master_root(), "misc")
+def local__filepaths_misc(jpg_root=hive_master_root()):
+    jpg_root = os.path.join(jpg_root, "misc")
     bee_image = os.path.join(jpg_root, "bee.jpg")
     bee_power_image = os.path.join(jpg_root, "power.jpg")
     hex_image = os.path.join(jpg_root, "hex_design.jpg")

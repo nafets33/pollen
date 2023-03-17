@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 import os
 import pandas as pd
-import datetime
+from datetime import datetime, timedelta
 import pytz
 import ipdb
 # import matplotlib.pyplot as plt
@@ -20,9 +20,9 @@ import time
 from streamlit_extras.switch_page_button import switch_page
 import argparse
 from streamlit_extras.stoggle import stoggle
-from chess_piece.app_hive import send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from chess_piece.king import print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
-from chess_piece.queen_hive import kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
+from chess_piece.app_hive import trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.king import hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
+from chess_piece.queen_hive import generate_chessboards_trading_models, generate_TradingModel, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
 from custom_button import cust_Button
 # import hydralit_components as hc
 from pollenq_pages.playground import PlayGround
@@ -31,6 +31,7 @@ from pollenq_pages.queen import queen
 from pollenq_pages.account import account
 from pollenq_pages.trading_models import trading_models
 from pollenq_pages.pollen_engine import pollen_engine
+import hydralit_components as hc
 
 from ozz.ozz_bee import send_ozz_call
 # import sys, importlib
@@ -146,7 +147,7 @@ def pollenq(admin_pq):
                         else:
                             birthday = st.date_input("Enter your birthday: YYYY/MM/DD", datetime.date(year=1989, month=4, day=11))
                         
-                        yrs_old = datetime.datetime.now().year - birthday.year
+                        yrs_old = datetime.now().year - birthday.year
                         if QUEEN_KING['age'] == 0:
                             QUEEN_KING['age'] = yrs_old
                         with cols[1]:
@@ -188,6 +189,7 @@ def pollenq(admin_pq):
             latest_rules = latest_kors.keys()
             save = False
             new_rules_confirmation = {}
+            ipdb.set_trace()
             for ticker, t_model in all_models.items():
                 missing_rules = [i for i in latest_rules if i not in t_model.keys()]
                 if len(missing_rules) > 0:
@@ -204,11 +206,124 @@ def pollenq(admin_pq):
                 PickleData(st.session_state["PB_App_Pickle"], QUEEN_KING)
             
             return QUEEN_KING
+
+        def refresh_chess_board__button(QUEEN_KING):
+            refresh = st.sidebar.button("Reset Chess Board",  use_container_width=True)
+
+            if refresh:
+                QUEEN_KING['chess_board'] = generate_chess_board()
+                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+                st.success("Generated Default Chess Board")
+                    
+            return True
+
+        def refresh_queen_controls_button(QUEEN_KING):
+            refresh = st.sidebar.button("Reset ALL QUEEN controls", use_container_width=True)
+
+            if refresh:
+                QUEEN_KING['king_controls_queen'] = return_queen_controls(stars)
+                
+                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+                st.success("All Queen Controls Reset")
+                    
+            return True
+
+        def refresh_trading_models_button(QUEEN_KING):
+            refresh = st.sidebar.button("Reset All Trading Models", use_container_width=True)
+
+            if refresh:
+                chessboard = QUEEN_KING['chess_board']
+                tradingmodels = generate_chessboards_trading_models(chessboard)
+                QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'] = tradingmodels
+                
+                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+                st.success("All Queen.TradingModels Reset")
+                    
+            return True
+
         
+        def queenbee_online(QUEENsHeart, admin, dag, api_failed, prod):
+            # from airflow.dags.dag_queenbee_prod import run_trigger_dag
+
+            def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
+                return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
+    
+            users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
+            now = datetime.now(est)
+
+            if dag =='run_queenbee':
+                if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
+                    st.write("Waking up your Queen")
+                    st.image(QUEEN_KING['character_image'], width=100)
+                    return False
+                # if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 86400:
+                #     st.sidebar.write("Awaiting Queen")
+                #     return False
+                
+                if api_failed:
+                    st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
+                    return False
+
+                # if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
+                if 'heartbeat_time' not in QUEENsHeart.keys():
+                    st.write("You Need a Queen")
+                    return False
+                
+                if (now - QUEENsHeart['heartbeat_time']).total_seconds() > 60:
+                    # st.write("YOUR QUEEN if OFFLINE")
+                    # st.error("Your Queen Is Asleep Wake Her UP!")
+                    wake_up_queen_button = st.button("Your Queen Is Asleep Wake Her UP!")
+                    # wake_up_queen_button = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
+                    if wake_up_queen_button and st.session_state['authorized_user']:
+                        # check to ensure queen is offline before proceeding 
+                        if (now - QUEENsHeart['heartbeat_time']).total_seconds() < 60:
+                            return False
+                        
+                        if st.session_state['username'] not in users_allowed_queen_email: ## this db name for client_user # stefanstapinski
+                            print("failsafe away from user running function")
+                            send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{st.session_state["username"]} you forgot to say something')
+                            st.error("Your Account not Yet authorized")
+                            return False
+
+                        # execute trigger
+                        trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
+                        QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
+                        st.write("My Queen")
+                        st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
+                        PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+                        # switch_page("pollenq")
+                        st.experimental_rerun()
+
+
+                    with cols[4]:
+                        local_gif(gif_path=flyingbee_grey_gif_path)
+
+
+                    return False
+                else:
+                    return True
+            elif dag =='run_workerbees':
+                if admin:
+                    if st.sidebar.button("Flying Bees", use_container_width=True):
+                        trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
+                        st.write("Bees Fly")
+                return True
+            elif dag =='run_workerbees_crypto':
+                if admin:
+                    if st.sidebar.button("Flying Crypto Bees", use_container_width=True):
+                        trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
+                        st.write("Crypto Bees Fly")
+                return True
+            else:
+                return False
+
+
+
         est = pytz.timezone("US/Eastern")
 
         # images
         MISC = local__filepaths_misc()
+        MISC_cb = local__filepaths_misc(jpg_root=os.path.join(hive_master_root(), '/custom_button/frontend/build/misc' ))
         bee_image = MISC['bee_image']
         mainpage_bee_png = MISC['mainpage_bee_png']
         flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
@@ -239,7 +354,6 @@ def pollenq(admin_pq):
             signin_main(page="pollenq")
         
         if st.session_state['authentication_status'] != True: ## None or False
-            # menu_id = menu_bar_selection(prod_name_oppiste=False, prod_name=False, prod=False, menu='unAuth', ac_info=False)
             display_for_unAuth_client_user()
             st.stop()
 
@@ -268,18 +382,41 @@ def pollenq(admin_pq):
                     st.session_state["production"] = False
                     st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
 
+            cols = st.columns((2,2,2,2,3,1))
+            hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
+            with cols[5]:
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+
+            print("King")
             PB_KING_Pickle = master_swarm_KING(prod=prod)
             KING = ReadPickleData(PB_KING_Pickle)
             QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
             QUEEN_KING['prod'] = st.session_state['production']          
             
-            # if st.session_state['admin']:
-            #     with st.sidebar:
-            #         if st.button('Re-Init KING'):
-            #             print("init KING")
-            #             KING = init_KING()
-            #             PickleData(PB_KING_Pickle, KING)
-
+            if authorized_user:
+                refresh_chess_board__button(QUEEN_KING)
+                refresh_queen_controls_button(QUEEN_KING)
+                refresh_trading_models_button(QUEEN_KING)
+            
+            option_data = [
+            {'icon': "fas fa-chess-board", 'label':"chess_board"},
+            {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+            ]
+            option_data_orders = [
+            # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
+            {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+            # {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
+            ]
+            option_data_qm = [
+            {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
+            {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+            ]
+            option_data_qm = [
+            {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
+            {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+            {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
+            ]
+            print("API")
             try:
                 api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
                 ac_info = refresh_account_info(api=api)['info_converted']
@@ -287,8 +424,22 @@ def pollenq(admin_pq):
                 st.error(e)
                 ac_info = False
             
-            hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
-            menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', ac_info=ac_info, hide_streamlit_markers=hide_streamlit_markers) 
+            print("MENU")
+            with cols[0]:
+                cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Orders', key='orders', default=True, height='134px')
+                if st.session_state['orders']:
+                    hc.option_bar(option_definition=option_data_orders,title='Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    
+            with cols[1]:
+                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Chess Board', key='chess_board', height='134px')
+                if st.session_state['chess_board']:
+                    hc.option_bar(option_definition=option_data,title='Chess Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+            with cols[2]:
+                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-PNG.png", hoverText='Trading Models', key='queens_mind', height='134px')
+                if st.session_state['queens_mind']:
+                    hc.option_bar(option_definition=option_data_qm,title='Trading Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    
+
             if st.session_state['admin'] == True:
                 st.write('admin:', st.session_state["admin"])
                 # add new keys
@@ -298,14 +449,15 @@ def pollenq(admin_pq):
                     PickleData(PB_KING_Pickle, KING)
             
             ## add new keys
-            QUEEN_KING = add_new_trading_models_settings(QUEEN_KING)
-
+            # QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
+            print("QUEENKING")
             APP_req = add_key_to_app(QUEEN_KING)
             QUEEN_KING = APP_req['QUEEN_KING']
             if APP_req['update']:
+                print("Updating KING QUEEN db")
                 PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
-            
             QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
+            print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)
             
             
@@ -313,20 +465,60 @@ def pollenq(admin_pq):
             theme_list = list(pollen_theme.keys())
 
             if 'init_queen_request' in st.session_state:
-                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.datetime.now(est)}
+                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.now(est)}
                 st.success("Hive Master Notified and You should receive contact soon")
+
+            with cols[4]:
+                if st.session_state['authorized_user']:
+                    if st.session_state['admin']:
+                        cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
+                        if st.session_state['admin_queens']:
+                            with st.form('admin queens'):
+                                prod_queen = st.checkbox('prod', False)
+                                client_user_queen = st.selectbox('client_user_queen', list(KING['users'].get('client_user__allowed_queen_list')))
+                                if st.form_submit_button("Send Queen"):
+                                    trigger_airflow_dag(dag='run_queenbee', client_username=client_user_queen, prod=prod_queen)
+                    
+                    QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])
+                    api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
+                    
+                    try:
+                        api_failed = False
+                        snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
+                    except Exception as e:
+                        # requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://data.alpaca.markets/v2/stocks/SPY/snapshot
+                        st.write("API Keys failed! You need to update, Please Go to your Alpaca Broker Account to Generate API Keys")
+                        # time.sleep(5)
+                        queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
+                        api_failed = True
+                
+                    # use API keys from user
+                    queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod)
+                    queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
+                    queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
+
+
+                    # queensheart
+                    now = datetime.now(est)
+                    beat = (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds()
+                    beat = 89 if beat > 89 else beat
+                    cust_Button("misc/dollar-symbol-unscreen.gif", hoverText='HeartBeat', key='heart_beat', height=f'{beat}px')
 
 
         if authorized_user and 'pollenq' in menu_id: 
+            print("QueensConscience")
             queens_conscience(KING=KING, QUEEN_KING=QUEEN_KING)
             st.stop()
         if menu_id == 'QC':
+            print("QUEEN")
             queen()
             st.stop()
         if menu_id == 'TradingModels':
+            print("TRADINGMODELS")
             trading_models()
             st.stop()
         if menu_id == 'PlayGround':
+            print("PLAYGROUND")
             PlayGround()
             st.stop()  
         if menu_id == 'Account':

@@ -82,16 +82,6 @@ def PlayGround():
         if view_ss_state:
             st.write(st.session_state)
 
-        @st.cache(allow_output_mutation=True)
-        def return_ORDERS():
-            return ReadPickleData(st.session_state['PB_Orders_Pickle'])
-
-        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
-            ORDERS = return_ORDERS()
-            order_buttons = True
-        else:
-            order_buttons = False
-            ORDERS = ReadPickleData(st.session_state['PB_Orders_Pickle'])
         
         QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
@@ -106,62 +96,7 @@ def PlayGround():
 
         
         active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-        # queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list)
-        ordertables__agrid = queen_order_flow(QUEEN=ORDERS, active_order_state_list=active_order_state_list, order_buttons=order_buttons)
-        # ipdb.set_trace()
-        if st.session_state['authorized_user']:
-            if ordertables__agrid.selected_rows:
-                # st.write(queen_order[0]['client_order_id'])
-                queen_order = ordertables__agrid.selected_rows[0]
-                client_order_id = queen_order.get('client_order_id')
 
-                try: # OrderState
-                    df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
-                    if len(df) > 0:
-                        current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
-                        if len(current_requests) > 0:
-                            st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
-                        else:
-                            st.write("App Req Created")
-                            order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
-                            order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
-                            # QUEEN_KING['update_queen_order'].append(order_update_package)
-                            # PickleData(PB_App_Pickle, QUEEN_KING)
-                            # st.success("Changing QueenOrderState Please wait for Queen to process, Refresh Table")
-                except:
-                    st.write("OrderState nothing was clicked")
-                
-                # validate to continue with selection
-                try: ## SELL
-                    df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
-                    if len(df) > 0:
-                        current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
-                        if len(current_requests) > 0:
-                            st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
-                        else:
-                            st.write("Sell App Req Created")
-                            sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-                            sell_package['sellable_qty'] = queen_order.get('available_qty')
-                            sell_package['side'] = 'sell'
-                            sell_package['type'] = 'market'
-                            # QUEEN_KING['sell_orders'].append(sell_package)
-                            # PickleData(PB_App_Pickle, QUEEN_KING)
-                            # st.success("Selling Order Sent to Queen Please wait for Queen to process, Refresh Table")
-                    else:
-                        st.write("Nothing Sell clicked")
-
-                except:
-                    st.write("Nothing was Sold")
-                try: ## KOR
-                    df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
-                    if len(df) > 0:
-                        st.write("KOR: ", client_order_id)
-                        # kings_order_rules__forum(order_rules)
-                    else:
-                        st.write("Nothing KOR clicked")
-                except:
-                    st.write("Nothing was KOR")
-        # page_tab_permission_denied(st.session_state['admin'])
         
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         cols = st.columns(2)

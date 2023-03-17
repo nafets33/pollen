@@ -21,12 +21,15 @@ sudo chmod +x /usr/bin/docker-compose
 docker ps 
 # stop docker
 docker stop $(docker ps -a -q)
+docker-compose down
 # rebuild no cache
 docker-compose build --no-cache
-
+# compose
 docker-compose up
 # docker permissions to container
 docker exec -u root container_1 chmod 777 .
+# inside container
+sudo docker exec -it effb7bb0d048 /bin/bash
 
 ## VM commands
 sudo -su root ## super user
@@ -36,6 +39,7 @@ screen -X -S SCREENID kill
 
 ## update permissions
 chmod -R 777 queen.pkl or dir client_user_dbs
+sudo chmod 777 symbols_pollenstory_dbs -R
 
 sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 
