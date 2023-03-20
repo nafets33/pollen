@@ -401,7 +401,7 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=[
         "tickers": ticker_list,
         "stars": stars(),
         "theme": theme,
-        # "total_buyng_power_allocation": .01,
+        "total_buyng_power_allocation": 1,
     }
 
 
@@ -4545,41 +4545,44 @@ def live_sandbox__setup_switch(client_username, queenKING=False, switch_env=Fals
         # if 'authoirzed_user' in st.session_state and st.session_state['authoirzed_user'] == True:
         #     if 'last_env' in st.session_state:
         #         prod = st.session_state['last_env']
-    try:
-        # else:
+    if "production" not in st.session_state:
+        prod = True if st.session_state['authorized_user'] else False
+    else:
         prod = (
             True
             if "production" in st.session_state and st.session_state["production"] == True
             else False
         )
+    # try:
+        # else:
         
-        prod_name = (
-            "LIVE"
-            if prod
-            else "Sandbox"
-        )
-        st.session_state["prod_name"] = prod_name
-        st.session_state["production"] = prod
+    prod_name = (
+        "LIVE"
+        if prod
+        else "Sandbox"
+    )
+    st.session_state["prod_name"] = prod_name
+    st.session_state["production"] = prod
 
-        if switch_env:
-            if prod:
-                prod = False
-                st.session_state["production"] = prod
-                prod_name = "Sanbox"
-                st.session_state["prod_name"] = prod_name
-            else:
-                prod = True
-                st.session_state["production"] = prod
-                prod_name = "LIVE"
-                st.session_state["prod_name"] = prod_name
+    if switch_env:
+        if prod:
+            prod = False
+            st.session_state["production"] = prod
+            prod_name = "Sanbox"
+            st.session_state["prod_name"] = prod_name
+        else:
+            prod = True
+            st.session_state["production"] = prod
+            prod_name = "LIVE"
+            st.session_state["prod_name"] = prod_name
 
-        st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
-        st.session_state['last_env'] = prod
+    st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
+    st.session_state['last_env'] = prod
 
 
-        return prod
-    except Exception as e:
-        print(e, print_line_of_error())
+    return prod
+    # except Exception as e:
+    #     print(e, print_line_of_error())
 
 
 def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):

@@ -118,13 +118,13 @@ showPyplotGlobalUse = true
 primaryColor = '#C9A500'
 
 # Background color for the main content area
-backgroundColor = '#FFFDE8'
+backgroundColor = '#FDFBEA'
 
 # Background color for sidebar and most interactive widgets
-secondaryBackgroundColor = '#ffe680'
+secondaryBackgroundColor = '#F3E69A'
 
 # Color used for almost all text
-textColor = '#59490A'
+textColor = '#5A470E'
 
 # Font family for all text in the app, except code blocks
 # Accepted values (serif | sans serif | monospace) 

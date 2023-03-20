@@ -726,14 +726,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if crypto: # crypto currently not supported
                 return {'kings_blessing': False}
             # # # # vars
-            ticker, tframe, frame = ticker_time_frame.split("_")
-            star_time = f'{tframe}{"_"}{frame}'
+            ticker, tframe, tperiod = ticker_time_frame.split("_")
+            star_time = f'{tframe}{"_"}{tperiod}'
             ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
             trigbee_wave_direction = ['waveup' if 'buy' in trigbee else 'wavedown' ][0]
 
             # Theme
             theme = QUEEN['queen_controls']['theme'] # what is the theme?
             trading_model_theme = trading_model.get('theme')
+            trading_model_star = trading_model['stars_kings_order_rules'].get(f'{tframe}_{tperiod}')
 
             """Stars Forever Be in Heaven"""
             # Story View, Wave Analysis
@@ -745,16 +746,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             current_wave_amo = pollen_theme_dict[theme][star_time][trigbee_wave_direction][current_wave_blocktime]
             
             # Trading Model Vars
-            # tmodel_power_rangers = trading_model['power_rangers'] # stars
-            # trading_model__star = trading_model['stars_kings_order_rules'][star_option_qc]
-            # tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time]['trigbees'][trigbee]['power_rangers']
             
             # Global switch to user power rangers at ticker or portfolio level 
-            tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time]['power_rangers']
+            tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time].get('power_rangers')
 
-            # king_order_rules = trading_model['trigbees'][trigbee][current_wave_blocktime] # trigbee kings_order_rules
             king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][trigbee][current_wave_blocktime]
-            maker_middle = [ticker_priceinfo['maker_middle'] if trading_model['kings_order_rules']['trade_using_limits'] == 'true' or trading_model['kings_order_rules']['trade_using_limits'] == True else False][0]
+            maker_middle = ticker_priceinfo['maker_middle'] if str(trading_model_star.get('trade_using_limits')) == 'true' else False
 
             # Total buying power allowed
             bpower_resp = buying_Power_cc(api=api, client_args="TBD", daytrade=True)
@@ -1470,8 +1467,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             honey = run_order['honey']
 
             # Return Latest Model Vars in QUEEN
+            ticker, tframe, tperiod = ticker_time_frame_origin.split("_")
             model_ticker = 'SPY' if run_order['symbol'] not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys() else run_order['symbol']
-            trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][model_ticker]
+            trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'].get(model_ticker)
+            trading_model_star = trading_model['stars_kings_order_rules'].get(f'{tframe}_{tperiod}')
 
             bishop_keys_list = ['ticker', 'ticker_time_frame', 'trigname', 'client_order_id']
             bishop_keys = {i: run_order[i] for i in bishop_keys_list}
@@ -1486,7 +1485,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             running_close_legs = False
 
             # global limit type order type
-            if str(trading_model['kings_order_rules']['trade_using_limits']).lower() == 'true':
+            if str(trading_model_star.get('trade_using_limits')).lower() == 'true':
                 order_type = 'limit'
                 limit_price = priceinfo['maker_middle']
             elif str(run_order['order_rules']['trade_using_limits']).lower() == 'true':
