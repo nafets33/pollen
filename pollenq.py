@@ -410,10 +410,10 @@ def pollenq(admin_pq):
             # use API keys from user
 
             hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
-            cols = st.columns((1,3,3,3,2,3,1,3,2))
+            cols = st.columns((1,3,3,3,1,3,2))
             hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
             
-            with cols[8]:
+            with cols[6]:
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
     
             print("King")
@@ -437,7 +437,7 @@ def pollenq(admin_pq):
             except Exception as e:
                 st.error(e)
                 ac_info = False
-            with cols[7]:
+            with cols[5]:
                 portfolio_header__QC(ac_info)
             
             print("MENU")
@@ -499,7 +499,7 @@ def pollenq(admin_pq):
                     
                     QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])
                     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
-                    
+
                     try:
                         api_failed = False
                         snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
@@ -511,16 +511,17 @@ def pollenq(admin_pq):
                         api_failed = True
                 
 
-            with cols[8]:
+            with cols[6]:
                 # queensheart
                 now = datetime.now(est)
-                beat = (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds()
-                beat = 89 if beat > 89 else beat
-                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat}px', default=False)
+                beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
+                beat_size = 100 if beat > 100 else beat
+                beat_size = 45 if beat_size < 10 else beat_size
+                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
                 if st.session_state['show_queenheart']:
                     hc.option_bar(option_definition=pq_buttons.get('option_heart'),title='', key='option_heartbeat', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
             
-            with cols[6]:
+            with cols[5]:
                 cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'23px')
 
             queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod)

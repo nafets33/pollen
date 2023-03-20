@@ -1635,14 +1635,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     if sell_trigbee_trigger:
                         if run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 500: 
-                            if 'use_wave_guage' in run_order['order_rules'].keys() and run_order['use_wave_guage'] == True: 
-                                if macd_gauge['metrics']['sell_cross-0'][24]['avg'] > .5 and macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
-                                    print("SELL ORDER change from buy to sell__using macd guage", current_macd, current_macd_time)
-                                    sell_reason = 'order_rules__macd_cross_buytosell'
-                                    sell_order = True
-                                    order_side = 'sell'
-                                    limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
-                            else:
+                            # if 'use_wave_guage' in run_order['order_rules'].keys():
+                            #     if run_order.get('use_wave_guage') == True: 
+                            #         if macd_gauge['metrics']['sell_cross-0'][24]['avg'] > .5 and macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
+                            #             print("SELL ORDER change from buy to sell__using macd guage", current_macd, current_macd_time)
+                            #             sell_reason = 'order_rules__macd_cross_buytosell'
+                            #             sell_order = True
+                            #             order_side = 'sell'
+                            #             limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
+                            if macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
                                 print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
                                 sell_reason = 'order_rules__macd_cross_buytosell'
                                 sell_order = True
