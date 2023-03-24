@@ -26,8 +26,9 @@ def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est
 
 def kingdom__global_vars():
     # ###### GLOBAL # ######
-    ARCHIVE_queenorder = "archived"
-    active_order_state_list = [
+    return {
+    'ARCHIVE_queenorder': "archived",
+    'active_order_state_list': [
         "running",
         "running_close",
         "submitted",
@@ -37,24 +38,24 @@ def kingdom__global_vars():
         "completed_alpaca",
         "running_open",
         "archived_bee",
-    ]
-    active_queen_order_states = [
+    ],
+    'active_queen_order_states': [
         "submitted",
         "accetped",
         "pending",
         "running",
         "running_close",
         "running_open",
-    ]
-    CLOSED_queenorders = ["running_close", "completed", "completed_alpaca"]
-    RUNNING_Orders = ["running", "running_open"]
-    RUNNING_CLOSE_Orders = ["running_close"]
+    ],
+    'CLOSED_queenorders': ["running_close", "completed", "completed_alpaca"],
+    'RUNNING_Orders': ["running", "running_open"],
+    'RUNNING_CLOSE_Orders': ["running_close"],
     # crypto
-    crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
-    coin_exchange = "CBSE"
+    'crypto_currency_symbols': ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"],
+    'coin_exchange': "CBSE",
 
     # misc
-    exclude_conditions = [
+    'exclude_conditions': [
         "B",
         "W",
         "4",
@@ -72,9 +73,9 @@ def kingdom__global_vars():
         "T",
         "V",
         "Z",
-    ]  # 'U'
+    ],  # 'U'
 
-
+    }
 # ###### GLOBAL # ######
 ARCHIVE_queenorder = "archived"
 active_order_state_list = [
@@ -125,7 +126,6 @@ exclude_conditions = [
 ]  # 'U'
 # script_path = os.path.abspath(__file__)
 # print(script_path)
-
 
 
 def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_markers=True):

@@ -40,6 +40,7 @@ screen -X -S SCREENID kill
 ## update permissions
 chmod -R 777 queen.pkl or dir client_user_dbs
 sudo chmod 777 symbols_pollenstory_dbs -R
+sudo chmod 777 symbols_STORY_bee_dbs -R
 
 sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 

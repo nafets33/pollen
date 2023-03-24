@@ -5,7 +5,7 @@ import os
 def pollen_engine(st, pd, acct_info, log_dir):
     
     with st.expander("alpaca account info"):
-        st.write(acct_info['info'])
+        st.write(acct_info)
 
     with st.expander('betty_bee'):
         betty_bee = ReadPickleData(os.path.join(os.path.join(hive_master_root(), 'db'), 'betty_bee.pkl'))

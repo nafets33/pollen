@@ -76,6 +76,22 @@ default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 
 ## IMPROVE GLOBAL VARIABLES
 
+@st.cache_data()
+def return_QUEEN():
+    st.info("Cache QUEEN")
+    return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+# Linked
+def read_QUEEN(info='assumes session state, cache queen'):
+    if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
+        QUEEN = return_QUEEN()
+        st.session_state['order_buttons'] = True
+    else:
+        st.cache_data.clear()
+        QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        st.session_state['order_buttons'] = False
+    
+    return QUEEN
+
 def create_AppRequest_package(request_name, archive_bucket=None, client_order_id=None):
     now = datetime.now(est)
     return {
@@ -999,7 +1015,7 @@ def download_df_as_CSV(df, file_name="name.csv"):
     return True
 
 
-def queen_order_flow(QUEEN, active_order_state_list, order_buttons):
+def queen_order_flow(QUEEN, active_order_state_list, order_buttons=False):
 
     with st.expander("Portfolio Orders", expanded=True):
         now_time = datetime.now(est)
@@ -1096,25 +1112,6 @@ def page_session_state__cleanUp(page):
 
 
 
-def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
-    QUEENBEE = ReadPickleData(queen_db)
-    queens_master_tickers = []
-    queens_chess_pieces = []
-    for qcp, qcp_vars in QUEENBEE["workerbees"].items():
-        for ticker in qcp_vars["tickers"]:
-            if qcp in qcp_s:
-                # if qcp in ['knight']:
-                queens_master_tickers.append(ticker)
-                queens_chess_pieces.append(qcp)
-    queens_chess_pieces = list(set(queens_chess_pieces))
-
-    return {
-        "QUEENBEE": QUEENBEE,
-        "queens_chess_pieces": queens_chess_pieces,
-        "queens_master_tickers": queens_master_tickers,
-    }
-
-
 def init_client_user_secrets(
     prod_keys_confirmed=False,
     sandbox_keys_confirmed=False,
@@ -1200,9 +1197,27 @@ def pollenq_button_source():
         {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
         {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
         ],
-        'option_heart': [{'id': "heartbeat", 'icon':"fas fa-heart",'label':""},]
+        'option_heart': [{'id': "heartbeat", 'icon':"fas fa-heart",'label':""},],
+        'option_chart': [{'id': "show_charts", 'icon':"fa fa-bar-chart",'label':""}, {'id': "no_charts", 'icon':"fa fa-toggle-off",'label':""}, ],
+        'pawn_option_data': [
+        {'id': "chess_board", 'icon': "fas fa-chess-pawn", 'label':""},
+        ],
+        'castle_option_data': [
+        {'id': "rook", 'icon': "fas fa-chess-rook", 'label':""},
+        ],
+        'bishop_option_data': [
+        {'id': "bishop", 'icon': "fas fa-chess-bishop", 'label':""},
+        ],
+        'knight_option_data': [
+        {'id': "knight", 'icon': "fas fa-chess-knight", 'label':""},
+        ],
+        'chess_option_data': [
+        {'id': "chess_search", 'icon': "fas fa-chess", 'label':""},
+        ],
+        'workerbees_option_data': [
+        {'id': "workerbees_option", 'icon': "fas fa-sitemap", 'label':""},
+        ],
     }
-
 
 def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False):
     if authorized_user == False:
@@ -1723,3 +1738,5 @@ def show_waves(STORY_bee, ticker_option='SPY', frame_option='1Minute_1Day'):
     st.dataframe(data=df_m_sort)
 
     return True
+
+

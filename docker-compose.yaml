@@ -77,7 +77,7 @@ x-airflow-common:
     - ./symbols_pollenstory_dbs:/opt/pollen/symbols_pollenstory_dbs
     - ./symbols_STORY_bee_dbs:/opt/pollen/symbols_STORY_bee_dbs
     - ./client_user_dbs:/opt/pollen/client_user_dbs
-  user: "${AIRFLOW_UID:-50000}:0"
+  user: "${AIRFLOW_UID:-1000}:0"
   depends_on:
     &airflow-common-depends-on
     redis:

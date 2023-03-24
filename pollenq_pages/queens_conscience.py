@@ -25,9 +25,9 @@ from custom_button import cust_Button
 from polleq_app_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import download_df_as_CSV, create_AppRequest_package, standard_AGgrid, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story
-from chess_piece.king import menu_bar_selection, return_all_client_users__db, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
-from chess_piece.queen_hive import add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, add_key_to_app, add_key_to_QUEEN, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
+from chess_piece.app_hive import pollenq_button_source, download_df_as_CSV, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
+from chess_piece.king import kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error
+from chess_piece.queen_hive import refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, return_queen_controls, return_STORYbee_trigbees, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, ReadPickleData, pollen_themes, PickleData, return_timestamp_string, init_logging
 from ozz.ozz_bee import send_ozz_call
 # from chat_bot import ozz_bot
 # from tqdm import tqdm
@@ -57,23 +57,6 @@ scriptname = os.path.basename(__file__)
 queens_chess_piece = os.path.basename(__file__)
 
 
-
-# if 'sidebar_hide' in st.session_state:
-#     sidebar_hide = 'collapsed'
-# else:
-#     sidebar_hide = 'expanded'
-
-# st.set_page_config(
-#      page_title="pollenq",
-#      page_icon=page_icon,
-#      layout="wide",
-#      initial_sidebar_state=sidebar_hide,
-#     #  menu_items={
-#     #      'Get Help': 'https://www.extremelycoolapp.com/help',
-#     #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-#     #      'About': "# This is a header. This is an *extremely* cool app!"
-#     #  }
-#  )
 page = 'QueensConscience'
 
 # if st.button("sw"):
@@ -83,15 +66,21 @@ page = 'QueensConscience'
 # st.header("Section 1")
 # st.markdown("[Section 1](#section-1)")
 
-def queens_conscience(st, hc, KING, QUEEN_KING):
+def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING):
+
     # from random import randint
     main_root = hive_master_root() # os.getcwd()  # hive root
     load_dotenv(os.path.join(main_root, ".env"))
     est = pytz.timezone("US/Eastern")
     utc = pytz.timezone('UTC')
     # ###### GLOBAL # ######
-    active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-
+    king_G = kingdom__global_vars()
+    active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+    active_queen_order_states = king_G.get('active_queen_order_states') # = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+    # CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['running_close', 'completed', 'completed_alpaca']
+    RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
+    # RUNNING_CLOSE_Orders = king_G.get('RUNNING_CLOSE_Orders') # = ['running_close']
+    
     # crypto
     crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
     crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
@@ -114,6 +103,126 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
     default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
     
     with st.spinner("Welcome to the QueensMind"):
+
+
+        def advanced_charts(STORY_bee, POLLENSTORY):
+            try:
+                tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
+                cols = st.columns((1,5,1,1))
+                # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
+                stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
+                '2hr':"2Hour_6Month", '1Yr':"1Day_1Year", 'all':"all",}
+                with cols[0]:
+                    ticker_option = st.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+                    ticker = ticker_option
+                with cols[1]:
+                    option__ = st.radio(
+                        label="stars_radio",
+                        options=list(stars_radio_dict.keys()),
+                        key="signal_radio",
+                        label_visibility='visible',
+                        # disabled=st.session_state.disabled,
+                        horizontal=True,
+                    )
+                
+                with cols[2]:
+                    day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
+                
+                if option__ != 'all':
+                    ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
+                else:
+                    ticker_time_frame = f'{ticker}_{"1Minute_1Day"}'
+
+                df = POLLENSTORY[ticker_time_frame].copy()
+
+                charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
+                
+                with charts__view:
+                    try:
+    
+                        st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+                        if option__.lower() == 'all':
+                            min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+                            min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+                            min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+                            _1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+                            _2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+                            _1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+
+                            c1, c2 = st.columns(2)
+                            with c1:
+                                st.plotly_chart(create_main_macd_chart(min_1))
+                            with c2:
+                                st.plotly_chart(create_main_macd_chart(min_5))
+                            c1, c2 = st.columns(2)
+                            with c1:
+                                st.plotly_chart(create_main_macd_chart(min_30m))
+                            with c2:
+                                st.plotly_chart(create_main_macd_chart(_1hr))
+                            c1, c2 = st.columns(2)
+                            with c1:
+                                st.plotly_chart(create_main_macd_chart(_2hr))
+                            with c2:
+                                st.plotly_chart(create_main_macd_chart(_1yr))
+                        else:
+                            if day_only_option == 'yes':
+                                df_day = df['timestamp_est'].iloc[-1]
+                                df['date'] = df['timestamp_est'] # test
+
+                                df_today = df[df['timestamp_est'] > (datetime.datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                                df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+
+                                df = df_today
+                            
+                            st.plotly_chart(create_main_macd_chart(df=df, width=1500, height=550))
+                    
+                    except Exception as e:
+                        print(e)
+                        print_line_of_error()
+
+                # if slope_option == 'yes':
+                with slopes__view:
+                    # df = POLLENSTORY[ticker_time_frame].copy()
+                    slope_cols = [i for i in df.columns if "slope" in i]
+                    slope_cols.append("close")
+                    slope_cols.append("timestamp_est")
+                    slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
+                    fig = create_slope_chart(df=df)
+                    st.plotly_chart(fig)
+                    st.dataframe(slopes_df)
+                    
+                # if wave_option == "yes":
+                with waves__view:
+                    # df = POLLENSTORY[ticker_time_frame].copy()
+                    fig = create_wave_chart(df=df)
+                    st.plotly_chart(fig)
+                    
+                    # dft = split_today_vs_prior(df=df)
+                    # dft = dft['df_today']
+                    fig=create_wave_chart_all(df=df, wave_col='buy_cross-0__wave')
+                    st.plotly_chart(fig)
+
+                    st.write("current wave")
+                    current_buy_wave = df['buy_cross-0__wave_number'].tolist()
+                    current_buy_wave = [int(i) for i in current_buy_wave]
+                    current_buy_wave = max(current_buy_wave)
+                    st.write("current wave number")
+                    st.write(current_buy_wave)
+                    dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
+                    st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
+                    fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
+                    st.plotly_chart(fig)
+            
+            
+                st.session_state['last_page'] = 'queen'
+            
+            
+            except Exception as e:
+                print(e)
+                print_line_of_error()
+            
+            return True
 
 
         def chunk(it, size):
@@ -162,9 +271,9 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                         st.write(df)
 
 
-        def queen_beeAction_theflash(Falseexpand=True):
+        def queen_beeAction_theflash(expand_=True):
     
-            with st.expander("The Flash", False):
+            with st.expander("The Flash", expand_):
                 cols = st.columns((1,1,1,2,1,1))
                 with cols[5]:
                     local_gif(power_gif)
@@ -336,14 +445,10 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
             return True
 
 
-
-
-
         def return_image_upon_save(title="Saved", width=33, gif=power_gif):
             local_gif(gif_path=gif)
             st.success(title)
 
-        
 
         def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
             save = False
@@ -385,80 +490,6 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
         def trigger_queen_vars(dag, client_username, last_trig_date=datetime.datetime.now(est)):
             return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
         
-        
-        def queenbee_online(QUEENsHeart, admin, dag, api_failed):
-            # from airflow.dags.dag_queenbee_prod import run_trigger_dag
-            
-            users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
-            now = datetime.datetime.now(est)
-
-            if dag =='run_queenbee':
-                if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
-                    st.write("Waking up your Queen She is a bit lazy today...it may take her up to 60 Seconds to get out of bed")
-                    st.image(QUEEN_KING['character_image'], width=100)
-                    return False
-                # if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 86400:
-                #     st.sidebar.write("Awaiting Queen")
-                #     return False
-                
-                if api_failed:
-                    st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
-                    return False
-
-                # if (now - QUEEN['pq_last_modified']['pq_last_modified']).total_seconds() > 60:
-                if 'heartbeat_time' not in QUEENsHeart.keys():
-                    st.write("You Need a Queen")
-                    return False
-                
-                if (now - QUEENsHeart['heartbeat_time']).total_seconds() > 60:
-                    # st.write("YOUR QUEEN if OFFLINE")
-                    cols = st.columns((3,1,1,1,1))
-                    with cols[2]:
-                        st.error("Your Queen Is Asleep Wake Her UP!")
-                    with cols[3]:
-                        wake_up_queen_button = st.button("Wake Her Up")
-                        # wake_up_queen_button = cust_Button(file_path_url="misc/sleeping_queen_gif.gif", height='50px', key='b')
-                        if wake_up_queen_button and st.session_state['authorized_user']:
-                            # check to ensure queen is offline before proceeding 
-                            if (now - QUEENsHeart['heartbeat_time']).total_seconds() < 60:
-                                return False
-                            
-                            if st.session_state['username'] not in users_allowed_queen_email: ## this db name for client_user # stefanstapinski
-                                print("failsafe away from user running function")
-                                send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{st.session_state["username"]} you forgot to say something')
-                                st.error("Your Account not Yet authorized")
-                                return False
-
-                            # execute trigger
-                            trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                            QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
-                            st.write("My Queen")
-                            st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
-                            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                            switch_page("pollenq")
-
-                    with cols[4]:
-                        local_gif(gif_path=flyingbee_grey_gif_path)
-
-
-                    return False
-                else:
-                    return True
-            elif dag =='run_workerbees':
-                if admin:
-                    if st.sidebar.button("Flying Bees", use_container_width=True):
-                        trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                        st.write("Bees Fly")
-                return True
-            elif dag =='run_workerbees_crypto':
-                if admin:
-                    if st.sidebar.button("Flying Crypto Bees", use_container_width=True):
-                        trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                        st.write("Crypto Bees Fly")
-                return True
-            else:
-                return False
-
         
         def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', title="Active Models", groupby_qcp=False, info_type='buy'):
 
@@ -559,182 +590,186 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
         def on_click_ss_value_bool(name):
             st.session_state[name] = True
 
+        
+        def chessboard(acct_info, QUEEN_KING, admin=False):
 
-        def chessboard(QUEEN_KING, admin=False):
-            ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
-            pawn_option_data = [
-            {'id': "chess_board", 'icon': "fas fa-chess-pawn", 'label':""},
-            ]
-            castle_option_data = [
-            {'id': "rook", 'icon': "fas fa-chess-rook", 'label':""},
-            ]
-            bishop_option_data = [
-            {'id': "bishop", 'icon': "fas fa-chess-bishop", 'label':""},
-            ]
-            knight_option_data = [
-            {'id': "knight", 'icon': "fas fa-chess-knight", 'label':""},
-            ]
-            chess_option_data = [
-            {'id': "chess_search", 'icon': "fas fa-chess", 'label':""},
-            ]
-            current_setup = QUEEN_KING['chess_board']
-            chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING)
-            view = chess_pieces.get('view')
-            all_workers = chess_pieces.get('all_workers')
-            qcp_ticker_index = chess_pieces.get('qcp_ticker_index')
-            current_tickers = qcp_ticker_index.keys()
-            # st.write(current_tickers)
-            
-            name = 'Workerbees_Admin' if admin else 'Chess Board'
-            qcp_bees_key = 'qcp_workerbees' if admin else 'chess_board'
+            def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp):
 
-            with st.expander(name, True):
-                with st.form(f'ChessBoard_form{admin}'):
-                    themes = list(pollen_themes(KING).keys())
-                    cols = st.columns((1,5))
-                    with cols[0]:
-                        hc.option_bar(option_definition=chess_option_data,title='', key='chess_search', horizontal_orientation=True)                                
-                    with cols[1]:
-                        ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
-
-                    cols = st.columns((1,1,1))
-                    with cols[1]:
-                        st.subheader(name)
-                    cols = st.columns((1,4,2,2,1,1,1,3,1,1))
-                    for qcp in all_workers:
-                         
+                try:
+                    def return_active_image(qcp):
                         if qcp == 'castle':
                             with cols[0]:
                                 # st.image(MISC.get('castle_png'), width=54)
-                                hc.option_bar(option_definition=castle_option_data,title='', key='castle_qcp', horizontal_orientation=True)
-                            with cols[1]:
-                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                            with cols[2]:
-                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                            with cols[3]:
-                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                            with cols[4]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                            with cols[5]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                            with cols[6]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                            with cols[7]:
-                                QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'{"BuyingPowerAllocation"}', key=f'{qcp}_buying_power_allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), help="Allocate Total.$.portfolio to share amongst tickers")
-                            with cols[8]:
-                                if 'total_budget' in QUEEN_KING[qcp_bees_key][qcp].keys():
-                                    QUEEN_KING[qcp_bees_key][qcp]['total_budget'] = st.number_input(label=f'{"Total Budget"}', key=f'{qcp}_total_budget', value=float(QUEEN_KING[qcp_bees_key][qcp]['total_budget']), help="Allocate Total.$.portfolio to share amongst tickers")
-
+                                hc.option_bar(option_definition=pq_buttons.get('castle_option_data'),title='', key='castle_qcp', horizontal_orientation=True)
                         elif qcp == 'bishop':
                             with cols[0]:
-                                hc.option_bar(option_definition=bishop_option_data,title='', key='bishop_qcp', horizontal_orientation=True)                                
-                            with cols[1]:
-                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                            with cols[2]:
-                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                            with cols[3]:
-                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                            with cols[4]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                            with cols[5]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                            with cols[6]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                            with cols[7]:
-                                QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'{"BuyingPowerAllocation"}', key=f'{qcp}_buying_power_allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), help="Allocate Total.$.portfolio to share amongst tickers")
-
+                                hc.option_bar(option_definition=pq_buttons.get('bishop_option_data'),title='', key='bishop_qcp', horizontal_orientation=True)                                
                         elif qcp == 'knight':
                             with cols[0]:
-                                hc.option_bar(option_definition=knight_option_data,title='', key='knight_qcp', horizontal_orientation=True)                                
-                            with cols[1]:
-                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                            with cols[2]:
-                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                            with cols[3]:
-                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                            with cols[4]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                            with cols[5]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                            with cols[6]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                            with cols[7]:
-                                QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'{"BuyingPowerAllocation"}', key=f'{qcp}_buying_power_allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), help="Allocate Total.$.portfolio to share amongst tickers")
-
+                                hc.option_bar(option_definition=pq_buttons.get('knight_option_data'),title='', key='knight_qcp', horizontal_orientation=True)                                
                         elif qcp == 'castle_coin':
                             with cols[0]:
                                 st.image("https://s3.us-east-2.amazonaws.com/nomics-api/static/images/currencies/BSV.png", width=54)
-                                
-                            with cols[1]:
-                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                            with cols[2]:
-                                st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                            with cols[3]:
-                                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                            with cols[4]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                            with cols[5]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                            with cols[6]:
-                                QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                            with cols[7]:
-                                QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'{"BuyingPowerAllocation"}', key=f'{qcp}_buying_power_allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), help="Allocate Total.$.portfolio to share amongst tickers")
-
                         else:
+                            with cols[0]:
+                                st.image(MISC.get('knight_png'), width=74)
+                        
+                        return True
+
+                    return_active_image(qcp)
+                    
+                    # chess board vars
+                    with cols[1]:
+                        QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label="", options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                    with cols[2]:
+                        st.selectbox(label='', options=['MACD'], key=f'{qcp}model{admin}')
+                    with cols[3]:
+                        QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+                    with cols[4]:
+                        QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                    with cols[5]:
+                        QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                    with cols[6]:
+                        QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+                    with cols[7]:
+                        QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='visible')
+                    
+                    return True
+                
+                except Exception as e:
+                    er, er_line = print_line_of_error()
+                    st.write(f'{qcp_bees_key} {qcp} failed {er_line}')
+            
+            def handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=False):
+                # add new trading models if needed
+                # Castle 
+                for workerbee, bees_data in QUEEN_KING[qcp_bees_key].items():
+                    for ticker in bees_data.get('tickers'):
+                        theme = bees_data.get('theme')
+                        QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee, theme=theme, reset_theme=reset_theme)
+                
+                return QUEEN_KING
+            
+            name = 'Chess Board'
+            qcp_bees_key = 'chess_board'
+            
+            ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
+
+            current_setup = QUEEN_KING['chess_board']
+            chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
+            view = chess_pieces.get('view')
+            all_workers = chess_pieces.get('all_workers')
+            qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
+            current_tickers = qcp_ticker_index.keys()
+
+            with st.expander(name, True): # ChessBoard
+                with st.form(f'ChessBoard_form{admin}'):
+                    try:
+                        themes = list(pollen_themes(KING).keys())
+                        cols = st.columns((1,5))
+
+                        with cols[0]:
+                            hc.option_bar(option_definition=pq_buttons.get('chess_option_data'),title='', key='chess_search', horizontal_orientation=True)                                
+                        with cols[1]:
+                            ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
+
+                        with cols[1]:
+                            st.subheader(name)
+                        
+                        cols = st.columns((1,5,2,2,2,2,2,3,2,2))
+                        
+                        # Board Headers
+                        c=0
+                        chess_board_names = list(QUEEN_KING[qcp_bees_key]['castle'].keys())
+                        chess_board_names = ["pq", 'symbols', 'Model', 'theme', 'fast', 'slow', 'smooth', 'BP.Allocation', 'Total Budget', 'Cash']
+                        for qcpvar in chess_board_names:
                             try:
-                                with cols[0]:
-                                    # st.image(MISC.get('knight_png'), width=74)
-                                    # cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders', default=True, height='134px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                                    hc.option_bar(option_definition=pawn_option_data,title='Pawn', key=f'{qcp}pawn_qcp', horizontal_orientation=True)
-
-                                with cols[1]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                                with cols[2]:
-                                    st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                                with cols[3]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                                with cols[4]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                                with cols[5]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                                with cols[6]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                                with cols[7]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'{"BuyingPowerAllocation"}', key=f'{qcp}_buying_power_allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), help="Allocate Total.$.portfolio to share amongst tickers")
+                                with cols[c]:
+                                    st.write(qcpvar)
+                                    c+=1
                             except Exception as e:
-                                er, er_line = print_line_of_error()
-                                st.write(f'{qcp_bees_key} {qcp} failed {er_line}')
+                                print(e)
+                        
+                        for qcp in all_workers:
+                            if qcp in ['castle', 'castle_coin', 'bishop', 'knight']:
+                                setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp)
 
-                    if st.form_submit_button('Save Workers'):
+                        # RevRec
+                        revrec = refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+
+                        QUEEN_KING['chess_board__revrec'] = revrec
+                        df_qcp = revrec.get('df_qcp')
+                        df_ticker = revrec.get('df_ticker')
+                        df_stars = revrec.get('df_stars')
+
+                        for ticker_time_frame in df_stars.index.to_list():
+                            star_total_budget = df_stars.loc[ticker_time_frame].get('star_total_budget')
+                            ttf_remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
+                            df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
+
+                        for qcp in all_workers:
+                            if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
+                                continue
+                            
+                            total_ticker_budget = 0
+                            tickers_cost_basis = 0
+                            qcp_tickers = [i for i in qcp_ticker_index.keys() if qcp_ticker_index[i] == qcp]
+                            for ticker in qcp_tickers:
+
+                                total_budget = df_ticker.loc[ticker].get('ticker_total_budget')
+                                total_ticker_budget+=total_budget
+                                q_orders = return_queen_orders__query(QUEEN=QUEEN, queen_order_states=RUNNING_Orders , ticker=ticker)
+                                if len(q_orders) > 0:
+                                    current_running_cost_b = sum(q_orders['cost_basis'])
+                                    tickers_cost_basis+=current_running_cost_b
+                            
+                            remaing_qcp_budget = total_ticker_budget - tickers_cost_basis
+
+                            with cols[8]:
+                                QUEEN_KING[qcp_bees_key][qcp]['total_budget'] = st.number_input(label=f'', key=f'{qcp}_total_budget', value=float(df_qcp.loc[qcp].get('total_budget')), help="Allocate Total.$.portfolio to share amongst tickers")
+ 
+                            with cols[9]:
+                                QUEEN_KING[qcp_bees_key][qcp]['remaining_budget'] = st.number_input(label=f'', key=f'{qcp}_remaining_budget', value=remaing_qcp_budget, help="Remaining Total Budget on Margin")
+                    
+                    except Exception as e:
+                        er, er_line = print_line_of_error()
+                        print(qcp, ticker)
+                    
+                    cols = st.columns((2,3,1))
+                    with cols[0]:
+                        # edit_df_qcp = st.experimental_data_editor(df_qcp)
+                        st.dataframe(df_qcp)
+                    with cols[0]:
+                        # edit_df_ticker = st.experimental_data_editor(df_ticker, key='df_ticker')
+                        st.dataframe(df_ticker)
+                    with cols[1]:
+                        # edit_df_stars = st.experimental_data_editor(df_stars, key='df_stars')
+                        st.dataframe(df_stars)
+                    
+                    QUEEN_KING['chess_board__revrec'] = {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
+                    
+                    if st.form_submit_button('Save Board'):
                         if authorized_user == False:
                             st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
                             return False
+                        
+                        QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING)
+                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                        st.success("New Move Saved")
+                        st.experimental_rerun()
+                        
                     if st.form_submit_button('Reset ChessBoards Trading Models With Theme', on_click=on_click_ss_value_bool('reset_chessboard_theme')):
                         if authorized_user == False:
                             st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
                             return False
 
-
-                        def handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=False):
-                            # add new trading models if needed
-                            # Castle 
-                            for workerbee, bees_data in QUEEN_KING[qcp_bees_key].items():
-                                for ticker in bees_data.get('tickers'):
-                                    print("UPDATE MODELS")
-                                    theme = bees_data.get('theme')
-                                    QUEEN_KING = add_trading_model(status='active', PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee, theme=theme, reset_theme=reset_theme)
-                            
-                            return QUEEN_KING
-                        
-
                         reset_theme = True if 'reset_chessboard_theme' in st.session_state and st.session_state['reset_chessboard_theme'] else False
                         print(reset_theme)
                         QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING, reset_theme=reset_theme)
-                        
-                        app_req = create_AppRequest_package(request_name='workerbees')
-                        QUEEN_KING['workerbees_requests'].append(app_req)
                         PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                        st.success("New Move Saved")
+                        st.success("All Trading Models Reset to Theme")
+                        st.experimental_rerun()
+                        
                         
                         return True
 
@@ -742,20 +777,19 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
         def chess_board__workerbees(QUEEN_KING, admin=True):
 
             try:
+                
+                name = 'Workerbees_Admin'
+                qcp_bees_key = 'qcp_workerbees'
 
                 ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
                 
                 current_setup = QUEEN_KING['chess_board']
-                chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING)
+                chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
                 view = chess_pieces.get('view')
                 all_workers = chess_pieces.get('all_workers')
-                qcp_ticker_index = chess_pieces.get('qcp_ticker_index')
+                qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
                 current_tickers = qcp_ticker_index.keys()
-                # st.write(current_tickers)
-                
-                name = 'Workerbees_Admin' if admin else 'Chess Board'
-                qcp_bees_key = 'qcp_workerbees' if admin else 'chess_board'
-                
+
                 add_new_qcp__to_Queens_workerbees(qcp_bees_key)
 
                 with st.expander(name, True):
@@ -777,110 +811,52 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                         #     image = "https://p7.hiclipart.com/preview/221/313/319/chess-piece-knight-rook-board-game-chess.jpg"
                         #     st.markdown(f'<img src="{image}" style="background-color:transparent">', unsafe_allow_html=True)
                         themes = list(pollen_themes(KING).keys())
+
                         with cols[1]:
                             st.subheader(name)
-                        cols = st.columns((1,4,2,2,1,1,1,1))
+                        cols = st.columns((1,3,2,2,2,2,2,2,1))
                         for qcp in all_workers:
-                            if qcp == 'castle_coin':
-                                with cols[0]:
-                                    st.image("https://s3.us-east-2.amazonaws.com/nomics-api/static/images/currencies/BSV.png", width=54)
-                                    
-                                with cols[1]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                                with cols[2]:
-                                    st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                                with cols[3]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                                with cols[4]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                                with cols[5]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                                with cols[6]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                                    
-                            if qcp == 'castle':
-                                with cols[0]:
-                                    st.image(MISC.get('castle_png'), width=54)
-
-                                with cols[1]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                                with cols[2]:
-                                    st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                                with cols[3]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                                with cols[4]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                                with cols[5]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                                with cols[6]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-
-
-                            if qcp == 'bishop':
-                                with cols[0]:
-                                    st.image(MISC.get('bishop_png'), width=74)
-
-                                with cols[1]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                                with cols[2]:
-                                    st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                                with cols[3]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-                                with cols[4]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
-                                with cols[5]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
-                                with cols[6]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-
-
-                            if qcp == 'knight':
-                                with cols[0]:
+                            try:
+                                if qcp == 'castle_coin':
+                                    with cols[0]:
+                                        st.image("https://s3.us-east-2.amazonaws.com/nomics-api/static/images/currencies/BSV.png", width=54)
+                                elif qcp == 'castle':
+                                    with cols[0]:
+                                        st.image(MISC.get('castle_png'), width=54)
+                                elif qcp == 'bishop':
+                                    with cols[0]:
+                                        st.image(MISC.get('bishop_png'), width=74)
+                                elif qcp == 'knight':
+                                    with cols[0]:
+                                        st.image(MISC.get('knight_png'), width=74)
+                                else:
                                     st.image(MISC.get('knight_png'), width=74)
-                                
+
                                 with cols[1]:
                                     QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                                 with cols[2]:
                                     st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
-                                with cols[3]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+                                # with cols[3]:
+                                #     QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
                                 with cols[4]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input(f'fast', min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
                                 with cols[5]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
                                 with cols[6]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                    
-                        if st.form_submit_button('Save Workers'):
+                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+                            except Exception as e:
+                                print(e, qcp)
+                                st.write(qcp, " ", e)
+
+                        if st.form_submit_button('Save ChessBoard'):
                             if authorized_user == False:
                                 st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
                                 return False
-                        if st.form_submit_button('Reset ChessBoards Trading Models With Theme', on_click=on_click_ss_value_bool('reset_chessboard_theme')):
-                            if authorized_user == False:
-                                st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
-                                return False
-
-
-                            def handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=False):
-                                # add new trading models if needed
-                                # Castle 
-                                for workerbee, bees_data in QUEEN_KING[qcp_bees_key].items():
-                                    for ticker in bees_data.get('tickers'):
-                                        print("UPDATE MODELS")
-                                        theme = bees_data.get('theme')
-                                        QUEEN_KING = add_trading_model(status='active', PB_APP_Pickle=PB_App_Pickle, QUEEN_KING=QUEEN_KING, ticker=ticker, workerbee=workerbee, theme=theme, reset_theme=reset_theme)
-                                
-                                return QUEEN_KING
-                            
-
-                            reset_theme = True if 'reset_chessboard_theme' in st.session_state and st.session_state['reset_chessboard_theme'] else False
-                            print(reset_theme)
-                            QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING, reset_theme=reset_theme)
                             
                             app_req = create_AppRequest_package(request_name='workerbees')
                             QUEEN_KING['workerbees_requests'].append(app_req)
                             PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                            st.success("New Move Saved")
+                            st.success("New Move")
                             
                             return True
 
@@ -914,9 +890,9 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                 if saved_model_ticker != 'select':
                     title = f'{"Viewing a Saved Not active Ticker Model"}'
                 else:
-                    title = "Current Ticker Model"
+                    title = "Trading Models"
                 
-                st.header(title)
+                st.title(title)
 
                 cols = st.columns(4)
                 with cols[0]:
@@ -930,21 +906,11 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                 else:
                     trading_model = QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc]
 
-                # Trading Model Levels
+                # Trading Global Model Levels
                 star_avail = list(trading_model['stars_kings_order_rules'].keys())
                 trigbees_avail = list(trading_model['trigbees'].keys())
                 blocktime_avail = list(trading_model['time_blocks'].keys())
                 
-                with cols[1]:
-                    star_option_qc = st.selectbox("Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
-                with cols[2]:
-                    trigbee_sel = st.selectbox("Trigbee", trigbees_avail, index=trigbees_avail.index(["buy_cross-0" if "buy_cross-0" in trigbees_avail else trigbees_avail[0]][0]))
-                with cols[3]:
-                    # wave_blocks_option = st.selectbox("Block Time", KING['waveBlocktimes'])
-                    wave_blocks_option = st.selectbox("BlockTime", blocktime_avail, index=blocktime_avail.index(["morning_9-11" if "morning_9-11" in blocktime_avail else blocktime_avail[0]][0]))
-                    
-                trading_model__star = trading_model['stars_kings_order_rules'][star_option_qc]
-
                 ticker_model_level_1 = {
                         'portforlio_weight_ask': {'type': 'portforlio_weight_ask'},
                         'QueenBeeTrader': {'type': None}, # not allowed to change
@@ -1007,199 +973,233 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                 }
                 # take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}
 
+                trading_model_revrec = {} #
+                trading_model_revrec_s = {}
+                with st.form("star_revrec"):
+                    st.header("Reallocate Star Buying Power")
+                    cols = st.columns((1,1,1,1,1,1,1))
+                    c = 0
+                    for star, star_vars in trading_model.get('stars_kings_order_rules').items():
+                        trading_model_revrec[star] = star_vars.get("buyingpower_allocation_LongTerm")
+                        trading_model_revrec_s[star] = star_vars.get("buyingpower_allocation_ShortTerm")
+                        with cols[c]:
+                            trading_model['stars_kings_order_rules'][star]["buyingpower_allocation_LongTerm"] = st.slider(label=f'L {star}', value=star_vars.get('buyingpower_allocation_LongTerm'), key=f'{star}{"_"}{"buying_power"}')
+                            trading_model['stars_kings_order_rules'][star]["buyingpower_allocation_ShortTerm"] = st.slider(label=f'S {star}', value=star_vars.get('buyingpower_allocation_ShortTerm'), key=f'{star}{"_"}{"buying_power_s"}')
+                        c+=1
+                        # with cols[0]:
+                        #     mark_down_text(align='left', text=star)
 
-
+                    df_revrec = pd.DataFrame(trading_model_revrec.items())
+                    df_revrec_s = pd.DataFrame(trading_model_revrec_s.items())
+                    df = story_view(STORY_bee=STORY_bee, ticker=ticker_option_qc)['df']
+                    # df_write = pd.concat([df], axis=1) ## Need to fix
+                    df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+                    # with cols[1]:
+                    st.write(df_style)
+                    # edited_df = st.experimental_data_editor(df_write)
+                    
+                    if st.form_submit_button("Reallocate Star Power"):
+                        QUEEN_KING['saved_trading_models'].update(trading_model)
+                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                        return_image_upon_save(title="Saved")
+                        st.experimental_rerun()
+                
                 with st.form('trading model form'):
-                    st.subheader("Settings")
+                    st.subheader("Kings Order Rules Settings")
                     #### TRADING MODEL ####
                     # Ticker Level 1
                     # Star Level 2
                     # Trigbees Level 3
-                    
-                    theme = st.selectbox(label=f'theme_reset', options=pollen_themes_selections, index=pollen_themes_selections.index(trading_model.get('theme')), key=f'theme_reset')
+                    cols = st.columns(3)
+
+                    with cols[0]:
+                        star_option_qc = st.selectbox("Star", star_avail, index=star_avail.index(["1Minute_1Day" if "1Minute_1Day" in star_avail else star_avail[0]][0]))
+                    with cols[1]:
+                        trigbee_sel = st.selectbox("Trigbee", trigbees_avail, index=trigbees_avail.index(["buy_cross-0" if "buy_cross-0" in trigbees_avail else trigbees_avail[0]][0]))
+                    with cols[2]:
+                        # wave_blocks_option = st.selectbox("Block Time", KING['waveBlocktimes'])
+                        wave_blocks_option = st.selectbox("BlockTime", blocktime_avail, index=blocktime_avail.index(["morning_9-11" if "morning_9-11" in blocktime_avail else blocktime_avail[0]][0]))
+
+                    trading_model__star = trading_model['stars_kings_order_rules'][star_option_qc]
+                    theme = st.selectbox(label=f'Theme', options=pollen_themes_selections, index=pollen_themes_selections.index(trading_model.get('theme')), key=f'theme_reset')
                     king_order_rules_update = trading_model__star['trigbees'][trigbee_sel][wave_blocks_option]
-
                     
-                    with st.expander(f'{ticker_option_qc} Global Settings'):
-                        cols = st.columns((1,1,1,1,1))
-                        
-                        # all ticker settings
-                        for kor_option, kor_v in trading_model.items():
-                            if kor_option in ticker_model_level_1.keys():
-                                item_type = ticker_model_level_1[kor_option]['type']
-                                if kor_option == 'theme':
-                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                    # with st.expander(f'{ticker_option_qc} Global Settings'):
+                    st.subheader(f'{ticker_option_qc} Global Settings')
+                    cols = st.columns((1,1,1,1,1))
+                    
+                    # all ticker settings
+                    for kor_option, kor_v in trading_model.items():
+                        if kor_option in ticker_model_level_1.keys():
+                            item_type = ticker_model_level_1[kor_option]['type']
+                            if kor_option == 'theme':
+                                trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
 
-                                if item_type == None:
-                                    continue # not allowed edit
+                            if item_type == None:
+                                continue # not allowed edit
 
-                                elif kor_option == 'status':
-                                    with cols[0]:
-                                        item_val = ticker_model_level_1[kor_option]['list']
-                                        trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
-                            
-                                elif kor_option == 'total_budget':
-                                    with cols[1]:
-                                        trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
-
-                                elif kor_option == 'max_single_trade_amount':
-                                    with cols[1]:
-                                        trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
-
-                                elif kor_option == 'allow_for_margin':
-                                    with cols[0]:
-                                        trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
-                                
-                                elif kor_option == 'buy_ONLY_by_accept_from_QueenBeeTrader':
-                                    with cols[1]:
-                                        trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
-
-                                elif kor_option == 'index_long_X':
-                                    with cols[0]:
-                                        item_val = ticker_model_level_1[kor_option]['list']
-                                        trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
-                                elif kor_option == 'index_inverse_X':
-                                    with cols[0]:
-                                        item_val = ticker_model_level_1[kor_option]['list']
-                                        trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
-                                
-                                elif kor_option == 'portforlio_weight_ask':
-                                    with cols[0]:
-                                        trading_model[kor_option] = st.slider(label=f'{"portforlio_weight_ask"}', key='portforlio_weight_ask', min_value=float(0.0), max_value=float(1.0), value=float(kor_v), help="Allocation to Strategy by portfolio")
-
-                                elif kor_option == 'trigbees':
-                                    with cols[4]:
-                                        st.write("Activate Trigbees")
-                                        item_val = ticker_model_level_1[kor_option]['list']
-                                        for trigbee, trigactive in trading_model['trigbees'].items():
-                                            trading_model[kor_option][trigbee] = st.checkbox(label=f'{trigbee}', value=trigactive, key=f'{ticker_option_qc}{"_"}{kor_option}{trigbee}')
-
-                                elif kor_option == 'time_blocks':
-                                    with cols[2]:
-                                        st.write("Trade Following Time Blocks")
-                                        for wave_block, waveactive in trading_model['time_blocks'].items():
-                                            trading_model[kor_option][wave_block] = st.checkbox(label=f'{wave_block}', value=waveactive, key=f'{ticker_option_qc}{"_"}{kor_option}{wave_block}')
-                                
-                                elif kor_option == 'power_rangers':
-                                    with cols[3]:
-                                        st.write('Trade Following Time Frames')
-                                        for power_ranger, pr_active in trading_model['power_rangers'].items():
-                                            trading_model[kor_option][power_ranger] = st.checkbox(label=f'{power_ranger}', value=pr_active, key=f'{ticker_option_qc}{"_"}{kor_option}{power_ranger}')
-                                
-                                elif kor_option == 'buyingpower_allocation_LongTerm':
-                                    with cols[0]:
-                                        long = st.slider(label=f'{"Long Term Allocation"}', key='tic_long', min_value=float(0.0), max_value=float(1.0), value=float(trading_model['buyingpower_allocation_LongTerm']), help="Set the Length of the trades, lower number means short trade times")
-                                        short = st.slider(label=f'{"Short Term Allocation"}', key='tic_short', min_value=float(0.0), max_value=float(1.0), value=float(trading_model['buyingpower_allocation_ShortTerm']), help="Set the Length of the trades, lower number means short trade times")
-
-                                        if long > short:
-                                            long = long
-                                        else:
-                                            short = 1 - long
-                                        
-                                        trading_model['buyingpower_allocation_ShortTerm'] = short
-                                        trading_model["buyingpower_allocation_LongTerm"] = long
-                                else:
-                                    st.write("not accounted ", kor_option)
-                            else:
-                                # trading_model[kor_option] = kor_v
-                                st.write("missing ", kor_option)
-
-                    with st.expander(f'{star_option_qc} Time Frame'):
-                        # st.write([i for i in star_level_2.keys() if i ])
-                        st.info("Set the Stars Gravity; allocation of power on the set of stars your Symbol's choice")
-                        cols = st.columns(3)
-                        
-                        for item_control, itc_vars in star_level_2.items():
-                            if item_control not in QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc]['stars_kings_order_rules'][star_option_qc].keys():
-                                st.write(f'{item_control} not in scope')
-                                continue
-                        
-
-                        with cols[0]: # total_budget
-                            trading_model['stars_kings_order_rules'][star_option_qc]['total_budget'] = st.number_input(label='$Budget', value=float(trading_model['stars_kings_order_rules'][star_option_qc]['total_budget']))
-
-                        with cols[0]: # Allocation
-                            long = st.slider(label=f'{"Long Term Allocation"}', key='trigbee_long', min_value=float(0.0), max_value=float(1.0), value=float(trading_model__star['buyingpower_allocation_LongTerm']), help="Set the Length of the trades, lower number means shorter trade times")
-                            short = st.slider(label=f'{"Short Term Allocation"}', key='trigbee_short', min_value=float(0.0), max_value=float(1.0), value=float(trading_model__star['buyingpower_allocation_ShortTerm']), help="Set the Length of the trades, lower number means shorter trade times")
-
-                            if long > short:
-                                long = long
-                            else:
-                                short = 1 - long
-                            
-                            trading_model['stars_kings_order_rules'][star_option_qc]['buyingpower_allocation_ShortTerm'] = short
-                            trading_model['stars_kings_order_rules'][star_option_qc]["buyingpower_allocation_LongTerm"] = long
-                        
-                        with cols[1]: # index_long_X
-                            trading_model['stars_kings_order_rules'][star_option_qc]['index_long_X'] = st.selectbox("Long X Weight", options=['1X', '2X', '3X'], index=['1X', '2X', '3X'].index(f'{trading_model["stars_kings_order_rules"][star_option_qc]["index_long_X"]}'))
-
-                        with cols[1]: # index_inverse_X
-                            trading_model['stars_kings_order_rules'][star_option_qc]['index_inverse_X'] = st.selectbox("Short X Weight", options=['1X', '2X', '3X'], index=['1X', '2X', '3X'].index(f'{trading_model["stars_kings_order_rules"][star_option_qc]["index_inverse_X"]}'))                    
-                        
-                        with cols[2]: # trade_using_limits
-                            trading_model['stars_kings_order_rules'][star_option_qc]['trade_using_limits'] = st.checkbox("trade_using_limits", value=trading_model['stars_kings_order_rules'][star_option_qc]['trade_using_limits'])
-                        
-                        page_line_seperator(height='1')
-                        cols = st.columns((1,3,1))
-                        with cols[1]:
-                            st.write('Star Allocation Power')
-                        
-                        # with cols[2]:
-                        #     st.write('Gravity')
-                        
-                        for power_ranger, pr_active in trading_model['stars_kings_order_rules'][star_option_qc]['power_rangers'].items():
-                            # st.write(power_ranger, pr_active)
-                            with cols[1]:
-                                trading_model['stars_kings_order_rules'][star_option_qc]['power_rangers'][power_ranger] = st.slider(label=f'{power_ranger}', min_value=float(0.0), max_value=float(1.0), value=float(pr_active), key=f'{star_option_qc}{power_ranger}')
-                            
-                    with st.expander(f'{wave_blocks_option} Time Block KOR'):
-                        # mark_down_text(text=f'{trigbee_sel}{" >>> "}{wave_blocks_option}')
-                        # st.write(f'{wave_blocks_option} >>> WaveBlocktime KingOrderRules 4')
-                        cols = st.columns((1, 1, 2, 3))
-
-                        for kor_option, kor_v in king_order_rules_update.items():
-                            if kor_option in kor_option_mapping.keys():
-                                st_func = kor_option_mapping[kor_option]
+                            elif kor_option == 'status':
                                 with cols[0]:
-                                    if kor_option == 'status':
-                                        st.write(kor_v)
-                                    if kor_option == 'theme':
-                                        st.write(kor_v)
-                                    if kor_option == 'take_profit_in_vwap_deviation_range':
-                                        # with cols[0]:
-                                        #     st.write("vwap_deviation_range")
-                                            low = st.number_input(label=f'{"vwap_deviation_low"}', value=kor_v['low_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"low_range"}', help="take_profit_in_vwap_deviation_range")
-                                            high = st.number_input(label=f'{"vwap_deviation_high"}', value=kor_v['high_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"high_range"}')
-                                            king_order_rules_update[kor_option] = {'high_range': high, "low_range": low}
-
-                                
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                        
+                            elif kor_option == 'total_budget':
                                 with cols[1]:
-                                    if kor_option == 'ignore_trigbee_in_vwap_range':
-                                        low = st.number_input(label=f'{"ignore_vwap_low"}', value=kor_v['low_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"vwap_low_range"}')
-                                        high = st.number_input(label=f'{"ignore_vwap_high"}', value=kor_v['high_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"vwap_high_range"}')
-                                        king_order_rules_update[kor_option] = {'high_range': high, "low_range": low}
-                                        # with cols[0]:
-                                        #     st.write("ignore_trigbee_in_vwap_range")
+                                    trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
 
-                                if kor_option == 'skip_sell_trigbee_distance_frequency':
-                                    with cols[3]:
-                                        king_order_rules_update[kor_option] = st.slider(label=f'{kor_option}', key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', min_value=float(0.0), max_value=float(3.0), value=float(kor_v), help="Skip a sellcross trigger frequency")
-                                
-                                if kor_option == 'ignore_trigbee_at_power':
-                                    with cols[3]:
-                                        king_order_rules_update[kor_option] = st.slider(label=f'{kor_option}', key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', min_value=float(0.0), max_value=float(3.0), value=float(kor_v), help="Trade Needs to be Powerful Enough as defined by the model allocation story")
+                            elif kor_option == 'max_single_trade_amount':
+                                with cols[1]:
+                                    trading_model[kor_option] = st.number_input(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
 
-                                if st_func == 'checckbox':
-                                    king_order_rules_update[kor_option] = st.checkbox(label=f'{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
-                                elif st_func == 'number':
-                                    king_order_rules_update[kor_option] = st.number_input(label=f'{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
-                                elif st_func == 'text':
-                                    king_order_rules_update[kor_option] = st.text_input(label=f'{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                            elif kor_option == 'allow_for_margin':
+                                with cols[0]:
+                                    trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
                             
+                            elif kor_option == 'buy_ONLY_by_accept_from_QueenBeeTrader':
+                                with cols[1]:
+                                    trading_model[kor_option] = st.checkbox(label=f'{ticker_option_qc}{"_"}{kor_option}', value=kor_v, key=f'{ticker_option_qc}{"_"}{kor_option}')
+
+                            elif kor_option == 'index_long_X':
+                                with cols[0]:
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            elif kor_option == 'index_inverse_X':
+                                with cols[0]:
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    trading_model[kor_option] = st.selectbox(label=f'{ticker_option_qc}{"_"}{kor_option}', options=item_val, index=item_val.index(kor_v), key=f'{ticker_option_qc}{"_"}{kor_option}')
+                            
+                            elif kor_option == 'portforlio_weight_ask':
+                                with cols[0]:
+                                    trading_model[kor_option] = st.slider(label=f'{"portforlio_weight_ask"}', key='portforlio_weight_ask', min_value=float(0.0), max_value=float(1.0), value=float(kor_v), help="Allocation to Strategy by portfolio")
+
+                            elif kor_option == 'trigbees':
+                                with cols[4]:
+                                    st.write("Activate Trigbees")
+                                    item_val = ticker_model_level_1[kor_option]['list']
+                                    for trigbee, trigactive in trading_model['trigbees'].items():
+                                        trading_model[kor_option][trigbee] = st.checkbox(label=f'{trigbee}', value=trigactive, key=f'{ticker_option_qc}{"_"}{kor_option}{trigbee}')
+
+                            elif kor_option == 'time_blocks':
+                                with cols[2]:
+                                    st.write("Trade Following Time Blocks")
+                                    for wave_block, waveactive in trading_model['time_blocks'].items():
+                                        trading_model[kor_option][wave_block] = st.checkbox(label=f'{wave_block}', value=waveactive, key=f'{ticker_option_qc}{"_"}{kor_option}{wave_block}')
+                            
+                            elif kor_option == 'power_rangers':
+                                with cols[3]:
+                                    st.write('Trade Following Time Frames')
+                                    for power_ranger, pr_active in trading_model['power_rangers'].items():
+                                        trading_model[kor_option][power_ranger] = st.checkbox(label=f'{power_ranger}', value=pr_active, key=f'{ticker_option_qc}{"_"}{kor_option}{power_ranger}')
+                            
+                            elif kor_option == 'buyingpower_allocation_LongTerm':
+                                with cols[0]:
+                                    long = st.slider(label=f'{"Long Term Allocation"}', key='tic_long', min_value=float(0.0), max_value=float(1.0), value=float(trading_model['buyingpower_allocation_LongTerm']), help="Set the Length of the trades, lower number means short trade times")
+                                    short = st.slider(label=f'{"Short Term Allocation"}', key='tic_short', min_value=float(0.0), max_value=float(1.0), value=float(trading_model['buyingpower_allocation_ShortTerm']), help="Set the Length of the trades, lower number means short trade times")
+
+                                    if long > short:
+                                        long = long
+                                    else:
+                                        short = 1 - long
+                                    
+                                    trading_model['buyingpower_allocation_ShortTerm'] = short
+                                    trading_model["buyingpower_allocation_LongTerm"] = long
                             else:
-                                # print('missing')
-                                st.write("missing ", kor_option)
-                                king_order_rules_update[kor_option] = kor_v
+                                st.write("not accounted ", kor_option)
+                        else:
+                            # trading_model[kor_option] = kor_v
+                            st.write("missing ", kor_option)
+
+                    # with st.expander(f'{star_option_qc} Time Frame'):
+                    st.subheader(f'Time Frame: {star_option_qc}')
+                    # st.write([i for i in star_level_2.keys() if i ])
+                    st.info("Set the Stars Gravity; allocation of power on the set of stars your Symbol's choice")
+                    cols = st.columns((1,1,1))
+                    
+                    for item_control, itc_vars in star_level_2.items():
+                        if item_control not in QUEEN_KING['king_controls_queen'][control_option][ticker_option_qc]['stars_kings_order_rules'][star_option_qc].keys():
+                            st.write(f'{item_control} not in scope')
+                            continue
+                    
+
+                    with cols[0]: # total_budget
+                        trading_model['stars_kings_order_rules'][star_option_qc]['total_budget'] = st.number_input(label='$Budget', value=float(trading_model['stars_kings_order_rules'][star_option_qc]['total_budget']))
+
+                        st.write("L power ", trading_model['stars_kings_order_rules'][star_option_qc]['buyingpower_allocation_LongTerm'])
+                        st.write("S power ", trading_model['stars_kings_order_rules'][star_option_qc]['buyingpower_allocation_ShortTerm'])
+                    
+                    with cols[1]: # index_long_X
+                        trading_model['stars_kings_order_rules'][star_option_qc]['index_long_X'] = st.selectbox("Long X Weight", options=['1X', '2X', '3X'], index=['1X', '2X', '3X'].index(f'{trading_model["stars_kings_order_rules"][star_option_qc]["index_long_X"]}'))
+
+                    with cols[1]: # index_inverse_X
+                        trading_model['stars_kings_order_rules'][star_option_qc]['index_inverse_X'] = st.selectbox("Short X Weight", options=['1X', '2X', '3X'], index=['1X', '2X', '3X'].index(f'{trading_model["stars_kings_order_rules"][star_option_qc]["index_inverse_X"]}'))                    
+                    
+                    with cols[2]: # trade_using_limits
+                        trading_model['stars_kings_order_rules'][star_option_qc]['trade_using_limits'] = st.checkbox("trade_using_limits", value=trading_model['stars_kings_order_rules'][star_option_qc]['trade_using_limits'])
+                    
+                    page_line_seperator(height='1')
+                    with cols[1]:
+                        st.write('Star Allocation Power')
+                    page_line_seperator(height='1')
+
+                    cols = st.columns((1,1,1,1,1,1,6))
+                    
+                    c = 0
+                    for power_ranger, pr_active in trading_model['stars_kings_order_rules'][star_option_qc]['power_rangers'].items():
+                        # st.write(power_ranger, pr_active)
+                        c = 0 if c > 5 else c
+                        with cols[c]:
+                            trading_model['stars_kings_order_rules'][star_option_qc]['power_rangers'][power_ranger] = st.slider(label=f'{power_ranger}', min_value=float(0.0), max_value=float(1.0), value=float(pr_active), key=f'{star_option_qc}{power_ranger}')
+                        c+=1
+                    
+                    # with st.expander(f'{wave_blocks_option} Time Block KOR'):
+                    st.subheader(f' Time Block KOR: {wave_blocks_option}')
+                    # mark_down_text(text=f'{trigbee_sel}{" >>> "}{wave_blocks_option}')
+                    # st.write(f'{wave_blocks_option} >>> WaveBlocktime KingOrderRules 4')
+                    cols = st.columns((1, 1, 2, 3))
+
+                    for kor_option, kor_v in king_order_rules_update.items():
+                        if kor_option in kor_option_mapping.keys():
+                            st_func = kor_option_mapping[kor_option]
+                            with cols[0]:
+                                if kor_option == 'status':
+                                    st.write(kor_v)
+                                if kor_option == 'theme':
+                                    st.write(kor_v)
+                                if kor_option == 'take_profit_in_vwap_deviation_range':
+                                    # with cols[0]:
+                                    #     st.write("vwap_deviation_range")
+                                        low = st.number_input(label=f'{"vwap_deviation_low"}', value=kor_v['low_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"low_range"}', help="take_profit_in_vwap_deviation_range")
+                                        high = st.number_input(label=f'{"vwap_deviation_high"}', value=kor_v['high_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"high_range"}')
+                                        king_order_rules_update[kor_option] = {'high_range': high, "low_range": low}
+
+                            
+                            with cols[1]:
+                                if kor_option == 'ignore_trigbee_in_vwap_range':
+                                    low = st.number_input(label=f'{"ignore_vwap_low"}', value=kor_v['low_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"vwap_low_range"}')
+                                    high = st.number_input(label=f'{"ignore_vwap_high"}', value=kor_v['high_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"vwap_high_range"}')
+                                    king_order_rules_update[kor_option] = {'high_range': high, "low_range": low}
+                                    # with cols[0]:
+                                    #     st.write("ignore_trigbee_in_vwap_range")
+
+                            if kor_option == 'skip_sell_trigbee_distance_frequency':
+                                with cols[3]:
+                                    king_order_rules_update[kor_option] = st.slider(label=f'{kor_option}', key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', min_value=float(0.0), max_value=float(3.0), value=float(kor_v), help="Skip a sellcross trigger frequency")
+                            
+                            if kor_option == 'ignore_trigbee_at_power':
+                                with cols[3]:
+                                    king_order_rules_update[kor_option] = st.slider(label=f'{kor_option}', key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}', min_value=float(0.0), max_value=float(3.0), value=float(kor_v), help="Trade Needs to be Powerful Enough as defined by the model allocation story")
+
+                            if st_func == 'checckbox':
+                                king_order_rules_update[kor_option] = st.checkbox(label=f'{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                            elif st_func == 'number':
+                                king_order_rules_update[kor_option] = st.number_input(label=f'{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                            elif st_func == 'text':
+                                king_order_rules_update[kor_option] = st.text_input(label=f'{kor_option}', value=kor_v, key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{kor_option}')
+                        
+                        else:
+                            # print('missing')
+                            st.write("missing ", kor_option)
+                            king_order_rules_update[kor_option] = kor_v
 
                     # WaveBlock Time Levle 4 ## using all selections to change KingsOrderRules
                     trading_model['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel][wave_blocks_option] = king_order_rules_update
@@ -1249,8 +1249,9 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                 print(e)
                 print_line_of_error()
 
+        
         def show_heartbeat():
-            cols = st.columns(3)
+            cols = st.columns(4)
             with cols[0]:
                 if st.button("clear all sell orders"):
                     QUEEN_KING['sell_orders'] = []
@@ -1262,13 +1263,24 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
                 st.write(QUEEN['heartbeat'])
             
             with cols[1]:
+                if st.button("clear all queen_sleep"):
+                    QUEEN_KING['queen_sleep'] = []
+                    PickleData(PB_App_Pickle, QUEEN_KING)
                 st.write("queen_sleep")
                 st.write(QUEEN_KING['queen_sleep'])
                 st.write("queen_messages")
                 st.write(QUEEN['queens_messages'])
             with cols[2]:
+                if st.button("clear all update_queen_order"):
+                    QUEEN_KING['update_queen_order'] = []
+                    PickleData(PB_App_Pickle, QUEEN_KING)
                 st.write("update_queen_order")
                 st.write(QUEEN_KING['update_queen_order'])
+            with cols[3]:
+                if st.button("clear all wave_triggers"):
+                    QUEEN_KING['wave_triggers'] = []
+                    PickleData(PB_App_Pickle, QUEEN_KING)
+                st.write(QUEEN_KING.get('wave_triggers'))
 
 
         ########################################################
@@ -1279,6 +1291,8 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
         ########################################################
 
     try:
+        pq_buttons = pollenq_button_source()
+
         # return page last visited 
         sneak_peak = False
         if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
@@ -1320,26 +1334,7 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
         PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
         PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
         PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
-        # PB_KING_Pickle = st.session_state['PB_KING_Pickle']
-
-
-        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)    
-        # KING = ReadPickleData(pickle_file=PB_KING_Pickle)
-        # QUEEN Databases
-        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-        
-        @st.cache_data()
-        def return_QUEEN():
-            st.info("Cache QUEEN")
-            return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-
-        if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
-            QUEEN = return_QUEEN()
-            order_buttons = True
-        else:
-            st.cache_data.clear()
-            order_buttons = False
-            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+            
     
         QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
@@ -1348,7 +1343,7 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
         api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
-        
+        acct_info = refresh_account_info(api=api)['info_converted']
         if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
             clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
         
@@ -1370,98 +1365,106 @@ def queens_conscience(st, hc, KING, QUEEN_KING):
             st.write(ticker_db_errors)
 
 
-        with st.spinner("Waking Up the Hive"):
-
-            # if cust_Button(MISC.get('pawn_png_url'), height='34px', key='chess'):
-            if st.session_state['chess_board'] == True:
-                if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
-                    chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
-                else:
-                    # chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=False)
-                    chessboard(QUEEN_KING=QUEEN_KING, admin=False)
-            
-            if st.session_state['queens_mind']:
-                update_trading_models(QUEEN_KING=QUEEN_KING, pollen_themes_selections=pollen_themes_selections)
-            if st.session_state['show_queenheart']:
-                show_heartbeat()
-
-            cols = st.columns(2)
+        with st.spinner("Refreshing"): # ozzbot
 
             if authorized_user:
+                
+                if st.session_state['workerbees'] == True:
+                    queen_triggerbees()
+
+                if st.session_state['the_flash'] == True:
+                    queen_beeAction_theflash(True)
+
+                if st.session_state['charts_toggle'] == True:
+                    with st.expander("charts", True):
+                        advanced_charts(STORY_bee, POLLENSTORY)
+
+                if st.session_state['chess_board'] == True:
+                    if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
+                        chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
+                    else:
+                        chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, admin=False)
+                
+                if st.session_state['queens_mind']:
+                    update_trading_models(QUEEN_KING=QUEEN_KING, pollen_themes_selections=pollen_themes_selections)
+                if st.session_state['show_queenheart']:
+                    with st.expander('heartbeat', True):
+                        show_heartbeat()
+
+                cols = st.columns(2)
+
                 if st.session_state['total_profits']:
                     return_total_profits(QUEEN=QUEEN)
                 stop_queenbee(QUEEN_KING=QUEEN_KING)
                 clear_subconscious_Thought(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
             
-            if st.session_state['orders']:
-                ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list, order_buttons=order_buttons)
-                # ipdb.set_trace()
-                if authorized_user:
-                    if ordertables__agrid.selected_rows:
-                        # st.write(queen_order[0]['client_order_id'])
-                        queen_order = ordertables__agrid.selected_rows[0]
-                        client_order_id = queen_order.get('client_order_id')
+                if st.session_state['orders']:
+                    ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list, order_buttons=st.session_state.get('order_buttons'))
+                    if authorized_user:
+                        if ordertables__agrid.selected_rows:
+                            # st.write(queen_order[0]['client_order_id'])
+                            queen_order = ordertables__agrid.selected_rows[0]
+                            client_order_id = queen_order.get('client_order_id')
 
-                        try: # OrderState
-                            df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
-                            if len(df) > 0:
-                                current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
-                                if len(current_requests) > 0:
-                                    st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
+                            try: # OrderState
+                                df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
+                                if len(df) > 0:
+                                    current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
+                                    if len(current_requests) > 0:
+                                        st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
+                                    else:
+                                        order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
+                                        order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
+                                        QUEEN_KING['update_queen_order'].append(order_update_package)
+                                        PickleData(PB_App_Pickle, QUEEN_KING)
+                                        st.success(f'{client_order_id} Changing QueenOrderState Please wait for Queen to process, Refresh Table')
+                            except:
+                                st.write("OrderState nothing was clicked")
+                            
+                            # validate to continue with selection
+                            try: ## SELL
+                                df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
+                                if len(df) > 0:
+                                    current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
+                                    if len(current_requests) > 0:
+                                        st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
+                                    else:
+                                        sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
+                                        sell_package['sell_qty'] = float(queen_order.get('qty_available'))
+                                        sell_package['side'] = 'sell'
+                                        sell_package['type'] = 'market'
+                                        QUEEN_KING['sell_orders'].append(sell_package)
+                                        PickleData(PB_App_Pickle, QUEEN_KING)
+                                        st.success(f'{client_order_id} : Selling Order Sent to Queen Please wait for Queen to process, Refresh Table')
                                 else:
-                                    order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
-                                    order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
-                                    QUEEN_KING['update_queen_order'].append(order_update_package)
-                                    PickleData(PB_App_Pickle, QUEEN_KING)
-                                    st.success(f'{client_order_id} Changing QueenOrderState Please wait for Queen to process, Refresh Table')
-                        except:
-                            st.write("OrderState nothing was clicked")
-                        
-                        # validate to continue with selection
-                        try: ## SELL
-                            df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
-                            if len(df) > 0:
-                                current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
-                                if len(current_requests) > 0:
-                                    st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
+                                    st.write("Nothing Sell clicked")
+
+                            except:
+                                er_line = print_line_of_error()
+                                st.write("Error in Sell ", er_line)
+                            try: ## KOR
+                                df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
+                                if len(df) > 0:
+                                    st.write("KOR: ", client_order_id)
+                                    # kings_order_rules__forum(order_rules)
                                 else:
-                                    sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-                                    sell_package['sell_qty'] = float(queen_order.get('qty_available'))
-                                    sell_package['side'] = 'sell'
-                                    sell_package['type'] = 'market'
-                                    QUEEN_KING['sell_orders'].append(sell_package)
-                                    PickleData(PB_App_Pickle, QUEEN_KING)
-                                    st.success(f'{client_order_id} : Selling Order Sent to Queen Please wait for Queen to process, Refresh Table')
-                            else:
-                                st.write("Nothing Sell clicked")
+                                    st.write("Nothing KOR clicked")
+                            except:
+                                st.write("KOR PENDING WORK")
+                    
+                    
+                page_session_state__cleanUp(page=page)
 
-                        except:
-                            er_line = print_line_of_error()
-                            st.write("Error in Sell ", er_line)
-                        try: ## KOR
-                            df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
-                            if len(df) > 0:
-                                st.write("KOR: ", client_order_id)
-                                # kings_order_rules__forum(order_rules)
-                            else:
-                                st.write("Nothing KOR clicked")
-                        except:
-                            st.write("KOR PENDING WORK")
+                st.session_state['last_page'] = 'queen'
+                QUEEN_KING['last_page_objects'] = {
+                    'orders': st.session_state['orders'],
+                    'chess_board': st.session_state['chess_board'],
+                    'queens_mind': st.session_state['queens_mind'],
+                    'charts_toggle': st.session_state['charts_toggle'],
 
-                    # download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
-                    queen_beeAction_theflash(False)
-                
-                queen_triggerbees()
-
-                page_line_seperator(color=default_yellow_color)
-
-                
-            page_session_state__cleanUp(page=page)
-
-        if authorized_user:            
-            st.session_state['last_page'] = 'queen'
-            PickleData(PB_App_Pickle, QUEEN_KING)
-            print(return_timestamp_string())
+                }
+                PickleData(PB_App_Pickle, QUEEN_KING)
+                print(return_timestamp_string())
         ##### END ####
     except Exception as e:
         print(e, print_line_of_error(), return_timestamp_string())

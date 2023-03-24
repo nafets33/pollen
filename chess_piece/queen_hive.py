@@ -326,7 +326,7 @@ def init_QUEEN(queens_chess_piece):
         "last_modified": datetime.now(est),
         "command_conscience": {}, ## ?
         "crypto_temp": {"trigbees": {}},
-        "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]),
+        "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id"),
         "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
         "heartbeat": {
             "active_tickerStars": {},
@@ -337,12 +337,7 @@ def init_QUEEN(queens_chess_piece):
         "queens_messages": {},
         "kings_order_rules": {},
         "queen_controls": return_queen_controls(stars),
-        # "symbol_universe": {
-        #     "index_ticker_db": index_ticker_db,
-        #     "main_index_dict": main_index_dict,
-        #     "main_symbols_full_list": main_symbols_full_list,
-        #     "not_avail_in_alpaca": not_avail_in_alpaca,
-        # },
+
         "workerbees": {
             "castle": {
                 "MACD_fast_slow_smooth": {"fast": 12, "slow": 26, "smooth": 9},
@@ -532,25 +527,170 @@ def add_key_to_app(QUEEN_KING):  # returns QUEES
 
     return {"QUEEN_KING": QUEEN_KING, "update": update}
 
-def set_chess_pieces_symbols(QUEEN_KING, admin=False):
-    if admin:
-        all_workers = list(QUEEN_KING['chess_board'].keys())
-    else:
-        all_workers = list(QUEEN_KING['qcp_workerbees'].keys())
+def set_chess_pieces_symbols(QUEEN_KING, qcp_bees_key):
+    all_workers = list(QUEEN_KING[qcp_bees_key].keys())
     
-    qcp_ticker_index = {}
+    ticker_qcp_index = {}
     view = []
-    for qcp in all_workers:
-        if qcp in ['castle', 'bishop', 'knight', 'castle_coin']:
-            view.append(f'{qcp.upper()} ({QUEEN_KING["qcp_workerbees"][qcp]["tickers"]} )')
-            for ticker in QUEEN_KING["qcp_workerbees"][qcp]["tickers"]:
-                qcp_ticker_index[ticker] = qcp
-    
-    return {'qcp_ticker_index': qcp_ticker_index, 'view': view, 'all_workers': all_workers}
 
-def add_trading_model(status, PB_APP_Pickle, QUEEN_KING, ticker, model='MACD', theme="nuetral", workerbee=False, reset_theme=False, save=False):
+    for qcp in all_workers:
+        # if qcp in ['castle', 'bishop', 'knight', 'castle_coin']:
+        view.append(f'{qcp.upper()} ({QUEEN_KING[qcp_bees_key][qcp].get("tickers")} )')
+        for ticker in QUEEN_KING[qcp_bees_key][qcp].get("tickers"):
+            ticker_qcp_index[ticker] = qcp
+    
+    return {'ticker_qcp_index': ticker_qcp_index, 'view': view, 'all_workers': all_workers}
+
+def return_ticker_qcp_index(QUEEN_KING, qcp_bees_key):
+    all_workers = list(QUEEN_KING[qcp_bees_key].keys())
+    ticker_qcp_index = {}
+    for qcp in all_workers:
+        for ticker in QUEEN_KING[qcp_bees_key][qcp].get("tickers"):
+            ticker_qcp_index[ticker] = qcp
+    
+    return ticker_qcp_index
+
+def refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}):
+    
+    def shape_revrec_chesspieces(dic_items, acct_info):
+        df = pd.DataFrame(dic_items.items())
+        df = df.rename(columns={0: 'qcp', 1: 'buying_power'})
+        bp = sum(df['buying_power'])
+        df['total_budget'] = (df['buying_power'] * acct_info.get('buying_power')) / bp
+        df['equity_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
+        df = df.set_index('qcp')
+        
+        return df
+
+    def shape_revrec_tickers(dic_items):
+        df = pd.DataFrame(dic_items.items())
+        df = df.rename(columns={0: 'qcp', 1: 'ticker_buying_power'})
+        df = df.set_index('qcp')
+        
+        return df
+
+    def shape_revrec_stars(dic_items):
+        df = pd.DataFrame(dic_items.items())
+        df = df.rename(columns={0: 'qcp', 1: 'star_buying_power'})
+        df = df.set_index('qcp')
+        
+        return df
+    
+    def return_star_from_ttf(x):
+        ticker, tframe, tperiod = x.split("_")
+        return f'{tframe}_{tperiod}'    
+    
+    # Create/Refresh RevRec from Chess Board
+    try:
+        all_workers = list(QUEEN_KING['chess_board'].keys())
+        # total budget calc
+        for qcp in all_workers:
+            if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
+                continue
+            
+            # Refresh ChessBoard and RevRec
+            qcp_power = float(QUEEN_KING['chess_board'][qcp]['total_buyng_power_allocation']) 
+            chess_board__revrec[qcp] = qcp_power
+            qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
+            num_tickers = len(qcp_tickers)
+            for ticker in qcp_tickers:
+                trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+                # Handle missing TM
+                if trading_model is None: 
+                    print(ticker, ' tradingmodel missing')
+                    QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
+                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+
+                # Ticker Allocation Budget
+                tm_keys = trading_model['stars_kings_order_rules'].keys()
+                if num_tickers <= 1:
+                    ticker_power = qcp_power
+                    revrec__ticker[ticker] = ticker_power
+                else:
+                    ticker_power = qcp_power / num_tickers
+                    revrec__ticker[ticker] = ticker_power
+                
+                # Star Allocation Budget
+                for star in tm_keys:
+                    revrec__stars[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_LongTerm")
+                    # revrec__stars.append({'star': star, 'buyingpower_allocation_LongTerm': trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_LongTerm")})
+
+        # Refresh RevRec Total Budgets
+        df_qcp = shape_revrec_chesspieces(chess_board__revrec, acct_info)
+        df_ticker =  shape_revrec_tickers(revrec__ticker)
+        df_stars =  shape_revrec_stars(revrec__stars)
+        df_stars = df_stars.fillna(0) # tickers without budget move this to upstream in code and fillna only total budget column
+        df_stars['ticker_time_frame'] = df_stars.index
+        df_stars['ticker'] = df_stars['ticker_time_frame'].apply(lambda x: x.split("_")[0])
+        df_stars['star'] = df_stars['ticker_time_frame'].apply(lambda x: return_star_from_ttf(x))
+
+        for qcp in all_workers:
+            if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
+                continue
+            piece = QUEEN_KING['chess_board'].get(qcp)
+            tickers = piece.get('tickers')
+
+            for ticker in tickers:
+                df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
+                bp = sum(df_temp['ticker_buying_power'])
+                df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('total_budget')) / bp
+                df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('equity_budget')) / bp
+                
+                # ticker
+                df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.loc[ticker].get('total_budget')
+                df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.loc[ticker].get('equity_budget')
+
+                # star time 
+                df_temp = df_stars[(df_stars['ticker'].isin([ticker]))].copy()
+                bp = sum(df_temp['star_buying_power'])
+                df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
+                df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
+                for star in df_temp['star'].to_list():
+                    df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
+
+        return {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
+    
+    except Exception as e:
+        print_line_of_error()
+
+
+def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='1 can be queried at a time until feat update to return all'):
+    queen_orders = QUEEN['queen_orders']
+    if ticker_time_frame:
+        orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states) & (queen_orders['ticker_time_frame'].isin([ticker_time_frame]))]
+    elif ticker:
+        orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states) & (queen_orders['ticker'].isin([ticker]))]
+    elif star:
+        orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states) & (queen_orders['star'].isin([star]))] ## needs to be added to orders
+    else:
+        orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states)] ## needs to be added to orders
+
+    return orders
+
+
+def return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states):
+    
+    # Total In Running, Remaining
+    queen_orders = QUEEN['queen_orders']
+    active_orders_ttf = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states) & (queen_orders['ticker_time_frame'].isin([ticker_time_frame]))]
+    if len(active_orders_ttf) == 0:
+        # print(ticker_time_frame, " Full Fire Power")
+        remaining_budget = star_total_budget
+    else:
+        # print(ticker_time_frame, " ORDERS RUNNING")
+        cost_basis_atPLAY = sum(active_orders_ttf['cost_basis'])
+        remaining_budget = star_total_budget - cost_basis_atPLAY
+        
+        if cost_basis_atPLAY >= star_total_budget:
+            # print("All Budget Used")
+            remaining_budget = 0
+
+    
+    return remaining_budget
+
+def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral", workerbee=False, reset_theme=False, save=False):
     trading_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
-    confirmed_qcp = ['castle', 'bishop', 'knight', 'castle_coin']
+
     if reset_theme:
         print(ticker, " Updating Trading Model ", model, theme)
         tradingmodel1 = generate_TradingModel(ticker=ticker, status=status, theme=theme)[model]
@@ -2058,16 +2198,10 @@ def return_alpc_portolio(api):
     return {"portfolio": portfolio}
 
 
-def check_order_status(
-    api, client_order_id, queen_order=False, prod=True
-):  # return raw dict form
-    if queen_order:
-        if "queen_gen" in queen_order["client_order_id"]:
-            return queen_order
-        else:
-            order = api.get_order_by_client_order_id(client_order_id=client_order_id)
-            order_ = vars(order)["_raw"]
-            return order_
+def check_order_status(api, client_order_id):  # return raw dict form
+    order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+    order_ = vars(order)["_raw"]
+    return order_
 
 
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
@@ -2498,7 +2632,7 @@ def createParser():
     return parser
 
 
-def return_market_hours(trading_days, crypto):
+def return_market_hours(trading_days, crypto=False):
     # trading_days = api_cal # api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
     s = datetime.now(est)
@@ -2507,7 +2641,7 @@ def return_market_hours(trading_days, crypto):
     mk_open = s.replace(hour=1, minute=1, second=1)
     mk_close = s.replace(hour=16, minute=0, second=0)
 
-    if str(crypto).lower() == "true":
+    if crypto:
         return "open"
 
     if mk_open_today:
@@ -2754,7 +2888,7 @@ def kings_order_rules( # rules created for 1Minute
 def generate_TradingModel(
     theme="nuetral", portfolio_name="Jq", ticker="SPY",
     stars=stars, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"], 
-    trading_model_name="MACD", status="active", portforlio_weight_ask=0.01,
+    trading_model_name="MACD", status="active", portforlio_weight_ask=0.01, init=False,
 ):
     # theme level settings
     themes = [
@@ -3007,7 +3141,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
                                     take_profit=.05,
-                                    sellout=-.00,
+                                    sellout=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3429,17 +3563,6 @@ def generate_TradingModel(
         etf_X_direction = ["1X", "2X", "3X"]  # Determined by QUEEN
         trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
 
-        # def generate_stars_revrec(stars, trigbees_list, trigbees_theme, time_blocks):
-        #     # adjust per theme
-        #     def trigbees_theme():
-        #         allocation
-        #     # all columns = [star, tribees, timeblocks, total_budget, qty, allocation, doubledowns_allowed, pertrade_block_weight]
-        #     df = pd.DataFrame(list((stars().keys())))
-        #     df.set_index(0, inplace=True)
-        #     df['trigbees_list'] = str(trigbees_list)
-        #     df['allocation'] = 1
-        #     df['doubledowns_allowed'] = 1
-        #     df['doubledowns_allowed'] = 1
 
         def init_stars_allocation():
             return {}
@@ -3484,6 +3607,9 @@ def generate_TradingModel(
     stars_vars = star_trading_model_vars(star_theme_vars, wave_block_theme__kor)
     # {ticker: model_vars}
     macd_model = tradingmodel_vars(symbol_theme_vars=symbol_theme_vars, stars_vars=stars_vars)
+
+    if init==False:
+        print(ticker, " ",theme, " Model Generated")
 
     return {"MACD": macd_model}
 
@@ -3591,7 +3717,9 @@ def order_vars__queen_order_items(
 def create_QueenOrderBee(
     trading_model="init",
     KING="init",
-    ticker_time_frame="init",
+    ticker_time_frame="Ticker_TFrame_TPeriod",
+    symbol="init",
+    star='init',
     portfolio_name="init",
     status_q="init",
     trig="init",
@@ -3611,7 +3739,6 @@ def create_QueenOrderBee(
         order_trig_sell_stop_limit=False,
         limit_price=False,
         running_close_legs=False,
-        symbol=False,
         order_rules=False,
         origin_wave=False,
         wave_at_creation=False,
@@ -3622,6 +3749,8 @@ def create_QueenOrderBee(
         wave_amo=False,
         trigname=trig,
         ticker_time_frame=ticker_time_frame,
+        symbol=symbol,
+        star=star,
         status_q=status_q,
         portfolio_name=portfolio_name,
         exit_order_link=exit_order_link,
@@ -3652,6 +3781,7 @@ def create_QueenOrderBee(
                 if name not in ["order", "order_vars", "priceinfo"]
             }
         else:
+
             return {
                 "trading_model": trading_model,
                 "double_down_trade": order_vars["double_down_trade"],
@@ -3663,8 +3793,10 @@ def create_QueenOrderBee(
                 "req_limit_price": order_vars["limit_price"],
                 "limit_price": order_vars["limit_price"],
                 "running_close_legs": False,
+                "ticker_time_frame": ticker_time_frame,
                 "ticker": order["symbol"],
                 "symbol": order["symbol"],
+                "star": star,
                 "order_rules": order_vars["king_order_rules"],
                 "origin_wave": order_vars["origin_wave"],
                 "wave_at_creation": order_vars["wave_at_creation"],
@@ -3675,7 +3807,6 @@ def create_QueenOrderBee(
                 "wave_amo": order_vars["wave_amo"],
                 "trigname": trig,
                 "datetime": date_mark,
-                "ticker_time_frame": ticker_time_frame,
                 "status_q": status_q,
                 "portfolio_name": portfolio_name,
                 "exit_order_link": exit_order_link,
@@ -3705,6 +3836,7 @@ def create_QueenOrderBee(
     elif order["side"] == "buy" or order["side"] == "sell":
         # print("create buy running order")
         running_order = gen_queen_order()
+    
 
     return running_order
 
@@ -3757,7 +3889,7 @@ def generate_chessboards_trading_models(chessboard):
     # chessboard = generate_chess_board()
     for qcp_name, chesspiece in chessboard.items():
         for ticker in chesspiece.get('tickers'):
-            tradingmodels[ticker] = generate_TradingModel(ticker=ticker, theme=chesspiece.get('theme'))["MACD"][ticker]
+            tradingmodels[ticker] = generate_TradingModel(ticker=ticker, theme=chesspiece.get('theme'), init=True)["MACD"][ticker]
     return tradingmodels
 
 def return_queen_controls(stars=stars):

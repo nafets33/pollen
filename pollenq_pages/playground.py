@@ -106,8 +106,8 @@ def PlayGround():
                 with cols_2[1]:
                     st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         
-        with st.expander("button on grid"):
-            click_button_grid()
+        # with st.expander("button on grid"):
+        #     click_button_grid()
 
         with st.expander("nested grid"):
             nested_grid()
