@@ -488,6 +488,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # ORDER TYPES Enter the Market
                     print(f'{side} {order_type} {qty_order}  {client_order_id__gen}')
                     order_submit = submit_order(api=api, symbol=ticker, type=order_type, qty=qty_order, side=side, client_order_id=client_order_id__gen, limit_price=limit_price) # buy
+                    if order_submit == False:
+                        print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
+
                     logging.info("order submit")
                     order = vars(order_submit)['_raw']
 
@@ -513,7 +516,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     logging.error(msg)
                     return{'executed': False, 'msg': msg}
             elif king_eval_order:
-                print(king_eval_order)
                 side = 'sell'
                 if side == 'sell':
                     print("bee_sell")
@@ -733,7 +735,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 logging.error((" queen not auth "))
                 return {'kings_blessing': False}
             
-            # # # # vars
+            # vars
             ticker, tframe, tperiod = ticker_time_frame.split("_")
             star_time = f'{tframe}{"_"}{tperiod}'
             ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
@@ -748,6 +750,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             
             # Total In Running, Remaining
             remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
+            if remaining_budget == 0:
+                print(f'{ticker_time_frame} all budget used up')
+                # if ticker_time_frame not in QUEEN['queens_messages'].keys():
+                #     QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
+                # else:
+                #     QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
+                return {'kings_blessing': False}
             
             # Total buying power allowed  
             wave_amo = remaining_budget
@@ -951,10 +960,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 crypto = True if ticker in crypto_currency_symbols else False
                 
                 # Check Mrk Hours
-                if mkhrs == 'open':
-                    val_pass = True
-                else:
-                    continue # break loop
+                if mkhrs != 'open':
+                    continue
 
                 """ the hunt """
                 s_time = datetime.datetime.now(est)
@@ -1574,13 +1581,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             sell_trigbee_trigger = True if str(run_order['order_rules']['sell_trigbee_trigger']).lower() == 'true' else False
             stagger_profits = True if str(run_order['order_rules']['stagger_profits']).lower() == 'true' else False
             scalp_profits = True if str(run_order['order_rules']['scalp_profits']).lower() == 'true' else False
-
-
+            macd_tier = current_macd_time
+            
             charlie_bee['queen_cyle_times']['bishop_block2_queenorder__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
             s_time = datetime.datetime.now(est)
 
             """ WaterFall sellout chain """
-            def waterfall_sellout_chain(trading_model, sell_order, run_order, order_type, limit_price, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed, sell_qty, QUEEN=QUEEN):
+            def waterfall_sellout_chain(macd_tier, trading_model, sell_order, run_order, order_type, limit_price, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed, sell_qty, QUEEN=QUEEN):
                 try:
                     client_order_id = run_order.get('client_order_id')
                     
@@ -1648,6 +1655,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         order_side = 'sell'
                         limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
+                    elif "ignore_trigbee_in_macdstory_tier" in run_order.keys():
+                        if macd_tier in run_order['order_rules'].get("ignore_trigbee_in_macdstory_tier"):
+                            print("Selling Out from macd_tier: deviation>> ", macd_tier)
+                            sell_reason = 'order_rules__macd_tier'
+                            sell_order = True
+
+                            order_side = 'sell'
+                            limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
+                    
+                    # how to consider new triggers?
                     if sell_trigbee_trigger:
                         if run_order['trigname'] == "buy_cross-0" and "sell" in current_macd and time_in_trade.seconds > 500: 
                             # if 'use_wave_guage' in run_order['order_rules'].keys():
@@ -1707,29 +1724,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 except Exception as e:
                     print('waterfall error', e, " er line>>", print_line_of_error())
 
-            king_bishop = waterfall_sellout_chain(trading_model, sell_order, run_order, order_type, limit_price, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed, sell_qty)
+            king_bishop = waterfall_sellout_chain(macd_tier, trading_model, sell_order, run_order, order_type, limit_price, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed, sell_qty)
         
             charlie_bee['queen_cyle_times']['bishop_block3_queenorder__om'] = (datetime.datetime.now(est) - s_time).total_seconds()
 
             # elif the 3 wisemen pointing to sell or re-chunk profits
 
-            # check if position is neg, if so, switch side to sell and sell_qty to buy
-            # try:
-            #     if portfolio[run_order['ticker']]['side'] == 'short':
-            #         sell_qty = abs(sell_qty)
-            #         side = 'buy'
-            # except Exception as e:
-            #     msg = (rn_order_symbol, " not found in portfolio, wait a moment and make second attempt call to portfolio :::: error: ", e)
-            #     print(msg)
-            #     logging.error(logging_log_message(log_type='error', msg=msg, error=str(e), origin_func='Main Queen orders()', ticker=rn_order_symbol))
-            #     time.sleep(1)
-            #     portfolio = return_alpc_portolio(api)['portfolio']
-            #     if portfolio[run_order['ticker']]['side'] == 'short':
-            #         sell_qty = abs(sell_qty)
-            #         side = 'buy'
-            # # App Requests
-
-
+            # check if position is neg, if so, switch side to sell and sell_qty to buy  # if portfolio[run_order['ticker']]['side'] == 'short':
 
             if king_bishop['sell_order']:            
                 # QUEEN['queen_orders'].at[run_order_idx, 'order_trig_sell_stop'] = True ## moved to after aysnc

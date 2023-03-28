@@ -2284,31 +2284,34 @@ def submit_order(
     time_in_force="gtc",
     order_class=False,
     stop_loss=False,
-    take_profit=False,
-):
-    if type == "market":
-        order = api.submit_order(
-            symbol=symbol,
-            qty=qty,
-            side=side,
-            type=type,
-            time_in_force=time_in_force,
-            client_order_id=client_order_id,
-        )
-    elif type == "limit":
-        order = api.submit_order(
-            symbol=symbol,
-            qty=qty,
-            side=side,
-            type=type,
-            time_in_force=time_in_force,
-            client_order_id=client_order_id,
-            limit_price=limit_price,
-        )
-    else:
-        return False
+    take_profit=False,):
+    try:
+        if type == "market":
+            order = api.submit_order(
+                symbol=symbol,
+                qty=qty,
+                side=side,
+                type=type,
+                time_in_force=time_in_force,
+                client_order_id=client_order_id,
+            )
+        elif type == "limit":
+            order = api.submit_order(
+                symbol=symbol,
+                qty=qty,
+                side=side,
+                type=type,
+                time_in_force=time_in_force,
+                client_order_id=client_order_id,
+                limit_price=limit_price,
+            )
+        else:
+            return False
 
-    return order
+        return order
+    except Exception as e:
+        print_line_of_error()
+        return False
 
     """stop loss order"""
     # api.submit_order(symbol='TSLA',
@@ -2902,9 +2905,9 @@ def generate_TradingModel(
     ]
 
     def theme_king_order_rules(theme, stars=stars):
-        "long_star" # Runs 1yr and few others only on power and conditions
-        " time duration in minutes" ### DOUBLE CHECK SOME NOT ALIGNED IN SECONDS ###
-        # return all levels of model
+        # " time duration in minutes" ### DOUBLE CHECK SOME NOT ALIGNED IN SECONDS ###
+        
+        # Default Model Settings return all levels of model
         symbol_theme_vars = {
             "power_rangers": {
                 "1Minute_1Day": True,
@@ -2919,93 +2922,46 @@ def generate_TradingModel(
         star_theme_vars = {
                 "1Minute_1Day": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .08,
-                    'buyingpower_allocation_ShortTerm': .02,
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "5Minute_5Day" : {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .08,
-                    'buyingpower_allocation_ShortTerm': .02,
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "30Minute_1Month": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .08,
-                    'buyingpower_allocation_ShortTerm': .02,
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "1Hour_3Month": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .08,
-                    'buyingpower_allocation_ShortTerm': .02,
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "2Hour_6Month": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .08,
-                    'buyingpower_allocation_ShortTerm': .02,
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "1Day_1Year": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .08,
-                    'buyingpower_allocation_ShortTerm': .02,
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
         }
         wave_block_theme__kor = {}
 
         if theme.lower() == 'nuetral':
-            symbol_theme_vars = {
-                "power_rangers": {
-                    "1Minute_1Day": True,
-                    "5Minute_5Day" : True,
-                    "30Minute_1Month": True,
-                    "1Hour_3Month": True,
-                    "2Hour_6Month": True,
-                    "1Day_1Year": True,
-
-                }
-            }
-            star_theme_vars = {
-                    "1Minute_1Day": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "5Minute_5Day" : {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "30Minute_1Month": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "1Hour_3Month": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "2Hour_6Month": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "1Day_1Year": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-            }
+            symbol_theme_vars = symbol_theme_vars
+            star_theme_vars = star_theme_vars
             wave_block_theme__kor = {
                 "1Minute_1Day": kings_order_rules(
                                     theme=theme,
@@ -3025,7 +2981,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3159,59 +3115,12 @@ def generate_TradingModel(
                 ),
             }
         elif theme.lower() == 'long_star':
-            symbol_theme_vars = {
-                "power_rangers": {
-                    "1Minute_1Day": True,
-                    "5Minute_5Day" : True,
-                    "30Minute_1Month": True,
-                    "1Hour_3Month": True,
-                    "2Hour_6Month": True,
-                    "1Day_1Year": True,
-
-                }
-            }
-            star_theme_vars = {
-                    "1Minute_1Day": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "5Minute_5Day" : {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "30Minute_1Month": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "1Hour_3Month": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "2Hour_6Month": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-                    "1Day_1Year": {
-                        'stagger_profits':False, 
-                        'buyingpower_allocation_LongTerm': .08,
-                        'buyingpower_allocation_ShortTerm': .02,
-                        'use_margin': False,
-                        },
-            }
+            symbol_theme_vars = symbol_theme_vars
+            star_theme_vars = star_theme_vars
             wave_block_theme__kor = {
                 "1Minute_1Day": kings_order_rules(
                                     theme=theme,
-                                    status='not_active',
+                                    status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=1,
@@ -3237,7 +3146,7 @@ def generate_TradingModel(
                 ),
                 "5Minute_5Day": kings_order_rules(
                                     theme=theme,
-                                    status='not_active',
+                                    status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=1,
@@ -3253,8 +3162,8 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
+                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
@@ -3263,7 +3172,7 @@ def generate_TradingModel(
                 ),
                 "30Minute_1Month": kings_order_rules(
                                     theme=theme,
-                                    status='not_active',
+                                    status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=1,
@@ -3279,8 +3188,8 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
+                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
@@ -3288,7 +3197,7 @@ def generate_TradingModel(
                 ),
                 "1Hour_3Month": kings_order_rules(
                                     theme=theme,
-                                    status='not_active',
+                                    status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=1,
@@ -3304,8 +3213,8 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
+                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,

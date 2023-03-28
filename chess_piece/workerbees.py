@@ -1,3 +1,4 @@
+
 # QueenBee Workers
 import argparse
 import asyncio
@@ -541,21 +542,18 @@ def queen_workerbees(prod,
         # add back in snapshot init
         return {"ticker_time": return_dict, "rebuild_confirmation": rebuild_confirmation}
 
-    def pollen_hunt(df_tickers_data, MACD, live=False):
-        if live:
-            # Check to see if any charts need to be Recreate as times lapsed
-            df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-            if len(df_tickers_data_rebuilt["rebuild_confirmation"].keys()) > 0:
-                print(df_tickers_data_rebuilt["rebuild_confirmation"].keys())
-                print(datetime.now(est).strftime("%H:%M-%S"))
+    def pollen_hunt(df_tickers_data, MACD):
+        # Check to see if any charts need to be Recreate as times lapsed
+        df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
+        if len(df_tickers_data_rebuilt["rebuild_confirmation"].keys()) > 0:
+            print(df_tickers_data_rebuilt["rebuild_confirmation"].keys())
+            print(datetime.now(est).strftime("%H:%M-%S"))
 
-            # re-add snapshot
-            # ipdb.set_trace()
-            df_tickers_data_rebuilt = Return_Snapshots_Rebuild(
-                df_tickers_data=df_tickers_data_rebuilt["ticker_time"]
-            )
-        else:
-            df_tickers_data_rebuilt = df_tickers_data
+        # re-add snapshot
+        # ipdb.set_trace()
+        df_tickers_data_rebuilt = Return_Snapshots_Rebuild(
+            df_tickers_data=df_tickers_data_rebuilt["ticker_time"]
+        )
 
         main_rebuild_dict = {}  ##> only override current dict if memory becomes issues!
         chart_rebuild_dict = {}
@@ -708,7 +706,7 @@ def queen_workerbees(prod,
             )
 
         for ttf in pollens_honey["conscience"]["STORY_bee"]:
-            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
+            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}_.pkl")
             PickleData(
                 ttf_db,
                 {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},

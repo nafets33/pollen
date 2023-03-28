@@ -30,6 +30,7 @@ from chess_piece.king import (
     local__filepaths_misc,
     streamlit_config_colors,
     return_timestamp_string,
+    print_line_of_error,
 )
 
 est = pytz.timezone("US/Eastern")
@@ -995,9 +996,7 @@ def save_the_QUEEN_KING(PB_App_Pickle, QUEEN_KING):
     PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
 
 
-def kings_order_rules__forum(order_rules):
-    # order_rules
-    return True
+
 
 
 def download_df_as_CSV(df, file_name="name.csv"):
@@ -1216,6 +1215,10 @@ def pollenq_button_source():
         ],
         'workerbees_option_data': [
         {'id': "workerbees_option", 'icon': "fas fa-sitemap", 'label':""},
+        ],
+        'charts_option_data': [
+        {'id': "charts_dayonly_no", 'icon': "", 'label':"no"},
+        {'id': "charts_dayonly_yes", 'icon': "", 'label':"yes"},
         ],
     }
 
@@ -1522,6 +1525,32 @@ def example__color_coding__dataframe(row):
 ############ utils ############
 
 
+
+def show_waves(STORY_bee, ticker_option='SPY', frame_option='1Minute_1Day'):
+    ttframe = f'{ticker_option}{"_"}{frame_option}'
+    knowledge = STORY_bee[ttframe]
+
+    # mark_down_text(text=ttframe)
+    st.write("waves story -- investigate BACKEND functions")
+    df = knowledge['waves']['story']
+    df = df.astype(str)
+    st.dataframe(df)
+
+    st.write("buy cross waves")
+    m_sort = knowledge['waves']['buy_cross-0']
+    df_m_sort = pd.DataFrame(m_sort).T
+    df_m_sort = df_m_sort.astype(str)
+    st.dataframe(data=df_m_sort)
+
+    st.write("sell cross waves")
+    m_sort = knowledge['waves']['sell_cross-0']
+    df_m_sort = pd.DataFrame(m_sort).T
+    df_m_sort = df_m_sort.astype(str)
+    st.dataframe(data=df_m_sort)
+
+    return True
+
+
 def nested_grid():
     url = "https://www.ag-grid.com/example-assets/master-detail-data.json"
     df = pd.read_json(url)
@@ -1713,30 +1742,5 @@ def click_button_grid():
         st.write(response["data"][response["data"].clicked == "clicked"])
     except:
         st.write("Nothing was clicked")
-
-
-def show_waves(STORY_bee, ticker_option='SPY', frame_option='1Minute_1Day'):
-    ttframe = f'{ticker_option}{"_"}{frame_option}'
-    knowledge = STORY_bee[ttframe]
-
-    # mark_down_text(text=ttframe)
-    st.write("waves story -- investigate BACKEND functions")
-    df = knowledge['waves']['story']
-    df = df.astype(str)
-    st.dataframe(df)
-
-    st.write("buy cross waves")
-    m_sort = knowledge['waves']['buy_cross-0']
-    df_m_sort = pd.DataFrame(m_sort).T
-    df_m_sort = df_m_sort.astype(str)
-    st.dataframe(data=df_m_sort)
-
-    st.write("sell cross waves")
-    m_sort = knowledge['waves']['sell_cross-0']
-    df_m_sort = pd.DataFrame(m_sort).T
-    df_m_sort = df_m_sort.astype(str)
-    st.dataframe(data=df_m_sort)
-
-    return True
 
 

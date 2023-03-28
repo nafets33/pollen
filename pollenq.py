@@ -288,11 +288,11 @@ def pollenq(admin_pq):
                     return False
         
                 if api_failed:
-                    st.write("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
+                    st.error("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
                     return False
 
                 if 'heartbeat_time' not in QUEENsHeart.keys():
-                    st.write("You Need a Queen")
+                    st.error("You Need a Queen")
                     return False
                 
                 if (now - QUEENsHeart['heartbeat_time']).total_seconds() > 60:
@@ -342,7 +342,8 @@ def pollenq(admin_pq):
                 honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
                 money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
 
-                mark_down_text(fontsize='18', text=f'{honey_text} {money_text}')
+                mark_down_text(fontsize='18', text=f'{honey_text}')
+                mark_down_text(fontsize='18', text=f'{money_text}')
             
                 with st.expander("Portfolio Value: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
                     cols = st.columns((3,2))
@@ -368,7 +369,6 @@ def pollenq(admin_pq):
                 er, erline=print_line_of_error()
                 print(erline)
 
-
         def admin_check(admin_pq):
             if admin_pq:
                 admin = True
@@ -383,6 +383,18 @@ def pollenq(admin_pq):
 
             return True
 
+        def admin_send_queen_airflow(KING):
+            if st.session_state['admin']:
+                cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
+                if st.session_state['admin_queens']:
+                    with st.form('admin queens'):
+                        prod_queen = st.checkbox('prod', False)
+                        client_user_queen = st.selectbox('client_user_queen', list(KING['users'].get('client_user__allowed_queen_list')))
+                        if st.form_submit_button("Send Queen"):
+                            trigger_airflow_dag(dag='run_queenbee', client_username=client_user_queen, prod=prod_queen)
+            
+            return True
+        
         pq_buttons = pollenq_button_source()
         est = pytz.timezone("US/Eastern")
 
@@ -439,17 +451,20 @@ def pollenq(admin_pq):
             
             ####### Welcome to Pollen ##########
             # use API keys from user
-
-            hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
-            cols = st.columns((2,2,2,2,2,2,2)) # 6
-            hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
             
-            with cols[6]:
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-    
             print("King")
             PB_KING_Pickle = master_swarm_KING(prod=prod)
             KING = ReadPickleData(PB_KING_Pickle)
+
+            admin_send_queen_airflow(KING)
+
+            hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
+            cols = st.columns((2,2,2,2,2,2,2,2,2)) # 6
+            hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
+            
+            with cols[8]:
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+    
             if authorized_user:
                 QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
                 QUEEN_KING['prod'] = st.session_state['production']          
@@ -463,6 +478,8 @@ def pollenq(admin_pq):
                 refresh_queen_orders(QUEEN)
                 stash_queen(QUEEN)
 
+
+
             print("API")
             try:
                 api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
@@ -474,12 +491,14 @@ def pollenq(admin_pq):
                 acct_info = False
                 st.session_state['production'] = False
 
-            with cols[5]:
+
+            with cols[7]:
                 portfolio_header__QC(acct_info)
+            
             print("MENU")
             with cols[0]:
                 height = 134 if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else 54
-                cust_Button("misc/hex_design.jpg", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
                 if st.session_state['workerbees']:
                     with cols[0]:
                         hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
@@ -505,11 +524,18 @@ def pollenq(admin_pq):
             with cols[4]:
                 # hc.option_bar(option_definition=pq_buttons.get('option_chart'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                 height = 134 if 'charts_toggle' in st.session_state and st.session_state['charts_toggle'] == True else 54
-                cust_Button("misc/knight.png", hoverText='Charts', key='charts_toggle', height=f'{height}px')
-
+                cust_Button("misc/charts.png", hoverText='Charts', key='charts_toggle', height=f'{height}px')
+            
+            with cols[5]:
                 height = 134 if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else 54
-                cust_Button("misc/power_gif.gif", hoverText='The FLash', key='the_flash', height=f'{height}px')
-
+                cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
+            
+            with cols[6]:                
+                height = 134 if 'waves' in st.session_state and st.session_state['waves'] == True else 54
+                cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px')
+            
+            with cols[7]:
+                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'23px')
 
             if st.session_state['admin'] == True:
                 st.sidebar.write('admin:', st.session_state["admin"])
@@ -544,7 +570,6 @@ def pollenq(admin_pq):
             
             print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)
-            pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
 
             if 'init_queen_request' in st.session_state:
@@ -552,36 +577,23 @@ def pollenq(admin_pq):
                 st.success("Hive Master Notified and You should receive contact soon")
 
             if st.session_state['authorized_user']:
-                with cols[6]:
-                    # queensheart
-                    now = datetime.now(est)
-                    beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
-                    beat_size = 100 if beat > 100 else beat
-                    beat_size = 45 if beat_size < 10 else beat_size
-                    cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
-                    if st.session_state['show_queenheart']:
-                        hc.option_bar(option_definition=pq_buttons.get('option_heart'),title='', key='option_heartbeat', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                
-                with cols[6]:
-                    if st.session_state['admin']:
-                        cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
-                        if st.session_state['admin_queens']:
-                            with st.form('admin queens'):
-                                prod_queen = st.checkbox('prod', False)
-                                client_user_queen = st.selectbox('client_user_queen', list(KING['users'].get('client_user__allowed_queen_list')))
-                                if st.form_submit_button("Send Queen"):
-                                    trigger_airflow_dag(dag='run_queenbee', client_username=client_user_queen, prod=prod_queen)
+                with cols[8]:
+                    if queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
+                        pass
+                    else:
+                        # queensheart
+                        now = datetime.now(est)
+                        beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
+                        beat_size = 100 if beat > 100 else beat
+                        beat_size = 45 if beat_size < 10 else beat_size
+                        cust_Button("misc/heart_beat.gif", hoverText=f'rate {beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
+                        if st.session_state['show_queenheart']:
+                            hc.option_bar(option_definition=pq_buttons.get('option_heart'),title='', key='option_heartbeat', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                     
-                
 
 
-            with cols[5]:
-                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'23px')
-
-            queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod)
             queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
             queenbee_online(QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
-
 
         if authorized_user and 'pollenq' in menu_id: 
             print("QueensConscience")
