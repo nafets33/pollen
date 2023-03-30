@@ -8,7 +8,7 @@ import pandas as pd
 sys.path.append("./chess_piece")
 
 
-from chess_piece.queen_worker_bees import queen_workerbees
+from chess_piece.workerbees import queen_workerbees
 from chess_piece.queen_hive import analyze_waves
 
 

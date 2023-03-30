@@ -97,6 +97,18 @@ def PlayGround():
         
         active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 
+        with st.expander("backtesting"):
+            back_test_blocktime = os.path.join(hive_master_root(), 'macd_grid_search_blocktime.csv')
+            df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
+            df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
+            for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
+                df_backtest[col] = pd.to_numeric(df_backtest[col], errors='coerce')
+            df_backtest_ttf = df_backtest.groupby(['ttf', 'key'])[['winratio', 'maxprofit']].sum().reset_index()
+            # st.dataframe(df_backtest)
+            standard_AGgrid(df_backtest_ttf)
+            standard_AGgrid(df_backtest)
+
+
         
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         cols = st.columns(2)

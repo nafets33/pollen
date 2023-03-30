@@ -443,6 +443,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     limit_price = round(limit_price, 2) if limit_price else limit_price
                     qty_order = float(round(wave_amo / current_price, 0))
 
+                    if not isinstance(qty_order, float):
+                        ipdb.set_trace()
+
                 return limit_price, qty_order
 
             portfolio = return_alpc_portolio(api)['portfolio']
@@ -677,6 +680,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         # answer all questions for order to be placed, compare against the rules
         # measure len of trigbee how long has trigger been there?
         # Std Deivation from last X trade prices
+        # Jump on wave if NOT on Wave?
+        # collective BUY only when story MACD tier aligns to certian power NEW THEME
+        # Sell on MACD Tier distance (how many tiers have we crossed increment to sell at)  NEW THEME
+        # collective MACD triggers? Family Triggers, weights on where trigger is
+        # accept trigbee tier when deviation from vwap?
+
+        ####### Allow Stars to borrow power if cash available ###### its_morphin_time
+        # borrow_cashed needs to be sold within timeframe OR it can keep it based on confidence
         
         def knight_request_recon_portfolio():
             # debate if we should place a new order based on current portfolio trades
@@ -696,8 +707,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         def proir_waves():
             # return fequency of prior waves and statement conclusions
             return True
-
-
+        
         def its_morphin_time(QUEEN_KING, QUEEN, trigbee, theme, tmodel_power_rangers, ticker, stars_df):
             try:
                 # Map in the color on storyview
@@ -745,17 +755,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # chessboard = QUEEN_KING['chess_board__revrec']
 
             acct_info = refresh_account_info(api=api)['info_converted']
-            revrec = refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
             star_total_budget = revrec['df_stars'].loc[ticker_time_frame].get("star_total_budget")
             
             # Total In Running, Remaining
             remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
             if remaining_budget == 0:
-                print(f'{ticker_time_frame} all budget used up')
-                # if ticker_time_frame not in QUEEN['queens_messages'].keys():
-                #     QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
-                # else:
-                #     QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
+                # print(f'{ticker_time_frame} all budget used up')
+                if ticker_time_frame not in QUEEN['queens_messages'].keys():
+                    QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
+                else:
+                    QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
                 return {'kings_blessing': False}
             
             # Total buying power allowed  
@@ -775,6 +785,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # Story View, Wave Analysis
             story_view_ = story_view(STORY_bee=STORY_bee, ticker=ticker)
             stars_df = story_view_['df']
+            stars_df = stars_df.set_index("star")
+            macd_tier = stars_df.loc[ticker_time_frame].get('current_macd_tier')
             current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
             current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][trigbee]
             current_wave_blocktime = current_wave['wave_blocktime']
@@ -785,6 +797,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time].get('power_rangers')
             king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][trigbee][current_wave_blocktime]
             maker_middle = ticker_priceinfo['maker_middle'] if str(trading_model_star.get('trade_using_limits')) == 'true' else False
+            
+
             
             # bpower_resp = buying_Power_cc(QUEEN_KING=QUEEN_KING, api=api, client_args="TBD", daytrade=True)
 
@@ -827,7 +841,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 print("Error New Trig not in Queens Mind: ", trigbee )
                 return {'kings_blessing': False}
             
-            elif trigbee == 'buy_cross-0':
+            if "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
+                if macd_tier in king_order_rules.get("ignore_trigbee_in_macdstory_tier"):
+                    print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
+                    return {'kings_blessing': False}
+            
+            if trigbee == 'buy_cross-0':
                 if crypto:
                     kings_blessing = True
                     order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
@@ -836,15 +855,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, king_order_rules=king_order_rules, order_side='buy', wave_amo=wave_amo, maker_middle=maker_middle, origin_wave=current_wave, power_up_rangers=power_up_amo, ticker_time_frame_origin=ticker_time_frame, wave_at_creation=current_macd_cross__wave)
 
                 if type(trig_action) != bool:
-                    # print("evalatue if there is another trade to make on top of current wave")
+                    """ print("evalatue if there is another trade to make on top of current wave")"""
                     if len(trig_action) >= 2:
                         # print("won't allow more then 2 double down trades")
                         return {'kings_blessing': False}
-                    else:
-                        now_time = datetime.datetime.now().astimezone(est)
-                        trig_action.iloc[-1]['datetime']
-                        
-                        time_delta = now_time - trig_action.iloc[-1]['datetime']
+                    
+                    now_time = datetime.datetime.now().astimezone(est)
+                    trig_action.iloc[-1]['datetime']
+                    time_delta = now_time - trig_action.iloc[-1]['datetime']
 
                     # if time_delta.seconds > king_order_rules['doubledown_timeduration']
                     if time_delta > datetime.timedelta(minutes=king_order_rules['doubledown_timeduration']):
@@ -924,7 +942,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 print("Error New Trig not in Queens Mind: ", trigbee )
                 return {'kings_blessing': False}
-
+            
         except Exception as e:
             print(e, print_line_of_error(), ticker_time_frame)
             print("logme")
@@ -1015,14 +1033,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 """ HAIL TRIGGER, WHAT SAY YOU? ~forgive me but I bring a gift for the king and queen"""
                                 s_time = datetime.datetime.now(est)
                                 king_resp = king_knights_requests(QUEEN=QUEEN, STORY_bee=STORY_bee, avail_trigs=avail_trigs, trigbee=trig, ticker_time_frame=ticker_time_frame, trading_model=trading_model, trig_action=trig_action, crypto=crypto)
-                                if king_resp['kings_blessing']:
+                                if king_resp.get('kings_blessing'):
                                     execute_order(QUEEN=QUEEN, king_resp=king_resp, king_eval_order=False, ticker=king_resp['ticker'], ticker_time_frame=ticker_time_frame, trig=trig, portfolio=portfolio, crypto=crypto)
+
                                 charlie_bee['queen_cyle_times']['knights_request__cc'] = (datetime.datetime.now(est) - s_time).total_seconds()
                     
                 except Exception as e:
                     msg = (ticker_time_frame, e, print_line_of_error())
                     print(msg)
                     QUEEN['queens_messages'].update({'commandconscience__failed': {'ticker_time_frame': f'{ticker_time_frame}', 'error': e, 'line_error': print_line_of_error()}})
+                    send_email(subject="Knight Error", body=f'{msg}')
+                    ipdb.set_trace()
                     sys.exit()
 
             
@@ -1655,14 +1676,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         order_side = 'sell'
                         limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
-                    elif "ignore_trigbee_in_macdstory_tier" in run_order.keys():
-                        if macd_tier in run_order['order_rules'].get("ignore_trigbee_in_macdstory_tier"):
-                            print("Selling Out from macd_tier: deviation>> ", macd_tier)
-                            sell_reason = 'order_rules__macd_tier'
-                            sell_order = True
 
-                            order_side = 'sell'
-                            limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
                     
                     # how to consider new triggers?
                     if sell_trigbee_trigger:

@@ -1216,9 +1216,12 @@ def pollenq_button_source():
         'workerbees_option_data': [
         {'id': "workerbees_option", 'icon': "fas fa-sitemap", 'label':""},
         ],
-        'charts_option_data': [
+        'charts_day_option_data': [
         {'id': "charts_dayonly_no", 'icon': "", 'label':"no"},
         {'id': "charts_dayonly_yes", 'icon': "", 'label':"yes"},
+        ],
+        'charts_option_data': [
+        {'id': "charts_id", 'icon': "fa fa-heartbeat", 'label':""},
         ],
     }
 

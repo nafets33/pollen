@@ -509,8 +509,9 @@ def ReadPickleData(pickle_file):
     # Check the file's size and modification time
     prev_size = os.stat(pickle_file).st_size
     prev_mtime = os.stat(pickle_file).st_mtime
+    stop = 0
+    e = None
     while True:
-        stop = 0
         # Get the current size and modification time of the file
         curr_size = os.stat(pickle_file).st_size
         curr_mtime = os.stat(pickle_file).st_mtime
@@ -521,17 +522,17 @@ def ReadPickleData(pickle_file):
             # print(f"{pickle_file} is currently being written to")
             # logging.info(f'{pickle_file} is currently being written to')
         else:
-            if stop > 3:
-                print("CRITICAL read pickle failed")
-                # logging.critical(f'{e} error is pickle load')
-                # send_email(subject='CRITICAL Read Pickle Break')
-                break
             try:
                 with open(pickle_file, "rb") as f:
                     return pickle.load(f)
             except Exception as e:
                 # print('pickleerror ', pickle_file, e)
                 # logging.error(f'{e} error is pickle load')
+                if stop > 3:
+                    print("CRITICAL read pickle failed ", e)
+                    # logging.critical(f'{e} error is pickle load')
+                    # send_email(subject='CRITICAL Read Pickle Break')
+                    break
                 stop += 1
                 time.sleep(0.033)
 

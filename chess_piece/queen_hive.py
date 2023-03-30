@@ -390,8 +390,9 @@ def init_QUEEN(queens_chess_piece):
     return QUEEN
 
 
-def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=['SPY'], theme='nuetral'):
+def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=['SPY'], theme='nuetral', model='MACD'):
     return {
+        "model": model,
         "MACD_fast_slow_smooth": init_macd_vars,
         "tickers": ticker_list,
         "stars": stars(),
@@ -550,7 +551,7 @@ def return_ticker_qcp_index(QUEEN_KING, qcp_bees_key):
     
     return ticker_qcp_index
 
-def refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}):
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}):
     
     def shape_revrec_chesspieces(dic_items, acct_info):
         df = pd.DataFrame(dic_items.items())
@@ -558,6 +559,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, r
         bp = sum(df['buying_power'])
         df['total_budget'] = (df['buying_power'] * acct_info.get('buying_power')) / bp
         df['equity_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
+        df['cash_budget'] = (df['buying_power'] * acct_info.get('cash')) / bp
         df = df.set_index('qcp')
         
         return df
@@ -583,6 +585,11 @@ def refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, r
     # Create/Refresh RevRec from Chess Board
     try:
         all_workers = list(QUEEN_KING['chess_board'].keys())
+        revrec_buying_power = acct_info.get('buying_power')
+        revrec_last_equity = acct_info.get('last_equity')
+        total_costbasis_active = return_remaining_budget(QUEEN, active_queen_order_states)
+        cash = acct_info.get('last_equity')
+
         # total budget calc
         for qcp in all_workers:
             if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
@@ -633,25 +640,34 @@ def refresh_chess_board__revrec(acct_info, QUEEN_KING, chess_board__revrec={}, r
             for ticker in tickers:
                 df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
                 bp = sum(df_temp['ticker_buying_power'])
+                
                 df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('total_budget')) / bp
                 df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('equity_budget')) / bp
+                df_temp['cash_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('cash_budget')) / bp
                 
                 # ticker
                 df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.loc[ticker].get('total_budget')
                 df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.loc[ticker].get('equity_budget')
+                df_ticker.at[ticker, 'ticker_cash_budget'] = df_temp.loc[ticker].get('cash_budget')
 
                 # star time 
                 df_temp = df_stars[(df_stars['ticker'].isin([ticker]))].copy()
                 bp = sum(df_temp['star_buying_power'])
                 df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
                 df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
+                df_temp['cash_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_cash_budget')) / bp
+
                 for star in df_temp['star'].to_list():
                     df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
+                    df_stars.at[f'{ticker}_{star}', 'star_equity_budget'] = df_temp.loc[f'{ticker}_{star}'].get('equity_budget')
+                    df_stars.at[f'{ticker}_{star}', 'star_cash_budget'] = df_temp.loc[f'{ticker}_{star}'].get('cash_budget')
 
         return {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
     
     except Exception as e:
         print_line_of_error()
+        print(e)
+        print('why')
 
 
 def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='1 can be queried at a time until feat update to return all'):
@@ -667,6 +683,14 @@ def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=Fal
 
     return orders
 
+def return_remaining_budget(QUEEN, active_queen_order_states):
+    
+    # Total In Running, Remaining
+    queen_orders = QUEEN['queen_orders']
+    active_orders = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states)]
+    cost_basis = sum(active_orders['cost_basis'])
+    
+    return cost_basis
 
 def return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states):
     
@@ -688,26 +712,24 @@ def return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, act
     
     return remaining_budget
 
-def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral", workerbee=False, reset_theme=False, save=False):
-    trading_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
-
-    if reset_theme:
+def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral"):
+    # tradingmodel1["SPY"]["stars_kings_order_rules"]["1Minute_1Day"]["trigbees" ]["buy_cross-0"]["morning_9-11"].items()
+    try:
+        if model is None or ticker is None or theme is None:
+            print("TM Vars Not Available")
+            print(f'{model} {ticker} {theme}')
+            return QUEEN_KING
+        
         print(ticker, " Updating Trading Model ", model, theme)
         tradingmodel1 = generate_TradingModel(ticker=ticker, status=status, theme=theme)[model]
-        # tradingmodel1["SPY"]["stars_kings_order_rules"]["1Minute_1Day"]["trigbees" ]["buy_cross-0"]["morning_9-11"].items()
-        QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
-        return QUEEN_KING
-    
-    if ticker not in trading_models.keys():
-        print(ticker, " Ticker Missing Trading Model Adding Default ", model)
+        if tradingmodel1 is not None:
+            QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(tradingmodel1)
+            return QUEEN_KING
+        else:
+            print("error in tm")
+    except Exception as e:
+        print('addTM ', e)
 
-        tradingmodel1 = generate_TradingModel(ticker=ticker, status=status, theme=theme)[model]
-        # QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(tradingmodel1)
-        QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
-
-        return QUEEN_KING
-    else:
-        return QUEEN_KING
 
 
 def add_key_to_QUEEN(QUEEN, queens_chess_piece):  # returns QUEEN
@@ -2891,8 +2913,7 @@ def kings_order_rules( # rules created for 1Minute
 def generate_TradingModel(
     theme="nuetral", portfolio_name="Jq", ticker="SPY",
     stars=stars, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"], 
-    trading_model_name="MACD", status="active", portforlio_weight_ask=0.01, init=False,
-):
+    trading_model_name="MACD", status="active", portforlio_weight_ask=0.01, init=False,):
     # theme level settings
     themes = [
         "nuetral", # Custom
@@ -2981,7 +3002,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
+                                    ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3006,7 +3027,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3031,7 +3052,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3056,7 +3077,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
+                                    ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3081,7 +3102,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-1, 0, 1],
+                                    ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3449,8 +3470,7 @@ def generate_TradingModel(
         portforlio_weight_ask=portforlio_weight_ask,
         stars=stars,
         portfolio_name=portfolio_name,
-        theme=theme,
-    ):
+        theme=theme,):
         afterhours = True if ticker in crypto_currency_symbols else False
         afternoon = True if ticker in crypto_currency_symbols else True
         lunch = True if ticker in crypto_currency_symbols else True
@@ -3511,16 +3531,20 @@ def generate_TradingModel(
 
         return star_model
 
-    # Trading Model Version 1
-    symbol_theme_vars, star_theme_vars, wave_block_theme__kor =  theme_king_order_rules(theme=theme, stars=stars)
-    stars_vars = star_trading_model_vars(star_theme_vars, wave_block_theme__kor)
-    # {ticker: model_vars}
-    macd_model = tradingmodel_vars(symbol_theme_vars=symbol_theme_vars, stars_vars=stars_vars)
+    try:
+        # Trading Model Version 1
+        symbol_theme_vars, star_theme_vars, wave_block_theme__kor =  theme_king_order_rules(theme=theme, stars=stars)
+        stars_vars = star_trading_model_vars(star_theme_vars, wave_block_theme__kor)
+        # {ticker: model_vars}
+        macd_model = tradingmodel_vars(symbol_theme_vars=symbol_theme_vars, stars_vars=stars_vars)
 
-    if init==False:
-        print(ticker, " ",theme, " Model Generated")
+        if init==False:
+            print(f'{trading_model_name} {ticker} {theme} Model Generated')
 
-    return {"MACD": macd_model}
+        return {"MACD": macd_model}
+    except Exception as e:
+        print(e)
+        return None
 
 
 
@@ -4617,7 +4641,6 @@ def live_sandbox__setup_switch(client_username, queenKING=False, switch_env=Fals
             prod_name = "LIVE"
             st.session_state["prod_name"] = prod_name
 
-    st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
     st.session_state['last_env'] = prod
 
 
@@ -4637,9 +4660,10 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
         if os.path.exists(db_root) == False:
             os.mkdir(db_root)
             os.mkdir(os.path.join(db_root, "logs"))
+    
     if queenKING:
         st.session_state['db_root'] = db_root
-
+        st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
 
     return db_root
 

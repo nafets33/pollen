@@ -47,8 +47,9 @@ os.environ["no_proxy"] = "*"
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
 def queen_workerbees(prod, 
                      queens_chess_piece="bees_manager", 
-                     backtesting = False,
-                     macd = None):
+                     backtesting=False,
+                     macd=None,
+                     reset_only=False):
     
     if backtesting:
         assert macd is not None 
@@ -393,7 +394,6 @@ def queen_workerbees(prod,
         except Exception as e:
             print(e)
             print(queens_chess_piece)
-            ipdb.set_trace()
 
         return main_return_dict
 
@@ -544,20 +544,22 @@ def queen_workerbees(prod,
 
     def pollen_hunt(df_tickers_data, MACD):
         # Check to see if any charts need to be Recreate as times lapsed
-        df_tickers_data_rebuilt = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-        if len(df_tickers_data_rebuilt["rebuild_confirmation"].keys()) > 0:
-            print(df_tickers_data_rebuilt["rebuild_confirmation"].keys())
-            print(datetime.now(est).strftime("%H:%M-%S"))
+        if backtesting == False or reset_only == False:
+            df_tickers_data = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
+            if len(df_tickers_data["rebuild_confirmation"].keys()) > 0:
+                print(df_tickers_data["rebuild_confirmation"].keys())
+                print(datetime.now(est).strftime("%H:%M-%S"))
+
 
         # re-add snapshot
-        # ipdb.set_trace()
-        df_tickers_data_rebuilt = Return_Snapshots_Rebuild(
-            df_tickers_data=df_tickers_data_rebuilt["ticker_time"]
-        )
+        if backtesting == False or reset_only == False:
+            df_tickers_data = Return_Snapshots_Rebuild(
+                df_tickers_data=df_tickers_data["ticker_time"]
+            )
 
         main_rebuild_dict = {}  ##> only override current dict if memory becomes issues!
         chart_rebuild_dict = {}
-        for ticker_time, bars_data in df_tickers_data_rebuilt.items():
+        for ticker_time, bars_data in df_tickers_data.items():
             chart_rebuild_dict[ticker_time] = bars_data
             df_data_new = return_getbars_WithIndicators(bars_data=bars_data, MACD=MACD)
             if df_data_new[0] == True:
@@ -583,12 +585,13 @@ def queen_workerbees(prod,
             print(msg)
             logging.critical(msg)
             sys.exit()
-        df_tickers_data_init = res["init_charts"]
+        df_tickers_data = res["init_charts"]
 
         """ add snapshot to initial chartdata -1 """
-        df_tickers_data = Return_Snapshots_Rebuild(
-            df_tickers_data=df_tickers_data_init, init=True
-        )
+        if backtesting == False or reset_only == False:
+            df_tickers_data = Return_Snapshots_Rebuild(
+                df_tickers_data=df_tickers_data, init=True
+            )
 
         """ give it all to the QUEEN put directkly in function """
         pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_settings)
@@ -828,9 +831,9 @@ def queen_workerbees(prod,
             pq = read_QUEEN(
                 queen_db=queen_db, qcp_s=["castle", "bishop", "knight"]
             )  # castle, bishop
-            QUEENBEE = pq["QUEENBEE"]
-            queens_chess_pieces = pq["queens_chess_pieces"]
-            queens_master_tickers = pq["queens_master_tickers"]
+            QUEENBEE = pq.get('QUEENBEE')
+            queens_chess_pieces = pq.get('queens_chess_pieces')
+            queens_master_tickers = pq.get('queens_master_tickers')
             # for every ticker async init return inital chart data
             # res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
 
@@ -890,9 +893,11 @@ if __name__ == "__main__":
 
     def createParser_workerbees():
         parser = argparse.ArgumentParser()
-        parser.add_argument("-qcp", default="workerbee")
         parser.add_argument("-prod", default=False)
-        # parser.add_argument ('-windows', default=False)
+        # parser.add_argument("-qcp", default="workerbee")
+        # parser.add_argument("-queens_chess_piece", default="bees_manager") 
+        # parser.add_argument("-backtesting", default=True)
+        # parser.add_argument("-macd", default=None)
 
         return parser
 
