@@ -284,7 +284,7 @@ def pollenq(admin_pq):
             backtesting = st.sidebar.checkbox("backtesting", reset_only)
 
             if refresh:
-                queen_workerbees(prod=st.session_state['prod'], reset_only=reset_only, backtesting=backtesting, macd=None)
+                queen_workerbees(prod=QUEEN_KING.get('prod'), reset_only=reset_only, backtesting=backtesting, macd=None)
                 st.success("WorkerBees Completed")
 
         def queenbee_online(QUEENsHeart, admin, dag, api_failed, prod):
