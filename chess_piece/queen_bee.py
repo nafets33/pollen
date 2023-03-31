@@ -86,7 +86,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # check against buying power validate not buying too much of total portfolio
                 if qty < 1:
                     print("Qty Value Not Valid (less then 1) setting to 1")
-                    qty = 1
+                    qty = 1.0
                 return {'qty_correction': qty}
             elif side == 'sell': # sel == sell
                 # print("check portfolio has enough shares to sell")
@@ -479,17 +479,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 if side == 'buy':
                     limit_price = [limit_price if limit_price != False else False][0]
-
+                    print(f'{wave_amo}')
                     limit_price, qty_order = update__validate__qty(crypto=crypto, current_price=priceinfo_order['price'], limit_price=limit_price, wave_amo=wave_amo)
+                    print(f'{qty_order}')
 
-                    # return num of trig for client_order_id
                     client_order_id__gen = generate_client_order_id(QUEEN=QUEEN, ticker=ticker, trig=trig)
 
                     send_order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, run_order_idx=run_order_idx)                    
                     qty_order = send_order_val['qty_correction'] # same return unless more validation done here
-
-                    # ORDER TYPES Enter the Market
+                    print(f'{qty_order}')
+                    if not isinstance(qty_order, float):
+                        send_email(subject='error checker go see whats up')
+                        ipdb.set_trace()
                     print(f'{side} {order_type} {qty_order}  {client_order_id__gen}')
+                    
                     order_submit = submit_order(api=api, symbol=ticker, type=order_type, qty=qty_order, side=side, client_order_id=client_order_id__gen, limit_price=limit_price) # buy
                     if order_submit == False:
                         print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
@@ -843,7 +846,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             
             if "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
                 if macd_tier in king_order_rules.get("ignore_trigbee_in_macdstory_tier"):
-                    print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
+                    # print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
                     return {'kings_blessing': False}
             
             if trigbee == 'buy_cross-0':

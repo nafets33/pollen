@@ -390,14 +390,16 @@ def init_QUEEN(queens_chess_piece):
     return QUEEN
 
 
-def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=['SPY'], theme='nuetral', model='MACD'):
+def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=['SPY'], theme='nuetral', model='MACD', piece_name='king', buying_power=1, picture='knight_png'):
     return {
+        "picture": picture,
+        "piece_name": piece_name,
         "model": model,
         "MACD_fast_slow_smooth": init_macd_vars,
         "tickers": ticker_list,
         "stars": stars(),
         "theme": theme,
-        "total_buyng_power_allocation": 1,
+        "total_buyng_power_allocation": buying_power,
     }
 
 
@@ -2147,7 +2149,7 @@ def rebuild_timeframe_bars(
 
 
 def return__snapshot__latest_PriceInfo(
-    api, ticker_list, crypto=False, coin_exchange=False, min_input=0, sec_input=30
+    api, ticker_list=["SPY"], crypto=False, coin_exchange=False, min_input=0, sec_input=60
 ):
     def has_condition(condition_list, condition_check):
         if type(condition_list) is not list:

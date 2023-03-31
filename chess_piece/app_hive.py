@@ -25,11 +25,13 @@ import plotly.graph_objects as go
 import ipdb
 
 from chess_piece.king import (
+    PickleData,
     ReadPickleData,
     hive_master_root,
     local__filepaths_misc,
     streamlit_config_colors,
     return_timestamp_string,
+    return_all_client_users__db,
     print_line_of_error,
 )
 
@@ -233,22 +235,6 @@ def queen_orders_view(
         return {"df": pd.DataFrame()}
 
 
-def PickleData(pickle_file, data_to_store):
-    p_timestamp = {"pq_last_modified": datetime.now(est)}
-    root, name = os.path.split(pickle_file)
-    pickle_file_temp = os.path.join(root, ("temp" + name))
-    with open(pickle_file_temp, "wb+") as dbfile:
-        db = data_to_store
-        db["pq_last_modified"] = p_timestamp
-        pickle.dump(db, dbfile)
-
-    with open(pickle_file, "wb+") as dbfile:
-        db = data_to_store
-        db["pq_last_modified"] = p_timestamp
-        pickle.dump(db, dbfile)
-
-    return True
-
 
 def update_queencontrol_theme(QUEEN_KING, theme_list):
     theme_desc = {
@@ -276,6 +262,44 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
             QUEEN_KING["last_app_update"] = datetime.now()
             PickleData(pickle_file=QUEEN_KING["source"], data_to_store=QUEEN_KING)
             st.success("Theme Saved")
+
+
+def admin_queens_active(PB_KING_Pickle, KING):
+    with st.expander("admin QUEENS_ACTIVE"):
+        df = return_all_client_users__db()
+        # df = pd.DataFrame(KING['users'].get('client_users_db'))
+        allowed_list = KING['users']['client_user__allowed_queen_list']
+        df_map = pd.DataFrame(allowed_list)
+        df_map['queen_authorized'] = 'active'
+        df_map = df_map.rename(columns={0: 'email'})
+        
+        df = pd.merge(df, df_map, how='outer', on='email').fillna('')
+        grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
+        grid_df = grid['data']
+
+        allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
+        allowed_list_new = allowed_list_new['email'].tolist()
+        new_emails = [i for i in allowed_list_new if i not in allowed_list]
+
+        if st.button("Save"):
+            KING['users']['client_user__allowed_queen_list'] = allowed_list_new
+            PickleData(PB_KING_Pickle, KING, write_temp=False)
+            st.success("Auth Queen Users Updated")
+            print(new_emails)
+            for email in new_emails:
+                print(email)
+                send_email(email, subject="Trading Bot is Now Active", 
+                body=f""" Hey! Your Queen Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
+                Steps:
+                1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
+                2. Customize QUEEN Bot Setting to Trade Specific to your Needs
+                3. Or Join an Existing Fund Trading Strategies
+
+                Happy Trading
+                pollenq
+                """
+                
+                )
 
 
 def mark_down_text(
@@ -485,7 +509,7 @@ def grid_height(len_of_rows):
     elif len_of_rows == 1:
         grid_height = 89
     else:
-        grid_height = round(len_of_rows * 63, 0)
+        grid_height = round(len_of_rows * 40, 0)
 
     return grid_height
 

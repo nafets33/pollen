@@ -544,7 +544,7 @@ def queen_workerbees(prod,
 
     def pollen_hunt(df_tickers_data, MACD):
         # Check to see if any charts need to be Recreate as times lapsed
-        if backtesting == False or reset_only == False:
+        if reset_only == False:
             df_tickers_data = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
             if len(df_tickers_data["rebuild_confirmation"].keys()) > 0:
                 print(df_tickers_data["rebuild_confirmation"].keys())
@@ -552,7 +552,7 @@ def queen_workerbees(prod,
 
 
         # re-add snapshot
-        if backtesting == False or reset_only == False:
+        if reset_only == False:
             df_tickers_data = Return_Snapshots_Rebuild(
                 df_tickers_data=df_tickers_data["ticker_time"]
             )
@@ -626,9 +626,7 @@ def queen_workerbees(prod,
         if backtesting:
             MACD_settings = macd 
         else:
-            MACD_settings = QUEENBEE["workerbees"][queens_chess_piece][
-                "MACD_fast_slow_smooth"
-            ]
+            MACD_settings = QUEENBEE["workerbees"][queens_chess_piece]["MACD_fast_slow_smooth"]
         # star_times = QUEENBEE['workerbees'][queens_chess_piece]['stars']
 
         # change the script to pull for each ticker, inifinite pawns pw1: [10] ... write out the pollenstory to the local db pickle file
@@ -636,13 +634,9 @@ def queen_workerbees(prod,
         # multiprocess the workbees # SPY_1Minute_1Day
 
         # main
-        pollen = pollen_hunt(
-            df_tickers_data=QUEEN[queens_chess_piece]["pollencharts"], MACD=MACD_settings
-        )
+        pollen = pollen_hunt(df_tickers_data=QUEEN[queens_chess_piece]["pollencharts"], MACD=MACD_settings)
         QUEEN[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
-        QUEEN[queens_chess_piece]["pollencharts_nectar"] = pollen[
-            "pollencharts_nectar"
-        ]  # bars and techicnals
+        QUEEN[queens_chess_piece]["pollencharts_nectar"] = pollen["pollencharts_nectar"]  # bars and techicnals
 
         pollens_honey = pollen_story(
             pollen_nectar=QUEEN[queens_chess_piece]["pollencharts_nectar"],
@@ -652,22 +646,14 @@ def queen_workerbees(prod,
         knights_sight_word = pollens_honey["conscience"]["KNIGHTSWORD"]
         STORY_bee = pollens_honey["conscience"]["STORY_bee"]
         betty_bee = pollens_honey["betty_bee"]
-        PickleData(
-            pickle_file=os.path.join(db_root, "betty_bee.pkl"), data_to_store=betty_bee
-        )
+        PickleData(pickle_file=os.path.join(db_root, "betty_bee.pkl"), data_to_store=betty_bee)
 
         # for each star append last macd state
         for ticker_time_frame, i in STORY_bee.items():
             speed_gauges[ticker_time_frame]["macd_gauge"].append(i["story"]["macd_state"])
-            speed_gauges[ticker_time_frame]["price_gauge"].append(
-                i["story"]["last_close_price"]
-            )
-            STORY_bee[ticker_time_frame]["story"]["macd_gauge"] = speed_gauges[
-                ticker_time_frame
-            ]["macd_gauge"]
-            STORY_bee[ticker_time_frame]["story"]["price_gauge"] = speed_gauges[
-                ticker_time_frame
-            ]["price_gauge"]
+            speed_gauges[ticker_time_frame]["price_gauge"].append(i["story"]["last_close_price"])
+            STORY_bee[ticker_time_frame]["story"]["macd_gauge"] = speed_gauges[ticker_time_frame]["macd_gauge"]
+            STORY_bee[ticker_time_frame]["story"]["price_gauge"] = speed_gauges[ticker_time_frame]["price_gauge"]
 
         SPEEDY_bee = speed_gauges
 
@@ -683,15 +669,11 @@ def queen_workerbees(prod,
         PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         # for every ticker ticker write pickle file to db
-        if backtesting:
-            symbols_pollenstory_dbs = workerbee_dbs_backtesting_root()
-        else:
-            symbols_pollenstory_dbs = workerbee_dbs_root()
+        symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
+
         # print("Pollen story path", symbols_pollenstory_dbs)
-        if backtesting:
-            symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee()
-        else:
-            symbols_STORY_bee_root = workerbee_dbs_root__STORY_bee()
+        symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee()
+
         # print("Story bee path", symbols_STORY_bee_root)
         if backtesting:
             macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], 
@@ -709,7 +691,7 @@ def queen_workerbees(prod,
             )
 
         for ttf in pollens_honey["conscience"]["STORY_bee"]:
-            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}_.pkl")
+            ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
             PickleData(
                 ttf_db,
                 {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},

@@ -21,8 +21,8 @@ from streamlit_extras.switch_page_button import switch_page
 import argparse
 from streamlit_extras.stoggle import stoggle
 from chess_piece.workerbees import queen_workerbees
-from chess_piece.app_hive import read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from chess_piece.king import hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
+from chess_piece.app_hive import standard_AGgrid, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.king import return_all_client_users__db, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
 from chess_piece.queen_hive import create_QueenOrderBee, generate_chessboards_trading_models, generate_TradingModel, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
 from custom_button import cust_Button
 # import hydralit_components as hc
@@ -54,6 +54,7 @@ pd.options.mode.chained_assignment = None
 
 def pollenq(admin_pq):
     try:
+
 
         def return_custom_button_nav(hoverText, key, file_path_url="misc/floating-queen-unscreen.gif", height='334'):
             cBq = cust_Button(file_path_url=file_path_url, height=f'{height}px', hoverText=hoverText, key=key)
@@ -279,10 +280,11 @@ def pollenq(admin_pq):
 
         def refresh_workerbees(QUEEN, backtesting=False, macd=None, reset_only=True):
             refresh = st.sidebar.button("Run WorkerBees", use_container_width=True)
-            reset_only = st.sidebar.checkbox("wb", reset_only)
+            reset_only = st.sidebar.checkbox("reset_only", reset_only)
+            backtesting = st.sidebar.checkbox("backtesting", reset_only)
 
             if refresh:
-                queen_workerbees(prod=st.session_state['prod'])
+                queen_workerbees(prod=st.session_state['prod'], reset_only=reset_only, backtesting=backtesting, macd=None)
                 st.success("WorkerBees Completed")
 
         def queenbee_online(QUEENsHeart, admin, dag, api_failed, prod):
@@ -470,17 +472,17 @@ def pollenq(admin_pq):
 
 
             admin_check(admin_pq)
-            
+
             ####### Welcome to Pollen ##########
             # use API keys from user
             
             print("King")
             PB_KING_Pickle = master_swarm_KING(prod=prod)
             KING = ReadPickleData(PB_KING_Pickle)
-
+            KING['source'] = PB_KING_Pickle
 
             hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
-            print("MENU")
+            # print("MENU")
             cols = st.columns((1,6,1)) # 6
             with cols[1]:
                 hide_streamlit_markers = False if st.sidebar.button('show dev-ham', use_container_width=True) else True
@@ -524,16 +526,16 @@ def pollenq(admin_pq):
                 refresh_chess_board__button(QUEEN_KING)
                 refresh_queen_controls_button(QUEEN_KING)
                 refresh_trading_models_button(QUEEN_KING)
-                refresh_swarmqueen_workerbees(QUEEN_KING)
                 refresh_queen_orders(QUEEN)
                 stash_queen(QUEEN)
-                refresh_workerbees(QUEEN)
+                if st.session_state['admin']:
+                    refresh_swarmqueen_workerbees(QUEEN_KING)
+                    refresh_workerbees(QUEEN)
 
             # enable_last_setup = True if 'last_page_objects' in QUEEN_KING.keys() else False
             # if enable_last_setup:
             #     for (key, last_page_bool) in QUEEN_KING['last_page_objects'].items():
             #         st.session_state[key] = last_page_bool
-
 
 
             print("MENU Buttons")
