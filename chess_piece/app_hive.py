@@ -265,41 +265,42 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
 
 
 def admin_queens_active(PB_KING_Pickle, KING):
-    with st.expander("admin QUEENS_ACTIVE"):
-        df = return_all_client_users__db()
-        # df = pd.DataFrame(KING['users'].get('client_users_db'))
-        allowed_list = KING['users']['client_user__allowed_queen_list']
-        df_map = pd.DataFrame(allowed_list)
-        df_map['queen_authorized'] = 'active'
-        df_map = df_map.rename(columns={0: 'email'})
-        
-        df = pd.merge(df, df_map, how='outer', on='email').fillna('')
-        grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
-        grid_df = grid['data']
+    if st.session_state['admin']:
+        with st.expander("admin QUEENS_ACTIVE"):
+            df = return_all_client_users__db()
+            # df = pd.DataFrame(KING['users'].get('client_users_db'))
+            allowed_list = KING['users']['client_user__allowed_queen_list']
+            df_map = pd.DataFrame(allowed_list)
+            df_map['queen_authorized'] = 'active'
+            df_map = df_map.rename(columns={0: 'email'})
+            
+            df = pd.merge(df, df_map, how='outer', on='email').fillna('')
+            grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
+            grid_df = grid['data']
 
-        allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
-        allowed_list_new = allowed_list_new['email'].tolist()
-        new_emails = [i for i in allowed_list_new if i not in allowed_list]
+            allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
+            allowed_list_new = allowed_list_new['email'].tolist()
+            new_emails = [i for i in allowed_list_new if i not in allowed_list]
 
-        if st.button("Save"):
-            KING['users']['client_user__allowed_queen_list'] = allowed_list_new
-            PickleData(PB_KING_Pickle, KING, write_temp=False)
-            st.success("Auth Queen Users Updated")
-            print(new_emails)
-            for email in new_emails:
-                print(email)
-                send_email(email, subject="Trading Bot is Now Active", 
-                body=f""" Hey! Your Queen Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
-                Steps:
-                1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
-                2. Customize QUEEN Bot Setting to Trade Specific to your Needs
-                3. Or Join an Existing Fund Trading Strategies
+            if st.button("Save"):
+                KING['users']['client_user__allowed_queen_list'] = allowed_list_new
+                PickleData(PB_KING_Pickle, KING, write_temp=False)
+                st.success("Auth Queen Users Updated")
+                print(new_emails)
+                for email in new_emails:
+                    print(email)
+                    send_email(email, subject="Trading Bot is Now Active", 
+                    body=f""" Hey! Your Queen Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
+                    Steps:
+                    1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
+                    2. Customize QUEEN Bot Setting to Trade Specific to your Needs
+                    3. Or Join an Existing Fund Trading Strategies
 
-                Happy Trading
-                pollenq
-                """
-                
-                )
+                    Happy Trading
+                    pollenq
+                    """
+                    
+                    )
 
 
 def mark_down_text(
@@ -569,10 +570,10 @@ def queens_orders__aggrid_v2(
         pinned='right',
         header_name="Date",
         type=["dateColumnFilter", "customDateTimeFormat"],
-        custom_format_string="MM/dd/yy",
+        custom_format_string="MM/dd/yy HH:MM",
         pivot=True,
-        initialWidth=75,
-        maxWidth=110,
+        initialWidth=123,
+        # maxWidth=133,
         autoSize=True,
     )
     gb.configure_column("symbol",
@@ -1202,6 +1203,7 @@ def test_api_keys(user_secrets, prod=False):
 
 def pollenq_button_source():
     return{
+        'chess_board': False,
         'option_data': [
         {'id': "chess_board", 'icon': "fas fa-chess-board", 'label':""},
         {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},

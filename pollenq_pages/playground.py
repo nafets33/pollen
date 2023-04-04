@@ -17,13 +17,14 @@ import pandas as pd
 import numpy as np
 from chat_bot import ozz_bot
 import os
-
+# from st_on_hover_tabs import on_hover_tabs
 
 
 # https://extras.streamlit.app/Annotated%20text
 
 def PlayGround():
     try:
+
         # images
         MISC = local__filepaths_misc()
         learningwalk_bee = MISC['learningwalk_bee']
@@ -53,6 +54,15 @@ def PlayGround():
                 OZZ = ozz_bot(api_key=os.environ.get("ozz_api_key"), username=st.session_state['username'])
                 st.write(OZZ)
         
+        with st.sidebar:
+            option_data = [
+            {'icon': "bi bi-hand-thumbs-up", 'label':"Agree"},
+            {'icon':"fa fa-question-circle",'label':"Unsure"},
+            {'icon': "bi bi-hand-thumbs-down", 'label':"Disagree"},
+            ]
+            op = hc.option_bar(option_definition=option_data,title='Feedback Response',key='nul') #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+
         with st.expander('feedback menu options examples'):
             option_data = [
             {'icon': "bi bi-hand-thumbs-up", 'label':"Agree"},

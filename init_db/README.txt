@@ -1,1 +1,1 @@
-Add the KING.pkl inside db in order to run locally
+Add the KING_sandbox.pkl inside db in order to run locally and copy __dbs dirs into pollen directory

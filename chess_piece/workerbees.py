@@ -45,11 +45,15 @@ os.environ["no_proxy"] = "*"
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
-def queen_workerbees(prod, 
+def queen_workerbees(
+                     qcp_s, #=["castle", "bishop", "knight"],
+                     prod=True, 
+                     check_with_queen_frequency=60,
                      queens_chess_piece="bees_manager", 
                      backtesting=False,
                      macd=None,
-                     reset_only=False):
+                     reset_only=False,
+                     ):
     
     if backtesting:
         assert macd is not None 
@@ -133,13 +137,14 @@ def queen_workerbees(prod,
 
     """# Main Arguments """
 
-    def close_worker():
+    def close_worker(WORKERBEE_queens):
         s = datetime.now(est)
         date = datetime.now(est)
         date = date.replace(hour=16, minute=1)
         if s >= date:
             logging.info("Happy Bee Day End")
             print("Great Job! See you Tomorrow")
+            print("save all workers and their results")
             return True
         else:
             return False
@@ -230,7 +235,6 @@ def queen_workerbees(prod,
             return {"init_charts": dfs_index_tickers, "errors": error_dict}
         except Exception as e:
             print("eeeeeror", e, print_line_of_error())
-            ipdb.set_trace()
 
     def Return_Bars_LatestDayRebuild(
         ticker_time,
@@ -266,9 +270,8 @@ def queen_workerbees(prod,
         # dfs_index_tickers['SPY_5Minute']
         return [dfs_index_tickers, error_dict, msg]
 
-    def Return_Snapshots_Rebuild(
-        df_tickers_data, init=False
-    ):  # from snapshots & consider using day.min.chart to rebuild other timeframes
+
+    def Return_Snapshots_Rebuild(df_tickers_data, init=False):  # from snapshots & consider using day.min.chart to rebuild other timeframes
         def ticker_Snapshots(ticker_list, float_cols, int_cols):
             return_dict = {}
             try:
@@ -316,7 +319,6 @@ def queen_workerbees(prod,
             except Exception as e:
                 print(e)
                 print(ticker)
-                ipdb.set_trace()
 
             return return_dict
 
@@ -324,7 +326,7 @@ def queen_workerbees(prod,
             ticker_list = list(
                 [set(j.split("_")[0] for j in df_tickers_data.keys())][0]
             )  # > get list of tickers
-            snapshots = api.get_snapshots(ticker_list)
+            snapshots = api.get_snapshots(ticker_list) # what happens when ticker doesn't have snapshot need to use Query Last Quote
 
             for ticker in snapshots.keys():  # replace snapshot if in exclude_conditions
                 c = 0
@@ -346,17 +348,9 @@ def queen_workerbees(prod,
             int_cols = ["volume", "trade_count"]
             main_return_dict = {}
 
-            # min_bars_dict = rebuild_timeframe_bars(ticker_list)
-            # if min_bars_dict['resp'] == False:
-            #     print("Min Bars Error", min_bars_dict)
-            #     min_bars_dict = {k:{} for k in ticker_list}
-            # else:
-            #     min_bars_dict = min_bars_dict['resp']
-            # min_bars_dict = {k:{} for k in ticker_list} # REBUILDING MIN BARS NEEDS IMPROVEMENT BEFORE SOME MAY FAIL TO RETURN
-
             snapshot_ticker_data = ticker_Snapshots(ticker_list, float_cols, int_cols)
 
-            for ticker_time, df in df_tickers_data.items():
+            def ttf_snapshot(ticker_time, df):
                 symbol_snapshots = {
                     k: v
                     for (k, v) in snapshot_ticker_data.items()
@@ -391,11 +385,39 @@ def queen_workerbees(prod,
                             drop=True
                         )  # concat minute
                         main_return_dict[ticker_time] = df_rebuild
+
+            s = datetime.now(est)
+            async def main_func(session, ticker_time, df):
+                async with session:
+                    try:
+                        ttf_snapshot(ticker_time=ticker_time, df=df)
+                        return True
+                    except Exception as e:
+                        print(e, ticker_time)
+            async def main(df_tickers_data):
+
+                async with aiohttp.ClientSession() as session:
+                    return_list = []
+                    tasks = []
+                    for ticker_time, df in df_tickers_data.items():
+                        tasks.append(asyncio.ensure_future(main_func(session, ticker_time, df)))
+                    original_pokemon = await asyncio.gather(*tasks)
+                    for pokemon in original_pokemon:
+                        return_list.append(pokemon)
+                    return return_list
+            return_list = asyncio.run(main(df_tickers_data))
+            e = datetime.now(est)
+            # print(f"async snapshots {df_tickers_data.keys()} --- {(e - s)} seconds ---")            
+
+            # for ticker_time, df in df_tickers_data.items():
+            #     ttf_snapshot(ticker_time)
+            
+            return main_return_dict
+        
         except Exception as e:
-            print(e)
+            print("Error mate", e)
             print(queens_chess_piece)
 
-        return main_return_dict
 
     def ReInitiate_Charts_Past_Their_Time(df_tickers_data):  # re-initiate for i timeframe
         # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
@@ -412,23 +434,23 @@ def queen_workerbees(prod,
             else:
                 return "0"
 
-        for ticker_time, df in df_tickers_data.items():
-            ticker, timeframe, days = ticker_time.split("_")
+        def rebuild_ticker_time_frame(ticker_time_frame, df):
+            ticker, timeframe, days = ticker_time_frame.split("_")
             last = df["timestamp_est"].iloc[-2]
             now = datetime.now(est)
             timedelta_minutes = (now - last).seconds / 60
             now_day = now.day
             last_day = last.day
             if now_day != last_day:
-                return_dict[ticker_time] = df
-                continue
+                return_dict[ticker_time_frame] = df
+                return return_dict, rebuild_confirmation
 
-            dfn = Return_Bars_LatestDayRebuild(ticker_time)
+            dfn = Return_Bars_LatestDayRebuild(ticker_time_frame)
 
             if "1minute" == timeframe.lower():
                 if timedelta_minutes > 2:
                     if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time]
+                        df_latest = dfn[0][ticker_time_frame]
                         df["timetag"] = df["timestamp_est"].apply(
                             lambda x: tag_current_day(x)
                         )
@@ -442,15 +464,15 @@ def queen_workerbees(prod,
                         ).reset_index(
                             drop=True
                         )  # add dup last row to act as snapshot
-                        return_dict[ticker_time] = df_return_me
-                        rebuild_confirmation[ticker_time] = "rebuild"
+                        return_dict[ticker_time_frame] = df_return_me
+                        rebuild_confirmation[ticker_time_frame] = "rebuild"
                 else:
-                    return_dict[ticker_time] = df
+                    return_dict[ticker_time_frame] = df
 
             elif "5minute" == timeframe.lower():
                 if timedelta_minutes > 6:
                     if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time]
+                        df_latest = dfn[0][ticker_time_frame]
                         df["timetag"] = df["timestamp_est"].apply(
                             lambda x: tag_current_day(x)
                         )
@@ -464,15 +486,15 @@ def queen_workerbees(prod,
                         ).reset_index(
                             drop=True
                         )  # add dup last row to act as snapshot
-                        return_dict[ticker_time] = df_return_me
-                        rebuild_confirmation[ticker_time] = "rebuild"
+                        return_dict[ticker_time_frame] = df_return_me
+                        rebuild_confirmation[ticker_time_frame] = "rebuild"
                 else:
-                    return_dict[ticker_time] = df
+                    return_dict[ticker_time_frame] = df
 
             elif "30minute" == timeframe.lower():
                 if timedelta_minutes > 31:
                     if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time]
+                        df_latest = dfn[0][ticker_time_frame]
 
                         df["timetag"] = df["timestamp_est"].apply(
                             lambda x: tag_current_day(x)
@@ -487,15 +509,15 @@ def queen_workerbees(prod,
                         ).reset_index(
                             drop=True
                         )  # add dup last row to act as snapshot
-                        return_dict[ticker_time] = df_return_me
-                        rebuild_confirmation[ticker_time] = "rebuild"
+                        return_dict[ticker_time_frame] = df_return_me
+                        rebuild_confirmation[ticker_time_frame] = "rebuild"
                 else:
-                    return_dict[ticker_time] = df
+                    return_dict[ticker_time_frame] = df
 
             elif "1hour" == timeframe.lower():
                 if timedelta_minutes > 61:
                     if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time]
+                        df_latest = dfn[0][ticker_time_frame]
                         df["timetag"] = df["timestamp_est"].apply(
                             lambda x: tag_current_day(x)
                         )
@@ -509,15 +531,15 @@ def queen_workerbees(prod,
                         ).reset_index(
                             drop=True
                         )  # add dup last row to act as snapshot
-                        return_dict[ticker_time] = df_return_me
-                        rebuild_confirmation[ticker_time] = "rebuild"
+                        return_dict[ticker_time_frame] = df_return_me
+                        rebuild_confirmation[ticker_time_frame] = "rebuild"
                 else:
-                    return_dict[ticker_time] = df
+                    return_dict[ticker_time_frame] = df
 
             elif "2hour" == timeframe.lower():
                 if timedelta_minutes > 121:
                     if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time]
+                        df_latest = dfn[0][ticker_time_frame]
                         df["timetag"] = df["timestamp_est"].apply(
                             lambda x: tag_current_day(x)
                         )
@@ -531,13 +553,47 @@ def queen_workerbees(prod,
                         ).reset_index(
                             drop=True
                         )  # add dup last row to act as snapshot
-                        return_dict[ticker_time] = df_return_me
-                        rebuild_confirmation[ticker_time] = "rebuild"
+                        return_dict[ticker_time_frame] = df_return_me
+                        rebuild_confirmation[ticker_time_frame] = "rebuild"
                 else:
-                    return_dict[ticker_time] = df
+                    return_dict[ticker_time_frame] = df
 
             else:
-                return_dict[ticker_time] = df
+                return_dict[ticker_time_frame] = df
+            
+            return return_dict, rebuild_confirmation
+
+        s = datetime.now(est)
+
+        async def get_changelog(session, ticker_time, df):
+            async with session:
+                try:
+                    return_dict = rebuild_ticker_time_frame(ticker_time_frame=ticker_time, df=df)
+                    return {
+                        'return_dict': return_dict
+                    }  # return Charts Data based on Queen's Query Params, (stars())
+                except Exception as e:
+                    print(e, ticker_time)
+
+        async def main(df_tickers_data):
+
+            async with aiohttp.ClientSession() as session:
+                return_list = []
+                tasks = []
+                for ticker_time, df in df_tickers_data.items():
+                    # return_dict = rebuild_ticker_time_frame(ticker_time_frame=ticker_time, df=df)
+                    tasks.append(asyncio.ensure_future(get_changelog(session, ticker_time, df)))
+                original_pokemon = await asyncio.gather(*tasks)
+                for pokemon in original_pokemon:
+                    return_list.append(pokemon)
+                return return_list
+
+        return_list = asyncio.run(main(df_tickers_data))
+        e = datetime.now(est)
+        # print(f"async ReInitiate Past Times {df_tickers_data.keys()} --- {(e - s)} seconds ---")
+
+        # for ticker_time, df in df_tickers_data.items():
+        #     return_dict = rebuild_ticker_time_frame(ticker_time_frame=ticker_time, df=df)
 
         # add back in snapshot init
         return {"ticker_time": return_dict, "rebuild_confirmation": rebuild_confirmation}
@@ -545,28 +601,59 @@ def queen_workerbees(prod,
     def pollen_hunt(df_tickers_data, MACD):
         # Check to see if any charts need to be Recreate as times lapsed
         if reset_only == False:
-            df_tickers_data = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-            if len(df_tickers_data["rebuild_confirmation"].keys()) > 0:
-                print(df_tickers_data["rebuild_confirmation"].keys())
+            res = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
+            df_tickers_data = res.get("ticker_time")
+            if len(res["rebuild_confirmation"].keys()) > 0:
+                print(res["rebuild_confirmation"].keys())
                 print(datetime.now(est).strftime("%H:%M-%S"))
-
 
         # re-add snapshot
         if reset_only == False:
-            df_tickers_data = Return_Snapshots_Rebuild(
-                df_tickers_data=df_tickers_data["ticker_time"]
-            )
+            df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data)
 
         main_rebuild_dict = {}  ##> only override current dict if memory becomes issues!
         chart_rebuild_dict = {}
-        for ticker_time, bars_data in df_tickers_data.items():
-            chart_rebuild_dict[ticker_time] = bars_data
-            df_data_new = return_getbars_WithIndicators(bars_data=bars_data, MACD=MACD)
+        ttf_MACD = {ttf: MACD for ttf in df_tickers_data.keys()}
+        def add_techincals_indicator(ticker_time, df, MACD):
+            chart_rebuild_dict[ticker_time] = df
+            df_data_new = return_getbars_WithIndicators(bars_data=df, MACD=MACD)
             if df_data_new[0] == True:
                 main_rebuild_dict[ticker_time] = df_data_new[1]
             else:
                 print("error", ticker_time)
 
+
+        s = datetime.now(est)
+        async def main_func(session, ticker_time, df, MACD):
+            async with session:
+                try:
+                    return_dict = add_techincals_indicator(ticker_time, df, MACD)
+                    return {
+                        'return_dict': return_dict
+                    }  # return Charts Data based on Queen's Query Params, (stars())
+                except Exception as e:
+                    print(e, ticker_time)
+
+        async def main(df_tickers_data):
+
+            async with aiohttp.ClientSession() as session:
+                return_list = []
+                tasks = []
+                for ticker_time, df in df_tickers_data.items():
+                    MACD = ttf_MACD.get(ticker_time) # get MAC from KING
+                    tasks.append(asyncio.ensure_future(main_func(session, ticker_time, df, MACD)))
+                original_pokemon = await asyncio.gather(*tasks)
+                for pokemon in original_pokemon:
+                    return_list.append(pokemon)
+                return return_list
+
+        return_list = asyncio.run(main(df_tickers_data))
+        e = datetime.now(est)
+        # print(f"async Techincals Join {df_tickers_data.keys()} --- {(e - s)} seconds ---")
+
+        # for ticker_time, df in df_tickers_data.items():
+        #     add_techincals_indicator(ticker_time, df, MACD)
+        
         return {
             "pollencharts_nectar": main_rebuild_dict,
             "pollencharts": chart_rebuild_dict,
@@ -574,9 +661,7 @@ def queen_workerbees(prod,
 
     """ Initiate your Charts with Indicators """
 
-    def initiate_ttframe_charts(
-        QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings
-    ):
+    def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings):
         s_mainbeetime = datetime.now(est)
         res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
         errors = res["errors"]
@@ -613,9 +698,7 @@ def queen_workerbees(prod,
         it = iter(it)
         return iter(lambda: tuple(islice(it, size)), ())
 
-    def ticker_star_hunter_bee(
-        WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges
-    ):
+    def ticker_star_hunter_bee(WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges):
         s = datetime.now(est)
 
         QUEEN = WORKERBEE_queens[queens_chess_piece]  # castle [spy, qqq], knight,
@@ -666,7 +749,7 @@ def queen_workerbees(prod,
         QUEEN[queens_chess_piece]["conscience"]["STORY_bee"] = STORY_bee
         QUEEN[queens_chess_piece]["conscience"]["SPEEDY_bee"] = SPEEDY_bee
 
-        PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
+        # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         # for every ticker ticker write pickle file to db
         symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
@@ -702,46 +785,58 @@ def queen_workerbees(prod,
 
     def qcp_QUEENWorker__pollenstory(qcp_s, QUEENBEE, WORKERBEE_queens, speed_gauges):
         try:
+            # s = datetime.now(est)
+
+            # async def get_changelog(session, qcp):
+            #     async with session:
+            #         try:
+            #             ticker_star_hunter_bee(
+            #                 WORKERBEE_queens=WORKERBEE_queens,
+            #                 QUEENBEE=QUEENBEE,
+            #                 queens_chess_piece=qcp,
+            #                 speed_gauges=speed_gauges,
+            #             )
+            #             return {
+            #                 qcp: ""
+            #             }  # return Charts Data based on Queen's Query Params, (stars())
+            #         except Exception as e:
+            #             print(e, qcp)
+            #             logging.error((str(qcp), str(e)))
+            #             return {qcp: e}
+
+            # async def main(qcp_s):
+
+            #     async with aiohttp.ClientSession() as session:
+            #         return_list = []
+            #         tasks = []
+            #         for (
+            #             qcp
+            #         ) in (
+            #             qcp_s
+            #         ):  # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
+            #             # print(qcp)
+            #             tasks.append(asyncio.ensure_future(get_changelog(session, qcp)))
+            #         original_pokemon = await asyncio.gather(*tasks)
+            #         for pokemon in original_pokemon:
+            #             return_list.append(pokemon)
+            #         return return_list
+
+            # x = asyncio.run(main(qcp_s))
+            # e = datetime.now(est)
+            # print(f"All Workers Refreshed {qcp_s} --- {(e - s)} seconds ---")
+            # return x
+
             s = datetime.now(est)
-
-            async def get_changelog(session, qcp):
-                async with session:
-                    try:
-                        ticker_star_hunter_bee(
-                            WORKERBEE_queens=WORKERBEE_queens,
-                            QUEENBEE=QUEENBEE,
-                            queens_chess_piece=qcp,
-                            speed_gauges=speed_gauges,
-                        )
-                        return {
-                            qcp: ""
-                        }  # return Charts Data based on Queen's Query Params, (stars())
-                    except Exception as e:
-                        print(e, qcp)
-                        logging.error((str(qcp), str(e)))
-                        return {qcp: e}
-
-            async def main(qcp_s):
-
-                async with aiohttp.ClientSession() as session:
-                    return_list = []
-                    tasks = []
-                    for (
-                        qcp
-                    ) in (
-                        qcp_s
-                    ):  # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
-                        # print(qcp)
-                        tasks.append(asyncio.ensure_future(get_changelog(session, qcp)))
-                    original_pokemon = await asyncio.gather(*tasks)
-                    for pokemon in original_pokemon:
-                        return_list.append(pokemon)
-                    return return_list
-
-            x = asyncio.run(main(qcp_s))
+            for qcp in WORKERBEE_queens.keys():
+                ticker_star_hunter_bee(
+                    WORKERBEE_queens=WORKERBEE_queens,
+                    QUEENBEE=QUEENBEE,
+                    queens_chess_piece=qcp,
+                    speed_gauges=speed_gauges,
+                )
             e = datetime.now(est)
             print(f"All Workers Refreshed {qcp_s} --- {(e - s)} seconds ---")
-            return x
+            return True
         except Exception as e:
             print("qtf", e, print_line_of_error())
 
@@ -786,32 +881,20 @@ def queen_workerbees(prod,
     """
     )
 
-    # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
-    # PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    # ipdb.set_trace()
-    # if os.path.exists(PB_QUEEN_Pickle) == False:
-    #     print("WorkerBee Needs a Queen")
-    #     sys.exit()
 
-    # Pollen QUEEN
+    def queens_court__WorkerBees(prod, qcp_s):
+        if type(qcp_s) == str:
+            qcp_s = [qcp_s]
+        queen_db = os.path.join(db_root, "queen.pkl") if prod else os.path.join(db_root, "queen_sandbox.pkl")
 
-    if prod:
-        queen_db = os.path.join(db_root, "queen.pkl")
-        # QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen.pkl'))
-    else:
-        queen_db = os.path.join(db_root, "queen_sandbox.pkl")
-        # QUEENBEE = ReadPickleData(pickle_file=os.path.join(db_root, 'queen_sandbox.pkl'))
-
-    ticker_universe = return_Ticker_Universe()
-    main_index_dict = ticker_universe["main_index_dict"]
-    index_ticker_db = ticker_universe["index_ticker_db"]
-    main_symbols_full_list = ticker_universe["main_symbols_full_list"]
-    not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
-
-    def queens_court__WorkerBees():
+        ticker_universe = return_Ticker_Universe()
+        main_index_dict = ticker_universe["main_index_dict"]
+        index_ticker_db = ticker_universe["index_ticker_db"]
+        main_symbols_full_list = ticker_universe["main_symbols_full_list"]
+        not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
         try:
             pq = read_QUEEN(
-                queen_db=queen_db, qcp_s=["castle", "bishop", "knight"]
+                queen_db=queen_db, qcp_s=qcp_s
             )  # castle, bishop
             QUEENBEE = pq.get('QUEENBEE')
             queens_chess_pieces = pq.get('queens_chess_pieces')
@@ -829,19 +912,24 @@ def queen_workerbees(prod,
             )
             WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
             speed_gauges = queen_workers["speed_gauges"]
+            last_queen_call = {'last_call': datetime.now(est)}
+            now_time = datetime.now(est)
 
             while True:
-                pq = read_QUEEN(queen_db=queen_db, qcp_s=["castle", "bishop", "knight"])
-                QUEENBEE = pq["QUEENBEE"]
-                latest__queens_chess_pieces = pq["queens_chess_pieces"]
-                latest__queens_master_tickers = pq["queens_master_tickers"]
-                if latest__queens_master_tickers != queens_master_tickers:
-                    print("Revised Ticker List ReInitiate")
-                    queen_workers = init_QueenWorkersBees(
-                        QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces
-                    )
-                    WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
-                    speed_gauges = queen_workers["speed_gauges"]
+                # if check_with_queen_frequency
+                if (now_time - last_queen_call.get('last_call')).total_seconds() > check_with_queen_frequency:
+                    # print("Check Queen for New Tickers")
+                    pq = read_QUEEN(queen_db=queen_db, qcp_s=qcp_s)
+                    QUEENBEE = pq["QUEENBEE"]
+                    latest__queens_chess_pieces = pq["queens_chess_pieces"]
+                    latest__queens_master_tickers = pq["queens_master_tickers"]
+                    if latest__queens_master_tickers != queens_master_tickers:
+                        print("Revised Ticker List ReInitiate")
+                        queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces)
+                        WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
+                        speed_gauges = queen_workers["speed_gauges"]
+                        now_time = datetime.now(est)
+                        last_queen_call = {'last_call': now_time}
 
                 qcp_QUEENWorker__pollenstory(
                     qcp_s=WORKERBEE_queens.keys(),
@@ -852,9 +940,8 @@ def queen_workerbees(prod,
 
                 if backtesting:
                     break 
-                else:
-                    if close_worker():
-                        break
+                if close_worker(WORKERBEE_queens):
+                    break
 
         except Exception as errbuz:
             print(errbuz)
@@ -862,11 +949,10 @@ def queen_workerbees(prod,
             log_msg = {"type": "ProgramCrash", "lineerror": erline}
             print(log_msg)
             logging.critical(log_msg)
-            ipdb.set_trace()
 
     # if queens_chess_piece == 'castle':
     print(f"Queens Court, {queens_chess_piece} I beseech you")
-    queens_court__WorkerBees()
+    queens_court__WorkerBees(prod, qcp_s)
     # elif queens_chess_piece == 'indexes':
     #     print("pending")
 
@@ -876,7 +962,7 @@ if __name__ == "__main__":
     def createParser_workerbees():
         parser = argparse.ArgumentParser()
         parser.add_argument("-prod", default=False)
-        # parser.add_argument("-qcp", default="workerbee")
+        parser.add_argument("-qcp_s", default="castle")
         # parser.add_argument("-queens_chess_piece", default="bees_manager") 
         # parser.add_argument("-backtesting", default=True)
         # parser.add_argument("-macd", default=None)
@@ -886,8 +972,8 @@ if __name__ == "__main__":
     # script arguments
     parser = createParser_workerbees()
     namespace = parser.parse_args()
-    queens_chess_piece = namespace.qcp  # 'castle', 'knight' 'queen'
+    qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
     prod = True if str(namespace.prod).lower() == "true" else False
-    queen_workerbees(prod=prod)
+    queen_workerbees(qcp_s=qcp_s, prod=prod)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

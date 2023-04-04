@@ -52,3 +52,9 @@ python -c "import sys; print(sys.path)"
 ## Setting Up Sever
 Ngnix
 docker >> Q: pythonpath missing?, airflow UID missing?
+
+import os
+directory = "/home/stapinski89/pollen/pollen/db/logs"
+for file_path in os.listdir(directory):
+    f_p = os.path.join(directory, file_path)
+    os.chmod(f_p, 0o777)

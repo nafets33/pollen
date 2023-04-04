@@ -329,12 +329,12 @@ def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
     queens_master_tickers = []
     queens_chess_pieces = []
     for qcp, qcp_vars in QUEENBEE["workerbees"].items():
-        for ticker in qcp_vars["tickers"]:
-            if qcp in qcp_s:
-                # if qcp in ['knight']:
+        if qcp in qcp_s:
+            for ticker in qcp_vars["tickers"]:
                 queens_master_tickers.append(ticker)
                 queens_chess_pieces.append(qcp)
     queens_chess_pieces = list(set(queens_chess_pieces))
+    queens_master_tickers = list(set(queens_master_tickers))
 
     return {
         "QUEENBEE": QUEENBEE,
