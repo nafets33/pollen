@@ -58,3 +58,5 @@ directory = "/home/stapinski89/pollen/pollen/db/logs"
 for file_path in os.listdir(directory):
     f_p = os.path.join(directory, file_path)
     os.chmod(f_p, 0o777)
+
+requiements openai and transformers
