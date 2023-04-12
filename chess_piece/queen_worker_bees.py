@@ -781,11 +781,7 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
     else:
         queen_db = os.path.join(db_root, "queen_sandbox.pkl")
 
-    ticker_universe = return_Ticker_Universe()
-    main_index_dict = ticker_universe["main_index_dict"]
-    index_ticker_db = ticker_universe["index_ticker_db"]
-    main_symbols_full_list = ticker_universe["main_symbols_full_list"]
-    not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
+    # ticker_universe = return_Ticker_Universe()
 
     def queens_court__WorkerBees():
         try:

@@ -50,6 +50,8 @@ python -c "import sys; print(sys.path)"
 
 
 ## Setting Up Sever
+fastapi: uvicorn server:app --reload
+
 Ngnix
 docker >> Q: pythonpath missing?, airflow UID missing?
 

@@ -30,9 +30,9 @@ from stocksymbol import StockSymbol
 from tqdm import tqdm
 
 from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc
+from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 queens_chess_piece = os.path.basename(__file__)
-
+king_G = kingdom__global_vars()
 MISC = local__filepaths_misc()
 mainpage_bee_png = MISC['mainpage_bee_png']
 
@@ -594,11 +594,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
         revrec_last_equity = acct_info.get('last_equity')
         total_costbasis_active = return_remaining_budget(QUEEN, active_queen_order_states)
         cash = acct_info.get('last_equity')
-
-        # total budget calc
+        # ttf_remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
+        queen_order_states = king_G.get('RUNNING_Orders')
+        
         for qcp in all_workers:
-            if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
-                continue
+            # print(qcp)
+            # if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
+            #     continue
             
             # Refresh ChessBoard and RevRec
             qcp_power = float(QUEEN_KING['chess_board'][qcp]['total_buyng_power_allocation'])
@@ -608,8 +610,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
             num_tickers = len(qcp_tickers)
             
             # CONFIRM TRADING MODEL Ticker Budget Allocation
-            for ticker in qcp_tickers:
+            for ticker in qcp_tickers:                
                 trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+                
                 # Handle missing TM
                 if trading_model is None: 
                     print(ticker, ' tradingmodel missing')
@@ -639,37 +642,48 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
         df_stars['ticker'] = df_stars['ticker_time_frame'].apply(lambda x: x.split("_")[0])
         df_stars['star'] = df_stars['ticker_time_frame'].apply(lambda x: return_star_from_ttf(x))
 
+
         for qcp in all_workers:
-            if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
-                continue
+            # if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
+            #     continue
+            
             piece = QUEEN_KING['chess_board'].get(qcp)
-            tickers = piece.get('tickers')
+            tickers = list(set(piece.get('tickers')))
 
             for ticker in tickers:
+                active_orders = return_queen_orders__query(QUEEN, queen_order_states, ticker=ticker, star=False, ticker_time_frame=False)       # total budget calc
+                ticker_cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
+
                 df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
                 bp = sum(df_temp['ticker_buying_power'])
                 
                 df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('total_budget')) / bp
                 df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('equity_budget')) / bp
-                df_temp['cash_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('cash_budget')) / bp
+                df_temp['borrow_budget'] = (df_temp['ticker_buying_power'] * df_qcp.loc[qcp].get('borrow_budget')) / bp
                 
                 # ticker
                 df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.loc[ticker].get('total_budget')
                 df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.loc[ticker].get('equity_budget')
-                df_ticker.at[ticker, 'ticker_cash_budget'] = df_temp.loc[ticker].get('cash_budget')
+                df_ticker.at[ticker, 'ticker_borrow_budget'] = df_temp.loc[ticker].get('borrow_budget')
+                df_ticker.at[ticker, 'ticker_remaining_budget'] = df_temp.loc[ticker].get('total_budget') - ticker_cost_basis
 
                 # star time 
                 df_temp = df_stars[(df_stars['ticker'].isin([ticker]))].copy()
                 bp = sum(df_temp['star_buying_power'])
                 df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
                 df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
-                df_temp['cash_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_cash_budget')) / bp
+                df_temp['borrow_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_borrow_budget')) / bp
 
                 for star in df_temp['star'].to_list():
                     df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
                     df_stars.at[f'{ticker}_{star}', 'star_equity_budget'] = df_temp.loc[f'{ticker}_{star}'].get('equity_budget')
-                    df_stars.at[f'{ticker}_{star}', 'star_cash_budget'] = df_temp.loc[f'{ticker}_{star}'].get('cash_budget')
-
+                    df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
+                for ticker_time_frame in df_stars.index.to_list():
+                    star_total_budget = df_stars.loc[ticker_time_frame].get('star_total_budget')
+                    ttf_remaining_budget = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                                                                       total_budget=star_total_budget, ticker_time_frame=ticker_time_frame, active_queen_order_states=active_queen_order_states)
+                    df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
+        
         return {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
     
     except Exception as e:
@@ -678,8 +692,23 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
         print('why')
 
 
+def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TBD
+    after = start_date
+    until = end_date
+    if symbols:
+        closed_orders = api.list_orders(status='closed', symbols=symbols, after=after, until=until, limit=limit)
+        open_orders = api.list_orders(status='open', symbols=symbols, after=after, until=until, limit=limit)
+    else:
+        closed_orders = api.list_orders(status='closed', after=after, until=until, limit=limit)
+        open_orders = api.list_orders(status='open', after=after, until=until, limit=limit)
+    
+    return {'open': open_orders, 'closed': closed_orders}
+
+
 def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='1 can be queried at a time until feat update to return all'):
     queen_orders = QUEEN['queen_orders']
+    if len(queen_orders) == 1: # init only
+        return ''
     if ticker_time_frame:
         orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states) & (queen_orders['ticker_time_frame'].isin([ticker_time_frame]))]
     elif ticker:
@@ -698,27 +727,39 @@ def return_remaining_budget(QUEEN, active_queen_order_states):
     active_orders = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states)]
     cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
     
-    return cost_basis
+    return active_orders, cost_basis
 
-def return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states):
-    
+def return_ttf_remaining_budget(QUEEN, total_budget, active_queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='only takes 1 ttf, ticker or star'):
+    # try:
     # Total In Running, Remaining
-    queen_orders = QUEEN['queen_orders']
-    active_orders_ttf = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states) & (queen_orders['ticker_time_frame'].isin([ticker_time_frame]))]
+    if ticker:
+        active_orders_ttf = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker=ticker,)
+    elif ticker_time_frame:
+        active_orders_ttf = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
+    elif star:
+        active_orders_ttf = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, star=star,)
+    else:
+        print("you did not use func correctly dummy")
+
     if len(active_orders_ttf) == 0:
         # print(ticker_time_frame, " Full Fire Power")
-        remaining_budget = star_total_budget
+        remaining_budget = total_budget
     else:
         # print(ticker_time_frame, " ORDERS RUNNING")
         cost_basis_atPLAY = sum(active_orders_ttf['cost_basis'])
-        remaining_budget = star_total_budget - cost_basis_atPLAY
+        remaining_budget = total_budget - cost_basis_atPLAY
         
-        if cost_basis_atPLAY >= star_total_budget:
+        if cost_basis_atPLAY >= total_budget:
             # print("All Budget Used")
             remaining_budget = 0
 
     
     return remaining_budget
+    # except Exception as e:
+    #     print(e)
+    #     print_line_of_error()
+    #     ipdb.set_trace()
+
 
 def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral"):
     # tradingmodel1["SPY"]["stars_kings_order_rules"]["1Minute_1Day"]["trigbees" ]["buy_cross-0"]["morning_9-11"].items()
@@ -2509,14 +2550,17 @@ def return_index_tickers(index_dir, ext):
     full_ticker_list = []
     all_indexs = [i.split(".")[0] for i in os.listdir(index_dir)]
     for i in all_indexs:
-        df = pd.read_csv(
-            os.path.join(index_dir, i + ext), dtype=str, encoding="utf8", engine="python"
-        )
-        df = df.fillna("")
-        tics = df["symbol"].tolist()
-        for j in tics:
-            full_ticker_list.append(j)
-        index_dict[i] = df
+        try:
+            df = pd.read_csv(
+                os.path.join(index_dir, i + ext), dtype=str, encoding="utf8", engine="python"
+            )
+            df = df.fillna("")
+            tics = df["symbol"].tolist()
+            for j in tics:
+                full_ticker_list.append(j)
+            index_dict[i] = df
+        except Exception as e:
+            print(f'read file error {e} {i}')
 
     return [index_dict, list(set(full_ticker_list))]
 
@@ -2924,8 +2968,9 @@ def kings_order_rules( # rules created for 1Minute
     'last_30min':KOR_close_order_today_vars(), 
     'last_hr':KOR_close_order_today_vars()
     },
-    close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
     use_margin=False,
+    close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
+    revisit_trade_frequency=60,
 
 ):
     return {
@@ -2961,6 +3006,7 @@ def kings_order_rules( # rules created for 1Minute
         'close_order_today': close_order_today,
         "close_order_today_vars": close_order_today_vars,
         "use_margin": use_margin,
+        "revisit_trade_frequency": revisit_trade_frequency,
     }
 
 def generate_TradingModel(
@@ -3063,6 +3109,7 @@ def generate_TradingModel(
                                     short_position=False,
                                     use_wave_guage=False,
                                     close_order_today=True,
+                                    revisit_trade_frequency=60,
                 ),
                 "5Minute_5Day": kings_order_rules(
                                     theme=theme,
@@ -3088,6 +3135,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    revisit_trade_frequency=5 * 3600,
                 ),
                 "30Minute_1Month": kings_order_rules(
                                     theme=theme,
@@ -3113,6 +3161,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    revisit_trade_frequency=10 * 3600,
                 ),
                 "1Hour_3Month": kings_order_rules(
                                     theme=theme,
@@ -3138,6 +3187,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    revisit_trade_frequency=10 * 3600,
                 ),
                 "2Hour_6Month": kings_order_rules(
                                     theme='nuetral',
@@ -3163,6 +3213,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    revisit_trade_frequency=10 * 3600,
                 ),
                 "1Day_1Year": kings_order_rules(
                                     theme=theme,
@@ -3188,6 +3239,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    revisit_trade_frequency=60 * 3600,
                 ),
             }
         elif theme.lower() == 'long_star':
@@ -3734,6 +3786,7 @@ def create_QueenOrderBee(
     queen_init=False,
 ):  # Create Running Order
     def gen_queen_order(
+        queen_order_version=1,
         trading_model=trading_model,
         double_down_trade=False,
         queen_order_state=False,
@@ -3778,8 +3831,9 @@ def create_QueenOrderBee(
         order_vars=order_vars,
         priceinfo=priceinfo,
         queen_init=False,
+        revisit_trade_datetime=datetime.now(est),
     ):
-        date_mark = datetime.now().astimezone(est)
+        date_mark = datetime.now(est)
         if queen_init:
             return {
                 name: "init"
@@ -3835,6 +3889,8 @@ def create_QueenOrderBee(
                 "sell_reason": order_vars["sell_reason"],
                 "honey_time_in_profit": {},
                 "profit_loss": 0,
+                "revisit_trade_datetime": revisit_trade_datetime,
+                "borrowed_funds": order_vars.get('borrowed_funds'),
             }
 
     if queen_init:
@@ -3847,10 +3903,6 @@ def create_QueenOrderBee(
     
 
     return running_order
-
-
-def heartbeat_portfolio_revrec_template():
-    return True
 
 
 def generate_queen_buying_powers_settings(
@@ -3991,24 +4043,21 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
         market_exchanges_tickers[v["_raw"]["exchange"]].append(k)
     # market_exchanges = ['OTC', 'NASDAQ', 'NYSE', 'ARCA', 'AMEX', 'BATS']
 
-    index_ticker_db = return_index_tickers(
-        index_dir=os.path.join(db_root, "index_tickers"), ext=".csv"
-    )
+    # index_ticker_db = return_index_tickers(
+    #     index_dir=os.path.join(db_root, "index_tickers"), ext=".csv"
+    # )
 
-    main_index_dict = index_ticker_db[0]
-    main_symbols = index_ticker_db[1]
-    not_avail_in_alpaca = [i for i in main_symbols if i not in alpaca_symbols_dict]
-    main_symbols_full_list = [i for i in main_symbols if i in alpaca_symbols_dict]
+    # main_index_dict = index_ticker_db[0]
+    # main_symbols = index_ticker_db[1]
+    # not_avail_in_alpaca = [i for i in main_symbols if i not in alpaca_symbols_dict]
+    # main_symbols_full_list = [i for i in main_symbols if i in alpaca_symbols_dict]
 
     """ Return Index Charts & Data for All Tickers Wanted"""
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
 
     return {
         "alpaca_symbols_dict": alpaca_symbols_dict,
-        "index_ticker_db": index_ticker_db,
-        "main_index_dict": main_index_dict,
-        "main_symbols_full_list": main_symbols_full_list,
-        "not_avail_in_alpaca": not_avail_in_alpaca,
+        "all_alpaca_tickers": all_alpaca_tickers,
     }
 
 
@@ -4025,13 +4074,13 @@ def get_ticker_statatistics(symbol):
 
 def init_ticker_stats__from_yahoo():
     ticker_universe = return_Ticker_Universe()
-    index_ticker_db = ticker_universe["index_ticker_db"]
-    main_index_dict = ticker_universe["main_index_dict"]
-    main_symbols_full_list = ticker_universe["main_symbols_full_list"]
-    not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
+    # index_ticker_db = ticker_universe["index_ticker_db"]
+    # main_index_dict = ticker_universe["main_index_dict"]
+    all_alpaca_tickers = ticker_universe.get("all_alpaca_tickers")
+    # not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
 
     db_return = {}
-    for symbol in tqdm(main_symbols_full_list):
+    for symbol in tqdm(all_alpaca_tickers):
         try:
             db_return[symbol] = get_ticker_statatistics(symbol)
         except Exception as e:

@@ -528,6 +528,7 @@ def queens_orders__aggrid_v2(
 
     data["$honey"] = pd.to_numeric(data["$honey"], errors='coerce')
     data["honey"] = pd.to_numeric(data["honey"], errors='coerce')
+    data["honey"] = data["honey"] * 100
 
     data["color"] = np.where(data["honey"] > 0, "green", "white")
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
@@ -557,7 +558,7 @@ def queens_orders__aggrid_v2(
     )
 
 
-    # Config Columns
+    # Config Columns (list selection, buttons, and tagged columns ), does the immutable grid get rebuilt by row, cell, or entire grid is a re-render
     gb.configure_column("queen_order_state",
         header_name="State",
         editable=True,
@@ -570,9 +571,9 @@ def queens_orders__aggrid_v2(
         pinned='right',
         header_name="Date",
         type=["dateColumnFilter", "customDateTimeFormat"],
-        custom_format_string="MM/dd/yy HH:MM",
+        custom_format_string="MM/dd/yy HH:mm",
         pivot=True,
-        initialWidth=123,
+        initialWidth=133,
         # maxWidth=133,
         autoSize=True,
     )
@@ -601,7 +602,7 @@ def queens_orders__aggrid_v2(
         initialWidth=138,
         autoSize=True,
     )
-    gb.configure_column("honey",
+    gb.configure_column("honey", # immutable
         header_name="Honey%",
         pinned="left",
         cellStyle=honey_colors,
@@ -612,7 +613,7 @@ def queens_orders__aggrid_v2(
         maxWidth=100,
         autoSize=True,
     )
-    gb.configure_column("$honey",
+    gb.configure_column("$honey", # immutable
         header_name="Money$",
         pinned="left",
         cellStyle=honey_colors,

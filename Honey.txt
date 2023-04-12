@@ -1,3 +1,29 @@
+react component to return text
+
+
+
+def cust_Text(api, tx_size, refresh_sec, refresh_cutoff_sec):
+    component_value = _component_func(
+        api=api,
+        size=size,
+        height=refresh_sec,
+        hoverText=refresh_cutoff,
+    )
+    return component_value
+
+
+def cust_Grid(api_dataframe, refresh_sec, refresh_cutoff_sec, gridoptions_build):
+    component_value = _component_func(
+        api=api_dataframe,
+        refresh_sec=refresh_sec,
+        refresh_cutoff_sec=refresh_cutoff_sec,
+        gridoptions_build=gridoptions_build,
+
+    )
+    return component_value
+
+
+
 # Make Honey
 # lets really make Honey
 # PollenFamily33! 
@@ -27,38 +53,6 @@
 # Increase in Tick on Highest Market Cap (Goog, appl...) weight to increasee Trade_Funds
 # When Market opens X % up or down creation caution on Ups and Downs
 # How far away from VWAP at each time interval of day? The further away towards end of session gives more weight to return to it (10:30, Noon, 2:30)
-      
-"""
- # Global 
-Tickers_Dict = {}
-securities_that_correlate_with_spy = []
-
-
-1year_MacSE = 
-1year_MacLE = 
-5day_MacSE = 
-5day_MacLE = 
-1day_MacSE = 
-1day_MacLE = 
-
-1year_RSI = 
-1year_RSI = 
-5day_RSI = 
-5day_RSI = 
-1day_RSI = 
-1day_RSI = 
-
-OR 
-
-RSI_TimeSeries =
-MACSE_TimeSeries = 
-MACLE_TimeSeries = 
-
-time_since_last_RSI OR RSI weight_index (20=X, 50=Y, 80=Z)
-time_since_last_MACLE
-time_since_last_MACSE
-time_since_last_MACLE_TIMESERIES_together
-time_since_last_MACSE_TIMESERIES_together
 
 
 
