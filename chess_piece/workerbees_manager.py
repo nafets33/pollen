@@ -26,7 +26,7 @@ from chess_piece.king import (
     master_swarm_QUEENBEE,
 )
 from chess_piece.queen_hive import (
-    init_index_ticker,
+    send_email,
     init_logging,
     init_pollen_dbs,
     pollen_story,
@@ -85,4 +85,5 @@ if __name__ == '__main__':
     qcp_s = ["castle", "bishop", "knight"]
     
     prod = True if str(namespace.prod).lower() == "true" else False
+    send_email(subject=f"WorkerBees Online Production is {prod}")
     workerbees_multiprocess_pool(prod, qcp_s)

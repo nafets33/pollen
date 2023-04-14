@@ -119,7 +119,7 @@ def PlayGround():
         #     standard_AGgrid(df_backtest)
 
         with st.expander("orders"):
-            qo = QUEEN['queen_orders'].iloc[2]
+            qo = QUEEN['queen_orders'].iloc[3]
             st.write(qo.to_dict())
         
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)

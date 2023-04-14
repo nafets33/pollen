@@ -1,7 +1,7 @@
 # Pollen
 
 ## Install ENV and pre-commit hooks
-- pip install -r requirements.txt <<< may need fix >>>
+- pip install -r requirements.txt
 - pre-commit install
 
 ## upgrade Google VM
@@ -41,6 +41,7 @@ screen -X -S SCREENID kill
 chmod -R 777 queen.pkl or dir client_user_dbs
 sudo chmod 777 symbols_pollenstory_dbs -R
 sudo chmod 777 symbols_STORY_bee_dbs -R
+sudo chmod 777 symbols_STORY_bee_dbs -R
 
 sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 
@@ -48,9 +49,12 @@ sudo chmod +rwx symbols_STORY_bee_dbs ## change permissions
 export PYTHONPATH="${PYTHONPATH}:${HOME}/home/stapinski89/pollen/pollen"
 python -c "import sys; print(sys.path)"
 
+export PYTHONPATH=/home/stapinski89/pollen/pollen
+
 
 ## Setting Up Sever
 fastapi: uvicorn server:app --reload
+export PATH=$PATH:$HOME/.local/bin
 
 Ngnix
 docker >> Q: pythonpath missing?, airflow UID missing?
@@ -62,3 +66,35 @@ for file_path in os.listdir(directory):
     os.chmod(f_p, 0o777)
 
 requiements openai and transformers
+
+## Cron Jobs
+crontab -e
+Select an editor.  To change later, run 'select-editor'.
+TZ=America/New_York
+30 9 * * * /home/stapinski89/pollen/bin/python /home/stapinski89/pollen/pollen/chess_piece/workerbees_manager.py
+
+
+
+
+cat /etc/timezone
+
+
+timedatectl
+timedatectl list-timezones
+sudo timedatectl set-timezone America/Toronto
+
+tail -f /var/log/cron
+
+Stefan Stapinski
+sudo timedatectl set-timezone America/New_York
+
+cd /var/log
+cat syslog | grep cron
+
+## all processes linux
+ps aux
+sudo kill -9 ID9876
+sudo vim .bashrc # when in home dir
+
+/etc/nginx/sites-available$ # in the file name change name, localhost, SSL if any
+

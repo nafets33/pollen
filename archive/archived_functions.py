@@ -4,6 +4,24 @@ import random
 import pickle
 import time, os
 
+
+def Engine_1():
+    bpower_resp = buying_Power_cc(QUEEN_KING=QUEEN_KING, api=api, client_args="TBD", daytrade=True)
+
+    ## Engine 1
+    total_buying_power = bpower_resp['total_buying_power']
+    client_total_DAY_trade_amt_allowed = bpower_resp['client_total_DAY_trade_amt_allowed']
+    app_portfolio_day_trade_allowed = bpower_resp['app_portfolio_day_trade_allowed']
+    client_total_LONG_trade_amt_allowed = bpower_resp['client_total_LONG_trade_amt_allowed']
+    # total budget
+    client_total_DAY_trade_amt_allowed =  float(total_buying_power) * float(app_portfolio_day_trade_allowed) # (10% * ($500,000 * 3%)
+    theme_amo = current_wave_amo * client_total_DAY_trade_amt_allowed
+    
+    power_up_amo = its_morphin_time(QUEEN_KING=QUEEN_KING, QUEEN=QUEEN, trigbee=trigbee, theme=theme, tmodel_power_rangers=tmodel_power_rangers, ticker=ticker, stars_df=stars_df)
+    # print("POWERUP !!!!! ", power_up_amo)
+    wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
+
+
 def update_dataframe():
     # Create a DataFrame with 3 columns of data
     df = pd.DataFrame({

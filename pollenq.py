@@ -442,12 +442,15 @@ def pollenq(admin_pq):
                 admin = True
                 st.session_state['admin'] = True
             if st.session_state['admin'] == True:
-                users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-                admin_client_user = st.sidebar.selectbox('admin client_users', options=users_allowed_queen_email, index=users_allowed_queen_email.index(st.session_state['username']))
-                if st.sidebar.button('admin change user', use_container_width=True):
-                    st.session_state['admin__client_user'] = admin_client_user
-                    st.session_state["production"] = False
-                    st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
+                with st.sidebar:
+                    with st.expander("admin user"):
+                        users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+                        admin_client_user = st.selectbox('admin client_users', options=users_allowed_queen_email, index=users_allowed_queen_email.index(st.session_state['username']))
+                        if st.button('admin change user', use_container_width=True):
+                            st.session_state['admin__client_user'] = admin_client_user
+                            st.session_state["production"] = False
+                            st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
+                            st.experimental_rerun()
 
             return True
 
@@ -461,6 +464,9 @@ def pollenq(admin_pq):
 
             return True
         
+        
+        ##### QuantQueen #####
+
         est = pytz.timezone("US/Eastern")
         # cust_Button(file_path_url='misc/chess_board.gif', hoverText=None, key=None)
 
@@ -480,14 +486,13 @@ def pollenq(admin_pq):
             page_title="pollenq",
             page_icon=page_icon,
             layout="wide",
-            initial_sidebar_state='collapsed',
+            initial_sidebar_state='expanded',
             #  menu_items={
             #      'Get Help': 'https://www.extremelycoolapp.com/help',
             #      'Report a bug': "https://www.extremelycoolapp.com/bug",
             #      'About': "# This is a header. This is an *extremely* cool app!"
             #  }
         )
-
 
 
         ##### STREAMLIT #####
@@ -532,7 +537,7 @@ def pollenq(admin_pq):
             KING = ReadPickleData(PB_KING_Pickle)
             KING['source'] = PB_KING_Pickle
             v = custom_text(api="http://localhost:8000/get-text/2", text_size = 17, refresh_sec =2,refresh_cutoff_sec =100)
-            st.write(v)
+
             hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
             cols = st.columns((1,6,1)) # 6
             with cols[0]:
@@ -585,7 +590,7 @@ def pollenq(admin_pq):
                 st.error(e)
                 acct_info = False
                 st.session_state['production'] = False
-            with cols[0]:
+            with st.sidebar:
                 with st.expander("control buttons"):
                     refresh_chess_board__button(QUEEN_KING)
                     refresh_queen_controls_button(QUEEN_KING)
@@ -606,55 +611,57 @@ def pollenq(admin_pq):
             # print("MENU Buttons")
             def menu_buttons():
                 sb = st.sidebar
+                off_size = 33
+                on_size = 89
                 with sb:
                     # with cols[0]:
-                    height = 89 if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else 54
+                    height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
                     cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
                     if st.session_state['workerbees']:
                         with cols[0]:
                             hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
                 # with cols[1]:
-                    height = 89 if 'orders' in st.session_state and st.session_state['orders'] == True else 54
-                    cust_Button("misc/knight_pawn.png", hoverText='Portfolio Orders', key='orders', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                    height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
+                    cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
                     if st.session_state['orders']:
                         with cols[1]:
-                            hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                            hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                 # with cols[2]:
-                    height = 89 if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else 54
+                    height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
                     cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=pq_buttons.get('chess_board'))
                     if st.session_state['chess_board']:
                         with cols[2]:
-                            hc.option_bar(option_definition=pq_buttons.get('option_data'),title='Chess Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                            hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                 # with cols[3]:
-                    height = 89 if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else 54
+                    height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
                     cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px')
                     if st.session_state['queens_mind']:
                         with cols[3]:
-                            hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Trading Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                            hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
                 # with cols[4]:
                     # hc.option_bar(option_definition=pq_buttons.get('option_chart'),title='Charts', key='charts', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                    height = 89 if 'charts' in st.session_state and st.session_state['charts'] == True else 54
+                    height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
                     cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px')
                     if st.session_state['charts']:
                         with cols[4]:
                             hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
                 # with cols[5]:
-                    height = 89 if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else 54
+                    height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
                     cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
                 
                 # with cols[6]:               
-                    height = 89 if 'waves' in st.session_state and st.session_state['waves'] == True else 54
+                    height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
                     cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px')
                     if st.session_state['waves']:
                         with cols[6]:
                             hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-
+            with cols[0]:
+                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'23px')
             with cols[8]:
                 portfolio_header__QC(acct_info)
-                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'23px')
 
 
             menu_buttons()

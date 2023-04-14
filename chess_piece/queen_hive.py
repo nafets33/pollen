@@ -4294,12 +4294,25 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
 
 
 # weight the MACD tier // slice by selected tiers?
-def wave_guage(df, model_eight_tier=8):
+def wave_guage(df, trading_model=False, model_eight_tier=8):
 
-    df['weight'] = 1 # change to join on based on ticker or groups of ticker models considered
-    df['weight_base'] = df['weight'] * model_eight_tier
-    df['macd_weight_sum'] = df['weight'] * df['current_macd_tier']
-    df['hist_weight_sum'] = df['weight'] * df['current_hist_tier']
+    if trading_model:
+        for ticker_time_frame in df.index:
+            ticker, tframe, tperiod = ticker_time_frame.split("_")
+            df.at[ticker_time_frame, 'weight_L'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+            df.at[ticker_time_frame, 'weight_S'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_ShortTerm")
+    else:
+        df['weight'] = 1 # change to join on based on ticker or groups of ticker models considered
+    
+    guage_return = {}
+    for weight_ in ['weight_L', 'weight_S']:
+        df[f'{weight_}_weight_base'] = df[weight_] * model_eight_tier
+        df[f'{weight_}_macd_weight_sum'] = df[weight_] * df['current_macd_tier']
+        df[f'{weight_}_hist_weight_sum'] = df[weight_] * df['current_hist_tier']
+        guage_return[f'{weight_}_macd_tier_guage'] = sum(df[f'{weight_}_macd_weight_sum']) / sum(df[f'{weight_}_weight_base'])
+        guage_return[f'{weight_}_hist_tier_guage'] = sum(df[f'{weight_}_hist_weight_sum']) / sum(df[f'{weight_}_weight_base'])
+    
+    return guage_return
     
     macd_tier_gauge = sum(df['macd_weight_sum']) / sum(df['weight_base'])
     hist_tier_gauge = sum(df['hist_weight_sum']) / sum(df['weight_base'])
