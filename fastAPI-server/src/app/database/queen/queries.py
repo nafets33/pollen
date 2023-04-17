@@ -43,8 +43,10 @@ def get_queen_orders_json(username, col_view = None):
               "side",
           ]
 
+  
   df = pd.DataFrame(qo)
+  df = df[df['queen_order_state'].isin(['running'])]
   df = df[col_view]
-  df["honey"][1] = random.randrange(100)
+  # df["honey"][1] = random.randrange(100)
   json_data = df.to_json(orient='records')
   return json_data
