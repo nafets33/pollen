@@ -12,11 +12,12 @@ if not _RELEASE:
     )
 else:
     parent_dir = os.path.dirname(os.path.abspath(__file__))
-    build_dir = os.path.join(parent_dir, "frontend","build")
-    _component_func = components.declare_component("custom_grid", path=build_dir)
+    build_dir = os.path.join(parent_dir, "frontend", "build")
+    _component_func = components.declare_component(
+        "custom_grid", path=build_dir)
 
 
-def st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build):
+def st_custom_grid(username: str, api: str, refresh_sec: int, refresh_cutoff_sec: int = 0, key=None):
     component_value = _component_func(
-        api=api, refresh_sec = refresh_sec, refresh_cutoff = refresh_cutoff, gridoption_build=gridoption_build)
+        username=username, api=api, refresh_sec=refresh_sec, refresh_cutoff_sec=refresh_cutoff_sec, key=key)
     return component_value
