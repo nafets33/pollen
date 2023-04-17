@@ -35,6 +35,9 @@ from chess_piece.king import (
     print_line_of_error,
 )
 
+# from chess_piece.workerbees import queen_workerbees
+
+
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone("UTC")
 
@@ -1241,7 +1244,8 @@ def pollenq_button_source():
         {'id': "chess_search", 'icon': "fas fa-chess", 'label':""},
         ],
         'workerbees_option_data': [
-        {'id': "workerbees_option", 'icon': "fas fa-sitemap", 'label':""},
+        {'id': "workerbees_on", 'icon': "fas fa-chess-queen", 'label':""},
+        {'id': "workerbees_off", 'icon': "fas fa-chess-pawn", 'label':""},
         ],
         'charts_day_option_data': [
         {'id': "charts_dayonly_no", 'icon': "", 'label':"no"},
@@ -1331,7 +1335,7 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                 if st.form_submit_button("Save API Keys"):
                     # test keys
                     if test_api_keys(user_secrets=user_secrets, prod=prod):
-                        st.success(f"{user_env_instance} Keys Added")
+                        st.success(f"{user_env_instance} Keys Added Refresh Page")
                         user_secrets[f"{user_env_instance}_keys_confirmed"] = True
                     else:
                         st.error(f"{user_env_instance} Keys Failed")
@@ -1341,6 +1345,8 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                     PickleData(PB_App_Pickle, QUEEN_KING)
 
     return True
+
+
 
 
 ############### Charts ##################

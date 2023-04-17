@@ -98,3 +98,6 @@ sudo vim .bashrc # when in home dir
 
 /etc/nginx/sites-available$ # in the file name change name, localhost, SSL if any
 
+# find if port active
+sudo lsof -i :8501
+sudo kill -9 PID

@@ -9,12 +9,10 @@ import sys
 import time
 from collections import defaultdict, deque
 import sqlite3
-
-# import datetime
+from itertools import islice
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from typing import Callable
-
 import alpaca_trade_api as tradeapi
 import ipdb
 import numpy as np
@@ -31,6 +29,7 @@ from tqdm import tqdm
 
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
+
 queens_chess_piece = os.path.basename(__file__)
 king_G = kingdom__global_vars()
 MISC = local__filepaths_misc()
@@ -420,8 +419,6 @@ def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, q
 
 
 def init_QUEEN_App():
-
-    init_macd_vars = {"fast": 12, "slow": 26, "smooth": 9}
 
     app = {
         "prod": 'init',
@@ -870,273 +867,279 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
         knights_sight_word = {}
 
         def pollenstory_cycle(ticker_time_frame, df_i):
-            s_ttfame_func_check = datetime.now(est).astimezone(est)
-            ticker, tframe, frame = ticker_time_frame.split("_")
-
-            trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
-
-            ANGEL_bee[ticker_time_frame] = {}
-            STORY_bee[ticker_time_frame] = {"story": {}}
-
-            df = df_i.fillna(0).copy()
-            df = df.reset_index(drop=True)
-            df["story_index"] = df.index
-            df_len = len(df)
-            mac_world = {
-                "macd_high": df["macd"].max(),
-                "macd_low": df["macd"].min(),
-                "signal_high": df["signal"].max(),
-                "signal_low": df["signal"].min(),
-                "hist_high": df["hist"].max(),
-                "hist_low": df["hist"].min(),
-            }
-            # macd signal divergence
-            df["macd_singal_deviation"] = df["macd"] - df["signal"]
-            STORY_bee[ticker_time_frame]["story"]["macd_singal_deviation"] = df.iloc[-1][
-                "macd_singal_deviation"
-            ]
-
-            s_timetoken = datetime.now(est)
-            # mac cross
-            df = mark_macd_signal_cross(df=df)
-            resp = knights_triggerbees(df=df)
-            df = resp["df"]
-            knights_word = resp["bee_triggers"]
-            # how long does trigger stay profitable?
-            e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["macdcross"] = e_timetoken - s_timetoken
-
-            """for every index(timeframe) calculate profit length, bell curve conclude with how well trigger is doing to then determine when next trigger will do well """
-            # MACD WAVE ~~~~~~~~~~~~~~~~~~~~~~~~ WAVES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MACD WAVE #
-            # Queen to make understanding of trigger-profit waves
-            # Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
-
-            s_timetoken = datetime.now(est)
-
-            wave = return_knightbee_waves(
-                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
-            )
-            e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves_return_knightbee_waves"] = (
-                e_timetoken - s_timetoken
-            )
-
-            s_timetoken = datetime.now(est)
-            MACDWAVE_story = return_macd_wave_story(
-                df=df,
-                trigbees=trigbees,
-                ticker_time_frame=ticker_time_frame,
-                tframe=tframe,
-            )
-            e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves_return_macd_wave_story"] = (
-                e_timetoken - s_timetoken
-            )
-
-            s_timetoken = datetime.now(est)
-            resp = return_waves_measurements(
-                df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
-            )
-            e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (
-                e_timetoken - s_timetoken
-            )
-
-            df = resp["df"]
-            MACDWAVE_story["story"] = resp["df_waves"]
-
-            STORY_bee[ticker_time_frame]["waves"] = MACDWAVE_story
-
-            e_timetoken = datetime.now(est)
-            betty_bee[ticker_time_frame]["waves"] = e_timetoken - s_timetoken
-
-            knights_sight_word[ticker_time_frame] = knights_word
-            STORY_bee[ticker_time_frame]["KNIGHTSWORD"] = knights_word
-
-            # # return degree angle 0, 45, 90
             try:
+                s_ttfame_func_check = datetime.now(est)
+                ticker, tframe, frame = ticker_time_frame.split("_")
+
+                trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
+
+                ANGEL_bee[ticker_time_frame] = {}
+                STORY_bee[ticker_time_frame] = {"story": {}}
+
+                df = df_i.fillna(0).copy()
+                df = df.reset_index(drop=True)
+                df["story_index"] = df.index
+                df_len = len(df)
+                mac_world = {
+                    "macd_high": df["macd"].max(),
+                    "macd_low": df["macd"].min(),
+                    "signal_high": df["signal"].max(),
+                    "signal_low": df["signal"].min(),
+                    "hist_high": df["hist"].max(),
+                    "hist_low": df["hist"].min(),
+                }
+                # macd signal divergence
+                df["macd_singal_deviation"] = df["macd"] - df["signal"]
+                STORY_bee[ticker_time_frame]["story"]["macd_singal_deviation"] = df.iloc[-1][
+                    "macd_singal_deviation"
+                ]
+
                 s_timetoken = datetime.now(est)
-                var_list = ["macd", "hist", "signal", "close", "rsi_ema"]
-                var_timeframes = [3, 6, 8, 10, 25, 33]
-                for var in var_list:
-                    for t in var_timeframes:
-                        # apply rollowing angle
-                        if df_len >= t:
-                            x = df.iloc[df_len - t : df_len][var].to_list()
-                            y = [1, 2]
-                            name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
-                            ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
+                # mac cross
+                df = mark_macd_signal_cross(df=df)
+                resp = knights_triggerbees(df=df)
+                df = resp["df"]
+                knights_word = resp["bee_triggers"]
+                # how long does trigger stay profitable?
+                e_timetoken = datetime.now(est)
+                betty_bee[ticker_time_frame]["macdcross"] = e_timetoken - s_timetoken
+
+                """for every index(timeframe) calculate profit length, bell curve conclude with how well trigger is doing to then determine when next trigger will do well """
+                # MACD WAVE ~~~~~~~~~~~~~~~~~~~~~~~~ WAVES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MACD WAVE #
+                # Queen to make understanding of trigger-profit waves
+                # Q? measure pressure of a wave? if small waves, expect bigger wave>> up the buy
+
+                s_timetoken = datetime.now(est)
+
+                wave = return_knightbee_waves(
+                    df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
+                )
+                e_timetoken = datetime.now(est)
+                betty_bee[ticker_time_frame]["waves_return_knightbee_waves"] = (
+                    e_timetoken - s_timetoken
+                )
+
+                s_timetoken = datetime.now(est)
+                MACDWAVE_story = return_macd_wave_story(
+                    df=df,
+                    trigbees=trigbees,
+                    ticker_time_frame=ticker_time_frame,
+                    tframe=tframe,
+                )
+                e_timetoken = datetime.now(est)
+                betty_bee[ticker_time_frame]["waves_return_macd_wave_story"] = (
+                    e_timetoken - s_timetoken
+                )
+
+                s_timetoken = datetime.now(est)
+                resp = return_waves_measurements(
+                    df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
+                )
+                e_timetoken = datetime.now(est)
+                betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (
+                    e_timetoken - s_timetoken
+                )
+
+                df = resp["df"]
+                MACDWAVE_story["story"] = resp["df_waves"]
+
+                STORY_bee[ticker_time_frame]["waves"] = MACDWAVE_story
+
+                e_timetoken = datetime.now(est)
+                betty_bee[ticker_time_frame]["waves"] = e_timetoken - s_timetoken
+
+                knights_sight_word[ticker_time_frame] = knights_word
+                STORY_bee[ticker_time_frame]["KNIGHTSWORD"] = knights_word
+
+                # # return degree angle 0, 45, 90
+                try:
+                    s_timetoken = datetime.now(est)
+                    var_list = ["macd", "hist", "signal", "close", "rsi_ema"]
+                    var_timeframes = [3, 6, 8, 10, 25, 33]
+                    for var in var_list:
+                        for t in var_timeframes:
+                            # apply rollowing angle
+                            if df_len >= t:
+                                x = df.iloc[df_len - t : df_len][var].to_list()
+                                y = [1, 2]
+                                name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
+                                ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
+                    e_timetoken = datetime.now().astimezone(est)
+                    betty_bee[ticker_time_frame]["Angel_Bee"] = e_timetoken - s_timetoken
+                except Exception as e:
+                    msg = (
+                        e,
+                        "--",
+                        print_line_of_error(),
+                        "--",
+                        ticker_time_frame,
+                        "--ANGEL_bee",
+                    )
+                    logging.error(msg)
+
+                # # add close price momentum
+                # try:
+                #     s_timetoken = datetime.now().astimezone(est)
+                #     close = df['close']
+                #     df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
+                #     df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
+                #     e_timetoken = datetime.now().astimezone(est)
+                #     betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
+                # except Exception as e:
+                #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
+                #     logging.error(msg)
+
+                time_state = df["timestamp_est"].iloc[-1]  # current time
+                STORY_bee[ticker_time_frame]["story"][
+                    "time_state"
+                ] = datetime.now().astimezone(est)
+
+                # devation from vwap
+                df["vwap_deviation"] = df["close"] - df["vwap"]
+                df["vwap_deviation_pct"] = df["close"] / df["vwap_deviation"]
+                STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1][
+                    "vwap_deviation"
+                ]
+                STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1][
+                    "vwap_deviation"
+                ]
+
+                # MACD WAVE
+                macd_state = df["macd_cross"].iloc[-1]
+                macd_state_side = macd_state.split("_")[0]  # buy_cross-num
+                middle_crossname = macd_state.split("_")[1].split("-")[0]
+                state_count = macd_state.split("-")[1]  # buy/sell_name_number
+                STORY_bee[ticker_time_frame]["story"]["macd_state"] = macd_state
+                STORY_bee[ticker_time_frame]["story"]["macd_state_side"] = macd_state_side
+                STORY_bee[ticker_time_frame]["story"]["time_since_macd_change"] = state_count
+
+                # last time there was buycross
+                if "buy_cross-0" in knights_word.keys():
+                    prior_macd_time = knights_word["buy_cross-0"]["last_seen"]
+                    STORY_bee[ticker_time_frame]["story"][
+                        f'{"last_seen_macd_buy_time"}'
+                    ] = prior_macd_time
+                    prior_macd_time = knights_word["buy_cross-0"]["prior_seen"]
+                    STORY_bee[ticker_time_frame]["story"][
+                        f'{"prior_seen_macd_buy_time"}'
+                    ] = prior_macd_time
+                # last time there was sellcross
+                if "sell_cross-0" in knights_word.keys():
+                    prior_macd_time = knights_word["sell_cross-0"]["last_seen"]
+                    STORY_bee[ticker_time_frame]["story"][
+                        f'{"last_seen_macd_sell_time"}'
+                    ] = prior_macd_time
+                    prior_macd_time = knights_word["sell_cross-0"]["prior_seen"]
+                    STORY_bee[ticker_time_frame]["story"][
+                        f'{"prior_seen_macd_sell_time"}'
+                    ] = prior_macd_time
+
+                # all triggers ? move to top?
+                # STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
+
+                # count number of Macd Crosses
+                # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
+                s_timetoken = datetime.now().astimezone(est)
+                today_df = df[
+                    df["timestamp_est"]
+                    > (datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)
+                ].copy()
+                # today_df = df[df['timestamp_est'] > (datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
+                STORY_bee[ticker_time_frame]["story"]["macd_cross_count"] = {
+                    "buy_cross_total_running_count": sum(
+                        np.where(df["macd_cross"] == "buy_cross-0", 1, 0)
+                    ),
+                    "sell_cross_totalrunning_count": sum(
+                        np.where(df["macd_cross"] == "sell_cross-0", 1, 0)
+                    ),
+                    "buy_cross_todays_running_count": sum(
+                        np.where(today_df["macd_cross"] == "buy_cross-0", 1, 0)
+                    ),
+                    "sell_cross_todays_running_count": sum(
+                        np.where(today_df["macd_cross"] == "sell_cross-0", 1, 0)
+                    ),
+                }
                 e_timetoken = datetime.now().astimezone(est)
-                betty_bee[ticker_time_frame]["Angel_Bee"] = e_timetoken - s_timetoken
+                betty_bee[ticker_time_frame]["count_cross"] = e_timetoken - s_timetoken
+
+                # latest_close_price
+                STORY_bee[ticker_time_frame]["story"]["last_close_price"] = df.iloc[-1]["close"]
+
+                try:
+                    if "1Minute_1Day" in ticker_time_frame:
+                        theme_df = df.copy()
+                        theme_df = split_today_vs_prior(df=theme_df)  # remove prior day
+                        theme_today_df = theme_df["df_today"]
+                        # theme_prior_df = theme_df['df_prior']
+
+                        # we want...last vs currnet close prices, && Height+length of wave
+                        current_price = theme_today_df.iloc[-1]["close"]
+                        open_price = theme_today_df.iloc[0]["close"]  # change to timestamp lookup
+                        # yesterday_close = theme_prior_df.iloc[-1]['close'] # change to timestamp lookup
+
+                        STORY_bee[ticker_time_frame]["story"]["current_from_open"] = (
+                            current_price - open_price
+                        ) / current_price
+
+                        # # Current from Yesterdays Close
+                        # STORY_bee[ticker_time_frame]['story']['current_from_yesterday_close'] = (current_price - yesterday_close) / current_price
+
+                        # # how did day start ## this could be moved to queen and calculated once only
+                        # STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
+
+                        e_timetoken = datetime.now(est)
+                        slope, intercept, r_value, p_value, std_err = stats.linregress(
+                            theme_today_df.index, theme_today_df["close"]
+                        )
+                        STORY_bee[ticker_time_frame]["story"]["current_slope"] = slope
+                        e_timetoken = datetime.now(est)
+                        betty_bee[ticker_time_frame]["slope"] = e_timetoken - s_timetoken
+                except Exception as e:
+                    print("PollenStory Error 1 Mintue", e)
+                    print_line_of_error()
+
+                # Measure MACD WAVES
+                # change % shifts for each, close, macd, signal, hist....
+                df = assign_MACD_Tier(
+                    df=df,
+                    mac_world=mac_world,
+                    tiers_num=macd_tiers,
+                    ticker_time_frame=ticker_time_frame,
+                )
+                STORY_bee[ticker_time_frame]["story"]["current_macd_tier"] = df.iloc[-1][
+                    "macd_tier"
+                ]
+                STORY_bee[ticker_time_frame]["story"]["current_hist_tier"] = df.iloc[-1][
+                    "hist_tier"
+                ]
+
+                df["mac_ranger"] = df["macd_tier"].apply(lambda x: power_ranger_mapping(x))
+                df["hist_ranger"] = df["hist_tier"].apply(lambda x: power_ranger_mapping(x))
+
+                # how long have you been stuck at vwap ?
+
+                # add to story
+                df["chartdate"] = df["timestamp_est"]  # add as new col
+                df["name"] = ticker_time_frame
+                story[ticker_time_frame] = df
+                # ticker, _time, _frame = ticker_time_frame.split("_")
+
+                # latest Pull
+                df_lastrow = df.iloc[-1]
+                # df_lastrow_remaining = df_lastrow[[i for i in df_lastrow.index.tolist() if i not in STORY_bee[ticker_time_frame]['story'].keys()]].copy
+                STORY_bee[ticker_time_frame]["story"]["current_mind"] = df_lastrow
+
+                e_ttfame_func_check = datetime.now().astimezone(est)
+                betty_bee[ticker_time_frame]["full_loop"] = (
+                    e_ttfame_func_check - s_ttfame_func_check
+                )
+
+                # add momentem ( when macd < signal & past 3 macds are > X Value or %)
+
+                # when did macd and signal share same tier?
             except Exception as e:
-                msg = (
-                    e,
-                    "--",
-                    print_line_of_error(),
-                    "--",
-                    ticker_time_frame,
-                    "--ANGEL_bee",
-                )
-                logging.error(msg)
-
-            # # add close price momentum
-            # try:
-            #     s_timetoken = datetime.now().astimezone(est)
-            #     close = df['close']
-            #     df['close_mom_3'] = talib.MOM(close, timeperiod=3).fillna(0)
-            #     df['close_mom_6'] = talib.MOM(close, timeperiod=6).fillna(0)
-            #     e_timetoken = datetime.now().astimezone(est)
-            #     betty_bee[ticker_time_frame]['MOM'] = (e_timetoken - s_timetoken)
-            # except Exception as e:
-            #     msg=(e,"--", print_line_of_error(), "--", ticker_time_frame)
-            #     logging.error(msg)
-
-            time_state = df["timestamp_est"].iloc[-1]  # current time
-            STORY_bee[ticker_time_frame]["story"][
-                "time_state"
-            ] = datetime.now().astimezone(est)
-
-            # devation from vwap
-            df["vwap_deviation"] = df["close"] - df["vwap"]
-            df["vwap_deviation_pct"] = df["close"] / df["vwap_deviation"]
-            STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1][
-                "vwap_deviation"
-            ]
-            STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1][
-                "vwap_deviation"
-            ]
-
-            # MACD WAVE
-            macd_state = df["macd_cross"].iloc[-1]
-            macd_state_side = macd_state.split("_")[0]  # buy_cross-num
-            middle_crossname = macd_state.split("_")[1].split("-")[0]
-            state_count = macd_state.split("-")[1]  # buy/sell_name_number
-            STORY_bee[ticker_time_frame]["story"]["macd_state"] = macd_state
-            STORY_bee[ticker_time_frame]["story"]["macd_state_side"] = macd_state_side
-            STORY_bee[ticker_time_frame]["story"]["time_since_macd_change"] = state_count
-
-            # last time there was buycross
-            if "buy_cross-0" in knights_word.keys():
-                prior_macd_time = knights_word["buy_cross-0"]["last_seen"]
-                STORY_bee[ticker_time_frame]["story"][
-                    f'{"last_seen_macd_buy_time"}'
-                ] = prior_macd_time
-                prior_macd_time = knights_word["buy_cross-0"]["prior_seen"]
-                STORY_bee[ticker_time_frame]["story"][
-                    f'{"prior_seen_macd_buy_time"}'
-                ] = prior_macd_time
-            # last time there was sellcross
-            if "sell_cross-0" in knights_word.keys():
-                prior_macd_time = knights_word["sell_cross-0"]["last_seen"]
-                STORY_bee[ticker_time_frame]["story"][
-                    f'{"last_seen_macd_sell_time"}'
-                ] = prior_macd_time
-                prior_macd_time = knights_word["sell_cross-0"]["prior_seen"]
-                STORY_bee[ticker_time_frame]["story"][
-                    f'{"prior_seen_macd_sell_time"}'
-                ] = prior_macd_time
-
-            # all triggers ? move to top?
-            # STORY_bee[ticker_time_frame]['story']['alltriggers_current_state'] = [k for (k,v) in knights_word.items() if v['last_seen'].day == time_state.day and v['last_seen'].hour == time_state.hour and v['last_seen'].minute == time_state.minute]
-
-            # count number of Macd Crosses
-            # df['macd_cross_running_count'] = np.where((df['macd_cross'] == 'buy_cross-0') | (df['macd_cross'] == 'sell_cross-0'), 1, 0)
-            s_timetoken = datetime.now().astimezone(est)
-            today_df = df[
-                df["timestamp_est"]
-                > (datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)
-            ].copy()
-            # today_df = df[df['timestamp_est'] > (datetime.now().replace(hour=1, minute=1, second=1)).isoformat()].copy()
-            STORY_bee[ticker_time_frame]["story"]["macd_cross_count"] = {
-                "buy_cross_total_running_count": sum(
-                    np.where(df["macd_cross"] == "buy_cross-0", 1, 0)
-                ),
-                "sell_cross_totalrunning_count": sum(
-                    np.where(df["macd_cross"] == "sell_cross-0", 1, 0)
-                ),
-                "buy_cross_todays_running_count": sum(
-                    np.where(today_df["macd_cross"] == "buy_cross-0", 1, 0)
-                ),
-                "sell_cross_todays_running_count": sum(
-                    np.where(today_df["macd_cross"] == "sell_cross-0", 1, 0)
-                ),
-            }
-            e_timetoken = datetime.now().astimezone(est)
-            betty_bee[ticker_time_frame]["count_cross"] = e_timetoken - s_timetoken
-
-            # latest_close_price
-            STORY_bee[ticker_time_frame]["story"]["last_close_price"] = df.iloc[-1][
-                "close"
-            ]
-
-            if "1Minute_1Day" in ticker_time_frame:
-                theme_df = df.copy()
-                theme_df = split_today_vs_prior(df=theme_df)  # remove prior day
-                theme_today_df = theme_df["df_today"]
-                # theme_prior_df = theme_df['df_prior']
-
-                # we want...last vs currnet close prices, && Height+length of wave
-                current_price = theme_today_df.iloc[-1]["close"]
-                open_price = theme_today_df.iloc[0]["close"]  # change to timestamp lookup
-                # yesterday_close = theme_prior_df.iloc[-1]['close'] # change to timestamp lookup
-
-                STORY_bee[ticker_time_frame]["story"]["current_from_open"] = (
-                    current_price - open_price
-                ) / current_price
-
-                # # Current from Yesterdays Close
-                # STORY_bee[ticker_time_frame]['story']['current_from_yesterday_close'] = (current_price - yesterday_close) / current_price
-
-                # # how did day start ## this could be moved to queen and calculated once only
-                # STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
-
-                e_timetoken = datetime.now().astimezone(est)
-                slope, intercept, r_value, p_value, std_err = stats.linregress(
-                    theme_today_df.index, theme_today_df["close"]
-                )
-                STORY_bee[ticker_time_frame]["story"]["current_slope"] = slope
-                e_timetoken = datetime.now().astimezone(est)
-                betty_bee[ticker_time_frame]["slope"] = e_timetoken - s_timetoken
-
-            # Measure MACD WAVES
-            # change % shifts for each, close, macd, signal, hist....
-            df = assign_MACD_Tier(
-                df=df,
-                mac_world=mac_world,
-                tiers_num=macd_tiers,
-                ticker_time_frame=ticker_time_frame,
-            )
-            STORY_bee[ticker_time_frame]["story"]["current_macd_tier"] = df.iloc[-1][
-                "macd_tier"
-            ]
-            STORY_bee[ticker_time_frame]["story"]["current_hist_tier"] = df.iloc[-1][
-                "hist_tier"
-            ]
-
-            df["mac_ranger"] = df["macd_tier"].apply(lambda x: power_ranger_mapping(x))
-            df["hist_ranger"] = df["hist_tier"].apply(lambda x: power_ranger_mapping(x))
-
-            # how long have you been stuck at vwap ?
-
-            # add to story
-            df["chartdate"] = df["timestamp_est"]  # add as new col
-            df["name"] = ticker_time_frame
-            story[ticker_time_frame] = df
-            # ticker, _time, _frame = ticker_time_frame.split("_")
-
-            # latest Pull
-            df_lastrow = df.iloc[-1]
-            # df_lastrow_remaining = df_lastrow[[i for i in df_lastrow.index.tolist() if i not in STORY_bee[ticker_time_frame]['story'].keys()]].copy
-            STORY_bee[ticker_time_frame]["story"]["current_mind"] = df_lastrow
-
-            e_ttfame_func_check = datetime.now().astimezone(est)
-            betty_bee[ticker_time_frame]["full_loop"] = (
-                e_ttfame_func_check - s_ttfame_func_check
-            )
-
-            # add momentem ( when macd < signal & past 3 macds are > X Value or %)
-
-            # when did macd and signal share same tier?
+                print_line_of_error()
+                print(e)
 
 
         s = datetime.now(est)
@@ -1148,7 +1151,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
                         'return_dict': return_dict
                     }  # return Charts Data based on Queen's Query Params, (stars())
                 except Exception as e:
-                    print(e, ticker_time_frame)
+                    print("ps_error", e, ticker_time_frame)
 
         async def main(pollen_nectar):
 
@@ -1862,19 +1865,13 @@ def return_waves_measurements(
 
 
 def split_today_vs_prior(df, timestamp="timestamp_est"):
-    # df[timestamp] = pd.to_datetime(df[timestamp], errors='coerce').fillna('err')
-    # err = df[df[timestamp] == 'err']
-    # if len(err) > 0:
-    #     print('datetime conv failed')
-
-    # df = df[df[timestamp] != 'err'].copy()
-
-    df_today = df[
-        df[timestamp]
-        > (datetime.now(est).replace(hour=1, minute=1, second=1)).astimezone(est)
-    ].copy()
-    df_prior = df[~(df[timestamp].isin(df_today[timestamp].to_list()))].copy()
-
+    try:
+        last_date = df[timestamp].iloc[-1].replace(hour=1, minute=1, second=1)
+        df_today = df[df[timestamp] > (last_date).astimezone(est)].copy()
+        df_prior = df[~(df[timestamp].isin(df_today[timestamp].to_list()))].copy()
+    except Exception as e:
+        print("QH error", e, print_line_of_error())
+    
     return {"df_today": df_today, "df_prior": df_prior}
 
 
@@ -1896,6 +1893,9 @@ def return_degree_angle(x, y):  #
 
     return degree
 
+def chunk(it, size):
+    it = iter(it)
+    return iter(lambda: tuple(islice(it, size)), ())
 
 ### BARS
 def return_bars(
@@ -2032,33 +2032,54 @@ def return_bars_list(
                     exchanges=exchange,
                 ).df
             else:
-                symbol_data = api.get_bars(
-                    ticker_list,
-                    timeframe=timeframe,
-                    start=start_date,
-                    end=end_date,
-                    adjustment="all",
-                ).df
+                def chunk_getbars_ticker_list(chunk_list, max_n=1,):
+                    num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
+                    chunk_num = max_n if num_rr > max_n else num_rr
+                    
+                    # if num_rr > chunk_num:
+                    chunks = list(chunk(range(num_rr), chunk_num))
+                    for i in chunks:
+                        if i[0] == 0:
+                            slice1 = i[0]
+                            slice2 = i[-1] # [0 : 49]
+                        else:
+                            slice1 = i[0] - 1
+                            slice2 = i[-1] # [49 : 87]
+                        # print("chunk slice", (slice1, slice2))
+                        chunk_n = chunk_list[slice1:slice2]
+                        try:
+                            symbol_data = api.get_bars(
+                                ticker_list,
+                                timeframe=timeframe,
+                                start=start_date,
+                                end=end_date,
+                                adjustment="all",
+                            ).df
 
-            # set index to EST time
-            symbol_data["timestamp_est"] = symbol_data.index
-            symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
-                lambda x: x.astimezone(est)
-            )
-            symbol_data["timeframe"] = timeframe
-            symbol_data["bars"] = "bars_list"
+                            if len(symbol_data) == 0:
+                                error_dict[ticker_list] = {"msg": "no data returned", "time": time}
+                                return False
+                            # set index to EST time
+                            symbol_data["timestamp_est"] = symbol_data.index
+                            symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
+                                lambda x: x.astimezone(est)
+                            )
+                            symbol_data["timeframe"] = timeframe
+                            symbol_data["bars"] = "bars_list"
 
-            symbol_data = symbol_data.reset_index(drop=True)
-            # if ndays == 1:
-            #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+                            symbol_data = symbol_data.reset_index(drop=True)
+                            # if ndays == 1:
+                            #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-            return_dict[charttime] = symbol_data
+                            return_dict[charttime] = symbol_data  
+                        except Exception as e:
+                            print("QH_getbars", print_line_of_error(), e)
 
-            if len(symbol_data) == 0:
-                error_dict[ticker_list] = {"msg": "no data returned", "time": time}
-                return False
+                        return True
 
-        e = datetime.now(est)
+                chunk_getbars_ticker_list(chunk_list=ticker_list)
+        
+        # e = datetime.now(est)
 
         return {"resp": True, "return": return_dict}
 
@@ -3244,7 +3265,44 @@ def generate_TradingModel(
             }
         elif theme.lower() == 'long_star':
             symbol_theme_vars = symbol_theme_vars
-            star_theme_vars = star_theme_vars
+            star_theme_vars = {
+                "1Minute_1Day": {
+                    'stagger_profits':False, 
+                    'buyingpower_allocation_LongTerm': .1,
+                    'buyingpower_allocation_ShortTerm': .2,
+                    'use_margin': False,
+                    },
+                "5Minute_5Day" : {
+                    'stagger_profits':False, 
+                    'buyingpower_allocation_LongTerm': .3,
+                    'buyingpower_allocation_ShortTerm': .2,
+                    'use_margin': False,
+                    },
+                "30Minute_1Month": {
+                    'stagger_profits':False, 
+                    'buyingpower_allocation_LongTerm': .4,
+                    'buyingpower_allocation_ShortTerm': .2,
+                    'use_margin': False,
+                    },
+                "1Hour_3Month": {
+                    'stagger_profits':False, 
+                    'buyingpower_allocation_LongTerm': .5,
+                    'buyingpower_allocation_ShortTerm': .2,
+                    'use_margin': False,
+                    },
+                "2Hour_6Month": {
+                    'stagger_profits':False, 
+                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_ShortTerm': .2,
+                    'use_margin': False,
+                    },
+                "1Day_1Year": {
+                    'stagger_profits':False, 
+                    'buyingpower_allocation_LongTerm': 1,
+                    'buyingpower_allocation_ShortTerm': .2,
+                    'use_margin': False,
+                    },
+        }
             wave_block_theme__kor = {
                 "1Minute_1Day": kings_order_rules(
                                     theme=theme,
@@ -4011,12 +4069,12 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
         "SREAS",
         "SUTIL",
     ]
-    index_ticker_db__dir = os.path.join(db_root, "index_tickers")
+    # index_ticker_db__dir = os.path.join(db_root, "index_tickers")
 
-    if os.path.exists(index_ticker_db__dir) == False:
-        os.mkdir(index_ticker_db__dir)
-        print("Ticker Index db Initiated")
-        init_index_ticker(index_list, db_root, init=True)
+    # if os.path.exists(index_ticker_db__dir) == False:
+    #     os.mkdir(index_ticker_db__dir)
+    #     print("Ticker Index db Initiated")
+    #     init_index_ticker(index_list, db_root, init=True)
 
     """ Return Index Charts & Data for All Tickers Wanted"""
     """ Return Tickers of SP500 & Nasdaq / Other Tickers"""
@@ -4076,15 +4134,19 @@ def init_ticker_stats__from_yahoo():
     ticker_universe = return_Ticker_Universe()
     # index_ticker_db = ticker_universe["index_ticker_db"]
     # main_index_dict = ticker_universe["main_index_dict"]
-    all_alpaca_tickers = ticker_universe.get("all_alpaca_tickers")
+    all_alpaca_tickers = ticker_universe.get("alpaca_symbols_dict")
+    all_alpaca_tickers = list(all_alpaca_tickers.keys())
     # not_avail_in_alpaca = ticker_universe["not_avail_in_alpaca"]
-
+    s = datetime.now(est)
     db_return = {}
     for symbol in tqdm(all_alpaca_tickers):
         try:
             db_return[symbol] = get_ticker_statatistics(symbol)
         except Exception as e:
             print(symbol, e)
+    e = datetime.now(est)
+    time_delta = (e-s)
+    st.write(f'{time_delta} __ total Seconds: {time_delta.total_seconds()}')
 
     yahoo_stats_bee = os.path.join(db_root, "yahoo_stats_bee.pkl")
 
@@ -4321,62 +4383,65 @@ def wave_guage(df, trading_model=False, model_eight_tier=8):
 
 
 def story_view(STORY_bee, ticker):  # --> returns dataframe
-    storyview = [
-        "ticker_time_frame",
-        "macd_state",
-        "current_macd_tier",
-        "current_hist_tier",
-        "macd",
-        "hist",
-        "mac_ranger",
-        "hist_ranger",
-    ]
-    wave_view = ["length", "maxprofit", "time_to_max_profit", "wave_n"]
-    ttframe__items = {k: v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker}
-    return_view = []  # queenmemory objects in conscience {}
-    return_agg_view = []
+    try:
+        storyview = [
+            "ticker_time_frame",
+            "macd_state",
+            "current_macd_tier",
+            "current_hist_tier",
+            "macd",
+            "hist",
+            "mac_ranger",
+            "hist_ranger",
+        ]
+        wave_view = ["length", "maxprofit", "time_to_max_profit", "wave_n"]
+        ttframe__items = {k: v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker}
+        return_view = []  # queenmemory objects in conscience {}
+        return_agg_view = []
+
+        for ttframe, conscience in ttframe__items.items():
+            queen_return = {"star": ttframe}
+            ttf_waves = {}
+
+            story = {k: v for (k, v) in conscience["story"].items() if k in storyview}
+            p_story = {k: v for (k, v) in conscience["story"]["current_mind"].items() if k in storyview}
+
+            last_buy_wave = [v for (k, v) in conscience["waves"]["buy_cross-0"].items() if str((len(conscience["waves"]["buy_cross-0"].keys()) - 1)) == str(k)][0]
+            last_sell_wave = [v for (k, v) in conscience["waves"]["sell_cross-0"].items() if str((len(conscience["waves"]["sell_cross-0"].keys()) - 1)) == str(k)][0]
+            # last_ready_buy_wave = [v for (k,v) in conscience['waves']['ready_buy_cross'].items() if str((len(conscience['waves']['ready_buy_cross'].keys()) - 1)) == str(k)][0]
+
+            # all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
+            # all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
+
+            # ALL waves groups
+            trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+            return_agg_view.append(trigbee_waves_analzyed)
+
+            # Current Wave View
+            if "buy" in story["macd_state"]:
+                current_wave = last_buy_wave
+            else:
+                current_wave = last_sell_wave
+
+            wave_times = {k: i["wave_start_time"] for k, i in ttf_waves.items()}
+
+            current_wave_view = {k: v for (k, v) in current_wave.items() if k in wave_view}
+            obj_return = {**story, **current_wave_view}
+            obj_return_ = {**obj_return, **p_story}
+            queen_return = {**queen_return, **obj_return_}
+            """append view"""
+            return_view.append(queen_return)
+
+        df = pd.DataFrame(return_view)
+        df_agg = pd.DataFrame(return_agg_view)
         
-    
-    for ttframe, conscience in ttframe__items.items():
-        queen_return = {"star": ttframe}
-        ttf_waves = {}
-
-        story = {k: v for (k, v) in conscience["story"].items() if k in storyview}
-        p_story = {k: v for (k, v) in conscience["story"]["current_mind"].items() if k in storyview}
-
-        last_buy_wave = [v for (k, v) in conscience["waves"]["buy_cross-0"].items() if str((len(conscience["waves"]["buy_cross-0"].keys()) - 1)) == str(k)][0]
-        last_sell_wave = [v for (k, v) in conscience["waves"]["sell_cross-0"].items() if str((len(conscience["waves"]["sell_cross-0"].keys()) - 1)) == str(k)][0]
-        # last_ready_buy_wave = [v for (k,v) in conscience['waves']['ready_buy_cross'].items() if str((len(conscience['waves']['ready_buy_cross'].keys()) - 1)) == str(k)][0]
-
-        # all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
-        # all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
-
-        # ALL waves groups
-        trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
-        return_agg_view.append(trigbee_waves_analzyed)
-
-        # Current Wave View
-        if "buy" in story["macd_state"]:
-            current_wave = last_buy_wave
-        else:
-            current_wave = last_sell_wave
-
-        wave_times = {k: i["wave_start_time"] for k, i in ttf_waves.items()}
-
-        current_wave_view = {k: v for (k, v) in current_wave.items() if k in wave_view}
-        obj_return = {**story, **current_wave_view}
-        obj_return_ = {**obj_return, **p_story}
-        queen_return = {**queen_return, **obj_return_}
-        """append view"""
-        return_view.append(queen_return)
-
-    df = pd.DataFrame(return_view)
-    df_agg = pd.DataFrame(return_agg_view)
-    
 
 
 
-    return {"df": df, "df_agg": df_agg, "current_wave": current_wave}
+        return {"df": df, "df_agg": df_agg}
+    except Exception as e:
+        print("queen hive story error")
+        print_line_of_error()
 
 
 
@@ -4717,8 +4782,8 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
 
     if force_db_root:
         db_root = os.path.join(hive_master_root(), "db")
-    elif client_username in ['stefanstapinski@gmail.com']:  ## admin
-        db_root = os.path.join(hive_master_root(), "db")
+    # elif client_username in ['stefanstapinski@gmail.com']:  ## admin
+    #     db_root = os.path.join(hive_master_root(), "db")
     else:
         db_root = return_db_root(client_username=client_username)
         if os.path.exists(db_root) == False:

@@ -190,7 +190,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_m
     return menu_id
 
 
-def hive_master_root():
+def hive_master_root(info='\pollen\pollen'):
     script_path = os.path.abspath(__file__)
     return os.path.dirname(os.path.dirname(script_path)) # \pollen\pollen
 
@@ -237,14 +237,14 @@ def init_symbol_dbs__pollenstory():
 
 
 def workerbee_dbs_backtesting_root():
-    symbols_pollenstory_dbs_backtesting = os.path.join(hive_master_root(), "symbols_pollenstory_dbs_backtesting")
+    symbols_pollenstory_dbs_backtesting = os.path.join(os.path.dirname(hive_master_root()), "symbols_pollenstory_dbs_backtesting")
     if os.path.exists(symbols_pollenstory_dbs_backtesting) == False:
         os.mkdir(symbols_pollenstory_dbs_backtesting)
     return symbols_pollenstory_dbs_backtesting
 
 
 def workerbee_dbs_backtesting_root__STORY_bee():
-    symbols_pollenstory_dbs_backtesting = os.path.join(hive_master_root(), "symbols_STORY_bee_dbs_backtesting")
+    symbols_pollenstory_dbs_backtesting = os.path.join(os.path.dirname(hive_master_root()), "symbols_STORY_bee_dbs_backtesting")
     if os.path.exists(symbols_pollenstory_dbs_backtesting) == False:
         os.mkdir(symbols_pollenstory_dbs_backtesting)
     return symbols_pollenstory_dbs_backtesting
@@ -346,7 +346,6 @@ def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
 def return_QUEEN_masterSymbols(
     prod=False,
     master_swarm_QUEENBEE=master_swarm_QUEENBEE,
-    qcp_s=["castle", "bishop", "knight"],
 ):
     # QUEENBEE_db =  # os.path.join(os.path.join(hive_master_root(), 'db'), 'queen.pkl') # MasterSwarmQueen
     QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
@@ -354,10 +353,10 @@ def return_QUEEN_masterSymbols(
     queens_chess_pieces = []
     for qcp, qcp_vars in QUEENBEE["workerbees"].items():
         for ticker in qcp_vars["tickers"]:
-            if qcp in qcp_s:
+            # if qcp in qcp_s:
                 # if qcp in ['knight']:
-                queens_master_tickers.append(ticker)
-                queens_chess_pieces.append(qcp)
+            queens_master_tickers.append(ticker)
+            queens_chess_pieces.append(qcp)
     queens_chess_pieces = list(set(queens_chess_pieces))
 
     return {
@@ -460,7 +459,7 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
     return {"queens_master_tickers": queens_master_tickers}
 
 
-def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, info="returns all ticker_time_frame data for open orders and chessboard"):
+def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False, info="returns all ticker_time_frame data for open orders and chessboard"):
     def return_active_orders(QUEEN):
         df = QUEEN["queen_orders"]
         df["index"] = df.index
@@ -474,8 +473,16 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, info="returns all ticker_time
     chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING)[
         "queens_master_tickers"
     ]
+    if symbols:
+        symbols = symbols + active_order_symbols + chessboard_symbols
+    else:
+        symbols = active_order_symbols + chessboard_symbols
+    
+    if swarmQueen:
+        symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
+
     ticker_db = read_QUEENs__pollenstory(
-        symbols=active_order_symbols + chessboard_symbols
+        symbols=symbols
     )
 
     return ticker_db

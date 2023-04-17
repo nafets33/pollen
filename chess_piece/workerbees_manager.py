@@ -45,7 +45,13 @@ from chess_piece.queen_hive import (
 from chess_piece.workerbees import queen_workerbees
 
 # prod = True
-def workerbees_multiprocess_pool(prod, qcp_s, num_workers=3):
+def workerbees_multiprocess_pool(prod, qcp_s, num_workers=3, reset_only=False): ## improvement send in reset_only into pool
+
+    if num_workers > 10:
+        print("Only Allowed 10 Processes to Run At Once")
+        num_workers = 10
+    
+    send_email(subject=f"WorkerBees Online Production is {prod}_{num_workers}")
 
     def runpool(qcp_s):
         x = []
@@ -85,5 +91,4 @@ if __name__ == '__main__':
     qcp_s = ["castle", "bishop", "knight"]
     
     prod = True if str(namespace.prod).lower() == "true" else False
-    send_email(subject=f"WorkerBees Online Production is {prod}")
-    workerbees_multiprocess_pool(prod, qcp_s)
+    workerbees_multiprocess_pool(prod, qcp_s, num_workers=3, reset_only=False)
