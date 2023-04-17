@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_extras.stoggle import stoggle
 from PIL import Image
 import subprocess
+from custom_grid import st_custom_grid
 from polleq_app_auth import signin_main
 from chess_piece.queen_hive import print_line_of_error
 from chess_piece.app_hive import queen_order_flow, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
@@ -119,8 +120,7 @@ def PlayGround():
         #     standard_AGgrid(df_backtest)
 
         with st.expander("orders"):
-            qo = QUEEN['queen_orders'].iloc[2]
-            st.write(qo.to_dict())
+           st_custom_grid("sven0227", "http://127.0.0.1:8000/api/data/queen", 2, 20)
         
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         cols = st.columns(2)
