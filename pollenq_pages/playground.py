@@ -119,8 +119,6 @@ def PlayGround():
         #     standard_AGgrid(df_backtest_ttf)
         #     standard_AGgrid(df_backtest)
 
-        with st.expander("orders"):
-           st_custom_grid("sven0227", "http://127.0.0.1:8000/api/data/queen", 2, 20)
         
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         cols = st.columns(2)

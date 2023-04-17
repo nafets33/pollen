@@ -1218,11 +1218,11 @@ def pollenq_button_source():
         {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
         {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
         ],
-        'option_data_qm': [
-        {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
-        {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
-        {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
-        ],
+        # 'option_data_qm': [
+        # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
+        # {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+        # {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
+        # ],
         'option_heart': [{'id': "heartbeat", 'icon':"fas fa-heart",'label':""},],
         'option_chart': [{'id': "show_charts", 'icon':"fa fa-bar-chart",'label':""}, {'id': "no_charts", 'icon':"fa fa-toggle-off",'label':""}, ],
         'pawn_option_data': [
