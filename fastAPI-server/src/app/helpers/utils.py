@@ -16,6 +16,7 @@ def find_folder(user_name):
                 return dir_name
 
 
+
 def ReadPickleData(pickle_file):
     # Check the file's size and modification time
     prev_size = os.stat(pickle_file).st_size
@@ -53,3 +54,16 @@ def ReadPickleData(pickle_file):
 
         # Wait a short amount of time before checking again
         time.sleep(0.033)
+
+
+def PickleData(pickle_file, data_to_store, write_temp=False):
+    if write_temp:
+        root, name = os.path.split(pickle_file)
+        pickle_file_temp = os.path.join(root, ("temp" + name))
+        with open(pickle_file_temp, "wb+") as dbfile:
+            pickle.dump(data_to_store, dbfile)
+
+    with open(pickle_file, "wb+") as dbfile:
+        pickle.dump(data_to_store, dbfile)
+
+    return True
