@@ -20,18 +20,20 @@ import time
 import os
 import sqlite3
 import time
-from custom_button import cust_Button
-
-from polleq_app_auth import signin_main
+import aiohttp
+import asyncio
 # import requests
 # from requests.auth import HTTPBasicAuth
 from chess_piece.app_hive import admin_queens_active, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
 from chess_piece.queen_hive import init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, wave_guage, return_STORYbee_trigbees, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
+
+from custom_button import cust_Button
+from custom_grid import st_custom_grid
+
 from ozz.ozz_bee import send_ozz_call
 # from chat_bot import ozz_bot
-import aiohttp
-import asyncio
+
 
 # from tqdm import tqdm
 
@@ -1701,6 +1703,8 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                             if st.session_state['orders']:
                                 hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                                 orders_agrid()
+                                if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
+                                    st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 33)
                                 # QUEEN['queen_orders'].iloc[3]
                                 # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
                                 

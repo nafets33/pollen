@@ -46,7 +46,9 @@ def get_queen_orders_json(username, prod):
               "side",
           ]
 
+  
   df = pd.DataFrame(qo)
-
+  df = df[df['queen_order_state'].isin(['running'])]
+  df = df[col_view]
   json_data = df.to_json(orient='records')
   return json_data
