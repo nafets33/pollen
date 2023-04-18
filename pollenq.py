@@ -669,7 +669,7 @@ def pollenq(admin_pq):
                 off_size = 33
                 on_size = 89
                 # with sb:
-                cols = st.columns(6)
+                cols = st.columns(7)
                 with cols[0]:
                     height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
                     cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
