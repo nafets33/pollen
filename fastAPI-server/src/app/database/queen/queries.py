@@ -5,15 +5,18 @@ import random
 from helpers.utils import ReadPickleData, find_folder, db_folder_path
 
 
-def load_queen_pkl(username):
+def load_queen_pkl(username, prod):
   print(db_folder_path)
-  queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_sandbox.pkl'
+  if prod == False:
+    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_sandbox.pkl'
+  else:
+    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen.pkl'
   print(queen_pkl_path)
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
 
-def get_queen_orders_json(username, col_view = None):
-  queen_db = load_queen_pkl(username)
+def get_queen_orders_json(username, prod):
+  queen_db = load_queen_pkl(username, prod)
 
   qo =queen_db['queen_orders']
   col_view = [
@@ -47,6 +50,5 @@ def get_queen_orders_json(username, col_view = None):
   df = pd.DataFrame(qo)
   df = df[df['queen_order_state'].isin(['running'])]
   df = df[col_view]
-  # df["honey"][1] = random.randrange(100)
   json_data = df.to_json(orient='records')
   return json_data
