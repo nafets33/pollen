@@ -1637,7 +1637,70 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
 
                 if st.session_state['total_profits']:
                     return_total_profits(QUEEN=QUEEN)
+        
                 # print("WAVES")
+                if st.session_state['orders']:
+                    hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    orders_agrid()
+                    if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
+                        st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
+                    # QUEEN['queen_orders'].iloc[3]
+                    # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
+                        
+                if st.session_state['waves'] == True:
+                    with st.expander('waves', True):
+                        hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                        queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
+                    with st.expander('STORY_bee'):
+                        st.write(STORY_bee['SPY_1Minute_1Day']['story'])
+            
+                if st.session_state['workerbees'] == True:
+                    hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
+                    queen_triggerbees()
+                    if st.session_state['admin']:
+                        if st.button("Yahoo Return Fin.Data Job"):
+                            with st.spinner("running yahoo.Fin.Data job"):
+                                init_ticker_stats__from_yahoo()
+                    with st.expander("yahoo stats", False):
+                        db = ReadPickleData(os.path.join(hive_master_root(), 'db/yahoo_stats_bee.pkl'))
+                        # st.write(db.keys())
+                        avail_ticker_list = list(db.keys())
+                        ticker_option = st.selectbox("ticker", options=avail_ticker_list)
+                        if ticker_option is not None:
+                            df_i = len(db.get(ticker_option))
+                            for n in  range(df_i):
+                                st.write(db.get(ticker_option)[n])
+            
+                if st.session_state['the_flash'] == True:
+                    with st.expander("The Flash", True):
+                        queen_beeAction_theflash()
+            
+                if st.session_state['charts'] == True:
+                    hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+                    with st.expander("charts", True):
+                        advanced_charts()
+            
+                if st.session_state['chess_board'] == True:
+                    hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
+                    themes = list(pollen_themes(KING).keys())
+
+                    if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
+                        chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
+                    else:
+                        chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+                    add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
+            
+                if st.session_state['queens_mind']:
+                    hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    with st.expander("Trading Models"):
+                        update_trading_models(QUEEN_KING)                            
+            
+
+
+
+
                 func_list = ['queens_mind', 'chess_board', 'orders', 'waves', 'workerbees', 'charts', 'the_flash']
                 func_list = [i for i in func_list if st.session_state[i]]
                 # if len(func_list) == 0:
@@ -1651,62 +1714,70 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                         c+=1
                         if tab_name == 'waves':
                             if st.session_state['waves'] == True:
-                                with st.expander('waves', True):
-                                    hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                    queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
-                                with st.expander('STORY_bee'):
-                                    st.write(STORY_bee['SPY_1Minute_1Day']['story'])
+
+                                st.write("waves")
+                                # with st.expander('waves', True):
+                                #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                                #     queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
+                                # with st.expander('STORY_bee'):
+                                #     st.write(STORY_bee['SPY_1Minute_1Day']['story'])
                         if tab_name == 'workerbees':
                             if st.session_state['workerbees'] == True:
-                                hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
-                                queen_triggerbees()
-                                if st.session_state['admin']:
-                                    if st.button("Yahoo Return Fin.Data Job"):
-                                        with st.spinner("running yahoo.Fin.Data job"):
-                                            init_ticker_stats__from_yahoo()
-                                with st.expander("yahoo stats", False):
-                                    db = ReadPickleData(os.path.join(hive_master_root(), 'db/yahoo_stats_bee.pkl'))
-                                    # st.write(db.keys())
-                                    avail_ticker_list = list(db.keys())
-                                    ticker_option = st.selectbox("ticker", options=avail_ticker_list)
-                                    if ticker_option is not None:
-                                        df_i = len(db.get(ticker_option))
-                                        for n in  range(df_i):
-                                            st.write(db.get(ticker_option)[n])
+                                st.write("waves")
+                                # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
+                                # queen_triggerbees()
+                                # if st.session_state['admin']:
+                                #     if st.button("Yahoo Return Fin.Data Job"):
+                                #         with st.spinner("running yahoo.Fin.Data job"):
+                                #             init_ticker_stats__from_yahoo()
+                                # with st.expander("yahoo stats", False):
+                                #     db = ReadPickleData(os.path.join(hive_master_root(), 'db/yahoo_stats_bee.pkl'))
+                                #     # st.write(db.keys())
+                                #     avail_ticker_list = list(db.keys())
+                                #     ticker_option = st.selectbox("ticker", options=avail_ticker_list)
+                                #     if ticker_option is not None:
+                                #         df_i = len(db.get(ticker_option))
+                                #         for n in  range(df_i):
+                                #             st.write(db.get(ticker_option)[n])
                         if tab_name == 'the_flash':
-                            if st.session_state['the_flash'] == True:
-                                with st.expander("The Flash", True):
-                                    queen_beeAction_theflash()
+                            st.write("waves")
+                            # if st.session_state['the_flash'] == True:
+                            #     with st.expander("The Flash", True):
+                            #         queen_beeAction_theflash()
                         if tab_name == 'charts':
-                            if st.session_state['charts'] == True:
-                                hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                            st.write("waves")
+                            # if st.session_state['charts'] == True:
+                            #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-                                with st.expander("charts", True):
-                                    advanced_charts()
+                            #     with st.expander("charts", True):
+                            #         advanced_charts()
                         if tab_name == 'chess_board':
                             if st.session_state['chess_board'] == True:
-                                hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
-                                themes = list(pollen_themes(KING).keys())
+                                st.write("waves")
+                                # hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                                # ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
+                                # themes = list(pollen_themes(KING).keys())
 
-                                if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
-                                    chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
-                                else:
-                                    chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
-                                add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
+                                # if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
+                                #     chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
+                                # else:
+                                #     chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+                                # add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
                         if tab_name == 'queens_mind':
-                            if st.session_state['queens_mind']:
-                                hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                with st.expander("Trading Models"):
-                                    update_trading_models(QUEEN_KING)                            
+                            st.write("waves")
+                            # if st.session_state['queens_mind']:
+                            #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                            #     with st.expander("Trading Models"):
+                            #         update_trading_models(QUEEN_KING)                            
                         if tab_name == 'orders':
-                            if st.session_state['orders']:
-                                hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                orders_agrid()
-                                if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
-                                    st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 33)
-                                # QUEEN['queen_orders'].iloc[3]
-                                # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
+                            st.write("waves")
+                            # if st.session_state['orders']:
+                            #     hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                            #     orders_agrid()
+                            #     if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
+                            #         st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
+                            #     # QUEEN['queen_orders'].iloc[3]
+                            #     # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
                                 
                             # print("STOP QUEEN")
 

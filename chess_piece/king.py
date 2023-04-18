@@ -18,6 +18,11 @@ import ipdb
 
 # from ozz.ozz_bee import send_ozz_call
 
+# HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)
+# <class 'requests.exceptions.ReadTimeout'> 2409
+# {'type': 'ProgramCrash', 'errbuz': ReadTimeout(ReadTimeoutError("HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)")), 'er': <class 'requests.exceptions.ReadTimeout'>, 'lineerror': 2409}
+
+
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
 
@@ -496,19 +501,14 @@ def handle__ttf_notactive__datastream(
 
 
 def PickleData(pickle_file, data_to_store, write_temp=False):
-    p_timestamp = {"pq_last_modified": datetime.now(est)}
-    root, name = os.path.split(pickle_file)
     if write_temp:
+        root, name = os.path.split(pickle_file)
         pickle_file_temp = os.path.join(root, ("temp" + name))
         with open(pickle_file_temp, "wb+") as dbfile:
-            db = data_to_store
-            db["pq_last_modified"] = p_timestamp
-            pickle.dump(db, dbfile)
+            pickle.dump(data_to_store, dbfile)
 
     with open(pickle_file, "wb+") as dbfile:
-        db = data_to_store
-        db["pq_last_modified"] = p_timestamp
-        pickle.dump(db, dbfile)
+        pickle.dump(data_to_store, dbfile)
 
     return True
 

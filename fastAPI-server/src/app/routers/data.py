@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from database.queen.queries import get_queen_orders_json
+from database.queen.queries import get_queen_orders_json, app_Sellorder_request
 from database.schemas import UsernameSchema
 import random
 
@@ -27,3 +27,10 @@ def load_queen_jons(username: str, prod: bool):
 def write_queen_order(username: str= Body(...), prod: bool= Body(...), id= Body(...)):
     print("/data/queen", username, prod, id)
     return JSONResponse(content="success")
+
+@router.get("/queen_app_Sellorder_request", status_code=status.HTTP_200_OK)
+def load_queen_jons(username: str, prod: bool, client_order_id: str, number_shares: int):
+    print(client_order_id, username, prod)
+    app_Sellorder_request(username, prod, client_order_id, number_shares)
+    return JSONResponse(content="success")
+
