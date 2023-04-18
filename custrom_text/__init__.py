@@ -19,11 +19,12 @@ else:
 # Pass them to _component_func which will deliver them to the frontend part
 
 
-def custom_text(api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0):
+def custom_text(api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0, key = None):
     component_value = _component_func(
         api=api,
         text_size= text_size,
         refresh_sec = refresh_sec,
         refresh_cutoff_sec = refresh_cutoff_sec,
+        key=key
     )
     return component_value
