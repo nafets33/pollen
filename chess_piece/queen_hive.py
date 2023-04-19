@@ -280,31 +280,35 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 
     prod_keys_confirmed = QUEEN_KING["users_secrets"]["prod_keys_confirmed"]
     sandbox_keys_confirmed = QUEEN_KING["users_secrets"]["sandbox_keys_confirmed"]
-    if authorized_user:
-        if prod:
-            if prod_keys_confirmed == False:
-                # st.error("You Need to Add you PROD API KEYS")
-                return False
+    try:
+        if authorized_user:
+            if prod:
+                if prod_keys_confirmed == False:
+                    # st.error("You Need to Add you PROD API KEYS")
+                    return False
+                else:
+                    api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"]
+                    api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"]
+                    api = return_client_user__alpaca_api_keys(
+                        api_key_id=api_key_id, api_secret=api_secret, prod=prod
+                    )["api"]
+                    return api
             else:
-                api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"]
-                api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"]
-                api = return_client_user__alpaca_api_keys(
-                    api_key_id=api_key_id, api_secret=api_secret, prod=prod
-                )["api"]
-                return api
+                if sandbox_keys_confirmed == False:
+                    # st.error("You Need to Add you SandboxPAPER API KEYS")
+                    return False
+                else:
+                    api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID_PAPER"]
+                    api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY_PAPER"]
+                    api = return_client_user__alpaca_api_keys(
+                        api_key_id=api_key_id, api_secret=api_secret, prod=prod
+                    )["api"]
+                    return api
         else:
-            if sandbox_keys_confirmed == False:
-                # st.error("You Need to Add you SandboxPAPER API KEYS")
-                return False
-            else:
-                api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID_PAPER"]
-                api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY_PAPER"]
-                api = return_client_user__alpaca_api_keys(
-                    api_key_id=api_key_id, api_secret=api_secret, prod=prod
-                )["api"]
-                return api
-    else:
-        return return_alpaca_api_keys(prod=False)["api"]
+            return return_alpaca_api_keys(prod=False)["api"]
+    except Exception as e:
+        print(e, print_line_of_error())
+        return False
 
 
 def hive_dates(api):
@@ -372,7 +376,8 @@ def init_QUEEN(queens_chess_piece):
         # 'triggerBee_frequency': {}, # hold a star and the running trigger
         "saved_pollenThemes": [],  # bucket of saved star settings to choose from
         "saved_powerRangers": [],  # bucket of saved star settings to choose from
-        "subconscious": {"app_info": []},
+        "subconscious": {"app_info": deque([], 89)},
+        "conscience": {"app_info": deque([], 89)},
         # Worker Bees
         queens_chess_piece: {
             "conscience": {"STORY_bee": {}, "KNIGHTSWORD": {}, "ANGEL_bee": {}},
@@ -3312,8 +3317,8 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=1,
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=120,
-                                    take_profit=.01,
-                                    sellout=-.015,
+                                    take_profit=.005,
+                                    sellout=-.089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -4194,9 +4199,9 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
         df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
         df["winners"] = np.where(df["maxprofit"] > 0, "winner", "loser")
         groups = (
-            df.groupby(["wave_blocktime"])
+            df.groupby(["ticker_time_frame", "wave_blocktime"])
             .agg({"maxprofit": "sum", "length": "mean", "time_to_max_profit": "mean"})
-            .reset_index()
+            .reset_index("ticker_time_frame")
         )
         df_return = groups.rename(
             columns={
@@ -4213,9 +4218,9 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
         df_today = split_today_vs_prior(df=df, timestamp="wave_start_time")["df_today"]
         df_day_bestwaves = return_Best_Waves(df=df_today, top=3)
         groups = (
-            df_today.groupby(["wave_blocktime"])
+            df_today.groupby(["ticker_time_frame", "wave_blocktime"])
             .agg({"maxprofit": "sum", "length": "mean", "time_to_max_profit": "mean"})
-            .reset_index()
+            .reset_index("ticker_time_frame")
         )
         df_today_return = groups.rename(
             columns={
@@ -4233,7 +4238,7 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
         df["winners_n"] = np.where(df["maxprofit"] > 0, 1, 0)
         df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
         groups = (
-            df.groupby(["wave_blocktime"])
+            df.groupby(["ticker_time_frame", "wave_blocktime"])
             .agg(
                 {
                     "winners_n": "sum",
@@ -4243,7 +4248,7 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
                     "time_to_max_profit": "mean",
                 }
             )
-            .reset_index()
+            .reset_index("ticker_time_frame")
         )
         df_return_wavedown = groups.rename(
             columns={
@@ -4298,9 +4303,9 @@ def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
                             df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
 
                             groups = (
-                                df.groupby(["wave_blocktime"])
+                                df.groupby(["ticker_time_frame", "wave_blocktime"])
                                 .agg(groupby_agg_dict)
-                                .reset_index()
+                                .reset_index("ticker_time_frame")
                             )
                             groups = groups.rename(
                                 columns={
@@ -4398,6 +4403,7 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
         ttframe__items = {k: v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker}
         return_view = []  # queenmemory objects in conscience {}
         return_agg_view = []
+        return_agg_view_dict = {}
 
         for ttframe, conscience in ttframe__items.items():
             queen_return = {"star": ttframe}
@@ -4416,7 +4422,8 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
             # ALL waves groups
             trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
             return_agg_view.append(trigbee_waves_analzyed)
-
+            return_agg_view_dict[ttframe] = trigbee_waves_analzyed
+            
             # Current Wave View
             if "buy" in story["macd_state"]:
                 current_wave = last_buy_wave
