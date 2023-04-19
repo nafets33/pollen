@@ -1954,6 +1954,11 @@ ag-grid-community@^29.1.0, ag-grid-community@~29.2.0:
   resolved "https://registry.npmjs.org/ag-grid-community/-/ag-grid-community-29.2.0.tgz"
   integrity sha512-1xP1fpM8gXp2ALzBLONejZNul9hA3//ddszSlhq79QZ1FskQ1Z7E2WvvFeCeLJTJZrfhQkT1q1LO5DGfGeiBvg==
 
+ag-grid-enterprise@^29.1.0:
+  version "29.2.0"
+  resolved "https://registry.npmjs.org/ag-grid-enterprise/-/ag-grid-enterprise-29.2.0.tgz"
+  integrity sha512-LYwX6Z8O2FBzN2c0N+h9mMX5hQQMpBzZ+ztmTiboxIVE6DB1MrpfVy0A8YfR31JtzLaj/lRjCqsx6BcnbvkSmA==
+
 ag-grid-react@^29.1.0:
   version "29.2.0"
   resolved "https://registry.npmjs.org/ag-grid-react/-/ag-grid-react-29.2.0.tgz"

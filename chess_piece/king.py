@@ -320,6 +320,7 @@ def kingdom__grace_to_find_a_Queen():
     KING = ReadPickleData(PB_KING)
     users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
     users_allowed_queen_email.append("stefanstapinski@gmail.com")
+    users_allowed_queen_email.append("sven0227@gmail.com")
 
     users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
 
