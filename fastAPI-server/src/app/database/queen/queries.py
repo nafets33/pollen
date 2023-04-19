@@ -36,7 +36,7 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
           status = "You Already Requested Queen To Sell order, Refresh Orders to View latest Status"
       else:
           sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-          sell_package['sell_qty'] = float(queen_order.get('qty_available'))
+          sell_package['sell_qty'] = float(df.get('qty_available'))
           sell_package['side'] = 'sell'
           sell_package['type'] = 'market'
           QUEEN_KING['sell_orders'].append(sell_package)
@@ -50,7 +50,7 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
 def load_queen_App_pkl(username, prod):
   print(db_folder_path)
   if prod == False:
-    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App_sandbox.pkl'
+    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App__sandbox.pkl'
   else:
     queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App.pkl'
   print(queen_pkl_path)
