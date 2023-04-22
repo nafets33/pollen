@@ -1,6 +1,7 @@
+import os
 import streamlit.components.v1 as components
 from decouple import config
-import os
+from custom_text.text_options_builder import TextOptionsBuilder
 
 _RELEASE = True
 # _RELEASE = False
@@ -19,12 +20,13 @@ else:
 # Pass them to _component_func which will deliver them to the frontend part
 
 
-def custom_text(api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0, key = None):
+def custom_text(api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0, key = None, text_option=None):
     component_value = _component_func(
         api=api,
         text_size= text_size,
         refresh_sec = refresh_sec,
         refresh_cutoff_sec = refresh_cutoff_sec,
-        key=key
+        key=key,
+        text_option=text_option,
     )
     return component_value
