@@ -12,7 +12,7 @@ import pytz
 import ipdb
 import asyncio
 import aiohttp
-# from tqdm import tqdm
+from collections import defaultdict, deque
 import argparse
 from chess_piece.king import kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData
 from chess_piece.queen_hive import initialize_orders, refresh_account_info, refresh_chess_board__revrec, return_ttf_remaining_budget, init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
@@ -848,7 +848,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 time_delta = now_time - datetime.now(est)
 
             
-            remaining_budget_wave = ticker_remaining_budget + star_remaining_budget
+            remaining_budget_wave = ticker_remaining_budget * .89
             # how much are you allowed of the total budget
             
             # Total buying power allowed  
@@ -1461,7 +1461,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return profit_seeking_star
 
 
-    def subconscious_update(root_name, dict_to_add):
+    def subconscious_update(root_name, dict_to_add, list_len=89):
         # store message
         if root_name not in QUEEN['subconscious'].keys():
             if dict_to_add not in QUEEN['subconscious'][root_name]:
@@ -1472,6 +1472,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         return True
 
+    def conscience_update(root_name, dict_to_add, list_len=89):
+        # store message
+        if root_name not in QUEEN['conscience'].keys():
+            QUEEN['conscience'][root_name] = deque([], list_len)
+        else:
+            if dict_to_add not in QUEEN['conscience'][root_name]:
+                QUEEN['conscience'][root_name].append(dict_to_add)
+
+        return True
 
     def subconscious_mind(root_name):
         # store message
@@ -1563,6 +1572,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
             honey_gauge = honeyGauge_metric(run_order)
+            conscience_update(root_name='macd_gauge', dict_to_add={macd_gauge}, list_len=1)
+            conscience_update(root_name='honey_gauge', dict_to_add={honey_gauge}, list_len=1)
 
             charlie_bee['queen_cyle_times']['bishop_block1_queenorder__om'] = (datetime.now(est) - s_time).total_seconds()
             s_time = datetime.now(est)
@@ -1601,6 +1612,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             """ Trading Models Kings Order Rules """ 
             # Trading Model Sell Vars
+            # use maxprofit deviation here and add to order
             current_wave_maxprofit_stat = current_wave['length'] - current_wave['time_to_max_profit']
             run_order_wave_changed = True if run_order['origin_wave']['wave_id'] in trigbees_wave_id_list else False
 
@@ -1626,6 +1638,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             def waterfall_sellout_chain(client_order_id, macd_tier, trading_model, sell_order, run_order, order_type, limit_price, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed, sell_qty, QUEEN=QUEEN):
                 try:
                     # client_order_id = run_order.get('client_order_id')
+                    sell_reasons = []
                     
                     if scalp_profits:
                         scalp_profits = order_rules['scalp_profits_timeduration']
@@ -1639,6 +1652,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                     # set limit price based on profit_seek
                                     print("selling out due Scalp Exit last_30_avg ")
                                     sell_reason = 'scalp_exit__last_30_avg'
+                                    sell_reasons.append(sell_reason)
                                     sell_order = True
                                     order_side = 'sell'
                                     profit_seek_value = priceinfo['maker_middle'] + abs(float(honey) * float(run_order['filled_avg_price']))
@@ -1662,6 +1676,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     if order_rules['take_profit'] <= honey:
                         print("selling out due PROFIT ACHIVED")
                         sell_reason = 'order_rules__take_profit'
+                        sell_reasons.append(sell_reason)
                         sell_order = True
                         
                         order_side = 'sell'
@@ -1670,6 +1685,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     elif honey <= order_rules['sellout']:
                         print("selling out due STOP LOSS")
                         sell_reason = 'order_rules__sellout'
+                        sell_reasons.append(sell_reason)
                         sell_order = True
 
                         order_side = 'sell'
@@ -1678,6 +1694,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     elif past_trade_duration:
                         print("selling out due to TIME DURATION")
                         sell_reason = 'order_rules__timeDuration'
+                        sell_reasons.append(sell_reason)
                         sell_order = True
 
                         order_side = 'sell'
@@ -1686,6 +1703,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     elif time_in_trade > timedelta(minutes=max_profit_waveDeviation_timeduration) and wave_past_max_profit:
                         print("Selling Out from max_profit_waveDeviation: deviation>> ", current_wave_maxprofit_stat)
                         sell_reason = 'order_rules__max_profit_waveDeviation'
+                        sell_reasons.append(sell_reason)
                         sell_order = True
 
                         order_side = 'sell'
@@ -1699,6 +1717,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             if macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
                                 print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
                                 sell_reason = 'order_rules__macd_cross_buytosell'
+                                sell_reasons.append(sell_reason)
                                 sell_order = True
                                 order_side = 'sell'
                                 limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
@@ -1707,6 +1726,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             if macd_gauge['metrics']['buy_cross-0'][5]['avg'] > .5:
                                 print("SELL ORDER change from Sell to Buy", current_macd, current_macd_time)
                                 sell_reason = 'order_rules__macd_cross_selltobuy'
+                                sell_reasons.append(sell_reason)
                                 sell_order = True
                                 order_side = 'sell'
                                 limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
@@ -1746,6 +1766,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     if app_req['app_flag']:       
                         print("QUEEN processing app sell order")
                         sell_order = True
+                        sell_reasons.append(sell_reason)
                         app_request = True
                         sell_reason = 'app_request'
                         
@@ -1756,7 +1777,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     
                     
                     if sell_order:
-
+                        print("Bishop SELL ORDER:", sell_reasons, current_macd, current_macd_time)
                         return {'sell_order': True, 
                         'sell_reason': sell_reason, 
                         'order_side': order_side, 
@@ -1778,7 +1799,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             # check if position is neg, if so, switch side to sell and sell_qty to buy  # if portfolio[run_order['ticker']]['side'] == 'short':
 
-            if king_bishop['sell_order']:            
+            if king_bishop['sell_order']:
+                conscience_update(root_name='bishop_sell_order', dict_to_add={king_bishop})
                 if str(king_bishop['sell_qty']) == 'nan':
                     send_email(subject='error checker go see whats up')
                     ipdb.set_trace()

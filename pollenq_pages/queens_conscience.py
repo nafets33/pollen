@@ -71,7 +71,7 @@ page = 'QueensConscience'
 # st.header("Section 1")
 # st.markdown("[Section 1](#section-1)")
 
-def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
+def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
 
     # from random import randint
     main_root = hive_master_root() # os.getcwd()  # hive root
@@ -1320,6 +1320,39 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                     PickleData(PB_App_Pickle, QUEEN_KING)
                 st.write(QUEEN_KING.get('wave_triggers'))
 
+        def model_wave_results(STORY_bee):
+            with st.expander('model results of queens court'):
+                return_results = {}
+                dict_list_ttf = analyze_waves(STORY_bee, ttframe_wave_trigbee=False)['d_agg_view_return']        
+
+                ticker_list = set([i.split("_")[0] for i in dict_list_ttf.keys()])
+                for ticker_option in ticker_list:
+                
+                    for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+                        
+                        ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+                        buys = [data[trigbee] for k, data in ticker_selection.items()]
+                        df_trigbee_waves = pd.concat(buys, axis=0)
+                        col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
+                        df_trigbee_waves = df_trigbee_waves[col_view]
+                        color = 'Green' if 'buy' in trigbee else 'Red'
+
+                        t_winners = sum(df_trigbee_waves['winners_n'])
+                        t_losers = sum(df_trigbee_waves['losers_n'])
+                        total_waves = t_winners + t_losers
+                        win_pct = 100 * round(t_winners / total_waves, 2)
+
+                        t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
+
+                        return_results[f'{ticker_option}{"_bee_"}{trigbee}'] = f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}{"  ~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}'
+                    # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
+
+                df = pd.DataFrame(return_results.items())
+                mark_down_text(color='#C5B743', text=f'{"Trigger Bee Model Results "}')
+                st.write(df) 
+
+                return True
+
 
         def queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail):
             # cust_Button("misc/waves.png", hoverText='', key='waves_icon', height=f'23px')
@@ -1384,7 +1417,10 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                 for symbol in tickers:
                     # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=symbol, POLLENSTORY=POLLENSTORY) ## RETURN FASTER maybe cache?
                     story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
-                    # st.write(story_views.get('df_agg'))
+                    SV = st.selectbox("Story Views", options=list(story_views.get('df_agg').keys()))
+                    st.write(story_views.get('df_agg').get(SV))
+                    st.write(story_views.get('df_agg').get(SV).iloc[0])
+                    df_hm = story_views.get('df_agg').get(SV)
                     df = story_views.get('df')
                     df = df.set_index('star')
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
@@ -1526,8 +1562,9 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
         prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
         sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
 
-        api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
-        acct_info = refresh_account_info(api=api)['info_converted']
+        # api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
+        # acct_info = refresh_account_info(api=api)['info_converted']
+        acct_info = api_vars.get('acct_info')
         if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
             clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
         
@@ -1538,7 +1575,7 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
 
         # db global
         # Ticker DataBase
-        call_all_ticker_data = st.sidebar.button("swarmQueen Symbols", True)
+        call_all_ticker_data = st.sidebar.checkbox("swarmQueen Symbols", False)
 
         coin_exchange = "CBSE"
         ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=call_all_ticker_data)
@@ -1546,7 +1583,6 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
         STORY_bee = ticker_db['STORY_bee']
         # tic_need_TM = [i.split("_")[0] for i in STORY_bee.keys()]
         tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
-        
         # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
         tic_need_TM = [i for i in tickers_avail if i not in QUEEN_KING['king_controls_queen'].get('symbols_stars_TradingModel')]
         if len(tic_need_TM) > 0:
@@ -1640,7 +1676,7 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
         
                 # print("WAVES")
                 if st.session_state['orders']:
-                    hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                     orders_agrid()
                     if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
                         st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
@@ -1649,13 +1685,13 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                         
                 if st.session_state['waves'] == True:
                     with st.expander('waves', True):
-                        hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                        # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                         queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
                     with st.expander('STORY_bee'):
                         st.write(STORY_bee['SPY_1Minute_1Day']['story'])
             
                 if st.session_state['workerbees'] == True:
-                    hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
+                    # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
                     queen_triggerbees()
                     if st.session_state['admin']:
                         if st.button("Yahoo Return Fin.Data Job"):
@@ -1676,13 +1712,13 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                         queen_beeAction_theflash()
             
                 if st.session_state['charts'] == True:
-                    hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
                     with st.expander("charts", True):
                         advanced_charts()
             
                 if st.session_state['chess_board'] == True:
-                    hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    # hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                     ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
                     themes = list(pollen_themes(KING).keys())
 
@@ -1693,7 +1729,9 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
                     add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
             
                 if st.session_state['queens_mind']:
-                    hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    model_wave_results(STORY_bee)
+
                     with st.expander("Trading Models"):
                         update_trading_models(QUEEN_KING)                            
             
@@ -1815,4 +1853,4 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs):
         print('queensconscience', e, print_line_of_error(), return_timestamp_string())
 
 if __name__ == '__main__':
-    queens_conscience(False, False, False, False, False)
+    queens_conscience(None, None, None, None, None, None, None)
