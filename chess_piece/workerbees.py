@@ -749,6 +749,33 @@ def queen_workerbees(
         # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         def write_pollenstory_storybee(pollens_honey):
+            # s = datetime.now(est)
+            # async def main_func(session, ticker_time_frame, pickle_file, data):
+            #     async with session:
+            #         try:
+            #             PickleData(pickle_file=pickle_file, data_to_store=data)
+            #             return_dict = {'status': 'success'}
+            #             return {
+            #                 'return_dict': return_dict
+            #             }  # return Charts Data based on Queen's Query Params, (stars())
+            #         except Exception as e:
+            #             print("ps_error", e, ticker_time_frame)
+            #             return_dict = {'status': 'error', 'error': e}
+
+            # async def main(pollen_nectar):
+
+            #     async with aiohttp.ClientSession() as session:
+            #         return_list = []
+            #         tasks = []
+            #         for ticker_time_frame, df_i in pollen_nectar.items():
+            #             tasks.append(asyncio.ensure_future(main_func(session, ticker_time_frame, df_i)))
+            #         original_pokemon = await asyncio.gather(*tasks)
+            #         for pokemon in original_pokemon:
+            #             return_list.append(pokemon)
+            #         return return_list
+
+            # return_list = asyncio.run(main(pollen_nectar))
+
             # for every ticker ticker write pickle file to db
             symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
 

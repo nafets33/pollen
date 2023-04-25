@@ -717,9 +717,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             #     pass
 
             return True
-        def trade_Allowance():
-            # trade is not allowed x% level, if so kill/reduce trade
-            return True 
+
         def proir_waves():
             # return fequency of prior waves and statement conclusions
             return True
@@ -810,7 +808,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             ticker, tframe, tperiod = ticker_time_frame.split("_")
             star_time = f'{tframe}{"_"}{tperiod}'
             ticker_priceinfo = return_snap_priceinfo(api=api, ticker=ticker, crypto=crypto, exclude_conditions=exclude_conditions)
-            trigbee_wave_direction = ['waveup' if 'buy' in trigbee else 'wavedown' ][0]
+            trigbee_wave_direction = ['waveup' if 'buy' in trigbee else 'wavedown'][0]
 
             # RevRec # Allocation Star allowed df_qcp, df_ticker, df_stars
             # qcp_total_budget = revrec['df_qcp'].loc[qcp].get("qcp_total_budget")
@@ -880,6 +878,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # Trading Model Vars
             # Global switch to user power rangers at ticker or portfolio level 
             tmodel_power_rangers = trading_model['stars_kings_order_rules'][star_time].get('power_rangers')
+            if trading_model_theme == 'story__AI':
+                print('story ai update KORs with lastest from story_view()')
             king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][trigbee][current_wave_blocktime]
             maker_middle = ticker_priceinfo['maker_middle'] if str(trading_model_star.get('trade_using_limits')) == 'true' else False
 
@@ -1777,7 +1777,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     
                     
                     if sell_order:
-                        print("Bishop SELL ORDER:", sell_reasons, current_macd, current_macd_time)
+                        print("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time)
+                        conscience_update(root_name='bishop_sell_order', dict_to_add={'ticker_time_frame': ticker_time_frame, 'sell_reasons': sell_reasons}, list_len=33)
                         return {'sell_order': True, 
                         'sell_reason': sell_reason, 
                         'order_side': order_side, 
@@ -2245,9 +2246,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         original_state = QUEEN['heartbeat']['available_tickers']
         
         QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < story_heartrate]
-        # create dict of allowed long term and short term of a given ticker so ticker as info for trading
-        QUEEN['heartbeat']['active_tickerStars'] = {k: {'trade_type': ['long_term', 'short_term']} for k in QUEEN['heartbeat']['available_tickers']}
-        ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['active_tickerStars'].keys()])
+        ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['available_tickers'].keys()])
 
         QUEEN['heartbeat']['active_tickers'] = [i for i in ticker_set if i in ticker_allowed]
 
@@ -2342,8 +2341,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ## !! Reconcile all orders processed in alpaca vs queen_order !! ##
 
         # Ticker database of pollenstory ## Need to seperate out into tables 
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING) ## async'd func
-        POLLENSTORY = ticker_db['pollenstory']
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
+        # POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
         QUEEN['heartbeat']['ticker_db'] =  {'errors': ticker_db.get('errors')}
         
@@ -2421,7 +2420,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 s_time = datetime.now(est)
                 # QUEEN Databases
                 KING = ReadPickleData(master_swarm_KING(prod=prod))
-                QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+                # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
                 QUEEN_KING = ReadPickleData(PB_App_Pickle)
                 QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
                 QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
@@ -2431,8 +2430,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 portfolio = return_alpc_portolio(api)['portfolio']
 
                 # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
-                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)                
-                POLLENSTORY = ticker_db['pollenstory']
+                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
+                # POLLENSTORY = ticker_db['pollenstory']
                 STORY_bee = ticker_db['STORY_bee']
 
                 QUEEN = refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)

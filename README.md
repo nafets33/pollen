@@ -88,6 +88,7 @@ tail -f /var/log/cron
 Stefan Stapinski
 sudo timedatectl set-timezone America/New_York
 
+# cron logs
 cd /var/log
 cat syslog | grep cron
 
