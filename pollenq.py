@@ -26,7 +26,7 @@ from chess_piece.app_hive import admin_queens_active, standard_AGgrid, read_QUEE
 from chess_piece.king import kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData, client_dbs_root
 from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, generate_TradingModel, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes
 from custom_button import cust_Button
-from custrom_text import custom_text
+from custom_text import custom_text
 
 # import hydralit_components as hc
 from pollenq_pages.playground import PlayGround
@@ -586,7 +586,13 @@ def pollenq(admin_pq):
             KING['source'] = PB_KING_Pickle
             # with st.sidebar:
             #     st.write("testing fastpi")
-            #     custom_text(api="http://localhost:8000/api/data/text", text_size = 17, refresh_sec =2,refresh_cutoff_sec =20)
+            from custom_text import custom_text, TextOptionsBuilder
+            to_builder = TextOptionsBuilder.create()
+            to_builder.configure_background_color("yellow")
+            to_builder.configure_text_color("#0d233a")
+            to_builder.configure_font_style("italic")
+            to = to_builder.build()
+            custom_text(api="http://localhost:8000/api/data/text", text_size = 17, refresh_sec =2,refresh_cutoff_sec =20,text_option=to)
 
             hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
             cols = st.columns((1,10,1)) # 6

@@ -2,19 +2,18 @@
 ```python
 # This is a simple Python program
 import streamlit as st
-from custom_text import custom_text
+from custom_text import custom_text, TextOptionsBuilder
 
 st.title("Testing Streamlit custom components")
 
 # Add Streamlit widgets to define the parameters for the CustomSlider
-label = st.sidebar.text_input('Label', 'Hello world')
-min_value, max_value = st.sidebar.slider("Range slider", 0, 100, (0, 50))
-
-# Pass the parameters inside the wrapper function
-v1 = custom_text(api="http://localhost:8000/get-text/1")
-st.write(v1)
-v2 = custom_text(api="http://localhost:8000/get-text/2", text_size = 17, refresh_sec =2,refresh_cutoff_sec =10)
-st.write(v2)
+to_builder = TextOptionsBuilder.create()
+to_builder.configure_background_color("yellow")
+to_builder.configure_text_color("#0d233a")
+to_builder.configure_font_style("italic")
+to = to_builder.build()
+custom_text(api="http://localhost:8000/api/data/text",
+                     text_size=17, refresh_sec=2, refresh_cutoff_sec=10, text_option=to)
 ```
 # example fastAPI server
 ```python
