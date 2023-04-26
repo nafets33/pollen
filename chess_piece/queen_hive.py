@@ -654,7 +654,14 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
 
             for ticker in tickers:
                 active_orders = return_queen_orders__query(QUEEN, queen_order_states, ticker=ticker, star=False, ticker_time_frame=False)       # total budget calc
+                num_active_orders = len(active_orders)
                 ticker_cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
+
+                borrowed_orders = active_orders[active_orders['borrowed_funds'] == None].copy() if num_active_orders > 0 else pd.DataFrame()
+                budget_orders = active_orders[active_orders['borrowed_funds'] != None].copy() if num_active_orders > 0 else pd.DataFrame()
+                
+                budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
+                borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
 
                 df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
                 bp = sum(df_temp['ticker_buying_power'])
@@ -667,7 +674,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
                 df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.loc[ticker].get('total_budget')
                 df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.loc[ticker].get('equity_budget')
                 df_ticker.at[ticker, 'ticker_borrow_budget'] = df_temp.loc[ticker].get('borrow_budget')
-                df_ticker.at[ticker, 'ticker_remaining_budget'] = df_temp.loc[ticker].get('total_budget') - ticker_cost_basis
+                df_ticker.at[ticker, 'ticker_remaining_budget'] = df_temp.loc[ticker].get('total_budget') - budget_cost_basis
+                df_ticker.at[ticker, 'ticker_remaining_borrow'] = df_temp.loc[ticker].get('borrow_budget') - borrowed_cost_basis
+
 
                 # star time 
                 df_temp = df_stars[(df_stars['ticker'].isin([ticker]))].copy()
@@ -682,9 +691,14 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order
                     df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
                 for ticker_time_frame in df_stars.index.to_list():
                     star_total_budget = df_stars.loc[ticker_time_frame].get('star_total_budget')
-                    ttf_remaining_budget = return_ttf_remaining_budget(QUEEN=QUEEN, 
-                                                                       total_budget=star_total_budget, ticker_time_frame=ticker_time_frame, active_queen_order_states=active_queen_order_states)
+                    star_borrow_budget = df_stars.loc[ticker_time_frame].get('star_borrow_budget')
+                    ttf_remaining_budget, remaining_budget_borrow = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                                                                       total_budget=star_total_budget,
+                                                                       borrow_budget=star_borrow_budget,
+                                                                       ticker_time_frame=ticker_time_frame, 
+                                                                       active_queen_order_states=active_queen_order_states)
                     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
+                    df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
         
         return {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
     
@@ -731,36 +745,48 @@ def return_remaining_budget(QUEEN, active_queen_order_states):
     
     return active_orders, cost_basis
 
-def return_ttf_remaining_budget(QUEEN, total_budget, active_queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='only takes 1 ttf, ticker or star'):
-    # try:
-    # Total In Running, Remaining
-    if ticker:
-        active_orders_ttf = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker=ticker,)
-    elif ticker_time_frame:
-        active_orders_ttf = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
-    elif star:
-        active_orders_ttf = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, star=star,)
-    else:
-        print("you did not use func correctly dummy")
-
-    if len(active_orders_ttf) == 0:
-        # print(ticker_time_frame, " Full Fire Power")
-        remaining_budget = total_budget
-    else:
-        # print(ticker_time_frame, " ORDERS RUNNING")
-        cost_basis_atPLAY = sum(active_orders_ttf['cost_basis'])
-        remaining_budget = total_budget - cost_basis_atPLAY
+def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='only takes 1 ttf, ticker or star'):
+    try:
+        # Total In Running, Remaining
+        if ticker:
+            active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker=ticker,)
+        elif ticker_time_frame:
+            active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
+        elif star:
+            active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, star=star,)
+        else:
+            print("you did not use func correctly dummy")        
         
-        if cost_basis_atPLAY >= total_budget:
-            # print("All Budget Used")
-            remaining_budget = 0
+        num_active_orders = len(active_orders)
+        budget_orders = active_orders[active_orders['borrowed_funds'] != None].copy() if num_active_orders > 0 else pd.DataFrame()
+        borrowed_orders = active_orders[active_orders['borrowed_funds'] == None].copy() if num_active_orders > 0 else pd.DataFrame()
+        
+        budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
+        borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
 
-    
-    return remaining_budget
-    # except Exception as e:
-    #     print(e)
-    #     print_line_of_error()
-    #     ipdb.set_trace()
+
+        if num_active_orders == 0:
+            # print(ticker_time_frame, " Full Fire Power")
+            remaining_budget = total_budget
+            remaining_budget_borrow = borrow_budget
+        else:
+            # print(ticker_time_frame, " ORDERS RUNNING")
+            # cost_basis_atPLAY = sum(active_orders['cost_basis'])
+            remaining_budget = total_budget - budget_cost_basis
+            remaining_budget_borrow = borrow_budget - borrowed_cost_basis
+            
+            if budget_cost_basis >= total_budget:
+                # print("All Budget Used")
+                remaining_budget = 0
+            if borrowed_cost_basis >= borrow_budget:
+                # print("All Budget Used")
+                remaining_budget_borrow = 0
+        
+        return remaining_budget, remaining_budget_borrow
+    except Exception as e:
+        print(e)
+        print_line_of_error()
+        ipdb.set_trace()
 
 
 def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral"):
@@ -2434,6 +2460,7 @@ def submit_order(
         return order
     except Exception as e:
         print_line_of_error()
+        # ipdb.set_trace()
         return False
 
     """stop loss order"""

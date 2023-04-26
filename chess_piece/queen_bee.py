@@ -816,24 +816,26 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             ticker_borrow_budget = revrec['df_ticker'].loc[ticker].get("ticker_borrow_budget")
             star_total_budget = revrec['df_stars'].loc[ticker_time_frame].get("star_total_budget")
             star_total_borrow = revrec['df_stars'].loc[ticker_time_frame].get("star_borrow_budget")
-            
+            star_total_budget_remaining = revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget")
+            star_total_borrow_remaining = revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget_borrow")
+
             # Total In Running, Remaining
-            ticker_remaining_budget = return_ttf_remaining_budget(QUEEN=QUEEN, total_budget=ticker_total_budget, active_queen_order_states=active_queen_order_states, ticker=ticker, star=False, ticker_time_frame=False,)
-            star_remaining_budget = return_ttf_remaining_budget(QUEEN=QUEEN, total_budget=star_total_budget, active_queen_order_states=active_queen_order_states, ticker=False, star=False, ticker_time_frame=ticker_time_frame,)
+            # ticker_remaining_budget = return_ttf_remaining_budget(QUEEN=QUEEN, total_budget=ticker_total_budget, active_queen_order_states=active_queen_order_states, ticker=ticker, star=False, ticker_time_frame=False,)
+            # star_remaining_budget = return_ttf_remaining_budget(QUEEN=QUEEN, total_budget=star_total_budget, active_queen_order_states=active_queen_order_states, ticker=False, star=False, ticker_time_frame=ticker_time_frame,)
             
             kings_blessing = False
 
             # how many trades have we completed today? whats our total profit loss with wave trades
             # should you override your original order rules?
 
-            if star_remaining_budget == 0:
+            if star_total_budget_remaining == 0:
                 # print(f'{ticker_time_frame} all budget used up')
                 if ticker_time_frame not in QUEEN['queens_messages'].keys():
                     QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
                 else:
                     QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
             
-            if star_remaining_budget == 0 and ticker_remaining_budget == 0:
+            if star_total_budget_remaining == 0 and star_total_borrow_remaining == 0:
                 return {'kings_blessing': False}
             
             # trade scenarios / power ups / 
@@ -846,14 +848,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 time_delta = now_time - datetime.now(est)
 
             
-            remaining_budget_wave = ticker_remaining_budget * .89
+            # remaining_budget_wave = ticker_remaining_budget * .89
+            remaining_budget_wave = star_total_budget_remaining
+            remaining_budget_wave_Short = star_total_borrow_remaining
             # how much are you allowed of the total budget
             
             # Total buying power allowed  
             wave_amo = remaining_budget_wave
             wave_amo = wave_amo * .89  # Never Allow Full Budget
 
-            borrowed_funds = True if star_remaining_budget == 0 else False
+            borrowed_funds = True if star_total_budget_remaining == 0 else False
 
             power_up_amo = 0
             power_rangers_universe = ['mac_ranger', 'hist_ranger']
@@ -1424,6 +1428,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             d_return[trigbee][num].update({'avg': 0})
                 
                 return {'metrics': d_return}
+            else:
+                return {'metrics': {}}
         except Exception as e:
             print(e, print_line_of_error())
 
@@ -1474,13 +1480,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     def conscience_update(root_name, dict_to_add, list_len=89):
         # store message
-        if root_name not in QUEEN['conscience'].keys():
-            QUEEN['conscience'][root_name] = deque([], list_len)
-        else:
-            if dict_to_add not in QUEEN['conscience'][root_name]:
-                QUEEN['conscience'][root_name].append(dict_to_add)
+        try:
+            if root_name not in QUEEN['conscience'].keys():
+                QUEEN['conscience'][root_name] = deque([], list_len)
+            else:
+                if dict_to_add not in QUEEN['conscience'][root_name]:
+                    QUEEN['conscience'][root_name].append(dict_to_add)
 
-        return True
+            return True
+        except Exception as e:
+            print(e, print_line_of_error())
 
     def subconscious_mind(root_name):
         # store message
@@ -1572,8 +1581,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
             honey_gauge = honeyGauge_metric(run_order)
-            conscience_update(root_name='macd_gauge', dict_to_add={macd_gauge}, list_len=1)
-            conscience_update(root_name='honey_gauge', dict_to_add={honey_gauge}, list_len=1)
+            # print(macd_gauge)
+            # conscience_update(root_name='macd_gauge', dict_to_add={macd_gauge}, list_len=1)
+            # conscience_update(root_name='honey_gauge', dict_to_add={honey_gauge}, list_len=1)
 
             charlie_bee['queen_cyle_times']['bishop_block1_queenorder__om'] = (datetime.now(est) - s_time).total_seconds()
             s_time = datetime.now(est)
@@ -1766,9 +1776,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     if app_req['app_flag']:       
                         print("QUEEN processing app sell order")
                         sell_order = True
+                        sell_reason = 'app_request'
                         sell_reasons.append(sell_reason)
                         app_request = True
-                        sell_reason = 'app_request'
                         
                         sell_qty = float(app_req['sell_qty'])
                         order_type = app_req['type']
@@ -1778,7 +1788,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     
                     if sell_order:
                         print("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time)
-                        conscience_update(root_name='bishop_sell_order', dict_to_add={'ticker_time_frame': ticker_time_frame, 'sell_reasons': sell_reasons}, list_len=33)
+                        # conscience_update(root_name='bishop_sell_order', dict_to_add={'ticker_time_frame': ticker_time_frame, 'sell_reasons': sell_reasons}, list_len=33)
                         return {'sell_order': True, 
                         'sell_reason': sell_reason, 
                         'order_side': order_side, 
@@ -1801,7 +1811,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # check if position is neg, if so, switch side to sell and sell_qty to buy  # if portfolio[run_order['ticker']]['side'] == 'short':
 
             if king_bishop['sell_order']:
-                conscience_update(root_name='bishop_sell_order', dict_to_add={king_bishop})
+                # conscience_update(root_name='bishop_sell_order', dict_to_add={king_bishop})
                 if str(king_bishop['sell_qty']) == 'nan':
                     send_email(subject='error checker go see whats up')
                     ipdb.set_trace()
@@ -2240,41 +2250,46 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
 
     def refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed, story_heartrate=54):
-        
-        now_time = datetime.now().astimezone(est)
+        try:
 
-        original_state = QUEEN['heartbeat']['available_tickers']
-        
-        QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < story_heartrate]
-        ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['available_tickers'].keys()])
+            now_time = datetime.now().astimezone(est)
 
-        QUEEN['heartbeat']['active_tickers'] = [i for i in ticker_set if i in ticker_allowed]
-
-        new_active = QUEEN['heartbeat']['available_tickers']
-        if original_state != new_active:
-            print('added dropped / updated tickers')
-            added_list = []
-            for ttframe in new_active:
-                if ttframe not in original_state:
-                    added_list.append({ttframe: return_timestamp_string()})
-                    # print("dropped", ttframe, return_timestamp_string())
-            if len(added_list) > 0:
-                print("Added ", added_list)
+            original_state = QUEEN['heartbeat']['available_tickers']
             
-            dropped_list = []
-            for ttframe in original_state:
-                if ttframe not in new_active:
-                    dropped_list.append({ttframe: return_timestamp_string()})
-                    # print("dropped", ttframe, return_timestamp_string())
-            if len(dropped_list) > 0:
-                print("dropped ", dropped_list)
+            QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).seconds < story_heartrate]
+            ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['available_tickers']])
+            # ticker_set = []
+            # for ttf in QUEEN['heartbeat']['available_tickers']:
+            #     ticker_set.append(ttf.split("_")[0])
 
-            QUEEN['heartbeat']['added_list'] = added_list
-            QUEEN['heartbeat']['dropped_list'] = dropped_list
-            PickleData(PB_QUEEN_Pickle, QUEEN)
+            QUEEN['heartbeat']['active_tickers'] = [i for i in ticker_set if i in ticker_allowed]
 
-        return QUEEN
+            new_active = QUEEN['heartbeat']['available_tickers']
+            if original_state != new_active:
+                print('added dropped / updated tickers')
+                added_list = []
+                for ttframe in new_active:
+                    if ttframe not in original_state:
+                        added_list.append({ttframe: return_timestamp_string()})
+                        # print("dropped", ttframe, return_timestamp_string())
+                if len(added_list) > 0:
+                    print("Added ", added_list)
+                
+                dropped_list = []
+                for ttframe in original_state:
+                    if ttframe not in new_active:
+                        dropped_list.append({ttframe: return_timestamp_string()})
+                        # print("dropped", ttframe, return_timestamp_string())
+                if len(dropped_list) > 0:
+                    print("dropped ", dropped_list)
 
+                QUEEN['heartbeat']['added_list'] = added_list
+                QUEEN['heartbeat']['dropped_list'] = dropped_list
+                PickleData(PB_QUEEN_Pickle, QUEEN)
+
+            return QUEEN
+        except Exception as e:
+            print("ERROR", print_line_of_error())
     ################################################################# pollen
     #################################################################
     ################################################################# 
@@ -2375,7 +2390,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         QUEEN = refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
 
-        available_triggerbees = ["sell_cross-0", "buy_cross-0"]        
+        available_triggerbees = ["sell_cross-0", "buy_cross-0"]
+        # ipdb.set_trace()
         QUEEN['heartbeat']['available_triggerbees'] = available_triggerbees
         
         print("active trigs", available_triggerbees)

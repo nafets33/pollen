@@ -370,9 +370,9 @@ def display_for_unAuth_client_user(pct_queens_taken=47):
     #     local_gif(floating_queen_gif, '100', '123')
     page_line_seperator("25")
 
-    st.error(
-        "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
-    )
+    # st.error(
+    #     "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
+    # )
 
     page_line_seperator("1")
 
