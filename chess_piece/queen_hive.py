@@ -3118,8 +3118,8 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=1,
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=120,
-                                    take_profit=.01,
-                                    sellout=-.015,
+                                    take_profit=.005,
+                                    sellout=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3274,13 +3274,13 @@ def generate_TradingModel(
                 "1Minute_1Day": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .1,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .5,
                     'use_margin': False,
                     },
                 "5Minute_5Day" : {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .3,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .5,
                     'use_margin': False,
                     },
                 "30Minute_1Month": {
@@ -3303,7 +3303,7 @@ def generate_TradingModel(
                     },
                 "1Day_1Year": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': 1,
+                    'buyingpower_allocation_LongTerm': .99,
                     'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },

@@ -373,9 +373,7 @@ def return_QUEEN_masterSymbols(
     }
 
 
-def read_QUEENs__pollenstory(
-    symbols, read_swarmQueen=False, info="function uses async"
-):  # return combined dataframes
+def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, read_storybee=True, read_pollenstory=True, info="function uses async"):  # return combined dataframes
     ### updates return ticker db and path to db ###
     def async__read_symbol_data(ttf_file_paths):  # re-initiate for i timeframe
         async def get_changelog(session, ttf_file_name):
@@ -411,7 +409,7 @@ def read_QUEENs__pollenstory(
     # return beeworkers data
     if read_swarmQueen:
         qb = return_QUEEN_masterSymbols()
-        symbols = qb["queens_master_tickers"]
+        symbols = qb.get("queens_master_tickers")
     else:
         symbols = symbols
 
@@ -421,38 +419,42 @@ def read_QUEENs__pollenstory(
     # Final Return
     pollenstory = {}
     STORY_bee = {}
+    errors = {}
 
     # pollen story // # story bee
     ps_all_files_names = []
     sb_all_files_names = []
     for symbol in set(symbols):
-        ps_all_files_names = ps_all_files_names + [
-            os.path.join(main_dir, i)
-            for i in os.listdir(main_dir)
-            if symbol in i and "temp" not in i
-        ]  # SPY SPY_1Minute_1Day
-        sb_all_files_names = sb_all_files_names + [
-            os.path.join(main_story_dir, i)
-            for i in os.listdir(main_story_dir)
-            if symbol in i and "temp" not in i
-        ]  # SPY SPY_1Minute_1Day
+        if read_pollenstory:
+            ps_all_files_names = ps_all_files_names + [
+                os.path.join(main_dir, i)
+                for i in os.listdir(main_dir)
+                if symbol in i and "temp" not in i
+            ]  # SPY SPY_1Minute_1Day
+        
+        if read_storybee:
+            sb_all_files_names = sb_all_files_names + [
+                os.path.join(main_story_dir, i)
+                for i in os.listdir(main_story_dir)
+                if symbol in i and "temp" not in i
+            ]  # SPY SPY_1Minute_1Day
 
     # async read data
-    pollenstory_data = async__read_symbol_data(ttf_file_paths=ps_all_files_names)
-    storybee_data = async__read_symbol_data(ttf_file_paths=sb_all_files_names)
-
-    # put into dictionary
-    errors = {}
-    for package_ in pollenstory_data:
-        if "error" not in package_.keys():
-            pollenstory[package_["ttf"]] = package_["db"]["pollen_story"]
-        else:
-            errors[package_["ttf"]] = package_["error"]
-    for package_ in storybee_data:
-        if "error" not in package_.keys():
-            STORY_bee[package_["ttf"]] = package_["db"]["STORY_bee"]
-        else:
-            errors[package_["ttf"]] = package_["error"]
+    if read_pollenstory:
+        pollenstory_data = async__read_symbol_data(ttf_file_paths=ps_all_files_names)
+        # put into dictionary
+        for package_ in pollenstory_data:
+            if "error" not in package_.keys():
+                pollenstory[package_["ttf"]] = package_["db"]["pollen_story"]
+            else:
+                errors[package_["ttf"]] = package_["error"]
+    if read_storybee:
+        storybee_data = async__read_symbol_data(ttf_file_paths=sb_all_files_names)
+        for package_ in storybee_data:
+            if "error" not in package_.keys():
+                STORY_bee[package_["ttf"]] = package_["db"]["STORY_bee"]
+            else:
+                errors[package_["ttf"]] = package_["error"]
 
     return {"pollenstory": pollenstory, "STORY_bee": STORY_bee, "errors": errors}
 
@@ -466,7 +468,7 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
     return {"queens_master_tickers": queens_master_tickers}
 
 
-def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False, info="returns all ticker_time_frame data for open orders and chessboard"):
+def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
     def return_active_orders(QUEEN):
         df = QUEEN["queen_orders"]
         df["index"] = df.index
@@ -489,7 +491,9 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
         symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
 
     ticker_db = read_QUEENs__pollenstory(
-        symbols=symbols
+        symbols=symbols,
+        read_storybee=read_storybee, 
+        read_pollenstory=read_pollenstory,
     )
 
     return ticker_db
