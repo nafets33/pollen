@@ -11,8 +11,8 @@ import Aggrid from "./Aggrid";
 const Main = (props: ComponentProps) => {
 
   const { username, api, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
-  const { api_url, button_name } = props.args;
-  console.log(props);
+  const { api_url, button_name, grid_options } = props.args;
+  console.log("AAAAAAAA", grid_options);
   return (
     <div >
       <Aggrid
@@ -24,6 +24,7 @@ const Main = (props: ComponentProps) => {
         prod={prod}
         api_url={api_url}
         button_name={button_name}
+        grid_options={grid_options}
       />
     </div>
   );
