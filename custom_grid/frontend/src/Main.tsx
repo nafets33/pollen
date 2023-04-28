@@ -11,11 +11,10 @@ import Aggrid from "./Aggrid";
 const Main = (props: ComponentProps) => {
 
   const { username, api, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
-
-  useEffect(() => Streamlit.setFrameHeight());
-  // Add a label and pass min/max variables to the baseui Slider
+  const { api_url, button_name } = props.args;
+  console.log(props);
   return (
-    <>
+    <div >
       <Aggrid
         username={username}
         api={api}
@@ -23,8 +22,10 @@ const Main = (props: ComponentProps) => {
         refresh_cutoff_sec={refresh_cutoff_sec}
         gridoption_build={gridoption_build}
         prod={prod}
+        api_url={api_url}
+        button_name={button_name}
       />
-    </>
+    </div>
   );
 };
 
