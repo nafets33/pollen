@@ -17,7 +17,15 @@ else:
         "custom_grid", path=build_dir)
 
 
-def st_custom_grid(username: str, api: str, refresh_sec: int, refresh_cutoff_sec: int = 0, prod: bool = True, key=None):
+def st_custom_grid(username: str, api: str, refresh_sec: int, refresh_cutoff_sec: int , prod: bool, key:str, api_url:str, button_name :str):
     component_value = _component_func(
-        username=username, api=api, refresh_sec=refresh_sec, refresh_cutoff_sec=refresh_cutoff_sec, prod=prod, key=key)
+        username=username,
+        api=api,
+        refresh_sec=refresh_sec,
+        refresh_cutoff_sec=refresh_cutoff_sec,
+        prod=prod,
+        key=key,
+        api_url=api_url,
+        button_name=button_name
+        )
     return component_value

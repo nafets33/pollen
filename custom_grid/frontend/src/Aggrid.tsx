@@ -3,14 +3,12 @@ import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-enterprise';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import './styles.css';
 import axios from "axios"
 import {
   ComponentProps,
   Streamlit,
   withStreamlitConnection,
 } from "streamlit-component-lib";
-import { IOlympicData } from './interfaces';
 import {
   ColDef,
   ColGroupDef,
@@ -31,31 +29,33 @@ type Props = {
   refresh_cutoff_sec?: number,
   gridoption_build?: any,
   prod?: boolean,
+  api_url: string,
+  button_name: string,
 }
 
-const BtnCellRenderer = (props: any) => {
-  const btnClickedHandler = () => {
-    props.clicked(props.value);
-  }
 
-  return (
-    <button onClick={btnClickedHandler}>Sell</button>
-  )
-}
 
 const defaultWidth = 100;
-
 
 
 let g_rowdata: any[] = [];
 
 const AgGrid = (props: Props) => {
+  const BtnCellRenderer = (props: any) => {
+    const btnClickedHandler = () => {
+      props.clicked(props.value);
+    }
+  
+    return (
+      <button onClick={btnClickedHandler}>{button_name}</button>
+    )
+  }
   const defaultColumnDefs: ColDef[] = [
     {
       field: 'honey',
       headerName: 'honey',
       width: defaultWidth,
-      // aggFunc: 'sum',
+      filter: "agTextColumnFilter",
       pinned: 'left',
       cellRenderer: 'agAnimateShowChangeCellRenderer',
       enableCellChangeFlash: true,
@@ -98,9 +98,11 @@ const AgGrid = (props: Props) => {
       cellRendererParams: {
         clicked: async function (field: any) {
           try {
-            // const res: any = await postRowId(field)
-            const num = prompt(`Please input number`);
-            const res = await axios.get("http://127.0.0.1:8000/api/data/queen_app_Sellorder_request", {
+            console.log('g_rowdata.find((row) => row.client_order_id == field).qty_available :>> ', g_rowdata.find((row) => row.client_order_id == field).qty_available);
+            const num = prompt(`Please input number`, g_rowdata.find((row) => row.client_order_id == field).qty_available);
+            console.log("prompt",num);
+            if(num == null) return;
+            const res = await axios.get(api_url, {
               params: {
                 username: username,
                 prod: prod,
@@ -110,7 +112,7 @@ const AgGrid = (props: Props) => {
             })
             alert("Success Sellorder_request!");
           } catch (error) {
-            alert("Failed Sellorder_request!");
+            alert(`${error}`);
           }
         },
       },
@@ -118,11 +120,12 @@ const AgGrid = (props: Props) => {
     }
   ];
   const gridRef = useRef<AgGridReact>(null);
-  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true } = props;
+  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true, api_url, button_name } = props;
   const [rowData, setRowData] = useState<any[]>([]);
   const [columnDefs, setColumnDefs] = useState<(ColDef | ColGroupDef)[]>(defaultColumnDefs)
   useEffect(() => Streamlit.setFrameHeight());
 
+  
   const addIds = (array: any[]) => {
     return array.map((item, idx) => {
       return { ...item, idx }
@@ -131,10 +134,16 @@ const AgGrid = (props: Props) => {
 
   const fetchAndSetData = async () => {
     const array = await fetchData();
-    const idAdded = addIds(array);
     const api = gridRef.current!.api;
-
-    api.applyTransactionAsync({ update: idAdded });
+    console.log(g_rowdata);
+    const id_array = array.map((item: any) => item.client_order_id)
+    const old_id_array = g_rowdata.map((item: any) => item.client_order_id)
+    const toUpdate = g_rowdata.filter((row: any) => id_array.includes(row.client_order_id))
+    const toRemove = g_rowdata.filter((row) => !id_array.includes(row.client_order_id))
+    const toAdd = array.filter((row: any) => !old_id_array.includes(row.client_order_id))
+    console.log(toRemove);
+    api.applyTransactionAsync({ update: toUpdate, remove: toRemove, add: toAdd });
+    g_rowdata = array
   };
 
   const fetchData = async () => {
@@ -145,9 +154,7 @@ const AgGrid = (props: Props) => {
       }
     });
     const array = JSON.parse(res.data);
-    const idAdded = addIds(array)
-    g_rowdata = idAdded;
-    return idAdded;
+    return array;
   };
 
   const postRowId = async (id: any) => {
@@ -192,8 +199,9 @@ const AgGrid = (props: Props) => {
 
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
-      const data = await fetchData();
-      setRowData(data);
+      const array = await fetchData();
+      setRowData(array);
+      g_rowdata = array;
     }, 100);
   }, []);
 
@@ -208,12 +216,13 @@ const AgGrid = (props: Props) => {
       width: 120,
       sortable: true,
       resizable: true,
+      filter: true,
     };
   }, []);
 
   const getRowId = useMemo<GetRowIdFunc>(() => {
     return (params: GetRowIdParams) => {
-      return params.data.idx;
+      return params.data.client_order_id;
     };
   }, []);
 
@@ -241,8 +250,8 @@ const AgGrid = (props: Props) => {
     };
   }, []);
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-      <div className="ag-theme-alpine-dark" style={{ overflow: 'hidden', flexGrow: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'row', height: '300px', width: "100" }}>
+      <div className="ag-theme-alpine-dark" style={{ width: "100%", height: "100%" }}>
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
@@ -251,7 +260,6 @@ const AgGrid = (props: Props) => {
           rowStyle={{ fontSize: 12, padding: 0 }}
           headerHeight={30}
           rowHeight={30}
-          domLayout={"autoHeight"}
           onGridReady={onGridReady}
           autoGroupColumnDef={autoGroupColumnDef}
           sideBar={sideBar}
