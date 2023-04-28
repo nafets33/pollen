@@ -71,7 +71,7 @@ page = 'QueensConscience'
 # st.header("Section 1")
 # st.markdown("[Section 1](#section-1)")
 
-def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
+def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
 
     # from random import randint
     main_root = hive_master_root() # os.getcwd()  # hive root
@@ -99,7 +99,7 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
     learningwalk_bee = MISC['learningwalk_bee']
     runaway_bee_gif = MISC['runaway_bee_gif']
 
-    learningwalk_bee = Image.open(learningwalk_bee)
+    # learningwalk_bee = Image.open(learningwalk_bee)
 
     ##### STREAMLIT ###
     k_colors = streamlit_config_colors()
@@ -109,10 +109,9 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
     
     with st.spinner("Welcome to the QueensMind"):
 
-        # print("QC Start")
         def advanced_charts():
             try:
-                tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
+                # tickers_avail = [list(set(i.split("_")[0] for i in POLLENSTORY.keys()))][0]
                 cols = st.columns((1,5,1,1))
                 # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
                 stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
@@ -347,8 +346,21 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                         return_image_upon_save(title="Flash Request Delivered to the Queen", gif=runaway_bee_gif)
             
             page_line_seperator('1')
-
-            # with cols[1]:
+            # if st.button("try me"):
+            #     import requests
+            #     #     requests.get("http://127.0.0.1:8000/api/data/queen_app_Sellorder_request")
+            #     # with cols[1]:
+            #     url = "http://127.0.0.1:8000/api/data/queen_app_Sellorder_request"
+            #     params = {
+            #     'username': 'stefanstapinski',
+            #     'prod': True,
+            #     'client_order_id': "run__GOOG-buy_cross-0-90-23-04-27 18.28",
+            #     'number_shares': 8,
+            #     }
+            #     response = requests.get(url, params=params)
+            #     print(response.json())
+            
+            # with st.form("the flash")
             ticker_time_frame = QUEEN['heartbeat']['available_tickers']
             if len(ticker_time_frame) == 0:
                 ticker_time_frame = list(set(i for i in STORY_bee.keys()))
@@ -549,7 +561,7 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                     st.info("Page Stopped")
                     st.stop()
             
-        def add_new_qcp__to_Queens_workerbees(qcp_bees_key):
+        def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key):
             with st.form('add new qcp'):
                 avail_qcp = ['pawn1', 'pawn2', 'pawn3', 'pawn4']
                 ticker_allowed = ['QQQ']
@@ -557,20 +569,20 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                 cols = st.columns((1,2,10,3,2,2))
                 with cols[1]:                
                     qcp = st.selectbox(label='qcp', key=f'qcp_new', options=avail_qcp)
-                    QUEEN_KING[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
+                    QUEENBEE[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
                 with cols[0]:
                     st.image(MISC.get('queen_crown_url'), width=64)
                 with cols[2]:
-                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+                    QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
                 with cols[3]:
-                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast')
+                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast')
                 with cols[4]:
-                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
+                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
                 with cols[5]:
-                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')            
+                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')            
 
                 if st.form_submit_button('Save New qcp'):
-                    PickleData(PB_App_Pickle, QUEEN_KING)
+                    PickleData(QUEENBEE.get('source'), QUEENBEE)
 
         def on_click_ss_value_bool(name):
             st.session_state[name] = True
@@ -803,42 +815,32 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                             
                             return True
             
-
-            
             except Exception as e:
                 print('chessboard ', e, print_line_of_error())
 
-        def chess_board__workerbees(QUEEN_KING, admin=True):
-
+        def QB_workerbees(QUEENBEE, admin=True):
             try:
-                
+                # QUEENBEE read queen bee and update based on QUEENBEE
                 name = 'Workerbees_Admin'
-                qcp_bees_key = 'qcp_workerbees'
-
+                qcp_bees_key = 'workerbees'
                 ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
                 
-                current_setup = QUEEN_KING['chess_board']
-                chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
+                chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key=qcp_bees_key)
                 view = chess_pieces.get('view')
                 all_workers = chess_pieces.get('all_workers')
                 qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
                 current_tickers = qcp_ticker_index.keys()
 
-                add_new_qcp__to_Queens_workerbees(qcp_bees_key)
-
-                # with st.expander("Workerbee Controls", True):
-                #     refresh_workerbees(QUEEN_KING)
+                add_new_qcp__to_Queens_workerbees(QUEENBEE=QUEENBEE, qcp_bees_key=qcp_bees_key)
 
                 with st.expander(name, True):
-
                     with st.form(f'Update WorkerBees{admin}'):
-                        
                         ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
-
+                        
                         cols = st.columns((1,1,1))
-
                         with cols[1]:
                             st.subheader(name)
+                        
                         cols = st.columns((1,3,2,2,2,2))
                         for qcp in all_workers:
                             try:
@@ -857,34 +859,28 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                                 else:
                                     st.image(MISC.get('knight_png'), width=74)
                                 
-                                ticker_list = QUEEN_KING[qcp_bees_key][qcp]['tickers']
+                                ticker_list = QUEENBEE[qcp_bees_key][qcp]['tickers']
                                 all_tickers = ticker_allowed + crypto_symbols__tickers_avail
                                 # st.write([i for i in ticker_list if i not in all_tickers])
-                                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = [i for i in ticker_list if i in all_tickers]
+                                QUEENBEE[qcp_bees_key][qcp]['tickers'] = [i for i in ticker_list if i in all_tickers]
 
                                 with cols[1]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                                    QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEENBEE[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                                 with cols[2]:
                                     st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
                                 with cols[3]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input(f'fast', min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
+                                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input(f'fast', min_value=1, max_value=88, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
                                 with cols[4]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
+                                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
                                 with cols[5]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEEN_KING[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
+                                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
                             except Exception as e:
                                 print(e, qcp)
                                 st.write(qcp, " ", e)
-                                st.write(QUEEN_KING[qcp_bees_key][qcp])
+                                st.write(QUEENBEE[qcp_bees_key][qcp])
 
                         if st.form_submit_button('Save ChessBoard'):
-                            if authorized_user == False:
-                                st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
-                                return False
-                            
-                            app_req = create_AppRequest_package(request_name='workerbees')
-                            QUEEN_KING['workerbees_requests'].append(app_req)
-                            PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                            PickleData(pickle_file=QUEENBEE.get('source'), data_to_store=QUEENBEE)
                             st.success("New Move")
                             
                             return True
@@ -1445,60 +1441,61 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
             
 
         def orders_agrid():
-            ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list, order_buttons=st.session_state.get('order_buttons'))
-            if authorized_user:
-                if ordertables__agrid == False:
-                    return True
-                if ordertables__agrid.selected_rows:
-                    # st.write(queen_order[0]['client_order_id'])
-                    queen_order = ordertables__agrid.selected_rows[0]
-                    client_order_id = queen_order.get('client_order_id')
+            with st.expander("Portfolio Orders", False):
+                ordertables__agrid = queen_order_flow(QUEEN=QUEEN, active_order_state_list=active_order_state_list, order_buttons=st.session_state.get('order_buttons'))
+                if authorized_user:
+                    if ordertables__agrid == False:
+                        return True
+                    if ordertables__agrid.selected_rows:
+                        # st.write(queen_order[0]['client_order_id'])
+                        queen_order = ordertables__agrid.selected_rows[0]
+                        client_order_id = queen_order.get('client_order_id')
 
-                    try: # OrderState
-                        df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
-                        if len(df) > 0:
-                            current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
-                            if len(current_requests) > 0:
-                                st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
+                        try: # OrderState
+                            df = ordertables__agrid["data"][ordertables__agrid["data"].orderstate == "clicked"]
+                            if len(df) > 0:
+                                current_requests = [i for i in QUEEN_KING['update_queen_order'] if client_order_id in i.keys()]
+                                if len(current_requests) > 0:
+                                    st.write("You Already Requested Queen To Change Order State, Refresh Orders to View latest Status")
+                                else:
+                                    order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
+                                    order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
+                                    QUEEN_KING['update_queen_order'].append(order_update_package)
+                                    PickleData(PB_App_Pickle, QUEEN_KING)
+                                    st.success(f'{client_order_id} Changing QueenOrderState Please wait for Queen to process, Refresh Table')
+                        except:
+                            st.write("OrderState nothing was clicked")
+                        
+                        # validate to continue with selection
+                        try: ## SELL
+                            df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
+                            if len(df) > 0:
+                                current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
+                                if len(current_requests) > 0:
+                                    st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
+                                else:
+                                    sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
+                                    sell_package['sell_qty'] = float(queen_order.get('qty_available'))
+                                    sell_package['side'] = 'sell'
+                                    sell_package['type'] = 'market'
+                                    QUEEN_KING['sell_orders'].append(sell_package)
+                                    PickleData(PB_App_Pickle, QUEEN_KING)
+                                    st.success(f'{client_order_id} : Selling Order Sent to Queen Please wait for Queen to process, Refresh Table')
                             else:
-                                order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
-                                order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': queen_order.get('queen_order_state')}}
-                                QUEEN_KING['update_queen_order'].append(order_update_package)
-                                PickleData(PB_App_Pickle, QUEEN_KING)
-                                st.success(f'{client_order_id} Changing QueenOrderState Please wait for Queen to process, Refresh Table')
-                    except:
-                        st.write("OrderState nothing was clicked")
-                    
-                    # validate to continue with selection
-                    try: ## SELL
-                        df = ordertables__agrid["data"][ordertables__agrid["data"].sell == "clicked"]
-                        if len(df) > 0:
-                            current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
-                            if len(current_requests) > 0:
-                                st.write("You Already Requested Queen To Sell order, Refresh Orders to View latest Status")
-                            else:
-                                sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-                                sell_package['sell_qty'] = float(queen_order.get('qty_available'))
-                                sell_package['side'] = 'sell'
-                                sell_package['type'] = 'market'
-                                QUEEN_KING['sell_orders'].append(sell_package)
-                                PickleData(PB_App_Pickle, QUEEN_KING)
-                                st.success(f'{client_order_id} : Selling Order Sent to Queen Please wait for Queen to process, Refresh Table')
-                        else:
-                            st.write("Nothing Sell clicked")
+                                st.write("Nothing Sell clicked")
 
-                    except:
-                        er_line = print_line_of_error()
-                        st.write("Error in Sell ", er_line)
-                    try: ## KOR
-                        df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
-                        if len(df) > 0:
-                            st.write("KOR: ", client_order_id)
-                            # kings_order_rules__forum(order_rules)
-                        else:
-                            st.write("Nothing KOR clicked")
-                    except:
-                        st.write("KOR PENDING WORK")
+                        except:
+                            er_line = print_line_of_error()
+                            st.write("Error in Sell ", er_line)
+                        try: ## KOR
+                            df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
+                            if len(df) > 0:
+                                st.write("KOR: ", client_order_id)
+                                # kings_order_rules__forum(order_rules)
+                            else:
+                                st.write("Nothing KOR clicked")
+                        except:
+                            st.write("KOR PENDING WORK")
 
 
         ########################################################
@@ -1666,6 +1663,8 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                         print("qtf", e, print_line_of_error())
 
 
+                stop_queenbee(QUEEN_KING)
+                clear_subconscious_Thought(QUEEN, QUEEN_KING)   
 
                 if st.session_state['show_queenheart']:
                     with st.expander('heartbeat', True):
@@ -1674,30 +1673,14 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                 if st.session_state['total_profits']:
                     return_total_profits(QUEEN=QUEEN)
         
-                # print("WAVES")
-                if st.session_state['orders']:
-                    # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                    orders_agrid()
-                    # if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
-                    #     st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
-                    st_custom_grid(username="stefanstapinski", 
-                        api="http://127.0.0.1:8000/api/data/queen", 
-                        refresh_sec= 2, 
-                        refresh_cutoff_sec= 60, 
-                        key = False,
-                        api_url="http://127.0.0.1:8000/api/data/queen_app_Sellorder_request",
-                        button_name="sell",
-                        prod=False,
-                        )
-                    # QUEEN['queen_orders'].iloc[3]
-                    # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
+
                         
-                if st.session_state['waves'] == True:
-                    with st.expander('waves', True):
-                        # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                        queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
-                    with st.expander('STORY_bee'):
-                        st.write(STORY_bee['SPY_1Minute_1Day']['story'])
+                # if st.session_state['waves'] == True:
+                #     with st.expander('waves', True):
+                #         # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                #         queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
+                #     with st.expander('STORY_bee'):
+                #         st.write(STORY_bee['SPY_1Minute_1Day']['story'])
             
                 if st.session_state['workerbees'] == True:
                     # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
@@ -1720,40 +1703,10 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                     with st.expander("The Flash", True):
                         queen_beeAction_theflash()
             
-                if st.session_state['charts'] == True:
-                    # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-
-                    with st.expander("charts", True):
-                        advanced_charts()
-            
-                if st.session_state['chess_board'] == True:
-                    # hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                    ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
-                    themes = list(pollen_themes(KING).keys())
-
-                    if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
-                        chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
-                    else:
-                        chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
-                    add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
-            
-                if st.session_state['queens_mind']:
-                    # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                    model_wave_results(STORY_bee)
-
-                    with st.expander("Trading Models"):
-                        update_trading_models(QUEEN_KING)                            
-            
-
-
-
-
-                func_list = ['queens_mind', 'chess_board', 'orders', 'waves', 'workerbees', 'charts', 'the_flash']
+                # moved inside pollenq.py this can be removed and added as var
+                func_list = ['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']
                 func_list = [i for i in func_list if st.session_state[i]]
-                # if len(func_list) == 0:
-                #     st.info("I would Suggest Checking our Your ChessBoard This Morning")
-                # else:
-                #     tabs = st.tabs(func_list)
+
                 c = 0
                 for tab_name in func_list:
                     with tabs[c]:
@@ -1761,13 +1714,11 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                         c+=1
                         if tab_name == 'waves':
                             if st.session_state['waves'] == True:
-
-                                st.write("waves")
-                                # with st.expander('waves', True):
-                                #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                #     queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
-                                # with st.expander('STORY_bee'):
-                                #     st.write(STORY_bee['SPY_1Minute_1Day']['story'])
+                                with st.expander('waves', True):
+                                    # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                                    queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
+                                with st.expander('STORY_bee'):
+                                    st.write(STORY_bee['SPY_1Minute_1Day']['story'])
                         if tab_name == 'workerbees':
                             if st.session_state['workerbees'] == True:
                                 st.write("waves")
@@ -1792,44 +1743,34 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                             #     with st.expander("The Flash", True):
                             #         queen_beeAction_theflash()
                         if tab_name == 'charts':
-                            st.write("waves")
-                            # if st.session_state['charts'] == True:
-                            #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-
-                            #     with st.expander("charts", True):
-                            #         advanced_charts()
+                            if st.session_state['charts'] == True:
+                                with st.expander("charts", True):
+                                    advanced_charts()
                         if tab_name == 'chess_board':
                             if st.session_state['chess_board'] == True:
-                                st.write("waves")
-                                # hc.option_bar(option_definition=pq_buttons.get('option_data'),title='C.Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                # ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
-                                # themes = list(pollen_themes(KING).keys())
+                                ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
+                                themes = list(pollen_themes(KING).keys())
 
-                                # if 'admin_workerbees' in st.session_state and st.session_state['admin_workerbees'] == "admin_workerbees":
-                                #     chess_board__workerbees(QUEEN_KING=QUEEN_KING, admin=admin)
-                                # else:
-                                #     chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
-                                # add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
+                                if st.session_state['chess_board_m'] == "admin_workerbees":
+                                    QB_workerbees(QUEENBEE=QUEENBEE, admin=admin)
+                                else:
+                                    chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+                                add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
+                        
                         if tab_name == 'queens_mind':
-                            st.write("waves")
-                            # if st.session_state['queens_mind']:
-                            #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                            #     with st.expander("Trading Models"):
-                            #         update_trading_models(QUEEN_KING)                            
-                        if tab_name == 'orders':
-                            st.write("waves")
-                            # if st.session_state['orders']:
-                            #     hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                            #     orders_agrid()
-                            #     if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
-                            #         st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
-                            #     # QUEEN['queen_orders'].iloc[3]
-                            #     # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
-                                
-                            # print("STOP QUEEN")
+                            if st.session_state['queens_mind']:
+                                # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                                model_wave_results(STORY_bee)
 
-                stop_queenbee(QUEEN_KING)
-                clear_subconscious_Thought(QUEEN, QUEEN_KING)                    
+                                with st.expander("Trading Models"):
+                                    update_trading_models(QUEEN_KING)                             
+                        if tab_name == 'orders':
+                            if st.session_state['orders']:
+                                st_custom_grid(client_user, "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
+                                
+                                orders_agrid()
+
+                 
                 page_session_state__cleanUp(page=page)
 
                 def all_button_keys():
@@ -1862,4 +1803,4 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
         print('queensconscience', e, print_line_of_error(), return_timestamp_string())
 
 if __name__ == '__main__':
-    queens_conscience(None, None, None, None, None, None, None)
+    queens_conscience(None, None, None, None, None, None, None, None)
