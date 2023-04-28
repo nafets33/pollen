@@ -204,9 +204,11 @@ def hive_master_root(info='\pollen\pollen'):
 
 def master_swarm_QUEENBEE(prod):
     if prod:
-        return os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl") # pollen/db
+        PB_QUEENBEE_Pickle = os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl") # pollen/db
     else:
-        return os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
+        PB_QUEENBEE_Pickle = os.path.join(os.path.join(hive_master_root(), "db"), "queen_sandbox.pkl")
+    
+    return PB_QUEENBEE_Pickle
 
 def master_swarm_KING(prod):
     if prod:
@@ -479,9 +481,9 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
     # symbol ticker data # 1 all current pieces on chess board && all current running orders
     current_active_orders = return_active_orders(QUEEN=QUEEN)
     active_order_symbols = list(set(current_active_orders["symbol"].tolist()))
-    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING)[
-        "queens_master_tickers"
-    ]
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(
+        QUEEN_KING=QUEEN_KING)["queens_master_tickers"]
+
     if symbols:
         symbols = symbols + active_order_symbols + chessboard_symbols
     else:

@@ -550,11 +550,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     # Validate Order
                     send_order_val = submit_order_validation(ticker=ticker, qty=sell_qty, side=q_side, portfolio=portfolio, run_order_idx=run_order_idx)
+                    sell_qty = send_order_val.get('qty_correction')
                     if 'stop_order' in send_order_val.keys():
                         print("Order Did not pass to execute")
                         msg = ("Order Did not pass to execute")
                         logging.error(msg)
                         return{'executed': False, 'msg': msg}
+                    
                     
                     send_close_order = submit_order(api=api, side=q_side, symbol=ticker, qty=sell_qty, type=q_type, client_order_id=client_order_id__gen, limit_price=limit_price) 
                     send_close_order = vars(send_close_order)['_raw']
@@ -834,7 +836,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
                 else:
                     QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
-            
+                return {'kings_blessing': False}
+
             if star_total_budget_remaining == 0 and star_total_borrow_remaining == 0:
                 return {'kings_blessing': False}
             
@@ -938,6 +941,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if not isinstance(order_vars.get('wave_amo'), float) or order_vars.get('wave_amo') <=0:
                     send_email(subject="error check go check kings blessing")
                     ipdb.set_trace()
+                    return {'kings_blessing': False}
 
             if kings_blessing:
                 return {'kings_blessing': kings_blessing, 'ticker': ticker, 'order_vars': order_vars}

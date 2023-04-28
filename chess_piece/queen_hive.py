@@ -2063,12 +2063,15 @@ def return_bars_list(
                     exchanges=exchange,
                 ).df
             else:
-                def chunk_getbars_ticker_list(chunk_list, max_n=1,):
+                def chunk_getbars_ticker_list(chunk_list, max_n=2,):
+                    # print(chunk_list)
+                    # ipdb.set_trace()
                     num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
                     chunk_num = max_n if num_rr > max_n else num_rr
                     
                     # if num_rr > chunk_num:
                     chunks = list(chunk(range(num_rr), chunk_num))
+                    # print(chunks)
                     for i in chunks:
                         if i[0] == 0:
                             slice1 = i[0]
@@ -2076,43 +2079,81 @@ def return_bars_list(
                         else:
                             slice1 = i[0] - 1
                             slice2 = i[-1] # [49 : 87]
-                        # print("chunk slice", (slice1, slice2))
+                        print("chunk slice", (slice1, slice2))
                         chunk_n = chunk_list[slice1:slice2]
-                        try:
-                            symbol_data = api.get_bars(
-                                ticker_list,
-                                timeframe=timeframe,
-                                start=start_date,
-                                end=end_date,
-                                adjustment="all",
-                            ).df
+                        print("c", chunk_n)
+                        # print(ticker_list)
+                        # try:
+                        #     symbol_data = api.get_bars(
+                        #         chunk_n,
+                        #         timeframe=timeframe,
+                        #         start=start_date,
+                        #         end=end_date,
+                        #         adjustment="all",
+                        #     ).df
+                        #     # print(type(symbol_data))
+                        #     # if symbol_data == None:
+                        #     #     print("QH_None_getbars")
+                        #     #     error_dict[ticker_list] = {"msg": "no data returned", "time": time}
+                        #     #     return False
+                            
+                        #     if len(symbol_data) == 0:
+                        #         error_dict[ticker_list] = {"msg": "no data returned", "time": time}
+                        #         return False
+                        #     # set index to EST time
+                        #     symbol_data["timestamp_est"] = symbol_data.index
+                        #     symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
+                        #         lambda x: x.astimezone(est)
+                        #     )
+                        #     symbol_data["timeframe"] = timeframe
+                        #     symbol_data["bars"] = "bars_list"
 
-                            if len(symbol_data) == 0:
-                                error_dict[ticker_list] = {"msg": "no data returned", "time": time}
-                                return False
-                            # set index to EST time
-                            symbol_data["timestamp_est"] = symbol_data.index
-                            symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
-                                lambda x: x.astimezone(est)
-                            )
-                            symbol_data["timeframe"] = timeframe
-                            symbol_data["bars"] = "bars_list"
+                        #     symbol_data = symbol_data.reset_index(drop=True)
+                        #     # if ndays == 1:
+                        #     #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-                            symbol_data = symbol_data.reset_index(drop=True)
-                            # if ndays == 1:
-                            #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
+                        #     return_dict[charttime] = symbol_data  
+                        # except Exception as e:
+                        #     print("QH_getbars", print_line_of_error(), e)
 
-                            return_dict[charttime] = symbol_data  
-                        except Exception as e:
-                            print("QH_getbars", print_line_of_error(), e)
+                    return True
 
-                        return True
+                # chunk_getbars_ticker_list(chunk_list=ticker_list)
+                try:
+                    symbol_data = api.get_bars(
+                        ticker_list,
+                        timeframe=timeframe,
+                        start=start_date,
+                        end=end_date,
+                        adjustment="all",
+                    ).df
+                    # print(type(symbol_data))
+                    # if symbol_data == None:
+                    #     print("QH_None_getbars")
+                    #     error_dict[ticker_list] = {"msg": "no data returned", "time": time}
+                    #     return False
+                    
+                    if len(symbol_data) == 0:
+                        error_dict[ticker_list] = {"msg": "no data returned", "time": time}
+                        return False
+                    # set index to EST time
+                    symbol_data["timestamp_est"] = symbol_data.index
+                    symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
+                        lambda x: x.astimezone(est)
+                    )
+                    symbol_data["timeframe"] = timeframe
+                    symbol_data["bars"] = "bars_list"
 
-                chunk_getbars_ticker_list(chunk_list=ticker_list)
-        
-        # e = datetime.now(est)
+                    symbol_data = symbol_data.reset_index(drop=True)
+                    # if ndays == 1:
+                    #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
-        return {"resp": True, "return": return_dict}
+                    return_dict[charttime] = symbol_data  
+                except Exception as e:
+                    print("QH_getbars", print_line_of_error(), e)
+        e = datetime.now(est)
+
+        return {"resp": True, "return": return_dict, 'error_dict': error_dict}
 
     except Exception as e:
         print("sending email of error", e)

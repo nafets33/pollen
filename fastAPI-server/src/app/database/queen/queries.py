@@ -28,7 +28,9 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
   df = queen_order.loc[client_order_id]
   # check against available_shares and validate amount
   # if number_shares > 0: # validate
-  
+  # print("Trying Request")
+  qty_available = float(df.get('qty_available'))
+  number_shares = qty_available if number_shares > qty_available else number_shares 
   status = None
   if len(df) > 0:
       current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
@@ -36,7 +38,7 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
           status = "You Already Requested Queen To Sell order, Refresh Orders to View latest Status"
       else:
           sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-          sell_package['sell_qty'] = float(df.get('qty_available'))
+          sell_package['sell_qty'] = number_shares
           sell_package['side'] = 'sell'
           sell_package['type'] = 'market'
           QUEEN_KING['sell_orders'].append(sell_package)
@@ -52,7 +54,7 @@ def load_queen_App_pkl(username, prod):
   if prod == False:
     queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App__sandbox.pkl'
   else:
-    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App.pkl'
+    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App_.pkl'
   print(queen_pkl_path)
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
@@ -70,7 +72,7 @@ def load_queen_pkl(username, prod):
 def get_queen_orders_json(username, prod):
   queen_db = load_queen_pkl(username, prod)
 
-  qo =queen_db['queen_orders']
+  qo = queen_db['queen_orders']
   col_view = [
               "honey",
               "$honey",
@@ -97,9 +99,13 @@ def get_queen_orders_json(username, prod):
               "order_trig_sell_stop",
               "side",
           ]
-
-  
   df = pd.DataFrame(qo)
+  
+  df["$honey"] = pd.to_numeric(df["$honey"], errors='coerce')
+  df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
+  df["honey"] = round(df["honey"] * 100,2)
+  df["$honey"] = round(df["$honey"],0)
+  
   df = df[df['queen_order_state'].isin(['running'])]
   df = df[col_view]
   json_data = df.to_json(orient='records')

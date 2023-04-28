@@ -183,6 +183,7 @@ def queen_workerbees(
             # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
             return [True, df_vwap_rsi_macd_smaslope]
         except Exception as e:
+            # ipdb.set_trace()
             print("log this error", print_line_of_error())
             return [False, e, print_line_of_error()]
 
@@ -273,7 +274,6 @@ def queen_workerbees(
         # print(msg)
         # dfs_index_tickers['SPY_5Minute']
         return [dfs_index_tickers, error_dict, msg]
-
 
     def Return_Snapshots_Rebuild(df_tickers_data, init=False):  # from snapshots & consider using day.min.chart to rebuild other timeframes
         def ticker_Snapshots(ticker_list, float_cols, int_cols):
@@ -645,6 +645,10 @@ def queen_workerbees(
                 return_list = []
                 tasks = []
                 for ticker_time, df in df_tickers_data.items():
+                    if len(df) == 0:
+                        print('errrrr', ticker_time)
+                    #     ipdb.set_trace()
+                    #     continue
                     MACD = ttf_MACD.get(ticker_time) # get MAC from KING
                     tasks.append(asyncio.ensure_future(main_func(session, ticker_time, df, MACD)))
                 original_pokemon = await asyncio.gather(*tasks)
@@ -668,14 +672,19 @@ def queen_workerbees(
 
     def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings):
         s_mainbeetime = datetime.now(est)
-        res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
-        errors = res["errors"]
-        if errors:
-            msg = ("Return_Init_ChartData Failed", "--", errors)
-            print(msg)
-            logging.critical(msg)
-            sys.exit()
-        df_tickers_data = res["init_charts"]
+        df_all = {}
+        for ticker in master_tickers:
+            res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
+            errors = res["errors"]
+            if errors:
+                msg = ("Return_Init_ChartData Failed", "--", errors)
+                print(msg)
+                logging.critical(msg)
+                sys.exit()
+            df_tickers_data = res["init_charts"]
+            df_all.update(df_tickers_data)
+        
+        df_tickers_data = df_all
 
         """ add snapshot to initial chartdata -1 """
         if reset_only == False:
@@ -812,22 +821,6 @@ def queen_workerbees(
         
         return True
 
-    def qcp_QUEENWorker__pollenstory(QUEENBEE, WORKERBEE_queens, speed_gauges):
-        try:
-            qcp_s=WORKERBEE_queens.keys(),
-            s = datetime.now(est)
-            for qcp in WORKERBEE_queens.keys():
-                ticker_star_hunter_bee(
-                    WORKERBEE_queens=WORKERBEE_queens,
-                    QUEENBEE=QUEENBEE,
-                    queens_chess_piece=qcp,
-                    speed_gauges=speed_gauges,
-                )
-            e = datetime.now(est)
-            print(f"All Workers Refreshed {qcp_s} --- {(e - s)} seconds ---")
-            return True
-        except Exception as e:
-            print("qtf", e, print_line_of_error())
 
     def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces):
 
@@ -887,7 +880,7 @@ def queen_workerbees(
             all_pawns = init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=list(alpaca_symbols_dict.keys()), theme=None, model=None, piece_name='all_pawns', buying_power=None, borrow_power=None, picture='knight_png')
             all_pawns = []
             p_num=0
-            for pawn in list(alpaca_symbols_dict.keys())[233:254]:
+            for pawn in list(alpaca_symbols_dict.keys())[100:200]:
                 all_pawns.append(init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=[pawn], theme=None, model=None, piece_name=pawn, buying_power=None, borrow_power=None, picture=f'knight_png'))
                 p_num += 1
 

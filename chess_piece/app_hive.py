@@ -1045,87 +1045,86 @@ def download_df_as_CSV(df, file_name="name.csv"):
 
 def queen_order_flow(QUEEN, active_order_state_list, order_buttons=False):
 
-    with st.expander("Portfolio Orders", expanded=True):
-        now_time = datetime.now(est)
-        cols = st.columns((1,3, 1, 1, 1, 1, 1))
-        with cols[0]:
-            refresh_b = st.button("Refresh", key="r1")
-            edit_orders= st.checkbox("edit_orders", key='edit_orders')
-        with cols[2]:
-            today_orders = st.checkbox("Today", False)
-            page_line_seperator(.2)
-            if today_orders:
-                st.image(mainpage_bee_png, width=33)
-        with cols[3]:
-            completed_orders = st.checkbox("Completed")
-            page_line_seperator(.2)
-            if completed_orders:
-                st.image(mainpage_bee_png, width=33)
-        with cols[4]:
-            all_orders = st.checkbox("All", False)
-            page_line_seperator(.2)
-            if all_orders:
-                st.image(mainpage_bee_png, width=33)
-        with cols[5]:
-            best_orders = st.checkbox("Best Bees")
-            page_line_seperator(.2)
-            if best_orders:
-                st.image(mainpage_bee_png, width=33)
-        with cols[6]:
-            show_errors = st.checkbox("Lost Bees")
-            page_line_seperator(.2)
-            if show_errors:
-                st.image(mainpage_bee_png, width=33)
-
-        order_states = set(QUEEN["queen_orders"]["queen_order_state"].tolist())
-
-        if all_orders:
-            order_states = order_states
-        elif completed_orders:
-            order_states = ["completed", "completed_alpaca"]
-        elif show_errors:
-            order_states = ["error"]
-        else:
-            order_states = ["submitted", "running", "running_close"]
-
-        with cols[1]:
-            queen_order_states = st.multiselect(
-                "queen order states",
-                options=list(active_order_state_list),
-                default=order_states,
-            )
-        cols = st.columns((1, 1, 10, 5))
-
-        df = queen_orders_view(
-            QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False
-        )["df"]
-        if len(df) == 0:
-            st.info("No Orders to View")
-            return False
-
+    now_time = datetime.now(est)
+    cols = st.columns((1,3, 1, 1, 1, 1, 1))
+    with cols[0]:
+        refresh_b = st.button("Refresh", key="r1")
+        edit_orders= st.checkbox("edit_orders", key='edit_orders')
+    with cols[2]:
+        today_orders = st.checkbox("Today", False)
+        page_line_seperator(.2)
         if today_orders:
-            df = df[df["datetime"] > now_time.replace(hour=1, minute=1, second=1)].copy()
+            st.image(mainpage_bee_png, width=33)
+    with cols[3]:
+        completed_orders = st.checkbox("Completed")
+        page_line_seperator(.2)
+        if completed_orders:
+            st.image(mainpage_bee_png, width=33)
+    with cols[4]:
+        all_orders = st.checkbox("All", False)
+        page_line_seperator(.2)
+        if all_orders:
+            st.image(mainpage_bee_png, width=33)
+    with cols[5]:
+        best_orders = st.checkbox("Best Bees")
+        page_line_seperator(.2)
+        if best_orders:
+            st.image(mainpage_bee_png, width=33)
+    with cols[6]:
+        show_errors = st.checkbox("Lost Bees")
+        page_line_seperator(.2)
+        if show_errors:
+            st.image(mainpage_bee_png, width=33)
 
-        g_height = grid_height(len_of_rows=len(df))
-        set_grid_height = st.sidebar.number_input(
-            label=f"Set Orders Grid Height", value=g_height
-        )
-        # with cols[1]:
-        with cols[0]:
-            mark_down_text(text=f'% {round(sum(df["honey"]) * 100, 2)}', fontsize="18")
-        with cols[1]:
-            mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
-        cols = st.columns((1, 1, 10))
+    order_states = set(QUEEN["queen_orders"]["queen_order_state"].tolist())
 
-        ordertables__agrid = queens_orders__aggrid_v2(
-            data=df.astype(str),
-            active_order_state_list=active_order_state_list,
-            reload_data=False,
-            height=set_grid_height,
-            buttons=order_buttons
+    if all_orders:
+        order_states = order_states
+    elif completed_orders:
+        order_states = ["completed", "completed_alpaca"]
+    elif show_errors:
+        order_states = ["error"]
+    else:
+        order_states = ["submitted", "running", "running_close"]
+
+    with cols[1]:
+        queen_order_states = st.multiselect(
+            "queen order states",
+            options=list(active_order_state_list),
+            default=order_states,
         )
-        
-        download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
+    cols = st.columns((1, 1, 10, 5))
+
+    df = queen_orders_view(
+        QUEEN=QUEEN, queen_order_state=queen_order_states, return_str=False
+    )["df"]
+    if len(df) == 0:
+        st.info("No Orders to View")
+        return False
+
+    if today_orders:
+        df = df[df["datetime"] > now_time.replace(hour=1, minute=1, second=1)].copy()
+
+    g_height = grid_height(len_of_rows=len(df))
+    set_grid_height = st.sidebar.number_input(
+        label=f"Set Orders Grid Height", value=g_height
+    )
+    # with cols[1]:
+    with cols[0]:
+        mark_down_text(text=f'% {round(sum(df["honey"]) * 100, 2)}', fontsize="18")
+    with cols[1]:
+        mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
+    cols = st.columns((1, 1, 10))
+
+    ordertables__agrid = queens_orders__aggrid_v2(
+        data=df.astype(str),
+        active_order_state_list=active_order_state_list,
+        reload_data=False,
+        height=set_grid_height,
+        buttons=order_buttons
+    )
+    
+    download_df_as_CSV(df=ordertables__agrid["data"], file_name="orders.csv")
 
     return ordertables__agrid
 
@@ -1208,24 +1207,32 @@ def test_api_keys(user_secrets, prod=False):
 def pollenq_button_source():
     return{
         'chess_board': False,
-        'option_data': [
+
+        'charts_option_data': [
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
+        {'id': "charts_id", 'icon': "fa fa-signal", 'label':""},
+        ],
+
+        'board_option_data': [
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
         {'id': "chess_board", 'icon': "fas fa-chess-board", 'label':""},
-        {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+        {'id': "admin_workerbees", 'icon':"fas fa-chess-queen",'label':""},
         ],
         'option_data_orders': [
         # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
-        {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
-        # {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
+        {'id': "orders", 'icon':"fas fa-chess-king",'label':""},
         ],
+        
         'option_data_qm': [
         {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
         {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
         ],
-        # 'option_data_qm': [
-        # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
-        # {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
-        # {'id': "admin_workerbees", 'icon':"fas fa-chess-pawn",'label':""},
-        # ],
+        'workerbees_option_data': [
+        {'id': "", 'icon': "fas fa-chess-pawn", 'label':""},
+        {'id': "workerbees", 'icon': "fa fa-star", 'label':""},
+        ],
+
         'option_heart': [{'id': "heartbeat", 'icon':"fas fa-heart",'label':""},],
         'option_chart': [{'id': "show_charts", 'icon':"fa fa-bar-chart",'label':""}, {'id': "no_charts", 'icon':"fa fa-toggle-off",'label':""}, ],
         'pawn_option_data': [
@@ -1243,17 +1250,11 @@ def pollenq_button_source():
         'chess_option_data': [
         {'id': "chess_search", 'icon': "fas fa-chess", 'label':""},
         ],
-        'workerbees_option_data': [
-        {'id': "workerbees_on", 'icon': "fas fa-chess-queen", 'label':""},
-        {'id': "workerbees_off", 'icon': "fas fa-chess-pawn", 'label':""},
-        ],
         'charts_day_option_data': [
         {'id': "charts_dayonly_no", 'icon': "", 'label':"no"},
         {'id': "charts_dayonly_yes", 'icon': "", 'label':"yes"},
         ],
-        'charts_option_data': [
-        {'id': "charts_id", 'icon': "fa fa-heartbeat", 'label':""},
-        ],
+
     }
 
 def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False):
