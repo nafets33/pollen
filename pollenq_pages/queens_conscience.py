@@ -1678,8 +1678,17 @@ def queens_conscience(st, hc, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
                 if st.session_state['orders']:
                     # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='P.Orders', key='orders_main', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                     orders_agrid()
-                    if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
-                        st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
+                    # if st.session_state['username'] in ["stefanstapinski@gmail.com"]:
+                    #     st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
+                    st_custom_grid(username="stefanstapinski", 
+                        api="http://127.0.0.1:8000/api/data/queen", 
+                        refresh_sec= 2, 
+                        refresh_cutoff_sec= 60, 
+                        key = False,
+                        api_url="http://127.0.0.1:8000/api/data/queen_app_Sellorder_request",
+                        button_name="sell",
+                        prod=False,
+                        )
                     # QUEEN['queen_orders'].iloc[3]
                     # st_custom_grid(api:str, refresh_sec:int, refresh_cutoff:int,gridoption_build)
                         
