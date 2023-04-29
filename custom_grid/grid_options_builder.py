@@ -12,6 +12,9 @@ class GridOptionsBuilder:
         gb = GridOptionsBuilder()
         return gb
 
+    def configure_index(self, index_field : str):
+        self.configure_grid_options(index=index_field)
+
     def configure_default_column(self, column_width=90, resizable=True, filterable=True, sortable=True, editable=False, groupable=False, sorteable=None, **other_default_column_properties):
         """Configure default column.
 
@@ -79,6 +82,14 @@ class GridOptionsBuilder:
             colDef = {**colDef, **other_column_properties}
 
         self.__grid_options["columnDefs"][field].update(colDef)
+    
+    def configure_grid_options(self, **props):
+        """Merges props to gridOptions
+
+        Args:
+            props (dict): props dicts will be merged to gridOptions root.
+        """
+        self.__grid_options.update(props)
         
     def build(self):
         self.__grid_options["columnDefs"] = list(self.__grid_options["columnDefs"].values())

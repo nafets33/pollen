@@ -9,16 +9,22 @@ def main():
     'cellRenderer': 'agAnimateShowChangeCellRenderer',
     'enableCellChangeFlash': True,
     }
-  gb.configure_column('honey', flash_def)
-  gb.configure_column('$honey',flash_def)
-  gb.configure_column('symbol')
-  gb.configure_column('ticker_time_frame')
-  gb.configure_column('trigname')
-  gb.configure_column('datetime')
-  gb.configure_column('honey_time_in_profit')
-  gb.configure_column('filled_qty')
-  gb.configure_column('qty_available')
-  gb.configure_column('filled_avg_price')
+  #Configure index field
+  gb.configure_index('a')
+  gb.configure_column('a', {'pinned': 'left', 'headerName': 'cc', 
+                            'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                            'custom_currency_symbol':"%"
+                            })
+  # gb.configure_column('honey', flash_def)
+  # gb.configure_column('$honey',flash_def)
+  # gb.configure_column('symbol')
+  # gb.configure_column('ticker_time_frame')
+  # gb.configure_column('trigname')
+  # gb.configure_column('datetime')
+  # gb.configure_column('honey_time_in_profit')
+  # gb.configure_column('filled_qty')
+  # gb.configure_column('qty_available')
+  # gb.configure_column('filled_avg_price')
   go = gb.build()
   st_custom_grid(username='sven0227', 
                  api='http://127.0.0.1:8000/api/data/queen', 
