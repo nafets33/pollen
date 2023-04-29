@@ -56,7 +56,7 @@ def queen_workerbees(
                      reset_only=False,
                      run_all_pawns=False,
                      ):
-    
+
     if backtesting:
         assert macd is not None
         reset_only = True
@@ -734,6 +734,9 @@ def queen_workerbees(
         QUEEN[queens_chess_piece]["pollencharts_nectar"] = pollen["pollencharts_nectar"]  # bars and techicnals
 
         pollens_honey = pollen_story(pollen_nectar=pollen.get("pollencharts_nectar"))
+        if pollens_honey == False:
+            print("PollenStory Failed continue")
+            return False
         betty_bee = pollens_honey["betty_bee"]
         # ANGEL_bee = pollens_honey["conscience"]["ANGEL_bee"]
         # knights_sight_word = pollens_honey["conscience"]["KNIGHTSWORD"]
@@ -854,14 +857,14 @@ def queen_workerbees(
 
         return {"WORKERBEE_queens": WORKERBEE_queens, "speed_gauges": speed_gauges}
 
-    print(
-        """
-    We all shall prosper through the depths of our connected hearts,
-    Not all will share my world,
-    So I put forth my best mind of virtue and goodness,
-    Always Bee Better
-    """
-    )
+    # print(
+    #     """
+    # We all shall prosper through the depths of our connected hearts,
+    # Not all will share my world,
+    # So I put forth my best mind of virtue and goodness,
+    # Always Bee Better
+    # """
+    # )
 
 
     def queens_court__WorkerBees(prod, qcp_s, run_all_pawns=False):
@@ -880,7 +883,7 @@ def queen_workerbees(
             all_pawns = init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=list(alpaca_symbols_dict.keys()), theme=None, model=None, piece_name='all_pawns', buying_power=None, borrow_power=None, picture='knight_png')
             all_pawns = []
             p_num=0
-            for pawn in list(alpaca_symbols_dict.keys())[100:200]:
+            for pawn in list(alpaca_symbols_dict.keys())[200:300]:
                 all_pawns.append(init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=[pawn], theme=None, model=None, piece_name=pawn, buying_power=None, borrow_power=None, picture=f'knight_png'))
                 p_num += 1
 
@@ -904,10 +907,13 @@ def queen_workerbees(
 
             while True:
                 # if check_with_queen_frequency
+                now_time = datetime.now(est)
+                # print((now_time - last_queen_call.get('last_call')).total_seconds())
                 if (now_time - last_queen_call.get('last_call')).total_seconds() > check_with_queen_frequency:
                     print("Check Queen for New Tickers")
                     pq = read_QUEEN(queen_db=queen_db, qcp_s=qcp_s)
                     QUEENBEE = pq["QUEENBEE"]
+                    last_queen_call = {'last_call': now_time}
                     latest__queens_chess_pieces = pq["queens_chess_pieces"]
                     latest__queens_master_tickers = pq["queens_master_tickers"]
                     if latest__queens_master_tickers != queens_master_tickers:
@@ -915,8 +921,6 @@ def queen_workerbees(
                         queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces)
                         WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
                         speed_gauges = queen_workers["speed_gauges"]
-                        now_time = datetime.now(est)
-                        last_queen_call = {'last_call': now_time}
                             
                 if run_all_pawns:
                     for pawn in all_pawns:
@@ -935,7 +939,7 @@ def queen_workerbees(
                             speed_gauges=speed_gauges,
                         )
                     e = datetime.now(est)
-                    print(f"All Workers Refreshed {all_qcp_s} --- {(e - s)} seconds ---")
+                    print(f"Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}")
                     # return True
                 except Exception as e:
                     print("qtf", e, print_line_of_error())

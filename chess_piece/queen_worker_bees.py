@@ -633,7 +633,6 @@ def queen_workerbees(prod, queens_chess_piece="bees_manager"):
 
         pollens_honey = pollen_story(
             pollen_nectar=QUEEN[queens_chess_piece]["pollencharts_nectar"],
-            WORKER_QUEEN=QUEENBEE,
         )
         ANGEL_bee = pollens_honey["conscience"]["ANGEL_bee"]
         knights_sight_word = pollens_honey["conscience"]["KNIGHTSWORD"]
