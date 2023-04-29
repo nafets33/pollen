@@ -32,17 +32,14 @@ type Props = {
   prod?: boolean,
   api_url: string,
   button_name: string,
-  grid_options?: GridOptions<any>
+  grid_options?: GridOptions<any>,
+  index: string,
 }
-
-
-
-const defaultWidth = 100;
-
 
 let g_rowdata: any[] = [];
 
 const AgGrid = (props: Props) => {
+
   const BtnCellRenderer = (props: any) => {
     const btnClickedHandler = () => {
       props.clicked(props.value);
@@ -52,6 +49,7 @@ const AgGrid = (props: Props) => {
       <button onClick={btnClickedHandler}>{button_name}</button>
     )
   }
+
   const defaultColumnDefs: ColDef[] = [
     {
       field: 'honey',
@@ -121,7 +119,7 @@ const AgGrid = (props: Props) => {
   ];
 
   const gridRef = useRef<AgGridReact>(null);
-  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true, api_url, button_name, grid_options = {} } = props;
+  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true, api_url, button_name, grid_options = {}, index } = props;
   const [rowData, setRowData] = useState<any[]>([]);
   const [columnDefs, setColumnDefs] = useState<(ColDef | ColGroupDef)[]>(defaultColumnDefs)
   useEffect(() => {
@@ -166,13 +164,14 @@ const AgGrid = (props: Props) => {
   const fetchAndSetData = async () => {
     const array = await fetchData();
     const api = gridRef.current!.api;
-    const id_array = array.map((item: any) => item.client_order_id)
-    const old_id_array = g_rowdata.map((item: any) => item.client_order_id)
-    const toUpdate = g_rowdata.filter((row: any) => id_array.includes(row.client_order_id))
-    const toRemove = g_rowdata.filter((row) => !id_array.includes(row.client_order_id))
-    const toAdd = array.filter((row: any) => !old_id_array.includes(row.client_order_id))
+    const id_array = array.map((item: any) => item[index])
+    const old_id_array = g_rowdata.map((item: any) => item[index])
+    const toUpdate = g_rowdata.filter((row: any) => id_array.includes(row[index]))
+    const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
+    const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
     api.applyTransactionAsync({ update: toUpdate, remove: toRemove, add: toAdd });
     g_rowdata = array
+    console.log("index", index);
   };
 
   const fetchData = async () => {
@@ -240,20 +239,11 @@ const AgGrid = (props: Props) => {
     };
   }, []);
 
-  // const defaultColDef = useMemo<ColDef>(() => {
-  //   return {
-  //     width: 120,
-  //     sortable: true,
-  //     resizable: true,
-  //     filter: true,
-  //   };
-  // }, []);
-
   const getRowId = useMemo<GetRowIdFunc>(() => {
     return (params: GetRowIdParams) => {
-      return params.data.client_order_id;
+      return params.data[index];
     };
-  }, []);
+  }, [index]);
 
   const sideBar = useMemo<
     SideBarDef | string | string[] | boolean | null

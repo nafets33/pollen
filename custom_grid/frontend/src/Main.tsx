@@ -12,7 +12,8 @@ const Main = (props: ComponentProps) => {
 
   const { username, api, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
   const { api_url, button_name, grid_options } = props.args;
-  console.log("AAAAAAAA", grid_options);
+  const { index } = grid_options;
+  console.log("AAAAAAAA", grid_options.index);
   return (
     <div >
       <Aggrid
@@ -25,6 +26,7 @@ const Main = (props: ComponentProps) => {
         api_url={api_url}
         button_name={button_name}
         grid_options={grid_options}
+        index={index}
       />
     </div>
   );
