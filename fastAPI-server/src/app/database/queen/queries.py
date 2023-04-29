@@ -5,6 +5,7 @@ import random
 from helpers.utils import ReadPickleData, find_folder, db_folder_path, PickleData
 from datetime import datetime
 import pytz
+import ipdb
 est = pytz.timezone("US/Eastern")
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
@@ -19,7 +20,6 @@ def create_AppRequest_package(request_name, archive_bucket=None, client_order_id
     'archive_bucket': archive_bucket,
     'request_timestamp': now,
     }
-
 
 def app_Sellorder_request(username, prod, client_order_id, number_shares):
   QUEEN_KING = load_queen_App_pkl(username, prod)
@@ -50,21 +50,19 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
   return {'status': status}
 
 def load_queen_App_pkl(username, prod):
-  print(db_folder_path)
   if prod == False:
-    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App__sandbox.pkl'
+    queen_pkl_path = username+'/queen_App__sandbox.pkl'
   else:
-    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_App_.pkl'
+    queen_pkl_path = username+'/queen_App_.pkl'
   print(queen_pkl_path)
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
 
 def load_queen_pkl(username, prod):
-  print(db_folder_path)
   if prod == False:
-    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen_sandbox.pkl'
+    queen_pkl_path = username+'/queen_sandbox.pkl'
   else:
-    queen_pkl_path = db_folder_path+"/"+find_folder(username)+'/queen.pkl'
+    queen_pkl_path = username+'/queen.pkl'
   print(queen_pkl_path)
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl

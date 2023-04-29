@@ -58,27 +58,35 @@ pd.options.mode.chained_assignment = None
 def pollenq(admin_pq):
     try:
         king_G = kingdom__global_vars()
-
+        import subprocess
+        import sys
         def refresh_workerbees(QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
+            
             with st.form("workerbees refresh"):
-                if st.session_state['admin']:
-                    reset_only = st.checkbox("reset_only", reset_only)
-                    backtesting = st.checkbox("backtesting", backtesting)
-                    run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
+                try:
+                    if st.session_state['admin']:
+                        reset_only = st.checkbox("reset_only", reset_only)
+                        backtesting = st.checkbox("backtesting", backtesting)
+                        run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
 
-                    refresh = st.form_submit_button("Run WorkerBees", use_container_width=True)
-                    if refresh:
-                        with st.spinner("Running WorkerBees"):
-                            s = datetime.now(est)
-                            queen_workerbees(qcp_s=['castle', 'knight', 'bishop'], 
-                                                prod=QUEEN_KING.get('prod'), 
-                                                reset_only=reset_only, 
-                                                backtesting=backtesting, 
-                                                run_all_pawns=run_all_pawns, 
-                                                macd=None)
-                            st.success("WorkerBees Completed")
-                            e = datetime.now(est)
-                            st.write("refresh time ", (e - s).total_seconds())
+                        refresh = st.form_submit_button("Run WorkerBees", use_container_width=True)
+                        if refresh:
+                            with st.spinner("Running WorkerBees"):
+                                s = datetime.now(est)
+                                if backtesting:
+                                    subprocess.run([f"{sys.executable}", os.path.join(hive_master_root(), 'macd_grid_search.py')])
+                                else:
+                                    queen_workerbees(qcp_s=['castle'], 
+                                                        prod=QUEEN_KING.get('prod'), 
+                                                        reset_only=reset_only, 
+                                                        backtesting=False, 
+                                                        run_all_pawns=run_all_pawns, 
+                                                        macd=None)
+                                st.success("WorkerBees Completed")
+                                e = datetime.now(est)
+                                st.write("refresh time ", (e - s).total_seconds())
+                except Exception as e:
+                    print(e, print_line_of_error())
 
         def refresh_workerbees_manager(QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
             with st.form("workerbees refresh"):
@@ -492,7 +500,6 @@ def pollenq(admin_pq):
             if st.session_state['admin'] == True:
                 with st.sidebar:
                     with st.expander("admin user"):
-                        users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
                         admin_client_user = st.selectbox('admin client_users', options=users_allowed_queen_email, index=users_allowed_queen_email.index(st.session_state['username']))
                         if st.button('admin change user', use_container_width=True):
                             st.session_state['admin__client_user'] = admin_client_user
@@ -575,7 +582,6 @@ def pollenq(admin_pq):
                 st.experimental_rerun()
 
 
-            admin_check(admin_pq)
 
             ####### Welcome to Pollen ##########
             # use API keys from user
@@ -584,9 +590,12 @@ def pollenq(admin_pq):
             PB_QUEENBEE_Pickle = master_swarm_QUEENBEE(prod=prod)
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
             QUEENBEE['source'] = PB_QUEENBEE_Pickle
-            PB_KING_Pickle = master_swarm_KING(prod=prod)
-            KING = ReadPickleData(PB_KING_Pickle)
-            KING['source'] = PB_KING_Pickle
+            KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+            admin_check(admin_pq)
+            # PB_KING_Pickle = master_swarm_KING(prod=prod)
+            # KING = ReadPickleData(PB_KING_Pickle)
+            # KING['source'] = PB_KING_Pickle
+            
             # with st.sidebar:
             #     st.write("testing fastpi")
             # to_builder = TextOptionsBuilder.create()

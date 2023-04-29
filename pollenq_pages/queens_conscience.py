@@ -1766,10 +1766,18 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     update_trading_models(QUEEN_KING)                             
                         if tab_name == 'orders':
                             if st.session_state['orders']:
-                                st_custom_grid(client_user, "http://127.0.0.1:8000/api/data/queen", 2, 500, prod=st.session_state['production'])
+                                st_custom_grid(
+                                    username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+                                    api="http://127.0.0.1:8000/api/data/queen", 
+                                    refresh_sec=2, 
+                                    refresh_cutoff_sec=500, 
+                                    prod=st.session_state['production'],
+                                    key='maingrid',
+                                    api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
+                                    button_name='sell',
+                                )
                                 
                                 orders_agrid()
-
                  
                 page_session_state__cleanUp(page=page)
 

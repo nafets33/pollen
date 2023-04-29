@@ -880,7 +880,7 @@ def return_STORYbee_trigbees(QUEEN, STORY_bee, tickers_filter=False):
 
 ### Story
 # trade closer to ask price .... sellers closer to bid .... measure divergence from bid/ask to give weight
-def pollen_story(pollen_nectar, WORKER_QUEEN=False):
+def pollen_story(pollen_nectar):
     # define weights in global and do multiple weights for different scenarios..
     # MACD momentum from past N times/days
     # TIME PAST SINCE LAST HIGH TO LOW to change weight & how much time passed since tier cross last high?
@@ -1171,6 +1171,8 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
             except Exception as e:
                 print_line_of_error()
                 print(e)
+                print("PStoryEr", ticker_time_frame)
+                return False
 
 
         s = datetime.now(est)
@@ -1206,7 +1208,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
 
 
         e = datetime.now(est)
-        print("pollen_story", str((e - s)))
+        # print("pollen_story", str((e - s)))
         
         
         return {
@@ -1222,6 +1224,7 @@ def pollen_story(pollen_nectar, WORKER_QUEEN=False):
     except Exception as e:
         print("pollen_story error ", e)
         print_line_of_error()
+        return False
 
 
 def knights_triggerbees(df):  # adds all triggers to dataframe
@@ -2151,6 +2154,7 @@ def return_bars_list(
                     return_dict[charttime] = symbol_data  
                 except Exception as e:
                     print("QH_getbars", print_line_of_error(), e)
+                    print(ticker_list)
         e = datetime.now(est)
 
         return {"resp": True, "return": return_dict, 'error_dict': error_dict}
@@ -4155,10 +4159,14 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
     all_alpaca_tickers = api.list_assets()
     alpaca_symbols_dict = {}
     for n, v in enumerate(all_alpaca_tickers):
-        if all_alpaca_tickers[n].status == "active":
+        if all_alpaca_tickers[n].status == "active" and all_alpaca_tickers[n].tradable == True and all_alpaca_tickers[n].exchange != 'CRYPTO':
             alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(
                 all_alpaca_tickers[n]
             )
+
+    alpaca_symbols = {k: i['_raw'] for k,i in alpaca_symbols_dict.items()}
+    alpaca_symbols_df = pd.DataFrame(alpaca_symbols).T
+
 
     symbol_shortable_list = []
     t = []
@@ -4189,6 +4197,7 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
     return {
         "alpaca_symbols_dict": alpaca_symbols_dict,
         "all_alpaca_tickers": all_alpaca_tickers,
+        "alpaca_symbols_df": alpaca_symbols_df,
     }
 
 

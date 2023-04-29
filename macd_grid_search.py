@@ -4,16 +4,14 @@ import re
 import pickle
 import pandas as pd
 from datetime import datetime
-from chess_piece.queen_hive import send_email
 
-sys.path.append("./chess_piece")
-
+# sys.path.append("./chess_piece")
 
 from chess_piece.workerbees import queen_workerbees
-from chess_piece.queen_hive import analyze_waves
-from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee
+from chess_piece.queen_hive import analyze_waves, send_email, stars
+from chess_piece.king import hive_master_root, workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee
 
-
+send_email(subject=f"Running BackTesting")
 fast_vals = range(7,15)
 slow_vals = range(15,33)
 smooth_vals = range(6,13)
@@ -30,7 +28,7 @@ backtest_folder = workerbee_dbs_backtesting_root__STORY_bee()
 
 def read_backtest_folder_assert_insight(backtest_folder):
     s = datetime.now()
-    pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
+    # pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
     # folder = "symbols_STORY_bee_dbs_backtesting"
     for filepath in os.listdir(backtest_folder):
         # if pattern.match(filepath):
@@ -71,12 +69,46 @@ def read_backtest_folder_assert_insight(backtest_folder):
         df.to_csv("macd_grid_search_blocktime.csv")
     else:
         df.to_csv("macd_grid_search.csv")
+
+    ## back test analysis results ##
+    back_test_blocktime = os.path.join(hive_master_root(), 'macd_grid_search_blocktime.csv')
+    df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
+    df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
+    for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
+        df_backtest[col] = pd.to_numeric(df_backtest[col], errors='coerce')
+    df_backtest_ttf = df_backtest.groupby(['ttf', 'key', 'macd_fast', 'macd_slow', 'macd_smooth'])[['winratio', 'maxprofit']].sum().reset_index()
+    # st.dataframe(df_backtest)
+    # standard_AGgrid(df_backtest_ttf)
+    # standard_AGgrid(df_backtest)
+    stars_times = stars().keys()
+    tickers = set([i.split("_")[0] for i in df_backtest_ttf['ttf'].tolist()])
+    results = []
+    results_top = []
+    for ticker in tickers:
+        for tframes in stars_times:
+            spy = df_backtest_ttf[df_backtest_ttf['ttf'] == f'{ticker}_{tframes}']
+            spy_ = spy[spy.index.isin(spy['maxprofit'].nlargest(n=5).index.tolist())]
+            mf = int(round(sum(spy_['macd_fast']) / 5,0))
+            ms = int(round(sum(spy_['macd_slow']) / 5,0))
+            mss = int(round(sum(spy_['macd_smooth']) / 5,0))
+            spy_['avg_ratio'] = f'{mf}_{ms}_{mss}'
+            spy_result = spy_[['ttf', 'avg_ratio']].drop_duplicates()
+            results_top.append(spy_result)
+            results.append(spy_)
+
+    df_top5 = pd.concat(results)
+    df_top5_results = pd.concat(results_top)
+
+    df_top5_results.to_csv('macd_backtest_analysis.csv')
+    df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting') + '/macd_backtest_analysis.csv')
+
     e = datetime.now()
     run_time = (e-s)
     send_email(subject=f"BackTesting Wave Analysis {run_time}")
 
 
 def run_backtesting_pollenstory(run_wave_analysis=True):
+
     s = datetime.now()
     for fast_val in fast_vals:
         for slow_val in slow_vals:
@@ -93,14 +125,14 @@ def run_backtesting_pollenstory(run_wave_analysis=True):
                 # Check that macd was already processed.            
                 pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
                 # folder = "symbols_STORY_bee_dbs_backtesting"
-                to_continue = False
-                for filepath in os.listdir(backtest_folder):
-                    if pattern.match(filepath):
-                        print("\tcontinued")
-                        to_continue = True 
-                        break
-                if to_continue:
-                    continue
+                # to_continue = False
+                # for filepath in os.listdir(backtest_folder):
+                #     if pattern.match(filepath):
+                #         print("\tcontinued")
+                #         to_continue = True 
+                #         break
+                # if to_continue:
+                #     continue
                 try:
                     queen_workerbees(qcp_s=['castle', 'knight', 'bishop'],
                                      prod = False, 
@@ -108,11 +140,15 @@ def run_backtesting_pollenstory(run_wave_analysis=True):
                                      macd = macd,
                                      reset_only=True)
                 except Exception as e:
-                    print(e)
-                if run_wave_analysis:
-                    read_backtest_folder_assert_insight(backtest_folder)
+                    print('heynow', e)
+    if run_wave_analysis:
+        read_backtest_folder_assert_insight(backtest_folder)
+
 
 
     e = datetime.now()
     run_time = (e-s)
     send_email(subject=f"BackTesting Run {run_time}")
+
+if __name__ == '__main__':
+    run_backtesting_pollenstory()

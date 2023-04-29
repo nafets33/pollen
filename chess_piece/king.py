@@ -318,15 +318,18 @@ def return_all_client_users__db(query="SELECT * FROM users"):
 
 def kingdom__grace_to_find_a_Queen():
     # create list for userdb
-    PB_KING = master_swarm_KING(prod=True)
-    KING = ReadPickleData(PB_KING)
+    PB_KING_Pickle = master_swarm_KING(prod=True)
+    KING = ReadPickleData(PB_KING_Pickle)
     users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
     users_allowed_queen_email.append("stefanstapinski@gmail.com")
     users_allowed_queen_email.append("sven0227@gmail.com")
 
     users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
-
+    KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
+    KING['source'] = PB_KING_Pickle
+    
     return (
+        KING,
         users_allowed_queen_email,
         users_allowed_queen_emailname__db,
     )

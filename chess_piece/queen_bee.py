@@ -28,6 +28,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     utc = pytz.timezone('UTC')
 
     # ###### GLOBAL # ######
+    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
     king_G = kingdom__global_vars()
     ARCHIVE_queenorder = king_G.get('ARCHIVE_queenorder') # ;'archived'
     active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
@@ -45,7 +46,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         'P','Q','R','T','V','Z'
     ] # 'U'
     
-    users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
     prod = True if str(prod).lower() == 'true' else False
 
@@ -728,7 +728,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             try:
                 # Map in the color on storyview
                 power_rangers_universe = ['mac_ranger', 'hist_ranger']
-                # queens_star_rangers = [i for i in QUEEN['queen_controls']['power_rangers'].keys() if i in tmodel_power_rangers]
                 stars_colors_d = {ranger: dict(zip(stars_df['star'], stars_df[ranger])) for ranger in power_rangers_universe}
                 # ticker = 'SPY' # default
                 ticker_token = f'{ticker}{"_"}'
@@ -745,7 +744,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     if v == 'active' or v == True:
                         for ranger in power_rangers_universe:
                             PowerRangerColor = stars_colors_d[ranger][f'{ticker_token}{star}'] # COLOR
-                            power_up[ranger] += float(QUEEN['queen_controls']['power_rangers'][star][ranger][wave_type][theme][PowerRangerColor]) # star-buywave-theme
+                            power_up[ranger] += float(QUEEN_KING['king_controls_queen']['power_rangers'][star][ranger][wave_type][theme][PowerRangerColor]) # star-buywave-theme
 
                 return power_up
             except Exception as e:
@@ -796,7 +795,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             
             return kings_blessing, order_vars
         
-        
+        # def last_time_tr
         try:
             if crypto: # crypto currently not supported
                 return {'kings_blessing': False}
@@ -850,7 +849,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 time_delta = now_time - datetime.now(est)
 
-            
             # remaining_budget_wave = ticker_remaining_budget * .89
             remaining_budget_wave = star_total_budget_remaining
             remaining_budget_wave_Short = star_total_borrow_remaining
@@ -867,7 +865,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             power_up_amo = {ranger: 0 for ranger in power_rangers_universe}
 
             # Theme
-            theme = QUEEN['queen_controls']['theme'] # what is the theme?
+            theme = QUEEN_KING['king_controls_queen']['theme'] # what is the theme?
             trading_model_theme = trading_model.get('theme')
             trading_model_star = trading_model['stars_kings_order_rules'].get(f'{tframe}_{tperiod}')
 
@@ -976,7 +974,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             s_time = datetime.now(est)
             for ticker in active_tickers:
                 # Ensure Trading Model
-                if ticker not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys():
+                if ticker not in QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].keys():
                     QUEEN['queens_messages'].update({'model_does_not_exist': f'{ticker}'})
                     continue 
                 crypto = True if ticker in crypto_currency_symbols else False
@@ -1014,7 +1012,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         if revrec.get('df_ticker').loc[ticker, 'ticker_buying_power'] == 0:
                             continue
 
-                        trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'][ticker]
+                        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker]
                         
                         # check global ticker level
                         if str(trading_model['status']) not in ['active', 'true']:
@@ -1546,8 +1544,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             # Return Latest Model Vars in QUEEN
             ticker, tframe, tperiod = ticker_time_frame_origin.split("_")
-            model_ticker = 'SPY' if run_order['symbol'] not in QUEEN['queen_controls']['symbols_stars_TradingModel'].keys() else run_order['symbol']
-            trading_model = QUEEN['queen_controls']['symbols_stars_TradingModel'].get(model_ticker)
+            model_ticker = 'SPY' if run_order['symbol'] not in QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].keys() else run_order['symbol']
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(model_ticker)
             trading_model_star = trading_model['stars_kings_order_rules'].get(f'{tframe}_{tperiod}')
 
             bishop_keys_list = ['ticker', 'ticker_time_frame', 'trigname', 'client_order_id']
@@ -2330,13 +2328,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
         PB_QUEENsHeart_PICKLE = init_pollen['PB_QUEENsHeart_PICKLE']
 
-        KING = ReadPickleData(master_swarm_KING(prod=prod))
+        # KING = ReadPickleData(master_swarm_KING(prod=prod))
         # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
         # QUEEN Databases
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
         QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-        QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
-        QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
+        QUEEN_KING['king_controls_queen'] = QUEEN_KING['king_controls_queen']
         ORDERS = ReadPickleData(PB_Orders_Pickle)
         
         """ Keys """ 
@@ -2395,7 +2392,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         QUEEN = refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
 
         available_triggerbees = ["sell_cross-0", "buy_cross-0"]
-        # ipdb.set_trace()
+
         QUEEN['heartbeat']['available_triggerbees'] = available_triggerbees
         
         print("active trigs", available_triggerbees)
@@ -2442,8 +2439,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 KING = ReadPickleData(master_swarm_KING(prod=prod))
                 # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
                 QUEEN_KING = ReadPickleData(PB_App_Pickle)
-                QUEEN['queen_controls'] = QUEEN_KING['king_controls_queen']
-                QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
                 QUEEN['chess_board'] = QUEEN_KING['chess_board']
                 QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
                 
@@ -2502,32 +2497,9 @@ if __name__ == '__main__':
     prod = namespace.prod
     queenbee(client_user, prod, queens_chess_piece='queen')
 
-
-# LongTerm_symbols = ['AAPL', 'GOOGL', 'MFST', 'VIT', 'HD', 'WMT', 'MOOD', 'LIT', 'SPXL', 'TQQQ']
-
-# import pandas_ta as ta
-
-# import threading
-# import alpaca_trade_api as tradeapi
-# import asyncio
-# from alpaca_trade_api.rest import TimeFrame, URL
-# from alpaca_trade_api.rest_async import gather_with_concurrency, AsyncRest
-# from enum import Enum
-# from operator import sub
-# from queue import Queue
-# from signal import signal
-# from symtable import Symbol
-# from scipy.stats import linregress
-# from scipy import stats
-# import hashlib
-# import json
-# from collections import deque
-# import tempfile
-# from typing import Callable
-# import random
-# import collections
-# import pickle
-# from tqdm import tqdm
-# from stocksymbol import StockSymbol
-# import requests
-# from collections import defaultdict
+"""
+The Journey is Hard,
+Believe in you,
+Believe in God,
+Believe
+"""
