@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, StrictMode } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-enterprise';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import 'ag-grid-enterprise';
+import './styles.css';
 import axios from "axios"
 import {
   ComponentProps,
@@ -31,30 +32,28 @@ type Props = {
   prod?: boolean,
   api_url: string,
   button_name: string,
+  grid_options?: GridOptions<any>,
+  index: string,
 }
-
-
-
-const defaultWidth = 100;
-
 
 let g_rowdata: any[] = [];
 
 const AgGrid = (props: Props) => {
+
   const BtnCellRenderer = (props: any) => {
     const btnClickedHandler = () => {
       props.clicked(props.value);
     }
-  
+
     return (
       <button onClick={btnClickedHandler}>{button_name}</button>
     )
   }
+
   const defaultColumnDefs: ColDef[] = [
     {
       field: 'honey',
       headerName: 'honey',
-      width: defaultWidth,
       filter: "agTextColumnFilter",
       pinned: 'left',
       cellRenderer: 'agAnimateShowChangeCellRenderer',
@@ -63,32 +62,31 @@ const AgGrid = (props: Props) => {
     {
       field: '$honey',
       headerName: '$honey',
-      width: defaultWidth,
       resizable: true,
       cellRenderer: 'agAnimateShowChangeCellRenderer',
       enableCellChangeFlash: true,
     },
-    { field: 'symbol', headerName: 'Symbol', width: defaultWidth, resizable: true },
-    { field: 'ticker_time_frame', headerName: 'ticker_time_frame', width: defaultWidth, resizable: true },
-    { field: 'trigname', headerName: 'trigname', width: defaultWidth, resizable: true },
-    { field: 'datetime', headerName: 'datetime', width: defaultWidth, resizable: true },
-    { field: 'honey_time_in_profit', headerName: 'honey_time_in_profit', width: defaultWidth, resizable: true },
-    { field: 'filled_qty', headerName: 'filled_qty', width: defaultWidth, resizable: true },
-    { field: 'qty_available', headerName: 'qty_available', width: defaultWidth, resizable: true },
-    { field: 'filled_avg_price', headerName: 'filled_avg_price', width: defaultWidth, resizable: true },
-    { field: 'limit_price', headerName: 'limit_price', width: defaultWidth, resizable: true },
-    { field: 'cost_basis', headerName: 'cost_basis', width: defaultWidth, resizable: true },
-    { field: 'wave_amo', headerName: 'wave_amo', width: defaultWidth, resizable: true },
-    { field: 'status_q', headerName: 'status_q', width: defaultWidth, resizable: true },
-    { field: 'client_order_id', headerName: 'client_order_id', width: defaultWidth, resizable: true },
-    { field: 'origin_wave', headerName: 'origin_wave', width: defaultWidth, resizable: true },
-    { field: 'wave_at_creation', headerName: 'wave_at_creation', width: defaultWidth, resizable: true },
-    { field: 'sell_reason', headerName: 'sell_reason', width: defaultWidth, resizable: true },
-    { field: 'exit_order_link', headerName: 'exit_order_link', width: defaultWidth, resizable: true },
-    { field: 'queen_order_state', headerName: 'queen_order_state', width: defaultWidth, resizable: true },
-    { field: 'order_rules', headerName: 'order_rules', width: defaultWidth, resizable: true },
+    { field: 'symbol', headerName: 'Symbol', resizable: true },
+    { field: 'ticker_time_frame', headerName: 'ticker_time_frame', resizable: true },
+    { field: 'trigname', headerName: 'trigname', resizable: true },
+    { field: 'datetime', headerName: 'datetime', resizable: true },
+    { field: 'honey_time_in_profit', headerName: 'honey_time_in_profit', resizable: true },
+    { field: 'filled_qty', headerName: 'filled_qty', resizable: true },
+    { field: 'qty_available', headerName: 'qty_available', resizable: true },
+    { field: 'filled_avg_price', headerName: 'filled_avg_price', resizable: true },
+    { field: 'limit_price', headerName: 'limit_price', resizable: true },
+    { field: 'cost_basis', headerName: 'cost_basis', resizable: true },
+    { field: 'wave_amo', headerName: 'wave_amo', resizable: true },
+    { field: 'status_q', headerName: 'status_q', resizable: true },
+    { field: 'client_order_id', headerName: 'client_order_id', resizable: true },
+    { field: 'origin_wave', headerName: 'origin_wave', resizable: true },
+    { field: 'wave_at_creation', headerName: 'wave_at_creation', resizable: true },
+    { field: 'sell_reason', headerName: 'sell_reason', resizable: true },
+    { field: 'exit_order_link', headerName: 'exit_order_link', resizable: true },
+    { field: 'queen_order_state', headerName: 'queen_order_state', resizable: true },
+    { field: 'order_rules', headerName: 'order_rules', resizable: true },
     { field: 'order_rules.sellout', headerName: 'order_rules.sellout', width: 150, resizable: true },
-    { field: 'order_trig_sell_stop', headerName: 'order_trig_sell_stop', width: defaultWidth, resizable: true },
+    { field: 'order_trig_sell_stop', headerName: 'order_trig_sell_stop', resizable: true },
     { field: 'side', headerName: 'side', width: 70, pinned: 'right', resizable: true },
     {
       field: "client_order_id",
@@ -100,8 +98,8 @@ const AgGrid = (props: Props) => {
           try {
             console.log('g_rowdata.find((row) => row.client_order_id == field).qty_available :>> ', g_rowdata.find((row) => row.client_order_id == field).qty_available);
             const num = prompt(`Please input number`, g_rowdata.find((row) => row.client_order_id == field).qty_available);
-            console.log("prompt",num);
-            if(num == null) return;
+            console.log("prompt", num);
+            if (num == null) return;
             const res = await axios.get(api_url, {
               params: {
                 username: username,
@@ -119,13 +117,44 @@ const AgGrid = (props: Props) => {
       pinned: 'right',
     }
   ];
+
   const gridRef = useRef<AgGridReact>(null);
-  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true, api_url, button_name } = props;
+  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true, api_url, button_name, grid_options = {}, index } = props;
   const [rowData, setRowData] = useState<any[]>([]);
   const [columnDefs, setColumnDefs] = useState<(ColDef | ColGroupDef)[]>(defaultColumnDefs)
-  useEffect(() => Streamlit.setFrameHeight());
+  useEffect(() => {
+    Streamlit.setFrameHeight()
+    grid_options.columnDefs!.push({
+      field: "client_order_id",
+      headerName: 'action',
+      width: 80,
+      cellRenderer: BtnCellRenderer,
+      cellRendererParams: {
+        clicked: async function (field: any) {
+          try {
+            console.log('g_rowdata.find((row) => row.client_order_id == field).qty_available :>> ', g_rowdata.find((row) => row.client_order_id == field).qty_available);
+            const num = prompt(`Please input number`, g_rowdata.find((row) => row.client_order_id == field).qty_available);
+            console.log("prompt", num);
+            if (num == null) return;
+            const res = await axios.get(api_url, {
+              params: {
+                username: username,
+                prod: prod,
+                client_order_id: field,
+                number_shares: num,
+              }
+            })
+            alert("Success Sellorder_request!");
+          } catch (error) {
+            alert(`${error}`);
+          }
+        },
+      },
+      pinned: 'right',
+    })
+  });
 
-  
+
   const addIds = (array: any[]) => {
     return array.map((item, idx) => {
       return { ...item, idx }
@@ -135,15 +164,14 @@ const AgGrid = (props: Props) => {
   const fetchAndSetData = async () => {
     const array = await fetchData();
     const api = gridRef.current!.api;
-    console.log(g_rowdata);
-    const id_array = array.map((item: any) => item.client_order_id)
-    const old_id_array = g_rowdata.map((item: any) => item.client_order_id)
-    const toUpdate = g_rowdata.filter((row: any) => id_array.includes(row.client_order_id))
-    const toRemove = g_rowdata.filter((row) => !id_array.includes(row.client_order_id))
-    const toAdd = array.filter((row: any) => !old_id_array.includes(row.client_order_id))
-    console.log(toRemove);
+    const id_array = array.map((item: any) => item[index])
+    const old_id_array = g_rowdata.map((item: any) => item[index])
+    const toUpdate = g_rowdata.filter((row: any) => id_array.includes(row[index]))
+    const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
+    const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
     api.applyTransactionAsync({ update: toUpdate, remove: toRemove, add: toAdd });
     g_rowdata = array
+    console.log("index", index);
   };
 
   const fetchData = async () => {
@@ -211,20 +239,11 @@ const AgGrid = (props: Props) => {
     };
   }, []);
 
-  const defaultColDef = useMemo<ColDef>(() => {
-    return {
-      width: 120,
-      sortable: true,
-      resizable: true,
-      filter: true,
-    };
-  }, []);
-
   const getRowId = useMemo<GetRowIdFunc>(() => {
     return (params: GetRowIdParams) => {
-      return params.data.client_order_id;
+      return params.data[index];
     };
-  }, []);
+  }, [index]);
 
   const sideBar = useMemo<
     SideBarDef | string | string[] | boolean | null
@@ -250,13 +269,13 @@ const AgGrid = (props: Props) => {
     };
   }, []);
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', height: '300px', width: "100" }}>
+    <div style={{ display: 'flex', flexDirection: 'row', height: '300px', width: "100" }} id='myGrid'>
       <div className="ag-theme-alpine-dark" style={{ width: "100%", height: "100%" }}>
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
+          // columnDefs={columnDefs}
+          // defaultColDef={defaultColDef}
           rowStyle={{ fontSize: 12, padding: 0 }}
           headerHeight={30}
           rowHeight={30}
@@ -266,6 +285,7 @@ const AgGrid = (props: Props) => {
           animateRows={true}
           suppressAggFuncInHeader={true}
           getRowId={getRowId}
+          gridOptions={grid_options}
         />
       </div>
     </div>
