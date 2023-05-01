@@ -34,9 +34,11 @@ type Props = {
   button_name: string,
   grid_options?: GridOptions<any>,
   index: string,
+  kwargs: any,
 }
 
 let g_rowdata: any[] = [];
+let g_newRowData: any = null
 
 const AgGrid = (props: Props) => {
 
@@ -50,78 +52,9 @@ const AgGrid = (props: Props) => {
     )
   }
 
-  const defaultColumnDefs: ColDef[] = [
-    {
-      field: 'honey',
-      headerName: 'honey',
-      filter: "agTextColumnFilter",
-      pinned: 'left',
-      cellRenderer: 'agAnimateShowChangeCellRenderer',
-      enableCellChangeFlash: true,
-    },
-    {
-      field: '$honey',
-      headerName: '$honey',
-      resizable: true,
-      cellRenderer: 'agAnimateShowChangeCellRenderer',
-      enableCellChangeFlash: true,
-    },
-    { field: 'symbol', headerName: 'Symbol', resizable: true },
-    { field: 'ticker_time_frame', headerName: 'ticker_time_frame', resizable: true },
-    { field: 'trigname', headerName: 'trigname', resizable: true },
-    { field: 'datetime', headerName: 'datetime', resizable: true },
-    { field: 'honey_time_in_profit', headerName: 'honey_time_in_profit', resizable: true },
-    { field: 'filled_qty', headerName: 'filled_qty', resizable: true },
-    { field: 'qty_available', headerName: 'qty_available', resizable: true },
-    { field: 'filled_avg_price', headerName: 'filled_avg_price', resizable: true },
-    { field: 'limit_price', headerName: 'limit_price', resizable: true },
-    { field: 'cost_basis', headerName: 'cost_basis', resizable: true },
-    { field: 'wave_amo', headerName: 'wave_amo', resizable: true },
-    { field: 'status_q', headerName: 'status_q', resizable: true },
-    { field: 'client_order_id', headerName: 'client_order_id', resizable: true },
-    { field: 'origin_wave', headerName: 'origin_wave', resizable: true },
-    { field: 'wave_at_creation', headerName: 'wave_at_creation', resizable: true },
-    { field: 'sell_reason', headerName: 'sell_reason', resizable: true },
-    { field: 'exit_order_link', headerName: 'exit_order_link', resizable: true },
-    { field: 'queen_order_state', headerName: 'queen_order_state', resizable: true },
-    { field: 'order_rules', headerName: 'order_rules', resizable: true },
-    { field: 'order_rules.sellout', headerName: 'order_rules.sellout', width: 150, resizable: true },
-    { field: 'order_trig_sell_stop', headerName: 'order_trig_sell_stop', resizable: true },
-    { field: 'side', headerName: 'side', width: 70, pinned: 'right', resizable: true },
-    {
-      field: "client_order_id",
-      headerName: 'action',
-      width: 80,
-      cellRenderer: BtnCellRenderer,
-      cellRendererParams: {
-        clicked: async function (field: any) {
-          try {
-            console.log('g_rowdata.find((row) => row.client_order_id == field).qty_available :>> ', g_rowdata.find((row) => row.client_order_id == field).qty_available);
-            const num = prompt(`Please input number`, g_rowdata.find((row) => row.client_order_id == field).qty_available);
-            console.log("prompt", num);
-            if (num == null) return;
-            const res = await axios.get(api_url, {
-              params: {
-                username: username,
-                prod: prod,
-                client_order_id: field,
-                number_shares: num,
-              }
-            })
-            alert("Success Sellorder_request!");
-          } catch (error) {
-            alert(`${error}`);
-          }
-        },
-      },
-      pinned: 'right',
-    }
-  ];
-
   const gridRef = useRef<AgGridReact>(null);
-  const { username, api, refresh_sec = 1, refresh_cutoff_sec = 0, prod = true, api_url, button_name, grid_options = {}, index } = props;
+  const { username, api, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, api_url, button_name, grid_options = {}, index, kwargs } = props;
   const [rowData, setRowData] = useState<any[]>([]);
-  const [columnDefs, setColumnDefs] = useState<(ColDef | ColGroupDef)[]>(defaultColumnDefs)
   useEffect(() => {
     Streamlit.setFrameHeight()
     grid_options.columnDefs!.push({
@@ -142,7 +75,8 @@ const AgGrid = (props: Props) => {
                 prod: prod,
                 client_order_id: field,
                 number_shares: num,
-              }
+              },
+              data:kwargs
             })
             alert("Success Sellorder_request!");
           } catch (error) {
@@ -153,13 +87,6 @@ const AgGrid = (props: Props) => {
       pinned: 'right',
     })
   });
-
-
-  const addIds = (array: any[]) => {
-    return array.map((item, idx) => {
-      return { ...item, idx }
-    })
-  }
 
   const fetchAndSetData = async () => {
     const array = await fetchData();
@@ -179,6 +106,7 @@ const AgGrid = (props: Props) => {
       params: {
         username: username,
         prod: prod,
+        kwargs,
       }
     });
     const array = JSON.parse(res.data);
@@ -195,19 +123,21 @@ const AgGrid = (props: Props) => {
   };
 
   useEffect(() => {
-    const interval = setInterval(fetchAndSetData, refresh_sec * 1000);
-    let timeout: NodeJS.Timeout;
-    if (refresh_cutoff_sec > 0) {
-      console.log(refresh_cutoff_sec);
-      timeout = setTimeout(() => {
+    if (refresh_sec && refresh_sec > 0) {
+      const interval = setInterval(fetchAndSetData, refresh_sec * 1000);
+      let timeout: NodeJS.Timeout;
+      if (refresh_cutoff_sec > 0) {
+        console.log(refresh_cutoff_sec);
+        timeout = setTimeout(() => {
+          clearInterval(interval);
+          console.log("Fetching data ended, refresh rate:", refresh_sec);
+        }, refresh_cutoff_sec * 1000);
+      }
+      console.error("rendered==========", props);
+      return () => {
         clearInterval(interval);
-        console.log("Fetching data ended, refresh rate:", refresh_sec);
-      }, refresh_cutoff_sec * 1000);
-    }
-    console.error("rendered==========", props);
-    return () => {
-      clearInterval(interval);
-      if (timeout) clearTimeout(timeout);
+        if (timeout) clearTimeout(timeout);
+      }
     }
   }, [props]);
 
@@ -268,8 +198,51 @@ const AgGrid = (props: Props) => {
       defaultToolPanel: 'customStats',
     };
   }, []);
+
+  const onCellValueChanged = useCallback((event) => {
+    if (g_newRowData == null) g_newRowData = {}
+    g_newRowData[event.data[index]] = event.data;
+    console.log('Data after change is', g_newRowData);
+  }, []);
+
+  const onRefresh = async () => {
+    fetchAndSetData();
+  }
+
+  const onUpdate = async () => {
+    if (g_newRowData == null) {
+      alert("No changes");
+      return;
+    }
+    try {
+      const res: any = await axios.post("http://127.0.0.1:8000/api/data/update_orders", {
+        username: username,
+        prod: prod,
+        new_data: g_newRowData,
+        kwargs,
+      })
+      g_newRowData = null
+      if (res.status)
+        alert("success"+res.data);
+      else alert("Failed" + res.message);
+    } catch (error: any) {
+      alert(error);
+    }
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', height: '300px', width: "100" }} id='myGrid'>
+    <div style={{ flexDirection: 'row', height: '300px', width: "100" }} id='myGrid'>
+      {
+        (refresh_sec == undefined || refresh_sec == 0) &&
+        <div style={{ display: 'flex' }}>
+          <div style={{ margin: "10px 10px 10px 2px" }}>
+            <button className='btn btn-warning' onClick={onRefresh}>Refresh</button>
+          </div>
+          <div style={{ margin: "10px 10px 10px 2px" }}>
+            <button className='btn btn-success' onClick={onUpdate}>Update</button>
+          </div>
+        </div>
+      }
       <div className="ag-theme-alpine-dark" style={{ width: "100%", height: "100%" }}>
         <AgGridReact
           ref={gridRef}
@@ -286,9 +259,10 @@ const AgGrid = (props: Props) => {
           suppressAggFuncInHeader={true}
           getRowId={getRowId}
           gridOptions={grid_options}
+          onCellValueChanged={onCellValueChanged}
         />
       </div>
-    </div>
+    </div >
   );
 };
 

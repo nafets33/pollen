@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from database.queen.queries import get_queen_orders_json, app_Sellorder_request
 from database.schemas import UsernameSchema
 import random
+import json 
 
 router = APIRouter(
     prefix="/api/data",
@@ -33,4 +34,11 @@ def sell_order(username: str, prod: bool, client_order_id: str, number_shares: i
     print(client_order_id, username, prod)
     app_Sellorder_request(username, prod, client_order_id, number_shares)
     return JSONResponse(content="success")
+
+@router.post("/update_orders", status_code=status.HTTP_200_OK)
+def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data= Body(...), kwargs=Body(...)):
+    print("/update_orders", username, prod, len(new_data), kwargs)
+    print("/update_orders", kwargs["api_key"])
+    ret = {"status":True, "data":{"rows_updated":len(new_data)}}
+    return JSONResponse(content=str(ret))
 
