@@ -69,14 +69,12 @@ const AgGrid = (props: Props) => {
             const num = prompt(`Please input number`, g_rowdata.find((row) => row.client_order_id == field).qty_available);
             console.log("prompt", num);
             if (num == null) return;
-            const res = await axios.get(api_url, {
-              params: {
+            const res = await axios.post(api_url, {
                 username: username,
                 prod: prod,
                 client_order_id: field,
                 number_shares: num,
-              },
-              data:kwargs
+                kwargs,
             })
             alert("Success Sellorder_request!");
           } catch (error) {
@@ -102,12 +100,10 @@ const AgGrid = (props: Props) => {
   };
 
   const fetchData = async () => {
-    const res = await axios.get(api, {
-      params: {
+    const res = await axios.post(api, {
         username: username,
         prod: prod,
         kwargs,
-      }
     });
     const array = JSON.parse(res.data);
     return array;
