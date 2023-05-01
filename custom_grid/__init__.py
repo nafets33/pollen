@@ -1,6 +1,7 @@
+import os
 import streamlit.components.v1 as components
 from decouple import config
-import os
+from custom_grid.grid_options_builder import GridOptionsBuilder
 
 _RELEASE = True
 # _RELEASE = False
@@ -17,7 +18,7 @@ else:
         "custom_grid", path=build_dir)
 
 
-def st_custom_grid(username: str, api: str, refresh_sec: int, refresh_cutoff_sec: int , prod: bool, key:str, api_url:str, button_name :str):
+def st_custom_grid(username: str, api: str, refresh_sec: int, refresh_cutoff_sec: int , prod: bool, key:str, api_url:str, button_name :str, grid_options):
     component_value = _component_func(
         username=username,
         api=api,
@@ -26,6 +27,7 @@ def st_custom_grid(username: str, api: str, refresh_sec: int, refresh_cutoff_sec
         prod=prod,
         key=key,
         api_url=api_url,
-        button_name=button_name
+        button_name=button_name,
+        grid_options=grid_options
         )
     return component_value
