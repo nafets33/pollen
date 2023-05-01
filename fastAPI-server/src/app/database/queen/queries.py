@@ -99,6 +99,7 @@ def get_queen_orders_json(username, prod):
           ]
   df = pd.DataFrame(qo)
   
+  df['client_order_id'] = df.index
   df["$honey"] = pd.to_numeric(df["$honey"], errors='coerce')
   df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
   df["honey"] = round(df["honey"] * 100,2)

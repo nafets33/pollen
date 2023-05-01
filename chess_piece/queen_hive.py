@@ -395,7 +395,10 @@ def init_QUEEN(queens_chess_piece):
     return QUEEN
 
 
-def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, ticker_list=['SPY'], theme='nuetral', model='MACD', piece_name='king', buying_power=1, borrow_power=0, picture='knight_png'):
+def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
+             ticker_list=['SPY'], 
+             theme='nuetral', 
+             model='MACD', piece_name='king', buying_power=1, borrow_power=0, picture='knight_png'):
     return {
         "picture": picture,
         "piece_name": piece_name,

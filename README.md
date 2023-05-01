@@ -102,3 +102,6 @@ sudo vim .bashrc # when in home dir
 # find if port active
 sudo lsof -i :8501
 sudo kill -9 PID
+
+# Git
+git push origin sven-dev

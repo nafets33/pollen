@@ -113,8 +113,8 @@ def PlayGround():
         # ipdb.set_trace()
         # standard_AGgrid(df)
 
-        active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-
+        # active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+        # ttf_macd_wave_ratios = ReadPickleData(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
         with st.expander("backtesting"):
             back_test_blocktime = os.path.join(hive_master_root(), 'macd_grid_search_blocktime.csv')
             df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
@@ -143,6 +143,7 @@ def PlayGround():
 
             df_top5 = pd.concat(results)
             df_top5_results = pd.concat(results_top)
+
 
             standard_AGgrid(df_top5_results)
             standard_AGgrid(df_top5)

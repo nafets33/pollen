@@ -29,7 +29,7 @@ from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backt
 from chess_piece.queen_hive import init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, wave_guage, return_STORYbee_trigbees, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
 
 from custom_button import cust_Button
-from custom_grid import st_custom_grid
+from custom_grid import st_custom_grid, GridOptionsBuilder
 
 from ozz.ozz_bee import send_ozz_call
 # from chat_bot import ozz_bot
@@ -392,7 +392,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             
             return True
 
-
+        def on_click_ss_value_bool(name):
+            st.session_state[name] = True
 
         def return_total_profits(QUEEN):
             try:
@@ -561,39 +562,14 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     st.info("Page Stopped")
                     st.stop()
             
-        def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key):
-            with st.form('add new qcp'):
-                avail_qcp = ['pawn1', 'pawn2', 'pawn3', 'pawn4']
-                ticker_allowed = ['QQQ']
-                # tickers_to_add = st.multiselect(label=f'Add Symbols', options=ticker_allowed, help=f'Try not to Max out number of piecesm, only ~10 allowed')
-                cols = st.columns((1,2,10,3,2,2))
-                with cols[1]:                
-                    qcp = st.selectbox(label='qcp', key=f'qcp_new', options=avail_qcp)
-                    QUEENBEE[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[])
-                with cols[0]:
-                    st.image(MISC.get('queen_crown_url'), width=64)
-                with cols[2]:
-                    QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
-                with cols[3]:
-                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast')
-                with cols[4]:
-                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow')
-                with cols[5]:
-                    QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth')            
-
-                if st.form_submit_button('Save New qcp'):
-                    PickleData(QUEENBEE.get('source'), QUEENBEE)
-
-        def on_click_ss_value_bool(name):
-            st.session_state[name] = True
-
         def add_new_qcp__to_chessboard(cols, QUEEN_KING, qcp_bees_key, ticker_allowed, themes):
+            cols = st.columns((1,5,2,2,2,2,2,3,2,2))
+            qcp_pieces = QUEEN_KING[qcp_bees_key].keys()
+            qcp = st.text_input(label='piece name', value=f'pawn_{len(qcp_pieces)}', help="Theme your names to match your strategy")
+            if qcp in qcp_pieces:
+                st.error("Chess Piece Name must be Unique")
+                st.stop()
             with st.form('new qcp'):
-                cols = st.columns((1,5,2,2,2,2,2,3,2,2))
-                qcp_pieces = QUEEN_KING[qcp_bees_key].keys()
-                qcp = st.text_input(label='piece name', value=f'pawn_{len(qcp_pieces)}', help="Theme your names to match your strategy")
-                if qcp in qcp_pieces:
-                    st.error("Chess Piece Name must be Unique")
                 qcp = setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp=None, new_piece=qcp, ticker_allowed=ticker_allowed, themes=themes, headers=0)
                 if st.form_submit_button('Add New Piece'):
                     QUEEN_KING[qcp_bees_key][qcp.get('piece_name')] = qcp
@@ -618,14 +594,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 except Exception as e:
                     print(e)
                     print_line_of_error()
-            
-            # qcp_ex = init_qcp()
-            # new_keys = [k for k in qcp_ex.keys() if k not in QUEEN_KING[qcp_bees_key][qcp].keys()]
-            # if len(new_keys) > 0:
-            #     print("qcp missing keys, adding them")
-            #     for missing_key in new_keys:
-            #         QUEEN_KING[qcp_bees_key][qcp][missing_key] = qcp_ex.get(missing_key)
-            
+
+            models = ['MACD', 'story__AI']
+
             try:
                 if headers == 0:
                     # Headers
@@ -666,12 +637,11 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     return qcp_vars
                 
                 else:   
-                    models = ['MACD']
                     # chess board vars
                     with cols[1]:
                         QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label="", options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                     with cols[2]:
-                        st.selectbox(label='', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+                        QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
                     with cols[3]:
                         QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
                     with cols[4]:
@@ -712,6 +682,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 all_workers = chess_pieces.get('all_workers')
                 qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
                 current_tickers = qcp_ticker_index.keys()
+                
+                with st.expander("New Chess Piece"):
+                    add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
 
                 with st.expander(name, True): # ChessBoard
                     allow_queen_to_update_chessboard = st.checkbox("Allow QUEEN to update chessboard for all themes", True)
@@ -818,6 +791,50 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             except Exception as e:
                 print('chessboard ', e, print_line_of_error())
 
+        
+        def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
+            models = ['MACD', 'story__AI']
+            qcp_pieces = QUEENBEE[qcp_bees_key].keys()
+            qcp = st.text_input(label='piece name', value=f'pawn_{len(qcp_pieces)}', help="Theme your names to match your strategy")
+            if qcp in qcp_pieces:
+                st.error("Chess Piece Name must be Unique")
+                st.stop()
+            cols = st.columns(2)
+            QUEENBEE[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[], model='story__AI')
+            with cols[0]:
+                QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+            with cols[1]:
+                QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+
+
+            with st.form('add new qcp'):
+                cols = st.columns((1,6,2,2,2,2))
+
+                with cols[0]:
+                    st.image(MISC.get('queen_crown_url'), width=64)
+                
+                if QUEENBEE[qcp_bees_key][qcp]['model'] == 'story__AI':
+                    # first_symbol = QUEENBEE[qcp_bees_key][qcp]['tickers'][0]
+                    # ttf_macd_wave_ratios = ReadPickleData(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+                    st.write("Lets Let AI Wave Analysis Handle Wave")
+                else:
+                    m_fast=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'])
+                    m_slow=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'])
+                    m_smooth=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'])
+                # with cols[1]:
+                #     QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+                # with cols[2]:
+                #     QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+                    with cols[3]:
+                        QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=m_fast, key=f'{qcp}fast')
+                    with cols[4]:
+                        QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=m_slow, key=f'{qcp}slow')
+                    with cols[5]:
+                        QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=m_smooth, key=f'{qcp}smooth')            
+                
+                if st.form_submit_button('Save New qcp'):
+                    PickleData(QUEENBEE.get('source'), QUEENBEE)
+
         def QB_workerbees(QUEENBEE, admin=True):
             try:
                 # QUEENBEE read queen bee and update based on QUEENBEE
@@ -831,7 +848,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
                 current_tickers = qcp_ticker_index.keys()
 
-                add_new_qcp__to_Queens_workerbees(QUEENBEE=QUEENBEE, qcp_bees_key=qcp_bees_key)
+                with st.expander("New Workerbee"):
+                    add_new_qcp__to_Queens_workerbees(QUEENBEE=QUEENBEE, qcp_bees_key=qcp_bees_key, ticker_allowed=ticker_allowed)
 
                 with st.expander(name, True):
                     with st.form(f'Update WorkerBees{admin}'):
@@ -846,7 +864,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             try:
                                 if qcp == 'castle_coin':
                                     with cols[0]:
-                                        st.image("https://s3.us-east-2.amazonaws.com/nomics-api/static/images/currencies/BSV.png", width=54)
+                                        st.image(MISC.get('castle_png'), width=54)
                                 elif qcp == 'castle':
                                     with cols[0]:
                                         st.image(MISC.get('castle_png'), width=54)
@@ -890,7 +908,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             except Exception as e:
                 print(e, print_line_of_error())
 
-        
         def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme):
             print("update generate trading model")
             tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme=theme)['MACD'][ticker]
@@ -1578,6 +1595,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
         ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=call_all_ticker_data)
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
+        ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
+
         # tic_need_TM = [i.split("_")[0] for i in STORY_bee.keys()]
         tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
         # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
@@ -1597,71 +1616,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
         with st.spinner("Refreshing"): # ozzbot
 
             if authorized_user:
-                
-                def run_function__async(func_list):
-                    try:
-                        s = datetime.now(est)
-
-                        async def read_pkl_file(session, qcp):
-                            async with session:
-                                try:
-                                    qcp()
-                                except Exception as e:
-                                    print(e, qcp)
-                                    return {qcp: e}
-
-                        async def main(func_list):
-
-                            async with aiohttp.ClientSession() as session:
-                                return_list = []
-                                tasks = []
-                                for qcp in (func_list):  # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
-                                    # print(qcp)
-                                    tasks.append(asyncio.ensure_future(read_pkl_file(session, qcp)))
-                                original_pokemon = await asyncio.gather(*tasks)
-                                for pokemon in original_pokemon:
-                                    return_list.append(pokemon)
-                                return return_list
-
-                        x = asyncio.run(main(func_list))
-                        e = datetime.now(est)
-                        print(f"--- All Workers Refreshed {(e - s)} seconds ---")
-                        return x
-                    except Exception as e:
-                        print("qtf", e, print_line_of_error())
-
-                def readgroup_pklfiles__async(qcp_s):
-                    try:
-                        s = datetime.now(est)
-
-                        async def read_pkl_file(session, qcp):
-                            async with session:
-                                try:
-                                    return ReadPickleData(qcp)
-                                except Exception as e:
-                                    print(e, qcp)
-                                    return False
-
-                        async def main(qcp_s):
-
-                            async with aiohttp.ClientSession() as session:
-                                return_list = []
-                                tasks = []
-                                for qcp in (qcp_s):  # castle: [spy], bishop: [goog], knight: [META] ..... pawn1: [xmy, skx], pawn2: [....]
-                                    # print(qcp)
-                                    tasks.append(asyncio.ensure_future(read_pkl_file(session, qcp)))
-                                original_pokemon = await asyncio.gather(*tasks)
-                                for pokemon in original_pokemon:
-                                    return_list.append(pokemon)
-                                return return_list
-
-                        x = asyncio.run(main(qcp_s))
-                        e = datetime.now(est)
-                        print(f"All Workers Refreshed {qcp_s} --- {(e - s)} seconds ---")
-                        return x
-                    except Exception as e:
-                        print("qtf", e, print_line_of_error())
-
 
                 stop_queenbee(QUEEN_KING)
                 clear_subconscious_Thought(QUEEN, QUEEN_KING)   
@@ -1672,15 +1626,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
                 if st.session_state['total_profits']:
                     return_total_profits(QUEEN=QUEEN)
-        
-
-                        
-                # if st.session_state['waves'] == True:
-                #     with st.expander('waves', True):
-                #         # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                #         queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
-                #     with st.expander('STORY_bee'):
-                #         st.write(STORY_bee['SPY_1Minute_1Day']['story'])
             
                 if st.session_state['workerbees'] == True:
                     # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
@@ -1748,14 +1693,12 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     advanced_charts()
                         if tab_name == 'chess_board':
                             if st.session_state['chess_board'] == True:
-                                ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
                                 themes = list(pollen_themes(KING).keys())
 
                                 if st.session_state['chess_board_m'] == "admin_workerbees":
                                     QB_workerbees(QUEENBEE=QUEENBEE, admin=admin)
                                 else:
                                     chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
-                                add_new_qcp__to_chessboard(cols=False, QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board', ticker_allowed=ticker_allowed, themes=themes)
                         
                         if tab_name == 'queens_mind':
                             if st.session_state['queens_mind']:
@@ -1766,6 +1709,36 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     update_trading_models(QUEEN_KING)                             
                         if tab_name == 'orders':
                             if st.session_state['orders']:
+                                gb = GridOptionsBuilder.create()
+                                gb.configure_default_column(100)
+                                flash_def = {
+                                    'pinned':'left',
+                                    'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                    'enableCellChangeFlash': True,
+                                    }
+                                #Configure index field
+                                gb.configure_index('client_order_id')
+                                # gb.configure_column('a', {'pinned': 'left', 'headerName': 'cc', 
+                                #                             'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                                #                             'custom_currency_symbol':"%"
+                                #                             })
+                                gb.configure_column('honey', flash_def)
+                                gb.configure_column('$honey',flash_def)
+                                gb.configure_column('symbol')
+                                gb.configure_column('ticker_time_frame')
+                                gb.configure_column('trigname')
+                                gb.configure_column('datetime')
+                                gb.configure_column('honey_time_in_profit')
+                                gb.configure_column('filled_qty')
+                                gb.configure_column('qty_available')
+                                gb.configure_column('filled_avg_price')
+                                gb.configure_column('cost_basis')
+                                gb.configure_column('wave_amo', {'hide': True})
+                                gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
+                                                                          "editable":True,
+                                                                          "cellEditor":"agSelectCellEditor",
+                                                                          })
+                                go = gb.build()
                                 st_custom_grid(
                                     username=KING['users_allowed_queen_emailname__db'].get(client_user), 
                                     api="http://127.0.0.1:8000/api/data/queen", 
@@ -1775,6 +1748,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     key='maingrid',
                                     api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
                                     button_name='sell',
+                                    grid_options=go
                                 )
                                 
                                 orders_agrid()
