@@ -10,15 +10,16 @@ import Aggrid from "./Aggrid";
 
 const Main = (props: ComponentProps) => {
 
-  const { username, api, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
-  const { api_url, button_name, grid_options, kwargs } = props.args;
+  const { username, api, api_update, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
+  const { api_url, button_name, grid_options, kwargs = {} } = props.args;
   const { index } = grid_options;
-  console.log("AAAAAAAA", grid_options.refresh_sec);
+  console.log("AAAAAAAA", grid_options.columnDefs);
   return (
     <div >
       <Aggrid
         username={username}
         api={api}
+        api_update={api_update}
         refresh_sec={refresh_sec}
         refresh_cutoff_sec={refresh_cutoff_sec}
         gridoption_build={gridoption_build}
