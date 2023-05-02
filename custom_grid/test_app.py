@@ -8,6 +8,8 @@ def main():
     flash_def = {
         'pinned': 'left',
         'cellRenderer': 'agAnimateShowChangeCellRenderer',
+        'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+        'custom_currency_symbol':"%",
         'enableCellChangeFlash': True,
     }
     # Configure index field
@@ -21,30 +23,30 @@ def main():
     gb.configure_column('symbol')
     gb.configure_column('ticker_time_frame')
     gb.configure_column('trigname')
-    gb.configure_column('datetime')
+    gb.configure_column('datetime',
+                        {'type': ["dateColumnFilter", "customDateTimeFormat"],
+                         "custom_format_string": "MM/dd/yy HH:mm"})
     gb.configure_column('honey_time_in_profit')
     gb.configure_column('filled_qty')
     gb.configure_column('qty_available')
     gb.configure_column('filled_avg_price')
     gb.configure_column('cost_basis')
     gb.configure_column('wave_amo', {'hide': True})
-    # gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
-    #                                           "editable": True,
-    #                                           "cellEditor": "agSelectCellEditor",
-    #                                           })
+
     go = gb.build()
     st_custom_grid(
         username="C:\sven\stefan\pollen\client_user_dbs\db__sven0227_82402505",
         api="http://127.0.0.1:8000/api/data/queen",
+        api_update="http://127.0.0.1:8000/api/data/update_orders",
         refresh_sec=None,
         refresh_cutoff_sec=500,
         prod=False,
         key='maingrid',
         api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
-        button_name='sell',
+        button_name=None,
         grid_options=go,
-        api_key = "my_key",
-        filter={"status":"running","para1":"value1"}
+        api_key="my_key",
+        filter={"status": "running", "para1": "value1"}
     )
 
 
