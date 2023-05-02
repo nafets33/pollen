@@ -122,31 +122,44 @@ const AgGrid = (props: Props) => {
   }
 
   const gridRef = useRef<AgGridReact>(null);
-  let { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, api_url, button_name, grid_options = {}, index, kwargs } = props;
+  const { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, api_url, button_name, index, kwargs } = props;
+  let { grid_options = {} } = props;
+  const { prompt_message, prompt_field } = kwargs;
   const [rowData, setRowData] = useState<any[]>([]);
 
   useEffect(() => {
     Streamlit.setFrameHeight();
     if (button_name) grid_options.columnDefs!.push({
-      field: "client_order_id",
+      field: index,
       headerName: 'action',
       width: 80,
       cellRenderer: BtnCellRenderer,
       cellRendererParams: {
         clicked: async function (field: any) {
           try {
-            console.log('g_rowdata.find((row) => row.client_order_id == field).qty_available :>> ', g_rowdata.find((row) => row.client_order_id == field).qty_available);
-            const num = prompt(`Please input number`, g_rowdata.find((row) => row.client_order_id == field).qty_available);
-            console.log("prompt", num);
-            if (num == null) return;
-            const res = await axios.post(api_url, {
-              username: username,
-              prod: prod,
-              client_order_id: field,
-              number_shares: num,
-              kwargs,
-            })
-            alert("Success Sellorder_request!");
+            if (prompt_field && prompt_message) {
+              const selectedRow = g_rowdata.find((row) => row[index] == field)
+              const num = prompt(prompt_message, selectedRow[prompt_field]);
+              if (num == null) return;
+              const res = await axios.post(api_url, {
+                username: username,
+                prod: prod,
+                client_order_id: field,
+                number_shares: num,
+                kwargs,
+              })
+            }
+            else {
+              if (window.confirm(prompt_message)) {
+                const res = await axios.post(api_url, {
+                  username: username,
+                  prod: prod,
+                  client_order_id: field,
+                  kwargs,
+                })
+              }
+            }
+            alert("Success!");
           } catch (error) {
             alert(`${error}`);
           }

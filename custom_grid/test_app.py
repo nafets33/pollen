@@ -43,10 +43,13 @@ def main():
         prod=False,
         key='maingrid',
         api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
-        button_name=None,
+        button_name="Sell",
         grid_options=go,
+        # kwargs from here
         api_key="my_key",
-        filter={"status": "running", "para1": "value1"}
+        filter={"status": "running", "para1": "value1"},
+        prompt_message ="Custom prompt message",
+        prompt_field = "qty_available",
     )
 
 
