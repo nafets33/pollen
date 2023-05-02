@@ -15,7 +15,7 @@ class GridOptionsBuilder:
     def configure_index(self, index_field : str):
         self.configure_grid_options(index=index_field)
 
-    def configure_default_column(self, column_width=90, resizable=True, filterable=True, sortable=True, editable=False, groupable=False, sorteable=None, **other_default_column_properties):
+    def configure_default_column(self, column_width=100, resizable=True, filterable=True, sortable=True, editable=False, groupable=False, sorteable=None, **other_default_column_properties):
         """Configure default column.
 
         Args:
@@ -51,7 +51,7 @@ class GridOptionsBuilder:
             sortable = sorteable
 
         defaultColDef = {
-            "width": column_width,
+            "initialWidth": column_width,
             "editable": editable,
             "filter": filterable,
             "resizable": resizable,
