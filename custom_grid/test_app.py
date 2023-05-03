@@ -4,13 +4,13 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 
 def main():
     gb = GridOptionsBuilder.create()
-    gb.configure_default_column(column_width=100, editable=True)
+    gb.configure_default_column(column_width=100, textWrap=True)
     flash_def = {
-        'pinned': 'left',
-        'cellRenderer': 'agAnimateShowChangeCellRenderer',
-        'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-        'custom_currency_symbol':"%",
-        'enableCellChangeFlash': True,
+        # 'pinned': 'left',
+        # 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+        # 'type': ["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+        # 'custom_currency_symbol': "%",
+        # 'enableCellChangeFlash': True,
     }
     # Configure index field
     gb.configure_index('client_order_id')
@@ -21,7 +21,10 @@ def main():
     gb.configure_column('honey', flash_def)
     gb.configure_column('$honey', flash_def)
     gb.configure_column('symbol')
-    gb.configure_column('ticker_time_frame')
+    gb.configure_column('ticker_time_frame',
+                        {
+                            "wrapText": True,
+                            "autoHeight": True})
     gb.configure_column('trigname')
     gb.configure_column('datetime',
                         {'type': ["dateColumnFilter", "customDateTimeFormat"],
@@ -48,8 +51,8 @@ def main():
         # kwargs from here
         api_key="my_key",
         filter={"status": "running", "para1": "value1"},
-        prompt_message ="Custom prompt message",
-        prompt_field = "qty_available",
+        prompt_message="Custom prompt message",
+        prompt_field="qty_available",
     )
 
 
