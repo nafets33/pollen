@@ -60,7 +60,7 @@ def pollenq(admin_pq):
         king_G = kingdom__global_vars()
         import subprocess
         import sys
-        def refresh_workerbees(QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
+        def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
             
             with st.form("workerbees refresh"):
                 try:
@@ -68,6 +68,8 @@ def pollenq(admin_pq):
                         reset_only = st.checkbox("reset_only", reset_only)
                         backtesting = st.checkbox("backtesting", backtesting)
                         run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
+                        qcp_options = list(QUEENBEE['workerbees'].keys())
+                        pieces = st.multiselect('qcp', options=qcp_options, default=['castle'])
 
                         refresh = st.form_submit_button("Run WorkerBees", use_container_width=True)
                         if refresh:
@@ -76,7 +78,7 @@ def pollenq(admin_pq):
                                 if backtesting:
                                     subprocess.run([f"{sys.executable}", os.path.join(hive_master_root(), 'macd_grid_search.py')])
                                 else:
-                                    queen_workerbees(qcp_s=['castle'], 
+                                    queen_workerbees(qcp_s=pieces, 
                                                         prod=QUEEN_KING.get('prod'), 
                                                         reset_only=reset_only, 
                                                         backtesting=False, 
@@ -122,8 +124,8 @@ def pollenq(admin_pq):
                 with cols[0]:
                     st.title("Automate Your Portfolio With a AI.BeeBot")
                 with cols[1]:
-                    # cust_Button(file_path_url='misc/queen_flair.gif', height='50px', hoverText='')
-                    return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='150', hoverText='Queens Conscience', key='qc2')
+                    cust_Button(file_path_url='misc/chess_board_king.gif', height='150px', hoverText='')
+                    # return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='150', hoverText='Queens Conscience', key='qc2')
 
                 hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "Choose A Queen:crown:", "Help:dizzy:"])
 
@@ -169,10 +171,6 @@ def pollenq(admin_pq):
                     with cols[2]:
                         page_line_seperator('.5')
                         st.image(mainpage_bee_png, width=100)
-                    # with cols[3]:
-                    #     page_line_seperator('.5')
-                    #     # st.write(":honeybee:")
-                        # return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='200', hoverText='Queens Conscience', key='qc2')
                 
                 with BrokerAPIKeys:
                     queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
@@ -221,15 +219,10 @@ def pollenq(admin_pq):
                 with YourPublicCharacter:      
                     cols = st.columns((1,1,1))
                     with cols[0]:
-                        # return_custom_button_nav(file_path_url="misc/pawn.png", height='123', hoverText="QUEEN1", key='queen_1')
                         set_button = True if QUEEN_KING['queen_tier'] == 'queen_1' else False
                         cBq = cust_Button(file_path_url="misc/pawn.png", height=f'100px', hoverText="Tier1 QUEEN", key="queen_1", default=set_button)
                         if cBq:
                             QUEEN_KING['queen_tier'] = 'queen_1'
-                    with cols[1]:
-                        return_custom_button_nav(file_path_url="misc/knight.png", height='153', hoverText="QUEEN2", key='queen_2')
-                    with cols[2]:
-                        return_custom_button_nav(file_path_url="misc/queen_king.png", height='159', hoverText="QUEEN_KING3", key='queen_3')
 
                 with help_me:
                     st.write("No Soup for You")
@@ -705,8 +698,8 @@ def pollenq(admin_pq):
                 with cols[3]:
                     height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
                     cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px')
-                    if st.session_state['queens_mind']:
-                        hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    # if st.session_state['queens_mind']:
+                    #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
                 with cols[4]:
                     # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Board', key='charts_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -821,7 +814,7 @@ def pollenq(admin_pq):
 
             if st.session_state['admin'] and st.session_state['workerbees']:
                 with st.expander("WorkerBees Tools"):
-                    refresh_workerbees(QUEEN_KING)
+                    refresh_workerbees(QUEENBEE, QUEEN_KING)
             
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars)
         if menu_id == 'QC':

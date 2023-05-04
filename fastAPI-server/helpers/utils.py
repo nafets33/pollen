@@ -3,9 +3,9 @@ import pickle
 import time
 from dotenv import load_dotenv
 
-script_dir = os.path.dirname(__file__)
-db_folder_path = os.path.abspath(os.path.join(
-    script_dir, '..', '..', '..', '..', 'client_user_dbs'))
+# script_dir = os.path.dirname(__file__)
+# db_folder_path = os.path.abspath(os.path.join(
+#     script_dir, '..', '..', '..', '..', 'client_user_dbs'))
 
 # chess_piece_module = os.path.abspath(os.path.join(script_dir, '..', '..', '..', '..', 'chess_piece'))
 
@@ -13,12 +13,12 @@ db_folder_path = os.path.abspath(os.path.join(
 
 # from .chess_piece.king import hive_master_root
 
-def find_folder(user_name):
-    # Loop through all folders and files in the db folder
-    for root, dirs, files in os.walk(db_folder_path):
-        for dir_name in dirs:
-            if user_name in dir_name:
-                return dir_name
+# def find_folder(user_name):
+#     # Loop through all folders and files in the db folder
+#     for root, dirs, files in os.walk(db_folder_path):
+#         for dir_name in dirs:
+#             if user_name in dir_name:
+#                 return dir_name
 
 def ReadPickleData(pickle_file):
     # Check the file's size and modification time

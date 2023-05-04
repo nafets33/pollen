@@ -1703,18 +1703,19 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         if tab_name == 'queens_mind':
                             if st.session_state['queens_mind']:
                                 # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                model_wave_results(STORY_bee)
-
                                 with st.expander("Trading Models"):
                                     update_trading_models(QUEEN_KING)                             
+                                
+                                model_wave_results(STORY_bee)
                         if tab_name == 'orders':
                             if st.session_state['orders']:
                                 gb = GridOptionsBuilder.create()
-                                gb.configure_default_column(100)
+                                gb.configure_default_column(100, textWrap=True)
                                 flash_def = {
                                     'pinned':'left',
                                     'cellRenderer': 'agAnimateShowChangeCellRenderer',
                                     'enableCellChangeFlash': True,
+                                    # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
                                     }
                                 #Configure index field
                                 gb.configure_index('client_order_id')
@@ -1725,9 +1726,14 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 gb.configure_column('honey', flash_def)
                                 gb.configure_column('$honey',flash_def)
                                 gb.configure_column('symbol')
-                                gb.configure_column('ticker_time_frame')
+                                gb.configure_column('ticker_time_frame',
+                                                    {
+                                                        "wrapText": True,
+                                                        "autoHeight": True})
                                 gb.configure_column('trigname')
-                                gb.configure_column('datetime')
+                                gb.configure_column('datetime',
+                                                    {'type': ["dateColumnFilter", "customDateTimeFormat"],
+                                                    "custom_format_string": "MM/dd/yy HH:mm"})
                                 gb.configure_column('honey_time_in_profit')
                                 gb.configure_column('filled_qty')
                                 gb.configure_column('qty_available')
@@ -1739,19 +1745,32 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                                           "cellEditor":"agSelectCellEditor",
                                                                           })
                                 go = gb.build()
+                                seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=30)- datetime.now(est)).total_seconds() 
+                                seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
+                                refresh_sec = 2 if seconds_to_market_close > 0 else None
+
                                 st_custom_grid(
                                     username=KING['users_allowed_queen_emailname__db'].get(client_user), 
-                                    api="http://127.0.0.1:8000/api/data/queen", 
-                                    refresh_sec=2, 
-                                    refresh_cutoff_sec=500, 
+                                    api="http://127.0.0.1:8000/api/data/queen",
+                                    api_update="http://127.0.0.1:8000/api/data/update_orders",
+                                    refresh_sec=refresh_sec, 
+                                    refresh_cutoff_sec=seconds_to_market_close, 
                                     prod=st.session_state['production'],
                                     key='maingrid',
                                     api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
                                     button_name='sell',
-                                    grid_options=go
+                                    grid_options=go,
+                                     # kwargs from here
+                                    api_key=os.environ.get("fastAPI_key"),
+                                    filter={"status": "running", "para1": "value1"},
+                                    prompt_message ="Custom prompt message",
+                                    prompt_field = "qty_available",
                                 )
                                 
-                                orders_agrid()
+                                cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+
+                                if st.session_state['old_orders']:
+                                    orders_agrid()
                  
                 page_session_state__cleanUp(page=page)
 

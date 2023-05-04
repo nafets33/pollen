@@ -2,7 +2,7 @@
 
 import pandas as pd
 import random
-from helpers.utils import ReadPickleData, find_folder, db_folder_path, PickleData
+from helpers.utils import ReadPickleData, PickleData
 from datetime import datetime
 import pytz
 import ipdb
@@ -72,7 +72,8 @@ def load_queen_pkl(username, prod):
 
 def get_queen_orders_json(username, prod, kwargs):
   # print(kwargs.get('my_key'))
-  if kwargs.get('my_key') != 'fastapi_pollenq_key': # os.enviorn.get("fastapi_pollenq_key")
+  if kwargs.get('api_key') != 'fastapi_pollenq_key': # os.enviorn.get("fastapi_pollenq_key")
+     print("Auth Failed", kwargs.get('api_key'))
      return "NOTAUTH"
   
   queen_db = load_queen_pkl(username, prod)
