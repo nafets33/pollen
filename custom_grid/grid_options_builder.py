@@ -65,7 +65,7 @@ class GridOptionsBuilder:
 
         self.__grid_options["defaultColDef"] = defaultColDef
     
-    def configure_column(self, field,  other_column_properties =None,header_name=None):
+    def configure_column(self, field=None,  other_column_properties =None,header_name=None):
         """Configures an individual column
         check https://www.ag-grid.com/javascript-grid-column-properties/ for more information.
 

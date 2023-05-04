@@ -6,6 +6,7 @@ from helpers.utils import ReadPickleData, find_folder, db_folder_path, PickleDat
 from datetime import datetime
 import pytz
 import ipdb
+import chess_piece 
 est = pytz.timezone("US/Eastern")
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
