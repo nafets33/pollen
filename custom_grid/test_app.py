@@ -34,10 +34,10 @@ def main():
     gb.configure_column('qty_available')
     gb.configure_column('filled_avg_price')
     # 123456 -> 123,456
-    gb.configure_column('cost_basis', 
-                        {"type": ["customNumberFormat"]})
+    # gb.configure_column('cost_basis', 
+    #                     {"type": ["customNumberFormat"]})
     # hyperlink field
-    gb.configure_column(field="",
+    gb.configure_column(field="cost_basis",
                         header_name="hyperLink",
                         other_column_properties= {
                         "type": ["customHyperlinkRenderer"],

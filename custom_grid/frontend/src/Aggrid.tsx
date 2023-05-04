@@ -111,7 +111,7 @@ const columnFormaters = {
 
 const HyperlinkRenderer = (props: any) => {
   console.log("hyperlink", props);
-  return <a href={`${props.column.colDef.baseURL}/${props.data[props.column.colDef["linkField"]]}`} target='_blank'>{props.data[props.column.colDef["linkField"]]}</a>
+  return <a href={`${props.column.colDef.baseURL}/${props.data[props.column.colDef["linkField"]]}`} target='_blank'>{props.value}</a>
 }
 
 const AgGrid = (props: Props) => {
