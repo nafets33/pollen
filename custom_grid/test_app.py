@@ -33,7 +33,17 @@ def main():
     gb.configure_column('filled_qty')
     gb.configure_column('qty_available')
     gb.configure_column('filled_avg_price')
-    gb.configure_column('cost_basis')
+    # 123456 -> 123,456
+    # gb.configure_column('cost_basis', 
+    #                     {"type": ["customNumberFormat"]})
+    # hyperlink field
+    gb.configure_column(field="cost_basis",
+                        header_name="hyperLink",
+                        other_column_properties= {
+                        "type": ["customHyperlinkRenderer"],
+                        "baseURL": "http://pollenq.com",
+                        "linkField": "qty_available"
+                        })
     gb.configure_column('wave_amo', {'hide': True})
 
     go = gb.build()

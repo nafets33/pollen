@@ -109,6 +109,11 @@ const columnFormaters = {
   },
 }
 
+const HyperlinkRenderer = (props: any) => {
+  console.log("hyperlink", props);
+  return <a href={`${props.column.colDef.baseURL}/${props.data[props.column.colDef["linkField"]]}`} target='_blank'>{props.value}</a>
+}
+
 const AgGrid = (props: Props) => {
 
   const BtnCellRenderer = (props: any) => {
@@ -120,6 +125,7 @@ const AgGrid = (props: Props) => {
       <button onClick={btnClickedHandler}>{button_name}</button>
     )
   }
+
 
   const gridRef = useRef<AgGridReact>(null);
   const { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, api_url, button_name, index, kwargs } = props;
@@ -167,7 +173,7 @@ const AgGrid = (props: Props) => {
       },
       pinned: 'right',
     })
-    parseGridoptions()
+    // parseGridoptions()
   });
 
   function parseGridoptions() {
@@ -352,6 +358,18 @@ const AgGrid = (props: Props) => {
       },
       timedeltaFormat: {
         valueFormatter: (params: any) => duration(params.value).humanize(true),
+      },
+      customNumberFormat: {
+        valueFormatter: (params: any) =>
+          Number(params.value).toLocaleString('en-US', { minimumFractionDigits: 0 })
+      },
+      customHyperlinkRenderer: {
+        // valueGetter: (params: any) =>
+        //   params.column.colDef.baseURL + params.data.honey,
+        cellRenderer: HyperlinkRenderer,
+        cellRendererParams: {
+          baseURL: "URLSearchParams.co"
+        }
       },
     };
   }, []);
