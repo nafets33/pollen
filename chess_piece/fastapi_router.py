@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import get_queen_orders_json, app_Sellorder_request
+from chess_piece.fastapi_queen import get_queen_orders_json, app_Sellorder_request,  get_ticker_data
 # from database.schemas import UsernameSchema
 import random
 import json 
@@ -37,3 +37,8 @@ def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data=
     ret = {"status":True, "data":{"rows_updated":len(new_data)}}
     return JSONResponse(content=str(ret))
 
+@router.post("/symbol_graph", status_code=status.HTTP_200_OK)
+def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), kwargs=Body(...)):
+    # print("/data/queen", username, prod, kwargs)
+    json_data = get_ticker_data(symbols, prod, kwargs)
+    return JSONResponse(content=json_data)

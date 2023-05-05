@@ -2,7 +2,7 @@
 
 import pandas as pd
 import random
-from chess_piece.king import ReadPickleData, PickleData
+from chess_piece.king import ReadPickleData, PickleData, read_QUEENs__pollenstory
 from datetime import datetime
 import pytz
 import ipdb
@@ -116,4 +116,22 @@ def get_queen_orders_json(username, prod, kwargs):
   df = df[df['queen_order_state'].isin(['running'])]
   df = df[col_view]
   json_data = df.to_json(orient='records')
+  return json_data
+
+def get_ticker_data(symbols, prod, kwargs):
+  # print(kwargs.get('my_key'))
+  if kwargs.get('api_key') != 'fastapi_pollenq_key': # os.enviorn.get("fastapi_pollenq_key")
+     print("Auth Failed", kwargs.get('api_key'))
+     return "NOTAUTH"
+
+  ticker_db = read_QUEENs__pollenstory(
+      symbols=symbols,
+      read_storybee=False, 
+      read_pollenstory=True,
+  )
+  
+  df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
+
+  json_data = df.to_json(orient='records')
+
   return json_data
