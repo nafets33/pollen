@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import get_queen_orders_json, app_Sellorder_request,  get_ticker_data
+from chess_piece.fastapi_queen import get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info
 # from database.schemas import UsernameSchema
 import random
 import json 
@@ -41,4 +41,12 @@ def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data=
 def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), kwargs=Body(...)):
     # print("/data/queen", username, prod, kwargs)
     json_data = get_ticker_data(symbols, prod, kwargs)
+    return JSONResponse(content=json_data)
+
+# info = api.get_account()
+# alpaca_acct_info = refresh_account_info(api=api)
+@router.get("/account_info", status_code=status.HTTP_200_OK)
+def load_account_info(symbols: list=Body(...), prod: bool=Body(...), kwargs=Body(...)):
+    # print("/data/queen", username, prod, kwargs)
+    json_data = get_account_info(symbols, prod, kwargs)
     return JSONResponse(content=json_data)
