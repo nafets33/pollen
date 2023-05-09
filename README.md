@@ -74,10 +74,7 @@ TZ=America/New_York
 30 9 * * * /home/stapinski89/pollen/bin/python /home/stapinski89/pollen/pollen/chess_piece/workerbees_manager.py
 
 
-
-
 cat /etc/timezone
-
 
 timedatectl
 timedatectl list-timezones

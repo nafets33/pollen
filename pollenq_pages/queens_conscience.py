@@ -26,7 +26,7 @@ import asyncio
 # from requests.auth import HTTPBasicAuth
 from chess_piece.app_hive import admin_queens_active, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, wave_guage, return_STORYbee_trigbees, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
+from chess_piece.queen_hive import hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, wave_guage, return_STORYbee_trigbees, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -345,7 +345,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     with cols[4]:
                         return_image_upon_save(title="Flash Request Delivered to the Queen", gif=runaway_bee_gif)
             
-            page_line_seperator('1')
+            # page_line_seperator('1')
             # if st.button("try me"):
             #     import requests
             #     #     requests.get("http://127.0.0.1:8000/api/data/queen_app_Sellorder_request")
@@ -1430,12 +1430,19 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 for symbol in tickers:
                     # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=symbol, POLLENSTORY=POLLENSTORY) ## RETURN FASTER maybe cache?
                     story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
-                    SV = st.selectbox("Story Views", options=list(story_views.get('df_agg').keys()))
+                    SV = st.selectbox("Story Views", options=list(story_views.get('df_agg').keys()), key=f'{"sview"}{symbol}')
                     st.write(story_views.get('df_agg').get(SV))
                     st.write(story_views.get('df_agg').get(SV).iloc[0])
                     df_hm = story_views.get('df_agg').get(SV)
                     df = story_views.get('df')
                     df = df.set_index('star')
+                    df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
+                    df.at[f'{symbol}_{"5Minute_5Day"}', 'sort'] = 2
+                    df.at[f'{symbol}_{"30Minute_1Month"}', 'sort'] = 3
+                    df.at[f'{symbol}_{"1Hour_3Month"}', 'sort'] = 4
+                    df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
+                    df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
+                    df = df.sort_values('sort')
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
                     story_guages = wave_guage(df, trading_model=trading_model)
                     df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
@@ -1449,6 +1456,73 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                            text=f'{symbol} {f"{weight_} MACD Gauge "}{"{:,.2%}".format(macd_)}{" Hist Gauge "}{"{:,.2%}".format(hist_)}')
 
                         st.dataframe(df_style)
+
+
+                        gb = GridOptionsBuilder.create()
+                        gb.configure_default_column(100, textWrap=True)
+                        gb.configure_index('star')
+
+                        # gb.configure_index('client_order_id')
+                        # flash_def = {
+                        #     'pinned':'left',
+                        #     'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                        #     'enableCellChangeFlash': True,
+                        #     # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                        #     }
+                        # #Configure index field
+                        # honey_options = {'pinned': 'left',
+                        #                 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                        #                 'custom_currency_symbol':"%"
+                        #                             }
+                        gb.configure_column("star")
+                        # gb.configure_column('$honey',flash_def, header_name="$Money")
+                        # gb.configure_column('symbol')
+                        # gb.configure_column('ticker_time_frame',
+                        #                     {
+                        #                         "wrapText": True,
+                        #                         "autoHeight": True})
+                        # gb.configure_column('trigname')
+                        # gb.configure_column('datetime',
+                        #                     {'type': ["dateColumnFilter", "customDateTimeFormat"],
+                        #                     "custom_format_string": "MM/dd/yy HH:mm"})
+                        # gb.configure_column('honey_time_in_profit')
+                        # gb.configure_column('filled_qty')
+                        # gb.configure_column('qty_available')
+                        # gb.configure_column('filled_avg_price')
+                        # gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                        #                                 #    'custom_currency_symbol':"$",
+                        #                                 }
+                        #                     )
+                        # gb.configure_column('wave_amo', {'hide': True})
+                        # gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
+                        #                                           "editable":True,
+                        #                                           "cellEditor":"agSelectCellEditor",
+                        #                                           })
+                        go = gb.build()
+                        print(seconds_to_market_close)
+                        refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                        # print(seconds_to_market_close, refresh_sec)
+                        st.write("buy waves")
+                        st_custom_grid(
+                            username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+                            api="http://127.0.0.1:8000/api/data/workerbees",
+                            api_update="http://127.0.0.1:8000/api/data/update_orders",
+                            refresh_sec=refresh_sec, 
+                            refresh_cutoff_sec=seconds_to_market_close, 
+                            prod=st.session_state['production'],
+                            grid_options=go,
+                            key=f'{"workerbees"}{symbol}',
+                            button_name='buy',
+                            api_url="http://127.0.0.1:8000/api/data/queen_buy_orders",
+                            # kwargs from here
+                            api_key=os.environ.get("fastAPI_key"),
+                            filter={"status": "running", "para1": "value1"},
+                            prompt_message ="Buy Amount",
+                            prompt_field = "star", # "current_macd_tier",
+                            read_pollenstory = False,
+                            read_storybee = True,
+                            symbols=[symbol]
+                        )  
 
 
                 return True
@@ -1612,6 +1686,11 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             st.error("symbol errors")
             st.write(ticker_db_errors)
 
+        trading_days = hive_dates(api=api)['trading_days']
+        mkhrs = return_market_hours(trading_days=trading_days)
+        seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+        seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
+
         # return__snapshot__latest_PriceInfo()
         with st.spinner("Refreshing"): # ozzbot
 
@@ -1719,12 +1798,12 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     }
                                 #Configure index field
                                 gb.configure_index('client_order_id')
-                                # gb.configure_column('a', {'pinned': 'left', 'headerName': 'cc', 
-                                #                             'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                                #                             'custom_currency_symbol':"%"
-                                #                             })
-                                gb.configure_column('honey', flash_def)
-                                gb.configure_column('$honey',flash_def)
+                                honey_options = {'pinned': 'left',
+                                                'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                                                'custom_currency_symbol':"%"
+                                                            }
+                                gb.configure_column('honey', honey_options)
+                                gb.configure_column('$honey',flash_def, header_name="$Money")
                                 gb.configure_column('symbol')
                                 gb.configure_column('ticker_time_frame',
                                                     {
@@ -1738,16 +1817,20 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 gb.configure_column('filled_qty')
                                 gb.configure_column('qty_available')
                                 gb.configure_column('filled_avg_price')
-                                gb.configure_column('cost_basis')
+                                gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                                #    'custom_currency_symbol':"$",
+                                                                }
+                                                    )
                                 gb.configure_column('wave_amo', {'hide': True})
                                 gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
                                                                           "editable":True,
                                                                           "cellEditor":"agSelectCellEditor",
                                                                           })
                                 go = gb.build()
-                                seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=30)- datetime.now(est)).total_seconds() 
-                                seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
-                                refresh_sec = 2 if seconds_to_market_close > 0 else None
+                                
+
+                                refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                                # print(seconds_to_market_close, refresh_sec)
 
                                 st_custom_grid(
                                     username=KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -1771,7 +1854,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
                                 if st.session_state['old_orders']:
                                     orders_agrid()
-                 
+
+
+               
                 page_session_state__cleanUp(page=page)
 
                 def all_button_keys():

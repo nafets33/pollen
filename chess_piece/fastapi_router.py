@@ -1,14 +1,27 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info
+from chess_piece.fastapi_queen import get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave
 # from database.schemas import UsernameSchema
 import random
-import json 
+import json
+import ipdb
 
 router = APIRouter(
     prefix="/api/data",
     tags=["auth"]
 )
+
+@router.post("/workerbees", status_code=status.HTTP_200_OK)
+def load_workebees_json(username: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), kwargs=Body(...)):
+    print(kwargs)
+    json_data = queen_wavestories__get_macdwave(username, prod, symbols, kwargs)
+    return JSONResponse(content=json_data)
+
+@router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
+def buy_order(username: str=Body(...), prod: bool=Body(...), client_order_id: str=Body(...), number_shares: int=Body(...), kwargs=Body(...)):
+    # print(client_order_id, username, prod, kwargs)
+    # app_Sellorder_request(username, prod, client_order_id, number_shares)
+    return JSONResponse(content="success")
 
 
 @router.get("/text", status_code=status.HTTP_200_OK)

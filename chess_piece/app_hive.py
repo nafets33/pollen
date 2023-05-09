@@ -1208,6 +1208,11 @@ def pollenq_button_source():
     return{
         'chess_board': False,
 
+        'option_data_orders': [
+        # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
+        {'id': "orders", 'icon':"fas fa-chess-king",'label':""},
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
+        ],
         'charts_option_data': [
         {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
         {'id': "charts_id", 'icon': "fa fa-signal", 'label':""},
@@ -1217,11 +1222,6 @@ def pollenq_button_source():
         {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
         {'id': "chess_board", 'icon': "fas fa-chess-board", 'label':""},
         {'id': "admin_workerbees", 'icon':"fas fa-chess-queen",'label':""},
-        ],
-        'option_data_orders': [
-        # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
-        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
-        {'id': "orders", 'icon':"fas fa-chess-king",'label':""},
         ],
         
         'option_data_qm': [
