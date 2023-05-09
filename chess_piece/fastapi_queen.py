@@ -1,5 +1,6 @@
 #find and read the pkl file in the folder.
 import os
+import json
 import pandas as pd
 import random
 from chess_piece.king import hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory
@@ -88,10 +89,10 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
 
   return {'status': status}
 
-def get_queen_orders_json(username, prod, kwargs):
-  if kwargs.get('api_key') != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-     print("Auth Failed", kwargs.get('api_key'))
-     return "NOTAUTH"
+def get_queen_orders_json(username, prod, api_key):
+  if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+     print("Auth Failed", api_key)
+     return json.dumps({"status":False,"message":"NOAUTH"})
   
   queen_db = load_queen_pkl(username, prod)
 
@@ -132,6 +133,7 @@ def get_queen_orders_json(username, prod, kwargs):
   
   df = df[df['queen_order_state'].isin(['running'])]
   df = df[col_view]
+  print(df)
   json_data = df.to_json(orient='records')
   return json_data
 

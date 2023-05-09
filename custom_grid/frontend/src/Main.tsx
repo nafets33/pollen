@@ -13,7 +13,7 @@ const Main = (props: ComponentProps) => {
   const { username, api, api_update, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
   const { api_url, button_name, grid_options, kwargs = {} } = props.args;
   const { index } = grid_options;
-  console.log("AAAAAAAA", grid_options.columnDefs);
+  console.log("AAAAAAAA", grid_options);
   return (
     <div >
       <Aggrid

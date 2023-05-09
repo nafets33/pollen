@@ -32,9 +32,9 @@ def get_text():
 
 
 @router.post("/queen", status_code=status.HTTP_200_OK)
-def load_queen_json(username: str=Body(...), prod: bool=Body(...), kwargs = Body(...)):
+def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
     # print("/data/queen", username, prod, kwargs)
-    json_data = get_queen_orders_json(username, prod, kwargs)
+    json_data = get_queen_orders_json(username, prod, api_key)
     return JSONResponse(content=json_data)
 
 @router.post("/queen_app_Sellorder_request", status_code=status.HTTP_200_OK)
