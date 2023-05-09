@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, StrictMode } from 'react';
 import { AgGridReact } from 'ag-grid-react';
+import toastr from 'toastr';
+import 'toastr/build/toastr.min.css';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import 'ag-grid-enterprise';
@@ -25,6 +27,7 @@ import {
   SideBarDef,
   ValueParserParams,
 } from 'ag-grid-community';
+import MyModal from './components/Modal';
 
 type Props = {
   username: string,
@@ -114,6 +117,13 @@ const HyperlinkRenderer = (props: any) => {
   return <a href={`${props.column.colDef.baseURL}/${props.data[props.column.colDef["linkField"]]}`} target='_blank'>{props.value}</a>
 }
 
+
+toastr.options = {
+  positionClass: 'toast-top-full-width',
+  hideDuration: 300,
+  timeOut: 3000,
+};
+
 const AgGrid = (props: Props) => {
 
   const BtnCellRenderer = (props: any) => {
@@ -126,12 +136,12 @@ const AgGrid = (props: Props) => {
     )
   }
 
-
   const gridRef = useRef<AgGridReact>(null);
   const { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, api_url, button_name, index, kwargs } = props;
   let { grid_options = {} } = props;
   const { prompt_message, prompt_field } = kwargs;
   const [rowData, setRowData] = useState<any[]>([]);
+  const [modalShow, setModalshow] = useState(false);
 
   useEffect(() => {
     Streamlit.setFrameHeight();
@@ -152,7 +162,7 @@ const AgGrid = (props: Props) => {
                 prod: prod,
                 client_order_id: field,
                 number_shares: num,
-                kwargs,
+                ...kwargs,
               })
             }
             else {
@@ -161,7 +171,7 @@ const AgGrid = (props: Props) => {
                   username: username,
                   prod: prod,
                   client_order_id: field,
-                  kwargs,
+                  ...kwargs,
                 })
               }
             }
@@ -176,17 +186,9 @@ const AgGrid = (props: Props) => {
     // parseGridoptions()
   });
 
-  function parseGridoptions() {
-    let gridOptions = Object.assign(
-      {},
-      columnFormaters,
-      grid_options
-    )
-    grid_options = gridOptions
-  }
-
   const fetchAndSetData = async () => {
     const array = await fetchData();
+    if (array === false) return false;
     const api = gridRef.current!.api;
     const id_array = array.map((item: any) => item[index])
     const old_id_array = g_rowdata.map((item: any) => item[index])
@@ -196,25 +198,26 @@ const AgGrid = (props: Props) => {
     api.applyTransactionAsync({ update: toUpdate, remove: toRemove, add: toAdd });
     g_rowdata = array
     console.log("index", index);
+    return true;
   };
 
   const fetchData = async () => {
-    const res = await axios.post(api, {
-      username: username,
-      prod: prod,
-      kwargs,
-    });
-    const array = JSON.parse(res.data);
-    return array;
-  };
-
-  const postRowId = async (id: any) => {
-    const res = await axios.post(api, {
-      username: username,
-      prod: prod,
-      id: id,
-    });
-    return res;
+    try {
+      const res = await axios.post(api, {
+        username: username,
+        prod: prod,
+        ...kwargs
+      });
+      const array = JSON.parse(res.data);
+      if (array.status == false) {
+        toastr.error(`Fetch Error: ${array.message}`);
+        return false;
+      }
+      return array;
+    } catch (error: any) {
+      toastr.error(`Fetch Error: ${error.message}`)
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -252,9 +255,17 @@ const AgGrid = (props: Props) => {
 
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
-      const array = await fetchData();
-      setRowData(array);
-      g_rowdata = array;
+      try {
+        const array = await fetchData();
+        if (array == false) {
+          // toastr.error(`Error: ${array.message}`)
+          return
+        }
+        setRowData(array);
+        g_rowdata = array;
+      } catch (error: any) {
+        toastr.error(`Error: ${error.message}`)
+      }
     }, 100);
   }, []);
 
@@ -301,12 +312,17 @@ const AgGrid = (props: Props) => {
   }, []);
 
   const onRefresh = async () => {
-    fetchAndSetData();
+    try {
+      const success = await fetchAndSetData();
+      success && toastr.success("Refresh success!")
+    } catch (error: any) {
+      toastr.error(`Refresh Failed! ${error.message}`)
+    }
   }
 
   const onUpdate = async () => {
     if (g_newRowData == null) {
-      alert("No changes");
+      toastr.warning(`No changes to update`);
       return;
     }
     try {
@@ -314,14 +330,14 @@ const AgGrid = (props: Props) => {
         username: username,
         prod: prod,
         new_data: g_newRowData,
-        kwargs,
+        ...kwargs,
       })
       g_newRowData = null
       if (res.status)
-        alert("success" + res.data);
-      else alert("Failed" + res.message);
-    } catch (error: any) {
-      alert(error);
+        toastr.success(`Successfully Updated! `);
+      else toastr.error(`Failed! ${res.message}`);
+    } catch (error) {
+      toastr.error(`Failed! ${error}`);
     }
   }
 
@@ -374,6 +390,10 @@ const AgGrid = (props: Props) => {
     };
   }, []);
 
+  const onClick = () => {
+    toastr.clear();
+    setTimeout(() => toastr.success(`Settings updated `), 300);
+  };
 
   return (
     <div style={{ flexDirection: 'row', height: '300px', width: "100" }} id='myGrid'>
@@ -392,7 +412,6 @@ const AgGrid = (props: Props) => {
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
-          // columnDefs={columnDefs}
           // defaultColDef={defaultColDef}
           rowStyle={{ fontSize: 12, padding: 0 }}
           headerHeight={30}

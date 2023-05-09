@@ -1,0 +1,33 @@
+/* .example-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#myGrid {
+  flex: 1 1 0px;
+  width: 100%;
+}
+
+.number {
+  text-align: right;
+}
+
+.ag-row-level-0 {
+  font-weight: bold;
+}
+
+a .ag-row-level-1 {
+  color: darkblue;
+}
+
+.ag-row-level-2 {
+  color: darkgreen;
+} */
+#myGrid {
+  flex: 1 1 0px;
+  width: 100%;
+
+  --ag-value-change-delta-down-color: rgb(0, 200, 160);
+  --ag-value-change-delta-up-color: rgb(255, 0, 80);
+}

@@ -4,7 +4,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 
 def main():
     gb = GridOptionsBuilder.create()
-    gb.configure_default_column(column_width=100, textWrap=True)
+    gb.configure_default_column(column_width=100,resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
     flash_def = {
         # 'pinned': 'left',
         # 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -21,15 +21,18 @@ def main():
     gb.configure_column('honey', flash_def)
     gb.configure_column('$honey', flash_def)
     gb.configure_column('symbol')
-    gb.configure_column('ticker_time_frame',
+    gb.configure_column('ticker_time_ frame',
                         {
                             "wrapText": True,
-                            "autoHeight": True})
+                            "autoHeight": True,
+                            "wrapHeaderText":True,
+                            "autoHeaderHeight": True
+                        })
     gb.configure_column('trigname')
     gb.configure_column('datetime',
                         {'type': ["dateColumnFilter", "customDateTimeFormat"],
                          "custom_format_string": "MM/dd/yy HH:mm"})
-    gb.configure_column('honey_time_in_profit')
+    gb.configure_column('honey_time _in_profit')
     gb.configure_column('filled_qty')
     gb.configure_column('qty_available')
     gb.configure_column('filled_avg_price')
