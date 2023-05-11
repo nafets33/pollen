@@ -107,10 +107,7 @@ def app_Sellorder_request(username, prod, client_order_id, number_shares):
 
   return {'status': status}
 
-def get_queen_orders_json(username, prod, api_key):
-  if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-     print("Auth Failed", api_key)
-     return json.dumps({"status":False,"message":"NOAUTH"})
+def get_queen_orders_json(username, prod):
   
   queen_db = load_queen_pkl(username, prod)
 
@@ -133,11 +130,7 @@ def get_queen_orders_json(username, prod, api_key):
   json_data = df.to_json(orient='records')
   return json_data
 
-def get_ticker_data(symbols, prod, api_key):
-
-  if api_key != os.environ.get("fastAPI_key"):
-     print("Auth Failed", api_key)
-     return "NOTAUTH"
+def get_ticker_data(symbols, prod):
 
   ticker_db = read_QUEENs__pollenstory(
       symbols=symbols,
@@ -151,6 +144,20 @@ def get_ticker_data(symbols, prod, api_key):
 
   json_data = df_main.to_json(orient='records')
 
+  return json_data
+
+def get_queen_messages_json(username, prod,):
+  QUEEN = load_queen_pkl(username, prod)
+
+  qo = QUEEN['queens_messages']
+
+  df = pd.DataFrame(qo.items())
+  df.reset_index(inplace=True)
+  df = df.rename(columns={0: 'idx', 1: 'message'})
+  df['message'] = df['message'].astype(str)
+  # df = df.set_index('idx', drop=False)
+
+  json_data = df.to_json(orient='records')
   return json_data
 
 

@@ -210,6 +210,15 @@ def master_swarm_QUEENBEE(prod):
     
     return PB_QUEENBEE_Pickle
 
+def stefan_home_queen(prod=False):
+    if prod:
+        PB_QUEEN_Pickle = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen.pkl") # pollen/db
+    else:
+        PB_QUEEN_Pickle = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_sandbox.pkl")
+    QUEEN = ReadPickleData(PB_QUEEN_Pickle)
+    QUEEN['source'] = PB_QUEEN_Pickle
+    return QUEEN
+
 def master_swarm_KING(prod):
     if prod:
         PB_KING_Pickle = os.path.join(hive_master_root(), "db/KING.pkl")
@@ -668,7 +677,10 @@ def local__filepaths_misc(jpg_root=hive_master_root()):
         "pawn_png_url": pawn_png_url,
     }
 
-
+def create_blessing():
+    return{
+        
+    }
 
 #### #### if __name__ == '__main__'  ###
 

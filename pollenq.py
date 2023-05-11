@@ -36,6 +36,7 @@ from pollenq_pages.account import account
 from pollenq_pages.trading_models import trading_models
 from pollenq_pages.pollen_engine import pollen_engine
 import hydralit_components as hc
+from custom_grid import st_custom_grid, GridOptionsBuilder
 
 from ozz.ozz_bee import send_ozz_call
 # import sys, importlib
@@ -502,6 +503,39 @@ def pollenq(admin_pq):
             return True
 
 
+        def queen_messages_grid(KING):
+            gb = GridOptionsBuilder.create()
+            gb.configure_default_column(column_width=100,resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
+            
+            #Configure index field
+            gb.configure_index('idx')
+            gb.configure_column('idx')
+            gb.configure_column('message', {'initialWidth': 120})
+            go = gb.build()
+
+            refresh_sec = None
+            seconds_to_market_close = None
+            st_custom_grid(
+                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+                api="http://127.0.0.1:8000/api/data/queen_messages",
+                api_update=None,
+                refresh_sec=refresh_sec, 
+                refresh_cutoff_sec=seconds_to_market_close, 
+                prod=st.session_state['production'],
+                grid_options=go,
+                key=f'{"queen_messages"}',
+                button_name='insight',
+                api_url=None,
+                # kwargs from here
+                api_key=os.environ.get("fastAPI_key"),
+                prompt_message ="message",
+                prompt_field = "idx", # "current_macd_tier",
+
+            ) 
+
+            return True
+
+
         # print("MENU Buttons")
         def menu_buttons():
             # sb = st.sidebar
@@ -771,7 +805,7 @@ def pollenq(admin_pq):
             # page_line_seperator("1") #############################################
             
          
-            cols = st.columns((8,2,1))
+            cols = st.columns((8,2))
             with cols[0]:
                 with st.expander('Master Controls', True):
                     menu_buttons()
@@ -780,10 +814,12 @@ def pollenq(admin_pq):
             if queenbee_online(cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
                 queen_offline = True
 
-
-
             queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
             queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
+
+            with cols[1]:
+                with st.expander("Queens Thoughts"):
+                    queen_messages_grid(KING)
 
             print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)

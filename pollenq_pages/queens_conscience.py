@@ -899,7 +899,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
                         if st.form_submit_button('Save ChessBoard'):
                             PickleData(pickle_file=QUEENBEE.get('source'), data_to_store=QUEENBEE)
-                            st.success("New Move")
+                            st.success("Swarm QueenBee Saved")
                             
                             return True
 

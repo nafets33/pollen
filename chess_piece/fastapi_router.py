@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave
+from chess_piece.fastapi_queen import get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave
 # from database.schemas import UsernameSchema
 import random
 import json
@@ -32,11 +32,21 @@ def get_text():
     n = random.randrange(100)
     return JSONResponse(content=str(n))
 
+@router.post("/queen_messages", status_code=status.HTTP_200_OK)
+def load_queen_messages_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_queen_messages_json(username, prod)
+    return JSONResponse(content=json_data)
+
 
 @router.post("/queen", status_code=status.HTTP_200_OK)
 def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
-    # print("/data/queen", username, prod, kwargs)
-    json_data = get_queen_orders_json(username, prod, api_key)
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_queen_orders_json(username, prod)
     return JSONResponse(content=json_data)
 
 @router.post("/queen_app_Sellorder_request", status_code=status.HTTP_200_OK)
@@ -60,7 +70,7 @@ def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Bod
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
-    json_data = get_ticker_data(symbols, prod, api_key)
+    json_data = get_ticker_data(symbols, prod)
     return JSONResponse(content=json_data)
 
 # info = api.get_account()
