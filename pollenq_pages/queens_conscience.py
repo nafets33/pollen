@@ -1312,6 +1312,15 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 
                 st.write("Heart")
                 st.write(QUEEN['heartbeat'])
+
+                if st.button("clear all buy orders", key=f'button_buy'):
+                    QUEEN_KING['buy_orders'] = []
+                    PickleData(PB_App_Pickle, QUEEN_KING)
+                st.write("buy_orders")
+                st.write(QUEEN_KING['buy_orders'])
+                
+                st.write("Heart")
+                st.write(QUEEN['heartbeat'])
             
             with cols[1]:
                 if st.button("clear all queen_sleep", key=f'button_b'):
@@ -1365,6 +1374,53 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 st.write(df) 
 
                 return True
+        
+        def backtesting():
+            with st.expander("backtesting"):
+                cols = st.columns((1,1,3))
+                with cols[0]:
+                    back_test_blocktime = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+                    st.write(back_test_blocktime)
+
+                with cols[0]:
+                    len_divider = st.slider(label=f'back test len to avg', key=f'len_divider', min_value=int(1), max_value=int(10), value=3)
+                back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.csv')
+                df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
+                df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
+                for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
+                    df_backtest[col] = pd.to_numeric(df_backtest[col], errors='coerce')
+                df_backtest_ttf = df_backtest.groupby(['ttf', 'key', 'macd_fast', 'macd_slow', 'macd_smooth'])[['winratio', 'maxprofit']].sum().reset_index()
+                # st.dataframe(df_backtest)
+                # standard_AGgrid(df_backtest_ttf)
+                # standard_AGgrid(df_backtest)
+                stars_times = stars().keys()
+                tickers = set([i.split("_")[0] for i in df_backtest_ttf['ttf'].tolist()])
+                results = []
+                results_top = []
+                for ticker in tickers:
+                    for tframes in stars_times:
+                        spy = df_backtest_ttf[df_backtest_ttf['ttf'] == f'{ticker}_{tframes}']
+                        top_num = round(int(len(spy) / len_divider),0)
+                        # print(len(spy), top_num)
+                        spy_ = spy[spy.index.isin(spy['maxprofit'].nlargest(n=top_num).index.tolist())]
+                        mf = int(round(sum(spy_['macd_fast']) / len(spy_),0))
+                        ms = int(round(sum(spy_['macd_slow']) / len(spy_),0))
+                        mss = int(round(sum(spy_['macd_smooth']) / len(spy_),0))
+                        spy_['avg_ratio'] = f'{mf}_{ms}_{mss}'
+                        spy_result = spy_[['ttf', 'avg_ratio']].drop_duplicates()
+                        results_top.append(spy_result)
+                        results.append(spy_)
+
+                df_top5 = pd.concat(results)
+                df_top5_results = pd.concat(results_top)
+
+                with cols[1]:
+                    standard_AGgrid(df_top5_results)
+                with cols[2]:
+                    if st.button("write analysis results"):
+                        df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+                        st.success("Saved")
+                standard_AGgrid(df_top5)
 
 
         def queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail):
@@ -1427,13 +1483,47 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     st.warning("Total MACD GUAGE Number reflects all tickers BUT you may only view 8 tickers")
                 cols = st.columns((1, 3))
 
+                if st.button("show views"):
+                    story_views = story_view(STORY_bee=STORY_bee, ticker="SPY")
+                    # SV = st.selectbox("Story Views", options=['SPY'], key=f'{"sview"}{"symbol"}')
+                    st.write(story_views.keys())
+                    SV = st.selectbox("Story Views", options=list(story_views.get('df_agg').keys()), key=f'{"sview"}{"symbol"}')
+                    st.write(story_views.get(SV))
+                    # st.write(story_views.get('df_agg').iloc[0])
+                    keys=list(story_views.get('df_agg').iloc[0].keys())
+                    SV2 = st.selectbox("agg 1", options=keys, key=f'{"sview"}{"symbolkey"}')
+                    
+                    def wave_analysis_from_storyview(story_views,  df_item='df_agg', df_item2='df'):
+                        wave_analysis = []
+                        for star in range(5):
+                            df = story_views.get(df_item).iloc[star][df_item2]
+                            df['star_avg_length'] = sum(df['avg_length']) / len(df)
+                            df['star_avg_time_to_max_profit'] = sum(df['avg_time_to_max_profit']) / len(df)
+                            wave_analysis.append(story_views.get(df_item).iloc[star][df_item2])
+                        wave_analysis_df = pd.DataFrame()
+                        for df in wave_analysis:
+                            wave_analysis_df = pd.concat([wave_analysis_df, df])
+                        
+                        tickers = []
+                        for ttf in wave_analysis_df['ticker_time_frame'].tolist():
+                            tickers.append(ttf.split("_")[0])
+                        tickers = set(tickers)
+                        for tic in tickers:
+                            wave_analysis_df[f'{tic}_avg_length'] = sum(wave_analysis_df['avg_length']) / len(wave_analysis_df)
+                            wave_analysis_df[f'{tic}_avg_time_to_max_profit'] = sum(wave_analysis_df['avg_time_to_max_profit']) / len(wave_analysis_df)
+
+                        return wave_analysis_df
+                    st.write(wave_analysis_from_storyview(story_views))
+                    page_line_seperator(".5")
+                    
+                    for star in range(5):
+                        st.write(story_views.get('df_agg').iloc[star]['df_today'])
+
+                
+                wavegauges = {}
                 for symbol in tickers:
                     # star__view = its_morphin_time_view(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=symbol, POLLENSTORY=POLLENSTORY) ## RETURN FASTER maybe cache?
                     story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
-                    SV = st.selectbox("Story Views", options=list(story_views.get('df_agg').keys()), key=f'{"sview"}{symbol}')
-                    st.write(story_views.get('df_agg').get(SV))
-                    st.write(story_views.get('df_agg').get(SV).iloc[0])
-                    df_hm = story_views.get('df_agg').get(SV)
                     df = story_views.get('df')
                     df = df.set_index('star')
                     df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
@@ -1446,83 +1536,24 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
                     story_guages = wave_guage(df, trading_model=trading_model)
                     df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
+
+                    cols = st.columns((2,5,2))
                     with cols[0]:
-                        st.plotly_chart(create_guage_chart(title=f'{symbol} Wave Gauge', value=float(story_guages.get(f'{"weight_L"}_macd_tier_guage'))))
+                        st.dataframe(df_style)
+
                     with cols[1]:
+                        wave_grid(symbols=[symbol], key=f'{"wb"}{symbol}')
+                    
+                    with cols[2]:
+                        st.plotly_chart(create_guage_chart(title=f'{symbol} Wave Gauge', value=float(story_guages.get(f'{"weight_L"}_macd_tier_guage'))))
+                        wavegauges[symbol] = float(story_guages.get(f'{"weight_L"}_macd_tier_guage'))
+                    # with cols[1]:
                         for weight_ in ['weight_L', 'weight_S']:
                             macd_ = story_guages.get(f'{weight_}_macd_tier_guage')
                             hist_ = story_guages.get(f'{weight_}_hist_tier_guage')
-                            mark_down_text(fontsize=25, 
+                            mark_down_text(fontsize=13, 
                                            text=f'{symbol} {f"{weight_} MACD Gauge "}{"{:,.2%}".format(macd_)}{" Hist Gauge "}{"{:,.2%}".format(hist_)}')
 
-                        st.dataframe(df_style)
-
-
-                        gb = GridOptionsBuilder.create()
-                        gb.configure_default_column(100, textWrap=True)
-                        gb.configure_index('star')
-
-                        # gb.configure_index('client_order_id')
-                        # flash_def = {
-                        #     'pinned':'left',
-                        #     'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                        #     'enableCellChangeFlash': True,
-                        #     # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                        #     }
-                        # #Configure index field
-                        # honey_options = {'pinned': 'left',
-                        #                 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                        #                 'custom_currency_symbol':"%"
-                        #                             }
-                        gb.configure_column("star")
-                        # gb.configure_column('$honey',flash_def, header_name="$Money")
-                        # gb.configure_column('symbol')
-                        # gb.configure_column('ticker_time_frame',
-                        #                     {
-                        #                         "wrapText": True,
-                        #                         "autoHeight": True})
-                        # gb.configure_column('trigname')
-                        # gb.configure_column('datetime',
-                        #                     {'type': ["dateColumnFilter", "customDateTimeFormat"],
-                        #                     "custom_format_string": "MM/dd/yy HH:mm"})
-                        # gb.configure_column('honey_time_in_profit')
-                        # gb.configure_column('filled_qty')
-                        # gb.configure_column('qty_available')
-                        # gb.configure_column('filled_avg_price')
-                        # gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                        #                                 #    'custom_currency_symbol':"$",
-                        #                                 }
-                        #                     )
-                        # gb.configure_column('wave_amo', {'hide': True})
-                        # gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
-                        #                                           "editable":True,
-                        #                                           "cellEditor":"agSelectCellEditor",
-                        #                                           })
-                        go = gb.build()
-                        print(seconds_to_market_close)
-                        refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-                        # print(seconds_to_market_close, refresh_sec)
-                        st.write("buy waves")
-                        st_custom_grid(
-                            username=KING['users_allowed_queen_emailname__db'].get(client_user), 
-                            api="http://127.0.0.1:8000/api/data/workerbees",
-                            api_update="http://127.0.0.1:8000/api/data/update_orders",
-                            refresh_sec=refresh_sec, 
-                            refresh_cutoff_sec=seconds_to_market_close, 
-                            prod=st.session_state['production'],
-                            grid_options=go,
-                            key=f'{"workerbees"}{symbol}',
-                            button_name='buy',
-                            api_url="http://127.0.0.1:8000/api/data/queen_buy_orders",
-                            # kwargs from here
-                            api_key=os.environ.get("fastAPI_key"),
-                            filter={"status": "running", "para1": "value1"},
-                            prompt_message ="Buy Amount",
-                            prompt_field = "star", # "current_macd_tier",
-                            read_pollenstory = False,
-                            read_storybee = True,
-                            symbols=[symbol]
-                        )  
 
 
                 return True
@@ -1589,6 +1620,125 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             st.write("KOR PENDING WORK")
 
 
+        def order_grid():
+            gb = GridOptionsBuilder.create()
+            gb.configure_default_column(column_width=100,resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
+            flash_def = {
+                'pinned':'left',
+                'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                'enableCellChangeFlash': True,
+                # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                }
+            #Configure index field
+            gb.configure_index('client_order_id')
+            honey_options = {'pinned': 'left',
+                            'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                            'custom_currency_symbol':"%"
+                                        }
+            gb.configure_column('honey', honey_options)
+            gb.configure_column('money',flash_def, header_name="$Money")
+            gb.configure_column('symbol')
+            gb.configure_column('ticker_time_frame',
+                                {
+                                    "wrapText": True,
+                                    "autoHeight": True})
+            gb.configure_column('trigname')
+            gb.configure_column('datetime',
+                                {'type': ["dateColumnFilter", "customDateTimeFormat"],
+                                "custom_format_string": "MM/dd/yy HH:mm"})
+            gb.configure_column('honey_time_in_profit')
+            gb.configure_column('filled_qty')
+            gb.configure_column('qty_available')
+            gb.configure_column('filled_avg_price')
+            gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                            #    'custom_currency_symbol':"$",
+                                            }
+                                )
+            gb.configure_column('wave_amo', {'hide': True})
+            gb.configure_column('order_rules', {"wrapText": True})
+            gb.configure_column('take_profit', {"wrapText": True})
+            gb.configure_column('close_order_today')
+            gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
+                                                    "editable":True,
+                                                    "cellEditor":"agSelectCellEditor",
+                                                    })
+            go = gb.build()
+            
+
+            refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+            # print(seconds_to_market_close, refresh_sec)
+
+            st_custom_grid(
+                username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+                api="http://127.0.0.1:8000/api/data/queen",
+                api_update="http://127.0.0.1:8000/api/data/update_orders",
+                refresh_sec=refresh_sec, 
+                refresh_cutoff_sec=seconds_to_market_close, 
+                prod=st.session_state['production'],
+                key='maingrid',
+                api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
+                button_name='sell',
+                grid_options=go,
+                # kwargs from here
+                api_key=os.environ.get("fastAPI_key"),
+                filter={"status": "running", "para1": "value1"},
+                prompt_message ="Custom prompt message",
+                prompt_field = "qty_available",
+            )
+
+        
+        def wave_grid(symbols, key='default', active=False):
+            
+            gb = GridOptionsBuilder.create()
+            gb.configure_default_column(100, textWrap=True)
+            gb.configure_index('star')
+            flash_def = {
+                'pinned':'left',
+                'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                'enableCellChangeFlash': True,
+                # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                }
+
+            gb.configure_column("star")
+            gb.configure_column('macd_state')
+            gb.configure_column('current_macd_tier')
+            gb.configure_column('current_hist_tier')
+            gb.configure_column('wave_n')
+            gb.configure_column('length')
+            gb.configure_column('maxprofit', flash_def)
+            gb.configure_column('time_to_max_profit')
+            gb.configure_column('remaining_budget')
+            gb.configure_column('remaining_budget_borrow')
+            # gb.configure_column('action', {'pinned': 'left'})
+
+            go = gb.build()
+
+            refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+            refresh_sec = refresh_sec if active else None
+            # print(seconds_to_market_close, refresh_sec)
+            # st.write("buy waves")
+            st_custom_grid(
+                username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+                api="http://127.0.0.1:8000/api/data/workerbees",
+                api_update="http://127.0.0.1:8000/api/data/update_orders",
+                refresh_sec=refresh_sec, 
+                refresh_cutoff_sec=seconds_to_market_close, 
+                prod=st.session_state['production'],
+                grid_options=go,
+                key=f'{"workerbees"}{key}',
+                button_name='buy',
+                api_url="http://127.0.0.1:8000/api/data/queen_buy_orders",
+                # kwargs from here
+                api_key=os.environ.get("fastAPI_key"),
+                filter={"status": "running", "para1": "value1"},
+                prompt_message ="Buy Amount",
+                prompt_field = "star", # "current_macd_tier",
+                read_pollenstory = False,
+                read_storybee = True,
+                symbols=symbols
+            ) 
+        
+        
         ########################################################
         ########################################################
         #############The Infinite Loop of Time #################
@@ -1636,7 +1786,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
         client_user = st.session_state["username"]
         # st.write("*", client_user)
         
-        
+        # from custom_graph import st_custom_graph
+        # st_custom_graph()
+
         PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
         PB_App_Pickle = st.session_state['PB_App_Pickle'] 
         PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
@@ -1708,6 +1860,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             
                 if st.session_state['workerbees'] == True:
                     # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
+                    # if st.button("backtesting"):
+                    backtesting()
                     queen_triggerbees()
                     if st.session_state['admin']:
                         if st.button("Yahoo Return Fin.Data Job"):
@@ -1788,70 +1942,14 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 model_wave_results(STORY_bee)
                         if tab_name == 'orders':
                             if st.session_state['orders']:
-                                gb = GridOptionsBuilder.create()
-                                gb.configure_default_column(100, textWrap=True)
-                                flash_def = {
-                                    'pinned':'left',
-                                    'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                    'enableCellChangeFlash': True,
-                                    # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                                    }
-                                #Configure index field
-                                gb.configure_index('client_order_id')
-                                honey_options = {'pinned': 'left',
-                                                'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                                                'custom_currency_symbol':"%"
-                                                            }
-                                gb.configure_column('honey', honey_options)
-                                gb.configure_column('$honey',flash_def, header_name="$Money")
-                                gb.configure_column('symbol')
-                                gb.configure_column('ticker_time_frame',
-                                                    {
-                                                        "wrapText": True,
-                                                        "autoHeight": True})
-                                gb.configure_column('trigname')
-                                gb.configure_column('datetime',
-                                                    {'type': ["dateColumnFilter", "customDateTimeFormat"],
-                                                    "custom_format_string": "MM/dd/yy HH:mm"})
-                                gb.configure_column('honey_time_in_profit')
-                                gb.configure_column('filled_qty')
-                                gb.configure_column('qty_available')
-                                gb.configure_column('filled_avg_price')
-                                gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                                #    'custom_currency_symbol':"$",
-                                                                }
-                                                    )
-                                gb.configure_column('wave_amo', {'hide': True})
-                                gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
-                                                                          "editable":True,
-                                                                          "cellEditor":"agSelectCellEditor",
-                                                                          })
-                                go = gb.build()
-                                
+                                cols = st.columns((3,1))
+                                with cols[0]:
+                                    order_grid()
+                                with cols[1]:
+                                    symbols = QUEEN['heartbeat'].get('active_tickers')
+                                    wave_grid(symbols=["SPY", "QQQ"], key=f'{"wb"}{symbols}{"orders"}', active=True)
 
-                                refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-                                # print(seconds_to_market_close, refresh_sec)
-
-                                st_custom_grid(
-                                    username=KING['users_allowed_queen_emailname__db'].get(client_user), 
-                                    api="http://127.0.0.1:8000/api/data/queen",
-                                    api_update="http://127.0.0.1:8000/api/data/update_orders",
-                                    refresh_sec=refresh_sec, 
-                                    refresh_cutoff_sec=seconds_to_market_close, 
-                                    prod=st.session_state['production'],
-                                    key='maingrid',
-                                    api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
-                                    button_name='sell',
-                                    grid_options=go,
-                                     # kwargs from here
-                                    api_key=os.environ.get("fastAPI_key"),
-                                    filter={"status": "running", "para1": "value1"},
-                                    prompt_message ="Custom prompt message",
-                                    prompt_field = "qty_available",
-                                )
-                                
                                 cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-
                                 if st.session_state['old_orders']:
                                     orders_agrid()
 

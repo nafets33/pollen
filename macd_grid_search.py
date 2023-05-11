@@ -66,9 +66,9 @@ def read_backtest_folder_assert_insight(backtest_folder):
                 print("{}, {}, {}, {}, {}, {}".format(ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
     print(df.head(5))
     if use_blocktime:   
-        df.to_csv("macd_grid_search_blocktime.csv")
+        df.to_csv("backtesting/macd_grid_search_blocktime.csv")
     else:
-        df.to_csv("macd_grid_search.csv")
+        df.to_csv("backtesting/macd_grid_search.csv")
 
     ## back test analysis results ##
     back_test_blocktime = os.path.join(hive_master_root(), 'macd_grid_search_blocktime.csv')

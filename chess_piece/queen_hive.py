@@ -321,10 +321,11 @@ def hive_dates(api):
 
 
 
-def init_QUEEN(queens_chess_piece):
+def init_queen(queens_chess_piece):
 
     QUEEN = {  # The Queens Mind
         "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
+        "account_info": 'init',
         "prod": "",
         "source": "na",
         "last_modified": datetime.now(est),
@@ -370,6 +371,7 @@ def init_QUEEN(queens_chess_piece):
             # },
         },
         "chess_board": {},
+        "revrec": {},
         "errors": {},
         "client_order_ids_qgen": [],
         "app_requests__bucket": [],
@@ -815,7 +817,7 @@ def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral")
 def add_key_to_QUEEN(QUEEN, queens_chess_piece):  # returns QUEEN
     update = False
     q_keys = QUEEN.keys()
-    latest_queen = init_QUEEN("queen")
+    latest_queen = init_queen("queen")
     for k, v in latest_queen.items():
         if k not in q_keys:
             QUEEN[k] = v
@@ -2536,7 +2538,7 @@ def refresh_account_info(api):
     #     'trading_blocked': False, 'transfers_blocked': False})
     """
     info = api.get_account()
-    return {
+    info_ = {
         "info": info,
         "info_converted": {
             "accrued_fees": float(info.accrued_fees),
@@ -2547,6 +2549,8 @@ def refresh_account_info(api):
             "portfolio_value": float(info.portfolio_value),
         },
     }
+    # info_ = {k: v for (k,v) in (vars(info).get('_raw').keys()) if k not in info_}
+    return info_
 
 
 def init_index_ticker(index_list, db_root, init=True):
@@ -3824,6 +3828,7 @@ def order_vars__queen_order_items(
     maker_middle=False,
     origin_wave=False,
     power_up_rangers=False,
+    symbol=False,
     ticker_time_frame_origin=False,
     double_down_trade=False,
     sell_reason={},
@@ -3833,6 +3838,7 @@ def order_vars__queen_order_items(
     first_sell=False,
     time_intrade=False,
     updated_at=False,
+    trigbee=False,
 ):
     if order_side:
         order_vars = {}
@@ -3862,6 +3868,9 @@ def order_vars__queen_order_items(
             order_vars["first_sell"] = first_sell
             order_vars["time_intrade"] = time_intrade
             order_vars["updated_at"] = updated_at
+            order_vars["symbol"] = symbol
+            # order_vars["trigbee"] = trigbee
+            
 
             return order_vars
 
@@ -3891,6 +3900,8 @@ def order_vars__queen_order_items(
             order_vars["first_sell"] = first_sell
             order_vars["time_intrade"] = time_intrade
             order_vars["updated_at"] = updated_at
+            order_vars["symbol"] = symbol
+            order_vars["trigbee"] = trigbee
 
             return order_vars
 
@@ -3965,11 +3976,13 @@ def create_QueenOrderBee(
         honey_time_in_profit=0,
         cost_basis=0,
         honey=0,
+        money=0,
         order=order,
         order_vars=order_vars,
         priceinfo=priceinfo,
         queen_init=False,
         revisit_trade_datetime=datetime.now(est),
+        datetime=datetime.now(est)
     ):
         date_mark = datetime.now(est)
         if queen_init:
@@ -4021,7 +4034,7 @@ def create_QueenOrderBee(
                 "ask": priceinfo["ask"],
                 "honey_gauge": deque([], 89),
                 "macd_gauge": deque([], 89),
-                "$honey": 0,
+                "money": 0,
                 "honey": 0,
                 "cost_basis": 0,
                 "sell_reason": order_vars["sell_reason"],
@@ -4540,7 +4553,7 @@ def queen_orders_view(
     else:
         col_view = [
             "honey",
-            "$honey",
+            "money",
             "symbol",
             "ticker_time_frame",
             "trigname",
@@ -4924,7 +4937,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         print("You Need a Queen")
         queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
         l = len(queens_archived["queens"])
-        QUEEN = init_QUEEN(queens_chess_piece=queens_chess_piece)
+        QUEEN = init_queen(queens_chess_piece=queens_chess_piece)
         QUEEN["id"] = f'{"V1"}{"__"}{l}'
         queens_archived["queens"].append({"queen_id": QUEEN["id"]})
         PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)

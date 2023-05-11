@@ -4,7 +4,7 @@ import json
 import pandas as pd
 import random
 from chess_piece.king import hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory
-from chess_piece.queen_hive import split_today_vs_prior, story_view
+from chess_piece.queen_hive import split_today_vs_prior, story_view, refresh_chess_board__revrec
 from datetime import datetime
 from dotenv import load_dotenv
 import pytz
@@ -34,7 +34,6 @@ def load_queen_App_pkl(username, prod):
     queen_pkl_path = username+'/queen_App__sandbox.pkl'
   else:
     queen_pkl_path = username+'/queen_App_.pkl'
-  print(queen_pkl_path)
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
 
@@ -43,7 +42,6 @@ def load_queen_pkl(username, prod):
     queen_pkl_path = username+'/queen_sandbox.pkl'
   else:
     queen_pkl_path = username+'/queen.pkl'
-  print(queen_pkl_path)
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
 
@@ -60,6 +58,26 @@ def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, usernam
 
 
 # Router Calls
+def app_buy_order_request(username, prod, client_order_id, number_shares): # index & wave_amount
+  QUEEN_KING = load_queen_App_pkl(username, prod)
+  buy_package = create_AppRequest_package(request_name='buy_orders', client_order_id=client_order_id)
+  # validate
+  # execute_order(QUEEN=QUEEN, blessing=blessing, # order_vars
+  #               side=blessing.get('order_side'),
+  #               wave_amo=blessing.get('wave_amo'),
+  #               order_type=blessing.get('order_type'),
+  #               limit_price=blessing.get('limit_price'),
+  #               trading_model=blessing.get('trading_model'),
+  #               king_resp=True, 
+  #               king_eval_order=False, 
+  #               ticker=blessing.get('symbol'), 
+  #               ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
+  #               trig=blessing.get('trigbee'), 
+  #               portfolio=portfolio, 
+  #               crypto=crypto)
+
+  return True
+
 
 def app_Sellorder_request(username, prod, client_order_id, number_shares):
   QUEEN_KING = load_queen_App_pkl(username, prod)
@@ -97,50 +115,28 @@ def get_queen_orders_json(username, prod, api_key):
   queen_db = load_queen_pkl(username, prod)
 
   qo = queen_db['queen_orders']
-  col_view = [
-              "honey",
-              "$honey",
-              "symbol",
-              "ticker_time_frame",
-              "trigname",
-              "datetime",
-              "honey_time_in_profit",
-              "filled_qty",
-              "qty_available",
-              "filled_avg_price",
-              "limit_price",
-              "cost_basis",
-              "wave_amo",
-              "status_q",
-              "client_order_id",
-              "origin_wave",
-              "wave_at_creation",
-              "power_up",
-              "sell_reason",
-              "exit_order_link",
-              "queen_order_state",
-              "order_rules",
-              "order_trig_sell_stop",
-              "side",
-          ]
+  if len(qo) == 1:
+    print("init queen")
+    return pd.DataFrame().to_json()
+
   df = pd.DataFrame(qo)
-  
   df['client_order_id'] = df.index
-  df["$honey"] = pd.to_numeric(df["$honey"], errors='coerce')
+  df["money"] = pd.to_numeric(df["money"], errors='coerce')
   df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
   df["honey"] = round(df["honey"] * 100,2)
-  df["$honey"] = round(df["$honey"],0)
+  df["money"] = round(df["money"],0)
+  df["take_profit"] = df["order_rules"].get('take_profit')
+  df["close_order_today"] = df["order_rules"].get('close_order_today')
   
   df = df[df['queen_order_state'].isin(['running'])]
-  df = df[col_view]
-  print(df)
+  # df = df[col_view]
   json_data = df.to_json(orient='records')
   return json_data
 
-def get_ticker_data(symbols, prod, kwargs):
+def get_ticker_data(symbols, prod, api_key):
 
-  if kwargs.get('api_key') != os.environ.get("fastAPI_key"):
-     print("Auth Failed", kwargs.get('api_key'))
+  if api_key != os.environ.get("fastAPI_key"):
+     print("Auth Failed", api_key)
      return "NOTAUTH"
 
   ticker_db = read_QUEENs__pollenstory(
@@ -157,34 +153,22 @@ def get_ticker_data(symbols, prod, kwargs):
 
   return json_data
 
-def get_account_info(kwargs):
-  if kwargs.get('api_key') != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-     print("Auth Failed", kwargs.get('api_key'))
-     return "NOTAUTH"
-  
-  QUEEN = load_queen_pkl(kwargs.get('username'), kwargs.get('prod'))
-  acct_info = QUEEN['account_info']
 
-  honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-  money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-
-  return f'{honey_text} {money_text}'
-  
-
-def queen_wavestories__get_macdwave(username, prod, symbols, kwargs):
+def queen_wavestories__get_macdwave(username, prod, symbols, api_key):
     # cust_Button("misc/waves.png", hoverText='', key='waves_icon', height=f'23px')
     # ipdb.set_trace()
-    print(kwargs)
     read_storybee=True, #kwargs.get('read_storybee')
     read_pollenstory=False, #kwargs.get('read_pollenstory')
     # st.image((os.path.join(hive_master_root(), "/custom_button/frontend/build/misc/waves.png")), width=33)
     # QUEEN_KING = load_queen_App_pkl(username, prod)
-    # QUEEN = load_queen_pkl(username, prod)
+    QUEEN = load_queen_pkl(username, prod)
+    # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+    revrec = QUEEN.get("revrec")
     ticker_db = load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod)
     # POLLENSTORY = ticker_db['pollenstory']
     STORY_bee = ticker_db['STORY_bee']
     try:
-        df_main = None
+        df_main = pd.DataFrame()
         for symbol in symbols:
             story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
 
@@ -198,14 +182,44 @@ def queen_wavestories__get_macdwave(username, prod, symbols, kwargs):
             df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
             df = df.sort_values('sort')
 
-            if df_main == None:
+            if len(df_main) == 0:
                df_main = df
             else:
+            #   ipdb.set_trace()
               df_main = pd.concat([df_main, df])
+
+        df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')
+        df_main["maxprofit"] = round(df_main["maxprofit"] * 100,2).fillna(0)
         
-        # df_main = df
+        if revrec is not None:
+          for indx in df_main.index.tolist():
+            df_main.at[indx, 'remaining_budget'] = revrec.get('df_stars').loc[indx]['remaining_budget']
+            df_main.at[indx, 'remaining_budget_borrow'] = revrec.get('df_stars').loc[indx]['remaining_budget_borrow']
+
         json_data = df_main.to_json(orient='records')
 
         return json_data
     except Exception as e:
-       print(e)
+       print("mmm error", e)
+
+
+
+
+
+
+def get_account_info(username, prod):
+  QUEEN = load_queen_pkl(username, prod)
+  acct_info = QUEEN['account_info']
+
+  honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+  money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+
+  return f'{honey_text} {money_text}'
+
+
+def get_queens_mind(username, prod):
+
+  QUEEN = load_queen_pkl(username, prod)
+  # QUEEN['messages']
+
+  return QUEEN['queens_messages']

@@ -183,7 +183,7 @@ def queen_orders_view(
     else:
         col_view = [
             "honey",
-            "$honey",
+            "money",
             "symbol",
             "ticker_time_frame",
             "trigname",
@@ -529,7 +529,7 @@ def queens_orders__aggrid_v2(
     allow_unsafe_jscode=True,
     buttons=True):
 
-    data["$honey"] = pd.to_numeric(data["$honey"], errors='coerce')
+    data["money"] = pd.to_numeric(data["money"], errors='coerce')
     data["honey"] = pd.to_numeric(data["honey"], errors='coerce')
     data["honey"] = data["honey"] * 100
 
@@ -616,7 +616,7 @@ def queens_orders__aggrid_v2(
         maxWidth=100,
         autoSize=True,
     )
-    gb.configure_column("$honey", # immutable
+    gb.configure_column("money", # immutable
         header_name="Money$",
         pinned="left",
         cellStyle=honey_colors,
@@ -703,7 +703,7 @@ def queens_orders__aggrid_v2(
     # }
     # """)
 
-    # int_cols = ['$honey', 'filled_avg_price', 'cost_basis', 'wave_amo', 'honey']
+    # int_cols = ['money', 'filled_avg_price', 'cost_basis', 'wave_amo', 'honey']
     # gb.configure_columns(int_cols, valueFormatter=k_sep_formatter)
     # for int_col in int_cols:
     #     gb.configure_column(int_col, type=["numericColumn", "numberColumnFilter", "customCurrencyFormat"], custom_currency_symbol="$")
@@ -1113,7 +1113,7 @@ def queen_order_flow(QUEEN, active_order_state_list, order_buttons=False):
     with cols[0]:
         mark_down_text(text=f'% {round(sum(df["honey"]) * 100, 2)}', fontsize="18")
     with cols[1]:
-        mark_down_text(text=f'$ {round(sum(df["$honey"]), 2)}', fontsize="18")
+        mark_down_text(text=f'$ {round(sum(df["money"]), 2)}', fontsize="18")
     cols = st.columns((1, 1, 10))
 
     ordertables__agrid = queens_orders__aggrid_v2(

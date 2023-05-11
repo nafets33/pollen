@@ -522,14 +522,13 @@ def pollenq(admin_pq):
                 #     with cols[0]:
             with cols[1]:
                 hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                # st.write(st.session_state['orders_m'])
-                st.session_state['orders'] = True if st.session_state['orders_m'] == 'orders' else False
+                st.session_state['orders'] = True if st.session_state['orders_m'] == 'orders' or st.session_state['orders_m'] == None else False
                 # st.session_state['orders'] = True
                 # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
                 # cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
             with cols[2]:
                 hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] else False
+                st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
                 
                 # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
                 # cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
@@ -538,6 +537,8 @@ def pollenq(admin_pq):
             with cols[3]:
                 height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
                 cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px')
+                # st.session_state['queens_mind'] = True if st.session_state['queens_mind'] in ['queens_mind'] or st.session_state['queens_mind'] == None else False
+
                 # if st.session_state['queens_mind']:
                 #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
@@ -620,11 +621,6 @@ def pollenq(admin_pq):
             authorized_user = st.session_state['authorized_user']
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
             prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"        
-
-            live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
-            if live_sb_button:
-                st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                st.experimental_rerun()
 
             ####### Welcome to Pollen ##########
             # use API keys from user
@@ -723,29 +719,35 @@ def pollenq(admin_pq):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
                 st.stop()
 
-            cols = st.columns((2,2,2,2,2,2))
+            cols = st.columns((2,1,2,4,4,2,2))
 
             with cols[0]:
-                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px')
+                live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
+                if live_sb_button:
+                    st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                    st.experimental_rerun()
             with cols[1]:
+
+                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
+            with cols[2]:
                 portfolio_header__QC(acct_info)
             
             honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
             money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-            with cols[2]:
+            with cols[3]:
                 # to_builder = TextOptionsBuilder.create()
                 # to_builder.configure_background_color("green")
                 # to_builder.configure_text_color("#0d233a")
                 # to_builder.configure_font_style("italic")
                 # to = to_builder.build()
                 # custom_text(api="http://localhost:8000/api/data/account_info", key='honey_fastapi', text_size = 17, refresh_sec =2,refresh_cutoff_sec =20,text_option=to)
-                mark_down_text(fontsize='18', text=f'{honey_text}', font='garamond-bold-italic')
+                mark_down_text(fontsize='23', text=f'{honey_text}', font='garamond-bold-italic')
                 page_line_seperator("3")
-            with cols[3]:
-                mark_down_text(fontsize='18', text=f'{money_text}', font='garamond-bold-italic')
+            with cols[4]:
+                mark_down_text(fontsize='23', text=f'{money_text}', font='garamond-bold-italic')
                 page_line_seperator("3")
             
-            with cols[4]:
+            with cols[5]:
                 with st.expander("control buttons"):
                     refresh_chess_board__button(QUEEN_KING)
                     refresh_queen_controls_button(QUEEN_KING)
@@ -757,7 +759,7 @@ def pollenq(admin_pq):
                         # refresh_workerbees(QUEEN_KING)
                         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
-            with cols[5]:
+            with cols[6]:
                 # queensheart
                 now = datetime.now(est)
                 beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
