@@ -4,7 +4,8 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 
 def main():
     gb = GridOptionsBuilder.create()
-    gb.configure_default_column(column_width=100,resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
+    gb.configure_default_column(column_width=100, resizable=True,
+                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
     flash_def = {
         # 'pinned': 'left',
         # 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -25,7 +26,7 @@ def main():
                         {
                             "wrapText": True,
                             "autoHeight": True,
-                            "wrapHeaderText":True,
+                            "wrapHeaderText": True,
                             "autoHeaderHeight": True
                         })
     gb.configure_column('trigname')
@@ -37,15 +38,15 @@ def main():
     gb.configure_column('qty_available')
     gb.configure_column('filled_avg_price')
     # 123456 -> 123,456
-    # gb.configure_column('cost_basis', 
+    # gb.configure_column('cost_basis',
     #                     {"type": ["customNumberFormat"]})
     # hyperlink field
     gb.configure_column(field="cost_basis",
                         header_name="hyperLink",
-                        other_column_properties= {
-                        "type": ["customHyperlinkRenderer"],
-                        "baseURL": "http://pollenq.com",
-                        "linkField": "qty_available"
+                        other_column_properties={
+                            "type": ["customHyperlinkRenderer"],
+                            "baseURL": "http://pollenq.com",
+                            "linkField": "qty_available"
                         })
     gb.configure_column('wave_amo', {'hide': True})
 
@@ -58,14 +59,25 @@ def main():
         refresh_cutoff_sec=500,
         prod=False,
         key='maingrid',
-        api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
-        button_name="Sell",
         grid_options=go,
         # kwargs from here
         api_key="my_key",
         filter={"status": "running", "para1": "value1"},
-        prompt_message="Custom prompt message",
-        prompt_field="qty_available",
+        buttons=[{'button_name': 'button1',
+                  'button_api': "api1",
+                  'prompt_message': 'message1',
+                  'prompt_field': None,
+                  'col_headername': 'buy button',
+                  'col_width':100,
+                  },
+                 {'button_name': 'button2',
+                  'button_api': "api2",
+                  'prompt_message': 'message2',
+                  'prompt_field': 'None',
+                  'col_headername': 'Sell button',
+                  'col_width':100,
+                  },
+                 ]
     )
 
 
