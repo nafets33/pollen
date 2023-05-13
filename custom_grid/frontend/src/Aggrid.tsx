@@ -37,8 +37,6 @@ type Props = {
   refresh_cutoff_sec?: number,
   gridoption_build?: any,
   prod?: boolean,
-  api_url: string,
-  button_name: string,
   grid_options?: GridOptions<any>,
   index: string,
   kwargs: any,
@@ -132,57 +130,64 @@ const AgGrid = (props: Props) => {
     }
 
     return (
-      <button onClick={btnClickedHandler}>{button_name}</button>
+      <button onClick={btnClickedHandler}>{props.buttonName }</button>
     )
   }
 
   const gridRef = useRef<AgGridReact>(null);
-  const { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, api_url, button_name, index, kwargs } = props;
+  const { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, index, kwargs } = props;
   let { grid_options = {} } = props;
-  const { prompt_message, prompt_field } = kwargs;
+  const { buttons } = kwargs;
   const [rowData, setRowData] = useState<any[]>([]);
   const [modalShow, setModalshow] = useState(false);
 
   useEffect(() => {
     Streamlit.setFrameHeight();
-    if (button_name) grid_options.columnDefs!.push({
-      field: index,
-      headerName: 'action',
-      width: 80,
-      cellRenderer: BtnCellRenderer,
-      cellRendererParams: {
-        clicked: async function (field: any) {
-          try {
-            if (prompt_field && prompt_message) {
-              const selectedRow = g_rowdata.find((row) => row[index] == field)
-              const num = prompt(prompt_message, selectedRow[prompt_field]);
-              if (num == null) return;
-              const res = await axios.post(api_url, {
-                username: username,
-                prod: prod,
-                client_order_id: field,
-                number_shares: num,
-                ...kwargs,
-              })
-            }
-            else {
-              if (window.confirm(prompt_message)) {
-                const res = await axios.post(api_url, {
-                  username: username,
-                  prod: prod,
-                  client_order_id: field,
-                  ...kwargs,
-                })
+    console.log('buttons :>> ', buttons);
+    if (buttons) {
+      buttons.map((button: any) => {
+        const { prompt_field, prompt_message, button_api } = button;
+        grid_options.columnDefs!.push({
+          field: index,
+          headerName: button['col_headername'],
+          width: button['col_width'],
+          cellRenderer: BtnCellRenderer,
+          cellRendererParams: {
+            buttonName:button['button_name'],
+            clicked: async function (field: any) {
+              try {
+                const selectedRow = g_rowdata.find((row) => row[index] == field)
+                if (prompt_field && prompt_message) {
+                  const num = prompt(prompt_message, selectedRow[prompt_field]);
+                  if (num == null) return;
+                  const res = await axios.post(button_api, {
+                    username: username,
+                    prod: prod,
+                    selected_row: selectedRow,
+                    default_value: num,
+                    ...kwargs,
+                  })
+                }
+                else {
+                  if (window.confirm(prompt_message)) {
+                    const res = await axios.post(button_api, {
+                      username: username,
+                      prod: prod,
+                      selected_row: selectedRow,
+                      ...kwargs,
+                    })
+                  }
+                }
+                alert("Success!");
+              } catch (error) {
+                alert(`${error}`);
               }
-            }
-            alert("Success!");
-          } catch (error) {
-            alert(`${error}`);
-          }
-        },
-      },
-      pinned: 'right',
-    })
+            },
+          },
+          pinned: 'right',
+        })
+      })
+    }
     // parseGridoptions()
   });
 
