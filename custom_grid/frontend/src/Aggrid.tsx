@@ -130,7 +130,7 @@ const AgGrid = (props: Props) => {
     }
 
     return (
-      <button onClick={btnClickedHandler}>{props.buttonName }</button>
+      <button onClick={btnClickedHandler}>{props.buttonName}</button>
     )
   }
 
@@ -151,9 +151,10 @@ const AgGrid = (props: Props) => {
           field: index,
           headerName: button['col_headername'],
           width: button['col_width'],
+          pinned: button['pinned'],
           cellRenderer: BtnCellRenderer,
           cellRendererParams: {
-            buttonName:button['button_name'],
+            buttonName: button['button_name'],
             clicked: async function (field: any) {
               try {
                 const selectedRow = g_rowdata.find((row) => row[index] == field)
@@ -184,7 +185,6 @@ const AgGrid = (props: Props) => {
               }
             },
           },
-          pinned: 'right',
         })
       })
     }
@@ -400,6 +400,11 @@ const AgGrid = (props: Props) => {
     setTimeout(() => toastr.success(`Settings updated `), 300);
   };
 
+  const getRowStyle = (params: any) => {
+    console.log('AAAAAAAAAA :>> ', params);
+    return { background: params.data['color_row'], color: params.data['color_row_text'] };
+  };
+
   return (
     <div style={{ flexDirection: 'row', height: '300px', width: "100" }} id='myGrid'>
       {
@@ -413,11 +418,12 @@ const AgGrid = (props: Props) => {
           </div>
         </div>
       }
-      <div className="ag-theme-alpine-dark" style={{ width: "100%", height: "100%" }}>
+      <div className="ag-theme-alpine-dark" style={{ width: "100%", height: kwargs['grid_height'] ? kwargs['grid_height'] : '100%' }}>
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
           // defaultColDef={defaultColDef}
+          getRowStyle={getRowStyle}
           rowStyle={{ fontSize: 12, padding: 0 }}
           headerHeight={30}
           rowHeight={30}

@@ -5,7 +5,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 def main():
     gb = GridOptionsBuilder.create()
     gb.configure_default_column(column_width=100, resizable=True,
-                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
+                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True)
     flash_def = {
         # 'pinned': 'left',
         # 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -21,7 +21,9 @@ def main():
     #                             })
     gb.configure_column('honey', flash_def)
     gb.configure_column('$honey', flash_def)
-    gb.configure_column('symbol')
+    gb.configure_column('symbol', {"filter": True, 
+                                   'suppressMenu': False,
+                                   })
     gb.configure_column('ticker_time_ frame',
                         {
                             "wrapText": True,
@@ -68,16 +70,18 @@ def main():
                   'prompt_message': 'message1',
                   'prompt_field': None,
                   'col_headername': 'buy button',
-                  'col_width':100,
+                  'col_width': 100,
                   },
                  {'button_name': 'button2',
                   'button_api': "api2",
                   'prompt_message': 'message2',
                   'prompt_field': 'None',
                   'col_headername': 'Sell button',
-                  'col_width':100,
+                  'col_width': 100,
+                  'pinned': 'left'
                   },
-                 ]
+                 ],
+        grid_height='500px',
     )
 
 
