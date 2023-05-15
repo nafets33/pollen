@@ -12,24 +12,28 @@ type Props = {
   refresh_sec?: number,
   refresh_cutoff_sec?: number,
   text_option?: any,
+  kwargs: any,
 }
 
 const defaultProps: Props = {
   api: "",
   text_size: 10,
   refresh_sec: 1,
-  refresh_cutoff_sec: 0
+  refresh_cutoff_sec: 0,
+  kwargs: {},
 }
 
 const CustomText: FC<Props> = (props: Props = defaultProps) => {
-  const { api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0, text_option = {} } = props;
+  const { api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0, text_option = {}, kwargs = {} } = props;
   const [rowData, setRowData] = useState("None");
   useEffect(() => Streamlit.setFrameHeight());
 
   useEffect(() => {
     console.log(props);
     const fetchData = async () => {
-      axios.get(api).then((response) => {
+      console.log('AAAAAAAAAAAAAAAAAAA :>> ', kwargs);
+
+      axios.post(api, {...kwargs}).then((response) => {
         setRowData(response.data);
       });
     };

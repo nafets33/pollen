@@ -31,7 +31,11 @@ a .ag-row-level-1 {
   --ag-value-change-delta-down-color: rgb(0, 200, 160);
   --ag-value-change-delta-up-color: rgb(255, 0, 80);
 }
-
+.ag-header-cell{
+  /* padding-left: 0px; */
+  padding-right: 0px;
+  /* text-align: center !important; */
+}
 #toast-container {
   margin-top: 1rem;
 }

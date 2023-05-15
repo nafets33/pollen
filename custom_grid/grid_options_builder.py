@@ -12,10 +12,10 @@ class GridOptionsBuilder:
         gb = GridOptionsBuilder()
         return gb
 
-    def configure_index(self, index_field : str):
+    def configure_index(self, index_field: str):
         self.configure_grid_options(index=index_field)
 
-    def configure_default_column(self, column_width=100, resizable=True, filterable=True, sortable=True, editable=False, groupable=False, sorteable=None, **other_default_column_properties):
+    def configure_default_column(self, column_width=100, resizable=True, filterable=False, sortable=False, editable=False, groupable=False, sorteable=False, suppress_menu=True, **other_default_column_properties):
         """Configure default column.
 
         Args:
@@ -56,16 +56,18 @@ class GridOptionsBuilder:
             "filter": filterable,
             "resizable": resizable,
             "sortable": sortable,
+            "suppressMenu": suppress_menu,
         }
         if groupable:
             defaultColDef["enableRowGroup"] = groupable
 
         if other_default_column_properties:
-            defaultColDef = {**defaultColDef, **other_default_column_properties}
+            defaultColDef = {**defaultColDef, **
+                             other_default_column_properties}
 
         self.__grid_options["defaultColDef"] = defaultColDef
-    
-    def configure_column(self, field=None,  other_column_properties =None,header_name=None):
+
+    def configure_column(self, field=None,  other_column_properties=None, header_name=None):
         """Configures an individual column
         check https://www.ag-grid.com/javascript-grid-column-properties/ for more information.
 
@@ -76,13 +78,14 @@ class GridOptionsBuilder:
         if not self.__grid_options.get("columnDefs", None):
             self.__grid_options["columnDefs"] = defaultdict(dict)
 
-        colDef = {"headerName": field if header_name is None else header_name, "field": field}
+        colDef = {
+            "headerName": field if header_name is None else header_name, "field": field}
 
         if other_column_properties:
             colDef = {**colDef, **other_column_properties}
 
         self.__grid_options["columnDefs"][field].update(colDef)
-    
+
     def configure_grid_options(self, **props):
         """Merges props to gridOptions
 
@@ -90,7 +93,8 @@ class GridOptionsBuilder:
             props (dict): props dicts will be merged to gridOptions root.
         """
         self.__grid_options.update(props)
-        
+
     def build(self):
-        self.__grid_options["columnDefs"] = list(self.__grid_options["columnDefs"].values())
+        self.__grid_options["columnDefs"] = list(
+            self.__grid_options["columnDefs"].values())
         return self.__grid_options
