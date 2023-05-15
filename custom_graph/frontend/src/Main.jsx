@@ -7,6 +7,7 @@ import {
 import ReactApexCharts from 'react-apexcharts'
 import ApexCharts from 'apexcharts'
 import axios from "axios";
+import moment from 'moment';
 
 var _seed = 42;
 Math.random = function () {
@@ -38,97 +39,72 @@ getDayWiseTimeSeries(new Date('11 Feb 2017 GMT').getTime(), 10, {
   max: 90
 })
 
-function getNewSeries(baseval, yrange) {
-  var newDate = baseval + TICKINTERVAL;
-  lastDate = newDate
-
-  for (var i = 0; i < data.length - 10; i++) {
-    // IMPORTANT
-    // we reset the x and y of the data which is out of drawing area
-    // to prevent memory leaks
-    data[i].x = newDate - XAXISRANGE - TICKINTERVAL
-    data[i].y = 0
-  }
-
-  data.push({
-    x: newDate,
-    y: Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min
-  })
-  // console.log('getNewSeries', data);
-}
-
-
 
 const Main = (props) => {
 
   const { kwargs } = props.args;
+  const { y_axis } = kwargs;
   const [series, setSeries] = useState([]);
   const [options, setOptions] = useState({});
 
 
   useEffect(() => Streamlit.setFrameHeight())
   const getGraphData = async () => {
-      console.log("SSSSSSSSSSSSS", kwargs);
-      const res = await axios.post("http://localhost:8000/api/data/symbol_graph", {
+    console.log("SSSSSSSSSSSSS", kwargs);
+    const res = await axios.post("http://localhost:8000/api/data/symbol_graph", {
       ...kwargs
     });
     return JSON.parse(res.data);
     console.log("postres", res.data);
   }
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const dfData = await getGraphData();
-      const serie1 = dfData.map((row) => row.close);
-      const serie2 = dfData.map((row) => row.vwap);
-      ApexCharts.exec('realtime', 'updateSeries', [{
-        name: "Session Duration",
-        data: serie1
-      },
-      {
-        name: "Page Views",
-        data: serie2
-      },
-      ])
-    }, 1000);
+    // const interval = setInterval(async () => {
+    //   const dfData = await getGraphData();
+    //   const serie1 = dfData.map((row) => row.close);
+    //   const serie2 = dfData.map((row) => row.vwap);
+    //   ApexCharts.exec('realtime', 'updateSeries', [{
+    //     name: "Session Duration",
+    //     data: serie1
+    //   },
+    //   {
+    //     name: "Page Views",
+    //     data: serie2
+    //   },
+    //   ])
+    // }, 1000);
     const onLoad = async () => {
       const dfData = await getGraphData();
-      const categories = dfData.map((row) => (row.timestamp_est));
+      const categories = dfData.map((row) => (row.timestamp_est / 1000));
+      // const categories = dfData.map((row) =>(row.timestamp_est.toString()));
       const serie1 = dfData.map((row) => row.close);
       const serie2 = dfData.map((row) => row.vwap);
-      const new_serires = [{
-        name: "close",
-        data: serie1
-      }, {
-        name: "vwap",
-        data: serie2
-      },]
+      const new_serires = y_axis.map((line) => {
+        return {
+          name: line.name,
+          data: dfData.map((row) => row[line['field']]).slice(0),
+        }
+      })
+      const colors = y_axis.map((line) => line['color'])
       const new_option = {
-        series: [{
-          name: "Session Duration",
-          data: serie1
-        },
-        {
-          name: "Page Views",
-          data: serie2
-        },
-        ],
+        colors: colors,
+        series: new_serires,
         chart: {
           height: 350,
           type: 'line',
           zoom: {
-            enabled: false
+            enabled: true
           },
         },
         dataLabels: {
           enabled: false
         },
         stroke: {
-          width: [5, 7, 5],
+          width: [3, 3, 3],
           curve: 'straight',
-          dashArray: [0, 8, 5]
+          dashArray: [0, 0, 0]
         },
         title: {
-          text: 'Page Statistics',
+          text: '',
           align: 'left'
         },
         legend: {
@@ -144,7 +120,12 @@ const Main = (props) => {
         },
         xaxis: {
           type: 'datetime',
-          categories: categories
+          categories: categories,
+          labels: {
+            formatter: function (val) {
+              return moment.unix(val).format(' hh:mm:ss');
+            }
+          }
         },
         tooltip: {
           // y: [
@@ -179,6 +160,9 @@ const Main = (props) => {
       setOptions(new_option);
       setSeries(new_serires)
     }
+    const interval = setInterval(() => {
+      // onLoad()
+    }, 1000);
     onLoad()
     return () => {
       clearInterval(interval);
