@@ -119,13 +119,18 @@ const Main = (props) => {
           }
         },
         xaxis: {
-          type: 'datetime',
+          type: 'category',
           categories: categories,
           labels: {
+            rotate:0,
             formatter: function (val) {
-              return moment.unix(val).format(' hh:mm:ss');
+              return moment.unix(val).format(' hh:mm');
+            },
+            style: {
+              cssClass: 'xaxis-label',
+              // fontSize: '22px',
             }
-          }
+          },
         },
         tooltip: {
           // y: [
@@ -161,7 +166,7 @@ const Main = (props) => {
       setSeries(new_serires)
     }
     const interval = setInterval(() => {
-      // onLoad()
+      onLoad()
     }, 1000);
     onLoad()
     return () => {
