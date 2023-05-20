@@ -926,9 +926,7 @@ def pollen_story(pollen_nectar):
                 }
                 # macd signal divergence
                 df["macd_singal_deviation"] = df["macd"] - df["signal"]
-                STORY_bee[ticker_time_frame]["story"]["macd_singal_deviation"] = df.iloc[-1][
-                    "macd_singal_deviation"
-                ]
+                STORY_bee[ticker_time_frame]["story"]["macd_singal_deviation"] = df.iloc[-1]["macd_singal_deviation"]
 
                 s_timetoken = datetime.now(est)
                 # mac cross
@@ -1033,12 +1031,9 @@ def pollen_story(pollen_nectar):
                 # devation from vwap
                 df["vwap_deviation"] = df["close"] - df["vwap"]
                 df["vwap_deviation_pct"] = df["close"] / df["vwap_deviation"]
-                STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1][
-                    "vwap_deviation"
-                ]
-                STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1][
-                    "vwap_deviation"
-                ]
+                STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1]["vwap_deviation"]
+                STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1]["vwap_deviation_pct"]
+                # rsi_deviation_pct
 
                 # MACD WAVE
                 macd_state = df["macd_cross"].iloc[-1]
@@ -1574,9 +1569,7 @@ def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
     return df
 
 
-def return_knightbee_waves(
-    df, trigbees, ticker_time_frame
-):  # adds profit wave based on trigger
+def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave based on trigger
     # df = POLLENSTORY['SPY_1Minute_1Day'] # test
     wave = {ticker_time_frame: {"ticker_time_frame": ticker_time_frame}}
     for knight_trigger in trigbees:
@@ -1592,13 +1585,19 @@ def return_knightbee_waves(
             if idx == 0:
                 continue
             if trig_bee == "bee":
-                # trig_bee_count+=1
-                # beename = f'{trig_name}{trig_bee_count}'
+
                 close_price = close[idx]
                 track_bees[beename] = close_price
                 # reset only if bee not continous
                 if trigger_bee[idx - 1] != "bee":
                     trig_bee_count += 1
+                
+                beename = f"{trig_bee_count}"
+                # print(beename, " ", idx)
+                if beename in track_bees_profits.keys():
+                    track_bees_profits[beename].update({idx: 0})
+                else:
+                    track_bees_profits[beename] = {idx: 0}
                 continue
             if trig_bee_count > 0:
                 # beename = f'{trig_name}{trig_bee_count}'
@@ -1606,16 +1605,14 @@ def return_knightbee_waves(
                 latest_price = close[idx]
                 profit_loss = (latest_price - origin_trig_price) / latest_price
 
-                if (
-                    "sell_cross-0" in knight_trigger
-                ):  # all triggers with short reverse number to reflect profit
+                if ("sell_cross-0" in knight_trigger):  # all triggers with short reverse number to reflect profit
                     profit_loss = profit_loss * -1
 
                 if beename in track_bees_profits.keys():
                     track_bees_profits[beename].update({idx: profit_loss})
                 else:
                     track_bees_profits[beename] = {idx: profit_loss}
-        # trigbees[trig_name]['wave'] = track_bees_profits
+
         wave[ticker_time_frame][trig_name] = track_bees_profits
         # wave[ticker_time_frame]["buy_cross-0"].keys()
         # bees_wave = wave['AAPL_1Minute_1Day']["buy_cross-0"]
@@ -1746,9 +1743,7 @@ def return_macd_wave_story(df, trigbees, ticker_time_frame, tframe):
     return MACDWAVE_story
 
 
-def return_waves_measurements(
-    df, ticker_time_frame, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
-):
+def return_waves_measurements(df, ticker_time_frame, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"]):
     # POLLENSTORY = read_pollenstory()
     # df = POLLENSTORY["SPY_1Minute_1Day"]
     # trigbees = ["macd_cross"]
@@ -2398,9 +2393,13 @@ def return_alpc_portolio(api):
 
 
 def check_order_status(api, client_order_id):  # return raw dict form
-    order = api.get_order_by_client_order_id(client_order_id=client_order_id)
-    order_ = vars(order)["_raw"]
-    return order_
+    try:
+        order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+        order_ = vars(order)["_raw"]
+        return order_
+    except Exception as e:
+        print("qplcacae", e)
+        return {}
 
 
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
@@ -3112,6 +3111,7 @@ def kings_order_rules( # rules created for 1Minute
         "close_order_today_vars": close_order_today_vars,
         "use_margin": use_margin,
         "revisit_trade_frequency": revisit_trade_frequency,
+        'close_order_today_allowed_timeduration': close_order_today_allowed_timeduration,
     }
 
 def generate_TradingModel(
@@ -3196,9 +3196,9 @@ def generate_TradingModel(
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=1,
                                     max_profit_waveDeviation_timeduration=5,
-                                    timeduration=120,
-                                    take_profit=.005,
-                                    sellout=-.0089,
+                                    timeduration=360,
+                                    take_profit=.033,
+                                    sellout=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3221,11 +3221,11 @@ def generate_TradingModel(
                                     status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
-                                    max_profit_waveDeviation=1,
+                                    max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=320,
-                                    take_profit=.01,
-                                    sellout=-.0089,
+                                    take_profit=.03,
+                                    sellout=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3234,7 +3234,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[0],
+                                    ignore_trigbee_in_macdstory_tier=[-1,0,1],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3247,11 +3247,11 @@ def generate_TradingModel(
                                     status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
-                                    max_profit_waveDeviation=1,
+                                    max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
-                                    take_profit=.01,
-                                    sellout=-.0089,
+                                    take_profit=.05,
+                                    sellout=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3260,7 +3260,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[0],
+                                    ignore_trigbee_in_macdstory_tier=[],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3273,11 +3273,11 @@ def generate_TradingModel(
                                     status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
-                                    max_profit_waveDeviation=1,
+                                    max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
-                                    take_profit=.01,
-                                    sellout=-.0089,
+                                    take_profit=.05,
+                                    sellout=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3286,7 +3286,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[0],
+                                    ignore_trigbee_in_macdstory_tier=[],
                                     ignore_trigbee_in_histstory_tier=[],
                                     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
@@ -3299,11 +3299,11 @@ def generate_TradingModel(
                                     status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
-                                    max_profit_waveDeviation=1,
+                                    max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
-                                    take_profit=.01,
-                                    sellout=-.0089,
+                                    take_profit=.07,
+                                    sellout=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3325,11 +3325,11 @@ def generate_TradingModel(
                                     status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
-                                    max_profit_waveDeviation=1,
+                                    max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
-                                    take_profit=.05,
-                                    sellout=-.0089,
+                                    take_profit=.10,
+                                    sellout=-.05,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3546,10 +3546,9 @@ def generate_TradingModel(
 
         return symbol_theme_vars, star_theme_vars,  wave_block_theme__kor
     
-    def star_trading_model_vars(star_theme_vars, wave_block_theme__kor,  stars=stars):
+    def star_trading_model_vars(star_theme_vars, wave_block_theme__kor, trigbees, stars=stars):
 
         def star_kings_order_rules_mapping(stars, trigbees, waveBlocktimes, wave_block_theme__kor=wave_block_theme__kor,):
-            # star_default_rules = star__DEFAULT_kings_order_rules_mapping()
             # symbol_theme_vars, star_theme_vars, wave_block_theme__kor =  theme_king_order_rules(theme=theme, stars=stars)
             # star_kings_order_rules_dict["1Minute_1Day"][trigbee]
             # for theme in themes
@@ -3691,7 +3690,7 @@ def generate_TradingModel(
 
         # Get Stars Trigbees and Blocktimes to create kings order rules
         all_stars = stars().keys()
-        trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
+        # trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
         waveBlocktimes = [
             "premarket",
             "morning_9-11",
@@ -3755,8 +3754,6 @@ def generate_TradingModel(
 
         allow_for_margin = [False if ticker in crypto_currency_symbols else True][0]
         etf_X_direction = ["1X", "2X", "3X"]  # Determined by QUEEN
-        trigbees_list = ['buy_cross-0', 'sell_cross-0', 'ready_buy_cross']
-
 
         def init_stars_allocation():
             return {}
@@ -3799,7 +3796,7 @@ def generate_TradingModel(
     try:
         # Trading Model Version 1
         symbol_theme_vars, star_theme_vars, wave_block_theme__kor =  theme_king_order_rules(theme=theme, stars=stars)
-        stars_vars = star_trading_model_vars(star_theme_vars, wave_block_theme__kor)
+        stars_vars = star_trading_model_vars(star_theme_vars, wave_block_theme__kor, trigbees)
         # {ticker: model_vars}
         macd_model = tradingmodel_vars(symbol_theme_vars=symbol_theme_vars, stars_vars=stars_vars)
 
@@ -4536,9 +4533,32 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
         df_agg = pd.DataFrame(return_agg_view)
         
 
+        def wave_analysis_from_storyview(story_views,  df_item='df_agg', df_item2='df'):
+            wave_analysis = []
+            for star in range(5):
+                df = story_views.get(df_item).iloc[star][df_item2]
+                df['star_avg_length'] = sum(df['avg_length']) / len(df)
+                df['star_avg_time_to_max_profit'] = sum(df['avg_time_to_max_profit']) / len(df)
+                wave_analysis.append(story_views.get(df_item).iloc[star][df_item2])
+            wave_analysis_df = pd.DataFrame()
+            for df in wave_analysis:
+                wave_analysis_df = pd.concat([wave_analysis_df, df])
+            
+            tickers = []
+            for ttf in wave_analysis_df['ticker_time_frame'].tolist():
+                tickers.append(ttf.split("_")[0])
+            tickers = set(tickers)
+            for tic in tickers:
+                wave_analysis_df[f'{tic}_avg_length'] = sum(wave_analysis_df['avg_length']) / len(wave_analysis_df)
+                wave_analysis_df[f'{tic}_avg_time_to_max_profit'] = sum(wave_analysis_df['avg_time_to_max_profit']) / len(wave_analysis_df)
 
+            return wave_analysis_df
 
-        return {"df": df, "df_agg": df_agg}
+        storyviews = {"df": df, "df_agg": df_agg}
+        storyviews.update({'wave_analysis': wave_analysis_from_storyview(storyviews)})
+
+        return storyviews
+    
     except Exception as e:
         print("queen hive story error")
         print_line_of_error()

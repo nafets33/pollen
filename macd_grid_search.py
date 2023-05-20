@@ -71,7 +71,7 @@ def read_backtest_folder_assert_insight(backtest_folder):
         df.to_csv("backtesting/macd_grid_search.csv")
 
     ## back test analysis results ##
-    back_test_blocktime = os.path.join(hive_master_root(), 'macd_grid_search_blocktime.csv')
+    back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.csv')
     df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
     df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
     for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:

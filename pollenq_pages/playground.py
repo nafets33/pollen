@@ -114,9 +114,12 @@ def PlayGround():
         # standard_AGgrid(df)
 
         # active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+        
         # ttf_macd_wave_ratios = ReadPickleData(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+        ttf_macd_wave_ratios = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+        # ipdb.set_trace()
         with st.expander("backtesting"):
-            back_test_blocktime = os.path.join(hive_master_root(), 'macd_grid_search_blocktime.csv')
+            back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.csv')
             df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
             df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
             for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
@@ -167,8 +170,12 @@ def PlayGround():
 
         with st.expander("pollenstory"):
             ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
-
-            grid = standard_AGgrid(data=POLLENSTORY[ttf], configure_side_bar=True)
+            data=POLLENSTORY[ttf]
+            default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number']
+            cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
+            data=data[cols].copy()
+            data = data.reset_index()
+            grid = standard_AGgrid(data=data, configure_side_bar=True)
 
 
 

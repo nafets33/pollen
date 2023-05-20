@@ -23,6 +23,8 @@ from dotenv import load_dotenv
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import ipdb
+from custom_grid import st_custom_grid
+from custom_grid import GridOptionsBuilder as GOB
 
 from chess_piece.king import (
     PickleData,
@@ -33,6 +35,7 @@ from chess_piece.king import (
     return_timestamp_string,
     return_all_client_users__db,
     print_line_of_error,
+    
 )
 
 # from chess_piece.workerbees import queen_workerbees
@@ -342,6 +345,87 @@ def progress_bar(value, sleeptime=0.000003, text=False, pct=False):
         status_text.text(text)
 
     return True
+
+
+def stop_queenbee(QUEEN_KING, sidebar=False):
+    if sidebar:
+        checkbox_val = st.sidebar.button("Stop Queen", use_container_width=True)
+    else:
+        checkbox_val = st.button("Stop Queen", use_container_width=True)
+    
+    if checkbox_val:
+        stop_queen = create_AppRequest_package(request_name='queen_sleep')
+
+        QUEEN_KING['queen_sleep'].append(stop_queen)
+        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+        st.success("Queen Sleeps")
+    
+    return True
+
+
+def queen_messages_grid(KING, f_api="http://127.0.0.1:8000/api/data/queen_messages", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+    gb = GOB.create()
+    gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, enableFilters=True)            
+    
+    #Configure index field
+    gb.configure_index('idx')
+    gb.configure_column('idx')
+    gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True})
+    go = gb.build()
+
+
+    st_custom_grid(
+        username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+        api=f_api,
+        api_update=None,
+        refresh_sec=varss.get('refresh_sec'), 
+        refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
+        prod=st.session_state['production'],
+        grid_options=go,
+        key=f'{"queen_messages"}',
+        button_name='insight',
+        api_url=None,
+        # kwargs from here
+        api_key=os.environ.get("fastAPI_key"),
+        prompt_message ="message",
+        prompt_field = "idx", # "current_macd_tier",
+
+    ) 
+
+    return True
+
+
+def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api="http://127.0.0.1:8000/api/data/queen_messages_logfile", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+    gb = GOB.create()
+    gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, enableFilters=True)            
+    
+    #Configure index field
+    gb.configure_index('idx')
+    gb.configure_column('idx')
+    gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True})
+    go = gb.build()
+
+    st_custom_grid(
+        username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+        api=f_api,
+        api_update=None,
+        refresh_sec=varss.get('refresh_sec'), 
+        refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
+        prod=st.session_state['production'],
+        grid_options=go,
+        key=f'{grid_key}',
+        button_name='insight',
+        api_url=None,
+        # kwargs from here
+        api_key=os.environ.get("fastAPI_key"),
+        prompt_message ="message",
+        prompt_field = "idx", # "current_macd_tier",
+        log_file=log_file
+
+    ) 
+
+    return True
+
 
 
 def display_for_unAuth_client_user(pct_queens_taken=47):
