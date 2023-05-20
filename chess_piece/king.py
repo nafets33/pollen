@@ -210,14 +210,22 @@ def master_swarm_QUEENBEE(prod):
     
     return PB_QUEENBEE_Pickle
 
-def stefan_home_queen(prod=False):
+def stefan_home_queen_king(prod=False):
     if prod:
         PB_QUEEN_Pickle = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen.pkl") # pollen/db
     else:
         PB_QUEEN_Pickle = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_sandbox.pkl")
     QUEEN = ReadPickleData(PB_QUEEN_Pickle)
     QUEEN['source'] = PB_QUEEN_Pickle
-    return QUEEN
+
+    if prod:
+        pkl_file = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_App_.pkl") # pollen/db
+    else:
+        pkl_file = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_App__sandbox.pkl")
+    QUEEN_KING = ReadPickleData(pkl_file)
+    QUEEN_KING['source'] = pkl_file
+
+    return QUEEN, QUEEN_KING
 
 def master_swarm_KING(prod):
     if prod:

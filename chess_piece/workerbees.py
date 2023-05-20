@@ -55,6 +55,7 @@ def queen_workerbees(
                      macd=None,
                      reset_only=False,
                      run_all_pawns=False,
+                     backtesting_star=False,
                      ):
 
     if backtesting:
@@ -762,7 +763,7 @@ def queen_workerbees(
 
         # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
-        def write_pollenstory_storybee(pollens_honey):
+        def write_pollenstory_storybee(pollens_honey, backtesting_star):
             # s = datetime.now(est)
             # async def main_func(session, ticker_time_frame, pickle_file, data):
             #     async with session:
@@ -804,8 +805,15 @@ def queen_workerbees(
             else:
                 macd_part_fname = ""
                 
+            # if backtesting run day only
+            
             for ttf in pollens_honey["pollen_story"]:
+                ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
+                if backtesting:
+                    if backtesting_star:
+                        if backtesting_star != f'{ttime}_{tframe}':
+                            continue
                 PickleData(
                     ttf_db,
                     {"pollen_story": pollens_honey["pollen_story"][ttf]},
@@ -813,14 +821,19 @@ def queen_workerbees(
                 )
 
             for ttf in pollens_honey["conscience"]["STORY_bee"]:
+                ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
+                if backtesting:
+                    if backtesting_star:
+                        if backtesting_star != f'{ttime}_{tframe}':
+                            continue
                 PickleData(
                     ttf_db,
                     {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},
                     write_temp=False,
                 )
 
-        write_pollenstory_storybee(pollens_honey)
+        write_pollenstory_storybee(pollens_honey, backtesting_star)
 
         # PickleData(pickle_file=os.path.join(db_root, f'{queens_chess_piece}_betty_bee.pkl'), data_to_store=betty_bee)
         

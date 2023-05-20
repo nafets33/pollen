@@ -24,7 +24,7 @@ import aiohttp
 import asyncio
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import admin_queens_active, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import queen_messages_logfile_grid, queen_messages_grid, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
 from chess_piece.queen_hive import hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, return_alpaca_user_apiKeys, wave_guage, return_STORYbee_trigbees, refresh_account_info, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
 
@@ -156,7 +156,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             _2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
                             _1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
 
-                            c1, c2 = st.columns(2)
+                            c1, c__, c2 = st.columns((3,1,3))
                             with c1:
                                 st.plotly_chart(create_main_macd_chart(min_1))
                             with c2:
@@ -348,9 +348,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             # page_line_seperator('1')
             # if st.button("try me"):
             #     import requests
-            #     #     requests.get("http://127.0.0.1:8000/api/data/queen_app_Sellorder_request")
+            #     #     requests.get("http://127.0.0.1:8000/api/data/queen_sell_orders")
             #     # with cols[1]:
-            #     url = "http://127.0.0.1:8000/api/data/queen_app_Sellorder_request"
+            #     url = "http://127.0.0.1:8000/api/data/queen_sell_orders"
             #     params = {
             #     'username': 'stefanstapinski',
             #     'prod': True,
@@ -451,17 +451,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 #     st.write("Waiting for your First Trade")
             return return_dict
 
-      
-        def stop_queenbee(QUEEN_KING):
-            checkbox_val = st.sidebar.button("Stop Queen", use_container_width=True)
-            if checkbox_val:
-                stop_queen = create_AppRequest_package(request_name='queen_sleep')
-
-                QUEEN_KING['queen_sleep'].append(stop_queen)
-                PickleData(PB_App_Pickle, QUEEN_KING)
-                st.success("Queen Sleeps")
-            
-            return True
 
 
         def return_image_upon_save(title="Saved", width=33, gif=power_gif):
@@ -1485,6 +1474,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
                 if st.button("show views"):
                     story_views = story_view(STORY_bee=STORY_bee, ticker="SPY")
+                    # st.write(story_views.get('wave_analysis'))
+                    wave_analysis = story_views.get("wave_analysis").reset_index()
+                    st.write(wave_analysis.set_index("ticker_time_frame").loc['SPY_1Minute_1Day'])
+                    # st.write(wave_analysis)
                     # SV = st.selectbox("Story Views", options=['SPY'], key=f'{"sview"}{"symbol"}')
                     st.write(story_views.keys())
                     SV = st.selectbox("Story Views", options=list(story_views.get('df_agg').keys()), key=f'{"sview"}{"symbol"}')
@@ -1493,27 +1486,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     keys=list(story_views.get('df_agg').iloc[0].keys())
                     SV2 = st.selectbox("agg 1", options=keys, key=f'{"sview"}{"symbolkey"}')
                     
-                    def wave_analysis_from_storyview(story_views,  df_item='df_agg', df_item2='df'):
-                        wave_analysis = []
-                        for star in range(5):
-                            df = story_views.get(df_item).iloc[star][df_item2]
-                            df['star_avg_length'] = sum(df['avg_length']) / len(df)
-                            df['star_avg_time_to_max_profit'] = sum(df['avg_time_to_max_profit']) / len(df)
-                            wave_analysis.append(story_views.get(df_item).iloc[star][df_item2])
-                        wave_analysis_df = pd.DataFrame()
-                        for df in wave_analysis:
-                            wave_analysis_df = pd.concat([wave_analysis_df, df])
-                        
-                        tickers = []
-                        for ttf in wave_analysis_df['ticker_time_frame'].tolist():
-                            tickers.append(ttf.split("_")[0])
-                        tickers = set(tickers)
-                        for tic in tickers:
-                            wave_analysis_df[f'{tic}_avg_length'] = sum(wave_analysis_df['avg_length']) / len(wave_analysis_df)
-                            wave_analysis_df[f'{tic}_avg_time_to_max_profit'] = sum(wave_analysis_df['avg_time_to_max_profit']) / len(wave_analysis_df)
 
-                        return wave_analysis_df
-                    st.write(wave_analysis_from_storyview(story_views))
+                    # st.write(wave_analysis_from_storyview(story_views))
                     page_line_seperator(".5")
                     
                     for star in range(5):
@@ -1620,9 +1594,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             st.write("KOR PENDING WORK")
 
 
-        def order_grid():
+        def order_grid(KING):
             gb = GridOptionsBuilder.create()
-            gb.configure_default_column(column_width=100,resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True)
+            gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True, sorteable=True)            
             flash_def = {
                 'pinned':'left',
                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -1637,27 +1611,30 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                         }
             gb.configure_column('honey', honey_options)
             gb.configure_column('money',flash_def, header_name="$Money")
-            gb.configure_column('symbol')
+            gb.configure_column('symbol', {"filter": True, 
+                                        'suppressMenu': False,
+                                        })            # gb.configure_column('Sell Button', {'pinned': 'right'})
             gb.configure_column('ticker_time_frame',
                                 {
                                     "wrapText": True,
                                     "autoHeight": True})
             gb.configure_column('trigname')
+            gb.configure_column('current_macd')
             gb.configure_column('datetime',
                                 {'type': ["dateColumnFilter", "customDateTimeFormat"],
                                 "custom_format_string": "MM/dd/yy HH:mm"})
-            gb.configure_column('honey_time_in_profit')
+            gb.configure_column('honey_time_in_profit', {'hide': True})
             gb.configure_column('filled_qty')
             gb.configure_column('qty_available')
-            gb.configure_column('filled_avg_price')
+            gb.configure_column('filled_avg_price', {'hide': True})
             gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                             #    'custom_currency_symbol':"$",
                                             }
                                 )
             gb.configure_column('wave_amo', {'hide': True})
-            gb.configure_column('order_rules', {"wrapText": True})
+            # gb.configure_column('order_rules', {"wrapText": True})
             gb.configure_column('take_profit', {"wrapText": True})
-            gb.configure_column('close_order_today')
+            gb.configure_column('client_order_id')
             gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
                                                     "editable":True,
                                                     "cellEditor":"agSelectCellEditor",
@@ -1676,21 +1653,37 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 refresh_cutoff_sec=seconds_to_market_close, 
                 prod=st.session_state['production'],
                 key='maingrid',
-                api_url='http://127.0.0.1:8000/api/data/queen_app_Sellorder_request',
-                button_name='sell',
+                # api_url='http://127.0.0.1:8000/api/data/queen_sell_orders',
+                # button_name='sell',
                 grid_options=go,
                 # kwargs from here
                 api_key=os.environ.get("fastAPI_key"),
                 filter={"status": "running", "para1": "value1"},
-                prompt_message ="Custom prompt message",
-                prompt_field = "qty_available",
+                # prompt_message ="Custom prompt message",
+                # prompt_field = "qty_available",
+                buttons=[{'button_name': 'sell',
+                        'button_api': "http://127.0.0.1:8000/api/data/queen_sell_orders",
+                        'prompt_message': 'Select Qty to Sell',
+                        'prompt_field': "qty_available",
+                        'col_headername': 'Sell button',
+                        'col_width':100,
+                        'pinned': 'left'
+                        },
+                        # {'button_name': 'button2',
+                        # 'button_api': "api2",
+                        # 'prompt_message': 'message2',
+                        # 'prompt_field': 'None',
+                        # 'col_headername': 'Sell button',
+                        # 'col_width':100,
+                        # },
+                        ]
             )
 
         
         def wave_grid(symbols, key='default', active=False):
             
             gb = GridOptionsBuilder.create()
-            gb.configure_default_column(100, textWrap=True)
+            gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
             gb.configure_index('star')
             flash_def = {
                 'pinned':'left',
@@ -1726,8 +1719,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 prod=st.session_state['production'],
                 grid_options=go,
                 key=f'{"workerbees"}{key}',
-                button_name='buy',
-                api_url="http://127.0.0.1:8000/api/data/queen_buy_orders",
+                # button_name='buy',
+                # api_url="http://127.0.0.1:8000/api/data/queen_buy_orders",
                 # kwargs from here
                 api_key=os.environ.get("fastAPI_key"),
                 filter={"status": "running", "para1": "value1"},
@@ -1735,10 +1728,95 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 prompt_field = "star", # "current_macd_tier",
                 read_pollenstory = False,
                 read_storybee = True,
-                symbols=symbols
+                symbols=symbols,
+                buttons=[{'button_name': 'buy',
+                        'button_api': "http://127.0.0.1:8000/api/data/queen_buy_orders",
+                        'prompt_message': 'Buy Amount',
+                        'prompt_field': None,
+                        'col_headername': 'Buy Waves',
+                        'col_width':100,
+                        },
+                        {'button_name': 'button2',
+                        'button_api': "api2",
+                        'prompt_message': 'message2',
+                        'prompt_field': 'None',
+                        'col_headername': 'Sell button',
+                        'col_width':100,
+                        },
+                        ]
             ) 
         
         
+
+        def queen_messages_grid(KING, f_api="http://127.0.0.1:8000/api/data/queen_messages", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+            gb = GridOptionsBuilder.create()
+            gb.configure_default_column(pagination=False, column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+            
+            #Configure index field
+            gb.configure_index('idx')
+            gb.configure_column('idx')
+            gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True, 'filter': True})
+            go = gb.build()
+
+
+            st_custom_grid(
+                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+                api=f_api,
+                api_update=None,
+                refresh_sec=varss.get('refresh_sec'), 
+                refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
+                prod=st.session_state['production'],
+                grid_options=go,
+                key=f'{"queen_messages"}',
+                button_name='insight',
+                api_url=None,
+                # kwargs from here
+                api_key=os.environ.get("fastAPI_key"),
+                prompt_message ="message",
+                prompt_field = "idx", # "current_macd_tier",
+
+            ) 
+
+            return True
+
+
+        def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api="http://127.0.0.1:8000/api/data/queen_messages_logfile", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+            gb = GridOptionsBuilder.create()
+            gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+            
+            #Configure index field
+            gb.configure_index('idx')
+            gb.configure_column('idx', {"sortable":True})
+            gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True})
+            go = gb.build()
+
+            st_custom_grid(
+                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+                api=f_api,
+                api_update=None,
+                refresh_sec=varss.get('refresh_sec'), 
+                refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
+                prod=st.session_state['production'],
+                grid_options=go,
+                key=f'{grid_key}',
+                button_name='insight',
+                api_url=None,
+                # kwargs from here
+                api_key=os.environ.get("fastAPI_key"),
+                prompt_message ="message",
+                prompt_field = "idx", # "current_macd_tier",
+                log_file=log_file
+
+            ) 
+
+            return True
+
+
+
+
+
+
+
         ########################################################
         ########################################################
         #############The Infinite Loop of Time #################
@@ -1848,7 +1926,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
             if authorized_user:
 
-                stop_queenbee(QUEEN_KING)
                 clear_subconscious_Thought(QUEEN, QUEEN_KING)   
 
                 if st.session_state['show_queenheart']:
@@ -1884,7 +1961,23 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 # moved inside pollenq.py this can be removed and added as var
                 func_list = ['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']
                 func_list = [i for i in func_list if st.session_state[i]]
-
+                from custom_graph import st_custom_graph
+                # st_custom_graph(symbols=["SPY"], prod=False, api_key="fastapi_pollenq_key")
+                # st_custom_graph(symbols=["SPY"], 
+                #                 prod=False, 
+                #                 api_key="fastapi_pollenq_key", 
+                #                 y_axis=[{
+                #                     'field':'close',
+                #                     'name':'CLOSE!!!',
+                #                     'color':'#332d1a'
+                #                     },
+                #                     {
+                #                     'field':'vwap',
+                #                     'name':'VWAP!!!',
+                #                     'color':'#2133dd'
+                #                     }
+                                    
+                #                     ])
                 c = 0
                 for tab_name in func_list:
                     with tabs[c]:
@@ -1942,13 +2035,28 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 model_wave_results(STORY_bee)
                         if tab_name == 'orders':
                             if st.session_state['orders']:
-                                cols = st.columns((3,1))
+                                cols = st.columns((3,2))
                                 with cols[0]:
-                                    order_grid()
-                                with cols[1]:
-                                    symbols = QUEEN['heartbeat'].get('active_tickers')
-                                    wave_grid(symbols=["SPY", "QQQ"], key=f'{"wb"}{symbols}{"orders"}', active=True)
+                                    order_grid(KING)
+                                    # with st.expander("Queens Thoughts"):
+                                    #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
+                                    with st.expander("Hive Logs"):
 
+                                        logs = os.listdir(log_dir)
+                                        logs = [i for i in logs if i.endswith(".log")]
+                                        log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                                        log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                                        st.write(log_file)
+                                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                                        queen_messages_logfile_grid(KING, log_file=log_file, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+ 
+                                with cols[1]:
+                                    # with st.expander("Waves", True):
+                                    symbols = QUEEN['heartbeat'].get('active_tickers')
+                                    print(symbols)
+                                    wave_grid(symbols=symbols, key=f'{"wb"}{symbols}{"orders"}', active=True)
+                                
+                                
                                 cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
                                 if st.session_state['old_orders']:
                                     orders_agrid()
@@ -1966,22 +2074,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     }
                 
                 # active_tabs = [i for i in all_button_keys.keys() if st.session_state[i]]
-                # t = st.tabs(active_tabs)
-                # for n in len(active_tabs):
-                #     with t[n]:
-                #         all_button_keys[]
-                # for key, func in all_button_keys.items():
 
-                # st.session_state['last_page'] = 'queen'
-                # QUEEN_KING['last_page_objects'] = {
-                #     'orders': st.session_state['orders'],
-                #     'chess_board': st.session_state['chess_board'],
-                #     'queens_mind': update_trading_models,
-                #     'charts_toggle': advanced_charts,
-
-                # }
-                # PickleData(PB_App_Pickle, QUEEN_KING)
-                # print("QC", return_timestamp_string())
         ##### END ####
     except Exception as e:
         print('queensconscience', e, print_line_of_error(), return_timestamp_string())
