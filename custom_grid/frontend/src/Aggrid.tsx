@@ -144,7 +144,7 @@ const AgGrid = (props: Props) => {
   useEffect(() => {
     Streamlit.setFrameHeight();
     console.log('buttons :>> ', buttons);
-    if (buttons) {
+    if (buttons.length) {
       buttons.map((button: any) => {
         const { prompt_field, prompt_message, button_api } = button;
         grid_options.columnDefs!.push({
@@ -262,9 +262,10 @@ const AgGrid = (props: Props) => {
     setTimeout(async () => {
       try {
         const array = await fetchData();
-        if (array == false) {
+      console.log('AAAAAAAAAAAAAAAAAAAAAAA',array);
+      if (array == false) {
           // toastr.error(`Error: ${array.message}`)
-          return
+          return;
         }
         setRowData(array);
         g_rowdata = array;

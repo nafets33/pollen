@@ -50,7 +50,7 @@ const Main = (props) => {
 
   useEffect(() => Streamlit.setFrameHeight())
   const getGraphData = async () => {
-    console.log("SSSSSSSSSSSSS", kwargs);
+    // console.log("SSSSSSSSSSSSS", kwargs);
     const res = await axios.post("http://localhost:8000/api/data/symbol_graph", {
       ...kwargs
     });
@@ -58,20 +58,24 @@ const Main = (props) => {
     console.log("postres", res.data);
   }
   useEffect(() => {
-    // const interval = setInterval(async () => {
-    //   const dfData = await getGraphData();
-    //   const serie1 = dfData.map((row) => row.close);
-    //   const serie2 = dfData.map((row) => row.vwap);
-    //   ApexCharts.exec('realtime', 'updateSeries', [{
-    //     name: "Session Duration",
-    //     data: serie1
-    //   },
-    //   {
-    //     name: "Page Views",
-    //     data: serie2
-    //   },
-    //   ])
-    // }, 1000);
+    const interval = setInterval(async () => {
+      const dfData = await getGraphData();
+      const categories = dfData.map((row) => (row.timestamp_est / 1000));
+      // const categories = dfData.map((row) =>(row.timestamp_est.toString()));
+      const serie1 = dfData.map((row) => row.close);
+      const serie2 = dfData.map((row) => row.vwap);
+      const new_serires = y_axis.map((line) => {
+        return {
+          name: line.name,
+          data: dfData.map((row) => row[line['field']]).slice(0),
+        }
+      })
+      console.log('SSSSSSSSSSSS', serie1.slice(-1));
+      setSeries(new_serires)
+
+      ApexCharts.exec('realtime', 'updateSeries', new_serires)
+    }, 1000);
+
     const onLoad = async () => {
       const dfData = await getGraphData();
       const categories = dfData.map((row) => (row.timestamp_est / 1000));
@@ -86,13 +90,20 @@ const Main = (props) => {
       })
       const colors = y_axis.map((line) => line['color'])
       const new_option = {
-        colors: colors,
         series: new_serires,
         chart: {
+          id: 'realtime',
           height: 350,
           type: 'line',
           zoom: {
             enabled: true
+          },
+          animations: {
+            enabled: true,
+            easing: 'linear',
+            dynamicAnimation: {
+              speed: 1000
+            }
           },
         },
         dataLabels: {
@@ -100,7 +111,7 @@ const Main = (props) => {
         },
         stroke: {
           width: [3, 3, 3],
-          curve: 'straight',
+          curve: 'smooth',
           dashArray: [0, 0, 0]
         },
         title: {
@@ -122,7 +133,7 @@ const Main = (props) => {
           type: 'category',
           categories: categories,
           labels: {
-            rotate:0,
+            rotate: 0,
             formatter: function (val) {
               return moment.unix(val).format(' hh:mm');
             },
@@ -165,9 +176,9 @@ const Main = (props) => {
       setOptions(new_option);
       setSeries(new_serires)
     }
-    const interval = setInterval(() => {
-      onLoad()
-    }, 1000);
+    // const interval = setInterval(() => {
+    // onLoad()
+    // }, 1000);
     onLoad()
     return () => {
       clearInterval(interval);

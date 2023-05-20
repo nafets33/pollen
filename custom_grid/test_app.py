@@ -5,7 +5,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 def main():
     gb = GridOptionsBuilder.create()
     gb.configure_default_column(column_width=100, resizable=True,
-                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True)
+                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True)
     flash_def = {
         # 'pinned': 'left',
         # 'cellRenderer': 'agAnimateShowChangeCellRenderer',
