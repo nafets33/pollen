@@ -430,7 +430,7 @@ const AgGrid = (props: Props) => {
           rowHeight={30}
           onGridReady={onGridReady}
           autoGroupColumnDef={autoGroupColumnDef}
-          sideBar={sideBar}
+          // sideBar={sideBar}
           animateRows={true}
           suppressAggFuncInHeader={true}
           getRowId={getRowId}

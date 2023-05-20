@@ -4,8 +4,10 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 
 def main():
     gb = GridOptionsBuilder.create()
+    gb.configure_grid_options(
+        pagination=True, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
     gb.configure_default_column(column_width=100, resizable=True,
-                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True)
+                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True)
     flash_def = {
         # 'pinned': 'left',
         # 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -21,7 +23,7 @@ def main():
     #                             })
     gb.configure_column('honey', flash_def)
     gb.configure_column('$honey', flash_def)
-    gb.configure_column('symbol', {"filter": True, 
+    gb.configure_column('symbol', {"filter": True,
                                    'suppressMenu': False,
                                    })
     gb.configure_column('ticker_time_ frame',
