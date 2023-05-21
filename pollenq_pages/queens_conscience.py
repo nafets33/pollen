@@ -1596,7 +1596,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
         def order_grid(KING):
             gb = GridOptionsBuilder.create()
-            gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True, sorteable=True)            
+            gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=True)
+            gb.configure_default_column(column_width=100, resizable=True,
+                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True)            
             flash_def = {
                 'pinned':'left',
                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -1639,6 +1641,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                     "editable":True,
                                                     "cellEditor":"agSelectCellEditor",
                                                     })
+            gb.configure_column('row_color', {"hide": True})
             go = gb.build()
             
 
@@ -1864,8 +1867,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
         client_user = st.session_state["username"]
         # st.write("*", client_user)
         
-        # from custom_graph import st_custom_graph
-        # st_custom_graph()
+        from custom_graph import st_custom_graph
+        st_custom_graph()
 
         PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
         PB_App_Pickle = st.session_state['PB_App_Pickle'] 
@@ -2053,7 +2056,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 with cols[1]:
                                     # with st.expander("Waves", True):
                                     symbols = QUEEN['heartbeat'].get('active_tickers')
-                                    print(symbols)
+                                    symbols = ['SPY'] if len(symbols) == 0 else symbols
                                     wave_grid(symbols=symbols, key=f'{"wb"}{symbols}{"orders"}', active=True)
                                 
                                 

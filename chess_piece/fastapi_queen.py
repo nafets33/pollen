@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import numpy as np
 import random
-from chess_piece.king import hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error
+from chess_piece.king import streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error
 from chess_piece.queen_hive import init_logging, split_today_vs_prior, story_view, refresh_chess_board__revrec
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -75,7 +75,7 @@ def app_buy_order_request(username, prod, selected_row, default_value): # index 
     'system': 'app',
     'wave_trigger': wave_trigger,
     'request_time': datetime.now(est),
-    'app_requests_id' : f'{"theflash"}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.now().microsecond}'
+    'app_requests_id' : f'{"theflash"}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.now().microsecond}',
     'macd_state': trigbee,
     }
 
@@ -150,6 +150,11 @@ def get_queen_orders_json(username, prod):
     print("init queen")
     return pd.DataFrame().to_json()
 
+  k_colors = streamlit_config_colors()
+  default_text_color = k_colors['default_text_color'] # = '#59490A'
+  default_font = k_colors['default_font'] # = "sans serif"
+  default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+
   df = pd.DataFrame(qo)
   df.reset_index(drop=True, inplace=True)
   df = df[df['client_order_id']!='init']
@@ -159,6 +164,7 @@ def get_queen_orders_json(username, prod):
   df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
   df["honey"] = round(df["honey"] * 100,2)
   df["money"] = round(df["money"],0)
+  df['row_color'] = default_yellow_color
   # df['wave_state'] = df['assigned_wave'].apply(lambda x: x.get('macd_state'))
   # df["take_profit"] = df["order_rules"].get('take_profit')
   # df["close_order_today"] = df["order_rules"].get('close_order_today')
