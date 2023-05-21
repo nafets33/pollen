@@ -43,7 +43,7 @@ getDayWiseTimeSeries(new Date('11 Feb 2017 GMT').getTime(), 10, {
 const Main = (props) => {
 
   const { kwargs } = props.args;
-  const { y_axis } = kwargs;
+  const { y_axis, api, y_max } = kwargs;
   const [series, setSeries] = useState([]);
   const [options, setOptions] = useState({});
 
@@ -51,7 +51,7 @@ const Main = (props) => {
   useEffect(() => Streamlit.setFrameHeight())
   const getGraphData = async () => {
     // console.log("SSSSSSSSSSSSS", kwargs);
-    const res = await axios.post("http://localhost:8000/api/data/symbol_graph", {
+    const res = await axios.post(api, {
       ...kwargs
     });
     return JSON.parse(res.data);
@@ -105,6 +105,7 @@ const Main = (props) => {
               speed: 1000
             }
           },
+
         },
         dataLabels: {
           enabled: false
@@ -142,6 +143,9 @@ const Main = (props) => {
               // fontSize: '22px',
             }
           },
+        },
+        yaxis: {
+          max: y_max
         },
         tooltip: {
           // y: [
