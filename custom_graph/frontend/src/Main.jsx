@@ -43,7 +43,7 @@ getDayWiseTimeSeries(new Date('11 Feb 2017 GMT').getTime(), 10, {
 const Main = (props) => {
 
   const { kwargs } = props.args;
-  const { y_axis, api, y_max } = kwargs;
+  const { y_axis, api, y_max, refresh_sec } = kwargs;
   const [series, setSeries] = useState([]);
   const [options, setOptions] = useState({});
 
@@ -72,9 +72,9 @@ const Main = (props) => {
       })
       console.log('SSSSSSSSSSSS', serie1.slice(-1));
       setSeries(new_serires)
-
-      ApexCharts.exec('realtime', 'updateSeries', new_serires)
-    }, 1000);
+      // 
+      // ApexCharts.exec('realtime', 'updateSeries', new_serires)
+    }, refresh_sec * 1000);
 
     const onLoad = async () => {
       const dfData = await getGraphData();
@@ -98,14 +98,8 @@ const Main = (props) => {
           zoom: {
             enabled: true
           },
-          animations: {
-            enabled: true,
-            easing: 'linear',
-            dynamicAnimation: {
-              speed: 1000
-            }
-          },
-
+          // },
+          // background:'#eee'
         },
         dataLabels: {
           enabled: false

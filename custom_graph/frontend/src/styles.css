@@ -57,3 +57,6 @@ select.flat-select:focus, select.flat-select:hover {
   display: none;
 }
 
+.apexcharts-canvas{
+  background-color: red;
+}
