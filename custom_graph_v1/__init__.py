@@ -2,8 +2,8 @@ import os
 import streamlit.components.v1 as components
 from decouple import config
 
-# _RELEASE = True
-_RELEASE = False
+_RELEASE = True
+# _RELEASE = False
 
 if not _RELEASE:
     _component_func = components.declare_component(

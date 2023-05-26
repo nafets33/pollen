@@ -8,7 +8,7 @@ def main():
         prod=False,
         symbols=["SPY"],
         api_key="api_key",
-        refresh_sec=10,
+        refresh_sec=1,
         y_axis=[{
             'field': 'close',
             'name': 'CLOSE!!!',
