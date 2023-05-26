@@ -1,5 +1,5 @@
 import streamlit as st
-from custom_graph import st_custom_graph
+from custom_graph_v1 import st_custom_graph
 
 
 def main():
