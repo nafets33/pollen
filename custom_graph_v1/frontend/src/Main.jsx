@@ -8,17 +8,10 @@ import {
 } from "streamlit-component-lib";
 
 import axios from 'axios';
-//var CanvasJSReact = require('@canvasjs/react-charts');
 
-var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
-var dataPoints1 = [];
-var dataPoints2 = [];
-var updateInterval = 2000;
-//initial values
-var yValue1 = 408;
-var yValue2 = 350;
-var xValue = 5;
+const dataPoints = [[], [], [], [], [], [], [], [], [], []];
+
 class App extends Component {
 
   constructor(props) {
@@ -30,7 +23,7 @@ class App extends Component {
     const { kwargs } = this.props.args;
     const { y_axis, api, y_max, refresh_sec } = kwargs;
     Streamlit.setFrameHeight();
-    this.updateChart(20);
+    this.updateChart();
     setInterval(this.updateChart, refresh_sec * 1000);
   }
   toggleDataSeries(e) {
@@ -45,77 +38,62 @@ class App extends Component {
   async fetchGraphData() {
     const { kwargs } = this.props.args;
     const { y_axis, api, y_max, refresh_sec } = kwargs;
-    const res = await axios.post(api, {
-      ...kwargs
-    });
+    const res = await axios.post(api, { ...kwargs });
     return JSON.parse(res.data);
   }
-  async updateChart(count) {
+  async updateChart() {
     const { kwargs } = this.props.args;
-    const { y_axis, api, y_max, refresh_sec } = kwargs;
+    const { x_axis, y_axis, api, y_max, refresh_sec } = kwargs;
     const data = await this.fetchGraphData();
-    const newSeriesOne = data.map((item, index) => {
-      return {
-        x: item.est_timestamp,
-        y: item.close,
-      }
+    const newSeries = [];
+    y_axis.map((axis, index) => {
+      return newSeries[index] = data.map((row, index) => {
+        return {
+          x: row[x_axis['field']],
+          y: row[axis['field']],
+        }
+      })
     })
-    const newSeriesTwo = data.map((item, index) => {
-      return {
-        x: item.est_timestamp,
-        y: item.vwap,
-      }
-    })
-    // dataPoints1 =newSeriesOne;
-    // dataPoints2= newSeriesOne;
-    // count = count || 1;
-    // var deltaY1, deltaY2;
-    // for (var i = 0; i < count; i++) {
-    //   xValue += 2;
-    //   deltaY1 = 5 + Math.random() * (-5 - 5);
-    //   deltaY2 = 5 + Math.random() * (-5 - 5);
-    //   yValue1 = Math.floor(Math.random() * (408 - 400 + 1) + 400);
-    //   yValue2 = Math.floor(Math.random() * (350 - 340 + 1) + 340);
-    //   console.log('datapoints pushing');
-    //   dataPoints1.push({
-    //     x: xValue,
-    //     y: yValue1
-    //   });
-    //   dataPoints2.push({
-    //     x: xValue,
-    //     y: yValue2
-    //   });
-    // }
-    // dataPoints1=[]
-    while (dataPoints1.length) {
-      dataPoints1.pop()
-      dataPoints2.pop()
+
+    while (dataPoints[0].length) {
+      y_axis.map((item, index) => {
+        dataPoints[index].pop();
+      })
     }
-    dataPoints1.push(...newSeriesOne);
-    dataPoints2.push(...newSeriesTwo);
-    // dataPoints1.splice(0,10)
-    // dataPoints1=newSeriesOne
-    console.log('fetchGraphData', dataPoints1, newSeriesOne);
-    this.chart.options.data[0].legendText = "close -  " + newSeriesOne.pop().y + "";
-    this.chart.options.data[1].legendText = "vwap - " + newSeriesOne.pop().y + "";
+    console.log('fetchGraphData', dataPoints);
+    y_axis.map((item, index) => {
+      dataPoints[index].push(...newSeries[index]);
+      this.chart.options.data[index].legendText = item['name'] + newSeries[index].pop().y;
+    })
     this.chart.render();
   }
+
   render() {
     const { kwargs } = this.props.args;
     const { y_axis, api, y_max, refresh_sec } = kwargs;
+    const dataY = y_axis.map((item, index) => {
+      return {
+        type: "spline",
+        xValueFormatString: "#.##0 ",
+        yValueFormatString: "#.##0",
+        showInLegend: true,
+        name: item['name'],
+        dataPoints: dataPoints[index],
+      }
+    })
     const options = {
       zoomEnabled: true,
       theme: "light1",
       title: {
-        text: "Close/Vwap"
+        text: "Title is required?"
       },
       axisX: {
-        title: "chart updates every 2 secs"
+        title: "THIS IS A-AXIS TITLE",
+        labelFormatter: (e) => e.value
       },
       axisY: {
         suffix: "",
-        maximum: y_max,
-        // interval:1,
+        maximum: y_max ? y_max : null,
         gridColor: 'white',
       },
       toolTip: {
@@ -128,32 +106,15 @@ class App extends Component {
         fontColor: "dimGrey",
         itemclick: this.toggleDataSeries
       },
-      data: [
-        {
-          type: "spline",
-          xValueFormatString: "#,##0 ",
-          yValueFormatString: "#,##0",
-          showInLegend: true,
-          name: "close:",
-          dataPoints: dataPoints1
-        },
-        {
-          type: "spline",
-          xValueFormatString: "#,##0 seconds",
-          yValueFormatString: "#,##0",
-          showInLegend: true,
-          name: "vwap:",
-          dataPoints: dataPoints2
-        }
-      ]
+      data: dataY
     }
     return (
       <div>
-        <CanvasJSChart options={options}
+        <CanvasJSChart
+          options={options}
           onRef={ref => this.chart = ref}
         />
-        {/*You can get reference to the chart instance as shown above using onRef. This allows you to access all chart properties and methods*/}
-      </div>
+      </div >
     );
   }
 }

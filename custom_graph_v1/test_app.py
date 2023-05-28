@@ -9,6 +9,9 @@ def main():
         symbols=["SPY"],
         api_key="api_key",
         refresh_sec=1,
+        x_axis={
+            'field':'timestamp_est'
+        },
         y_axis=[{
             'field': 'close',
             'name': 'CLOSE!!!',
@@ -20,7 +23,8 @@ def main():
             'color': '#2133dd'
         }
         ],
-        y_max=430)
+        y_max=430
+        )
 
 
 if __name__ == '__main__':
