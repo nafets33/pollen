@@ -8,9 +8,9 @@ def main():
         prod=False,
         symbols=["SPY"],
         api_key="api_key",
-        refresh_sec=1,
+        refresh_sec=0,
         x_axis={
-            'field':'timestamp_est'
+            'field': 'timestamp_est'
         },
         y_axis=[{
             'field': 'close',
@@ -23,8 +23,15 @@ def main():
             'color': '#2133dd'
         }
         ],
-        y_max=430
-        )
+        y_max=430,
+        theme_options={
+            'backgroundColor': "#F5DEB3",
+            'main_title': 'Main title',   # '' for none
+            'x_axis_title': 'X-Axis title',
+            'grid_color': 'black',
+        },
+        refresh_button=True,
+    )
 
 
 if __name__ == '__main__':
