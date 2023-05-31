@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import random
 from chess_piece.king import streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error
-from chess_piece.queen_hive import init_logging, split_today_vs_prior, story_view, refresh_chess_board__revrec
+from chess_piece.queen_hive import wave_analysis__storybee_model, init_logging, split_today_vs_prior, story_view, refresh_chess_board__revrec
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import pytz
@@ -61,13 +61,47 @@ def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, usernam
 
 
 # Router Calls
+# Router Calls
 def app_buy_order_request(username, prod, selected_row, default_value): # index & wave_amount
+  try:
+    QUEEN_KING = load_queen_App_pkl(username, prod)
+    buy_package = create_AppRequest_package(request_name='buy_orders')
+    
+    # ticker_time_frame = selected_row.get('star')
+    # macd_state = selected_row.get('macd_state')
+    # buy_package.update()
+    # blessing=blessing, # order_vars
+    # side=blessing.get('order_side'),
+    # wave_amo=blessing.get('wave_amo'),
+    # order_type=blessing.get('order_type'),
+    # limit_price=blessing.get('limit_price'),
+    # trading_model=blessing.get('trading_model'),
+    # king_resp=True, 
+    # king_eval_order=False, 
+    # ticker=blessing.get('symbol'), 
+    # ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
+    # trig=blessing.get('trigbee'), 
+    # portfolio=portfolio, 
+    # crypto=crypto
+
+
+    # QUEEN_KING['buy_orders'].append(buy_package)
+    # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    
+
+    return True
+  except Exception as e:
+     print(e)
+     logging.error(("fastapi", e))
+
+def app_buy_wave_order_request(username, prod, selected_row, default_value): # index & wave_amount
   try:
     QUEEN_KING = load_queen_App_pkl(username, prod)
     # buy_package = create_AppRequest_package(request_name='buy_orders')
     ticker_time_frame = selected_row.get('star')
     macd_state = selected_row.get('macd_state')
-    trigbee = f'buy_cross-0' if 'buy' in macd_state else f'sell_cross-0'
+    # trigbee = f'buy_cross-0' if 'buy' in macd_state else f'sell_cross-0'
+    trigbee = macd_state
 
     wave_trigger = {ticker_time_frame: [trigbee]}
     order_dict = {'ticker': ticker_time_frame.split("_")[0],
@@ -164,7 +198,10 @@ def get_queen_orders_json(username, prod):
   df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
   df["honey"] = round(df["honey"] * 100,2)
   df["money"] = round(df["money"],0)
-  df['row_color'] = default_yellow_color
+  df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
+  df['color_row_text'] = default_text_color
+  df = df.rename(columns={'ticker_time_frame': 'Star Time',
+                          'current_macd': 'Current MACD',})
   # df['wave_state'] = df['assigned_wave'].apply(lambda x: x.get('macd_state'))
   # df["take_profit"] = df["order_rules"].get('take_profit')
   # df["close_order_today"] = df["order_rules"].get('close_order_today')
@@ -185,10 +222,12 @@ def get_ticker_data(symbols, prod):
   df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
   df_ = df[['timestamp_est', 'close', 'vwap']]
   df_main = split_today_vs_prior(df_).get('df_today')
+  df_main.at[len(df) -1, 'timestamp_est'] = df_main.at[len(df) -2, 'timestamp_est'] + timedelta(minutes=1)
   # df_token = df_.tail(1)
   # df_token['timestamp_est'] = df_token['timestamp_est'] + timedelta(seconds=1)
   # df_token['close'] = df_token['close'] + random.randint(1,10)
   # df_main = pd.concat([df_main, df_token])
+  print(df_main.iloc[-1].get('timestamp_est'))
 
 
   json_data = df_main.to_json(orient='records')
@@ -223,49 +262,33 @@ def get_queen_messages_logfile_json(username, log_file):
   df = pd.DataFrame(content).reset_index()
   df = df.sort_index(ascending=False)
   df = df.rename(columns={'index': 'idx', 0: 'message'})
-  df = df.tail(500)
-
-
+  df = df.head(500)
 
   json_data = df.to_json(orient='records')
   return json_data
 
 
 def queen_wavestories__get_macdwave(username, prod, symbols, api_key):
-    if len(symbols) == 0:
-       symbols=['SPY']
-    # cust_Button("misc/waves.png", hoverText='', key='waves_icon', height=f'23px')
-    # ipdb.set_trace()
-    read_storybee=True, #kwargs.get('read_storybee')
-    read_pollenstory=False, #kwargs.get('read_pollenstory')
-    # st.image((os.path.join(hive_master_root(), "/custom_button/frontend/build/misc/waves.png")), width=33)
-    # QUEEN_KING = load_queen_App_pkl(username, prod)
-    QUEEN = load_queen_pkl(username, prod)
-    # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-    revrec = QUEEN.get("revrec")
-    ticker_db = load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod)
-    # POLLENSTORY = ticker_db['pollenstory']
-    STORY_bee = ticker_db['STORY_bee']
     try:
-        df_main = pd.DataFrame()
-        for symbol in symbols:
-            story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
+        if len(symbols) == 0:
+          symbols=['SPY']
 
-            df = story_views.get('df')
-            df = df.set_index('star', drop=False)
-            df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
-            df.at[f'{symbol}_{"5Minute_5Day"}', 'sort'] = 2
-            df.at[f'{symbol}_{"30Minute_1Month"}', 'sort'] = 3
-            df.at[f'{symbol}_{"1Hour_3Month"}', 'sort'] = 4
-            df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
-            df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
-            df = df.sort_values('sort')
+        k_colors = streamlit_config_colors()
+        default_text_color = k_colors['default_text_color'] # = '#59490A'
+        default_font = k_colors['default_font'] # = "sans serif"
+        default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-            if len(df_main) == 0:
-               df_main = df
-            else:
-            #   ipdb.set_trace()
-              df_main = pd.concat([df_main, df])
+        read_storybee=True, #kwargs.get('read_storybee')
+        read_pollenstory=False, #kwargs.get('read_pollenstory')
+        # st.image((os.path.join(hive_master_root(), "/custom_button/frontend/build/misc/waves.png")), width=33)
+        QUEEN_KING = load_queen_App_pkl(username, prod)
+        QUEEN = load_queen_pkl(username, prod)
+        # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+        revrec = QUEEN.get("revrec")
+        ticker_db = load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod)
+        # POLLENSTORY = ticker_db['pollenstory']
+        STORY_bee = ticker_db['STORY_bee']
+        df_main, df_storyguage = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols)
 
         df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')
         df_main["maxprofit"] = round(df_main["maxprofit"] * 100,2).fillna(0)
@@ -274,6 +297,9 @@ def queen_wavestories__get_macdwave(username, prod, symbols, api_key):
           for indx in df_main.index.tolist():
             df_main.at[indx, 'remaining_budget'] = revrec.get('df_stars').loc[indx]['remaining_budget']
             df_main.at[indx, 'remaining_budget_borrow'] = revrec.get('df_stars').loc[indx]['remaining_budget_borrow']
+        
+        df_main['color_row'] = np.where(df_main['maxprofit'] > 0, default_yellow_color, "#ACE5FB")
+        df_main['color_row_text'] = default_text_color
 
         json_data = df_main.to_json(orient='records')
 

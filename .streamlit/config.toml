@@ -115,16 +115,16 @@ showfileUploaderEncoding = true
 showPyplotGlobalUse = true
 [theme]
 # Primary accent for interactive elements
-primaryColor = '#C9A500'
+primaryColor = '#0287BB'
 
 # Background color for the main content area
-backgroundColor = '#FDFBEA'
+backgroundColor = '#F3FAFD'
 
 # Background color for sidebar and most interactive widgets
-secondaryBackgroundColor = '#F3E69A'
+secondaryBackgroundColor = '#E6C93B'
 
 # Color used for almost all text
-textColor = '#5A470E'
+textColor = '#0287BB'
 
 # Font family for all text in the app, except code blocks
 # Accepted values (serif | sans serif | monospace) 

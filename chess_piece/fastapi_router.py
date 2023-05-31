@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave
+from chess_piece.fastapi_queen import get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request
 # from database.schemas import UsernameSchema
 import random
 import json
@@ -50,6 +50,15 @@ def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(
         print("Auth Failed", api_key)
         return "NOTAUTH"
     app_Sellorder_request(username, prod, selected_row, default_value)
+    return JSONResponse(content="ssuccess")
+
+@router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
+def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+
+    app_buy_wave_order_request(username, prod, selected_row, default_value)
     return JSONResponse(content="ssuccess")
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)

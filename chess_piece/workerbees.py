@@ -330,7 +330,7 @@ def queen_workerbees(
                 [set(j.split("_")[0] for j in df_tickers_data.keys())][0]
             )  # > get list of tickers
             snapshots = api.get_snapshots(ticker_list) # what happens when ticker doesn't have snapshot need to use Query Last Quote
-
+            # symbol_data["timestamp_est"].apply(lambda x: x.astimezone(est)
             for ticker in snapshots.keys():  # replace snapshot if in exclude_conditions
                 c = 0
                 while True:
@@ -373,6 +373,7 @@ def queen_workerbees(
                 else:
                     df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}']  # stapshot df
                     df_snapshot["symbol"] = symbol
+                    # df_snapshot['timestamp_est'] = df_snapshot["timestamp_est"].apply(lambda x: x.astimezone(est))
                     if init:
                         df_rebuild = pd.concat(
                             [df, df_snapshot], join="outer", axis=0
@@ -852,6 +853,10 @@ def queen_workerbees(
                 MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
             master_tickers = QUEENBEE["workerbees"][qcp_worker]["tickers"]
             star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
+            if backtesting_star:
+                QUEENBEE["workerbees"][qcp_worker]["stars"] = {backtesting_star: 1} # "1Minute_1Day"
+                star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
+            
             WORKERBEE_queens[qcp_worker] = initiate_ttframe_charts(
                 QUEEN=WORKERBEE_queens[qcp_worker],
                 queens_chess_piece=qcp_worker,
@@ -937,7 +942,7 @@ def queen_workerbees(
                     latest__queens_master_tickers = pq["queens_master_tickers"]
                     if latest__queens_master_tickers != queens_master_tickers:
                         print("Revised Ticker List ReInitiate")
-                        queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces)
+                        queen_workers = init_QueenWorkersBees(QUEENBEE=QUEENBEE, queens_chess_pieces=latest__queens_chess_pieces, MACD_WAVES=MACD_WAVES)
                         WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
                         speed_gauges = queen_workers["speed_gauges"]
                             

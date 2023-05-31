@@ -4,7 +4,7 @@ import re
 import pickle
 import pandas as pd
 from datetime import datetime
-
+from tqdm import tqdm
 # sys.path.append("./chess_piece")
 
 from chess_piece.workerbees import queen_workerbees
@@ -23,7 +23,7 @@ if use_blocktime:
 else:
     df = pd.DataFrame(columns = ["ttf", "macd_fast", "macd_slow", "macd_smooth", "winratio", "maxprofit"]) 
 
-workerbee_dbs_backtesting_root()
+# workerbee_dbs_backtesting_root()
 backtest_folder = workerbee_dbs_backtesting_root__STORY_bee()
 
 def read_backtest_folder_assert_insight(backtest_folder):
@@ -31,7 +31,10 @@ def read_backtest_folder_assert_insight(backtest_folder):
     # pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
     # folder = "symbols_STORY_bee_dbs_backtesting"
     for filepath in os.listdir(backtest_folder):
-        # if pattern.match(filepath):
+        if filepath.endswith(".pkl"):
+            pass
+        else:
+            continue
         with open(backtest_folder + "/" + filepath, "rb") as f:
             fast_val, slow_val, smooth_val = filepath.split("__")[1].split(".pkl")[0].split("-")
             ttf = filepath.split("__")[0]
@@ -53,7 +56,7 @@ def read_backtest_folder_assert_insight(backtest_folder):
                         win_ratio = winners / (winners + losers)
                     maxprofit = b["sum_maxprofit"]
                     df.loc[df.shape[0]] = [ttf, blocktime, fast_val, slow_val, smooth_val, win_ratio, maxprofit]
-                    print("{}, {}, {}, {}, {}, {}, {}".format(ttf, blocktime, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
+                    # print("{}, {}, {}, {}, {}, {}, {}".format(ttf, blocktime, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
             else:
                 winners = buycross["winners_n"].mean()
                 losers = buycross["losers_n"].mean()
@@ -63,7 +66,7 @@ def read_backtest_folder_assert_insight(backtest_folder):
                     win_ratio = winners / (winners + losers)
                 maxprofit = buycross["sum_maxprofit"].mean()
                 df.loc[df.shape[0]] = [ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit]
-                print("{}, {}, {}, {}, {}, {}".format(ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
+                # print("{}, {}, {}, {}, {}, {}".format(ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
     print(df.head(5))
     if use_blocktime:   
         df.to_csv("backtesting/macd_grid_search_blocktime.csv")

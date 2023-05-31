@@ -296,10 +296,10 @@ def admin_queens_active(PB_KING_Pickle, KING):
                 for email in new_emails:
                     print(email)
                     send_email(email, subject="Trading Bot is Now Active", 
-                    body=f""" Hey! Your Queen Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
+                    body=f""" Hey! Your Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
                     Steps:
                     1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
-                    2. Customize QUEEN Bot Setting to Trade Specific to your Needs
+                    2. Customize Trading Bot Setting to Trade Specific to your Needs
                     3. Or Join an Existing Fund Trading Strategies
 
                     Happy Trading
@@ -437,11 +437,11 @@ def display_for_unAuth_client_user(pct_queens_taken=47):
         st.subheader("Create an Account Get a QueenTraderBot")
     with cols[1]:
         progress_bar(
-            value=pct_queens_taken, text=f"{100-pct_queens_taken} Queens Remaining"
+            value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Remaining"
         )
     with cols[2]:
         sneak_peak = st.button(
-            "Take a sneak peak and watch a Queen Trade in Real Time :honeybee:"
+            "Watch a Bot Trade Live :honeybee:"
         )
         if sneak_peak:
             st.session_state["sneak_peak"] = True
@@ -1294,49 +1294,52 @@ def pollenq_button_source():
 
         'option_data_orders': [
         # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
-        {'id': "orders", 'icon':"fas fa-chess-king",'label':""},
-        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
+        {'id': "orders", 'icon':"fas fa-chess-king",'label':"on"},
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':"off"},
         ],
         'charts_option_data': [
-        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
-        {'id': "charts_id", 'icon': "fa fa-signal", 'label':""},
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':"off"},
+        {'id': "charts_id", 'icon': "fa fa-signal", 'label':"on"},
         ],
 
         'board_option_data': [
-        {'id': "", 'icon':"fas fa-chess-pawn",'label':""},
-        {'id': "chess_board", 'icon': "fas fa-chess-board", 'label':""},
-        {'id': "admin_workerbees", 'icon':"fas fa-chess-queen",'label':""},
+        {'id': "chess_board", 'icon': "fas fa-chess-board", 'label':"on"},
+        {'id': "", 'icon':"fas fa-chess-pawn",'label':"off"},
+        {'id': "admin_workerbees", 'icon':"fas fa-chess-queen",'label':"admin"},
         ],
         
         'option_data_qm': [
-        {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
-        {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':""},
+        {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':"on"},
+        {'id': "admin_workerbees", 'icon':"fas fa-chess-king",'label':"admin"},
         ],
         'workerbees_option_data': [
-        {'id': "", 'icon': "fas fa-chess-pawn", 'label':""},
-        {'id': "workerbees", 'icon': "fa fa-star", 'label':""},
+        {'id': "", 'icon': "fas fa-chess-pawn", 'label':"off"},
+        {'id': "workerbees", 'icon': "fa fa-star", 'label':"on"},
         ],
 
-        'option_heart': [{'id': "heartbeat", 'icon':"fas fa-heart",'label':""},],
-        'option_chart': [{'id': "show_charts", 'icon':"fa fa-bar-chart",'label':""}, {'id': "no_charts", 'icon':"fa fa-toggle-off",'label':""}, ],
+        'option_heart': [{'id': "heartbeat", 'icon':"fas fa-heart",'label':"heartbeat"},],
+        'option_chart': [{'id': "show_charts", 'icon':"fa fa-bar-chart",'label':"on"}, {'id': "no_charts", 'icon':"fa fa-toggle-off",'label':"off"}, ],
         'pawn_option_data': [
-        {'id': "chess_board", 'icon': "fas fa-chess-pawn", 'label':""},
+        {'id': "chess_board", 'icon': "fas fa-chess-pawn", 'label':"on"},
         ],
         'castle_option_data': [
-        {'id': "rook", 'icon': "fas fa-chess-rook", 'label':""},
+        {'id': "rook", 'icon': "fas fa-chess-rook", 'label':"castle"},
         ],
         'bishop_option_data': [
-        {'id': "bishop", 'icon': "fas fa-chess-bishop", 'label':""},
+        {'id': "bishop", 'icon': "fas fa-chess-bishop", 'label':"bishop"},
         ],
         'knight_option_data': [
-        {'id': "knight", 'icon': "fas fa-chess-knight", 'label':""},
+        {'id': "knight", 'icon': "fas fa-chess-knight", 'label':"knight"},
         ],
         'chess_option_data': [
-        {'id': "chess_search", 'icon': "fas fa-chess", 'label':""},
+        {'id': "chess_search", 'icon': "fas fa-chess", 'label':"search"},
         ],
         'charts_day_option_data': [
         {'id': "charts_dayonly_no", 'icon': "", 'label':"no"},
         {'id': "charts_dayonly_yes", 'icon': "", 'label':"yes"},
+        ],
+        'coin_option_data': [
+        {'id': "coins", 'icon': "fas fa-chess-bishop", 'label':"coins"},
         ],
 
     }

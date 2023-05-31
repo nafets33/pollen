@@ -93,6 +93,7 @@ active_order_state_list = [
     "completed_alpaca",
     "running_open",
     "archived_bee",
+    "long_term",
 ]
 active_queen_order_states = [
     "submitted",
@@ -587,9 +588,9 @@ def print_line_of_error():
 def streamlit_config_colors():
     # read config file and parse from there
     return {
-        "default_text_color": "#59490A",
+        "default_text_color": "#055A6E",
         "default_font": "sans serif",
-        "default_yellow_color": "#C5B743",
+        "default_yellow_color": "#E6C93B",
     }
 
 

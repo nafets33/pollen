@@ -24,7 +24,7 @@ from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, generate_TradingModel, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes, hive_dates, return_market_hours
+from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes, hive_dates, return_market_hours
 from custom_button import cust_Button
 from custom_text import custom_text, TextOptionsBuilder
 
@@ -643,7 +643,6 @@ def pollenq(admin_pq):
                 cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
                 hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
                 cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
 
             hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
 
@@ -670,10 +669,7 @@ def pollenq(admin_pq):
                 QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
 
 
-            if menu_id == 'PlayGround':
-                print("PLAYGROUND")
-                PlayGround()
-                st.stop()
+
 
             # print("API")
             if st.sidebar.button('show_keys'):
@@ -711,6 +707,38 @@ def pollenq(admin_pq):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
                 st.stop()
 
+            ### TOP OF PAGE
+
+            # Master Controls #
+            cols = st.columns((8,2))
+            with cols[0]:
+                with st.expander('Master Controls', True):
+                    menu_buttons()
+            with cols[1]:
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+
+            if menu_id == 'PlayGround':
+                print("PLAYGROUND")
+                PlayGround()
+                st.stop()
+
+
+            queen_offline = False
+            if queenbee_online(cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
+                queen_offline = True
+
+            queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
+            queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
+
+            # with cols[1]:
+            #     with st.expander("Queens Thoughts"):
+            #         queen_messages_grid(KING)
+
+
+
+
+
+
             cols = st.columns((2,2,2,4,2,2,1))
 
             with cols[0]:
@@ -737,7 +765,8 @@ def pollenq(admin_pq):
             mkhrs = return_market_hours(trading_days=trading_days)
             seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
             seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
-
+            if mkhrs != 'open':
+                seconds_to_market_close = None
             with cols[3]:
                 # Total Account info
                 to_builder = TextOptionsBuilder.create()
@@ -746,7 +775,10 @@ def pollenq(admin_pq):
                 to_builder.configure_font_style(default_font)
                 to = to_builder.build()
                 # with cols[4]:
-                custom_text(api="http://localhost:8000/api/data/account_info", text_size = 23, refresh_sec =5,refresh_cutoff_sec =seconds_to_market_close,
+                custom_text(api="http://localhost:8000/api/data/account_info", 
+                            text_size=23, 
+                            refresh_sec=5,
+                            refresh_cutoff_sec=seconds_to_market_close,
                             text_option=to, 
                             api_key=os.environ.get("fastAPI_key"), 
                             prod=prod, 
@@ -777,38 +809,14 @@ def pollenq(admin_pq):
                 beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
                 beat_size = 66 if beat > 100 else beat
                 beat_size = 45 if beat_size < 10 else beat_size
-                cust_Button("misc/heart_beat.gif", hoverText=f'rate {beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
+                cust_Button("misc/zelda-icons.gif", hoverText=f'rate {beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
 
             with cols[6]:
                 cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
 
             # page_line_seperator("1") #############################################
             
-         
-            cols = st.columns((8,2))
-            with cols[0]:
-                with st.expander('Master Controls', True):
-                    menu_buttons()
-            # with cols[1]:
-            #     bp=acct_info['buying_power']
-            #     le=acct_info['last_equity']
-            #     pv=acct_info['portfolio_value']
-            #     cash=acct_info['cash']
-            #     fees=acct_info['accrued_fees']
-            #     num = cash/pv
-            #     progress_bar(value=num, text=f"Cash % {round(num,2)}")
-            #     num = pv/bp
-            #     progress_bar(value=num, text=f"PVPower at Play {round(num,2)}")
-            queen_offline = False
-            if queenbee_online(cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
-                queen_offline = True
-
-            queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
-            queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
-
-            # with cols[1]:
-            #     with st.expander("Queens Thoughts"):
-            #         queen_messages_grid(KING)
+            
 
             # print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)
