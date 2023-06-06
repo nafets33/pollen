@@ -6,7 +6,7 @@ def main():
     gb = GridOptionsBuilder.create()
     gb.configure_grid_options(
         pagination=True, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-    gb.configure_default_column(column_width=100, resizable=True,
+    gb.configure_default_column(column_width=100, resizable=True,editable=True,
                                 textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True)
     flash_def = {
         # 'pinned': 'left',
@@ -77,7 +77,7 @@ def main():
                  {'button_name': 'button2',
                   'button_api': "api2",
                   'prompt_message': 'message2',
-                  'prompt_field': 'None',
+                  'prompt_field': 'honey',
                   'col_headername': 'Sell button',
                   'col_width': 100,
                   'pinned': 'left'

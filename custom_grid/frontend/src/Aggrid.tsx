@@ -197,12 +197,11 @@ const AgGrid = (props: Props) => {
     const api = gridRef.current!.api;
     const id_array = array.map((item: any) => item[index])
     const old_id_array = g_rowdata.map((item: any) => item[index])
-    const toUpdate = g_rowdata.filter((row: any) => id_array.includes(row[index]))
+    const toUpdate = array.filter((row: any) => id_array.includes(row[index]))
     const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
     const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
     api.applyTransactionAsync({ update: toUpdate, remove: toRemove, add: toAdd });
     g_rowdata = array
-    console.log("index", index);
     return true;
   };
 
