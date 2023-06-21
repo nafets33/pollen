@@ -61,7 +61,9 @@ def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, usernam
 
 
 # Router Calls
-# Router Calls
+def symbols_wave_guage(username, prod):
+   return True
+
 def app_buy_order_request(username, prod, selected_row, default_value): # index & wave_amount
   try:
     QUEEN_KING = load_queen_App_pkl(username, prod)
@@ -220,14 +222,17 @@ def get_ticker_data(symbols, prod):
   )
   
   df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
-  df_ = df[['timestamp_est', 'close', 'vwap']]
-  df_main = split_today_vs_prior(df_).get('df_today')
-  df_main.at[len(df) -1, 'timestamp_est'] = df_main.at[len(df) -2, 'timestamp_est'] + timedelta(minutes=1)
+  df_main = df[['timestamp_est', 'close', 'vwap']]
+  df_main = split_today_vs_prior(df_main).get('df_today')
+  # df_main['timestamp_est'] = str(df_main['timestamp_est'])
+  
+  # df_main.at[len(df) -1, 'timestamp_est'] = df_main.at[len(df) -2, 'timestamp_est'] + timedelta(minutes=1)
   # df_token = df_.tail(1)
   # df_token['timestamp_est'] = df_token['timestamp_est'] + timedelta(seconds=1)
   # df_token['close'] = df_token['close'] + random.randint(1,10)
   # df_main = pd.concat([df_main, df_token])
-  print(df_main.iloc[-1].get('timestamp_est'))
+  # print(df_main.iloc[-1].get('timestamp_est'))
+  # df_main['timestamp_est'] = df_main['timestamp_est'].apply(lambda x: str(datetime.strptime(str(x)[:16], '%Y-%m-%d %H:%M'))[6:16])
 
 
   json_data = df_main.to_json(orient='records')
@@ -268,7 +273,7 @@ def get_queen_messages_logfile_json(username, log_file):
   return json_data
 
 
-def queen_wavestories__get_macdwave(username, prod, symbols, api_key):
+def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves', return_piece='revrec'):
     try:
         if len(symbols) == 0:
           symbols=['SPY']
@@ -284,26 +289,50 @@ def queen_wavestories__get_macdwave(username, prod, symbols, api_key):
         QUEEN_KING = load_queen_App_pkl(username, prod)
         QUEEN = load_queen_pkl(username, prod)
         # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-        revrec = QUEEN.get("revrec")
-        ticker_db = load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod)
-        # POLLENSTORY = ticker_db['pollenstory']
-        STORY_bee = ticker_db['STORY_bee']
-        df_main, df_storyguage = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols)
-
-        df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')
-        df_main["maxprofit"] = round(df_main["maxprofit"] * 100,2).fillna(0)
+        if return_piece == 'revrec':
+          revrec = QUEEN.get("revrec")
+        else:
+           revrec = QUEEN_KING.get("revrec")
         
-        if revrec is not None:
-          for indx in df_main.index.tolist():
-            df_main.at[indx, 'remaining_budget'] = revrec.get('df_stars').loc[indx]['remaining_budget']
-            df_main.at[indx, 'remaining_budget_borrow'] = revrec.get('df_stars').loc[indx]['remaining_budget_borrow']
-        
-        df_main['color_row'] = np.where(df_main['maxprofit'] > 0, default_yellow_color, "#ACE5FB")
-        df_main['color_row_text'] = default_text_color
+        # ticker_db = load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod)
+        # # POLLENSTORY = ticker_db['pollenstory']
+        # STORY_bee = ticker_db['STORY_bee']
+        # # df_storyview, df_storygauge, df_main = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols)
+        # resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols)
+        # df_storyview = resp.get('df_storyview')
+        # df_storygauge = resp.get('df_storyguage')
+        # df_main = resp.get('df_waveview')
+        # df_storyview_down = resp.get('df_storyview_down')
 
+        if return_type == 'waves':
+           df_main = revrec.get('waveview')
+           df_main['color_row'] = k_colors.get('background_color')
+           df_main['color_row_text'] = default_text_color
+           json_data = df_main.to_json(orient='records')
+           return json_data
+        
+        # elif return_type == 'storygauge':
+        #    df_main = df_storygauge
+        #    df_main = df_main[['symbol', 'weight_L_macd_tier_position', 'weight_L_hist_tier_position']]
+        #    print(df_main)
+
+        elif return_type == 'wavess':
+          df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')
+          df_main["maxprofit"] = round(df_main["maxprofit"] * 100,2).fillna(0)
+          
+          if revrec is not None:
+            for indx in df_main.index.tolist():
+              df_main.at[indx, 'remaining_budget'] = revrec.get('df_stars').loc[indx]['remaining_budget']
+              df_main.at[indx, 'remaining_budget_borrow'] = revrec.get('df_stars').loc[indx]['remaining_budget_borrow']
+          
+          df_main['color_row'] = np.where(df_main['maxprofit'] > 0, default_yellow_color, "#ACE5FB")
+          df_main['color_row_text'] = default_text_color
+
+          df_main = df_main.reset_index(drop=False)
+        
         json_data = df_main.to_json(orient='records')
-
         return json_data
+    
     except Exception as e:
        print("mmm error", e)
 
@@ -312,8 +341,8 @@ def get_account_info(username, prod):
   QUEEN = load_queen_pkl(username, prod)
   acct_info = QUEEN['account_info']
 
-  honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-  money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+  honey_text = "Today" + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+  money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
 
   return f'{honey_text} {money_text}'
 

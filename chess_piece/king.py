@@ -591,6 +591,7 @@ def streamlit_config_colors():
         "default_text_color": "#055A6E",
         "default_font": "sans serif",
         "default_yellow_color": "#E6C93B",
+        "background_color": '#F3FAFD',
     }
 
 

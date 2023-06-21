@@ -42,7 +42,7 @@ def read_backtest_folder_assert_insight(backtest_folder):
             sb_temp = res["STORY_bee"]
             STORY_bee = {}
             STORY_bee[ttf] = sb_temp
-            res = analyze_waves(STORY_bee = STORY_bee, ttframe_wave_trigbee = False)
+            res = analyze_waves(STORY_bee, ticker_time_frame=False)
             res_data = res["d_agg_view_return"]
             buycross = res_data[ttf]["buy_cross-0"]
             if use_blocktime:
