@@ -4,6 +4,9 @@ import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import 'ag-grid-community/styles/ag-theme-balham.css';
+import 'ag-grid-community/styles/ag-theme-material.css';
+
 import 'ag-grid-enterprise';
 import { parseISO, compareAsc } from "date-fns"
 import { format } from "date-fns-tz"
@@ -37,7 +40,7 @@ type Props = {
   refresh_cutoff_sec?: number,
   gridoption_build?: any,
   prod?: boolean,
-  grid_options?: GridOptions<any>,
+  grid_options?: any,
   index: string,
   kwargs: any,
 }
@@ -179,7 +182,7 @@ const AgGrid = (props: Props) => {
                     })
                   }
                 }
-                alert("Success!");
+                toastr.success("Success!")
               } catch (error) {
                 alert(`${error}`);
               }
@@ -213,6 +216,7 @@ const AgGrid = (props: Props) => {
         ...kwargs
       });
       const array = JSON.parse(res.data);
+      console.log('table data :>> ', array);
       if (array.status == false) {
         toastr.error(`Fetch Error: ${array.message}`);
         return false;
@@ -418,7 +422,7 @@ const AgGrid = (props: Props) => {
           </div>
         </div>
       }
-      <div className="ag-theme-alpine-dark" style={{ width: "100%", height: kwargs['grid_height'] ? kwargs['grid_height'] : '100%' }}>
+      <div className={grid_options.theme || 'ag-theme-alpine-dark'} style={{ width: "100%", height: kwargs['grid_height'] ? kwargs['grid_height'] : '100%' }}>
         <AgGridReact
           ref={gridRef}
           rowData={rowData}

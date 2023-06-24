@@ -5,14 +5,15 @@ import {
   withStreamlitConnection,
 } from "streamlit-component-lib";
 import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+// import 'ag-grid-community/styles/ag-theme-alpine.css';
+import 'ag-grid-community/styles/ag-theme-balham.css';
 import Aggrid from "./Aggrid";
 
 const Main = (props: ComponentProps) => {
 
   const { username, api, api_update, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
   const { grid_options, kwargs = {} } = props.args;
-  const { index } = grid_options;
+  const { index,theme } = grid_options;
   console.log("AAAAAAAA", grid_options);
   return (
     <div >

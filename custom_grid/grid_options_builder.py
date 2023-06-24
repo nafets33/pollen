@@ -14,6 +14,9 @@ class GridOptionsBuilder:
 
     def configure_index(self, index_field: str):
         self.configure_grid_options(index=index_field)
+    
+    def configure_theme(self, theme: str):
+        self.configure_grid_options(theme=theme)
 
     def configure_default_column(self, column_width=100, resizable=True, filterable=False, sortable=False, editable=False, groupable=False, sorteable=False, suppress_menu=True, **other_default_column_properties):
         """Configure default column.
