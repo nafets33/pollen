@@ -17,6 +17,9 @@ def main():
     }
     # Configure index field
     gb.configure_index('client_order_id')
+    # https://www.ag-grid.com/javascript-data-grid/themes/
+    # ag-theme-alpine ag-theme-alpine-dark (default) ag-theme-balham ag-theme-balham-dark ag-theme-material
+    gb.configure_theme('ag-theme-alpine')
     # gb.configure_column('a', {'pinned': 'left', 'headerName': 'cc',
     #                             'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
     #                             'custom_currency_symbol':"%"
@@ -56,12 +59,12 @@ def main():
 
     go = gb.build()
     st_custom_grid(
-        username="C:\sven\stefan\pollen\client_user_dbs\db__sven0227_82402505",
+        username="F:/Work/2023-04/stefan/pollen/client_user_dbs/db__sven0227_82402505",
         api="http://127.0.0.1:8000/api/data/queen",
         api_update="http://127.0.0.1:8000/api/data/update_orders",
         refresh_sec=None,
         refresh_cutoff_sec=500,
-        prod=False,
+        prod=True,
         key='maingrid',
         grid_options=go,
         # kwargs from here

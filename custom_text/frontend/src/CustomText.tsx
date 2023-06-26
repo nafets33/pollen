@@ -25,7 +25,7 @@ const defaultProps: Props = {
 
 const CustomText: FC<Props> = (props: Props = defaultProps) => {
   const { api, text_size = 10, refresh_sec = 1, refresh_cutoff_sec = 0, text_option = {}, kwargs = {} } = props;
-  const [rowData, setRowData] = useState("None");
+  const [rowData, setRowData] = useState("");
   useEffect(() => Streamlit.setFrameHeight());
 
   useEffect(() => {
