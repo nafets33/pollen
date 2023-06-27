@@ -20,7 +20,9 @@ def main():
             'color': '#2133dd'
         }
         ],
-        y_max=430)
+        y_max=430,
+        graph_height=500,
+        )
 
 
 if __name__ == '__main__':
