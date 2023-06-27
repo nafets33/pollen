@@ -31,7 +31,7 @@ class App extends Component {
   }
   componentDidMount() {
     const { kwargs } = this.props.args;
-    const { y_axis, api, y_max, refresh_sec } = kwargs;
+    const { y_axis, api, y_max, refresh_sec,graph_height } = kwargs;
     Streamlit.setFrameHeight();
     this.updateChart();
     if (refresh_sec)
@@ -132,6 +132,7 @@ class App extends Component {
         itemclick: this.toggleDataSeries
       },
       data: dataY,
+      height:kwargs.graph_height?kwargs.graph_height:400
     }
     return (
       <div>
