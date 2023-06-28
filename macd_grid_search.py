@@ -102,7 +102,6 @@ def read_backtest_folder_assert_insight(backtest_folder):
     df_top5 = pd.concat(results)
     df_top5_results = pd.concat(results_top)
 
-    df_top5_results.to_csv('macd_backtest_analysis.csv')
     df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting') + '/macd_backtest_analysis.csv')
 
     e = datetime.now()

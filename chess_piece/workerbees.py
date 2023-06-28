@@ -144,8 +144,8 @@ def queen_workerbees(
     def close_worker(WORKERBEE_queens):
         s = datetime.now(est)
         date = datetime.now(est)
-        date = date.replace(hour=16, minute=1)
-        if s >= date:
+        date = date.replace(hour=16, minute=0)
+        if s > date:
             logging.info("Happy Bee Day End")
             print("Great Job! See you Tomorrow")
             print("save all workers and their results")
@@ -887,7 +887,6 @@ def queen_workerbees(
     # """
     # )
 
-
     def queens_court__WorkerBees(prod, qcp_s, run_all_pawns=False):
         # for every ticker async init return inital chart data
         # res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
@@ -930,6 +929,7 @@ def queen_workerbees(
             last_queen_call = {'last_call': datetime.now(est)}
 
             while True:
+
                 # if check_with_queen_frequency
                 now_time = datetime.now(est)
                 # print((now_time - last_queen_call.get('last_call')).total_seconds())

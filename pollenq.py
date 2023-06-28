@@ -13,6 +13,8 @@ import ipdb
 from PIL import Image
 from dotenv import load_dotenv
 import os
+import requests
+
 # from random import randint
 import streamlit as st
 from polleq_app_auth import signin_main
@@ -452,10 +454,23 @@ def pollenq(admin_pq):
             except Exception as e:
                 print(e, print_line_of_error())
 
+        def check_fastapi_status(ip_address):
+            try:
+                print("ip_address")
+                # ipdb.set_trace()
+                req = requests.get(f"http://{ip_address}:8000/api/data/", timeout=2) # http://127.0.0.1:8000/api/data/
+                print("req", req)
+                return True
+            # except ConnectionError as e:
+            except Exception as e:
+                print(e)
+                return False
+
+
         def portfolio_header__QC(acct_info):
             try:
            
-                with st.expander("Portfolio Value: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
+                with st.expander("Portfolio: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
                     # st.write(":heavy_minus_sign:" * 34)
                     mark_down_text(fontsize='18', text="Total Buying Power: " + '${:,.2f}'.format(acct_info['buying_power']))
                     mark_down_text(fontsize='15', text="last_equity: " + '${:,.2f}'.format(acct_info['last_equity']))
@@ -593,6 +608,7 @@ def pollenq(admin_pq):
         default_text_color = k_colors['default_text_color'] # = '#59490A'
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+        default_background_color = k_colors.get('default_background_color')
 
 
         with st.spinner("Verifying Your Scent, Hang Tight"):
@@ -663,8 +679,11 @@ def pollenq(admin_pq):
                 QUEEN_KING['prod'] = st.session_state['production']          
                 QUEEN = read_QUEEN()
 
+                if QUEEN.get('revrec') == 'init':
+                    st.warning("missing revrec, add revrec to QUEEN")
+
                 ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
-                # print("QUEEN_KING")
+                print("QUEEN_KING")
                 if st.sidebar.button("Check for new KORs"):
                     QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
                 APP_req = add_key_to_app(QUEEN_KING)
@@ -678,7 +697,7 @@ def pollenq(admin_pq):
 
 
 
-            # print("API")
+            print("API")
             if st.sidebar.button('show_keys'):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
 
@@ -743,15 +762,25 @@ def pollenq(admin_pq):
             queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
 
 
-            cols = st.columns((2,2,2,4,2,2,1))
+            cols = st.columns((2,2,2,3,1,2,1,1))
+            # honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+            # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+            trading_days = hive_dates(api=api)['trading_days']
+            mkhrs = return_market_hours(trading_days=trading_days)
+            seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+            seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
+            if mkhrs != 'open':
+                seconds_to_market_close = 1
 
             with cols[0]:
+                print("cash")
                 bp=acct_info['buying_power']
                 le=acct_info['last_equity']
                 pv=acct_info['portfolio_value']
                 cash=acct_info['cash']
                 fees=acct_info['accrued_fees']
                 num = cash/pv
+                num = 0 if num <=1 else num
                 progress_bar(value=num, text=f"Cash % {round(num,2)}")
 
             with cols[1]:
@@ -763,24 +792,17 @@ def pollenq(admin_pq):
             with cols[2]:
                 portfolio_header__QC(acct_info)
             
-            # honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-            # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-            trading_days = hive_dates(api=api)['trading_days']
-            mkhrs = return_market_hours(trading_days=trading_days)
-            seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
-            seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
-            if mkhrs != 'open':
-                seconds_to_market_close = None
+            
             with cols[3]:
                 # Total Account info
                 to_builder = TextOptionsBuilder.create()
-                to_builder.configure_background_color(default_yellow_color)
-                to_builder.configure_text_color(default_text_color)
+                to_builder.configure_background_color(default_text_color)
+                to_builder.configure_text_color(default_yellow_color)
                 to_builder.configure_font_style(default_font)
                 to = to_builder.build()
                 custom_text(api="http://localhost:8000/api/data/account_info", 
-                            text_size=23, 
-                            refresh_sec=5,
+                            text_size=28, 
+                            refresh_sec=8,
                             refresh_cutoff_sec=seconds_to_market_close,
                             text_option=to, 
                             api_key=os.environ.get("fastAPI_key"), 
@@ -789,13 +811,12 @@ def pollenq(admin_pq):
                 # mark_down_text(fontsize='23', text=f'{money_text}', font='garamond-bold-italic')
                 # page_line_seperator("3")
             
-            with cols[4]:
+            with cols[5]:
                 with st.expander("control buttons"):
                     live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
                     if live_sb_button:
                         st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
                         st.experimental_rerun()
-                    stop_queenbee(QUEEN_KING)
                     refresh_chess_board__button(QUEEN_KING)
                     refresh_queen_controls_button(QUEEN_KING)
                     refresh_trading_models_button(QUEEN_KING)
@@ -806,22 +827,39 @@ def pollenq(admin_pq):
                         # refresh_workerbees(QUEEN_KING)
                         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
-            with cols[5]:
+            with cols[4]:
                 # queensheart
+                print("Heart")
                 now = datetime.now(est)
                 beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
                 beat_size = 66 if beat > 100 else beat
                 beat_size = 45 if beat_size < 10 else beat_size
                 cust_Button("misc/zelda-icons.gif", hoverText=f'rate {beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
+                import subprocess
 
+                if check_fastapi_status(ip_address) == False:
+                    print("fastapi")
+                    if st.button('API'):
+                        # Define the path to your Python script
+                        script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
+                        # Run the Python script using subprocess
+                        try:
+                            subprocess.run(['python3', script_path], check=True)
+                        except subprocess.CalledProcessError as e:
+                            print(f"Error: {e}")
+
+
+            
             with cols[6]:
-                cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
-
+                st.button("Refresh", use_container_width=True)
+                # cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
+            with cols[7]:
+                stop_queenbee(QUEEN_KING)
             # page_line_seperator("1") #############################################
             
             
 
-            # print("POLLENTHEMES")
+            print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
 
@@ -840,7 +878,7 @@ def pollenq(admin_pq):
                 
                 return tabs, func_list
 
-
+        print('User Auth')
         if authorized_user and 'pollenq' in menu_id: 
             print("QueensConscience")
             # with cols[0]:

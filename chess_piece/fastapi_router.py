@@ -139,3 +139,8 @@ def load_queens_mind(username: str= Body(...), prod: bool=Body(...), api_key=Bod
     # print("/data/queen", username, prod, kwargs)
     json_data = get_queens_mind(username, prod)
     return JSONResponse(content=json_data)
+
+@router.get("/", status_code=status.HTTP_200_OK)
+def check_api():
+    print("online")
+    return JSONResponse(content="online")

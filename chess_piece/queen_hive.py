@@ -327,6 +327,7 @@ def init_queen(queens_chess_piece):
         "account_info": 'init',
         "prod": "",
         "source": "na",
+        "source_account_info": 'init',
         "last_modified": datetime.now(est),
         "command_conscience": {}, ## ?
         "crypto_temp": {"trigbees": {}},
@@ -722,7 +723,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
                     df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
 
-        
+        df_stars['star_at_play'] = df_stars['star_total_budget'] - df_stars['remaining_budget']
+        df_stars['star_at_play_borrow'] = df_stars['star_borrow_budget'] - df_stars['remaining_budget_borrow']
+
         # Wave Analysis 3 triforce view
         # wave_analysis, storygauge, waveview = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
         resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
@@ -757,6 +760,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview.at[ttf, 'star_avg_length'] = wave_analysis_length.loc[ttf].get('star_avg_length')
             waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
             waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
+            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
+            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
 
 
 
@@ -766,6 +771,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview.at[ttf, 'star_avg_length'] = wave_analysis_length_sell.loc[ttf].get('star_avg_length')
             waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
             waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
+            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
+            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
 
        
         # power on current deviation
@@ -793,15 +800,15 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # if l == tmp and > starmark, push out starmark to + 1?
 
 
+
         e_ = datetime.now(est)
         return {'cycle_time': (e_-s_).total_seconds(), 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
                 'wave_analysis': wave_analysis, 'storygauge': storygauge, 'waveview': waveview}
     
     except Exception as e:
-        ipdb.set_trace()
-        print_line_of_error()
-        print(e)
+        print_line_of_error(e)
         print('why')
+        ipdb.set_trace()
 
 
 def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TBD
@@ -1034,12 +1041,13 @@ def pollen_story(pollen_nectar):
                     wave_starttime_token = wave_starttime.replace(tzinfo=None)
                     if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
                         wave_blocktime = "morning_9-11"
-                    elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                    elif wave_starttime_token >= wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
                         wave_blocktime = "lunch_11-2"
-                    elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                    elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
                         wave_blocktime = "afternoon_2-4"
                     else:
                         wave_blocktime = "afterhours"
+                        ipdb.set_trace()
 
                 MACDWAVE_story[trigger][wave_n].update(
                     {
@@ -1063,43 +1071,39 @@ def pollen_story(pollen_nectar):
                 )
 
                 wave_height_value = max(df_waveslice[wave_col_name].values)
+                # df[f'{wave_col_name}_mp_deviation'] = df[wave_col_name] / wave_height_value
+
                 # how long was it profitable?
                 profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
                 profit_length = len(profit_df)
                 if profit_length > 0:
-                    max_profit_index = profit_df[
-                        profit_df[wave_col_name] == wave_height_value
-                    ].iloc[0]["story_index"]
+                    max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]["story_index"]
                     time_to_max_profit = max_profit_index - row_1
+                    mt = df_waveslice.at[max_profit_index, 'macd_tier']
+                    vt = df_waveslice.at[max_profit_index, 'vwap_tier']
+                    rst = df_waveslice.at[max_profit_index, 'rsi_ema_tier']                    
+                    
                     MACDWAVE_story[trigger][wave_n].update(
                         {
                             "maxprofit": wave_height_value,
                             "time_to_max_profit": time_to_max_profit,
+                            "mxp_macd_tier": df_waveslice.at[max_profit_index, 'macd_tier'],
+                            "mxp_vwap_tier": df_waveslice.at[max_profit_index, 'vwap_tier'],
+                            "mxp_rsi_ema_tier": df_waveslice.at[max_profit_index, 'rsi_ema_tier'],
+
                         }
                     )
 
                 else:
                     MACDWAVE_story[trigger][wave_n].update(
-                        {"maxprofit": wave_height_value, "time_to_max_profit": 0}
+                        {"maxprofit": wave_height_value, 
+                         "time_to_max_profit": 0,
+                        "mxp_macd_tier": 'NAN',
+                        "mxp_vwap_tier": 'NAN',
+                        "mxp_rsi_ema_tier": 'NAN',
+                         }
                     )
 
-        # all_waves = []
-        # all_waves_temp = []
-        # for trig_name in trigbees:
-        #     l_waves = list(MACDWAVE_story[trig_name].values())
-        #     l_waves = [i for i in l_waves if i['wave_n'] != '0']
-        #     all_waves_temp.append(l_waves)
-        # for el_list in range(len(all_waves_temp)):
-        #     all_waves = all_waves + all_waves_temp[el_list - 1]
-        # df_waves = pd.DataFrame(all_waves)
-        # # df_waves = df_waves.fillna("NULL")
-        # # df_waves = df_waves
-        # df_waves = df_waves.sort_values(by=['wave_start_time'], ascending=True).reset_index()
-        # df_waves['macd_wave_n'] = df_waves.index
-        # df_waves = macd_wave_length_story(df_waves) # df_waves['macd_wave_length']
-
-        # MACDWAVE_story['story'] = df_waves
-        # df_t = df_waves[[i for i in df_waves.columns if 'macd' in i or i in ['wave_start_time', 'trigbee', 'wave_blocktime']]].copy()
 
         return MACDWAVE_story
 
@@ -2821,9 +2825,9 @@ def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est
     return datetime.now(tz).strftime(format)
 
 
-def print_line_of_error():
+def print_line_of_error(e=False):
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    print(exc_type, exc_tb.tb_lineno)
+    print(e, exc_type, exc_tb.tb_lineno)
     # return exc_type, exc_tb.tb_lineno
 
 
@@ -3382,15 +3386,15 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=360,
-                                    take_profit=.033,
-                                    sellout=-.02,
+                                    take_profit=.08,
+                                    sellout=-.04,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
                                     stagger_profits_tiers=1,
                                     limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
+                                    skip_sell_trigbee_distance_frequency=1,
                                     ignore_trigbee_at_power=0.01,
                                     ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
@@ -3398,7 +3402,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
-                                    close_order_today=True,
+                                    close_order_today=False,
                                     revisit_trade_frequency=60,
                 ),
                 "5Minute_5Day": kings_order_rules(
@@ -3407,9 +3411,9 @@ def generate_TradingModel(
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=3,
-                                    max_profit_waveDeviation_timeduration=5,
+                                    max_profit_waveDeviation_timeduration=10,
                                     timeduration=320,
-                                    take_profit=.03,
+                                    take_profit=.3,
                                     sellout=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
@@ -4677,7 +4681,6 @@ def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
         guage_return[f'{weight_}_hist_tier_position'] = sum(df_waves[f'{weight_}_hist_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
 
 
-
     return guage_return, df_waves
 
 
@@ -4760,7 +4763,8 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
 
                 wave_times = {k: i["wave_start_time"] for k, i in ttf_waves.items()}
 
-                current_wave_view = {k: v for (k, v) in current_wave.items() if k in wave_view}
+                current_wave_view = {k: v for (k, v) in current_wave.items()}
+                # print(current_wave_view)
                 obj_return = {**story, **current_wave_view}
                 obj_return_ = {**obj_return, **p_story}
                 queen_return = {**queen_return, **obj_return_}

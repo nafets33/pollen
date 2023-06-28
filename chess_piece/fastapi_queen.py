@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import pytz
 import ipdb
+import time
 est = pytz.timezone("US/Eastern")
 
 main_root = hive_master_root() # os.getcwd()  # hive root
@@ -45,7 +46,12 @@ def load_queen_pkl(username, prod):
     queen_pkl_path = username+'/queen_sandbox.pkl'
   else:
     queen_pkl_path = username+'/queen.pkl'
+  
   queen_pkl = ReadPickleData(queen_pkl_path)
+  if len(queen_pkl) == 0:
+     print("WHY????")
+     queen_pkl = ReadPickleData(queen_pkl_path)
+  
   return queen_pkl
 
 def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod):
@@ -180,6 +186,9 @@ def app_Sellorder_request(username, prod, selected_row, default_value):
 def get_queen_orders_json(username, prod):
   
   QUEEN = load_queen_pkl(username, prod)
+  if len(QUEEN) == 0:
+      print("Queen Failed orders")
+      return pd.DataFrame()
 
   qo = QUEEN['queen_orders']
   if len(qo) == 1:
@@ -194,6 +203,7 @@ def get_queen_orders_json(username, prod):
   df = pd.DataFrame(qo)
   df.reset_index(drop=True, inplace=True)
   df = df[df['client_order_id']!='init']
+  df["order_rules"] = df["order_rules"].astype(str)
   # df["take_profit"] = df["order_rules"].apply(lambda x: x.get("take_profit"))
   # df['client_order_id'] = df.index
   df["money"] = pd.to_numeric(df["money"], errors='coerce')
@@ -208,7 +218,8 @@ def get_queen_orders_json(username, prod):
   # df["take_profit"] = df["order_rules"].get('take_profit')
   # df["close_order_today"] = df["order_rules"].get('close_order_today')
   
-  df = df[df['queen_order_state'].isin(['running'])]
+  df = df[df['queen_order_state'].isin(['running', 'running_close', 'running_open'])]
+  print("len orders", len(df))
   # df = df[col_view]
   json_data = df.to_json(orient='records')
   return json_data
@@ -261,6 +272,7 @@ def get_queen_messages_logfile_json(username, log_file):
   # log_dir = os.path.join(username, 'logs')
   # logs = os.listdir(log_dir)
   # logs = [i for i in logs if i.endswith(".log")]
+  k_colors = streamlit_config_colors()
   with open(log_file, 'r') as f:
       content = f.readlines()
 
@@ -268,6 +280,9 @@ def get_queen_messages_logfile_json(username, log_file):
   df = df.sort_index(ascending=False)
   df = df.rename(columns={'index': 'idx', 0: 'message'})
   df = df.head(500)
+
+  df['color_row'] = k_colors.get('default_background_color')
+  df['color_row_text'] = k_colors.get('default_text_color')
 
   json_data = df.to_json(orient='records')
   return json_data
@@ -283,11 +298,60 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
+        def get_darker_shade(base_color, shade_number, var_col=False):
+            # Dictionary of base colors and their corresponding RGB values
+            color_codes = {
+                "black": (0, 0, 0),
+                "white": (255, 255, 255),
+                "red": (255, 0, 0),
+                "green": (0, 128, 0),
+                "blue": (0, 0, 255),
+                # Add more colors and their RGB values as needed
+            }
+            if var_col:
+              m_wave, m_num = var_col.split("_")
+              base_color = 'green' if 'buy' in m_wave else 'red'
+              shade_number = int(m_num.split("-")[-1])
+              # if shade_number > 10:
+              #    shade_number = 8
+            
+            # Retrieve the RGB values of the base color
+            if base_color.lower() not in color_codes:
+                print("Invalid base color")
+                return "Invalid base color"
+
+            r, g, b = color_codes[base_color.lower()]
+
+            # Calculate the shade based on the shade number
+            middle_shade = 15
+            shade_factor = (shade_number - middle_shade) / 100
+
+            # Adjust the RGB values based on the shade factor
+            darker_r = max(int(r - (r * abs(shade_factor))), 0)
+            darker_g = max(int(g - (g * abs(shade_factor))), 0)
+            darker_b = max(int(b - (b * abs(shade_factor))), 0)
+
+            # Convert the RGB values to hex format
+            hex_color = '#{:02x}{:02x}{:02x}'.format(darker_r, darker_g, darker_b)
+            # print(print(var_col, hex_color))
+
+            hex_color = '#ddf3d5' if base_color == 'green' else '#f4cccc'
+            return hex_color
+        
+        # base_color = "green"
+        # shade_number = 9
+        # darker_shade = get_darker_shade(base_color, shade_number, var_col=False)
+        # print(darker_shade)
+
+
         read_storybee=True, #kwargs.get('read_storybee')
         read_pollenstory=False, #kwargs.get('read_pollenstory')
         # st.image((os.path.join(hive_master_root(), "/custom_button/frontend/build/misc/waves.png")), width=33)
         QUEEN_KING = load_queen_App_pkl(username, prod)
         QUEEN = load_queen_pkl(username, prod)
+        if len(QUEEN) == 0:
+           print("Queen Failed")
+           return pd.DataFrame()
         # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
         if return_piece == 'revrec':
           revrec = QUEEN.get("revrec")
@@ -306,8 +370,12 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
 
         if return_type == 'waves':
            df_main = revrec.get('waveview')
-           df_main['color_row'] = k_colors.get('background_color')
+          #  df_main['color_row'] = k_colors.get('default_background_color')
            df_main['color_row_text'] = default_text_color
+           df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')
+           df_main["maxprofit"] = round(df_main["maxprofit"] * 100,2).fillna(0)
+           df_main['color_row'] = df_main['macd_state'].apply(lambda x: get_darker_shade(base_color=False, shade_number=False, var_col=x))
+          #  df_main.at['SPY_1Minute_1Day', 'color_row'] = '#a1b357'
            json_data = df_main.to_json(orient='records')
            return json_data
         
@@ -324,6 +392,9 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
             for indx in df_main.index.tolist():
               df_main.at[indx, 'remaining_budget'] = revrec.get('df_stars').loc[indx]['remaining_budget']
               df_main.at[indx, 'remaining_budget_borrow'] = revrec.get('df_stars').loc[indx]['remaining_budget_borrow']
+              df_main.at[indx, 'star_at_play_borrow'] = revrec.get('df_stars').loc[indx]['star_at_play_borrow']
+              df_main.at[indx, 'star_at_play'] = revrec.get('df_stars').loc[indx]['star_at_play']
+
           
           df_main['color_row'] = np.where(df_main['maxprofit'] > 0, default_yellow_color, "#ACE5FB")
           df_main['color_row_text'] = default_text_color
@@ -334,7 +405,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         return json_data
     
     except Exception as e:
-       print("mmm error", e)
+       print("mmm error", print_line_of_error(e))
 
 
 def get_account_info(username, prod):

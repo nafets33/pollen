@@ -562,13 +562,13 @@ def ReadPickleData(pickle_file):
                 with open(pickle_file, "rb") as f:
                     return pickle.load(f)
             except Exception as e:
-                # print('pickleerror ', pickle_file, e)
+                print('pkl read error: ', os.path.basename(pickle_file), e, stop)
                 # logging.error(f'{e} error is pickle load')
-                if stop > 3:
+                if stop > 10:
                     print("CRITICAL read pickle failed ", e)
                     # logging.critical(f'{e} error is pickle load')
                     # send_email(subject='CRITICAL Read Pickle Break')
-                    break
+                    return ''
                 stop += 1
                 time.sleep(0.033)
 
@@ -580,9 +580,9 @@ def ReadPickleData(pickle_file):
         time.sleep(0.033)
 
 
-def print_line_of_error():
+def print_line_of_error(e='print_error_message'):
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    print(exc_type, exc_tb.tb_lineno)
+    print(e, exc_type, exc_tb.tb_lineno)
     return exc_type, exc_tb.tb_lineno
 
 def streamlit_config_colors():
@@ -591,7 +591,7 @@ def streamlit_config_colors():
         "default_text_color": "#055A6E",
         "default_font": "sans serif",
         "default_yellow_color": "#E6C93B",
-        "background_color": '#F3FAFD',
+        "default_background_color": '#F3FAFD',
     }
 
 
