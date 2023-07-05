@@ -549,7 +549,8 @@ def pollenq(admin_pq):
             
             height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
             cust_Button("misc/charts.png", hoverText='Charts', key='charts_m', height=f'{height}px', default=False)
-            st.session_state['charts'] = True if st.session_state['charts_m'] == 'charts' or st.session_state['charts_m'] == None else False
+            st.session_state['charts'] = True if st.session_state['charts_m'] == True else False
+            # print(st.session_state['charts_m'])
 
             # if st.session_state['charts']:
             #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -718,6 +719,9 @@ def pollenq(admin_pq):
                         api_failed = True
 
                 alpaca_acct_info = refresh_account_info(api=api)
+                # st.write(alpaca_acct_info)
+                # ap_info=alpaca_acct_info
+                # st.write(float(ap_info['info'].get('daytrading_buying_power')) - 4 * (float(ap_info['info'].get('last_equity')) - float(ap_info['info'].get('last_maintenance_margin'))))
                 acct_info = alpaca_acct_info.get('info_converted')
                 acct_info_raw = alpaca_acct_info.get('info')
                 init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
@@ -784,8 +788,11 @@ def pollenq(admin_pq):
                 progress_bar(value=num, text=f"Cash % {round(num,2)}")
 
             with cols[1]:
-                num = pv/bp
-                progress_bar(value=num, text=f"PVPower at Play {round(num,2)}")
+                try:
+                    num = pv/bp
+                    progress_bar(value=num, text=f"PVPower at Play {round(num,2)}")
+                except Exception as e:
+                    print(e)
             # with cols[1]:
             #     cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
             

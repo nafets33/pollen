@@ -24,7 +24,7 @@ import aiohttp
 import asyncio
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
 from chess_piece.queen_hive import wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
 
@@ -466,7 +466,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 for app_req in QUEEN_KING[req_bucket]:
                     if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
                         print(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
-                        st.info(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
+                        # st.info(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
                         archive_bucket = f'{req_bucket}{"_requests"}'
                         QUEEN_KING[req_bucket].remove(app_req)
                         QUEEN_KING[archive_bucket].append(app_req)
@@ -569,15 +569,20 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 try:
                     with cols[0]:
                         if qcp == 'castle':
-                            hc.option_bar(option_definition=pq_buttons.get('castle_option_data'),title='', key='castle_qcp', horizontal_orientation=False)
+                            st.write(qcp)
+                            # hc.option_bar(option_definition=pq_buttons.get('castle_option_data'),title='', key='castle_qcp', horizontal_orientation=False)
                         elif qcp == 'bishop':
-                            hc.option_bar(option_definition=pq_buttons.get('bishop_option_data'),title='', key='bishop_qcp', horizontal_orientation=False)                                
+                            st.write(qcp)
+                            # hc.option_bar(option_definition=pq_buttons.get('bishop_option_data'),title='', key='bishop_qcp', horizontal_orientation=False)                                
                         elif qcp == 'knight':
-                            hc.option_bar(option_definition=pq_buttons.get('knight_option_data'),title='', key='knight_qcp', horizontal_orientation=False)                                
+                            st.write(qcp)
+                            # hc.option_bar(option_definition=pq_buttons.get('knight_option_data'),title='', key='knight_qcp', horizontal_orientation=False)                                
                         elif qcp == 'castle_coin':
-                            hc.option_bar(option_definition=pq_buttons.get('coin_option_data'),title='', key='coin_qcp', horizontal_orientation=False)                                
+                            st.write(qcp)
+                            # hc.option_bar(option_definition=pq_buttons.get('coin_option_data'),title='', key='coin_qcp', horizontal_orientation=False)                                
                         else:
-                            st.image(MISC.get('knight_png'), width=74)
+                            st.write(qcp)
+                            # st.image(MISC.get('knight_png'), width=74)
                     return True
                 except Exception as e:
                     print(e)
@@ -599,10 +604,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         except Exception as e:
                             print(qcpvar, e)
 
-                if new_piece:
-                    return_active_image(new_piece)
-                else:
-                    return_active_image(qcp)
+                # if new_piece:
+                #     return_active_image(new_piece)
+                # else:
+                #     return_active_image(qcp)
 
                 if new_piece:
                     qcp = new_piece
@@ -612,7 +617,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         models = ['MACD']
                         # chess board vars
                         with cols[1]:
-                            qcp_vars['tickers'] = st.multiselect(label="-", options=ticker_allowed + crypto_symbols__tickers_avail, default=qcp_vars['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                            qcp_vars['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=qcp_vars['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                         with cols[2]:
                             st.selectbox(label='-', options=models, index=models.index(qcp_vars.get('model')), key=f'{qcp}model{admin}')
                         with cols[3]:
@@ -627,7 +632,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 else:   
                     # chess board vars
                     with cols[1]:
-                        QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label="-", options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                        QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                     with cols[2]:
                         QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
                     with cols[3]:
@@ -741,16 +746,28 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             st.write(waveview)
 
                             def king_knights_of_the_round_table(revrec):
+                                st.write("Knights of the Round Table")
                                 df_stars = revrec.get('df_stars')
                                 waveview = revrec.get('waveview')
 
-                                waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('buy')), True, False)
-                                waveview_buys = waveview[waveview['symbol_filter'] == True]
-                                buys_symbols = waveview_buys.groupby(['symbol']).agg({'allocation': 'sum'}).reset_index()
+                                waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
 
-                                waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('sell')), True, False)
-                                waveview_sells = waveview[waveview['symbol_filter'] == True]
-                                sell_symbols = waveview_sells.groupby(['symbol']).agg({'allocation': 'sum'}).reset_index()
+                                # def _filter_symbol()
+                                df_main = pd.DataFrame()
+                                df_buy_main = pd.DataFrame()
+                                df_sell_main = pd.DataFrame()
+                                for symbol in set(waveview['symbol'].tolist()):
+                                    buys_symbols = waveview[(waveview['symbol'] == symbol) & (waveview['macd_state'].str.contains('buy'))]
+                                    sells_symbols = waveview[(waveview['symbol'] == symbol) & (waveview['macd_state'].str.contains('sell'))]
+                                    
+                                    buys_symbols_group = buys_symbols.groupby(['symbol', 'bs_position']).agg({'allocation': 'sum'}).reset_index()
+                                    sells_symbols_group = sells_symbols.groupby(['symbol', 'bs_position']).agg({'allocation': 'sum'}).reset_index()
+
+                                    df_main = pd.concat([df_main, buys_symbols_group, sells_symbols_group])
+                                    df_buy_main = pd.concat([df_buy_main, buys_symbols_group])
+                                    df_sell_main = pd.concat([df_sell_main, sells_symbols_group])
+                                
+                                st.write(df_main)
 
                                 waveview['symbol_filter'] = np.where((waveview['symbol'] == "SPY") & (waveview['macd_state'].str.contains('buy')), True, False)
                                 v1 = waveview[waveview['symbol_filter'] == True]
@@ -759,6 +776,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 waveview['symbol_filter'] = np.where((waveview['symbol'] == "SPY") & (waveview['macd_state'].str.contains('sell')), True, False)
                                 v1 = waveview[waveview['symbol_filter'] == True]
                                 st.write(v1)
+
+
+                            
+                            
                             king_knights_of_the_round_table(revrec)
 
 
@@ -804,7 +825,12 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             
                             
                             return True
-            
+                # with st.form("download files"):
+                if st.button("download csv"):
+                    try:
+                        download_df_as_CSV(waveview, 'waveview.csv')
+                    except Exception as e:
+                        print(e)
             except Exception as e:
                 print('chessboard ', e, print_line_of_error())
 
@@ -881,10 +907,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             try:
                                 if qcp == 'castle_coin':
                                     with cols[0]:
-                                        st.image(MISC.get('castle_png'), width=54)
+                                        st.image(MISC.get('castle_png'), width=74)
                                 elif qcp == 'castle':
                                     with cols[0]:
-                                        st.image(MISC.get('castle_png'), width=54)
+                                        st.image(MISC.get('castle_png'), width=74)
                                 elif qcp == 'bishop':
                                     with cols[0]:
                                         st.image(MISC.get('bishop_png'), width=74)
@@ -892,7 +918,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     with cols[0]:
                                         st.image(MISC.get('knight_png'), width=74)
                                 else:
-                                    st.image(MISC.get('knight_png'), width=74)
+                                    with cols[0]:
+                                        st.image(MISC.get('knight_png'), width=74)
                                 
                                 ticker_list = QUEENBEE[qcp_bees_key][qcp]['tickers']
                                 all_tickers = ticker_allowed + crypto_symbols__tickers_avail
@@ -900,7 +927,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 QUEENBEE[qcp_bees_key][qcp]['tickers'] = [i for i in ticker_list if i in all_tickers]
 
                                 with cols[1]:
-                                    QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEENBEE[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+                                    QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp}', options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEENBEE[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                                 with cols[2]:
                                     st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
                                 with cols[3]:
@@ -1540,6 +1567,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=tickers)
                     st.write(resp.get('df_storyview'))
                     st.write(resp.get('df_storyguage'))
+                    print(resp.get('df_storyguage').dtypes)
                     st.write(resp.get('df_waveview'))
                     st.write(resp.get('df_storyview_down'))
 
@@ -1750,8 +1778,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 username=KING['users_allowed_queen_emailname__db'].get(client_user), 
                 api="http://127.0.0.1:8000/api/data/queen",
                 api_update="http://127.0.0.1:8000/api/data/update_orders",
-                refresh_sec=None, 
-                refresh_cutoff_sec=None, 
+                refresh_sec=refresh_sec, 
+                refresh_cutoff_sec=seconds_to_market_close, 
                 prod=st.session_state['production'],
                 key='maingrid',
                 grid_options=go,
@@ -1838,8 +1866,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 username=KING['users_allowed_queen_emailname__db'].get(client_user), 
                 api="http://127.0.0.1:8000/api/data/wave_stories",
                 api_update="http://127.0.0.1:8000/api/data/update_orders",
-                refresh_sec=None, 
-                refresh_cutoff_sec=None, 
+                refresh_sec=refresh_sec, 
+                refresh_cutoff_sec=seconds_to_market_close, 
                 prod=st.session_state['production'],
                 grid_options=go,
                 key=f'{"workerbees"}{key}',
@@ -1979,22 +2007,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 # kwargs from here
                 api_key=os.environ.get("fastAPI_key"),
                 buttons = [],
-                # buttons=[{'button_name': 'insight',
-                #         'button_api': "http://127.0.0.1:8000/api/data/insight",
-                #         'prompt_message': 'Message',
-                #         'prompt_field': "message",
-                #         'col_headername': 'Insight',
-                #         'col_width':100,
-                #         # 'pinned': 'left'
-                #         },
-                #         # {'button_name': 'button2',
-                #         # 'button_api': "api2",
-                #         # 'prompt_message': 'message2',
-                #         # 'prompt_field': 'None',
-                #         # 'col_headername': 'Sell button',
-                #         # 'col_width':100,
-                #         # },
-                #         ],
+
                 grid_height='300px',
                 log_file=log_file
 
@@ -2228,10 +2241,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             if st.session_state['charts'] == True:
                                 with st.expander("charts", True):
                                     advanced_charts()
+                        
+                        
                         # df_storyview,df_storygauge,df_waveview = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=tickers_avail)
                         resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=tickers_avail)
                         df_storyview = resp.get('df_storyview')
                         df_storygauge = resp.get('df_storyguage')
+                        # print(resp.get('df_storyguage').dtypes)
                         df_waveview = resp.get('df_waveview')
                         df_storyview_down = resp.get('df_storyview_down')
                         if tab_name == 'chess_board':
@@ -2249,6 +2265,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 st.write("storyview")                                
                                 st.write(df_storyview)
                                 st.write("storygauge")
+                                # print(df_storygauge.dtypes)
                                 for col in df_storygauge.columns:
                                     # print(type(df_storygauge.iloc[-1].get(col)))
                                     if type(df_storygauge.iloc[-1].get(col)) == np.float64:
@@ -2304,28 +2321,32 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                         },
                                         refresh_sec=refresh_sec,
                                         )
-                                with cols[0]:
-                                    logs = os.listdir(log_dir)
-                                    logs = [i for i in logs if i.endswith(".log")]
-                                    log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                                    log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                                    with st.expander(log_file):
-                                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                                        queen_messages_logfile_grid(KING, log_file=log_file, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                
+                """ Bottom Page """
+                bottom_buttons = {'old_orders':0, 'refresh_bee':1, 'logs':2}
+                cols = st.columns(len(bottom_buttons))
+                for col_name, col_n in bottom_buttons.items():
+                    with cols[col_n]:
+                        if col_name == 'old_orders':
+                            cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                        if col_name == 'logs':
+                            logs = os.listdir(log_dir)
+                            logs = [i for i in logs if i.endswith(".log")]
+                            log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                            log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                            with st.expander(log_file):
+                                log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                                queen_messages_logfile_grid(KING, log_file=log_file, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                        if col_name == 'refresh_bee':
+                            cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText=None, key='bottom_page')
+                
+                ### Display when Buttons Pressed ###
+                if st.session_state['old_orders']:
+                    orders_agrid()
 
 
 
-                                cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                                
-                                # cols = st.columns()
-                                if st.session_state['old_orders']:
-                                    orders_agrid()
-                                
-
-               
                 page_session_state__cleanUp(page=page)
-                cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText=None, key='bottom_page')
-
 
                 def all_button_keys():
                     return {

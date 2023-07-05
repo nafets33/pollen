@@ -502,8 +502,7 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
     # symbol ticker data # 1 all current pieces on chess board && all current running orders
     current_active_orders = return_active_orders(QUEEN=QUEEN)
     active_order_symbols = list(set(current_active_orders["symbol"].tolist()))
-    chessboard_symbols = return_QUEENs_workerbees_chessboard(
-        QUEEN_KING=QUEEN_KING)["queens_master_tickers"]
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 
     if symbols:
         symbols = symbols + active_order_symbols + chessboard_symbols

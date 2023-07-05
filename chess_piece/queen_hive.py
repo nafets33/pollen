@@ -332,7 +332,7 @@ def init_queen(queens_chess_piece):
         "command_conscience": {}, ## ?
         "crypto_temp": {"trigbees": {}},
         "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id"),
-        "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
+        "portfolio": {},
         "heartbeat": {
             "active_tickerStars": {},
             "available_tickers": [],
@@ -680,8 +680,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 num_active_orders = len(active_orders)
                 ticker_cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
 
-                borrowed_orders = active_orders[active_orders['borrowed_funds'] == None].copy() if num_active_orders > 0 else pd.DataFrame()
-                budget_orders = active_orders[active_orders['borrowed_funds'] != None].copy() if num_active_orders > 0 else pd.DataFrame()
+                budget_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
+                borrowed_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
                 
                 budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
                 borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
@@ -759,7 +759,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_.loc[ttf].get('star_avg_time_to_max_profit')
             waveview.at[ttf, 'star_avg_length'] = wave_analysis_length.loc[ttf].get('star_avg_length')
             waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
+            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
             waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
+            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
             waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
             waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
 
@@ -770,7 +772,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_sell.loc[ttf].get('star_avg_time_to_max_profit')
             waveview.at[ttf, 'star_avg_length'] = wave_analysis_length_sell.loc[ttf].get('star_avg_length')
             waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
+            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
             waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
+            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
             waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
             waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
 
@@ -791,8 +795,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         waveview['allocation_power_powerlen'] = waveview['tmp_power'] - waveview['tmp_power_len']
         waveview['allocation'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-        waveview['allocation_RM_delta'] = np.where(waveview['allocation'] < 0, waveview['remaining_budget'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-        waveview['allocation_deploy'] = np.where(waveview['allocation_RM_delta'] > 0, True, False)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        waveview['allocation_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+
+        waveview['allocation_borrow'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_borrow_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        waveview['allocation_borrow_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
 
         # rules, main budget stays on len vs starmark. add budget when past mark? if in wave deviation. 
@@ -863,8 +869,8 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
             print("you did not use func correctly dummy")        
         
         num_active_orders = len(active_orders)
-        budget_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
-        borrowed_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
+        budget_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
+        borrowed_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
         
         budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
         borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
@@ -1262,7 +1268,6 @@ def pollen_story(pollen_nectar):
         return {"df": df, "df_waves": df_waves}
 
 
-
     def assign_MACD_Tier(df, mac_world, tiers_num):
         # create tier ranges
         # tiers_num = 8
@@ -1384,7 +1389,6 @@ def pollen_story(pollen_nectar):
         return df
 
 
-
     def power_ranger_mapping(
         tier_value,
         colors=[
@@ -1438,7 +1442,6 @@ def pollen_story(pollen_nectar):
         story = {}
         ANGEL_bee = {}  # add to QUEENS mind
         STORY_bee = {}
-        # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
         betty_bee = {k: {} for k in pollen_nectar.keys()}  # monitor function speeds
         knights_sight_word = {}
 
@@ -1536,13 +1539,9 @@ def pollen_story(pollen_nectar):
                 )
 
                 s_timetoken = datetime.now(est)
-                resp = return_waves_measurements(
-                    df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
-                )
+                resp = return_waves_measurements(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
                 e_timetoken = datetime.now(est)
-                betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (
-                    e_timetoken - s_timetoken
-                )
+                betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (e_timetoken - s_timetoken)
 
                 df = resp["df"]
                 MACDWAVE_story["story"] = resp["df_waves"]
@@ -3246,6 +3245,7 @@ def kings_order_rules( # rules created for 1Minute
     scalp_profits=False,
     scalp_profits_timeduration=30,
     stagger_profits_tiers=1,
+    stagger_profits_tiers_scale={},
     limitprice_decay_timeduration=1,
     skip_sell_trigbee_distance_frequency=0,
     skip_buy_trigbee_distance_frequency=0,
@@ -3419,7 +3419,7 @@ def generate_TradingModel(
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
+                                    stagger_profits_tiers=3,
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
@@ -5176,6 +5176,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
         PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{".pkl"}')
+        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{".pkl"}')
+        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
@@ -5184,6 +5186,16 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
         PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}{".pkl"}')
+        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}{".pkl"}')
+        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
+
+    if os.path.exists(PB_account_info_PICKLE) == False:
+        print("Init PB_account_info_PICKLE")
+        PickleData(PB_account_info_PICKLE, {'account_info': {}})
+
+    if os.path.exists(PB_RevRec_PICKLE) == False:
+        print("Init PB_RevRec_PICKLE")
+        PickleData(PB_RevRec_PICKLE, {'revrec': {}})
 
     if os.path.exists(PB_QUEENsHeart_PICKLE) == False:
         print("Init PB_QUEENsHeart_PICKLE")
@@ -5228,6 +5240,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         st.session_state["PB_queen_Archives_Pickle"] = PB_queen_Archives_Pickle
         st.session_state["PB_QUEENsHeart_PICKLE"] = PB_QUEENsHeart_PICKLE
         st.session_state["PB_KING_Pickle"] = PB_KING_Pickle
+        st.session_state["PB_RevRec_PICKLE"] = PB_RevRec_PICKLE
 
 
     return {
@@ -5237,6 +5250,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         "PB_queen_Archives_Pickle": PB_queen_Archives_Pickle,
         "PB_QUEENsHeart_PICKLE": PB_QUEENsHeart_PICKLE,
         "PB_KING_Pickle": PB_KING_Pickle,
+        "PB_RevRec_PICKLE": PB_RevRec_PICKLE,
+        "PB_account_info_PICKLE": PB_account_info_PICKLE,
     }
 
 
