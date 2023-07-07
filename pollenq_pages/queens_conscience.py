@@ -750,7 +750,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 df_stars = revrec.get('df_stars')
                                 waveview = revrec.get('waveview')
 
-                                waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
+                                # waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
 
                                 # def _filter_symbol()
                                 df_main = pd.DataFrame()
@@ -1038,7 +1038,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 kor_option_mapping = {
                 'theme': 'theme',
                 'take_profit': 'number',
-                'sellout': 'number',
+                'sell_out': 'number',
                 'status': 'checkbox',
                 'trade_using_limits': 'checkbox',
                 'doubledown_timeduration': 'number',

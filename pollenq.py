@@ -25,7 +25,7 @@ from streamlit_extras.stoggle import stoggle
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
+from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes, hive_dates, return_market_hours
 from custom_button import cust_Button
 from custom_text import custom_text, TextOptionsBuilder
@@ -615,12 +615,6 @@ def pollenq(admin_pq):
         with st.spinner("Verifying Your Scent, Hang Tight"):
             signin_main(page="pollenq")
 
-        import socket
-
-        def get_ip_address():
-            hostname = socket.gethostname()
-            ip_address = socket.gethostbyname(hostname)
-            return ip_address
 
         # Call the function to get the IP address
         ip_address = get_ip_address()

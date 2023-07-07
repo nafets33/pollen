@@ -736,9 +736,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         waveview['star'] = waveview.index
         waveview['symbol'] = waveview['star'].apply(lambda x: return_symbol_from_ttf(x))
+        waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
 
         waveview_buy = waveview[waveview['macd_state'].str.contains('buy')]
-        waveview_sell = waveview[~waveview['macd_state'].str.contains('buy')]
+        waveview_sell = waveview[~waveview['macd_state'].str.contains('sell')]
 
         wave_analysis['star'] = wave_analysis.index
         wave_analysis_ = wave_analysis[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True)
@@ -3230,38 +3231,36 @@ def kings_order_rules( # rules created for 1Minute
     doubledown_timeduration=60,
     ignore_trigbee_in_macdstory_tier=[0],
     ignore_trigbee_in_histstory_tier=[0],
+    # Not Used
     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+    ignore_trigbee_at_power=0.01,
     
     # SELLS
-    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+    take_profit=.01,
+    take_profit_scale={.05: {'take_pct': .25, 'take_mark': False}},
+    sell_out=-.0089,
+    sell_out_scale={.05: {'take_pct': .25, 'take_mark': False}},
     max_profit_waveDeviation=1, ## Need to figure out expected waveDeivation from a top profit in wave to allow trade to exit (faster from seeking profit?)
     max_profit_waveDeviation_timeduration=5,
     timeduration=120,
-    take_profit=.01,
-    sellout=-.0089,
-    sell_out=-.0089,
     sell_trigbee_trigger=True,
+    use_wave_guage=False,
+    doubledowns_allowed=2,
+    close_order_today=False,
+    close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
+    
+    # Not Used
+    short_position=False,
+    revisit_trade_frequency=60,
+    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
     stagger_profits=False,
     scalp_profits=False,
     scalp_profits_timeduration=30,
     stagger_profits_tiers=1,
-    stagger_profits_tiers_scale={},
     limitprice_decay_timeduration=1,
     skip_sell_trigbee_distance_frequency=0,
     skip_buy_trigbee_distance_frequency=0,
-    ignore_trigbee_at_power=0.01,
-    short_position=False,
-    use_wave_guage=False,
-    doubledowns_allowed=2,
-    close_order_today=False,
-    close_order_today_vars={
-    'last_60sec':KOR_close_order_today_vars(take_profit=False), 
-    'last_30min':KOR_close_order_today_vars(), 
-    'last_hr':KOR_close_order_today_vars()
-    },
     use_margin=False,
-    close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
-    revisit_trade_frequency=60,
 
 ):
     return {
@@ -3277,7 +3276,6 @@ def kings_order_rules( # rules created for 1Minute
         "max_profit_waveDeviation_timeduration": max_profit_waveDeviation_timeduration,
         "timeduration": timeduration,
         "take_profit": take_profit,
-        "sellout": sellout,
         "sell_out": sell_out, # migrate
         "sell_trigbee_trigger": sell_trigbee_trigger,
         "stagger_profits": stagger_profits,
@@ -3296,7 +3294,6 @@ def kings_order_rules( # rules created for 1Minute
         'use_wave_guage': use_wave_guage,
         'doubledowns_allowed': doubledowns_allowed,
         'close_order_today': close_order_today,
-        "close_order_today_vars": close_order_today_vars,
         "use_margin": use_margin,
         "revisit_trade_frequency": revisit_trade_frequency,
         'close_order_today_allowed_timeduration': close_order_today_allowed_timeduration,
@@ -3387,7 +3384,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=360,
                                     take_profit=.08,
-                                    sellout=-.04,
+                                    sell_out=-.04,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3414,7 +3411,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=10,
                                     timeduration=320,
                                     take_profit=.3,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3441,7 +3438,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
                                     take_profit=.05,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3468,7 +3465,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
                                     take_profit=.05,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3495,7 +3492,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
                                     take_profit=.07,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3522,7 +3519,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
                                     take_profit=.10,
-                                    sellout=-.05,
+                                    sell_out=-.05,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3591,7 +3588,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=120,
                                     take_profit=.005,
-                                    sellout=-.089,
+                                    sell_out=-.089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3617,7 +3614,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=320,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3643,7 +3640,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3668,7 +3665,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3693,7 +3690,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3718,7 +3715,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
                                     take_profit=.05,
-                                    sellout=-.015,
+                                    sell_out=-.015,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,

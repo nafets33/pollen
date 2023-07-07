@@ -3,6 +3,7 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import uvicorn
+from chess_piece.king import get_ip_address
 
 load_dotenv()
 
@@ -30,4 +31,6 @@ def check():
 
 
 if __name__ == '__main__':
-    uvicorn.run(app)
+    ip_address = get_ip_address()
+    print("IP Address:", ip_address)
+    uvicorn.run(app, host=ip_address, port=8000) # '10.3.144.157'

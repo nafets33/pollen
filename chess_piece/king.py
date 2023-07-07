@@ -12,6 +12,7 @@ import hydralit_components as hc
 import pandas as pd
 import aiohttp
 import pytz
+import socket
 import ipdb
 # from pollenq_pages.queens_conscience import queens_conscience
 # from custom_button import cust_Button
@@ -25,6 +26,13 @@ import ipdb
 
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
+
+
+def get_ip_address():
+    hostname = socket.gethostname()
+    ip_address = socket.gethostbyname(hostname)
+    return ip_address
+
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
     return datetime.now(tz).strftime(format)
