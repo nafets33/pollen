@@ -31,6 +31,7 @@ def main():
             'grid_color': 'black',
         },
         refresh_button=True,
+        graph_height=500,
     )
 
 
