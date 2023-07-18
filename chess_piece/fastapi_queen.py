@@ -102,7 +102,7 @@ def app_buy_order_request(username, prod, selected_row, default_value): # index 
      print(e)
      logging.error(("fastapi", e))
 
-def app_buy_wave_order_request(username, prod, selected_row, default_value): # index & wave_amount
+def app_buy_wave_order_request(username, prod, selected_row, ready_buy=False): # index & wave_amount
   try:
     QUEEN_KING = load_queen_App_pkl(username, prod)
     # buy_package = create_AppRequest_package(request_name='buy_orders')
@@ -119,6 +119,7 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value): # i
     'request_time': datetime.now(est),
     'app_requests_id' : f'{"theflash"}{"_"}{"waveup"}{"_app-request_id_"}{return_timestamp_string()}{datetime.now().microsecond}',
     'macd_state': trigbee,
+    'ready_buy': ready_buy,
     }
 
     QUEEN_KING['wave_triggers'].append(order_dict)
@@ -185,7 +186,11 @@ def app_Sellorder_request(username, prod, selected_row, default_value):
 
 def get_queen_orders_json(username, prod):
   
-  QUEEN = load_queen_pkl(username, prod)
+  # QUEEN = load_queen_pkl(username, prod)
+  if prod:
+    QUEEN = ReadPickleData(username + '/queen_Orders_.pkl')
+  else:
+     QUEEN = ReadPickleData(username + '/queen_Orders__sandbox.pkl')
   if len(QUEEN) == 0:
       print("Queen Failed orders")
       return pd.DataFrame()
@@ -219,8 +224,13 @@ def get_queen_orders_json(username, prod):
   # df["close_order_today"] = df["order_rules"].get('close_order_today')
   
   df = df[df['queen_order_state'].isin(['running', 'running_close', 'running_open'])]
-  print("len orders", len(df))
-  # df = df[col_view]
+  df.loc['Total', 'money'] = df['money'].sum()
+  df.loc['Total', 'honey'] = df['honey'].sum()
+  df.loc['Total', 'datetime'] = ''
+  df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
+  newIndex=['Total']+[ind for ind in df.index if ind!='Total']
+  df=df.reindex(index=newIndex)
+
   json_data = df.to_json(orient='records')
   return json_data
 
@@ -290,6 +300,11 @@ def get_queen_messages_logfile_json(username, log_file):
 
 def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves', return_piece='revrec'):
     try:
+        if prod:
+          revrec = ReadPickleData(username + '/queen_revrec.pkl').get('revrec')
+        else:
+           revrec = ReadPickleData(username + '/queen_revrec_sandbox.pkl').get('revrec')
+        # print(len(revrec))
         if len(symbols) == 0:
           symbols=['SPY']
 
@@ -347,16 +362,17 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         read_storybee=True, #kwargs.get('read_storybee')
         read_pollenstory=False, #kwargs.get('read_pollenstory')
         # st.image((os.path.join(hive_master_root(), "/custom_button/frontend/build/misc/waves.png")), width=33)
-        QUEEN_KING = load_queen_App_pkl(username, prod)
-        QUEEN = load_queen_pkl(username, prod)
-        if len(QUEEN) == 0:
-           print("Queen Failed")
-           return pd.DataFrame()
-        # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-        if return_piece == 'revrec':
-          revrec = QUEEN.get("revrec")
-        else:
-           revrec = QUEEN_KING.get("revrec")
+        # QUEEN_KING = load_queen_App_pkl(username, prod)
+        # QUEEN = load_queen_pkl(username, prod)
+        # if len(QUEEN) == 0:
+        #    print("Queen Failed")
+        #    return pd.DataFrame()
+        # # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, active_queen_order_states=RUNNING_Orders, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+        # if return_piece == 'revrec':
+        #   revrec = QUEEN.get("revrec")
+        # else:
+        #    revrec = QUEEN_KING.get("revrec")
+        # revrec = ReadPickleData(username + '/queen_revrec.pkl')
         
         # ticker_db = load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod)
         # # POLLENSTORY = ticker_db['pollenstory']
@@ -409,13 +425,19 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
 
 
 def get_account_info(username, prod):
-  QUEEN = load_queen_pkl(username, prod)
+  # QUEEN = load_queen_pkl(username, prod)
+  if prod:
+    QUEEN = ReadPickleData(username +'/queen_account_info.pkl')
+  else:
+     QUEEN = ReadPickleData(username +'/queen_account_info_sandbox.pkl')
   acct_info = QUEEN['account_info']
+  if len(acct_info) > 0:
+    honey_text = "Today" + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+    money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
 
-  honey_text = "Today" + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-  money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-
-  return f'{honey_text} {money_text}'
+    return f'{honey_text} {money_text}'
+  else:
+     return 'NO QUEEN'
 
 
 def get_queens_mind(username, prod):

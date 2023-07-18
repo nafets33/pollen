@@ -17,7 +17,7 @@ import requests
 
 # from random import randint
 import streamlit as st
-from polleq_app_auth import signin_main
+from pq_auth import signin_main
 import time
 from streamlit_extras.switch_page_button import switch_page
 import argparse
@@ -31,18 +31,18 @@ from custom_button import cust_Button
 from custom_text import custom_text, TextOptionsBuilder
 
 # import hydralit_components as hc
-from pollenq_pages.playground import PlayGround
-from pollenq_pages.queens_conscience import queens_conscience
-from pollenq_pages.queen import queen
-from pollenq_pages.account import account
-from pollenq_pages.trading_models import trading_models
-from pollenq_pages.pollen_engine import pollen_engine
+from pages.playground import PlayGround
+from pages.queens_conscience import queens_conscience
+from pages.queen import queen
+from pages.account import account
+from pages.trading_models import trading_models
+from pages.pollen_engine import pollen_engine
 import hydralit_components as hc
 from custom_grid import st_custom_grid, GridOptionsBuilder
 
 from ozz.ozz_bee import send_ozz_call
 # import sys, importlib
-# importlib.reload(sys.modules['pollenq_pages.'])
+# importlib.reload(sys.modules['pages.'])
 
 pd.options.mode.chained_assignment = None
 # https://blog.streamlit.io/a-new-streamlit-theme-for-altair-and-plotly/
@@ -618,6 +618,7 @@ def pollenq(admin_pq):
 
         # Call the function to get the IP address
         ip_address = get_ip_address()
+        st.session_state['ip_address'] = ip_address
         print("IP Address:", ip_address)
 
 
@@ -733,10 +734,10 @@ def pollenq(admin_pq):
 
             ### TOP OF PAGE
 
-            # Master Controls #
-            menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
 
             with st.sidebar:
+                # Master Controls #
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
                 with st.expander('Master Controls', True):
                     menu_buttons()
             cols = st.columns((8,2))
@@ -771,14 +772,14 @@ def pollenq(admin_pq):
                 seconds_to_market_close = 1
 
             with cols[0]:
-                print("cash")
+                # print("cash")
                 bp=acct_info['buying_power']
                 le=acct_info['last_equity']
                 pv=acct_info['portfolio_value']
                 cash=acct_info['cash']
                 fees=acct_info['accrued_fees']
                 num = cash/pv
-                num = 0 if num <=1 else num
+                # num = 0 if num <=1 else num
                 progress_bar(value=num, text=f"Cash % {round(num,2)}")
 
             with cols[1]:
@@ -812,21 +813,21 @@ def pollenq(admin_pq):
                 # mark_down_text(fontsize='23', text=f'{money_text}', font='garamond-bold-italic')
                 # page_line_seperator("3")
             
-            with cols[5]:
-                with st.expander("control buttons"):
-                    live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
-                    if live_sb_button:
-                        st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                        st.experimental_rerun()
-                    refresh_chess_board__button(QUEEN_KING)
-                    refresh_queen_controls_button(QUEEN_KING)
-                    refresh_trading_models_button(QUEEN_KING)
-                    refresh_queen_orders(QUEEN)
-                    stash_queen(QUEEN)
-                    if st.session_state['admin']:
-                        refresh_swarmqueen_workerbees(QUEEN_KING)
-                        # refresh_workerbees(QUEEN_KING)
-                        refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
+            # with cols[5]:
+                # with st.expander("control buttons"):
+                #     live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
+                #     if live_sb_button:
+                #         st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                #         st.experimental_rerun()
+                #     refresh_chess_board__button(QUEEN_KING)
+                #     refresh_queen_controls_button(QUEEN_KING)
+                #     refresh_trading_models_button(QUEEN_KING)
+                #     refresh_queen_orders(QUEEN)
+                #     stash_queen(QUEEN)
+                #     if st.session_state['admin']:
+                #         refresh_swarmqueen_workerbees(QUEEN_KING)
+                #         # refresh_workerbees(QUEEN_KING)
+                #         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
             with cols[4]:
                 # queensheart
@@ -835,7 +836,7 @@ def pollenq(admin_pq):
                 beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
                 beat_size = 66 if beat > 100 else beat
                 beat_size = 45 if beat_size < 10 else beat_size
-                cust_Button("misc/zelda-icons.gif", hoverText=f'rate {beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
+                cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
                 import subprocess
 
                 if check_fastapi_status(ip_address) == False:
@@ -880,6 +881,24 @@ def pollenq(admin_pq):
                 return tabs, func_list
 
         print('User Auth')
+        if menu_id == 'PlayGround':
+            print("PLAYGROUND")
+            switch_page("playground")
+            # PlayGround()
+        
+        if menu_id == 'QC':
+            print("QUEEN")
+            queen()
+        # if menu_id == 'TradingModels':
+        #     print("TRADINGMODELS")
+        #     trading_models()
+        if menu_id == 'Account':
+            account(st=st)
+            setup_page()
+        if menu_id == 'pollen_engine':
+            log_dir = os.path.join(st.session_state['db_root'], 'logs')
+            pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
+        
         if authorized_user and 'pollenq' in menu_id: 
             print("QueensConscience")
             # with cols[0]:
@@ -890,28 +909,27 @@ def pollenq(admin_pq):
                     refresh_workerbees(QUEENBEE, QUEEN_KING)
             if 'total_profits' not in st.session_state:
                 st.session_state['total_profits'] = False
+
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars)
 
             # with cols[1]:
             cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
  
-        if menu_id == 'QC':
-            print("QUEEN")
-            queen()
-        # if menu_id == 'TradingModels':
-        #     print("TRADINGMODELS")
-        #     trading_models()
-        if menu_id == 'PlayGround':
-            print("PLAYGROUND")
-            PlayGround()
-        if menu_id == 'Account':
-            account(st=st)
-            setup_page()
-        if menu_id == 'pollen_engine':
-            log_dir = os.path.join(st.session_state['db_root'], 'logs')
-            pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
         
-
+        with st.expander("control buttons"):
+            live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
+            if live_sb_button:
+                st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                st.experimental_rerun()
+            refresh_chess_board__button(QUEEN_KING)
+            refresh_queen_controls_button(QUEEN_KING)
+            refresh_trading_models_button(QUEEN_KING)
+            refresh_queen_orders(QUEEN)
+            stash_queen(QUEEN)
+            if st.session_state['admin']:
+                refresh_swarmqueen_workerbees(QUEEN_KING)
+                # refresh_workerbees(QUEEN_KING)
+                refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')

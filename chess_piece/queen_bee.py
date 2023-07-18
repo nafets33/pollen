@@ -15,7 +15,7 @@ import aiohttp
 from collections import defaultdict, deque
 import argparse
 from chess_piece.king import kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData
-from chess_piece.queen_hive import return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, return_ttf_remaining_budget, init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
+from chess_piece.queen_hive import return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
 
 
 """ ideas 
@@ -714,11 +714,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return {ranger: 0 for ranger in power_rangers_universe}
 
         
-        def kings_blessing_checks(trading_model, king_order_rules):
+        def kings_blessing_checks(king_order_rules, trig_action_num, time_delta, macd_tier):
 
             if "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
                 if macd_tier in king_order_rules.get("ignore_trigbee_in_macdstory_tier"):
                     # print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
+                    return True
+            elif trig_action_num > 0:
+                if time_delta < timedelta(minutes=king_order_rules['doubledown_timeduration']):
+                    # print("Trig In Action time delta not Met for Double Down")
                     return True
             else:
                 return False
@@ -739,7 +743,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             return ticker, etf_long_tier, etf_inverse_tier
 
-        def trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, time_delta, trading_model_theme, king_order_rules, wave_amo, maker_middle, order_side='buy', borrowed_funds=False, kings_blessing=True, app_trig=False, info="returns kings_blessing, order_vars"):
+        def trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, time_delta, trading_model_theme, king_order_rules, wave_amo, maker_middle, order_side='buy', borrowed_funds=False, kings_blessing=True, app_trig={'trig': False}, info="returns kings_blessing, order_vars"):
             kings_blessing = True
             order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
                                                         king_order_rules=king_order_rules, 
@@ -756,7 +760,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                                         tm_trig=tm_trig,
                                                         borrowed_funds=borrowed_funds,
                                                         )
-            if app_trig == True:
+            if app_trig.get('trig') == True:
+                # if app_trig.get('ready_buy') == True:
+                    # king_order_rules.update({'sell_trigbee_trigger_timeduration': })
+                
                 return kings_blessing, order_vars
             
             if trig_action_num > 0:
@@ -838,7 +845,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 time_delta = now_time - trig_action.iloc[-1]['datetime']
             else:
                 time_delta = now_time - datetime.now(est)
-            
+
             # how much are you allowed of the total budget
             borrowed_funds = True if star_total_budget_remaining == 0 else False
             
@@ -893,7 +900,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # print("POWERUP !!!!! ", power_up_amo)
             # wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
 
-            if kings_blessing_checks(trading_model, king_order_rules):
+            if kings_blessing_checks(king_order_rules, trig_action_num, time_delta, macd_tier):
                 charlie_bee['queen_cyle_times']['cc_knight_false'] = (datetime.now(est) - s_).total_seconds()
                 return {'kings_blessing': False}
 
@@ -972,7 +979,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     kings_blessing, order_vars = trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, 
                                                                           time_delta, trading_model_theme, king_order_rules, 
                                                                           wave_amo=wave_amo_borrow, maker_middle=maker_middle, 
-                                                                          order_side='buy', borrowed_funds=borrowed_funds, 
+                                                                          order_side='buy', borrowed_funds=True, 
                                                                           app_trig=app_trig)
                     blessings['blessings'].append(order_vars)
 
@@ -985,7 +992,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 kings_blessing, order_vars = trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, 
                                                                       time_delta, trading_model_theme, king_order_rules, wave_amo, 
                                                                       maker_middle, 
-                                                                      order_side='buy', borrowed_funds=borrowed_funds, 
+                                                                      order_side='buy', borrowed_funds=False, 
                                                                       app_trig=app_trig)
                 blessings['blessings'].append(order_vars)
             
@@ -999,8 +1006,26 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if macd_tier >=5:
                     print("powerup ", ticker_time_frame)
                     logging.info(("powerup ", ticker_time_frame, "", macd_tier))
-                    wave_amo = wave_amo + symbol_total_budget_remaining * .8
-                
+                    wave_amo = wave_amo + symbol_total_budget_remaining * .3
+
+                if wave_amo > star_total_budget_remaining:
+                    print("wave_amo exceeds stars budget, split into 2 blessings")
+                    logging.info(("wave_amo exceeds stars budget, split into 2 blessings"))
+                    wave_amo_borrow = wave_amo - star_total_budget_remaining
+                    wave_amo = star_total_budget_remaining
+
+                if wave_amo_borrow:
+                    borrowed_funds = True
+                    kings_blessing = True
+                    king_order_rules.update({'take_profit': .0034, 'scalp_profits': True, 'close_order_today': True})
+                    kings_blessing, order_vars = trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, 
+                                                                          time_delta, trading_model_theme, king_order_rules, 
+                                                                          wave_amo=wave_amo_borrow, maker_middle=maker_middle, 
+                                                                          order_side='buy', borrowed_funds=True, 
+                                                                          app_trig=app_trig)
+                    blessings['blessings'].append(order_vars)
+
+
                 ## create process of shorting when regular tickers
                 kings_blessing = True
                 kings_blessing, order_vars = trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, 
@@ -1108,15 +1133,39 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             s_time = datetime.now(est)
 
-            mkhrs = return_market_hours(trading_days=trading_days)
-            if mkhrs != 'open':
-                return False
+            # mkhrs = return_market_hours(trading_days=trading_days)
+            # if mkhrs != 'open':
+            #     return False
             
             active_tickers = QUEEN['heartbeat']['active_tickers']
             all_orders = QUEEN['queen_orders']
             active_orders = all_orders[all_orders['queen_order_state'].isin(active_queen_order_states)].copy()
             app_wave_trig_req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='wave_triggers', archive_bucket='app_wave_requests')
-            
+            app_trig = {'trig': False}
+            ready_buy = False
+            app_trig_ttf = False
+            if app_wave_trig_req.get('app_flag'):
+                print('app flag', app_wave_trig_req)
+                app_trig_ttf = app_wave_trig_req.get('ticker_time_frame')
+                ready_buy = app_wave_trig_req.get('ready_buy')
+
+            def ready_buy_star_timeduration_delay(frame_block):
+                if frame_block == '1Minute_1Day':
+                    return 60
+                elif frame_block == '5Minute_5Day':
+                    return 60 * 5
+                elif frame_block == '30Minute_1Month':
+                    return 60
+                elif frame_block == '1Hour_3Month':
+                    return 60
+                elif frame_block == '2Hour_6Month':
+                    return 60
+                elif frame_block == '1Day_1Year':
+                    return 60
+        
+                else:
+                    return 500
+
             # def global level allow trade to be considered
             # 1 stop Level of tier trading only allowed x number of trades a day until you receive day trade margin
             revrec = QUEEN['revrec']
@@ -1131,24 +1180,23 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     continue 
                 crypto = True if ticker in crypto_currency_symbols else False
                 
-                # Check Mrk Hours
-                if mkhrs != 'open':
-                    continue
+                # # Check Mrk Hours
+                # if mkhrs != 'open':
+                #     continue
 
                 """ the hunt """
                 s_time = datetime.now(est)
                 req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=[ticker])
-                active_trigs = req.get('active_trigs')   
+                active_trigs = req.get('active_trigs') 
                 all_current_trigs = req.get('all_current_trigs')
-                app_trig = False
-                if app_wave_trig_req.get('app_flag'):
-                    active_trigs = add_app_wave_trigger(active_trigs=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)      
-                    app_trig = app_wave_trig_req.get('ticker_time_frame')
+                if app_wave_trig_req.get('app_flag') == True and ticker == app_wave_trig_req['app_request']['ticker']:
+                    active_trigs = add_app_wave_trigger(active_trigs=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)
+                
                 charlie_bee['queen_cyle_times']['cc_thehunt__cc'] = (datetime.now(est) - s_time).total_seconds()
                 # Return Scenario based trades
                 # return all allocation deploys and add wave trigger if one not already there
                 try:
-                    tic_waveview = waveview[(waveview['symbol'] == ticker) and waveview['allocation_deploy'] < 0]
+                    tic_waveview = waveview[(waveview['symbol'] == ticker) & (waveview['allocation_deploy'] < 0)]
                     if len(tic_waveview) > 0:
                         ttf_buys = tic_waveview[tic_waveview['bs_position'] == 'buy']
                         ttf_sells = tic_waveview[tic_waveview['bs_position'] == 'sell']
@@ -1156,19 +1204,19 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         buy_waves_needed = ttf_buys.index.tolist()
                         sell_waves_needed = ttf_sells.index.tolist()
                         
-                        buy_waves_needed = {i: ttf_buys.at[i, 'macd_state'] for i in buy_waves_needed if i not in active_trigs.keys()}
-                        sell_waves_needed = {i: ttf_sells.at[i, 'macd_state'] for i in sell_waves_needed if i not in active_trigs.keys()}
-
+                        buy_waves_needed = {i: [ttf_buys.at[i, 'macd_state']] for i in buy_waves_needed if i not in active_trigs.keys()}
+                        sell_waves_needed = {i: [ttf_sells.at[i, 'macd_state']] for i in sell_waves_needed if i not in active_trigs.keys()}
+                        print(buy_waves_needed, sell_waves_needed)
                         active_trigs = {**active_trigs, **buy_waves_needed}
-                        active_trigs = {**active_trigs, **sell_waves_needed}
+                        # active_trigs = {**active_trigs, **sell_waves_needed}
                 except Exception as e:
-                    print(e)
+                    print("add wave failed", e)
                 try: # """ Trigger Bees"""
                     s_time = datetime.now(est)
                     for ticker_time_frame, avail_trigs in active_trigs.items():
-                        if ticker_time_frame == app_trig:
+                        if ticker_time_frame == app_trig_ttf:
                             print("app trig ", ticker_time_frame, " ", avail_trigs)
-                            app_trig = True
+                            app_trig = {'trig': True, 'ready_buy': ready_buy}
                         if len(avail_trigs) == 0:
                             continue
                         
@@ -1195,7 +1243,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             tm_trig = trig
                             trig_name, trig_wave_length = trig.split("-")
                             on_wave_buy = True if trig_wave_length != '0' else False
-                            if 'sell_cross' in trig and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
+                            if 'sell' in trig and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
                                 # ("Wants to Short Stock Scenario")
                                 continue
 
@@ -1212,6 +1260,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             ticker_trig_action = ticker_trig_In_Action_cc(active_orders=active_orders, trig=tm_trig, ticker=ticker)
                             trig_action = trig_In_Action_cc(active_orders=active_orders, trig=tm_trig, ticker_time_frame=ticker_time_frame)
                             charlie_bee['queen_cyle_times']['cc_trig_in_action'] = (datetime.now(est) - s_).total_seconds()
+                            # Protect the Knight
                             if len(ticker_trig_action) > 0 and trading_model.get('short_position') == True:
                                 print("Only 1 Trigger Allowed in ticker Shorting")
                                 continue
@@ -1438,7 +1487,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         maker_middle = best_limit_price['maker_middle']
         ask_bid_variance = current_bid / current_ask
         
-        priceinfo = {'snapshot': snap, 'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+        priceinfo = {'ticker': ticker, 'snapshot': snap, 'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
         
         return priceinfo
 
@@ -1495,13 +1544,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         current_ask = snap.latest_quote.ask_price
         current_bid = snap.latest_quote.bid_price
 
+        # current_ask = STORY_bee[f'{ticker}_1Minute_1Day']['story']['current_mind'].get('high')
+
 
         # best limit price
         best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
         maker_middle = best_limit_price['maker_middle']
         ask_bid_variance = current_bid / current_ask
         
-        priceinfo = {'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+        priceinfo = {'ticker': ticker, 'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
         
         return priceinfo
 
@@ -1881,7 +1932,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     try:
                         update_profit_mark_scale = []
                         take_profit_scale = order_rules.get('take_profit_scale')
-                        if type(take_profit_scale) is dict:
+                        if take_profit_scale is not None:
                             for profit_num, profit_take_vars in take_profit_scale.items():
                                 if profit_take_vars.get('take_mark') == False:
                                     if honey >= profit_num:
@@ -1935,7 +1986,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
                     
                     # how to consider new triggers?
-                    if sell_trigbee_trigger:
+                    sell_trigbee_trigger_timeduration = run_order.get('sell_trigbee_trigger_timeduration')
+                    sell_trigbee_trigger_timeduration = 60 if type(sell_trigbee_trigger_timeduration) != int else sell_trigbee_trigger_timeduration
+                    if sell_trigbee_trigger and time_in_trade_datetime > timedelta(seconds=sell_trigbee_trigger_timeduration): #run_order.get('sell_trigbee_trigger_timeduration')
                         if "buy" in run_order['trigname'] and "sell" in current_macd and time_in_trade_datetime.seconds > 500: 
                             # if 'use_wave_guage' in order_rules.keys():
                             logging.info(("looking to sell BUY-cross", ticker_time_frame))
@@ -2258,75 +2311,37 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         print(e, print_line_of_error())
                         print("Unable to Route Queen Order")
                         logging.error({'queen order client id': queen_order['client_order_id'], 'msg': 'unable to route queen order', 'error': str(e)})
-
-
-                def async_api_alpaca__queenOrders(queen_order__s, mkhrs): # re-initiate for i timeframe 
-
-                    async def get_queen_order_status(session, client_order_id, queen_order, ticker):
-                        async with session:
-                            try:
-                                order_status = check_order_status(api=api, client_order_id=client_order_id)
-                                return {'client_order_id': client_order_id, 'order_status': order_status, 'ticker': ticker}
-                            except Exception as e:
-                                print(e, client_order_id)
-                                logging.error((str(client_order_id), str(e)))
-                                return {'client_order_id': client_order_id, 'order_status': 'failed', 'ticker': ticker}
-                    
-                    async def main_get_order_status(queen_order__s):
-                        async with aiohttp.ClientSession() as session:
-                            return_list = []
-                            tasks = []
-                            for queen_order in queen_order__s:
-                                client_order_id = queen_order['client_order_id']
-                                ticker = queen_order['ticker']
-                                qo_crypto = True if ticker in crypto_currency_symbols else False
-                                if mkhrs != 'open':
-                                    continue # markets are not open for you
-                                tasks.append(asyncio.ensure_future(get_queen_order_status(session, client_order_id, queen_order, ticker)))
-                            original_pokemon = await asyncio.gather(*tasks)
-                            for pokemon in original_pokemon:
-                                return_list.append(pokemon)
-                            
-                            return return_list
-
-                    list_of_status = asyncio.run(main_get_order_status(queen_order__s))
-                    
-                    return list_of_status
-
                 
-                def async_api_alpaca__snapshots_priceinfo(queen_order__s, mkhrs): # re-initiate for i timeframe 
+                def async_api_alpaca__snapshots_priceinfo(queen_order__s, mkhrs, STORY_bee, api): # re-initiate for i timeframe 
 
-                    async def get_changelog(session, client_order_id, queen_order, ticker, crypto):
+                    async def get_changelog(session, ticker, api, STORY_bee):
                         async with session:
                             try:
-                                priceinfo = return_snap_priceinfo(api=api, ticker=queen_order['ticker'], crypto=crypto, exclude_conditions=exclude_conditions)
-                                return {'client_order_id': client_order_id, 'priceinfo': priceinfo, 'ticker': ticker}
+                                priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=ticker, api=api)
+                                return {'priceinfo': priceinfo, 'ticker': ticker}
                             except Exception as e:
-                                print(e, client_order_id)
-                                logging.error((str(client_order_id), str(e)))
+                                print(e)
                                 raise e
                     
-                    async def main(queen_order__s):
+                    async def main(queen_order__s, STORY_bee, api):
                         async with aiohttp.ClientSession() as session:
                             return_list = []
                             tasks = []
-                            for queen_order in queen_order__s:
-                                client_order_id = queen_order['client_order_id']
-                                ticker = queen_order['ticker']
+                            symbols = [qo['symbol'] for qo in queen_order__s]
+                            for ticker in set(symbols):
                                 crypto = True if ticker in crypto_currency_symbols else False
                                 # Continue Only if Market Open
                                 if mkhrs != 'open':
                                     continue # markets are not open for you
-                                tasks.append(asyncio.ensure_future(get_changelog(session, client_order_id, queen_order, ticker, crypto)))
+                                tasks.append(asyncio.ensure_future(get_changelog(session, ticker, api, STORY_bee)))
                             original_pokemon = await asyncio.gather(*tasks)
                             for pokemon in original_pokemon:
                                 return_list.append(pokemon)
                             
                             return return_list
 
-                    list_of_status = asyncio.run(main(queen_order__s))
-                    return list_of_status
-                
+                    list_return = asyncio.run(main(queen_order__s, STORY_bee, api))
+                    return list_return
 
                 def async_send_queen_orders__to__kingsBishop_court(queen_orders__dict, revrec): 
 
@@ -2359,12 +2374,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 # charlie_bee['queen_cyle_times']['read_funcs__QUEENORDERS_om'] = (datetime.now(est) - s_loop).total_seconds()
 
-                mkhrs = return_market_hours(trading_days=trading_days)
+                # mkhrs = return_market_hours(trading_days=trading_days)
 
                 try: # App Requests
                     s_app = datetime.now(est)
                     process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order')
-                    charlie_bee['queen_cyle_times']['app_req_om'] = (datetime.now(est) - s_app).total_seconds()
+                    charlie_bee['queen_cyle_times']['om_app_req_om'] = (datetime.now(est) - s_app).total_seconds()
                 except Exception as e:
                     print('APP: Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
                     log_error_dict = logging_log_message(log_type='error', msg='APP: Queen Order Main FAILED PROCESSING ORDER', error=str(e), origin_func='Quen Main Orders')
@@ -2382,7 +2397,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 queen_orders__index_dic = dict(zip(df['client_order_id'], df['index']))
                 df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
                 qo_active_index = df_active['index'].to_list()
-                # charlie_bee['queen_cyle_times']['app_filter_QUEENORDERS_om'] = (datetime.now(est) - s_loop).total_seconds()
                 def gather_orders_as_dict(qo_active_index):
                     queen_order__s = [] 
                     for idx in qo_active_index:
@@ -2392,16 +2406,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     return queen_order__s
                 
                 queen_order__s = gather_orders_as_dict(qo_active_index)
-                
-                if mkhrs != 'open':
-                    print("zzZzZzz")
-                    return False # markets are not open for you
-                
+                charlie_bee['queen_cyle_times']['gather_orders_as_dict'] = (datetime.now(est) - s_loop).total_seconds()
+
                 s_time_qOrders = datetime.now(est)
                 if len(queen_order__s) == 0:
                     return False
                 
-                # order_status_info = async_api_alpaca__queenOrders(queen_order__s, mkhrs)        # return {'client_order_id': client_order_id, 'order_status': order_status, 'ticker': ticker}
+                # api
                 init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
                 init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
                 api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date, symbols=False, limit=500)
@@ -2432,29 +2443,36 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             order_status_info.append(order_status)
                         except Exception as e:
                             print("ee", e)
-                charlie_bee['queen_cyle_times']['om_order_status'] = (datetime.now(est) - s_time_qOrders).total_seconds()
+                charlie_bee['queen_cyle_times']['om_order_status_api'] = (datetime.now(est) - s_time_qOrders).total_seconds()
                 
-                # s_time = datetime.now(est)
-                # priceinfo_info = async_api_alpaca__snapshots_priceinfo(queen_order__s=queen_order__s)
-                # charlie_bee['queen_cyle_times']['api_priceinfo_QUEENORDERS_om'] = (datetime.now(est) - s_time).total_seconds()
+                s_time = datetime.now(est)
+                price_info_symbols = async_api_alpaca__snapshots_priceinfo(queen_order__s, mkhrs, STORY_bee, api)
+                charlie_bee['queen_cyle_times']['om_priceinfo_api'] = (datetime.now(est) - s_time).total_seconds()
 
                 
+                # 10 SECONDS X?
                 s_time = datetime.now(est)
                 queen_orders__dict = {}
                 for idx in qo_active_index:
+                    s_b1 = datetime.now(est)
                     # Queen Order Local Vars
                     run_order = QUEEN['queen_orders'].loc[idx].to_dict()
                     runorder_client_order_id = run_order['client_order_id']
                     ticker = run_order['ticker_time_frame'].split("_")[0]
                     crypto = True if ticker in crypto_currency_symbols else False
-                    if runorder_client_order_id =='close__2-run__MSFT-buy_cross-0-8531-23-07-03 21.10.-23-07-03 44.10.':
-                        print("c here")
                     
                     try:
-                        if mkhrs != 'open':
-                            continue # markets are not open for you
 
-                        priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'], api=api)
+                        # priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'], api=api)
+                        # priceinfo = [pi for pi in price_info_symbols if pi['ticker'] == ticker][0].get('priceinfo')
+                        priceinfo = False
+                        for pi in price_info_symbols:
+                            if pi['ticker'] == run_order.get('symbol'):
+                                priceinfo = pi['priceinfo']
+                        if priceinfo == False:
+                            print("pi failed", ticker)
+                            priceinfo = return_snap_priceinfo__pollenData(STORY_bee=STORY_bee, ticker=run_order['ticker'], api=api)
+                        
                         order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
                         # Process Queen Order States
                         if len(order_status) > 0:
@@ -2503,26 +2521,30 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 charlie_bee['queen_cyle_times']['om_loop_queen_orders__om'] = (datetime.now(est) - s_time).total_seconds()
 
                 if len(queen_orders__dict) > 0 :
-                    s_time_qOrders = datetime.now(est)
-                    king_bishop_queen_order__EvalOrder = async_send_queen_orders__to__kingsBishop_court(queen_orders__dict, revrec)
-                    charlie_bee['queen_cyle_times']['async_kingsBishop__queenOrders__om'] = (datetime.now(est) - s_time_qOrders).total_seconds()
+                    pass
+                else:
+                    return False
 
-                    for king_eval_order in king_bishop_queen_order__EvalOrder:
-                        if king_eval_order['bee_sell']:
-                                execute_order(QUEEN=QUEEN,
-                                blessing=king_eval_order['bishop_keys'],
-                                king_resp=False, 
-                                king_eval_order=king_eval_order,
-                                side='sell',
-                                order_type=king_eval_order['bishop_keys']['order_type'],
-                                trading_model=None,
-                                ticker=king_eval_order['bishop_keys']['ticker'], 
-                                ticker_time_frame=king_eval_order['bishop_keys']['ticker_time_frame'],
-                                trig=king_eval_order['bishop_keys']['trigname'], 
-                                run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
-                                crypto=king_eval_order['bishop_keys']['qo_crypto'],
-                                app_request=king_eval_order['app_request']
-                            )
+                s_time_qOrders = datetime.now(est)
+                king_bishop_queen_order__EvalOrder = async_send_queen_orders__to__kingsBishop_court(queen_orders__dict, revrec)
+                charlie_bee['queen_cyle_times']['om_async_kingsBishop__queenOrders__om'] = (datetime.now(est) - s_time_qOrders).total_seconds()
+
+                for king_eval_order in king_bishop_queen_order__EvalOrder:
+                    if king_eval_order['bee_sell']:
+                            execute_order(QUEEN=QUEEN,
+                            blessing=king_eval_order['bishop_keys'],
+                            king_resp=False, 
+                            king_eval_order=king_eval_order,
+                            side='sell',
+                            order_type=king_eval_order['bishop_keys']['order_type'],
+                            trading_model=None,
+                            ticker=king_eval_order['bishop_keys']['ticker'], 
+                            ticker_time_frame=king_eval_order['bishop_keys']['ticker_time_frame'],
+                            trig=king_eval_order['bishop_keys']['trigname'], 
+                            run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
+                            crypto=king_eval_order['bishop_keys']['qo_crypto'],
+                            app_request=king_eval_order['app_request']
+                        )
                 
                 charlie_bee['queen_cyle_times']['full_loop_queenorderS__om'] = (datetime.now(est) - s_loop).total_seconds()
                 
@@ -2578,8 +2600,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['available_tickers']])
 
             QUEEN['heartbeat']['active_tickers'] = [i for i in ticker_set if i in ticker_allowed]
+            
+            if 'active_tickerStars' in QUEEN['heartbeat'].keys():
+                print('clean heart')
+                QUEEN['heartbeat'].pop('active_tickerStars')
 
             new_active = QUEEN['heartbeat']['available_tickers']
+
+            # if 'story_lastseen' not in 
+            # QUEEN['heartbeat']['story_lastseen'].update({i: datetime.now(est) for i in QUEEN['heartbeat']['available_tickers'].keys()})
             if original_state != new_active:
                 print('added dropped / updated tickers')
                 added_list = []
@@ -2600,7 +2629,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 QUEEN['heartbeat']['added_list'] = added_list
                 QUEEN['heartbeat']['dropped_list'] = dropped_list
-                PickleData(PB_QUEEN_Pickle, QUEEN)
 
             return QUEEN
         except Exception as e:
@@ -2742,9 +2770,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         while True:
             s = datetime.now(est)
             # Should you operate now? I thnik the brain never sleeps ?
+            mkhrs = return_market_hours(trading_days=trading_days)
+            if mkhrs != 'open':
+                print("ZzzzZZzzzZzzz")
+                time.sleep(60)
+                continue # markets are not open for you
 
             if queens_chess_piece.lower() == 'queen': # Rule On High
-                seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds()
+                seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
                 
                 """ The Story of every Knight and their Quest """
                 s = datetime.now(est)
@@ -2771,7 +2804,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 QUEEN['portfolio'] = portfolio
                 acct_info = refresh_account_info(api=api)['info_converted']
                 QUEEN['account_info'] = acct_info
-                PickleData(os.path.join(os.path.dirname(QUEEN.get('source')), 'queen_account_info.pkl'), {'acct_info': acct_info})
+                # PickleData(os.path.join(os.path.dirname(QUEEN.get('source')), 'queen_account_info.pkl'), {'acct_info': acct_info})
+                PickleData(os.path.join(PB_account_info_PICKLE + 'queen_account_info.pkl'), {'acct_info': acct_info})
+                # print(os.path.dirname(QUEEN.get('source')))
+                # print(QUEEN.get('source'))
                 charlie_bee['queen_cyle_times']['cc_block1_account'] = (datetime.now(est) - s_time).total_seconds()
 
                 """Rev Rec"""

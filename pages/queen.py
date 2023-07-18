@@ -22,7 +22,7 @@ import sqlite3
 import time
 from custom_button import cust_Button
 
-from polleq_app_auth import signin_main
+from pq_auth import signin_main
 # import requests
 # from requests.auth import HTTPBasicAuth
 from chess_piece.app_hive import download_df_as_CSV, create_AppRequest_package, standard_AGgrid, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, trigger_airflow_dag, send_email, queen__account_keys, progress_bar, queen_order_flow, mark_down_text, click_button_grid, nested_grid, mark_down_text, page_line_seperator, write_flying_bee, hexagon_gif, local_gif, flying_bee_gif, pollen__story

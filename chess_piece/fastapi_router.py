@@ -76,12 +76,21 @@ def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(
     return JSONResponse(content="ssuccess")
 
 @router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
-def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    app_buy_wave_order_request(username, prod, selected_row, default_value)
+    app_buy_wave_order_request(username, prod, selected_row, ready_buy=False)
+    return JSONResponse(content="ssuccess")
+
+@router.post("/queen_buy_wave_orders__ready_buy", status_code=status.HTTP_200_OK)
+def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+
+    app_buy_wave_order_request(username, prod, selected_row, ready_buy=True)
     return JSONResponse(content="ssuccess")
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)

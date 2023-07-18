@@ -69,12 +69,12 @@ def read_backtest_folder_assert_insight(backtest_folder):
                 # print("{}, {}, {}, {}, {}, {}".format(ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
     print(df.head(5))
     if use_blocktime:   
-        df.to_csv("backtesting/macd_grid_search_blocktime.csv")
+        df.to_csv("backtesting/macd_grid_search_blocktime.txt")
     else:
-        df.to_csv("backtesting/macd_grid_search.csv")
+        df.to_csv("backtesting/macd_grid_search.txt")
 
     ## back test analysis results ##
-    back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.csv')
+    back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.txt')
     df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
     df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
     for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
@@ -102,7 +102,7 @@ def read_backtest_folder_assert_insight(backtest_folder):
     df_top5 = pd.concat(results)
     df_top5_results = pd.concat(results_top)
 
-    df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting') + '/macd_backtest_analysis.csv')
+    df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting') + '/macd_backtest_analysis.txt')
 
     e = datetime.now()
     run_time = (e-s)

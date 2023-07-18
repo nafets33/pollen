@@ -25,8 +25,8 @@ import asyncio
 # import requests
 # from requests.auth import HTTPBasicAuth
 from chess_piece.app_hive import download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
-from chess_piece.king import workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_ttf_remaining_budget, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
+from chess_piece.king import get_ip_address, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
+from chess_piece.queen_hive import kings_order_rules, wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -74,6 +74,7 @@ page = 'QueensConscience'
 
 def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars):
 
+    # print("here")
     # from random import randint
     main_root = hive_master_root() # os.getcwd()  # hive root
     load_dotenv(os.path.join(main_root, ".env"))
@@ -558,8 +559,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 st.error("Chess Piece Name must be Unique")
                 st.stop()
             with st.form('new qcp'):
-                qcp = setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp=None, new_piece=qcp, ticker_allowed=ticker_allowed, themes=themes, headers=0)
                 if st.form_submit_button('Add New Piece'):
+                    qcp = setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp=None, new_piece=qcp, ticker_allowed=ticker_allowed, themes=themes, headers=0)
                     QUEEN_KING[qcp_bees_key][qcp.get('piece_name')] = qcp
                     PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
                     st.success("New Piece Added Refresh")
@@ -1365,9 +1366,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     PickleData(PB_App_Pickle, QUEEN_KING)
                 st.write("buy_orders")
                 st.write(QUEEN_KING['buy_orders'])
-                
-                st.write("Heart")
-                st.write(QUEEN['heartbeat'])
+
             
             with cols[1]:
                 if st.button("clear all queen_sleep", key=f'button_b'):
@@ -1430,12 +1429,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             with st.expander("backtesting"):
                 cols = st.columns((1,1,3))
                 with cols[0]:
-                    back_test_blocktime = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+                    # back_test_blocktime = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+                    back_test_blocktime = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.txt'))
                     st.write(back_test_blocktime)
 
                 with cols[0]:
                     len_divider = st.slider(label=f'back test len to avg', key=f'len_divider', min_value=int(1), max_value=int(10), value=3)
-                back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.csv')
+                back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.txt')
                 df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
                 df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
                 for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
@@ -1466,10 +1466,11 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 df_top5_results = pd.concat(results_top)
 
                 with cols[1]:
+                    st.write("top ", len_divider)
                     standard_AGgrid(df_top5_results)
                 with cols[2]:
                     if st.button("write analysis results"):
-                        df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+                        df_top5_results.to_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.txt'))
                         st.success("Saved")
                 standard_AGgrid(df_top5)
 
@@ -1699,85 +1700,94 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             st.write("KOR PENDING WORK")
 
 
-        def order_grid(KING):
+        def order_grid(KING, ip_address):
             gb = GridOptionsBuilder.create()
             gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-            gb.configure_default_column(column_width=100, resizable=True,
-                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
-            flash_def = {
-                'pinned':'left',
-                'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                'enableCellChangeFlash': True,
-                # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                }
+            gb.configure_default_column(column_width=100, resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
+
             #Configure index field
             gb.configure_index('client_order_id')
             gb.configure_theme('ag-theme-material')
-            honey_options = {'pinned': 'left',
-                            'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
-                            'custom_currency_symbol':"%"
-                                        }
-            gb.configure_column('honey', honey_options)
-            gb.configure_column('money',flash_def, header_name="$Money")
-            gb.configure_column('symbol', {"filter": True, 
-                                        'suppressMenu': False,
-                                        # 'editable': True,
-                                        })            # gb.configure_column('Sell Button', {'pinned': 'right'})
-            gb.configure_column('Star Time',
-                                {
-                                    # "wrapText": True,
-                                    # "autoHeight": True,
-                                    # "wrapHeaderText": True,
-                                    # "autoHeaderHeight": True,
-                                    'initialWidth': 168,
-                                    "sortable":True
-                                })
-            gb.configure_column('trigname', {'initialWidth': 140,})
-            gb.configure_column('Current MACD') 
-            gb.configure_column('datetime',
-                                {'type': ["dateColumnFilter", "customDateTimeFormat"],
-                                "custom_format_string": "MM/dd/yy HH:mm"})
-            gb.configure_column('honey_time_in_profit', {'hide': True})
-            gb.configure_column('filled_qty')
-            gb.configure_column('qty_available')
-            gb.configure_column('filled_avg_price', {'hide': True})
-            gb.configure_column('cost_basis', {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                            #    'custom_currency_symbol':"$",
-                                            "sortable":True
+
+
+            def config_cols():
+                money_def = {
+                    'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                    'enableCellChangeFlash': True,
+                    'pinned':'right',
+                    }
+                honey_options = {'pinned': 'left',
+                                 'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                                 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                                 'custom_currency_symbol':"%",
                                             }
-                                )
-            gb.configure_column('wave_amo', {'hide': True})
-            gb.configure_column('order_rules', {'hide': True, "editable":True, 'cellEditorPopup': True,
-    'cellEditor': 'agLargeTextCellEditor',
-    'cellEditorParams': {
-      'maxLength': 1000,
-      'rows': 10,
-      'cols': 50,
-    }, 'flex':2})
-            # gb.configure_column('take_profit', {"wrapText": True})
-            gb.configure_column('client_order_id')
-            # gb.configure_column('borrowed_funds')
-            gb.configure_column('queen_order_state', {"cellEditorParams": {"values": active_order_state_list},
-                                                    "editable":True,
-                                                    "cellEditor":"agSelectCellEditor",
-                                                    })
-            gb.configure_column('row_color', {"hide": True})
-            
-            gb.configure_column('borrowed_funds', {
-                # 'cellEditorPopup':False,
-                "editable":True,
-                # "cellEditor":"agSelectCellEditor",
-            })
+                return {
+                        'honey': honey_options,
+                        'money': money_def,
+                        'symbol': {"filter": True, 
+                                                    'suppressMenu': False,
+                                                    # 'editable': True,
+                                                    },          # gb.configure_column('Sell Button', {'pinned': 'right'})
+                        'Star Time':
+                                            {
+                                                # "wrapText": True,
+                                                # "autoHeight": True,
+                                                # "wrapHeaderText": True,
+                                                # "autoHeaderHeight": True,
+                                                'initialWidth': 168,
+                                                "sortable":True
+                                            },
+                        'trigname': {'initialWidth': 140,},
+                        'Current MACD': {},
+                        'datetime':
+                                {'type': ["dateColumnFilter", "customDateTimeFormat"],
+                                "custom_format_string": "MM/dd/yy HH:mm"},
+                        'filled_qty': {},
+                        'qty_available': {},
+                        'borrowed_funds': {
+                                        # 'cellEditorPopup':False,
+                                        "editable":True,
+                                        # "cellEditor":"agSelectCellEditor",
+                                    },
+                        'queen_order_state': {"cellEditorParams": {"values": active_order_state_list},
+                                                                            "editable":True,
+                                                                            "cellEditor":"agSelectCellEditor",
+                                                                            },
+                        'client_order_id': {},
+                        'order_rules': {        'initialWidth': 100,
+                                                "editable":True, 'cellEditorPopup': True,
+                                                'cellEditor': 'agLargeTextCellEditor',
+                                                'cellEditorParams': {
+                                                'maxLength': 1000,
+                                                'rows': 10,
+                                                'cols': 50,
+                                                }, },
+                        'cost_basis': {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                                    #    'custom_currency_symbol':"$",
+                                                                    "sortable":True,
+                                                                    "pinned": 'right',
+                                                                    'initialWidth': 115,
+                                                                    },
+                                }
+
+            config_cols = config_cols()
+            for col, config_values in config_cols.items():
+                gb.configure_column(col, config_values)
+            mmissing = [i for i in kings_order_rules().keys() if i not in config_cols.keys()]
+            if len(mmissing) > 0:
+                for col in mmissing:
+                    gb.configure_column(col, {'hide': True})
+
             go = gb.build()
             
 
             refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
             # print(seconds_to_market_close, refresh_sec)
-
+            # print(f'http://{ip_address}:8000/api/data/update_orders')
             st_custom_grid(
                 username=KING['users_allowed_queen_emailname__db'].get(client_user), 
                 api="http://127.0.0.1:8000/api/data/queen",
-                api_update="http://127.0.0.1:8000/api/data/update_orders",
+                api_update=f'http://{ip_address}:8000/api/data/update_orders',
                 refresh_sec=refresh_sec, 
                 refresh_cutoff_sec=seconds_to_market_close, 
                 prod=st.session_state['production'],
@@ -1787,27 +1797,27 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 api_key=os.environ.get("fastAPI_key"),
                 filter={"status": "running", "para1": "value1"},
                 buttons=[{'button_name': 'sell',
-                        'button_api': "http://127.0.0.1:8000/api/data/queen_sell_orders",
+                        'button_api': f'http://{ip_address}:8000/api/data/queen_sell_orders',
                         'prompt_message': 'Select Qty to Sell',
                         'prompt_field': "qty_available",
                         'col_headername': 'Sell button',
                         'col_width':100,
                         'pinned': 'left'
                         },
-                        {'button_name': 'Order Rules',
-                        'button_api': None,
-                        'prompt_message': 'message2',
-                        'prompt_field': 'order_rules',
-                        'col_headername': 'Order Rules',
-                        'col_width':89,
-                        'pinned': 'right',
-                        },
+                        # {'button_name': 'Order Rules',
+                        # 'button_api': None,
+                        # 'prompt_message': 'message2',
+                        # 'prompt_field': 'order_rules',
+                        # 'col_headername': 'Order Rules',
+                        # 'col_width':89,
+                        # 'pinned': 'right',
+                        # },
                         ],
                 grid_height='300px',
             )
 
         
-        def wave_grid(revrec, symbols, key='default', active=False):
+        def wave_grid(revrec, symbols, ip_address, key='default', active=False):
             refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
@@ -1830,7 +1840,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                                     'initialWidth':123,
                                     },
-                        'star_at_play': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                        'star_at_play': {'header_name':'At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
@@ -1838,7 +1848,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
-                        'star_at_play_borrow': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                        'star_at_play_borrow': {'header_name':'Borrow Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
@@ -1864,8 +1874,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             # st.write("buy waves")
             st_custom_grid(
                 username=KING['users_allowed_queen_emailname__db'].get(client_user), 
-                api="http://127.0.0.1:8000/api/data/wave_stories",
-                api_update="http://127.0.0.1:8000/api/data/update_orders",
+                api=f'http://{ip_address}:8000/api/data/wave_stories',
+                api_update= f'http://{ip_address}:8000/api/data/update_orders',
                 refresh_sec=refresh_sec, 
                 refresh_cutoff_sec=seconds_to_market_close, 
                 prod=st.session_state['production'],
@@ -1880,20 +1890,21 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 read_storybee = True,
                 symbols=symbols,
                 buttons=[{'button_name': 'buy',
-                        'button_api': "http://127.0.0.1:8000/api/data/queen_buy_wave_orders",
+                        'button_api': f'http://{ip_address}:8000/api/data/queen_buy_wave_orders',
                         'prompt_message': 'Buy Wave',
                         'prompt_field': 'macd_state',
                         'col_headername': 'Buy Waves',
                         'col_width':100,
                         'pinned': 'left',
                         },
-                        # {'button_name': 'button2',
-                        # 'button_api': "api2",
-                        # 'prompt_message': 'message2',
-                        # 'prompt_field': 'None',
-                        # 'col_headername': 'Sell button',
-                        # 'col_width':100,
-                        # },
+                        {'button_name': 'RBuy',
+                        'button_api': f'http://{ip_address}:8000/api/data/queen_buy_wave_orders__ready_buy',
+                        'prompt_message': 'Ready Buy Wave',
+                        'prompt_field': 'macd_state',
+                        'col_headername': 'Ready Buy',
+                        'col_width':100,
+                        'pinned': 'left',
+                        },
                         ],
                 grid_height='300px',
             ) 
@@ -1983,7 +1994,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             return True
 
 
-        def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api="http://127.0.0.1:8000/api/data/queen_messages_logfile", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+        def queen_messages_logfile_grid(KING, log_file, grid_key, f_api, varss={'seconds_to_market_close': None, 'refresh_sec': None}):
             gb = GridOptionsBuilder.create()
             gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
             gb.configure_default_column(column_width=100, resizable=True,
@@ -2150,12 +2161,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
         if len(ticker_db_errors) > 0:
             st.error("symbol errors")
             st.write(ticker_db_errors)
-
         trading_days = hive_dates(api=api)['trading_days']
         mkhrs = return_market_hours(trading_days=trading_days)
         seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
         seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
-
+        # ip_address = get_ip_address()
+        ip_address = st.session_state['ip_address']
+        # print("ip", ip_address)
         # return__snapshot__latest_PriceInfo()
         with st.spinner("Refreshing"): # ozzbot
 
@@ -2175,7 +2187,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
                     # if st.button("backtesting"):
                     backtesting()
-                    queen_triggerbees()
+                    # queen_triggerbees()
                     if st.session_state['admin']:
                         if st.button("Yahoo Return Fin.Data Job"):
                             with st.spinner("running yahoo.Fin.Data job"):
@@ -2288,7 +2300,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             if st.session_state['orders']:
                                 cols = st.columns((3,2))
                                 with cols[0]:
-                                    order_grid(KING)
+                                    order_grid(KING, ip_address)
                                     # with st.expander("Queens Thoughts"):
                                     #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
 
@@ -2296,7 +2308,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     # with st.expander("Waves", True):
                                     symbols = QUEEN['heartbeat'].get('active_tickers')
                                     symbols = ['SPY'] if len(symbols) == 0 else symbols
-                                    wave_grid(revrec=revrec, symbols=symbols, key=f'{"wb"}{symbols}{"orders"}', active=True)
+                                    wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
                                 refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
                                 cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
                                         prod=prod,
@@ -2336,7 +2348,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
                             with st.expander(log_file):
                                 log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                                queen_messages_logfile_grid(KING, log_file=log_file, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                                queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
                         if col_name == 'refresh_bee':
                             cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText=None, key='bottom_page')
                 

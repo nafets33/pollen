@@ -3,7 +3,7 @@ from streamlit_extras.stoggle import stoggle
 from PIL import Image
 import subprocess
 from custom_grid import st_custom_grid
-from polleq_app_auth import signin_main
+from pq_auth import signin_main
 from chess_piece.queen_hive import print_line_of_error, return_Ticker_Universe, stars
 from chess_piece.app_hive import queen_order_flow, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
 from chess_piece.king import master_swarm_KING, hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data

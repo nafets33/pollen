@@ -334,7 +334,7 @@ def init_queen(queens_chess_piece):
         "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id"),
         "portfolio": {},
         "heartbeat": {
-            "active_tickerStars": {},
+            # "active_tickerStars": {},
             "available_tickers": [],
             "active_tickers": [],
             "available_triggerbees": [],
@@ -600,6 +600,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         except Exception as e:
             print(e)
             return x  
+    
     def return_symbol_from_ttf(x):
         try:
             return x.split("_")[0]
@@ -715,16 +716,15 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 for ticker_time_frame in df_stars.index.to_list():
                     star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
                     star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
-                    ttf_remaining_budget, remaining_budget_borrow = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                    ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis = return_ttf_remaining_budget(QUEEN=QUEEN, 
                                                                        total_budget=star_total_budget,
                                                                        borrow_budget=star_borrow_budget,
                                                                        ticker_time_frame=ticker_time_frame, 
                                                                        active_queen_order_states=active_queen_order_states)
                     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
                     df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
-
-        df_stars['star_at_play'] = df_stars['star_total_budget'] - df_stars['remaining_budget']
-        df_stars['star_at_play_borrow'] = df_stars['star_borrow_budget'] - df_stars['remaining_budget_borrow']
+                    df_stars.at[ticker_time_frame, 'star_at_play'] = budget_cost_basis
+                    df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
 
         # Wave Analysis 3 triforce view
         # wave_analysis, storygauge, waveview = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
@@ -739,7 +739,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
 
         waveview_buy = waveview[waveview['macd_state'].str.contains('buy')]
-        waveview_sell = waveview[~waveview['macd_state'].str.contains('sell')]
+        waveview_sell = waveview[waveview['macd_state'].str.contains('sell')]
 
         wave_analysis['star'] = wave_analysis.index
         wave_analysis_ = wave_analysis[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True)
@@ -754,30 +754,23 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         wave_analysis_length_sell = wave_analysis_down[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True)
         wave_analysis_length_sell = wave_analysis_length_sell.set_index('star')
 
+        for ttf in waveview.index.to_list():
+            waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
+            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
+            waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
+            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
+            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
+            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
 
         for ttf in waveview_buy.index:
             # print(wave_analysis.at[ttf, 'star_avg_time_to_max_profit'][0])
             waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_.loc[ttf].get('star_avg_time_to_max_profit')
             waveview.at[ttf, 'star_avg_length'] = wave_analysis_length.loc[ttf].get('star_avg_length')
-            waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
-            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
-            waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
-            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
-            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
-            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
-
-
 
         for ttf in waveview_sell.index:
             # print(wave_analysis.at[ttf, 'star_avg_time_to_max_profit'][0])
             waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_sell.loc[ttf].get('star_avg_time_to_max_profit')
             waveview.at[ttf, 'star_avg_length'] = wave_analysis_length_sell.loc[ttf].get('star_avg_length')
-            waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
-            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
-            waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
-            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
-            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
-            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
 
        
         # power on current deviation
@@ -894,7 +887,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
                 # print("All Budget Used")
                 remaining_budget_borrow = 0
         
-        return remaining_budget, remaining_budget_borrow
+        return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis
     except Exception as e:
         print(e)
         print_line_of_error()
@@ -3031,7 +3024,7 @@ def return_market_hours(trading_days, crypto=False):
     s = datetime.now(est)
     s_iso = s.isoformat()[:10]
     mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = s.replace(hour=1, minute=1, second=1)
+    mk_open = s.replace(hour=9, minute=30, second=1)
     mk_close = s.replace(hour=16, minute=0, second=0)
 
     if crypto:
@@ -3234,7 +3227,10 @@ def kings_order_rules( # rules created for 1Minute
     # Not Used
     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
     ignore_trigbee_at_power=0.01,
-    
+    macd_tier_multiplier = {},
+    vwap_tier_multiplier = {},
+    rsi_tier_multiplier = {},
+
     # SELLS
     take_profit=.01,
     take_profit_scale={.05: {'take_pct': .25, 'take_mark': False}},
@@ -3244,6 +3240,7 @@ def kings_order_rules( # rules created for 1Minute
     max_profit_waveDeviation_timeduration=5,
     timeduration=120,
     sell_trigbee_trigger=True,
+    sell_trigbee_trigger_timeduration=60, # seconds
     use_wave_guage=False,
     doubledowns_allowed=2,
     close_order_today=False,
@@ -3261,16 +3258,26 @@ def kings_order_rules( # rules created for 1Minute
     skip_sell_trigbee_distance_frequency=0,
     skip_buy_trigbee_distance_frequency=0,
     use_margin=False,
-
 ):
+
+    def tier_multiplier(max_world=8, tiers=['macd', 'vwap', 'rsi'], trigbees=['buy_cross-0', 'sell_cross-0']):
+        ticker_time_frame__mp = {}
+        return_d = {}
+        for tier in tiers:
+            return_d[tier] = {}
+            for trig in trigbees:
+                if trig == 'buy_cross-0':
+                    return_d[tier][trig] = {i: .1 + (abs(i) / 1) for i in range(max_world)}
+                else:
+                    return_d[tier][trig] = {i: .1 + (abs(i) / 1) for i in range(max_world)}
+        return return_d
+
     return {
         "KOR_version": KOR_version,
-        # 1 trade if exists, double allows for 1 more trade to occur while in existance
         "theme": theme,
         "status": status,
         "trade_using_limits": trade_using_limits,
         "limitprice_decay_timeduration": limitprice_decay_timeduration,
-        # TimeHorizion: i.e. the further along time how to sell out of profit
         "doubledown_timeduration": doubledown_timeduration,
         "max_profit_waveDeviation": max_profit_waveDeviation,
         "max_profit_waveDeviation_timeduration": max_profit_waveDeviation_timeduration,
@@ -3297,6 +3304,12 @@ def kings_order_rules( # rules created for 1Minute
         "use_margin": use_margin,
         "revisit_trade_frequency": revisit_trade_frequency,
         'close_order_today_allowed_timeduration': close_order_today_allowed_timeduration,
+
+        'macd_tier_multiplier': {},
+        'vwap_tier_multiplier': {},
+        'rsi_tier_multiplier': {},
+        'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
+
     }
 
 def generate_TradingModel(

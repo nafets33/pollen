@@ -8,7 +8,7 @@ import sys
 from collections import deque
 from datetime import datetime
 from itertools import islice
-
+import time
 import aiohttp
 import ipdb
 import pandas as pd
@@ -20,11 +20,13 @@ from chess_piece.king import (
 )
 from chess_piece.queen_hive import (
     send_email,
+    return_market_hours
 )
 
 from chess_piece.workerbees import queen_workerbees
 
-# prod = True
+est = pytz.timezone("US/Eastern")
+
 def workerbees_multiprocess_pool(prod, qcp_s, num_workers=3, reset_only=False): ## improvement send in reset_only into pool
 
     if num_workers > 10:
@@ -68,7 +70,14 @@ if __name__ == '__main__':
     parser = createParser_workerbees()
     namespace = parser.parse_args()
     # qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
-    qcp_s = ["castle", "bishop", "knight"]
+    qcp_s = ["castle", "bishop", "knight", 'pawn1', 'pawn_5']
     
     prod = True if str(namespace.prod).lower() == "true" else False
-    workerbees_multiprocess_pool(prod, qcp_s, num_workers=3, reset_only=False)
+    while True:
+        seconds_to_market_open = (datetime.now(est).replace(hour=9, minute=32, second=0) - datetime.now(est)).total_seconds()
+        if seconds_to_market_open > 0:
+            print(seconds_to_market_open, " ZZzzzZZ")
+            time.sleep(3)
+        else:
+            break
+    workerbees_multiprocess_pool(prod, qcp_s, num_workers=5, reset_only=False)

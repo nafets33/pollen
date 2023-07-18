@@ -51,6 +51,7 @@ python -c "import sys; print(sys.path)"
 
 export PYTHONPATH=/home/stapinski89/pollen/pollen
 
+export PYTHONPATH=/home/stefanstapinski/ENV/pollen/pollen  # not working????
 
 ## Setting Up Sever
 fastapi: uvicorn server:app --reload
