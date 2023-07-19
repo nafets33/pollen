@@ -657,8 +657,8 @@ def pollenq(admin_pq):
                     KING = KING_req['KING']
                     PickleData(KING.get('source'), KING)
                 
+                pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
                 if st.button("test write new file"):
-                    pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
                     PickleData(pickle_file, {})
                 if st.button("test set file permissions"):
                     os.chmod(pickle_file, 0o400)
