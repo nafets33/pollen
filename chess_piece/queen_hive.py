@@ -2214,29 +2214,28 @@ def return_bars(
         )
 
 
-def return_bars_list(
-    api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False
-):
+def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False, start_date=False, end_date=False):
     try:
-        s = datetime.now(est)
         # ticker_list = ['SPY', 'QQQ']
         # chart_times = {
         #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18,
         #     "1Hour_3Month": 48, "2Hour_6Month": 72,
         #     "1Day_1Year": 250
         #     }
+        current_date = datetime.now(est).strftime("%Y-%m-%d")
+        s = datetime.now(est)
         return_dict = {}
         error_dict = {}
 
         for charttime, ndays in chart_times.items():
             timeframe = charttime.split("_")[0]  # '1Minute_1Day'
-
-            trading_days_df_ = trading_days_df[
-                trading_days_df["date"] < current_date
-            ]  # less then current date
-            start_date = trading_days_df_.tail(ndays).head(1).date
-            start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-            end_date = datetime.now(est).strftime("%Y-%m-%d")
+            if start_date and end_date:
+                pass
+            else:
+                trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
+                start_date = trading_days_df_.tail(ndays).head(1).date
+                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+                end_date = datetime.now(est).strftime("%Y-%m-%d")
 
             if exchange:
                 symbol_data = api.get_crypto_bars(
@@ -2310,11 +2309,6 @@ def return_bars_list(
                         end=end_date,
                         adjustment="all",
                     ).df
-                    # print(type(symbol_data))
-                    # if symbol_data == None:
-                    #     print("QH_None_getbars")
-                    #     error_dict[ticker_list] = {"msg": "no data returned", "time": time}
-                    #     return False
                     
                     if len(symbol_data) == 0:
                         error_dict[ticker_list] = {"msg": "no data returned", "time": time}
@@ -2328,8 +2322,6 @@ def return_bars_list(
                     symbol_data["bars"] = "bars_list"
 
                     symbol_data = symbol_data.reset_index(drop=True)
-                    # if ndays == 1:
-                    #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
                     return_dict[charttime] = symbol_data  
                 except Exception as e:

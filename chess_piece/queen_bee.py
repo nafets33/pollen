@@ -2843,6 +2843,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if (e - s).seconds > 10:
                 logging.info((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))
                 print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+                print('use price gauge') # (STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
     except Exception as errbuz:
         print("eeerbuz", errbuz)
         er, erline = print_line_of_error()

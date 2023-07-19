@@ -735,16 +735,16 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 
                                 remaing_qcp_budget = total_ticker_budget - tickers_cost_basis
 
-                                with cols[6]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['total_budget'] = st.number_input(label=f'-', key=f'{qcp}_total_budget', value=float(df_qcp.loc[qcp].get('total_budget')), help="Allocate Total.$.portfolio to share amongst tickers")
+                                # with cols[6]:
+                                #     QUEEN_KING[qcp_bees_key][qcp]['total_budget'] = st.number_input(label=f'-', key=f'{qcp}_total_budget', value=float(df_qcp.loc[qcp].get('total_budget')), help="Allocate Total.$.portfolio to share amongst tickers")
     
-                                with cols[7]:
-                                    QUEEN_KING[qcp_bees_key][qcp]['remaining_budget'] = st.number_input(label=f'-', key=f'{qcp}_remaining_budget', value=remaing_qcp_budget, help="Remaining Total Budget on Margin")
+                                # with cols[7]:
+                                #     QUEEN_KING[qcp_bees_key][qcp]['remaining_budget'] = st.number_input(label=f'-', key=f'{qcp}_remaining_budget', value=remaing_qcp_budget, help="Remaining Total Budget on Margin")
                         
-                            st.write("waveview")
-                            # st.write(waveview.loc['SPY_1Minute_1Day'])
-                            # st.write(waveview.at['SPY_1Minute_1Day', 'allocation'])
-                            st.write(waveview)
+                            # st.write("waveview")
+                            # # st.write(waveview.loc['SPY_1Minute_1Day'])
+                            # # st.write(waveview.at['SPY_1Minute_1Day', 'allocation'])
+                            # st.write(waveview)
 
                             def king_knights_of_the_round_table(revrec):
                                 st.write("Knights of the Round Table")
@@ -1781,7 +1781,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             go = gb.build()
             
 
-            refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+            refresh_sec = 5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
             # print(seconds_to_market_close, refresh_sec)
             # print(f'http://{ip_address}:8000/api/data/update_orders')
             st_custom_grid(
@@ -1813,12 +1813,12 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         # 'pinned': 'right',
                         # },
                         ],
-                grid_height='300px',
+                grid_height='250px',
             )
 
         
         def wave_grid(revrec, symbols, ip_address, key='default', active=False):
-            refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+            refresh_sec = 3 if seconds_to_market_close > 0 and mkhrs == 'open' else None
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
             gb.configure_index('star')
@@ -1861,10 +1861,11 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             config_cols = config_cols()
             for col, config_values in config_cols.items():
                 gb.configure_column(col, config_values)
+                # gb.configure_column(col, {'pinned': 'left'})
             mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
             if len(mmissing) > 0:
                 for col in mmissing:
-                    gb.configure_column(col, {'hide': True})
+                    gb.configure_column(col, {'hide': False})
 
             go = gb.build()
 
@@ -2027,7 +2028,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             return True
 
 
-        def cust_graph(username, api, x_axis, y_axis, theme_options,refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"]):
+        def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=230):
             st_custom_graph(
                 api=api,
                 x_axis={
@@ -2045,7 +2046,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 refresh_sec=refresh_sec,
                 api_key=os.environ.get("fastAPI_key"),
                 return_type=return_type,
-                # graph_height=230,
+                graph_height=graph_height,
                 # y_max=420
                 )
             return True
@@ -2173,7 +2174,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
             if authorized_user:
                 revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-                st.write(STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
+                # st.write(STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
                 clear_subconscious_Thought(QUEEN, QUEEN_KING)
 
                 if st.session_state['show_queenheart']:
@@ -2272,11 +2273,11 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
                                 
                                                                 # if st.button("showwavebutton"):
-                                st.write("df_storyview_down")                                
-                                st.write(df_storyview_down)
-                                st.write("storyview")                                
-                                st.write(df_storyview)
-                                st.write("storygauge")
+                                # st.write("df_storyview_down")                                
+                                # st.write(df_storyview_down)
+                                # st.write("storyview")                                
+                                # st.write(df_storyview)
+                                # st.write("storygauge")
                                 # print(df_storygauge.dtypes)
                                 for col in df_storygauge.columns:
                                     # print(type(df_storygauge.iloc[-1].get(col)))
@@ -2285,8 +2286,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                         df_storygauge[col] = df_storygauge[col] * 100
                                 df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['weight_L_macd_tier_position'], axis=0, vmin=-100, vmax=100)                               
                                 st.write(df_storygauge)
-                                st.write("waveview")
-                                st.write(df_waveview)
+                                # st.write("waveview")
+                                # st.write(df_waveview)
+                                print("ChessBoard")
 
                         
                         if tab_name == 'queens_mind':
@@ -2296,59 +2298,65 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     update_trading_models(QUEEN_KING)                             
                                 
                                 model_wave_results(STORY_bee)
+                                print("TRADING MODELS")
                         if tab_name == 'orders':
                             if st.session_state['orders']:
                                 cols = st.columns((3,2))
                                 with cols[0]:
                                     order_grid(KING, ip_address)
-                                    # with st.expander("Queens Thoughts"):
-                                    #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
-
-                                with cols[1]:
                                     # with st.expander("Waves", True):
                                     symbols = QUEEN['heartbeat'].get('active_tickers')
                                     symbols = ['SPY'] if len(symbols) == 0 else symbols
                                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
-                                refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-                                cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                                        prod=prod,
-                                        api="http://localhost:8000/api/data/symbol_graph",
-                                        x_axis='timestamp_est',
-                                        y_axis=[{
-                                            'field': 'close',
-                                            'name': 'CLOSE',
-                                            'color': '#332d1a'
-                                        },
-                                            {
-                                            'field': 'vwap',
-                                            'name': 'VWAP',
-                                            'color': '#2133dd'
-                                        }
-                                        ],
-                                        theme_options={
-                                            'backgroundColor': k_colors.get('default_background_color'),
-                                            'main_title': '',   # '' for none
-                                            'x_axis_title': '',
-                                            'grid_color': default_text_color,
-                                        },
-                                        refresh_sec=refresh_sec,
-                                        )
+                                    # with st.expander("Queens Thoughts"):
+                                    #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
+
+                                with cols[1]:
+                                    refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                                    cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                                            prod=prod,
+                                            api="http://localhost:8000/api/data/symbol_graph",
+                                            x_axis='timestamp_est',
+                                            y_axis=[{
+                                                'field': 'close',
+                                                'name': 'CLOSE',
+                                                'color': '#332d1a'
+                                            },
+                                                {
+                                                'field': 'vwap',
+                                                'name': 'VWAP',
+                                                'color': '#2133dd'
+                                            }
+                                            ],
+                                            theme_options={
+                                                'backgroundColor': k_colors.get('default_background_color'),
+                                                'main_title': '',   # '' for none
+                                                'x_axis_title': '',
+                                                'grid_color': default_text_color,
+                                            },
+                                            refresh_sec=refresh_sec,
+                                            refresh_button=True,
+                                            graph_height=250,
+                                            )
+                                    # with cols[1]:
+                                    logs = os.listdir(log_dir)
+                                    logs = [i for i in logs if i.endswith(".log")]
+                                    log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                                    log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                                    with st.expander(log_file):
+                                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                                        queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                                
+                                print("ORDERS")
                 
                 """ Bottom Page """
-                bottom_buttons = {'old_orders':0, 'refresh_bee':1, 'logs':2}
+                bottom_buttons = {'old_orders':0, 'refresh_bee':1}
                 cols = st.columns(len(bottom_buttons))
                 for col_name, col_n in bottom_buttons.items():
                     with cols[col_n]:
                         if col_name == 'old_orders':
                             cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                        if col_name == 'logs':
-                            logs = os.listdir(log_dir)
-                            logs = [i for i in logs if i.endswith(".log")]
-                            log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                            log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                            with st.expander(log_file):
-                                log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                                queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+
                         if col_name == 'refresh_bee':
                             cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText=None, key='bottom_page')
                 

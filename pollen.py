@@ -561,8 +561,8 @@ def pollenq(admin_pq):
         
         # with cols[6]:              
             height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
-            cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px')
-            st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' or st.session_state['waves_m'] == None else False
+            cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px', default=False)
+            st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
 
                 # if st.session_state['waves']:
                 #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -934,28 +934,7 @@ def pollenq(admin_pq):
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')
         print(f'pollenq {return_timestamp_string()}' )
-        # hide = """
-        # <style>
-        # ul.streamlit-expander {
-        #     border: 0 !important;
-        # </style>
-        # """
-        # st.markdown(hide, unsafe_allow_html=True)
-        
-        # st.markdown(
-        #     """
-        #     <style>
-        #     [data-testid="stSidebar"][aria-expanded="true"] > div:first-child {
-        #         width: 150px;
-        #     }
-        #     [data-testid="stSidebar"][aria-expanded="false"] > div:first-child {
-        #         width: 150px;
-        #         margin-left: -150px;
-        #     }
-        #     </style>
-        #     """,
-        #     unsafe_allow_html=True,
-        # )
+
         st.stop()
     except Exception as e:
         print(e, print_line_of_error(), return_timestamp_string())

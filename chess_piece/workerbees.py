@@ -796,10 +796,8 @@ def queen_workerbees(
             # for every ticker ticker write pickle file to db
             symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
 
-            # print("Pollen story path", symbols_pollenstory_dbs)
             symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee()
 
-            # print("Story bee path", symbols_STORY_bee_root)
             if backtesting:
                 macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], 
                                                     MACD_settings["slow"], 
@@ -812,10 +810,8 @@ def queen_workerbees(
             for ttf in pollens_honey["pollen_story"]:
                 ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
-                if backtesting:
-                    if backtesting_star:
-                        if backtesting_star != f'{ttime}_{tframe}':
-                            continue
+                if backtesting_star != f'{ttime}_{tframe}':
+                    continue
                 PickleData(
                     ttf_db,
                     {"pollen_story": pollens_honey["pollen_story"][ttf]},
@@ -825,10 +821,8 @@ def queen_workerbees(
             for ttf in pollens_honey["conscience"]["STORY_bee"]:
                 ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
-                if backtesting:
-                    if backtesting_star:
-                        if backtesting_star != f'{ttime}_{tframe}':
-                            continue
+                if backtesting_star != f'{ttime}_{tframe}':
+                    continue
                 PickleData(
                     ttf_db,
                     {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},
