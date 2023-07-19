@@ -658,7 +658,10 @@ def pollenq(admin_pq):
                     PickleData(KING.get('source'), KING)
                 
                 if st.button("test write new file"):
-                    PickleData(os.path.join(hive_master_root(), 'delme.pkl'), {})
+                    pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
+                    PickleData(pickle_file, {})
+                if st.button("test set file permissions"):
+                    os.chmod(pickle_file, 0o400)
             
             # with st.sidebar:
             #     st.write("testing fastpi")

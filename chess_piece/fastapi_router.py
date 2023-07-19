@@ -60,20 +60,26 @@ def load_queen_messages_logfile_json(username: str=Body(...), api_key = Body(...
 
 @router.post("/queen", status_code=status.HTTP_200_OK)
 def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    json_data = get_queen_orders_json(username, prod)
-    return JSONResponse(content=json_data)
+    try:
+        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+            print("Auth Failed", api_key)
+            return "NOTAUTH"
+        json_data = get_queen_orders_json(username, prod)
+        return JSONResponse(content=json_data)
+    except Exception as e:
+        print("router queen error", e)
 
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
 def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
-    print("router", username, prod, selected_row, default_value)
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    app_Sellorder_request(username, prod, selected_row, default_value)
-    return JSONResponse(content="ssuccess")
+    try:
+        print("router", username, prod, selected_row, default_value)
+        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+            print("Auth Failed", api_key)
+            return "NOTAUTH"
+        app_Sellorder_request(username, prod, selected_row, default_value)
+        return JSONResponse(content="ssuccess")
+    except Exception as e:
+        print("router err ", e)
 
 @router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
 def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):

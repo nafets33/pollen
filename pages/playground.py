@@ -110,46 +110,10 @@ def PlayGround():
         alpaca_symbols_dict = ticker_universe.get('alpaca_symbols_dict')
         alpaca_symbols = {k: i['_raw'] for k,i in alpaca_symbols_dict.items()}
         df = pd.DataFrame(alpaca_symbols).T
-        # ipdb.set_trace()
-        # standard_AGgrid(df)
+        st.write("all symbols")
+        with st.expander("all symbols"):
+            st.dataframe(df)
 
-        # active_order_state_list = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-        
-        # ttf_macd_wave_ratios = ReadPickleData(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
-        ttf_macd_wave_ratios = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
-        # ipdb.set_trace()
-        with st.expander("backtesting"):
-            back_test_blocktime = os.path.join(hive_master_root(), 'backtesting/macd_grid_search_blocktime.csv')
-            df_backtest = pd.read_csv(back_test_blocktime, dtype=str)
-            df_backtest['key'] = df_backtest["macd_fast"] + "_" + df_backtest["macd_slow"] + "_" + df_backtest["macd_smooth"]
-            for col in ['macd_fast', 'macd_slow', 'macd_smooth', 'winratio', 'maxprofit']:
-                df_backtest[col] = pd.to_numeric(df_backtest[col], errors='coerce')
-            df_backtest_ttf = df_backtest.groupby(['ttf', 'key', 'macd_fast', 'macd_slow', 'macd_smooth'])[['winratio', 'maxprofit']].sum().reset_index()
-            # st.dataframe(df_backtest)
-            # standard_AGgrid(df_backtest_ttf)
-            # standard_AGgrid(df_backtest)
-            stars_times = stars().keys()
-            tickers = set([i.split("_")[0] for i in df_backtest_ttf['ttf'].tolist()])
-            results = []
-            results_top = []
-            for ticker in tickers:
-                for tframes in stars_times:
-                    spy = df_backtest_ttf[df_backtest_ttf['ttf'] == f'{ticker}_{tframes}']
-                    spy_ = spy[spy.index.isin(spy['maxprofit'].nlargest(n=5).index.tolist())]
-                    mf = int(round(sum(spy_['macd_fast']) / 5,0))
-                    ms = int(round(sum(spy_['macd_slow']) / 5,0))
-                    mss = int(round(sum(spy_['macd_smooth']) / 5,0))
-                    spy_['avg_ratio'] = f'{mf}_{ms}_{mss}'
-                    spy_result = spy_[['ttf', 'avg_ratio']].drop_duplicates()
-                    results_top.append(spy_result)
-                    results.append(spy_)
-
-            df_top5 = pd.concat(results)
-            df_top5_results = pd.concat(results_top)
-
-
-            standard_AGgrid(df_top5_results)
-            standard_AGgrid(df_top5)
 
 
         
