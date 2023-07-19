@@ -75,10 +75,10 @@ if __name__ == '__main__':
     prod = True if str(namespace.prod).lower() == "true" else False
     while True:
         seconds_to_market_open = (datetime.now(est).replace(hour=9, minute=32, second=0) - datetime.now(est)).total_seconds()
-        if datetime.now(est) > datetime.now(est).replace(hour=9, minute=32, second=0):
-            print('zzz market closed')
-            time.sleep(3)
-            continue
+        # if datetime.now(est) > datetime.now(est).replace(hour=9, minute=32, second=0):
+        #     print('zzz market closed')
+        #     time.sleep(3)
+        #     continue
         if seconds_to_market_open > 0:
             print(seconds_to_market_open, " ZZzzzZZ")
             time.sleep(3)

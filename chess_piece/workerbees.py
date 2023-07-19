@@ -810,7 +810,7 @@ def queen_workerbees(
             for ttf in pollens_honey["pollen_story"]:
                 ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
-                if backtesting_star != f'{ttime}_{tframe}':
+                if backtesting and backtesting_star != f'{ttime}_{tframe}':
                     continue
                 PickleData(
                     ttf_db,
@@ -821,7 +821,7 @@ def queen_workerbees(
             for ttf in pollens_honey["conscience"]["STORY_bee"]:
                 ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
-                if backtesting_star != f'{ttime}_{tframe}':
+                if backtesting and backtesting_star != f'{ttime}_{tframe}':
                     continue
                 PickleData(
                     ttf_db,

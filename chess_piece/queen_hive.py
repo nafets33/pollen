@@ -2214,25 +2214,26 @@ def return_bars(
         )
 
 
-def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False, start_date=False, end_date=False):
+def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False, s_date=False, e_date=False):
     try:
         # ticker_list = ['SPY', 'QQQ']
         # chart_times = {
-        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18,
+        #     "1Minute_1Day": 1, "5Minute_5Day": 5, "30Minute_1Month": 18,
         #     "1Hour_3Month": 48, "2Hour_6Month": 72,
         #     "1Day_1Year": 250
         #     }
         current_date = datetime.now(est).strftime("%Y-%m-%d")
+        trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
         s = datetime.now(est)
         return_dict = {}
         error_dict = {}
 
         for charttime, ndays in chart_times.items():
             timeframe = charttime.split("_")[0]  # '1Minute_1Day'
-            if start_date and end_date:
-                pass
+            if s_date and e_date:
+                start_date = s_date
+                end_date = e_date
             else:
-                trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
                 start_date = trading_days_df_.tail(ndays).head(1).date
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
                 end_date = datetime.now(est).strftime("%Y-%m-%d")
