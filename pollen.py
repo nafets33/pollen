@@ -41,6 +41,9 @@ import hydralit_components as hc
 from custom_grid import st_custom_grid, GridOptionsBuilder
 
 from ozz.ozz_bee import send_ozz_call
+
+import subprocess
+import sys
 # import sys, importlib
 # importlib.reload(sys.modules['pages.'])
 
@@ -61,8 +64,7 @@ pd.options.mode.chained_assignment = None
 def pollenq(admin_pq):
     try:
         king_G = kingdom__global_vars()
-        import subprocess
-        import sys
+
         def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
             
             with st.form("workerbees refresh"):
@@ -110,7 +112,6 @@ def pollenq(admin_pq):
                             st.success("WorkerBees Completed")
                             e = datetime.now(est)
                             st.write("refresh time ", (e - s).total_seconds())
-
 
         def setup_page():
             try:
@@ -655,6 +656,9 @@ def pollenq(admin_pq):
                 if KING_req.get('update'):
                     KING = KING_req['KING']
                     PickleData(KING.get('source'), KING)
+                
+                if st.button("test write new file"):
+                    PickleData(os.path.join(hive_master_root(), 'delme.pkl'), {})
             
             # with st.sidebar:
             #     st.write("testing fastpi")
@@ -735,7 +739,6 @@ def pollenq(admin_pq):
                 st.stop()
 
             ### TOP OF PAGE
-
 
             with st.sidebar:
                 # Master Controls #
@@ -848,7 +851,7 @@ def pollenq(admin_pq):
                         script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
                         # Run the Python script using subprocess
                         try:
-                            subprocess.run(['python3', script_path], check=True)
+                            subprocess.run(['python', script_path], check=True)
                         except subprocess.CalledProcessError as e:
                             print(f"Error: {e}")
 
