@@ -35,7 +35,7 @@ import streamlit as st
 try:
     def send_ozz_call(query):
         openai.api_key = "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"
-        csv_main = 'ozz/Learning walks data.csv'
+        csv_main = 'ozz/Learning walks data.txt'
         vector_pickle = 'ozz/Learning walks embeddings.pickle'
 
         def doc_to_string_main():
