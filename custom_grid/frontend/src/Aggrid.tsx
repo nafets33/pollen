@@ -463,7 +463,7 @@ const AgGrid = (props: Props) => {
         toastr={toastr}
       ></MyModal>
       <div
-        style={{ flexDirection: 'row', height: '300px', width: '100' }}
+        style={{ flexDirection: 'row', height: '100%', width: '100' }}
         id='myGrid'
       >
         {(refresh_sec == undefined || refresh_sec == 0) && (
