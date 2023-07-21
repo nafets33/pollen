@@ -43,6 +43,7 @@ from chess_piece.queen_hive import (
 
 os.environ["no_proxy"] = "*"
 
+est = pytz.timezone("US/Eastern")
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
@@ -144,8 +145,8 @@ def queen_workerbees(
     def close_worker(WORKERBEE_queens):
         s = datetime.now(est)
         date = datetime.now(est)
-        date = date.replace(hour=16, minute=1)
-        if s >= date:
+        date = date.replace(hour=16, minute=0)
+        if s > date:
             logging.info("Happy Bee Day End")
             print("Great Job! See you Tomorrow")
             print("save all workers and their results")
@@ -795,10 +796,8 @@ def queen_workerbees(
             # for every ticker ticker write pickle file to db
             symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
 
-            # print("Pollen story path", symbols_pollenstory_dbs)
             symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee()
 
-            # print("Story bee path", symbols_STORY_bee_root)
             if backtesting:
                 macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], 
                                                     MACD_settings["slow"], 
@@ -811,10 +810,8 @@ def queen_workerbees(
             for ttf in pollens_honey["pollen_story"]:
                 ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
-                if backtesting:
-                    if backtesting_star:
-                        if backtesting_star != f'{ttime}_{tframe}':
-                            continue
+                if backtesting and backtesting_star != f'{ttime}_{tframe}':
+                    continue
                 PickleData(
                     ttf_db,
                     {"pollen_story": pollens_honey["pollen_story"][ttf]},
@@ -824,10 +821,8 @@ def queen_workerbees(
             for ttf in pollens_honey["conscience"]["STORY_bee"]:
                 ticker, ttime, tframe = ttf.split("_")
                 ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
-                if backtesting:
-                    if backtesting_star:
-                        if backtesting_star != f'{ttime}_{tframe}':
-                            continue
+                if backtesting and backtesting_star != f'{ttime}_{tframe}':
+                    continue
                 PickleData(
                     ttf_db,
                     {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},
@@ -887,7 +882,6 @@ def queen_workerbees(
     # """
     # )
 
-
     def queens_court__WorkerBees(prod, qcp_s, run_all_pawns=False):
         # for every ticker async init return inital chart data
         # res = Return_Init_ChartData(ticker_list=master_tickers, chart_times=star_times)
@@ -896,7 +890,7 @@ def queen_workerbees(
         if type(qcp_s) == str:
             qcp_s = [qcp_s]
         
-        MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+        MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.txt'))
         MACD_WAVES = MACD_WAVES.set_index('ttf')
 
         queen_db = os.path.join(db_root, "queen.pkl") if prod else os.path.join(db_root, "queen_sandbox.pkl")
@@ -930,6 +924,7 @@ def queen_workerbees(
             last_queen_call = {'last_call': datetime.now(est)}
 
             while True:
+
                 # if check_with_queen_frequency
                 now_time = datetime.now(est)
                 # print((now_time - last_queen_call.get('last_call')).total_seconds())
@@ -1005,6 +1000,14 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
     prod = True if str(namespace.prod).lower() == "true" else False
+    while True:
+        seconds_to_market_open = (datetime.now(est).replace(hour=9, minute=30, second=0) - datetime.now(est)).total_seconds()
+        if seconds_to_market_open > 0:
+            print(seconds_to_market_open, " ZZzzzZZ")
+            time.sleep(3)
+        else:
+            break
+    
     queen_workerbees(qcp_s=qcp_s, prod=prod)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

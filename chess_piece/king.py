@@ -12,6 +12,7 @@ import hydralit_components as hc
 import pandas as pd
 import aiohttp
 import pytz
+import socket
 import ipdb
 # from pollenq_pages.queens_conscience import queens_conscience
 # from custom_button import cust_Button
@@ -25,6 +26,13 @@ import ipdb
 
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
+
+
+def get_ip_address():
+    hostname = socket.gethostname()
+    ip_address = socket.gethostbyname(hostname)
+    return ip_address
+
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
     return datetime.now(tz).strftime(format)
@@ -502,8 +510,7 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
     # symbol ticker data # 1 all current pieces on chess board && all current running orders
     current_active_orders = return_active_orders(QUEEN=QUEEN)
     active_order_symbols = list(set(current_active_orders["symbol"].tolist()))
-    chessboard_symbols = return_QUEENs_workerbees_chessboard(
-        QUEEN_KING=QUEEN_KING)["queens_master_tickers"]
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 
     if symbols:
         symbols = symbols + active_order_symbols + chessboard_symbols
@@ -562,13 +569,13 @@ def ReadPickleData(pickle_file):
                 with open(pickle_file, "rb") as f:
                     return pickle.load(f)
             except Exception as e:
-                # print('pickleerror ', pickle_file, e)
+                print('pkl read error: ', os.path.basename(pickle_file), e, stop)
                 # logging.error(f'{e} error is pickle load')
-                if stop > 3:
+                if stop > 10:
                     print("CRITICAL read pickle failed ", e)
                     # logging.critical(f'{e} error is pickle load')
                     # send_email(subject='CRITICAL Read Pickle Break')
-                    break
+                    return ''
                 stop += 1
                 time.sleep(0.033)
 
@@ -580,9 +587,9 @@ def ReadPickleData(pickle_file):
         time.sleep(0.033)
 
 
-def print_line_of_error():
+def print_line_of_error(e='print_error_message'):
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    print(exc_type, exc_tb.tb_lineno)
+    print(e, exc_type, exc_tb.tb_lineno)
     return exc_type, exc_tb.tb_lineno
 
 def streamlit_config_colors():
@@ -591,6 +598,7 @@ def streamlit_config_colors():
         "default_text_color": "#055A6E",
         "default_font": "sans serif",
         "default_yellow_color": "#E6C93B",
+        "default_background_color": '#F3FAFD',
     }
 
 
