@@ -104,3 +104,11 @@ sudo kill -9 PID
 
 # Git
 git push origin sven-dev
+
+# create requirements from freeze
+pip freeze >> requirements.txt
+
+# view ports on mac
+netstat
+# or 
+lsof -Pn -i4

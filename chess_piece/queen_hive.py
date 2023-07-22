@@ -826,8 +826,8 @@ def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TB
 
 def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, trigbee=False, info='1 can be queried at a time until feat update to return all'):
     queen_orders = QUEEN['queen_orders']
-    # if len(queen_orders) == 1: # init only
-    #     return ''
+    if len(queen_orders) == 1: # init only
+        return ''
     if ticker_time_frame:
         orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states) & (queen_orders['ticker_time_frame'].isin([ticker_time_frame]))]
     elif ticker:

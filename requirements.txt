@@ -96,7 +96,7 @@ stocksymbol==0.0.5
 streamlit-aggrid==0.3.3
 streamlit-authenticator==0.2.1
 streamlit-extras==0.2.4
-streamlit==1.19.0
+streamlit==1.25.0
 streamlit-option-menu==0.3.2
 ta==0.10.2
 tablib==3.2.1
