@@ -186,7 +186,16 @@ const AgGrid = (props: Props) => {
             clicked: async function (field: any) {
               try {
                 const selectedRow = g_rowdata.find(row => row[index] == field)
-                if (prompt_field === 'order_rules') {
+
+                if (prompt_order_rules) {
+                  console.log('str :>> ', selectedRow[prompt_field])
+                  const str = selectedRow[prompt_field]
+                    .replace(/'/g, '"')
+                    .replace(/\n/g, '')
+                    .replace(/\s/g, '')
+                    .replace(/False/g, 'false')
+                    .replace(/True/g, 'true')
+                  const selectedField = JSON.parse(str)
                   setModalshow(true)
                   setModalData({
                     prompt_message,
@@ -200,12 +209,7 @@ const AgGrid = (props: Props) => {
                   })
                   const rules_value: any = {}
                   prompt_order_rules.map((rule: string) => {
-                    rules_value[rule] =
-                    // @ts-expect-error
-                      order_rules_default[rule] != null
-                        ? // @ts-expect-error
-                          order_rules_default[rule]
-                        : selectedRow[rule]
+                    rules_value[rule] = selectedField[rule]
                   })
                   setPromptText(rules_value)
                 } else if (prompt_field && prompt_message) {

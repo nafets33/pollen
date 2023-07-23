@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import ReactModal from 'react-modal'
 import './modal.css'
 import axios from 'axios'
-import { order_rules_default } from '../utils/order_rules'
 
 const modalStyle = {
   content: {
