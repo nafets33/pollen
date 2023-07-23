@@ -1135,6 +1135,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     def command_conscience(QUEENsHeart, QUEEN, STORY_bee, QUEEN_KING, api):
 
         try:
+            def revrec_alloc__find_missing_waves(waveview, ticker):
+                try:# revrec allocation wave decision ... Missing a Swell??
+                    tic_waveview = waveview[(waveview['symbol'] == ticker) & (waveview['allocation_deploy'] < 0)]
+                    if len(tic_waveview) > 0:
+                        ttf_buys = tic_waveview[tic_waveview['bs_position'] == 'buy']
+                        ttf_sells = tic_waveview[tic_waveview['bs_position'] == 'sell']
+                        
+                        buy_waves_needed = ttf_buys.index.tolist()
+                        sell_waves_needed = ttf_sells.index.tolist()
+                        
+                        buy_waves_needed = {i: [ttf_buys.at[i, 'macd_state']] for i in buy_waves_needed if i not in active_trigs.keys()}
+                        sell_waves_needed = {i: [ttf_sells.at[i, 'macd_state']] for i in sell_waves_needed if i not in active_trigs.keys()}
+                        # log understanding of why
+                        print(buy_waves_needed, sell_waves_needed)
+                        active_trigs = {**active_trigs, **buy_waves_needed}
+                        active_trigs = {**active_trigs, **sell_waves_needed}
+                except Exception as e:
+                    print("add wave failed", e)
 
 
             def short():
@@ -1205,23 +1223,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # Return Scenario based trades
                 # return all allocation deploys and add wave trigger if one not already there
                 
-                try:# revrec allocation wave decision ... Missing a Swell??
-                    tic_waveview = waveview[(waveview['symbol'] == ticker) & (waveview['allocation_deploy'] < 0)]
-                    if len(tic_waveview) > 0:
-                        ttf_buys = tic_waveview[tic_waveview['bs_position'] == 'buy']
-                        ttf_sells = tic_waveview[tic_waveview['bs_position'] == 'sell']
-                        
-                        buy_waves_needed = ttf_buys.index.tolist()
-                        sell_waves_needed = ttf_sells.index.tolist()
-                        
-                        buy_waves_needed = {i: [ttf_buys.at[i, 'macd_state']] for i in buy_waves_needed if i not in active_trigs.keys()}
-                        sell_waves_needed = {i: [ttf_sells.at[i, 'macd_state']] for i in sell_waves_needed if i not in active_trigs.keys()}
-                        # log understanding of why
-                        print(buy_waves_needed, sell_waves_needed)
-                        active_trigs = {**active_trigs, **buy_waves_needed}
-                        # active_trigs = {**active_trigs, **sell_waves_needed}
-                except Exception as e:
-                    print("add wave failed", e)
+                revrec_alloc__find_missing_waves(waveview=waveview, ticker=ticker)
+                
                 try: # """ Trigger Bees"""
                     s_time = datetime.now(est)
                     for ticker_time_frame, avail_trigs in active_trigs.items():
@@ -1254,8 +1257,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             tm_trig = trig
                             trig_name, trig_wave_length = trig.split("-")
                             on_wave_buy = True if trig_wave_length != '0' else False
+
+                            # Stop Symbols from shorting unless you are main_index ("Wants to Short Stock Scenario")
                             if 'sell' in trig and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
-                                # ("Wants to Short Stock Scenario")
+                                print("ticker not avail to short > short gauge >")
                                 continue
 
                             if on_wave_buy:

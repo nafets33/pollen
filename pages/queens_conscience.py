@@ -1840,6 +1840,20 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                                     'initialWidth':123,
                                     },
+                        
+                        'allocation_borrow': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                                    'initialWidth':123,
+                                    },
+                        'allocation_deploy': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                                    'initialWidth':123,
+                                    },
+                        'allocation_borrow_deploy': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                                    'initialWidth':123,
+                                    },
+
                         'star_at_play': {'header_name':'At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
@@ -2333,13 +2347,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                             graph_height=300,
                                             )
                                     # with cols[1]:
-                                    logs = os.listdir(log_dir)
-                                    logs = [i for i in logs if i.endswith(".log")]
-                                    log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                                    log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                                    with st.expander(log_file):
-                                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                                        queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                                    # logs = os.listdir(log_dir)
+                                    # logs = [i for i in logs if i.endswith(".log")]
+                                    # log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                                    # log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                                    # with st.expander(log_file):
+                                    #     log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                                    #     queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
                                 
                                 print("ORDERS")
                 

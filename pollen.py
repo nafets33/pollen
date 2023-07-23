@@ -569,6 +569,38 @@ def pollenq(admin_pq):
                 #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
 
+        def queen_messages_logfile_grid(KING, log_file, grid_key, f_api, varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+            gb = GridOptionsBuilder.create()
+            gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
+            gb.configure_default_column(column_width=100, resizable=True,
+                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
+            #Configure index field
+            gb.configure_index('idx')
+            gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
+            gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True, "sortable":True})
+            go = gb.build()
+
+            st_custom_grid(
+                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+                api=f_api,
+                api_update=None,
+                refresh_sec=varss.get('refresh_sec'), 
+                refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
+                prod=st.session_state['production'],
+                grid_options=go,
+                key=f'{grid_key}',
+
+                # kwargs from here
+                api_key=os.environ.get("fastAPI_key"),
+                buttons = [],
+
+                grid_height='300px',
+                log_file=log_file
+
+            ) 
+
+            return True
+
         
         ##### QuantQueen #####
 
@@ -616,6 +648,7 @@ def pollenq(admin_pq):
         with st.spinner("Verifying Your Scent, Hang Tight"):
             signin_main(page="pollenq")
 
+        log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
         # Call the function to get the IP address
         ip_address = get_ip_address()
@@ -763,13 +796,13 @@ def pollenq(admin_pq):
             queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
 
 
-            cols = st.columns((2,2,2,3,1,2,1,1))
+            cols = st.columns((1,3,5))
             # honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
             # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
             trading_days = hive_dates(api=api)['trading_days']
             mkhrs = return_market_hours(trading_days=trading_days)
             seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
-            seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
+            seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
             if mkhrs != 'open':
                 seconds_to_market_close = 1
 
@@ -786,20 +819,21 @@ def pollenq(admin_pq):
 # 
                     # progress_bar(value=num, text=f"Cash % {round(num,2)}")
 
-            with cols[1]:
-                try:
-                    num = pv/bp
-                    progress_bar(value=num, text=f"PVPower at Play {round(num,2)}")
-                except Exception as e:
-                    print(e)
+            # with cols[1]:
+            #     try:
+            #         num = pv/bp
+            #         progress_bar(value=num, text=f"PVPower at Play {round(num,2)}")
+            #     except Exception as e:
+            #         print(e)
             # with cols[1]:
             #     cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
             
-            with cols[2]:
+            # with cols[2]:
+            
+            
+            with cols[1]:
                 portfolio_header__QC(acct_info)
-            
-            
-            with cols[3]:
+
                 # Total Account info
                 to_builder = TextOptionsBuilder.create()
                 to_builder.configure_background_color(default_text_color)
@@ -816,7 +850,18 @@ def pollenq(admin_pq):
                             username=KING['users_allowed_queen_emailname__db'].get(client_user))            
                 # mark_down_text(fontsize='23', text=f'{money_text}', font='garamond-bold-italic')
                 # page_line_seperator("3")
-            
+
+                with cols[2]:
+                    logs = os.listdir(log_dir)
+                    logs = [i for i in logs if i.endswith(".log")]
+                    log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                    log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                    with st.expander(log_file):
+                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                        queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                                
+
+
             # with cols[5]:
                 # with st.expander("control buttons"):
                 #     live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
@@ -833,7 +878,7 @@ def pollenq(admin_pq):
                 #         # refresh_workerbees(QUEEN_KING)
                 #         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
-            with cols[4]:
+            with cols[0]:
                 # queensheart
                 print("Heart")
                 now = datetime.now(est)
@@ -850,17 +895,17 @@ def pollenq(admin_pq):
                         script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
                         # Run the Python script using subprocess
                         try:
-                            subprocess.run(['python', script_path], check=True)
+                            subprocess.run(['python', script_path, '-i',])
                         except subprocess.CalledProcessError as e:
                             print(f"Error: {e}")
 
 
             
-            with cols[6]:
-                st.button("Refresh", use_container_width=True)
-                # cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
-            with cols[7]:
-                stop_queenbee(QUEEN_KING)
+            # with cols[6]:
+            #     st.button("Refresh", use_container_width=True)
+            #     # cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
+            # with cols[7]:
+            #     stop_queenbee(QUEEN_KING)
             # page_line_seperator("1") #############################################
             
             
@@ -900,7 +945,6 @@ def pollenq(admin_pq):
             account(st=st)
             setup_page()
         if menu_id == 'pollen_engine':
-            log_dir = os.path.join(st.session_state['db_root'], 'logs')
             pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
         
         if authorized_user and 'pollenq' in menu_id: 
@@ -915,7 +959,7 @@ def pollenq(admin_pq):
                 st.session_state['total_profits'] = False
 
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars)
-
+            print("Back to Pollen")
             # with cols[1]:
             cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
  
@@ -938,6 +982,13 @@ def pollenq(admin_pq):
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')
         print(f'pollenq {return_timestamp_string()}' )
+
+        # with cols[6]:
+        st.button("Refresh", use_container_width=True)
+            # cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
+        # with cols[7]:
+        stop_queenbee(QUEEN_KING)
+
 
         st.stop()
     except Exception as e:

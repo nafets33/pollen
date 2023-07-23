@@ -147,7 +147,6 @@ def app_buy_wave_order_request(username, prod, selected_row, ready_buy=False): #
      print(e)
      logging.error(("fastapi", e))
 
-
 def app_Sellorder_request(username, prod, selected_row, default_value):
   try:
 
