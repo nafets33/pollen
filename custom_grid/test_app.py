@@ -79,14 +79,15 @@ def main():
                   },
                  {'button_name': 'button2',
                   'button_api': "api2",
-                  'prompt_message': 'message2',
-                  'prompt_field': 'honey',
+                  'prompt_message': 'edit orders',
+                  'prompt_field': 'order_rules',
                   'col_headername': 'Sell button',
                   'col_width': 100,
-                  'pinned': 'left'
+                  'pinned': 'left',
+                  'prompt_order_rules': ['theme', 'sell_out', 'take_profit'] # default to None or empty list
                   },
                  ],
-        grid_height='250px',
+        grid_height='350px',
     )
 
 

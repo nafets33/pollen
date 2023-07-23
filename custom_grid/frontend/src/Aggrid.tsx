@@ -38,6 +38,7 @@ import {
   ValueParserParams,
 } from 'ag-grid-community'
 import MyModal from './components/Modal'
+import { order_rules_default } from './utils/order_rules'
 
 type Props = {
   username: string
@@ -172,7 +173,8 @@ const AgGrid = (props: Props) => {
     console.log('buttons :>> ', buttons)
     if (buttons.length) {
       buttons.map((button: any) => {
-        const { prompt_field, prompt_message, button_api } = button
+        const { prompt_field, prompt_message, button_api, prompt_order_rules } =
+          button
         grid_options.columnDefs!.push({
           field: index,
           headerName: button['col_headername'],
@@ -184,7 +186,26 @@ const AgGrid = (props: Props) => {
             clicked: async function (field: any) {
               try {
                 const selectedRow = g_rowdata.find(row => row[index] == field)
-                if (prompt_field && prompt_message) {
+                if (prompt_field === 'order_rules') {
+                  setModalshow(true)
+                  setModalData({
+                    prompt_message,
+                    button_api: button_api,
+                    username: username,
+                    prod: prod,
+                    selectedRow: selectedRow,
+                    kwargs: kwargs,
+                    prompt_field,
+                    prompt_order_rules,
+                  })
+                  const rules_value: any = {}
+                  prompt_order_rules.map((rule: string) => {
+                    rules_value[rule] = order_rules_default[rule]
+                      ? order_rules_default[rule]
+                      : selectedRow[rule]
+                  })
+                  setPromptText(rules_value)
+                } else if (prompt_field && prompt_message) {
                   setModalshow(true)
                   setModalData({
                     prompt_message,
