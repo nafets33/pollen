@@ -327,13 +327,14 @@ def init_queen(queens_chess_piece):
         "account_info": 'init',
         "prod": "",
         "source": "na",
+        "source_account_info": 'init',
         "last_modified": datetime.now(est),
         "command_conscience": {}, ## ?
         "crypto_temp": {"trigbees": {}},
         "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id"),
-        "portfolios": {"Jq": {"total_investment": 0, "currnet_value": 0}},
+        "portfolio": {},
         "heartbeat": {
-            "active_tickerStars": {},
+            # "active_tickerStars": {},
             "available_tickers": [],
             "active_tickers": [],
             "available_triggerbees": [],
@@ -565,7 +566,7 @@ def return_ticker_qcp_index(QUEEN_KING, qcp_bees_key):
     return ticker_qcp_index
 
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}):
-    
+    s_ = datetime.now(est)
     def shape_revrec_chesspieces(dic_items, acct_info):
         df = pd.DataFrame(dic_items.items())
         df = df.rename(columns={0: 'qcp', 1: 'buying_power'})
@@ -593,8 +594,19 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         return df
     
     def return_star_from_ttf(x):
-        ticker, tframe, tperiod = x.split("_")
-        return f'{tframe}_{tperiod}'    
+        try:
+            ticker, tframe, tperiod = x.split("_")
+            return f'{tframe}_{tperiod}'
+        except Exception as e:
+            print(e)
+            return x  
+    
+    def return_symbol_from_ttf(x):
+        try:
+            return x.split("_")[0]
+        except Exception as e:
+            print(e)
+            return x  
     
     # Create/Refresh RevRec from Chess Board
     try:
@@ -605,7 +617,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         cash = acct_info.get('last_equity')
         # ttf_remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
         queen_order_states = king_G.get('RUNNING_Orders')
-        
+        board_tickers = []
         for qcp in all_workers:
             if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
                 continue
@@ -615,14 +627,14 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             qcp_borrow = float(QUEEN_KING['chess_board'][qcp]['total_borrow_power_allocation']) 
             chess_board__revrec[qcp] = qcp_power
             qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
+            board_tickers = board_tickers + qcp_tickers
             # qcp_tickers = [i for i in qcp_tickers if QUEEN_KING['chess_board'][qcp][i].get('ticker_buying_power') > 0]
             num_tickers = len(qcp_tickers)
             if num_tickers == 0:
                 print("No Tickers in Chess Piece")
                 continue
 
-            wave_analysis, df_storyguage = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=qcp_tickers)
-            QUEEN_KING['STORY_bee_wave_analysis'] = wave_analysis
+
             
             # CONFIRM TRADING MODEL Ticker Budget Allocation
             for ticker in qcp_tickers:                
@@ -657,7 +669,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         df_stars['ticker'] = df_stars['ticker_time_frame'].apply(lambda x: x.split("_")[0])
         df_stars['star'] = df_stars['ticker_time_frame'].apply(lambda x: return_star_from_ttf(x))
 
-
         for qcp in all_workers:
             # if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
             #     continue
@@ -670,8 +681,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 num_active_orders = len(active_orders)
                 ticker_cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
 
-                borrowed_orders = active_orders[active_orders['borrowed_funds'] == None].copy() if num_active_orders > 0 else pd.DataFrame()
-                budget_orders = active_orders[active_orders['borrowed_funds'] != None].copy() if num_active_orders > 0 else pd.DataFrame()
+                budget_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
+                borrowed_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
                 
                 budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
                 borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
@@ -705,20 +716,99 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 for ticker_time_frame in df_stars.index.to_list():
                     star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
                     star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
-                    ttf_remaining_budget, remaining_budget_borrow = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                    ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis = return_ttf_remaining_budget(QUEEN=QUEEN, 
                                                                        total_budget=star_total_budget,
                                                                        borrow_budget=star_borrow_budget,
                                                                        ticker_time_frame=ticker_time_frame, 
                                                                        active_queen_order_states=active_queen_order_states)
                     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
                     df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
-        
-        return {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
+                    df_stars.at[ticker_time_frame, 'star_at_play'] = budget_cost_basis
+                    df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
+
+        # Wave Analysis 3 triforce view
+        # wave_analysis, storygauge, waveview = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
+        resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
+        wave_analysis = resp.get('df_storyview')
+        wave_analysis_down = resp.get('df_storyview_down')
+        storygauge = resp.get('df_storyguage')
+        waveview = resp.get('df_waveview')
+
+        waveview['star'] = waveview.index
+        waveview['symbol'] = waveview['star'].apply(lambda x: return_symbol_from_ttf(x))
+        waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
+
+        waveview_buy = waveview[waveview['macd_state'].str.contains('buy')]
+        waveview_sell = waveview[waveview['macd_state'].str.contains('sell')]
+
+        wave_analysis['star'] = wave_analysis.index
+        wave_analysis_ = wave_analysis[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True)
+        wave_analysis_ = wave_analysis_.set_index('star')
+        wave_analysis_length = wave_analysis[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True)
+        wave_analysis_length = wave_analysis_length.set_index('star')
+
+
+        wave_analysis_down['star'] = wave_analysis_down.index
+        wave_analysis_sell = wave_analysis_down[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True)
+        wave_analysis_sell = wave_analysis_sell.set_index('star')
+        wave_analysis_length_sell = wave_analysis_down[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True)
+        wave_analysis_length_sell = wave_analysis_length_sell.set_index('star')
+
+        for ttf in waveview.index.to_list():
+            waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
+            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
+            waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
+            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
+            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
+            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
+
+        for ttf in waveview_buy.index:
+            # print(wave_analysis.at[ttf, 'star_avg_time_to_max_profit'][0])
+            waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_.loc[ttf].get('star_avg_time_to_max_profit')
+            waveview.at[ttf, 'star_avg_length'] = wave_analysis_length.loc[ttf].get('star_avg_length')
+
+        for ttf in waveview_sell.index:
+            # print(wave_analysis.at[ttf, 'star_avg_time_to_max_profit'][0])
+            waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_sell.loc[ttf].get('star_avg_time_to_max_profit')
+            waveview.at[ttf, 'star_avg_length'] = wave_analysis_length_sell.loc[ttf].get('star_avg_length')
+
+       
+        # power on current deviation
+        waveview['tmp_deivation'] = waveview['time_to_max_profit'] - waveview['star_avg_time_to_max_profit']        
+        # where we are you, tmp - len deviation
+        waveview['tmp_length_deivation'] = waveview['time_to_max_profit'] - waveview['length']
+        # len - star deviation
+        waveview['len__starmark_tmp_deviation'] = waveview['length'] - waveview['star_avg_time_to_max_profit']
+
+        waveview['tmp_deivation_multiplier'] = waveview['tmp_deivation'] / waveview['star_avg_time_to_max_profit']
+        waveview['current_tmp_len_multiplier'] = waveview['tmp_length_deivation'] / waveview['star_avg_time_to_max_profit']
+        waveview['lev_vs_starmark_tmp_multiplier'] = waveview['len__starmark_tmp_deviation'] / waveview['star_avg_time_to_max_profit']
+
+        waveview['tmp_power'] = np.where(waveview['tmp_deivation_multiplier'] < 0, waveview['star_total_budget'] * waveview['tmp_deivation_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        waveview['tmp_power_len'] = np.where(waveview['current_tmp_len_multiplier'] < 0, waveview['star_total_budget'] * waveview['current_tmp_len_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+
+        waveview['allocation_power_powerlen'] = waveview['tmp_power'] - waveview['tmp_power_len']
+        waveview['allocation'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        waveview['allocation_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+
+        waveview['allocation_borrow'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_borrow_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        waveview['allocation_borrow_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+
+
+        # rules, main budget stays on len vs starmark. add budget when past mark? if in wave deviation. 
+        # If current_tmp_deviation > tmp_multiplier, then 0. 
+        # if l == tmp and > starmark, push out starmark to + 1?
+
+
+
+        e_ = datetime.now(est)
+        return {'cycle_time': (e_-s_).total_seconds(), 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
+                'wave_analysis': wave_analysis, 'storygauge': storygauge, 'waveview': waveview}
     
     except Exception as e:
-        print_line_of_error()
-        print(e)
+        print_line_of_error(e)
         print('why')
+        ipdb.set_trace()
 
 
 def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TBD
@@ -773,8 +863,8 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
             print("you did not use func correctly dummy")        
         
         num_active_orders = len(active_orders)
-        budget_orders = active_orders[active_orders['borrowed_funds'] != None].copy() if num_active_orders > 0 else pd.DataFrame()
-        borrowed_orders = active_orders[active_orders['borrowed_funds'] == None].copy() if num_active_orders > 0 else pd.DataFrame()
+        budget_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
+        borrowed_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
         
         budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
         borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
@@ -797,7 +887,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
                 # print("All Budget Used")
                 remaining_budget_borrow = 0
         
-        return remaining_budget, remaining_budget_borrow
+        return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis
     except Exception as e:
         print(e)
         print_line_of_error()
@@ -903,12 +993,449 @@ def pollen_story(pollen_nectar):
 
     # >/ create ranges for MACD & RSI 4-3, 70-80, or USE Prior MAX&Low ...
     # >/ what current macd tier values in comparison to max/min
+
+
+    def return_macd_wave_story(df, trigbees, ticker_time_frame, tframe):
+        # POLLENSTORY = read_pollenstory()
+        # df = POLLENSTORY["SPY_1Minute_1Day"]
+        # trigbees = ["buy_cross-0", "sell_cross-0"]
+        # length and height of wave
+        MACDWAVE_story = {"story": {}}
+        MACDWAVE_story.update({trig_name: {} for trig_name in trigbees})
+
+        for trigger in trigbees:
+            wave_col_name = f'{trigger}{"__wave"}'
+            wave_col_wavenumber = f'{trigger}{"__wave_number"}'
+
+            num_waves = df[wave_col_wavenumber].tolist()
+            num_waves_list = list(set(num_waves))
+            num_waves_list = [
+                str(i) for i in sorted([int(i) for i in num_waves_list], reverse=True)
+            ]
+
+            for wave_n in num_waves_list:
+                MACDWAVE_story[trigger][wave_n] = {}
+                MACDWAVE_story[trigger][wave_n].update({"wave_n": wave_n})
+                if wave_n == "0":
+                    continue
+                df_waveslice = df[
+                    ["timestamp_est", wave_col_wavenumber, "story_index", wave_col_name, "macd_tier", "hist_tier", "vwap_tier", "rsi_ema_tier"]
+                ].copy()
+                df_waveslice = df[
+                    df[wave_col_wavenumber] == wave_n
+                ]  # slice by trigger event wave start / end
+
+                row_1 = df_waveslice.iloc[0]["story_index"]
+                row_2 = df_waveslice.iloc[-1]["story_index"]
+
+                # we want to know the how long it took to get to low?
+
+                # Assign each waves timeblock
+                if "Day" in tframe:
+                    wave_blocktime = "Day"
+                    wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
+                    wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
+                else:
+                    wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
+                    wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
+                    wave_starttime_token = wave_starttime.replace(tzinfo=None)
+                    if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+                        wave_blocktime = "morning_9-11"
+                    elif wave_starttime_token >= wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                        wave_blocktime = "lunch_11-2"
+                    elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                        wave_blocktime = "afternoon_2-4"
+                    else:
+                        wave_blocktime = "afterhours"
+                        ipdb.set_trace()
+
+                MACDWAVE_story[trigger][wave_n].update(
+                    {
+                        "ticker_time_frame": ticker_time_frame,
+                        "length": row_2 - row_1,
+                        "wave_blocktime": wave_blocktime,
+                        "wave_start_time": wave_starttime,
+                        "wave_end_time": wave_endtime,
+                        "trigbee": trigger,
+                        "wave_id": f'{trigger}{"_"}{wave_blocktime}{"_"}{wave_starttime}',
+                        # macd
+                        "start_tier_macd": df_waveslice.iloc[0].get('macd_tier'),
+                        "end_tier_macd": df_waveslice.iloc[-1].get('macd_tier'),
+                        # vwap
+                        "start_tier_vwap": df_waveslice.iloc[0].get('vwap_tier'),
+                        "end_tier_vwap": df_waveslice.iloc[-1].get('vwap_tier'),
+                        # rsi
+                        "start_tier_rsi_ema": df_waveslice.iloc[0].get('rsi_ema_tier'),
+                        "end_tier_rsi_ema": df_waveslice.iloc[-1].get('rsi_ema_tier'),
+                    }
+                )
+
+                wave_height_value = max(df_waveslice[wave_col_name].values)
+                # df[f'{wave_col_name}_mp_deviation'] = df[wave_col_name] / wave_height_value
+
+                # how long was it profitable?
+                profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
+                profit_length = len(profit_df)
+                if profit_length > 0:
+                    max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]["story_index"]
+                    time_to_max_profit = max_profit_index - row_1
+                    mt = df_waveslice.at[max_profit_index, 'macd_tier']
+                    vt = df_waveslice.at[max_profit_index, 'vwap_tier']
+                    rst = df_waveslice.at[max_profit_index, 'rsi_ema_tier']                    
+                    
+                    MACDWAVE_story[trigger][wave_n].update(
+                        {
+                            "maxprofit": wave_height_value,
+                            "time_to_max_profit": time_to_max_profit,
+                            "mxp_macd_tier": df_waveslice.at[max_profit_index, 'macd_tier'],
+                            "mxp_vwap_tier": df_waveslice.at[max_profit_index, 'vwap_tier'],
+                            "mxp_rsi_ema_tier": df_waveslice.at[max_profit_index, 'rsi_ema_tier'],
+
+                        }
+                    )
+
+                else:
+                    MACDWAVE_story[trigger][wave_n].update(
+                        {"maxprofit": wave_height_value, 
+                         "time_to_max_profit": 0,
+                        "mxp_macd_tier": 'NAN',
+                        "mxp_vwap_tier": 'NAN',
+                        "mxp_rsi_ema_tier": 'NAN',
+                         }
+                    )
+
+
+        return MACDWAVE_story
+
+
+    def return_waves_measurements(df, ticker_time_frame, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"]):
+        # POLLENSTORY = read_pollenstory()
+        # df = POLLENSTORY["SPY_1Minute_1Day"]
+        # trigbees = ["macd_cross"]
+        # length and height of wave
+
+        # """ use shift to get row index"""
+        # # Create a sample DataFrame
+        # df = pd.DataFrame({'col1': [1, 4, 7, 10], 'col2': [10, 20, 30, 40]})
+        # # Create a new column 'new_column' that calculates the difference between 'col1' and the previous row's value of 'col1'
+        # df['new_column'] = np.where(df['col1'] - df['col1'].shift(1) != 0, df['col1'] - df['col1'].shift(1), 0)
+
+        # df['new_column'] = np.where(df['close'] > 0, ((df['close'] - df['close'].shift(1))/ df['close']), 0)
+
+        ticker, tframe, frame = ticker_time_frame.split("_")
+
+        def profit_loss(df_waves, x):
+            if x == 0:
+                return 0
+            else:
+                prior_row = df_waves.iloc[x - 1]
+                current_row = df_waves.iloc[x]
+                latest_price = current_row["close"]
+                origin_trig_price = prior_row["close"]
+                profit_loss = (latest_price - origin_trig_price) / latest_price
+                if df_waves.iloc[x]["macd_cross"] == "sell_cross-0":
+                    profit_loss * -1
+                return profit_loss
+
+        def macd_cross_WaveLength(df_waves, x):
+            if x == 0:
+                return 0
+            else:
+                prior_row = df_waves.iloc[x - 1]
+                current_row = df_waves.iloc[x]
+                latest_price = current_row["story_index"]
+                origin_trig_price = prior_row["story_index"]
+                length = latest_price - origin_trig_price
+                return length
+
+        def macd_cross_WaveBlocktime(df_waves, x):
+            # Assign each waves timeblock
+            if x == 0:
+                return 0
+            if "Day" in tframe:
+                return "Day"
+            else:
+                wave_starttime = df_waves.iloc[x]["timestamp_est"]
+                # wave_endtime = df_waves.iloc[x]['timestamp_est']
+                wave_starttime_token = wave_starttime.replace(tzinfo=None)
+                if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+                    return "morning_9-11"
+                elif wave_starttime_token >= wave_starttime_token.replace(
+                    hour=11, minute=0
+                ) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                    return "lunch_11-2"
+                elif wave_starttime_token >= wave_starttime_token.replace(
+                    hour=14, minute=0
+                ) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                    return "afternoon_2-4"
+                else:
+                    return "afterhours"
+
+        ### Needs a little extra Love >> index max profit, count length, add to df_waves and df >> ensure max profit is correct as 2 rows could share same value
+        def macd_cross_TimeToMaxProfit(df, df_waves, x):
+            # Assign each waves timeblock
+            for x in df_waves["wave_n"].tolist():
+                if x == 0:
+                    return 0
+                else:
+                    prior_row = df_waves.iloc[x - 1]["story_index"]
+                    current_row = df_waves.iloc[x]["story_index"]
+
+                    df_waveslice = df[
+                        (df.index >= int(prior_row)) & (df.index < int(current_row))
+                    ].copy()
+                    origin_trig_price = df_waves.iloc[x - 1]["close"]
+                    df_waveslice["macd_cross__maxprofit"] = (
+                        df_waveslice["close"] - origin_trig_price
+                    ) / df_waveslice["close"]
+
+                    index_wave_series = dict(
+                        zip(
+                            df_waveslice["story_index"], df_waveslice["macd_cross__maxprofit"]
+                        )
+                    )
+                    # df['macd_cross__maxprofit'] = df['story_index'].map(index_wave_series).fillna("0")
+                    # return index_wave_series
+                    # return df
+                    wave_col_name = "macd_cross__maxprofit"
+                    wave_height_value = max(df_waveslice[wave_col_name].values)
+                    # how long was it profitable?
+                    profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
+                    profit_length = len(profit_df)
+                    if profit_length > 0:
+                        max_profit_index = profit_df[
+                            profit_df[wave_col_name] == wave_height_value
+                        ].iloc[0]["story_index"]
+                        time_to_max_profit = max_profit_index - prior_row
+                        # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': time_to_max_profit})
+
+                    else:
+                        time_to_max_profit = 0
+                        # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
+
+        # set wave num
+        df_waves = df[df["macd_cross"].isin(trigbees)].copy().reset_index()
+        df_waves["wave_n"] = df_waves.index
+        df_waves["length"] = df_waves["wave_n"].apply(
+            lambda x: macd_cross_WaveLength(df_waves, x)
+        )
+        df_waves["profits"] = df_waves["wave_n"].apply(lambda x: profit_loss(df_waves, x))
+        # df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
+        df_waves["active_wave"] = np.where(
+            df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active"
+        )
+        df_waves["wave_blocktime"] = df_waves["wave_n"].apply(
+            lambda x: macd_cross_WaveBlocktime(df_waves, x)
+        )
+
+        index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_n"]))
+        df["wave_n"] = df["story_index"].map(index_wave_series).fillna("0")
+
+        index_wave_series = dict(zip(df_waves["story_index"], df_waves["length"]))
+        df["length"] = df["story_index"].map(index_wave_series).fillna("0")
+
+        index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_blocktime"]))
+        df["wave_blocktime"] = df["story_index"].map(index_wave_series).fillna("0")
+
+        index_wave_series = dict(zip(df_waves["story_index"], df_waves["profits"]))
+        df["profits"] = df["story_index"].map(index_wave_series).fillna("0")
+
+        # index_wave_series = dict(zip(df_waves['story_index'], df_waves['story_index_in_profit']))
+        # df['story_index_in_profit'] = df['story_index'].map(index_wave_series).fillna("0")
+
+        index_wave_series = dict(zip(df_waves["story_index"], df_waves["active_wave"]))
+        df["active_wave"] = df["story_index"].map(index_wave_series).fillna("0")
+
+        df_waves = df_waves[
+            [
+                "story_index",
+                "wave_blocktime",
+                "timestamp_est",
+                "macd_cross",
+                "wave_n",
+                "length",
+                "profits",
+                "active_wave",
+            ]
+        ]
+
+        return {"df": df, "df_waves": df_waves}
+
+
+    def assign_MACD_Tier(df, mac_world, tiers_num):
+        # create tier ranges
+        # tiers_num = 8
+
+        def create_tier_range(m_high, m_low):
+            # m_high = mac_world_ranges[ftime]
+            # m_low = mac_world_ranges[ftime] * -1
+
+            tiers_add = m_high / tiers_num
+            td_high = {}
+            for i in range(tiers_num):
+                if i == 0:
+                    td_high[i] = (0, tiers_add)
+                else:
+                    td_high[i] = (td_high[i - 1][1], td_high[i - 1][1] + tiers_add)
+
+            tiers_add = m_low / tiers_num
+            td_low = {}
+            for i in range(tiers_num):
+                if i == 0:
+                    td_low[i] = (0, tiers_add)
+                else:
+                    td_low[i] = (td_low[i - 1][1], td_low[i - 1][1] + tiers_add)
+
+            return {"td_high": td_high, "td_low": td_low}
+
+        def assign_tier_num(num_value, td):
+            length_td = len(td)  ## Max Tier
+            max_num_value = td[length_td - 1][1]  ## max value of range
+
+            for k, v in td.items():
+                num_value = float(num_value)
+
+                if num_value > 0 and num_value > v[0] and num_value < v[1]:
+                    # print(k, num_value)
+                    return k
+                elif num_value < 0 and num_value < v[0] and num_value > v[1]:
+                    # print(k, num_value)
+                    return k
+                elif num_value > 0 and num_value >= max_num_value:
+                    # print("way above")
+                    return length_td
+                elif num_value < 0 and num_value <= max_num_value:
+                    # print("way below")
+                    return length_td
+                elif num_value == 0:
+                    # print('0 really')
+                    return 0
+
+        # select mac_world &  # apply tiers
+
+        # "MACD"
+        if mac_world["macd_high"] == 0:  # no max min exist yet (1day scenario)
+            m_high = 1
+            m_low = -1
+        else:
+            m_high = mac_world["macd_high"]
+            m_low = mac_world["macd_low"]
+        tier_range = create_tier_range(m_high, m_low)
+        td_high = tier_range["td_high"]
+        td_low = tier_range["td_low"]
+        df["macd_tier"] = np.where(
+            (df["macd"] > 0),
+            df["macd"].apply(lambda x: assign_tier_num(num_value=x, td=td_high)),
+            df["macd"].apply(lambda x: assign_tier_num(num_value=x, td=td_low)),
+        )
+        df["macd_tier"] = np.where(df["macd"] > 0, df["macd_tier"], df["macd_tier"] * -1)
+
+
+        # "MAC HIST"
+        if mac_world["hist_high"] == 0:  # no max min exist yet (1day scenario)
+            m_high = 1
+            m_low = -1
+        else:
+            m_high = mac_world["hist_high"]
+            m_low = mac_world["hist_low"]
+        tier_range = create_tier_range(m_high, m_low)
+        td_high = tier_range["td_high"]
+        td_low = tier_range["td_low"]
+        df["hist_tier"] = np.where(
+            (df["hist"] > 0),
+            df["hist"].apply(lambda x: assign_tier_num(num_value=x, td=td_high)),
+            df["hist"].apply(lambda x: assign_tier_num(num_value=x, td=td_low)),
+        )
+        df["hist_tier"] = np.where(df["hist"] > 0, df["hist_tier"], df["hist_tier"] * -1)
+
+        # "RSI"
+        if mac_world["rsi_ema_high"] == 0:  # no max min exist yet (1day scenario)
+            m_high = 1
+            m_low = -1
+        else:
+            m_high = mac_world["rsi_ema_high"]
+            m_low = mac_world["rsi_ema_low"]
+        tier_range = create_tier_range(m_high, m_low)
+        td_high = tier_range["td_high"]
+        td_low = tier_range["td_low"]
+        df["rsi_ema_tier"] = np.where(
+            (df["rsi_ema"] > 0),
+            df["rsi_ema"].apply(lambda x: assign_tier_num(num_value=x, td=td_high)),
+            df["rsi_ema"].apply(lambda x: assign_tier_num(num_value=x, td=td_low)),
+        )
+        df["rsi_ema_tier"] = np.where(df["rsi_ema"] > 0, df["rsi_ema_tier"], df["rsi_ema_tier"] * -1)
+
+        # "VWAP"
+        if mac_world["vwap_deviation_high"] == 0:  # no max min exist yet (1day scenario)
+            m_high = 1
+            m_low = -1
+        else:
+            m_high = mac_world["vwap_deviation_high"]
+            m_low = mac_world["vwap_deviation_low"]
+        tier_range = create_tier_range(m_high, m_low)
+        df["vwap_tier"] = np.where(
+            (df["vwap_deviation"] > 0),
+            df["vwap_deviation"].apply(lambda x: assign_tier_num(num_value=x, td=tier_range["td_high"])),
+            df["vwap_deviation"].apply(lambda x: assign_tier_num(num_value=x, td=tier_range["td_low"])),
+        )
+        df["vwap_tier"] = np.where(df["vwap_deviation"] > 0, df["vwap_tier"], df["vwap_tier"] * -1)
+
+        return df
+
+
+    def power_ranger_mapping(
+        tier_value,
+        colors=[
+            "red",
+            "blue",
+            "pink",
+            "yellow",
+            "white",
+            "green",
+            "orange",
+            "purple",
+            "black",
+        ],
+    ):
+        # When 1M macd tier in range (-7, -5) + 50% : Red // Sell :: 1%
+        # When 1M macd tier in range (-5, -3) + 40% : Blue // Sell :: 1%
+        # When 1M macd tier in range (-3, -2) + 25% : Pink // Sell :: 1%
+        # When 1M macd tier in range (-2, -1) + 10% : Yellow // Sell :: 1%
+        # When 1M macd tier in range (-1, 1) + 1% : White // Sell :: 1%
+        # When 1M macd tier in range (1, 2) + 1% : Green // Sell :: 1%
+        # When 1M macd tier in range (2, 3) + 1% : orange // Sell :: 25%
+        # When 1M macd tier in range (3, 5) + 1% : purple // Sell :: 40%
+        # When 1M macd tier in range (5, 7) + 1% : Black // Sell :: 50%
+
+        tier_value = float(tier_value)
+
+        if tier_value >= -8 and tier_value <= -7:
+            return "red"
+        elif tier_value >= -6 and tier_value <= -5:
+            return "blue"
+        elif tier_value >= -4 and tier_value <= -3:
+            return "pink"
+        elif tier_value >= -2 and tier_value <= -1:
+            return "yellow"
+        elif tier_value > -1 and tier_value <= 1:
+            return "white"
+        elif tier_value >= 2 and tier_value <= 3:
+            return "green"
+        elif tier_value >= 4 and tier_value <= 5:
+            return "purple"
+        elif tier_value >= 6 and tier_value >= 7:
+            return "black"
+        else:
+            return "black"
+
+
+
+
     try:
         s = datetime.now(est)
         story = {}
         ANGEL_bee = {}  # add to QUEENS mind
         STORY_bee = {}
-        # CHARLIE_bee = {}  # holds all ranges for ticker and passes info into df
         betty_bee = {k: {} for k in pollen_nectar.keys()}  # monitor function speeds
         knights_sight_word = {}
 
@@ -926,6 +1453,16 @@ def pollen_story(pollen_nectar):
                 df = df.reset_index(drop=True)
                 df["story_index"] = df.index
                 df_len = len(df)
+
+                # adjust rsi
+                rsi_t = df[~df['rsi_ema'].isin([0,100])]
+                
+                # macd signal divergence
+                df["macd_singal_deviation"] = df["macd"] - df["signal"]
+                # devation from vwap
+                df["vwap_deviation"] = df["close"] - df["vwap"]
+                df["vwap_deviation_pct"] =  df["vwap_deviation"] / df["close"]
+
                 mac_world = {
                     "macd_high": df["macd"].max(),
                     "macd_low": df["macd"].min(),
@@ -933,10 +1470,30 @@ def pollen_story(pollen_nectar):
                     "signal_low": df["signal"].min(),
                     "hist_high": df["hist"].max(),
                     "hist_low": df["hist"].min(),
+                    "rsi_ema_high": rsi_t["rsi_ema"].max(),
+                    "rsi_ema_low": rsi_t["rsi_ema"].min(),
+                    "vwap_deviation_high": df["vwap_deviation"].max(),
+                    "vwap_deviation_low": df["vwap_deviation"].min(),
                 }
-                # macd signal divergence
-                df["macd_singal_deviation"] = df["macd"] - df["signal"]
+                
                 STORY_bee[ticker_time_frame]["story"]["macd_singal_deviation"] = df.iloc[-1]["macd_singal_deviation"]
+                STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1]["vwap_deviation"]
+                STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1]["vwap_deviation_pct"]
+
+                # Measure MACD WAVES
+                # change % shifts for each, close, macd, signal, hist....
+                s_timetoken = datetime.now(est)
+                df = assign_MACD_Tier(df=df, mac_world=mac_world, tiers_num=macd_tiers)
+                STORY_bee[ticker_time_frame]["story"]["current_macd_tier"] = df.iloc[-1]["macd_tier"]
+                STORY_bee[ticker_time_frame]["story"]["current_hist_tier"] = df.iloc[-1]["hist_tier"]
+
+                df["mac_ranger"] = df["macd_tier"].apply(lambda x: power_ranger_mapping(x))
+                df["hist_ranger"] = df["hist_tier"].apply(lambda x: power_ranger_mapping(x))
+                df["vwap_ranger"] = df["vwap_tier"].apply(lambda x: power_ranger_mapping(x))
+                df["rsi_ema"] = df["rsi_ema"].apply(lambda x: power_ranger_mapping(x))
+                e_timetoken = datetime.now(est)
+                betty_bee[ticker_time_frame]["assign_Tier"] = e_timetoken - s_timetoken
+
 
                 s_timetoken = datetime.now(est)
                 # mac cross
@@ -976,13 +1533,9 @@ def pollen_story(pollen_nectar):
                 )
 
                 s_timetoken = datetime.now(est)
-                resp = return_waves_measurements(
-                    df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame
-                )
+                resp = return_waves_measurements(df=df, trigbees=trigbees, ticker_time_frame=ticker_time_frame)
                 e_timetoken = datetime.now(est)
-                betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (
-                    e_timetoken - s_timetoken
-                )
+                betty_bee[ticker_time_frame]["waves_return_waves_measurements"] = (e_timetoken - s_timetoken)
 
                 df = resp["df"]
                 MACDWAVE_story["story"] = resp["df_waves"]
@@ -995,31 +1548,31 @@ def pollen_story(pollen_nectar):
                 knights_sight_word[ticker_time_frame] = knights_word
                 STORY_bee[ticker_time_frame]["KNIGHTSWORD"] = knights_word
 
-                # # return degree angle 0, 45, 90
-                try:
-                    s_timetoken = datetime.now(est)
-                    var_list = ["macd", "hist", "signal", "close", "rsi_ema"]
-                    var_timeframes = [3, 6, 8, 10, 25, 33]
-                    for var in var_list:
-                        for t in var_timeframes:
-                            # apply rollowing angle
-                            if df_len >= t:
-                                x = df.iloc[df_len - t : df_len][var].to_list()
-                                y = [1, 2]
-                                name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
-                                ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
-                    e_timetoken = datetime.now().astimezone(est)
-                    betty_bee[ticker_time_frame]["Angel_Bee"] = e_timetoken - s_timetoken
-                except Exception as e:
-                    msg = (
-                        e,
-                        "--",
-                        print_line_of_error(),
-                        "--",
-                        ticker_time_frame,
-                        "--ANGEL_bee",
-                    )
-                    logging.error(msg)
+                # # # return degree angle 0, 45, 90
+                # try:
+                #     s_timetoken = datetime.now(est)
+                #     var_list = ["macd", "hist", "signal", "close", "rsi_ema"]
+                #     var_timeframes = [3, 6, 8, 10, 25, 33]
+                #     for var in var_list:
+                #         for t in var_timeframes:
+                #             # apply rollowing angle
+                #             if df_len >= t:
+                #                 x = df.iloc[df_len - t : df_len][var].to_list()
+                #                 y = [1, 2]
+                #                 name = f'{var}{"-"}{"Degree"}{"--"}{str(t)}'
+                #                 ANGEL_bee[ticker_time_frame][name] = return_degree_angle(x, y)
+                #     e_timetoken = datetime.now().astimezone(est)
+                #     betty_bee[ticker_time_frame]["Angel_Bee"] = e_timetoken - s_timetoken
+                # except Exception as e:
+                #     msg = (
+                #         e,
+                #         "--",
+                #         print_line_of_error(),
+                #         "--",
+                #         ticker_time_frame,
+                #         "--ANGEL_bee",
+                #     )
+                #     print(msg)
 
                 # # add close price momentum
                 # try:
@@ -1038,12 +1591,7 @@ def pollen_story(pollen_nectar):
                     "time_state"
                 ] = datetime.now().astimezone(est)
 
-                # devation from vwap
-                df["vwap_deviation"] = df["close"] - df["vwap"]
-                df["vwap_deviation_pct"] = df["close"] / df["vwap_deviation"]
-                STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1]["vwap_deviation"]
-                STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1]["vwap_deviation_pct"]
-                # rsi_deviation_pct
+
 
                 # MACD WAVE
                 macd_state = df["macd_cross"].iloc[-1]
@@ -1139,23 +1687,7 @@ def pollen_story(pollen_nectar):
                     print("PollenStory Error 1 Mintue", e)
                     print_line_of_error()
 
-                # Measure MACD WAVES
-                # change % shifts for each, close, macd, signal, hist....
-                df = assign_MACD_Tier(
-                    df=df,
-                    mac_world=mac_world,
-                    tiers_num=macd_tiers,
-                    ticker_time_frame=ticker_time_frame,
-                )
-                STORY_bee[ticker_time_frame]["story"]["current_macd_tier"] = df.iloc[-1][
-                    "macd_tier"
-                ]
-                STORY_bee[ticker_time_frame]["story"]["current_hist_tier"] = df.iloc[-1][
-                    "hist_tier"
-                ]
 
-                df["mac_ranger"] = df["macd_tier"].apply(lambda x: power_ranger_mapping(x))
-                df["hist_ranger"] = df["hist_tier"].apply(lambda x: power_ranger_mapping(x))
 
                 # how long have you been stuck at vwap ?
 
@@ -1486,99 +2018,6 @@ def mark_macd_signal_cross(df):  # return df: Mark the signal macd crosses
         logging.critical(msg)
 
 
-def assign_MACD_Tier(df, mac_world, tiers_num, ticker_time_frame):
-    # create tier ranges
-    # tiers_num = 8
-
-    def create_tier_range(m_high, m_low):
-        # m_high = mac_world_ranges[ftime]
-        # m_low = mac_world_ranges[ftime] * -1
-
-        tiers_add = m_high / tiers_num
-        td_high = {}
-        for i in range(tiers_num):
-            if i == 0:
-                td_high[i] = (0, tiers_add)
-            else:
-                td_high[i] = (td_high[i - 1][1], td_high[i - 1][1] + tiers_add)
-
-        tiers_add = m_low / tiers_num
-        td_low = {}
-        for i in range(tiers_num):
-            if i == 0:
-                td_low[i] = (0, tiers_add)
-            else:
-                td_low[i] = (td_low[i - 1][1], td_low[i - 1][1] + tiers_add)
-
-        return {"td_high": td_high, "td_low": td_low}
-
-    def assign_tier_num(num_value, td):
-        length_td = len(td)  ## Max Tier
-        max_num_value = td[length_td - 1][1]  ## max value of range
-
-        for k, v in td.items():
-            num_value = float(num_value)
-
-            if num_value > 0 and num_value > v[0] and num_value < v[1]:
-                # print(k, num_value)
-                return k
-            elif num_value < 0 and num_value < v[0] and num_value > v[1]:
-                # print(k, num_value)
-                return k
-            elif num_value > 0 and num_value >= max_num_value:
-                # print("way above")
-                return length_td
-            elif num_value < 0 and num_value <= max_num_value:
-                # print("way below")
-                return length_td
-            elif num_value == 0:
-                # print('0 really')
-                return 0
-
-    # select mac_world &  # apply tiers
-
-    # "MAC"
-    if mac_world["macd_high"] == 0:  # no max min exist yet (1day scenario)
-        m_high = 1
-        m_low = -1
-    else:
-        m_high = mac_world["macd_high"]
-        m_low = mac_world["macd_low"]
-
-    tier_range = create_tier_range(m_high, m_low)
-    td_high = tier_range["td_high"]
-    td_low = tier_range["td_low"]
-
-    df["macd_tier"] = np.where(
-        (df["macd"] > 0),
-        df["macd"].apply(lambda x: assign_tier_num(num_value=x, td=td_high)),
-        df["macd"].apply(lambda x: assign_tier_num(num_value=x, td=td_low)),
-    )
-
-    df["macd_tier"] = np.where(df["macd"] > 0, df["macd_tier"], df["macd_tier"] * -1)
-
-
-    # "MAC"
-    if mac_world["hist_high"] == 0:  # no max min exist yet (1day scenario)
-        m_high = 1
-        m_low = -1
-    else:
-        m_high = mac_world["hist_high"]
-        m_low = mac_world["hist_low"]
-
-    tier_range = create_tier_range(m_high, m_low)
-    td_high = tier_range["td_high"]
-    td_low = tier_range["td_low"]
-    df["hist_tier"] = np.where(
-        (df["hist"] > 0),
-        df["hist"].apply(lambda x: assign_tier_num(num_value=x, td=td_high)),
-        df["hist"].apply(lambda x: assign_tier_num(num_value=x, td=td_low)),
-    )
-    df["hist_tier"] = np.where(df["hist"] > 0, df["hist_tier"], df["hist_tier"] * -1)
-
-    return df
-
-
 def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave based on trigger
     # df = POLLENSTORY['SPY_1Minute_1Day'] # test
     wave = {ticker_time_frame: {"ticker_time_frame": ticker_time_frame}}
@@ -1644,268 +2083,6 @@ def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave
         # bees_wave_df = df[df['story_index'].isin(bees_wave_list)].copy()
         # tag greatest profit
     return wave
-
-
-def return_macd_wave_story(df, trigbees, ticker_time_frame, tframe):
-    # POLLENSTORY = read_pollenstory()
-    # df = POLLENSTORY["SPY_1Minute_1Day"]
-    # trigbees = ["buy_cross-0", "sell_cross-0"]
-    # length and height of wave
-    MACDWAVE_story = {"story": {}}
-    MACDWAVE_story.update({trig_name: {} for trig_name in trigbees})
-
-    for trigger in trigbees:
-        wave_col_name = f'{trigger}{"__wave"}'
-        wave_col_wavenumber = f'{trigger}{"__wave_number"}'
-
-        num_waves = df[wave_col_wavenumber].tolist()
-        num_waves_list = list(set(num_waves))
-        num_waves_list = [
-            str(i) for i in sorted([int(i) for i in num_waves_list], reverse=True)
-        ]
-
-        for wave_n in num_waves_list:
-            MACDWAVE_story[trigger][wave_n] = {}
-            MACDWAVE_story[trigger][wave_n].update({"wave_n": wave_n})
-            if wave_n == "0":
-                continue
-            df_waveslice = df[
-                ["timestamp_est", wave_col_wavenumber, "story_index", wave_col_name]
-            ].copy()
-            df_waveslice = df[
-                df[wave_col_wavenumber] == wave_n
-            ]  # slice by trigger event wave start / end
-
-            row_1 = df_waveslice.iloc[0]["story_index"]
-            row_2 = df_waveslice.iloc[-1]["story_index"]
-
-            # we want to know the how long it took to get to low?
-
-            # Assign each waves timeblock
-            if "Day" in tframe:
-                wave_blocktime = "Day"
-                wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
-                wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
-            else:
-                wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
-                wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
-                wave_starttime_token = wave_starttime.replace(tzinfo=None)
-                if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
-                    wave_blocktime = "morning_9-11"
-                elif wave_starttime_token > wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
-                    wave_blocktime = "lunch_11-2"
-                elif wave_starttime_token > wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
-                    wave_blocktime = "afternoon_2-4"
-                else:
-                    wave_blocktime = "afterhours"
-
-            MACDWAVE_story[trigger][wave_n].update(
-                {
-                    "ticker_time_frame": ticker_time_frame,
-                    "length": row_2 - row_1,
-                    "wave_blocktime": wave_blocktime,
-                    "wave_start_time": wave_starttime,
-                    "wave_end_time": wave_endtime,
-                    "trigbee": trigger,
-                    "wave_id": f'{trigger}{"_"}{wave_blocktime}{"_"}{wave_starttime}',
-                }
-            )
-
-            wave_height_value = max(df_waveslice[wave_col_name].values)
-            # how long was it profitable?
-            profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
-            profit_length = len(profit_df)
-            if profit_length > 0:
-                max_profit_index = profit_df[
-                    profit_df[wave_col_name] == wave_height_value
-                ].iloc[0]["story_index"]
-                time_to_max_profit = max_profit_index - row_1
-                MACDWAVE_story[trigger][wave_n].update(
-                    {
-                        "maxprofit": wave_height_value,
-                        "time_to_max_profit": time_to_max_profit,
-                    }
-                )
-
-            else:
-                MACDWAVE_story[trigger][wave_n].update(
-                    {"maxprofit": wave_height_value, "time_to_max_profit": 0}
-                )
-
-    # all_waves = []
-    # all_waves_temp = []
-    # for trig_name in trigbees:
-    #     l_waves = list(MACDWAVE_story[trig_name].values())
-    #     l_waves = [i for i in l_waves if i['wave_n'] != '0']
-    #     all_waves_temp.append(l_waves)
-    # for el_list in range(len(all_waves_temp)):
-    #     all_waves = all_waves + all_waves_temp[el_list - 1]
-    # df_waves = pd.DataFrame(all_waves)
-    # # df_waves = df_waves.fillna("NULL")
-    # # df_waves = df_waves
-    # df_waves = df_waves.sort_values(by=['wave_start_time'], ascending=True).reset_index()
-    # df_waves['macd_wave_n'] = df_waves.index
-    # df_waves = macd_wave_length_story(df_waves) # df_waves['macd_wave_length']
-
-    # MACDWAVE_story['story'] = df_waves
-    # df_t = df_waves[[i for i in df_waves.columns if 'macd' in i or i in ['wave_start_time', 'trigbee', 'wave_blocktime']]].copy()
-
-    return MACDWAVE_story
-
-
-def return_waves_measurements(df, ticker_time_frame, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"]):
-    # POLLENSTORY = read_pollenstory()
-    # df = POLLENSTORY["SPY_1Minute_1Day"]
-    # trigbees = ["macd_cross"]
-    # length and height of wave
-
-    # """ use shift to get row index"""
-    # # Create a sample DataFrame
-    # df = pd.DataFrame({'col1': [1, 4, 7, 10], 'col2': [10, 20, 30, 40]})
-    # # Create a new column 'new_column' that calculates the difference between 'col1' and the previous row's value of 'col1'
-    # df['new_column'] = np.where(df['col1'] - df['col1'].shift(1) != 0, df['col1'] - df['col1'].shift(1), 0)
-
-    # ipdb.set_trace()
-    # df['new_column'] = np.where(df['close'] > 0, ((df['close'] - df['close'].shift(1))/ df['close']), 0)
-
-    ticker, tframe, frame = ticker_time_frame.split("_")
-
-    def profit_loss(df_waves, x):
-        if x == 0:
-            return 0
-        else:
-            prior_row = df_waves.iloc[x - 1]
-            current_row = df_waves.iloc[x]
-            latest_price = current_row["close"]
-            origin_trig_price = prior_row["close"]
-            profit_loss = (latest_price - origin_trig_price) / latest_price
-            if df_waves.iloc[x]["macd_cross"] == "sell_cross-0":
-                profit_loss * -1
-            return profit_loss
-
-    def macd_cross_WaveLength(df_waves, x):
-        if x == 0:
-            return 0
-        else:
-            prior_row = df_waves.iloc[x - 1]
-            current_row = df_waves.iloc[x]
-            latest_price = current_row["story_index"]
-            origin_trig_price = prior_row["story_index"]
-            length = latest_price - origin_trig_price
-            return length
-
-    def macd_cross_WaveBlocktime(df_waves, x):
-        # Assign each waves timeblock
-        if x == 0:
-            return 0
-        if "Day" in tframe:
-            return "Day"
-        else:
-            wave_starttime = df_waves.iloc[x]["timestamp_est"]
-            # wave_endtime = df_waves.iloc[x]['timestamp_est']
-            wave_starttime_token = wave_starttime.replace(tzinfo=None)
-            if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
-                return "morning_9-11"
-            elif wave_starttime_token >= wave_starttime_token.replace(
-                hour=11, minute=0
-            ) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
-                return "lunch_11-2"
-            elif wave_starttime_token >= wave_starttime_token.replace(
-                hour=14, minute=0
-            ) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
-                return "afternoon_2-4"
-            else:
-                return "afterhours"
-
-    ### Needs a little extra Love >> index max profit, count length, add to df_waves and df >> ensure max profit is correct as 2 rows could share same value
-    def macd_cross_TimeToMaxProfit(df, df_waves, x):
-        # Assign each waves timeblock
-        for x in df_waves["wave_n"].tolist():
-            if x == 0:
-                return 0
-            else:
-                prior_row = df_waves.iloc[x - 1]["story_index"]
-                current_row = df_waves.iloc[x]["story_index"]
-
-                df_waveslice = df[
-                    (df.index >= int(prior_row)) & (df.index < int(current_row))
-                ].copy()
-                origin_trig_price = df_waves.iloc[x - 1]["close"]
-                df_waveslice["macd_cross__maxprofit"] = (
-                    df_waveslice["close"] - origin_trig_price
-                ) / df_waveslice["close"]
-
-                index_wave_series = dict(
-                    zip(
-                        df_waveslice["story_index"], df_waveslice["macd_cross__maxprofit"]
-                    )
-                )
-                # df['macd_cross__maxprofit'] = df['story_index'].map(index_wave_series).fillna("0")
-                # return index_wave_series
-                # return df
-                wave_col_name = "macd_cross__maxprofit"
-                wave_height_value = max(df_waveslice[wave_col_name].values)
-                # how long was it profitable?
-                profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
-                profit_length = len(profit_df)
-                if profit_length > 0:
-                    max_profit_index = profit_df[
-                        profit_df[wave_col_name] == wave_height_value
-                    ].iloc[0]["story_index"]
-                    time_to_max_profit = max_profit_index - prior_row
-                    # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': time_to_max_profit})
-
-                else:
-                    time_to_max_profit = 0
-                    # MACDWAVE_story[trigger][wave_n].update({'maxprofit': wave_height_value, 'time_to_max_profit': 0})
-
-    # set wave num
-    df_waves = df[df["macd_cross"].isin(trigbees)].copy().reset_index()
-    df_waves["wave_n"] = df_waves.index
-    df_waves["length"] = df_waves["wave_n"].apply(
-        lambda x: macd_cross_WaveLength(df_waves, x)
-    )
-    df_waves["profits"] = df_waves["wave_n"].apply(lambda x: profit_loss(df_waves, x))
-    # df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
-    df_waves["active_wave"] = np.where(
-        df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active"
-    )
-    df_waves["wave_blocktime"] = df_waves["wave_n"].apply(
-        lambda x: macd_cross_WaveBlocktime(df_waves, x)
-    )
-
-    index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_n"]))
-    df["wave_n"] = df["story_index"].map(index_wave_series).fillna("0")
-
-    index_wave_series = dict(zip(df_waves["story_index"], df_waves["length"]))
-    df["length"] = df["story_index"].map(index_wave_series).fillna("0")
-
-    index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_blocktime"]))
-    df["wave_blocktime"] = df["story_index"].map(index_wave_series).fillna("0")
-
-    index_wave_series = dict(zip(df_waves["story_index"], df_waves["profits"]))
-    df["profits"] = df["story_index"].map(index_wave_series).fillna("0")
-
-    # index_wave_series = dict(zip(df_waves['story_index'], df_waves['story_index_in_profit']))
-    # df['story_index_in_profit'] = df['story_index'].map(index_wave_series).fillna("0")
-
-    index_wave_series = dict(zip(df_waves["story_index"], df_waves["active_wave"]))
-    df["active_wave"] = df["story_index"].map(index_wave_series).fillna("0")
-
-    df_waves = df_waves[
-        [
-            "story_index",
-            "wave_blocktime",
-            "timestamp_est",
-            "macd_cross",
-            "wave_n",
-            "length",
-            "profits",
-            "active_wave",
-        ]
-    ]
-
-    return {"df": df, "df_waves": df_waves}
 
 
 def split_today_vs_prior(df, timestamp="timestamp_est"):
@@ -2020,12 +2197,6 @@ def return_bars(
         e = datetime.now(est)
         # print(str((e - s)) + ": " + datetime.now().strftime('%Y-%m-%d %H:%M'))
 
-        # if ndays == 1:
-        #     market_hours_data = market_hours_data[market_hours_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
-
-        # if symbol_data.iloc[-1]["timestamp_est"] == 0:
-        #     ipdb.set_trace()
-
         return {
             "resp": True,
             "df": symbol_data,
@@ -2043,29 +2214,29 @@ def return_bars(
         )
 
 
-def return_bars_list(
-    api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False
-):
+def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False, s_date=False, e_date=False):
     try:
-        s = datetime.now(est)
         # ticker_list = ['SPY', 'QQQ']
         # chart_times = {
-        #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18,
+        #     "1Minute_1Day": 1, "5Minute_5Day": 5, "30Minute_1Month": 18,
         #     "1Hour_3Month": 48, "2Hour_6Month": 72,
         #     "1Day_1Year": 250
         #     }
+        current_date = datetime.now(est).strftime("%Y-%m-%d")
+        trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
+        s = datetime.now(est)
         return_dict = {}
         error_dict = {}
 
         for charttime, ndays in chart_times.items():
             timeframe = charttime.split("_")[0]  # '1Minute_1Day'
-
-            trading_days_df_ = trading_days_df[
-                trading_days_df["date"] < current_date
-            ]  # less then current date
-            start_date = trading_days_df_.tail(ndays).head(1).date
-            start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-            end_date = datetime.now(est).strftime("%Y-%m-%d")
+            if s_date and e_date:
+                start_date = s_date
+                end_date = e_date
+            else:
+                start_date = trading_days_df_.tail(ndays).head(1).date
+                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+                end_date = datetime.now(est).strftime("%Y-%m-%d")
 
             if exchange:
                 symbol_data = api.get_crypto_bars(
@@ -2078,7 +2249,6 @@ def return_bars_list(
             else:
                 def chunk_getbars_ticker_list(chunk_list, max_n=2,):
                     # print(chunk_list)
-                    # ipdb.set_trace()
                     num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
                     chunk_num = max_n if num_rr > max_n else num_rr
                     
@@ -2140,11 +2310,6 @@ def return_bars_list(
                         end=end_date,
                         adjustment="all",
                     ).df
-                    # print(type(symbol_data))
-                    # if symbol_data == None:
-                    #     print("QH_None_getbars")
-                    #     error_dict[ticker_list] = {"msg": "no data returned", "time": time}
-                    #     return False
                     
                     if len(symbol_data) == 0:
                         error_dict[ticker_list] = {"msg": "no data returned", "time": time}
@@ -2158,8 +2323,6 @@ def return_bars_list(
                     symbol_data["bars"] = "bars_list"
 
                     symbol_data = symbol_data.reset_index(drop=True)
-                    # if ndays == 1:
-                    #     symbol_data = symbol_data[symbol_data['timestamp_est'] > (datetime.now(est).replace(hour=1, minute=1, second=1))].copy()
 
                     return_dict[charttime] = symbol_data  
                 except Exception as e:
@@ -2519,7 +2682,6 @@ def submit_order(
         return order
     except Exception as e:
         print_line_of_error()
-        # ipdb.set_trace()
         return False
 
     """stop loss order"""
@@ -2649,9 +2811,9 @@ def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est
     return datetime.now(tz).strftime(format)
 
 
-def print_line_of_error():
+def print_line_of_error(e=False):
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    print(exc_type, exc_tb.tb_lineno)
+    print(e, exc_type, exc_tb.tb_lineno)
     # return exc_type, exc_tb.tb_lineno
 
 
@@ -2855,7 +3017,7 @@ def return_market_hours(trading_days, crypto=False):
     s = datetime.now(est)
     s_iso = s.isoformat()[:10]
     mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = s.replace(hour=1, minute=1, second=1)
+    mk_open = s.replace(hour=9, minute=30, second=1)
     mk_close = s.replace(hour=16, minute=0, second=0)
 
     if crypto:
@@ -3055,17 +3217,32 @@ def kings_order_rules( # rules created for 1Minute
     doubledown_timeduration=60,
     ignore_trigbee_in_macdstory_tier=[0],
     ignore_trigbee_in_histstory_tier=[0],
+    # Not Used
     ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-    
+    ignore_trigbee_at_power=0.01,
+    macd_tier_multiplier = {},
+    vwap_tier_multiplier = {},
+    rsi_tier_multiplier = {},
+
     # SELLS
-    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+    take_profit=.01,
+    take_profit_scale={.05: {'take_pct': .25, 'take_mark': False}},
+    sell_out=-.0089,
+    sell_out_scale={.05: {'take_pct': .25, 'take_mark': False}},
     max_profit_waveDeviation=1, ## Need to figure out expected waveDeivation from a top profit in wave to allow trade to exit (faster from seeking profit?)
     max_profit_waveDeviation_timeduration=5,
     timeduration=120,
-    take_profit=.01,
-    sellout=-.0089,
-    sell_out=-.0089,
     sell_trigbee_trigger=True,
+    sell_trigbee_trigger_timeduration=60, # seconds
+    use_wave_guage=False,
+    doubledowns_allowed=2,
+    close_order_today=False,
+    close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
+    
+    # Not Used
+    short_position=False,
+    revisit_trade_frequency=60,
+    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
     stagger_profits=False,
     scalp_profits=False,
     scalp_profits_timeduration=30,
@@ -3073,35 +3250,32 @@ def kings_order_rules( # rules created for 1Minute
     limitprice_decay_timeduration=1,
     skip_sell_trigbee_distance_frequency=0,
     skip_buy_trigbee_distance_frequency=0,
-    ignore_trigbee_at_power=0.01,
-    short_position=False,
-    use_wave_guage=False,
-    doubledowns_allowed=2,
-    close_order_today=False,
-    close_order_today_vars={
-    'last_60sec':KOR_close_order_today_vars(take_profit=False), 
-    'last_30min':KOR_close_order_today_vars(), 
-    'last_hr':KOR_close_order_today_vars()
-    },
     use_margin=False,
-    close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
-    revisit_trade_frequency=60,
-
 ):
+
+    def tier_multiplier(max_world=8, tiers=['macd', 'vwap', 'rsi'], trigbees=['buy_cross-0', 'sell_cross-0']):
+        ticker_time_frame__mp = {}
+        return_d = {}
+        for tier in tiers:
+            return_d[tier] = {}
+            for trig in trigbees:
+                if trig == 'buy_cross-0':
+                    return_d[tier][trig] = {i: .1 + (abs(i) / 1) for i in range(max_world)}
+                else:
+                    return_d[tier][trig] = {i: .1 + (abs(i) / 1) for i in range(max_world)}
+        return return_d
+
     return {
         "KOR_version": KOR_version,
-        # 1 trade if exists, double allows for 1 more trade to occur while in existance
         "theme": theme,
         "status": status,
         "trade_using_limits": trade_using_limits,
         "limitprice_decay_timeduration": limitprice_decay_timeduration,
-        # TimeHorizion: i.e. the further along time how to sell out of profit
         "doubledown_timeduration": doubledown_timeduration,
         "max_profit_waveDeviation": max_profit_waveDeviation,
         "max_profit_waveDeviation_timeduration": max_profit_waveDeviation_timeduration,
         "timeduration": timeduration,
         "take_profit": take_profit,
-        "sellout": sellout,
         "sell_out": sell_out, # migrate
         "sell_trigbee_trigger": sell_trigbee_trigger,
         "stagger_profits": stagger_profits,
@@ -3120,10 +3294,15 @@ def kings_order_rules( # rules created for 1Minute
         'use_wave_guage': use_wave_guage,
         'doubledowns_allowed': doubledowns_allowed,
         'close_order_today': close_order_today,
-        "close_order_today_vars": close_order_today_vars,
         "use_margin": use_margin,
         "revisit_trade_frequency": revisit_trade_frequency,
         'close_order_today_allowed_timeduration': close_order_today_allowed_timeduration,
+
+        'macd_tier_multiplier': {},
+        'vwap_tier_multiplier': {},
+        'rsi_tier_multiplier': {},
+        'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
+
     }
 
 def generate_TradingModel(
@@ -3161,19 +3340,19 @@ def generate_TradingModel(
         star_theme_vars = {
                 "1Minute_1Day": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_LongTerm': .23,
                     'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "5Minute_5Day" : {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_LongTerm': .5,
                     'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
                 "30Minute_1Month": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_LongTerm': .6,
                     'buyingpower_allocation_ShortTerm': .2,
                     'use_margin': False,
                     },
@@ -3207,18 +3386,18 @@ def generate_TradingModel(
                                     status='active',
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
-                                    max_profit_waveDeviation=1,
+                                    max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=360,
-                                    take_profit=.033,
-                                    sellout=-.02,
+                                    take_profit=.08,
+                                    sell_out=-.04,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
                                     stagger_profits_tiers=1,
                                     limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
+                                    skip_sell_trigbee_distance_frequency=1,
                                     ignore_trigbee_at_power=0.01,
                                     ignore_trigbee_in_macdstory_tier=[0],
                                     ignore_trigbee_in_histstory_tier=[],
@@ -3226,7 +3405,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
-                                    close_order_today=True,
+                                    close_order_today=False,
                                     revisit_trade_frequency=60,
                 ),
                 "5Minute_5Day": kings_order_rules(
@@ -3235,15 +3414,15 @@ def generate_TradingModel(
                                     doubledown_timeduration=60,
                                     trade_using_limits=False,
                                     max_profit_waveDeviation=3,
-                                    max_profit_waveDeviation_timeduration=5,
+                                    max_profit_waveDeviation_timeduration=10,
                                     timeduration=320,
-                                    take_profit=.03,
-                                    sellout=-.02,
+                                    take_profit=.3,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
+                                    stagger_profits_tiers=3,
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
@@ -3253,6 +3432,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    close_order_today=False,
                                     revisit_trade_frequency=5 * 3600,
                 ),
                 "30Minute_1Month": kings_order_rules(
@@ -3264,7 +3444,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
                                     take_profit=.05,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3279,6 +3459,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    close_order_today=False,
                                     revisit_trade_frequency=10 * 3600,
                 ),
                 "1Hour_3Month": kings_order_rules(
@@ -3290,7 +3471,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
                                     take_profit=.05,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3305,6 +3486,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    close_order_today=False,
                                     revisit_trade_frequency=10 * 3600,
                 ),
                 "2Hour_6Month": kings_order_rules(
@@ -3316,7 +3498,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
                                     take_profit=.07,
-                                    sellout=-.02,
+                                    sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3331,6 +3513,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    close_order_today=False,
                                     revisit_trade_frequency=10 * 3600,
                 ),
                 "1Day_1Year": kings_order_rules(
@@ -3342,7 +3525,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
                                     take_profit=.10,
-                                    sellout=-.05,
+                                    sell_out=-.05,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3357,6 +3540,7 @@ def generate_TradingModel(
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
+                                    close_order_today=False,
                                     revisit_trade_frequency=60 * 3600,
                 ),
             }
@@ -3410,7 +3594,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=120,
                                     take_profit=.005,
-                                    sellout=-.089,
+                                    sell_out=-.089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3436,7 +3620,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=320,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3462,7 +3646,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3487,7 +3671,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3512,7 +3696,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
                                     take_profit=.01,
-                                    sellout=-.0089,
+                                    sell_out=-.0089,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3537,7 +3721,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
                                     take_profit=.05,
-                                    sellout=-.015,
+                                    sell_out=-.015,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
                                     scalp_profits=False,
@@ -3850,6 +4034,7 @@ def order_vars__queen_order_items(
     updated_at=False,
     trigbee=False,
     tm_trig=False,
+    borrowed_funds=False,
 ):
     if order_side:
         order_vars = {}
@@ -3880,9 +4065,8 @@ def order_vars__queen_order_items(
             order_vars["time_intrade"] = time_intrade
             order_vars["updated_at"] = updated_at
             order_vars["symbol"] = symbol
-            # order_vars["trigbee"] = trigbee
             
-
+            
             return order_vars
 
         elif order_side == "buy":
@@ -3914,7 +4098,7 @@ def order_vars__queen_order_items(
             order_vars["symbol"] = symbol
             order_vars["trigbee"] = trigbee
             order_vars["tm_trig"] = tm_trig
-            
+            order_vars["borrowed_funds"] = borrowed_funds
 
             return order_vars
 
@@ -3995,7 +4179,8 @@ def create_QueenOrderBee(
         priceinfo=priceinfo,
         queen_init=False,
         revisit_trade_datetime=datetime.now(est),
-        datetime=datetime.now(est)
+        datetime=datetime.now(est),
+        borrowed_funds=False,
     ):
         date_mark = datetime.now(est)
         if queen_init:
@@ -4284,262 +4469,255 @@ def return_Best_Waves(df, rankname="maxprofit", top=False):
         return df
 
 
-def analyze_waves(STORY_bee, ttframe_wave_trigbee=False):
-    # len and profits
-    groupby_agg_dict = {
-        "winners_n": "sum",
-        "losers_n": "sum",
-        "maxprofit": "sum",
-        "length": "mean",
-        "time_to_max_profit": "mean",
-    }
-    # groupby_agg_dict = {'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}
-
-    if ttframe_wave_trigbee:
-        # buy_cross-0
-        wave_series = STORY_bee[ttframe_wave_trigbee]["waves"]["buy_cross-0"]
-        upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != "0"]
-        df = pd.DataFrame(upwave_dict)
-        df["winners"] = np.where(df["maxprofit"] > 0, "winner", "loser")
-        df["winners_n"] = np.where(df["maxprofit"] > 0, 1, 0)
-        df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
-        df["winners"] = np.where(df["maxprofit"] > 0, "winner", "loser")
-        groups = (
-            df.groupby(["ticker_time_frame", "wave_blocktime"])
-            .agg({"maxprofit": "sum", "length": "mean", "time_to_max_profit": "mean"})
-            .reset_index("ticker_time_frame")
-        )
-        df_return = groups.rename(
-            columns={
-                "length": "avg_length",
-                "time_to_max_profit": "avg_time_to_max_profit",
-                "maxprofit": "sum_maxprofit",
-            }
-        )
-
-        df_bestwaves = return_Best_Waves(df=df, top=3)
-
-        # show today only
-        df_today_return = pd.DataFrame()
-        df_today = split_today_vs_prior(df=df, timestamp="wave_start_time")["df_today"]
-        df_day_bestwaves = return_Best_Waves(df=df_today, top=3)
-        groups = (
-            df_today.groupby(["ticker_time_frame", "wave_blocktime"])
-            .agg({"maxprofit": "sum", "length": "mean", "time_to_max_profit": "mean"})
-            .reset_index("ticker_time_frame")
-        )
-        df_today_return = groups.rename(
-            columns={
-                "length": "avg_length",
-                "time_to_max_profit": "avg_time_to_max_profit",
-                "maxprofit": "sum_maxprofit",
-            }
-        )
-
-        # sell_cross-0
-        wave_series = STORY_bee[ttframe_wave_trigbee]["waves"]["sell_cross-0"]
-        upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != "0"]
-        df = pd.DataFrame(upwave_dict)
-        df["winners"] = np.where(df["maxprofit"] > 0, "winner", "loser")
-        df["winners_n"] = np.where(df["maxprofit"] > 0, 1, 0)
-        df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
-        groups = (
-            df.groupby(["ticker_time_frame", "wave_blocktime"])
-            .agg(
-                {
-                    "winners_n": "sum",
-                    "losers_n": "sum",
-                    "maxprofit": "sum",
-                    "length": "mean",
-                    "time_to_max_profit": "mean",
+def analyze_waves(STORY_bee, ticker_time_frame=False, top_waves=8):
+    def process_trigbee(wave_series):
+        try:
+            upwave_dict = [wave_data for (k, wave_data) in wave_series.items() if k != "0"]
+            df = pd.DataFrame(upwave_dict)
+            df["winners_n"] = np.where(df["maxprofit"] > 0, 1, 0)
+            df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
+            df["winners"] = np.where(df["maxprofit"] > 0, "winner", "loser")
+            df_token = df[df['winners']=='winner']
+            df_token_g = df_token.groupby(["ticker_time_frame"]).agg({'maxprofit': "mean"}).reset_index("ticker_time_frame")
+            # print(df.columns)
+            groups = (
+                df.groupby(["ticker_time_frame", "wave_blocktime",]) # "end_tier_macd", "end_tier_vwap", "end_tier_rsi_ema"])
+                .agg(
+                    {
+                        "winners_n": "sum",
+                        "losers_n": "sum",
+                        "maxprofit": "sum",
+                        "length": "mean",
+                        "time_to_max_profit": "mean",
+                    }
+                )
+                .reset_index("ticker_time_frame")
+            )
+            df_return_waveup = groups.rename(
+                columns={
+                    "length": "avg_length",
+                    "time_to_max_profit": "avg_time_to_max_profit",
+                    "maxprofit": "sum_maxprofit",
                 }
             )
-            .reset_index("ticker_time_frame")
-        )
-        df_return_wavedown = groups.rename(
-            columns={
-                "length": "avg_length",
-                "time_to_max_profit": "avg_time_to_max_profit",
-                "maxprofit": "sum_maxprofit",
-            }
-        )
+            df_return_waveup['ttf_avg_maxprofit'] = df_token_g.iloc[0].get('maxprofit')
 
-        df_bestwaves_sell_cross = return_Best_Waves(df=df, top=3)
+            df_bestwaves = return_Best_Waves(df=df, top=top_waves)
 
-        df_best_buy__sell__waves = pd.concat(
-            [df_bestwaves, df_bestwaves_sell_cross], axis=0
-        )
+            # show today only
+            df_today_return = pd.DataFrame()
+            df_today = split_today_vs_prior(df=df, timestamp="wave_start_time")["df_today"]
+            df_day_bestwaves = return_Best_Waves(df=df_today, top=top_waves)
+            groups = (
+                df_today.groupby(["ticker_time_frame", "wave_blocktime"])
+                .agg(
+                    {
+                        "winners_n": "sum",
+                        "losers_n": "sum",
+                        "maxprofit": "sum",
+                        "length": "mean",
+                        "time_to_max_profit": "mean",
+                    }
+                )
+                .reset_index("ticker_time_frame")
+            )
+            df_today_return = groups.rename(
+                columns={
+                    "length": "avg_length",
+                    "time_to_max_profit": "avg_time_to_max_profit",
+                    "maxprofit": "sum_maxprofit",
+                }
+            )
 
-        return {
-            "df": df_return,
-            "df_wavedown": df_return_wavedown,
-            "df_today": df_today_return,
-            "df_bestwaves": df_bestwaves,
-            "df_bestwaves_sell_cross": df_bestwaves_sell_cross,
-            "df_day_bestwaves": df_day_bestwaves,
-            "df_best_buy__sell__waves": df_best_buy__sell__waves,
+            return df_return_waveup, df_bestwaves, df_today_return
+        except Exception as e:
+            print_line_of_error()
+            print('yeah yeah', e)
+
+    try:
+        # len and profits
+        groupby_agg_dict = {
+            "winners_n": "sum",
+            "losers_n": "sum",
+            "maxprofit": "sum",
+            "length": "mean",
+            "time_to_max_profit": "mean",
         }
-    else:
-        df_bestwaves = pd.DataFrame()
-        d_return = {}  # every star and the data by grouping
-        d_agg_view_return = {}  # every star and the data by grouping
 
-        for symbol_star, data in STORY_bee.items():
-            try:
-                d_return[symbol_star] = {}
-                d_agg_view_return[symbol_star] = {}
-
-                waves = data["waves"]
-                for trigbee, wave in waves.items():
-                    if trigbee == "story":
-                        continue
-                    else:
-                        d_wave = [
-                            wave_data for (k, wave_data) in wave.items() if k != "0"
-                        ]
-                        df = pd.DataFrame(d_wave)
-                        if len(df) > 0:
-                            df["winners"] = np.where(
-                                df["maxprofit"] > 0, "winner", "loser"
-                            )
-                            df["winners"] = np.where(
-                                df["maxprofit"] > 0, "winner", "loser"
-                            )
-                            df["winners_n"] = np.where(df["maxprofit"] > 0, 1, 0)
-                            df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
-
-                            groups = (
-                                df.groupby(["ticker_time_frame", "wave_blocktime"])
-                                .agg(groupby_agg_dict)
-                                .reset_index("ticker_time_frame")
-                            )
-                            groups = groups.rename(
-                                columns={
-                                    "length": "avg_length",
-                                    "time_to_max_profit": "avg_time_to_max_profit",
-                                    "maxprofit": "sum_maxprofit",
-                                }
-                            )
-                            d_return[symbol_star][trigbee] = groups
-
-                            groups = (
-                                df.groupby(["trigbee", "wave_blocktime"])
-                                .agg(groupby_agg_dict)
-                                .reset_index()
-                            )
-                            groups = groups.rename(
-                                columns={
-                                    "length": "avg_length",
-                                    "time_to_max_profit": "avg_time_to_max_profit",
-                                    "maxprofit": "sum_maxprofit",
-                                }
-                            )
-                            groups["ticker_time_frame"] = symbol_star
-                            d_agg_view_return[symbol_star][f"{trigbee}"] = groups
-
-            except Exception as e:
-                print(e)
-
-        #
-
-        df_return = pd.DataFrame(d_return)
-        df_agg_view_return = pd.DataFrame(d_agg_view_return)
-        df_agg_view_return = df_agg_view_return.T
-
-    # d_return2 = {} # every star and the data by grouping
-    # for symbol_star, data in STORY_bee.items():
-    #     d_return[symbol_star] = {}
-    #     waves = data['waves']['story']
-    #     df = pd.DataFrame(waves)
-    #     # df = df[~df['macd_wave_length'] == 'NULL'].copy()
-    #     if len(df) > 0:
-    #         df['winners'] = np.where(df['maxprofit'] > 0, 'winner', 'loser')
-    #         groups = df.groupby(['wave_blocktime']).agg({'maxprofit': 'sum', 'length': 'mean', 'time_to_max_profit': 'mean'}).reset_index()
-    #         groups = groups.rename(columns={'length': 'avg_length'})
-    #         d_return[symbol_star][trigbee] = groups
-
-    return {
-        "df": d_return,
-        "d_agg_view_return": d_agg_view_return,
-        "df_agg_view_return": df_agg_view_return,
-        "df_bestwaves": df_bestwaves,
-    }
+        if ticker_time_frame:
+            # buy_cross-0
+            wave_series = STORY_bee[ticker_time_frame]["waves"]["buy_cross-0"]
+            df_return_waveup, df_bestwaves, df_waveup_today = process_trigbee(wave_series)
 
 
-def create_budget_allocation_from_symbol_waves(revrec, df_symbol_waves, df_symbols_wave_guage):
+            # sell_cross-0
+            wave_series = STORY_bee[ticker_time_frame]["waves"]["sell_cross-0"]
+            df_return_wavedown, df_bestwaves_sell_cross, df_wavedown_today = process_trigbee(wave_series)
 
-    return True
+
+            df_best_buy__sell__waves = pd.concat(
+                [df_bestwaves, df_bestwaves_sell_cross], axis=0
+            )
+
+            return {
+                "df_waveup": df_return_waveup,
+                "df_wavedown": df_return_wavedown,
+                "df_waveup_today": df_waveup_today,
+                "df_wavedown_today": df_wavedown_today,
+                "df_best_buy__sell__waves": df_best_buy__sell__waves,
+            }
+        else:
+            df_bestwaves = pd.DataFrame()
+            d_return = {}  # every star and the data by grouping
+            d_agg_view_return = {}  # every star and the data by grouping
+
+            for symbol_star, data in STORY_bee.items():
+                try:
+                    d_return[symbol_star] = {}
+                    d_agg_view_return[symbol_star] = {}
+
+                    waves = data["waves"]
+                    for trigbee, wave in waves.items():
+                        if trigbee == "story":
+                            continue
+                        else:
+                            d_wave = [
+                                wave_data for (k, wave_data) in wave.items() if k != "0"
+                            ]
+                            df = pd.DataFrame(d_wave)
+                            if len(df) > 0:
+                                df["winners"] = np.where(
+                                    df["maxprofit"] > 0, "winner", "loser"
+                                )
+                                df["winners"] = np.where(
+                                    df["maxprofit"] > 0, "winner", "loser"
+                                )
+                                df["winners_n"] = np.where(df["maxprofit"] > 0, 1, 0)
+                                df["losers_n"] = np.where(df["maxprofit"] < 0, 1, 0)
+
+                                groups = (
+                                    df.groupby(["ticker_time_frame", "wave_blocktime"])
+                                    .agg(groupby_agg_dict)
+                                    .reset_index("ticker_time_frame")
+                                )
+                                groups = groups.rename(
+                                    columns={
+                                        "length": "avg_length",
+                                        "time_to_max_profit": "avg_time_to_max_profit",
+                                        "maxprofit": "sum_maxprofit",
+                                    }
+                                )
+                                d_return[symbol_star][trigbee] = groups
+
+                                groups = (
+                                    df.groupby(["trigbee", "wave_blocktime"])
+                                    .agg(groupby_agg_dict)
+                                    .reset_index()
+                                )
+                                groups = groups.rename(
+                                    columns={
+                                        "length": "avg_length",
+                                        "time_to_max_profit": "avg_time_to_max_profit",
+                                        "maxprofit": "sum_maxprofit",
+                                    }
+                                )
+                                groups["ticker_time_frame"] = symbol_star
+                                d_agg_view_return[symbol_star][f"{trigbee}"] = groups
+
+                except Exception as e:
+                    print(e)
+
+
+            df_return_waveup = pd.DataFrame(d_return)
+            df_agg_view_return = pd.DataFrame(d_agg_view_return)
+            df_agg_view_return = df_agg_view_return.T
+
+
+            return {
+                "df": df_return_waveup,
+                "d_agg_view_return": d_agg_view_return,
+                "df_agg_view_return": df_agg_view_return,
+                "df_bestwaves": df_bestwaves,
+            }
+    except Exception as e:
+        print("universe what am I missing?", e)
+        print_line_of_error()
+
+
 
 
 # weight the MACD tier // slice by selected tiers?
-def wave_guage(df, trading_model=False, model_eight_tier=8):
+def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
     weight_short = ['1Minute_1Day', '5Minute_5Day']
     weight_mid = ['30Minute_1Month', '1Hour_3Month']
     weight_long = ['2Hour_6Month', '1Day_1Year']
     if trading_model:
-        for ticker_time_frame in df.index:
+        for ticker_time_frame in df_waves.index:
             ticker, tframe, tperiod = ticker_time_frame.split("_")
-            df.at[ticker_time_frame, 'weight_L'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            df.at[ticker_time_frame, 'weight_S'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_ShortTerm")
-            # df.at[ticker_time_frame, 'weight_L_15'] = .5 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+            df_waves.at[ticker_time_frame, 'weight_L'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+            df_waves.at[ticker_time_frame, 'weight_S'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_ShortTerm")
 
             if f'{tframe}_{tperiod}' in weight_short:
-                df.at[ticker_time_frame, 'weight_L_15'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            # elif f'{tframe}_{tperiod}' in weight_mid:
-            #     df.at[ticker_time_frame, 'weight_L_30'] = .5 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            # elif f'{tframe}_{tperiod}' in weight_long:
-            #     df.at[ticker_time_frame, 'weight_L_54'] = .5 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                df_waves.at[ticker_time_frame, 'weight_L_15'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+            elif f'{tframe}_{tperiod}' in weight_mid:
+                df_waves.at[ticker_time_frame, 'weight_L_30'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+            elif f'{tframe}_{tperiod}' in weight_long:
+                df_waves.at[ticker_time_frame, 'weight_L_54'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
             else:
-                df.at[ticker_time_frame, 'weight_L_15'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            #     df.at[ticker_time_frame, 'weight_L_30'] = .5 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            #     df.at[ticker_time_frame, 'weight_L_54'] = .5 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                df_waves.at[ticker_time_frame, 'weight_L_15'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                df_waves.at[ticker_time_frame, 'weight_L_30'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                df_waves.at[ticker_time_frame, 'weight_L_54'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
 
 
     else:
-        df['weight_L'] = 1 # change to join on based on ticker or groups of ticker models considered
-        df['weight_S'] = 1
+        df_waves['weight_L'] = 1 # change to join on based on ticker or groups of ticker models considered
+        df_waves['weight_S'] = 1
 
     guage_return = {}
-    for weight_ in ['weight_L', 'weight_S', 'weight_L_15',]: #'weight_L_30', 'weight_L_54']:
-        df[f'{weight_}_weight_base'] = df[weight_] * model_eight_tier
-        df[f'{weight_}_macd_weight_sum'] = df[weight_] * df['current_macd_tier']
-        df[f'{weight_}_hist_weight_sum'] = df[weight_] * df['current_hist_tier']
-        guage_return[f'{weight_}_macd_tier_guage'] = sum(df[f'{weight_}_macd_weight_sum']) / sum(df[f'{weight_}_weight_base'])
-        guage_return[f'{weight_}_hist_tier_guage'] = sum(df[f'{weight_}_hist_weight_sum']) / sum(df[f'{weight_}_weight_base'])
+    df_waves = df_waves.fillna(0)
+    for weight_ in ['weight_L', 'weight_S', 'weight_L_15', 'weight_L_30', 'weight_L_54']:
+        df_waves[f'{weight_}_weight_base'] = df_waves[weight_] * model_eight_tier
+        df_waves[f'{weight_}_macd_weight_sum'] = df_waves[weight_] * df_waves['current_macd_tier']
+        df_waves[f'{weight_}_hist_weight_sum'] = df_waves[weight_] * df_waves['current_hist_tier']
+        # Macd Tier Position 
+        guage_return[f'{weight_}_macd_tier_position'] = sum(df_waves[f'{weight_}_macd_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+        guage_return[f'{weight_}_hist_tier_position'] = sum(df_waves[f'{weight_}_hist_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
 
 
-
-    return guage_return
+    return guage_return, df_waves
 
 
 def story_view(STORY_bee, ticker):  # --> returns dataframe
-    def wave_analysis_from_storyview(story_views,  df_item='df_agg', df_item2='df'):
-        # try:
-        wave_analysis = []
-        wave_analysis_df = pd.DataFrame()
-        tickers = []
-        
-        for star in range(len(story_views.get(df_item))):
-            df = story_views.get(df_item).iloc[star][df_item2]
-            df['star_avg_length'] = sum(df['avg_length']) / len(df)
-            df['star_avg_time_to_max_profit'] = sum(df['avg_time_to_max_profit']) / len(df)
-            wave_analysis.append(df)
-        
-        for wave_df in wave_analysis:
-            wave_analysis_df = pd.concat([wave_analysis_df, wave_df])
-        
-        for ttf in wave_analysis_df['ticker_time_frame'].tolist():
-            tickers.append(ttf.split("_")[0])
-        
-        tickers = set(tickers)
-        for tic in tickers:
-            wave_analysis_df[f'{"symbol"}_avg_length'] = sum(wave_analysis_df['avg_length']) / len(wave_analysis_df)
-            wave_analysis_df[f'{"symbol"}_avg_time_to_max_profit'] = sum(wave_analysis_df['avg_time_to_max_profit']) / len(wave_analysis_df)
+    s_ = datetime.now(est)
+    def wave_analysis_from_storyview(storyviews, trigbee='df_waveup', df_agg='df_agg'):
+        try:
+            wave_analysis = []
+            wave_analysis_df = pd.DataFrame()
+            tickers = []
+            # ipdb.set_trace()
+            for star_n in range(len(storyviews.get(df_agg))):
+                df = storyviews.get(df_agg).iloc[star_n][trigbee]
+                df['star_avg_length'] = sum(df['avg_length']) / len(df)
+                df['star_avg_time_to_max_profit'] = sum(df['avg_time_to_max_profit']) / len(df)
+                wave_analysis.append(df)
+            
+            for wave_df in wave_analysis:
+                wave_analysis_df = pd.concat([wave_analysis_df, wave_df])
+            
+            # group tickers
+            for ttf in wave_analysis_df['ticker_time_frame'].tolist():
+                tickers.append(ttf.split("_")[0])
+            # set by symbol
+            tickers = set(tickers)
+            for tic in tickers:
+                wave_analysis_df[f'{"symbol"}_avg_length'] = sum(wave_analysis_df['avg_length']) / len(wave_analysis_df)
+                wave_analysis_df[f'{"symbol"}_avg_time_to_max_profit'] = sum(wave_analysis_df['avg_time_to_max_profit']) / len(wave_analysis_df)
+            
 
-        return wave_analysis_df
-        # except Exception as e:
-        #     print_line_of_error()
-        #     print(wave_analysis_df)
+            return wave_analysis_df
+        except Exception as e:
+            print_line_of_error()
+            print(wave_analysis_df)
     
     
     try:
@@ -4557,7 +4735,8 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
         ttframe__items = {k: v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker}
         return_view = []  # queenmemory objects in conscience {}
         return_agg_view = []
-        return_agg_view_dict = {}
+        return_analyzed_wavesup = []
+        return_analyzed_wavesdown = []
         try:
             for ttframe, conscience in ttframe__items.items():
                 queen_return = {"star": ttframe}
@@ -4574,9 +4753,10 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
                 # all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
 
                 # ALL waves groups
-                trigbee_waves_analzyed = analyze_waves(STORY_bee, ttframe_wave_trigbee=ttframe)
+                trigbee_waves_analzyed = analyze_waves(STORY_bee, ticker_time_frame=ttframe)
                 return_agg_view.append(trigbee_waves_analzyed)
-                return_agg_view_dict[ttframe] = trigbee_waves_analzyed
+                # return_analyzed_wavesup.append(trigbee_waves_analzyed.get('df_waveup'))
+                # return_analyzed_wavesdown.append(trigbee_waves_analzyed.get('df_wavedown'))
                 
                 # Current Wave View
                 if "buy" in story["macd_state"]:
@@ -4586,7 +4766,8 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
 
                 wave_times = {k: i["wave_start_time"] for k, i in ttf_waves.items()}
 
-                current_wave_view = {k: v for (k, v) in current_wave.items() if k in wave_view}
+                current_wave_view = {k: v for (k, v) in current_wave.items()}
+                # print(current_wave_view)
                 obj_return = {**story, **current_wave_view}
                 obj_return_ = {**obj_return, **p_story}
                 queen_return = {**queen_return, **obj_return_}
@@ -4596,18 +4777,19 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
             df = pd.DataFrame(return_view)
             df_agg = pd.DataFrame(return_agg_view)
             
-            storyviews = {"df": df, "df_agg": df_agg}
+            storyviews = {"df": df, "df_agg": df_agg, 'cycle_time': (datetime.now(est) - s_).total_seconds()}
+                #'df_analyzed_wavesup': df_analyzed_wavesup, 'df_analyzed_wavesdown': df_analyzed_wavesdown}
         except Exception as e:
             print_line_of_error()
         
         if len(storyviews.get('df')) == 0:
-            # ipdb.set_trace()
             # print("missing ticker from storybee", ticker)
             pass
             return False
 
         # wave analysis
-        storyviews.update({'wave_analysis': wave_analysis_from_storyview(storyviews)})
+        storyviews.update({'wave_analysis_up': wave_analysis_from_storyview(storyviews, trigbee='df_waveup')})
+        storyviews.update({'wave_analysis_down': wave_analysis_from_storyview(storyviews, trigbee='df_wavedown')})
 
         return storyviews
     
@@ -4618,20 +4800,29 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
 
 def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbols=1000):
     try:
+        df_waveview = pd.DataFrame()
         df_storyview = pd.DataFrame()
+        df_storyview_down = pd.DataFrame()
         df_storyguage = pd.DataFrame()
         story_guages_view = []
         for idx, symbol in enumerate(symbols):
+            # if symbol != 'SPY':
+            #     continue
             if idx > max_num_symbols:
                 continue
             # story views wave analysis
             story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
             if story_views == False:
                 continue
-            wave_analysis = story_views.get("wave_analysis").reset_index()
+            
+            wave_analysis = story_views.get("wave_analysis_up").reset_index()
             waves = wave_analysis.set_index("ticker_time_frame")
             df_storyview = pd.concat([df_storyview, waves])
-            
+
+            wave_analysis = story_views.get("wave_analysis_down").reset_index()
+            waves = wave_analysis.set_index("ticker_time_frame")
+            df_storyview_down = pd.concat([df_storyview_down, waves])
+
             # wave_guage__story()
             df = story_views.get('df')
             df = df.set_index('star')
@@ -4642,19 +4833,24 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
             df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
             df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
             df = df.sort_values('sort')
+            df_waveview = pd.concat([df_waveview, df])
+            
+            
             trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
             if trading_model == None:
                 print("no tm")
                 continue
-            story_guages = wave_guage(df, trading_model=trading_model)
+            story_guages, delme = wave_gauge(df_waves=df, trading_model=trading_model)
             story_guages['symbol'] = symbol
             story_guages_view.append(story_guages)
-            # df_storyguage = pd.concat([df_storyguage, df_story_guages_view])
 
         df_storyguage = pd.DataFrame(story_guages_view)
         
-        return df_storyview, df_storyguage
-    
+        return {'df_storyview': df_storyview, 
+                'df_storyguage': df_storyguage, 
+                'df_waveview': df_waveview, 
+                'df_storyview_down': df_storyview_down
+        }
     except Exception as e:
         print_line_of_error()
         print("hive hive hive")
@@ -4721,52 +4917,6 @@ def queen_orders_view(
         return {"df": df_return}
     else:
         return {"df": pd.DataFrame()}
-
-
-def power_ranger_mapping(
-    tier_value,
-    colors=[
-        "red",
-        "blue",
-        "pink",
-        "yellow",
-        "white",
-        "green",
-        "orange",
-        "purple",
-        "black",
-    ],
-):
-    # When 1M macd tier in range (-7, -5) + 50% : Red // Sell :: 1%
-    # When 1M macd tier in range (-5, -3) + 40% : Blue // Sell :: 1%
-    # When 1M macd tier in range (-3, -2) + 25% : Pink // Sell :: 1%
-    # When 1M macd tier in range (-2, -1) + 10% : Yellow // Sell :: 1%
-    # When 1M macd tier in range (-1, 1) + 1% : White // Sell :: 1%
-    # When 1M macd tier in range (1, 2) + 1% : Green // Sell :: 1%
-    # When 1M macd tier in range (2, 3) + 1% : orange // Sell :: 25%
-    # When 1M macd tier in range (3, 5) + 1% : purple // Sell :: 40%
-    # When 1M macd tier in range (5, 7) + 1% : Black // Sell :: 50%
-
-    tier_value = float(tier_value)
-
-    if tier_value >= -8 and tier_value <= -7:
-        return "red"
-    elif tier_value >= -6 and tier_value <= -5:
-        return "blue"
-    elif tier_value >= -4 and tier_value <= -3:
-        return "pink"
-    elif tier_value >= -2 and tier_value <= -1:
-        return "yellow"
-    elif tier_value > -1 and tier_value <= 1:
-        return "white"
-    elif tier_value >= 2 and tier_value <= 3:
-        return "green"
-    elif tier_value >= 4 and tier_value <= 5:
-        return "purple"
-    elif tier_value >= 6 and tier_value >= 7:
-        return "black"
-    else:
-        return "black"
 
 
 def init_PowerRangers(ranger_dimensions=False):
@@ -5029,6 +5179,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
         PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{".pkl"}')
+        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{".pkl"}')
+        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
@@ -5037,6 +5189,16 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
         PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
         PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}{".pkl"}')
+        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}{".pkl"}')
+        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
+
+    if os.path.exists(PB_account_info_PICKLE) == False:
+        print("Init PB_account_info_PICKLE")
+        PickleData(PB_account_info_PICKLE, {'account_info': {}})
+
+    if os.path.exists(PB_RevRec_PICKLE) == False:
+        print("Init PB_RevRec_PICKLE")
+        PickleData(PB_RevRec_PICKLE, {'revrec': {}})
 
     if os.path.exists(PB_QUEENsHeart_PICKLE) == False:
         print("Init PB_QUEENsHeart_PICKLE")
@@ -5081,6 +5243,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         st.session_state["PB_queen_Archives_Pickle"] = PB_queen_Archives_Pickle
         st.session_state["PB_QUEENsHeart_PICKLE"] = PB_QUEENsHeart_PICKLE
         st.session_state["PB_KING_Pickle"] = PB_KING_Pickle
+        st.session_state["PB_RevRec_PICKLE"] = PB_RevRec_PICKLE
 
 
     return {
@@ -5090,6 +5253,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
         "PB_queen_Archives_Pickle": PB_queen_Archives_Pickle,
         "PB_QUEENsHeart_PICKLE": PB_QUEENsHeart_PICKLE,
         "PB_KING_Pickle": PB_KING_Pickle,
+        "PB_RevRec_PICKLE": PB_RevRec_PICKLE,
+        "PB_account_info_PICKLE": PB_account_info_PICKLE,
     }
 
 

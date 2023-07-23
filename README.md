@@ -51,6 +51,7 @@ python -c "import sys; print(sys.path)"
 
 export PYTHONPATH=/home/stapinski89/pollen/pollen
 
+export PYTHONPATH=/home/stefanstapinski/ENV/pollen/pollen  # not working????
 
 ## Setting Up Sever
 fastapi: uvicorn server:app --reload
@@ -98,6 +99,7 @@ sudo vim .bashrc # when in home dir
 
 # find if port active
 sudo lsof -i :8501
+sudo lsof -i :8000
 sudo kill -9 PID
 
 # Git

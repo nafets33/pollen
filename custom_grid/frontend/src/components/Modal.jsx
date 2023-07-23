@@ -143,4 +143,4 @@ const MyModal = ({
   )
 }
 
-export default MyModal
+export default MyModal;

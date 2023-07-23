@@ -1112,13 +1112,13 @@ def save_the_QUEEN_KING(PB_App_Pickle, QUEEN_KING):
 
 
 
-def download_df_as_CSV(df, file_name="name.csv"):
+def download_df_as_CSV(df, button_name="download csv", file_name="name.csv"):
     def convert_df_to_csv(df):
         # IMPORTANT: Cache the conversion to prevent computation on every rerun
         return df.to_csv().encode("utf-8")
 
     st.download_button(
-        label="Download as CSV",
+        label=button_name,
         data=convert_df_to_csv(df),
         file_name=file_name,
         mime="text/csv",
@@ -1663,6 +1663,8 @@ def show_waves(STORY_bee, ticker_option='SPY', frame_option='1Minute_1Day'):
     st.write("buy cross waves")
     m_sort = knowledge['waves']['buy_cross-0']
     df_m_sort = pd.DataFrame(m_sort).T
+    if st.button("download buy"):
+        dd = download_df_as_CSV(df_m_sort, 'trigbee_cross-0.csv')
     df_m_sort = df_m_sort.astype(str)
     st.dataframe(data=df_m_sort)
 
