@@ -9,7 +9,7 @@ import ssl
 from email.message import EmailMessage
 # from streamlit_extras.switch_page_button import switch_page
 from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc
-from chess_piece.queen_hive import setup_instance
+from chess_piece.queen_hive import setup_instance, print_line_of_error
 import ipdb
 
 # from QueenHive import init_pollen_dbs
@@ -327,7 +327,8 @@ def signin_main(page):
             return False
     
     except Exception as e:
-        print('auth', e)
+        print('ERROR auth', e)
+        print_line_of_error()
 
 if __name__ == "__main__":
     st.session_state["logout"] = True

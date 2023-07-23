@@ -656,12 +656,6 @@ def pollenq(admin_pq):
                 if KING_req.get('update'):
                     KING = KING_req['KING']
                     PickleData(KING.get('source'), KING)
-                
-                pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
-                if st.button("test write new file"):
-                    PickleData(pickle_file, {})
-                if st.button("test set file permissions"):
-                    os.chmod(pickle_file, 0o400)
             
             # with st.sidebar:
             #     st.write("testing fastpi")
@@ -787,8 +781,10 @@ def pollenq(admin_pq):
                 cash=acct_info['cash']
                 fees=acct_info['accrued_fees']
                 num = cash/pv
-                # num = 0 if num <=1 else num
-                progress_bar(value=num, text=f"Cash % {round(num,2)}")
+                # num = 0 if num <=1 else
+                # try:
+# 
+                    # progress_bar(value=num, text=f"Cash % {round(num,2)}")
 
             with cols[1]:
                 try:

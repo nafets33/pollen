@@ -1813,7 +1813,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         # 'pinned': 'right',
                         # },
                         ],
-                grid_height='250px',
+                grid_height='300px',
             )
 
         
@@ -1831,7 +1831,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     'enableCellChangeFlash': True,
                     # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
                     }
-                return {'star': {},
+                return {'star': {'initialWidth': 168,},
                         'macd_state': {'initialWidth':123},
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
@@ -1852,10 +1852,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
-                        # 'allocation_RM_delta': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                        #             "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                        #             'initialWidth':123,
-                        #             },
+                        'remaining_budget_borrow': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                        #    'custom_currency_symbol':"$",
+                                                        'initialWidth':123,
+                                                        },
                                 }
 
             config_cols = config_cols()
@@ -1952,13 +1952,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'col_width':100,
                         'pinned': 'left',
                         },
-                        # {'button_name': 'button2',
-                        # 'button_api': "api2",
-                        # 'prompt_message': 'message2',
-                        # 'prompt_field': 'None',
-                        # 'col_headername': 'Sell button',
-                        # 'col_width':100,
-                        # },
+
                         ]
             ) 
 
@@ -2002,7 +1996,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
             #Configure index field
             gb.configure_index('idx')
-            gb.configure_column('idx', {"sortable":True})
+            gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
             gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True, "sortable":True})
             go = gb.build()
 
@@ -2028,7 +2022,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             return True
 
 
-        def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=230):
+        def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300):
             st_custom_graph(
                 api=api,
                 x_axis={
@@ -2336,7 +2330,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                             },
                                             refresh_sec=refresh_sec,
                                             refresh_button=True,
-                                            graph_height=250,
+                                            graph_height=300,
                                             )
                                     # with cols[1]:
                                     logs = os.listdir(log_dir)
