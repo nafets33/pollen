@@ -1,23 +1,30 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback, StrictMode } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import toastr from 'toastr';
-import 'toastr/build/toastr.min.css';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
-import 'ag-grid-community/styles/ag-theme-balham.css';
-import 'ag-grid-community/styles/ag-theme-material.css';
-
-import 'ag-grid-enterprise';
-import { parseISO, compareAsc } from "date-fns"
-import { format } from "date-fns-tz"
-import { duration } from "moment"
-import './styles.css';
-import axios from "axios"
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  StrictMode,
+} from 'react'
+import { AgGridReact } from 'ag-grid-react'
+import toastr from 'toastr'
+import 'toastr/build/toastr.min.css'
+import 'ag-grid-community/styles/ag-grid.css'
+import 'ag-grid-community/styles/ag-theme-alpine.css'
+import 'ag-grid-community/styles/ag-theme-balham.css'
+import 'ag-grid-community/styles/ag-theme-material.css'
+import Modal from 'react-modal'
+import 'ag-grid-enterprise'
+import { parseISO, compareAsc } from 'date-fns'
+import { format } from 'date-fns-tz'
+import { duration } from 'moment'
+import './styles.css'
+import axios from 'axios'
 import {
   ComponentProps,
   Streamlit,
   withStreamlitConnection,
-} from "streamlit-component-lib";
+} from 'streamlit-component-lib'
 import {
   ColDef,
   ColGroupDef,
@@ -34,22 +41,22 @@ import MyModal from './components/Modal'
 import { order_rules_default } from './utils/order_rules'
 
 type Props = {
-  username: string,
-  api: string,
-  api_update: string,
-  refresh_sec?: number,
-  refresh_cutoff_sec?: number,
-  gridoption_build?: any,
-  prod?: boolean,
-  grid_options?: any,
-  index: string,
-  kwargs: any,
+  username: string
+  api: string
+  api_update: string
+  refresh_sec?: number
+  refresh_cutoff_sec?: number
+  gridoption_build?: any
+  prod?: boolean
+  grid_options?: any
+  index: string
+  kwargs: any
 }
 
-let g_rowdata: any[] = [];
+let g_rowdata: any[] = []
 let g_newRowData: any = null
 
-function dateFormatter(isoString: string, formaterString: string): String {
+function dateFormatter (isoString: string, formaterString: string): String {
   try {
     let date = new Date(isoString)
     return format(date, formaterString)
@@ -59,7 +66,7 @@ function dateFormatter(isoString: string, formaterString: string): String {
   }
 }
 
-function currencyFormatter(number: any, currencySymbol: string): String {
+function currencyFormatter (number: any, currencySymbol: string): String {
   let n = Number.parseFloat(number)
   if (!Number.isNaN(n)) {
     return currencySymbol + n.toFixed(2)
@@ -68,7 +75,7 @@ function currencyFormatter(number: any, currencySymbol: string): String {
   }
 }
 
-function numberFormatter(number: any, precision: number): String {
+function numberFormatter (number: any, precision: number): String {
   let n = Number.parseFloat(number)
   if (!Number.isNaN(n)) {
     return n.toFixed(precision)
@@ -80,18 +87,18 @@ function numberFormatter(number: any, precision: number): String {
 const columnFormaters = {
   columnTypes: {
     dateColumnFilter: {
-      filter: "agDateColumnFilter",
+      filter: 'agDateColumnFilter',
       filterParams: {
         comparator: (filterValue: any, cellValue: string) =>
           compareAsc(parseISO(cellValue), filterValue),
       },
     },
     numberColumnFilter: {
-      filter: "agNumberColumnFilter",
+      filter: 'agNumberColumnFilter',
     },
     shortDateTimeFormat: {
       valueFormatter: (params: any) =>
-        dateFormatter(params.value, "dd/MM/yyyy HH:mm"),
+        dateFormatter(params.value, 'dd/MM/yyyy HH:mm'),
     },
     customDateTimeFormat: {
       valueFormatter: (params: any) =>
@@ -115,39 +122,55 @@ const columnFormaters = {
 }
 
 const HyperlinkRenderer = (props: any) => {
-  console.log("hyperlink", props);
-  return <a href={`${props.column.colDef.baseURL}/${props.data[props.column.colDef["linkField"]]}`} target='_blank'>{props.value}</a>
+  console.log('hyperlink', props)
+  return (
+    <a
+      href={`${props.column.colDef.baseURL}/${
+        props.data[props.column.colDef['linkField']]
+      }`}
+      target='_blank'
+    >
+      {props.value}
+    </a>
+  )
 }
-
 
 toastr.options = {
   positionClass: 'toast-top-full-width',
   hideDuration: 300,
   timeOut: 3000,
-};
+}
 
 const AgGrid = (props: Props) => {
-
   const BtnCellRenderer = (props: any) => {
     const btnClickedHandler = () => {
-      props.clicked(props.value);
+      props.clicked(props.value)
     }
 
-    return (
-      <button onClick={btnClickedHandler}>{props.buttonName}</button>
-    )
+    return <button onClick={btnClickedHandler}>{props.buttonName}</button>
   }
 
-  const gridRef = useRef<AgGridReact>(null);
-  const { username, api, api_update, refresh_sec = undefined, refresh_cutoff_sec = 0, prod = true, index, kwargs } = props;
-  let { grid_options = {} } = props;
-  const { buttons } = kwargs;
-  const [rowData, setRowData] = useState<any[]>([]);
-  const [modalShow, setModalshow] = useState(false);
+  const gridRef = useRef<AgGridReact>(null)
+  const {
+    username,
+    api,
+    api_update,
+    refresh_sec = undefined,
+    refresh_cutoff_sec = 0,
+    prod = true,
+    index,
+    kwargs,
+  } = props
+  let { grid_options = {} } = props
+  const { buttons } = kwargs
+  const [rowData, setRowData] = useState<any[]>([])
+  const [modalShow, setModalshow] = useState(false)
+  const [modalData, setModalData] = useState({})
+  const [promptText, setPromptText] = useState('')
 
   useEffect(() => {
-    Streamlit.setFrameHeight();
-    console.log('buttons :>> ', buttons);
+    Streamlit.setFrameHeight()
+    console.log('buttons :>> ', buttons)
     if (buttons.length) {
       buttons.map((button: any) => {
         const { prompt_field, prompt_message, button_api, prompt_order_rules } =
@@ -177,9 +200,12 @@ const AgGrid = (props: Props) => {
                   })
                   const rules_value: any = {}
                   prompt_order_rules.map((rule: string) => {
-                    rules_value[rule] = order_rules_default[rule]
-                      ? order_rules_default[rule]
-                      : selectedRow[rule]
+                    rules_value[rule] =
+                    // @ts-expect-error
+                      order_rules_default[rule] != null
+                        ? // @ts-expect-error
+                          order_rules_default[rule]
+                        : selectedRow[rule]
                   })
                   setPromptText(rules_value)
                 } else if (prompt_field && prompt_message) {
@@ -189,12 +215,20 @@ const AgGrid = (props: Props) => {
                     button_api: button_api,
                     username: username,
                     prod: prod,
-                    selected_row: selectedRow,
-                    default_value: num,
-                    ...kwargs,
+                    selectedRow: selectedRow,
+                    kwargs: kwargs,
                   })
-                }
-                else {
+                  setPromptText(selectedRow[prompt_field])
+                  // const num = prompt(prompt_message, selectedRow[prompt_field]);
+                  // if (num == null) return;
+                  // const res = await axios.post(button_api, {
+                  //   username: username,
+                  //   prod: prod,
+                  //   selected_row: selectedRow,
+                  //   default_value: num,
+                  //   ...kwargs,
+                  // })
+                } else {
                   if (window.confirm(prompt_message)) {
                     const res = await axios.post(button_api, {
                       username: username,
@@ -203,10 +237,10 @@ const AgGrid = (props: Props) => {
                       ...kwargs,
                     })
                   }
+                  toastr.success('Success!')
                 }
-                toastr.success("Success!")
               } catch (error) {
-                alert(`${error}`);
+                alert(`${error}`)
               }
             },
           },
@@ -214,103 +248,107 @@ const AgGrid = (props: Props) => {
       })
     }
     // parseGridoptions()
-  });
+  })
 
   const fetchAndSetData = async () => {
-    const array = await fetchData();
-    if (array === false) return false;
-    const api = gridRef.current!.api;
+    const array = await fetchData()
+    if (array === false) return false
+    const api = gridRef.current!.api
     const id_array = array.map((item: any) => item[index])
     const old_id_array = g_rowdata.map((item: any) => item[index])
     const toUpdate = array.filter((row: any) => id_array.includes(row[index]))
-    const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
+    const toRemove = g_rowdata.filter(row => !id_array.includes(row[index]))
     const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
-    api.applyTransactionAsync({ update: toUpdate, remove: toRemove, add: toAdd });
+    api.applyTransactionAsync({
+      update: toUpdate,
+      remove: toRemove,
+      add: toAdd,
+    })
     g_rowdata = array
-    return true;
-  };
+    return true
+  }
 
   const fetchData = async () => {
     try {
       const res = await axios.post(api, {
         username: username,
         prod: prod,
-        ...kwargs
-      });
-      const array = JSON.parse(res.data);
-      console.log('table data :>> ', array);
+        ...kwargs,
+      })
+      const array = JSON.parse(res.data)
+      console.log('table data :>> ', array)
       if (array.status == false) {
-        toastr.error(`Fetch Error: ${array.message}`);
-        return false;
+        toastr.error(`Fetch Error: ${array.message}`)
+        return false
       }
-      return array;
+      return array
     } catch (error: any) {
       toastr.error(`Fetch Error: ${error.message}`)
-      return false;
+      return false
     }
-  };
+  }
 
   useEffect(() => {
     if (refresh_sec && refresh_sec > 0) {
-      const interval = setInterval(fetchAndSetData, refresh_sec * 1000);
-      let timeout: NodeJS.Timeout;
+      const interval = setInterval(fetchAndSetData, refresh_sec * 1000)
+      let timeout: NodeJS.Timeout
       if (refresh_cutoff_sec > 0) {
-        console.log(refresh_cutoff_sec);
+        console.log(refresh_cutoff_sec)
         timeout = setTimeout(() => {
-          clearInterval(interval);
-          console.log("Fetching data ended, refresh rate:", refresh_sec);
-        }, refresh_cutoff_sec * 1000);
+          clearInterval(interval)
+          console.log('Fetching data ended, refresh rate:', refresh_sec)
+        }, refresh_cutoff_sec * 1000)
       }
-      console.error("rendered==========", props);
+      console.error('rendered==========', props)
       return () => {
-        clearInterval(interval);
-        if (timeout) clearTimeout(timeout);
+        clearInterval(interval)
+        if (timeout) clearTimeout(timeout)
       }
     }
-  }, [props]);
+  }, [props])
 
   const autoSizeAll = useCallback((skipHeader: boolean) => {
-    const allColumnIds: string[] = [];
+    const allColumnIds: string[] = []
     gridRef.current!.columnApi.getColumns()!.forEach((column: any) => {
-      allColumnIds.push(column.getId());
-    });
-    gridRef.current!.columnApi.autoSizeColumns(allColumnIds, skipHeader);
-  }, []);
+      allColumnIds.push(column.getId())
+    })
+    gridRef.current!.columnApi.autoSizeColumns(allColumnIds, skipHeader)
+  }, [])
 
   const sizeToFit = useCallback(() => {
     gridRef.current!.api.sizeColumnsToFit({
       defaultMinWidth: 100,
-    });
-  }, []);
+    })
+  }, [])
 
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
       try {
-        const array = await fetchData();
-      console.log('AAAAAAAAAAAAAAAAAAAAAAA',array);
-      if (array == false) {
+        const array = await fetchData()
+        console.log('AAAAAAAAAAAAAAAAAAAAAAA', array)
+        if (array == false) {
           // toastr.error(`Error: ${array.message}`)
-          return;
+          return
         }
-        setRowData(array);
-        g_rowdata = array;
+        setRowData(array)
+        g_rowdata = array
       } catch (error: any) {
         toastr.error(`Error: ${error.message}`)
       }
-    }, 100);
-  }, []);
+    }, 100)
+  }, [])
 
   const autoGroupColumnDef = useMemo<ColDef>(() => {
     return {
       minWidth: 200,
-    };
-  }, []);
+    }
+  }, [])
 
   const getRowId = useMemo<GetRowIdFunc>(() => {
     return (params: GetRowIdParams) => {
-      return params.data[index];
-    };
-  }, [index]);
+      return params.data[index]
+    }
+  }, [index])
 
   const sideBar = useMemo<
     SideBarDef | string | string[] | boolean | null
@@ -333,19 +371,19 @@ const AgGrid = (props: Props) => {
         },
       ],
       defaultToolPanel: 'customStats',
-    };
-  }, []);
+    }
+  }, [])
 
-  const onCellValueChanged = useCallback((event) => {
+  const onCellValueChanged = useCallback(event => {
     if (g_newRowData == null) g_newRowData = {}
-    g_newRowData[event.data[index]] = event.data;
-    console.log('Data after change is', g_newRowData);
-  }, []);
+    g_newRowData[event.data[index]] = event.data
+    console.log('Data after change is', g_newRowData)
+  }, [])
 
   const onRefresh = async () => {
     try {
-      const success = await fetchAndSetData();
-      success && toastr.success("Refresh success!")
+      const success = await fetchAndSetData()
+      success && toastr.success('Refresh success!')
     } catch (error: any) {
       toastr.error(`Refresh Failed! ${error.message}`)
     }
@@ -353,8 +391,8 @@ const AgGrid = (props: Props) => {
 
   const onUpdate = async () => {
     if (g_newRowData == null) {
-      toastr.warning(`No changes to update`);
-      return;
+      toastr.warning(`No changes to update`)
+      return
     }
     try {
       const res: any = await axios.post(api_update, {
@@ -364,33 +402,35 @@ const AgGrid = (props: Props) => {
         ...kwargs,
       })
       g_newRowData = null
-      if (res.status)
-        toastr.success(`Successfully Updated! `);
-      else toastr.error(`Failed! ${res.message}`);
+      if (res.status) toastr.success(`Successfully Updated! `)
+      else toastr.error(`Failed! ${res.message}`)
     } catch (error) {
-      toastr.error(`Failed! ${error}`);
+      toastr.error(`Failed! ${error}`)
     }
   }
 
   const columnTypes = useMemo<any>(() => {
     return {
       dateColumnFilter: {
-        filter: "agDateColumnFilter",
+        filter: 'agDateColumnFilter',
         filterParams: {
           comparator: (filterValue: any, cellValue: string) =>
             compareAsc(new Date(cellValue), filterValue),
         },
       },
       numberColumnFilter: {
-        filter: "agNumberColumnFilter",
+        filter: 'agNumberColumnFilter',
       },
       shortDateTimeFormat: {
         valueFormatter: (params: any) =>
-          dateFormatter(params.value, "dd/MM/yyyy HH:mm"),
+          dateFormatter(params.value, 'dd/MM/yyyy HH:mm'),
       },
       customDateTimeFormat: {
         valueFormatter: (params: any) =>
-          dateFormatter(params.value, params.column.colDef.custom_format_string),
+          dateFormatter(
+            params.value,
+            params.column.colDef.custom_format_string
+          ),
       },
       customNumericFormat: {
         valueFormatter: (params: any) =>
@@ -408,28 +448,33 @@ const AgGrid = (props: Props) => {
       },
       customNumberFormat: {
         valueFormatter: (params: any) =>
-          Number(params.value).toLocaleString('en-US', { minimumFractionDigits: 0 })
+          Number(params.value).toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+          }),
       },
       customHyperlinkRenderer: {
         // valueGetter: (params: any) =>
         //   params.column.colDef.baseURL + params.data.honey,
         cellRenderer: HyperlinkRenderer,
         cellRendererParams: {
-          baseURL: "URLSearchParams.co"
-        }
+          baseURL: 'URLSearchParams.co',
+        },
       },
-    };
-  }, []);
+    }
+  }, [])
 
   const onClick = () => {
-    toastr.clear();
-    setTimeout(() => toastr.success(`Settings updated `), 300);
-  };
+    toastr.clear()
+    setTimeout(() => toastr.success(`Settings updated `), 300)
+  }
 
   const getRowStyle = (params: any) => {
-    console.log('AAAAAAAAAA :>> ', params);
-    return { background: params.data['color_row'], color: params.data['color_row_text'] };
-  };
+    console.log('AAAAAAAAAA :>> ', params)
+    return {
+      background: params.data['color_row'],
+      color: params.data['color_row_text'],
+    }
+  }
 
   return (
     <>
@@ -458,30 +503,36 @@ const AgGrid = (props: Props) => {
               </button>
             </div>
           </div>
+        )}
+        <div
+          className={grid_options.theme || 'ag-theme-alpine-dark'}
+          style={{
+            width: '100%',
+            height: kwargs['grid_height'] ? kwargs['grid_height'] : '100%',
+          }}
+        >
+          <AgGridReact
+            ref={gridRef}
+            rowData={rowData}
+            // defaultColDef={defaultColDef}
+            getRowStyle={getRowStyle}
+            rowStyle={{ fontSize: 12, padding: 0 }}
+            headerHeight={30}
+            rowHeight={30}
+            onGridReady={onGridReady}
+            autoGroupColumnDef={autoGroupColumnDef}
+            // sideBar={sideBar}
+            animateRows={true}
+            suppressAggFuncInHeader={true}
+            getRowId={getRowId}
+            gridOptions={grid_options}
+            onCellValueChanged={onCellValueChanged}
+            columnTypes={columnTypes}
+          />
         </div>
-      }
-      <div className={grid_options.theme || 'ag-theme-alpine-dark'} style={{ width: "100%", height: kwargs['grid_height'] ? kwargs['grid_height'] : '100%' }}>
-        <AgGridReact
-          ref={gridRef}
-          rowData={rowData}
-          // defaultColDef={defaultColDef}
-          getRowStyle={getRowStyle}
-          rowStyle={{ fontSize: 12, padding: 0 }}
-          headerHeight={30}
-          rowHeight={30}
-          onGridReady={onGridReady}
-          autoGroupColumnDef={autoGroupColumnDef}
-          // sideBar={sideBar}
-          animateRows={true}
-          suppressAggFuncInHeader={true}
-          getRowId={getRowId}
-          gridOptions={grid_options}
-          onCellValueChanged={onCellValueChanged}
-          columnTypes={columnTypes}
-        />
       </div>
-    </div >
-  );
-};
+    </>
+  )
+}
 
-export default AgGrid;
+export default AgGrid

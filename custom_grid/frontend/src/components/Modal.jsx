@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ReactModal from 'react-modal'
 import './modal.css'
 import axios from 'axios'
@@ -27,6 +27,8 @@ const MyModal = ({
 }) => {
   const { prompt_field, prompt_order_rules, selectedRow } = modalData
 
+  const ref = useRef()
+
   const handleOk = async () => {
     try {
       const res = await axios.post(modalData.button_api, {
@@ -45,7 +47,7 @@ const MyModal = ({
 
   const handleOkSecond = async () => {
     try {
-      console.log('promptText :>> ', promptText);
+      console.log('promptText :>> ', promptText)
       const res = await axios.post(modalData.button_api, {
         username: modalData.username,
         prod: modalData.prod,
@@ -60,6 +62,10 @@ const MyModal = ({
     }
   }
 
+  useEffect(() => {
+    if (isOpen) setTimeout(() => ref.current.focus(), 100)
+  }, [isOpen])
+
   if (prompt_field === 'order_rules')
     return (
       <div className='my-modal' style={{ display: isOpen ? 'block' : 'none' }}>
@@ -71,26 +77,55 @@ const MyModal = ({
             </span>
           </div>
           <div className='modal-body p-2'>
-            {prompt_order_rules.map((rule, index) => (
-              <div className='d-flex flex-row justify-content-end' key={index}>
-                <label>
-                  {rule + ':  '}
-                  <input
-                    type='text'
-                    value={promptText[rule]}
-                    onChange={e =>
-                      setPromptText({ ...promptText, [rule]: e.target.value })
-                    }
-                  />
-                </label>
-              </div>
-            ))}
+            {prompt_order_rules.map((rule, index) => {
+              if (typeof promptText[rule] == 'boolean')
+                return (
+                  <div
+                    className='d-flex flex-row justify-content-end'
+                    key={index}
+                  >
+                    <label className='d-flex flex-row'>
+                      {rule + ':  '}
+                      <div className='px-2' style={{ width: '193px' }}>
+                        <input
+                          type='checkbox'
+                          checked={promptText[rule]}
+                          onChange={e =>
+                            setPromptText({
+                              ...promptText,
+                              [rule]: e.target.checked,
+                            })
+                          }
+                        />
+                      </div>
+                    </label>
+                  </div>
+                )
+              return (
+                <div
+                  className='d-flex flex-row justify-content-end'
+                  key={index}
+                >
+                  <label>
+                    {rule + ':  '}
+                    <input
+                      type='text'
+                      value={promptText[rule]}
+                      onChange={e =>
+                        setPromptText({ ...promptText, [rule]: e.target.value })
+                      }
+                    />
+                  </label>
+                </div>
+              )
+            })}
           </div>
           <div className='modal-footer'>
             <button
               type='button'
               className='btn btn-primary'
               onClick={handleOkSecond}
+              ref={ref}
             >
               Ok
             </button>
@@ -127,7 +162,12 @@ const MyModal = ({
           />
         </div>
         <div className='modal-footer'>
-          <button type='button' className='btn btn-primary' onClick={handleOk}>
+          <button
+            type='button'
+            className='btn btn-primary'
+            onClick={handleOk}
+            ref={ref}
+          >
             Ok
           </button>
           <button
@@ -143,4 +183,4 @@ const MyModal = ({
   )
 }
 
-export default MyModal;
+export default MyModal
