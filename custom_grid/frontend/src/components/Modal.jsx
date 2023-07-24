@@ -30,34 +30,56 @@ const MyModal = ({
 
   const handleOk = async () => {
     try {
-      const res = await axios.post(modalData.button_api, {
+      const { data: res } = await axios.post(modalData.button_api, {
         username: modalData.username,
         prod: modalData.prod,
         selected_row: modalData.selectedRow,
         default_value: promptText,
         ...modalData.kwargs,
       })
-      toastr.success('Success')
-      closeModal()
+      const { status, data, description } = res
+      console.log('res :>> ', res)
+      if (status == 'success') {
+        data.message_type == 'fade'
+          ? toastr.success(description, 'Success')
+          : alert('Success!\nDescription: ' + description)
+      } else {
+        data.message_type == 'fade'
+          ? toastr.error(description, 'Error')
+          : alert('Error!\nDescription: ' + description)
+      }
+      if (data?.close_modal != false) closeModal()
     } catch (error) {
-      alert(`${error}`)
+      console.log('error :>> ', error)
+      toastr.error(error.message)
     }
   }
 
   const handleOkSecond = async () => {
     try {
-      console.log('promptText :>> ', promptText)
-      const res = await axios.post(modalData.button_api, {
+      const body = {
         username: modalData.username,
         prod: modalData.prod,
         selected_row: modalData.selectedRow,
         default_value: promptText,
         ...modalData.kwargs,
-      })
-      toastr.success('Success')
-      closeModal()
+      }
+      console.log('body :>> ', body)
+      const { data: res } = await axios.post(modalData.button_api, body)
+      const { status, data, description } = res
+      if (status == 'success') {
+        data.message_type == 'fade'
+          ? toastr.success(description, 'Success')
+          : alert('Success!\nDescription: ' + description)
+      } else {
+        data.message_type == 'fade'
+          ? toastr.error(description, 'Error')
+          : alert('Error!\nDescription: ' + description)
+      }
+      if (data?.close_modal != false) closeModal()
     } catch (error) {
-      alert(`${error}`)
+      console.log('error :>> ', error)
+      toastr.error(error.message)
     }
   }
 

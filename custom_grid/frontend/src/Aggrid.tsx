@@ -162,19 +162,24 @@ const AgGrid = (props: Props) => {
     kwargs,
   } = props
   let { grid_options = {} } = props
-  const { buttons } = kwargs
+  const { buttons, toggle_views } = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
   const [promptText, setPromptText] = useState('')
+  const [viewId, setViewId] = useState(0)
 
   useEffect(() => {
     Streamlit.setFrameHeight()
     console.log('buttons :>> ', buttons)
     if (buttons.length) {
       buttons.map((button: any) => {
-        const { prompt_field, prompt_message, button_api, prompt_order_rules } =
-          button
+        const {
+          prompt_field,
+          prompt_message,
+          button_api,
+          prompt_order_rules,
+        } = button
         grid_options.columnDefs!.push({
           field: index,
           headerName: button['col_headername'],
@@ -189,12 +194,17 @@ const AgGrid = (props: Props) => {
 
                 if (prompt_order_rules) {
                   const str = selectedRow[prompt_field]
-                  const selectedField = typeof str === 'string' ? JSON.parse(selectedRow[prompt_field]
-                    .replace(/'/g, '"')
-                    .replace(/\n/g, '')
-                    .replace(/\s/g, '')
-                    .replace(/False/g, 'false')
-                    .replace(/True/g, 'true')) : str
+                  const selectedField =
+                    typeof str === 'string'
+                      ? JSON.parse(
+                          selectedRow[prompt_field]
+                            .replace(/'/g, '"')
+                            .replace(/\n/g, '')
+                            .replace(/\s/g, '')
+                            .replace(/False/g, 'false')
+                            .replace(/True/g, 'true')
+                        )
+                      : str
                   setModalshow(true)
                   setModalData({
                     prompt_message,
@@ -271,12 +281,17 @@ const AgGrid = (props: Props) => {
     return true
   }
 
+  useEffect(() => {
+    onRefresh()
+  }, [viewId])
+
   const fetchData = async () => {
     try {
       const res = await axios.post(api, {
         username: username,
         prod: prod,
         ...kwargs,
+        toggle_view_selection: toggle_views ? toggle_views[viewId] : 'none',
       })
       const array = JSON.parse(res.data)
       console.log('table data :>> ', array)
@@ -493,20 +508,36 @@ const AgGrid = (props: Props) => {
         style={{ flexDirection: 'row', height: '100%', width: '100' }}
         id='myGrid'
       >
-        {(refresh_sec == undefined || refresh_sec == 0) && (
-          <div style={{ display: 'flex' }}>
-            <div style={{ margin: '10px 10px 10px 2px' }}>
-              <button className='btn btn-warning' onClick={onRefresh}>
-                Refresh
-              </button>
+        <div className='d-flex justify-content-between align-items-center'>
+          {(refresh_sec == undefined || refresh_sec == 0) && (
+            <div style={{ display: 'flex' }}>
+              <div style={{ margin: '10px 10px 10px 2px' }}>
+                <button className='btn btn-warning' onClick={onRefresh}>
+                  Refresh
+                </button>
+              </div>
+              <div style={{ margin: '10px 10px 10px 2px' }}>
+                <button className='btn btn-success' onClick={onUpdate}>
+                  Update
+                </button>
+              </div>
             </div>
-            <div style={{ margin: '10px 10px 10px 2px' }}>
-              <button className='btn btn-success' onClick={onUpdate}>
-                Update
-              </button>
-            </div>
+          )}
+          <div className='d-flex flex-row gap-6'>
+            {toggle_views.map((view: string, index: number) => (
+              <span className=''>
+                <button
+                  className={`btn ${
+                    viewId == index ? 'btn-danger' : 'btn-secondary'
+                  }`}
+                  onClick={() => setViewId(index)}
+                >
+                  {view}
+                </button>
+              </span>
+            ))}
           </div>
-        )}
+        </div>
         <div
           className={grid_options.theme || 'ag-theme-alpine-dark'}
           style={{
