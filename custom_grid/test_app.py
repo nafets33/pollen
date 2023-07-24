@@ -62,7 +62,7 @@ def main():
         username="F:/Work/2023-04/stefan/pollen/client_user_dbs/db__sven0227_82402505",
         api="http://127.0.0.1:8000/api/data/queen",
         api_update="http://127.0.0.1:8000/api/data/update_orders",
-        refresh_sec=None,
+        refresh_sec=10,
         refresh_cutoff_sec=500,
         prod=True,
         key='maingrid',
@@ -79,14 +79,15 @@ def main():
                   },
                  {'button_name': 'button2',
                   'button_api': "api2",
-                  'prompt_message': 'message2',
-                  'prompt_field': 'honey',
+                  'prompt_message': 'edit orders',
+                  'prompt_field': 'order_rules',
                   'col_headername': 'Sell button',
                   'col_width': 100,
-                  'pinned': 'left'
+                  'pinned': 'left',
+                  'prompt_order_rules': ['theme', 'sell_out', 'take_profit'] # default to None or empty list
                   },
                  ],
-        grid_height='500px',
+        grid_height='350px',
     )
 
 
