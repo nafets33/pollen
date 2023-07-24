@@ -65,7 +65,7 @@ const MyModal = ({
     if (isOpen) setTimeout(() => ref.current.focus(), 100)
   }, [isOpen])
 
-  if (prompt_field === 'order_rules')
+  if (prompt_order_rules)
     return (
       <div className='my-modal' style={{ display: isOpen ? 'block' : 'none' }}>
         <div className='my-modal-content'>

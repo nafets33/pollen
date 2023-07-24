@@ -188,14 +188,13 @@ const AgGrid = (props: Props) => {
                 const selectedRow = g_rowdata.find(row => row[index] == field)
 
                 if (prompt_order_rules) {
-                  console.log('str :>> ', selectedRow[prompt_field])
                   const str = selectedRow[prompt_field]
+                  const selectedField = typeof str === 'string' ? JSON.parse(selectedRow[prompt_field]
                     .replace(/'/g, '"')
                     .replace(/\n/g, '')
                     .replace(/\s/g, '')
                     .replace(/False/g, 'false')
-                    .replace(/True/g, 'true')
-                  const selectedField = JSON.parse(str)
+                    .replace(/True/g, 'true')) : str
                   setModalshow(true)
                   setModalData({
                     prompt_message,
