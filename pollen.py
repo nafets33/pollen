@@ -654,8 +654,8 @@ def pollenq(admin_pq):
         ip_address = get_ip_address()
         st.session_state['ip_address'] = ip_address
         print("IP Address:", ip_address)
-        if ip_address == '10.202.0.2':
-           ip_address = 'pollenq.com'
+        # if ip_address == '10.202.0.2':
+        #    ip_address = 'pollenq.com'
 
 
         if st.session_state['authentication_status'] != True: ## None or False

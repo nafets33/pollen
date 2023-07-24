@@ -4015,6 +4015,39 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
+def process_order_submission(trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
+
+    try:
+        # Create Running Order
+        new_queen_order = create_QueenOrderBee(
+        trading_model=trading_model,
+        order_vars=order_vars, 
+        order=order, 
+        symbol=symbol,
+        star=star,
+        ticker_time_frame=ticker_time_frame, 
+        portfolio_name=portfolio_name, 
+        status_q=status_q, 
+        trig=trig, 
+        exit_order_link=exit_order_link, 
+        priceinfo=priceinfo
+        )
+
+        # Append Order
+        new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id")
+
+        # QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0) # , ignore_index=True
+        # QUEEN['queen_orders']['client_order_id'] = QUEEN['queen_orders'].index
+        
+        # logging.info("Order Bee Created")
+        
+        return new_queen_order_df
+
+    except Exception as e:
+        print(e, print_line_of_error())
+        return False
+
+
 def order_vars__queen_order_items(
     order_side=False,
     trading_model=False,
@@ -4119,7 +4152,6 @@ def order_vars__queen_order_items(
 
 def create_QueenOrderBee(
     trading_model="init",
-    KING="init",
     ticker_time_frame="Ticker_TFrame_TPeriod",
     symbol="init",
     star='init',
@@ -4136,7 +4168,7 @@ def create_QueenOrderBee(
         queen_order_version=1,
         trading_model=trading_model,
         double_down_trade=False,
-        queen_order_state=False,
+        queen_order_state="submitted",
         side=False,
         order_trig_buy_stop=False,
         order_trig_sell_stop=False,
@@ -4194,27 +4226,26 @@ def create_QueenOrderBee(
 
             return {
                 "trading_model": trading_model,
-                "double_down_trade": order_vars["double_down_trade"],
-                "queen_order_state": "submitted",
-                "side": order["side"],
+                "queen_order_state": queen_order_state,
                 "order_trig_buy_stop": True,
                 "order_trig_sell_stop": False,
+                "running_close_legs": False,
+                "ticker_time_frame": ticker_time_frame,
+                "star": star,
+                "double_down_trade": order_vars["double_down_trade"],
                 "order_trig_sell_stop_limit": order_vars["order_trig_sell_stop_limit"],
                 "req_limit_price": order_vars["limit_price"],
                 "limit_price": order_vars["limit_price"],
-                "running_close_legs": False,
-                "ticker_time_frame": ticker_time_frame,
-                "ticker": order["symbol"],
-                "symbol": order["symbol"],
-                "star": star,
                 "order_rules": order_vars["king_order_rules"],
                 "origin_wave": order_vars["origin_wave"],
                 "wave_at_creation": order_vars["wave_at_creation"],
-                "assigned_wave": {},
                 "power_up": order_vars["power_up"],
                 "power_up_rangers": order_vars["power_up_rangers"],
                 "ticker_time_frame_origin": order_vars["ticker_time_frame_origin"],
                 "wave_amo": order_vars["wave_amo"],
+                "sell_reason": order_vars["sell_reason"],
+                "borrowed_funds": order_vars.get('borrowed_funds'),
+                "assigned_wave": {},
                 "trigname": trig,
                 "datetime": date_mark,
                 "status_q": status_q,
@@ -4223,6 +4254,9 @@ def create_QueenOrderBee(
                 "client_order_id": order["client_order_id"],
                 "system_recon": False,
                 "order": "alpaca",
+                "side": order["side"],
+                "ticker": order["symbol"],
+                "symbol": order["symbol"],
                 "req_qty": order["qty"],
                 "qty": order["qty"],
                 "filled_qty": order["filled_qty"],
@@ -4236,11 +4270,9 @@ def create_QueenOrderBee(
                 "money": 0,
                 "honey": 0,
                 "cost_basis": 0,
-                "sell_reason": order_vars["sell_reason"],
                 "honey_time_in_profit": {},
                 "profit_loss": 0,
                 "revisit_trade_datetime": revisit_trade_datetime,
-                "borrowed_funds": order_vars.get('borrowed_funds'),
             }
 
     if queen_init:

@@ -14,8 +14,8 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
-from chess_piece.king import kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, master_swarm_QUEENBEE, ReadPickleData, PickleData
-from chess_piece.queen_hive import return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, init_clientUser_dbroot, queens_heart, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, create_QueenOrderBee, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours,  add_key_to_app, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
+from chess_piece.king import kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
+from chess_piece.queen_hive import return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, init_clientUser_dbroot, process_order_submission, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
 
 
 """ ideas 
@@ -151,37 +151,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         return order_id
 
 
-    def process_order_submission(trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
 
-        try:
-            # Create Running Order
-            new_queen_order = create_QueenOrderBee(
-            trading_model=trading_model,
-            KING=KING, 
-            order_vars=order_vars, 
-            order=order, 
-            symbol=symbol,
-            star=star,
-            ticker_time_frame=ticker_time_frame, 
-            portfolio_name=portfolio_name, 
-            status_q=status_q, 
-            trig=trig, 
-            exit_order_link=exit_order_link, 
-            priceinfo=priceinfo
-            )
-
-            # Append Order
-            new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id")
-
-            QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0) # , ignore_index=True
-            QUEEN['queen_orders']['client_order_id'] = QUEEN['queen_orders'].index
-            
-
-            # logging.info("Order Bee Created")
-            
-            return True
-        except Exception as e:
-            print(e, print_line_of_error())
 
     
     def process_sell_app_request(QUEEN, QUEEN_KING, run_order, request_name='sell_orders', app_requests__bucket='app_requests__bucket'):
@@ -472,22 +442,29 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if 'borrowed_funds' not in order_vars.keys():
                     order_vars['borrowed_funds'] = False
 
-                process_order_submission(trading_model=trading_model, 
-                order=order, 
-                order_vars=order_vars,
-                trig=trig,
-                symbol=ticker,
-                ticker_time_frame=ticker_time_frame,
-                star=star,
-                priceinfo=priceinfo_order)
+                new_queen_order_df = process_order_submission(
+                    trading_model=trading_model, 
+                    order=order, 
+                    order_vars=order_vars,
+                    trig=trig,
+                    symbol=ticker,
+                    ticker_time_frame=ticker_time_frame,
+                    star=star,
+                    priceinfo=priceinfo_order
+                )
 
-                # PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                if new_queen_order_df:
+                    QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0) # , ignore_index=True
+                    QUEEN['queen_orders']['client_order_id'] = QUEEN['queen_orders'].index
 
-                msg = f'{trig} {ticker_time_frame} {wave_amo}'
-                logging.info(msg)
-                print(msg)
-                
-                return{'executed': True, 'msg': msg}
+                    msg = f'{trig} {ticker_time_frame} {wave_amo}'
+                    logging.info(msg)
+                    print(msg)
+                    
+                    # PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+                    PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': QUEEN.get('queen_orders')})
+                    
+                    return{'executed': True, 'msg': msg}
             
             elif king_eval_order:
                 side = 'sell'
@@ -515,8 +492,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     msg = ("Order Did not pass to execute")
                     logging.error(msg)
                     return{'executed': False, 'msg': msg}
-                
-                
+
                 send_close_order = submit_order(api=api, side=side, symbol=ticker, qty=sell_qty, type=order_type, client_order_id=client_order_id__gen, limit_price=limit_price) 
                 send_close_order = vars(send_close_order)['_raw']
                                     
@@ -529,7 +505,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     order_vars['borrowed_funds'] = False
                 
                 # Order Vars 
-                process_order_submission(trading_model=False,
+                new_queen_order_df = process_order_submission(trading_model=False,
                 order=send_close_order, 
                 order_vars=order_vars, 
                 trig=trig, 
@@ -539,12 +515,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 star=star,
                 priceinfo=priceinfo_order)
 
-                QUEEN['queen_orders'].at[run_order_idx, 'order_trig_sell_stop'] = True
-                # QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'].update({client_order_id__gen: {'sell_reason': sell_reason}})
-                QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'] = {client_order_id__gen: {'sell_reason': sell_reason}}
-                update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=run_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
+                if new_queen_order_df:
+                    QUEEN['queen_orders'].at[run_order_idx, 'order_trig_sell_stop'] = True
+                    # QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'].update({client_order_id__gen: {'sell_reason': sell_reason}})
+                    QUEEN['queen_orders'].at[run_order_idx, 'sell_reason'] = {client_order_id__gen: {'sell_reason': sell_reason}}
+                    update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=run_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
-                PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+                    # PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+                    PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': QUEEN.get('queen_orders')})
     
         except Exception as e:
             print("Error Ex Order..Full Failure" , e, print_line_of_error())
