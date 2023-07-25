@@ -524,7 +524,7 @@ const AgGrid = (props: Props) => {
             </div>
           )}
           <div className='d-flex flex-row gap-6'>
-            {toggle_views.map((view: string, index: number) => (
+            {toggle_views?.map((view: string, index: number) => (
               <span className=''>
                 <button
                   className={`btn ${
