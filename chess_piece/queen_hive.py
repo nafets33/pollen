@@ -2683,6 +2683,7 @@ def submit_order(
         return order
     except Exception as e:
         print_line_of_error()
+        print(symbol, qty, type)
         return False
 
     """stop loss order"""

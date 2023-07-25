@@ -183,6 +183,18 @@ def app_Sellorder_request(username, prod, selected_row, default_value):
      print("fapi e", e)
      print_line_of_error()
 
+def app_archive_queen_order(username, prod, selected_row, default_value):
+    # number_shares = default_value
+    # print(default_value)
+    queen_order = selected_row
+    client_order_id = queen_order.get('client_order_id')
+    QUEEN_KING = load_queen_App_pkl(username, prod)
+    order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
+    order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': 'archived'}}
+    QUEEN_KING['update_queen_order'].append(order_update_package)
+    PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    return True
+
 def get_queen_orders_json(username, prod):
   
   # QUEEN = load_queen_pkl(username, prod)

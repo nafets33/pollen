@@ -516,54 +516,56 @@ def pollenq(admin_pq):
             off_size = 54
             on_size = 54
             # with sb:
-            # cols = st.columns(7)
-        # with cols[0]:
-            wb = hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
-            st.session_state['workerbees'] = True if st.session_state['workerbees_m'] == 'workerbees' else False
-            # height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
-            # cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-        # with cols[1]:
-            hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-            st.session_state['orders'] = True if st.session_state['orders_m'] == 'orders' or st.session_state['orders_m'] == None else False
-            # st.session_state['orders'] = True
-            # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
-            # cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-        # with cols[2]:
-            hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-            st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
-            
-            # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
-            # cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
-            # if st.session_state['chess_board']:
-            #     hc.option_bar(option_definition=pq_buttons.get('option_data'),title='Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-        # with cols[3]:
-            height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
-            cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px')
+            cols = st.columns(7)
+            height = 33
+            with cols[0]:
+                # wb = hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
+                # st.session_state['workerbees'] = True if st.session_state['workerbees_m'] == 'workerbees' else False
+                # height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
+                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+            with cols[1]:
+                # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                # st.session_state['orders'] = True
+                # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
+                cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                print(cb)
+                st.session_state['orders'] = True if cb == True or cb == 0 else False
+            with cols[2]:
+                # hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                # st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
+                
+                # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
+                cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
+                # if st.session_state['chess_board']:
+                #     hc.option_bar(option_definition=pq_buttons.get('option_data'),title='Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+            with cols[3]:
+                # height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
+                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
             # st.session_state['queens_mind'] = True if st.session_state['queens_mind'] in ['queens_mind'] or st.session_state['queens_mind'] == None else False
 
             # if st.session_state['queens_mind']:
             #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-        # with cols[4]:
+            with cols[4]:
             # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Board', key='charts_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
             # st.session_state['charts'] = True if st.session_state['charts_m'] in ['charts_id'] else False
             
-            height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
-            cust_Button("misc/charts.png", hoverText='Charts', key='charts_m', height=f'{height}px', default=False)
-            st.session_state['charts'] = True if st.session_state['charts_m'] == True else False
+                height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
+                cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
+                # st.session_state['charts'] = True if st.session_state['charts_m'] == True else False
             # print(st.session_state['charts_m'])
 
             # if st.session_state['charts']:
             #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-        # with cols[5]:
-            height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
-            cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
-        
-        # with cols[6]:              
-            height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
-            cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px', default=False)
-            st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
+            with cols[5]:
+                height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
+                cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
+            
+            with cols[6]:              
+                height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
+                cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px', default=False)
+                st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
 
                 # if st.session_state['waves']:
                 #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -773,8 +775,8 @@ def pollenq(admin_pq):
             with st.sidebar:
                 # Master Controls #
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-                with st.expander('Master Controls', True):
-                    menu_buttons()
+            with st.expander('Master Controls', False):
+                menu_buttons()
             cols = st.columns((8,2))
             # with cols[0]:
             #     with st.expander('Master Controls', True):

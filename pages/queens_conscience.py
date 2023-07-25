@@ -1804,14 +1804,22 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'col_width':100,
                         'pinned': 'left'
                         },
-                        # {'button_name': 'Order Rules',
-                        # 'button_api': None,
-                        # 'prompt_message': 'message2',
-                        # 'prompt_field': 'order_rules',
-                        # 'col_headername': 'Order Rules',
-                        # 'col_width':89,
+                        {'button_name': 'Order Rules',
+                        'button_api': f'http://{ip_address}:8000/api/data/',
+                        'prompt_message': 'Edit Rules',
+                        'prompt_field': 'order_rules',
+                        'col_headername': 'Order Rules',
+                        'col_width':89,
+                        'pinned': 'right',
+                        },
+                        {'button_name': 'Archive',
+                        'button_api': f'http://{ip_address}:8000/api/data/queen_archive_queen_order',
+                        'prompt_message': 'Archive Order',
+                        'prompt_field': 'client_order_id',
+                        'col_headername': 'Archive Order',
+                        'col_width':89,
                         # 'pinned': 'right',
-                        # },
+                        },
                         ],
                 grid_height='300px',
             )
@@ -2309,18 +2317,20 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 print("TRADING MODELS")
                         if tab_name == 'orders':
                             if st.session_state['orders']:
-                                cols = st.columns((3,2))
+                                cols = st.columns((4,2))
+                                # with cols[0]:
+                                order_grid(KING, ip_address)
+                                # with st.expander("Waves", True):
+                                symbols = QUEEN['heartbeat'].get('active_tickers')
+                                symbols = ['SPY'] if len(symbols) == 0 else symbols
                                 with cols[0]:
-                                    order_grid(KING, ip_address)
-                                    # with st.expander("Waves", True):
-                                    symbols = QUEEN['heartbeat'].get('active_tickers')
-                                    symbols = ['SPY'] if len(symbols) == 0 else symbols
                                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
-                                    # with st.expander("Queens Thoughts"):
-                                    #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
+                                        # with st.expander("Queens Thoughts"):
+                                        #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
 
                                 with cols[1]:
                                     refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                                    # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
                                     cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
                                             prod=prod,
                                             api="http://localhost:8000/api/data/symbol_graph",

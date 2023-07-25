@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request
+from chess_piece.fastapi_queen import get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, app_archive_queen_order
 import pandas as pd
 import random
 import json
@@ -69,6 +69,17 @@ def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Bod
     except Exception as e:
         print("router queen error", e)
 
+@router.post("/queen_archive_queen_order", status_code=status.HTTP_200_OK)
+def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    try:
+        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+            print("Auth Failed", api_key)
+            return "NOTAUTH"
+        json_data = app_archive_queen_order(username, prod, selected_row, default_value)
+        return JSONResponse(content=json_data)
+    except Exception as e:
+        print("router queen error", e)
+
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
 def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
     try:
@@ -77,7 +88,7 @@ def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(
             print("Auth Failed", api_key)
             return "NOTAUTH"
         app_Sellorder_request(username, prod, selected_row, default_value)
-        return JSONResponse(content="ssuccess")
+        return JSONResponse(content="Selling Order")
     except Exception as e:
         print("router err ", e)
 
