@@ -471,13 +471,13 @@ def pollenq(admin_pq):
         def portfolio_header__QC(acct_info):
             try:
            
-                with st.expander("Portfolio: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
+                # with st.expander("Portfolio: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
                     # st.write(":heavy_minus_sign:" * 34)
-                    mark_down_text(fontsize='18', text="Total Buying Power: " + '${:,.2f}'.format(acct_info['buying_power']))
-                    mark_down_text(fontsize='15', text="last_equity: " + '${:,.2f}'.format(acct_info['last_equity']))
-                    mark_down_text(fontsize='15', text="portfolio_value: " + '${:,.2f}'.format(acct_info['portfolio_value']))
-                    mark_down_text(fontsize='15', text="Cash: " + '${:,.2f}'.format(acct_info['cash']))
-                    mark_down_text(fontsize='12', text="Total Fees: " + '${:,.2f}'.format(acct_info['accrued_fees']))
+                mark_down_text(fontsize='18', text="Total Buying Power: " + '${:,.2f}'.format(acct_info['buying_power']))
+                mark_down_text(fontsize='15', text="last_equity: " + '${:,.2f}'.format(acct_info['last_equity']))
+                mark_down_text(fontsize='15', text="portfolio_value: " + '${:,.2f}'.format(acct_info['portfolio_value']))
+                mark_down_text(fontsize='15', text="Cash: " + '${:,.2f}'.format(acct_info['cash']))
+                mark_down_text(fontsize='12', text="Total Fees: " + '${:,.2f}'.format(acct_info['accrued_fees']))
                 return True
             except Exception as e:
                 er, erline=print_line_of_error()
@@ -511,13 +511,13 @@ def pollenq(admin_pq):
 
 
         # print("MENU Buttons")
-        def menu_buttons():
+        def menu_buttons(cols):
             # sb = st.sidebar
             off_size = 54
             on_size = 54
             # with sb:
-            cols = st.columns(7)
-            height = 33
+            # cols = st.columns(7)
+            height = 54
             with cols[0]:
                 # wb = hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
                 # st.session_state['workerbees'] = True if st.session_state['workerbees_m'] == 'workerbees' else False
@@ -528,8 +528,10 @@ def pollenq(admin_pq):
                 # st.session_state['orders'] = True
                 # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
                 cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                print(cb)
                 st.session_state['orders'] = True if cb == True or cb == 0 else False
+                if st.session_state['orders'] == True:
+                    print("yes")
+                    page_line_seperator(color=default_font)
             with cols[2]:
                 # hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                 # st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
@@ -603,7 +605,24 @@ def pollenq(admin_pq):
 
             return True
 
-        
+        def custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close=8, prod=False, api="http://localhost:8000/api/data/account_info"):
+            # Total Account info
+            to_builder = TextOptionsBuilder.create()
+            to_builder.configure_background_color(default_text_color)
+            to_builder.configure_text_color(default_yellow_color)
+            to_builder.configure_font_style(default_font)
+            to = to_builder.build()
+            custom_text(api=api, 
+                        text_size=28, 
+                        refresh_sec=8,
+                        refresh_cutoff_sec=seconds_to_market_close,
+                        text_option=to, 
+                        api_key=os.environ.get("fastAPI_key"), 
+                        prod=prod, 
+                        username=KING['users_allowed_queen_emailname__db'].get(client_user))            
+
+            return True
+       
         ##### QuantQueen #####
 
         est = pytz.timezone("US/Eastern")
@@ -771,34 +790,58 @@ def pollenq(admin_pq):
                 st.stop()
 
             ### TOP OF PAGE
+            if check_fastapi_status(ip_address) == False:
+                print("fastapi")
+                if st.button('API'):
+                    # Define the path to your Python script
+                    script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
+                    # Run the Python script using subprocess
+                    try:
+                        subprocess.run(['python', script_path, '-i',])
+                    except subprocess.CalledProcessError as e:
+                        print(f"Error: {e}")
 
             with st.sidebar:
                 # Master Controls #
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-            with st.expander('Master Controls', False):
-                menu_buttons()
-            cols = st.columns((8,2))
+            # with st.expander('Master Controls', False):
             # with cols[0]:
-            #     with st.expander('Master Controls', True):
-            #         menu_buttons()
-            # with cols[1]:
-            #     # menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-            #     return_runningbee_gif__save()
+            with st.expander("Master Menu"):
+                cols = st.columns((1,1,1,1,1,1,1,1,4,4))
+                menu_buttons(cols)
+                # with cols[0]:
+                #     st.write("stefan")
+                with cols[7]:
+                    # queensheart
+                    print("Heart")
+                    now = datetime.now(est)
+                    beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
+                    beat_size = 66 if beat > 100 else beat
+                    beat_size = 45 if beat_size < 10 else beat_size
+                    cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
+                    seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+                
+                with cols[8]:
+                    custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api="http://localhost:8000/api/data/account_info")
+                with cols[9]:
+                    portfolio_header__QC(acct_info)
+            
+
             if menu_id == 'PlayGround':
                 print("PLAYGROUND")
                 PlayGround()
                 st.stop()
 
 
-            queen_offline = False
-            if queenbee_online(cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
-                queen_offline = True
+            # queen_offline = False
+            # if queenbee_online(cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
+            #     queen_offline = True
 
-            queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
-            queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
+            # queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
+            # queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
 
 
-            cols = st.columns((1,3,5))
+            # cols = st.columns((1,3,5))
             # honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
             # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
             trading_days = hive_dates(api=api)['trading_days']
@@ -808,14 +851,14 @@ def pollenq(admin_pq):
             if mkhrs != 'open':
                 seconds_to_market_close = 1
 
-            with cols[0]:
+            # with cols[0]:
                 # print("cash")
-                bp=acct_info['buying_power']
-                le=acct_info['last_equity']
-                pv=acct_info['portfolio_value']
-                cash=acct_info['cash']
-                fees=acct_info['accrued_fees']
-                num = cash/pv
+                # bp=acct_info['buying_power']
+                # le=acct_info['last_equity']
+                # pv=acct_info['portfolio_value']
+                # cash=acct_info['cash']
+                # fees=acct_info['accrued_fees']
+                # num = cash/pv
                 # num = 0 if num <=1 else
                 # try:
 # 
@@ -830,86 +873,7 @@ def pollenq(admin_pq):
             # with cols[1]:
             #     cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
             
-            # with cols[2]:
-            
-            
-            with cols[1]:
-                portfolio_header__QC(acct_info)
-
-                # Total Account info
-                to_builder = TextOptionsBuilder.create()
-                to_builder.configure_background_color(default_text_color)
-                to_builder.configure_text_color(default_yellow_color)
-                to_builder.configure_font_style(default_font)
-                to = to_builder.build()
-                custom_text(api="http://localhost:8000/api/data/account_info", 
-                            text_size=28, 
-                            refresh_sec=8,
-                            refresh_cutoff_sec=seconds_to_market_close,
-                            text_option=to, 
-                            api_key=os.environ.get("fastAPI_key"), 
-                            prod=prod, 
-                            username=KING['users_allowed_queen_emailname__db'].get(client_user))            
-                # mark_down_text(fontsize='23', text=f'{money_text}', font='garamond-bold-italic')
-                # page_line_seperator("3")
-
-                with cols[2]:
-                    logs = os.listdir(log_dir)
-                    logs = [i for i in logs if i.endswith(".log")]
-                    log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                    log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                    with st.expander(log_file):
-                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                        queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
-                                
-
-
-            # with cols[5]:
-                # with st.expander("control buttons"):
-                #     live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
-                #     if live_sb_button:
-                #         st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                #         st.experimental_rerun()
-                #     refresh_chess_board__button(QUEEN_KING)
-                #     refresh_queen_controls_button(QUEEN_KING)
-                #     refresh_trading_models_button(QUEEN_KING)
-                #     refresh_queen_orders(QUEEN)
-                #     stash_queen(QUEEN)
-                #     if st.session_state['admin']:
-                #         refresh_swarmqueen_workerbees(QUEEN_KING)
-                #         # refresh_workerbees(QUEEN_KING)
-                #         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
-
-            with cols[0]:
-                # queensheart
-                print("Heart")
-                now = datetime.now(est)
-                beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
-                beat_size = 66 if beat > 100 else beat
-                beat_size = 45 if beat_size < 10 else beat_size
-                cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
-                import subprocess
-
-                if check_fastapi_status(ip_address) == False:
-                    print("fastapi")
-                    if st.button('API'):
-                        # Define the path to your Python script
-                        script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
-                        # Run the Python script using subprocess
-                        try:
-                            subprocess.run(['python', script_path, '-i',])
-                        except subprocess.CalledProcessError as e:
-                            print(f"Error: {e}")
-
-
-            
-            # with cols[6]:
-            #     st.button("Refresh", use_container_width=True)
-            #     # cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
-            # with cols[7]:
-            #     stop_queenbee(QUEEN_KING)
-            # page_line_seperator("1") #############################################
-            
+            # with cols[2]:            
             
 
             print("POLLENTHEMES")
@@ -963,23 +927,34 @@ def pollenq(admin_pq):
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars)
             print("Back to Pollen")
             # with cols[1]:
-            cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
+            # cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
  
-        
-        with st.expander("control buttons"):
-            live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
-            if live_sb_button:
-                st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                st.experimental_rerun()
-            refresh_chess_board__button(QUEEN_KING)
-            refresh_queen_controls_button(QUEEN_KING)
-            refresh_trading_models_button(QUEEN_KING)
-            refresh_queen_orders(QUEEN)
-            stash_queen(QUEEN)
-            if st.session_state['admin']:
-                refresh_swarmqueen_workerbees(QUEEN_KING)
-                # refresh_workerbees(QUEEN_KING)
-                refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
+        cols = st.columns((6,2))
+        with cols[0]:
+            logs = os.listdir(log_dir)
+            logs = [i for i in logs if i.endswith(".log")]
+            log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+            log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+            with st.expander(log_file):
+                log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                
+
+        with cols[1]:
+            with st.expander("control buttons"):
+                live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
+                if live_sb_button:
+                    st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                    st.experimental_rerun()
+                refresh_chess_board__button(QUEEN_KING)
+                refresh_queen_controls_button(QUEEN_KING)
+                refresh_trading_models_button(QUEEN_KING)
+                refresh_queen_orders(QUEEN)
+                stash_queen(QUEEN)
+                if st.session_state['admin']:
+                    refresh_swarmqueen_workerbees(QUEEN_KING)
+                    # refresh_workerbees(QUEEN_KING)
+                    refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')

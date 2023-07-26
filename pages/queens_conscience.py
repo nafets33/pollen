@@ -2197,8 +2197,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     with st.expander('heartbeat', True):
                         show_heartbeat()
 
-                if st.session_state['total_profits']:
-                    return_total_profits(QUEEN=QUEEN)
+                # if st.session_state['total_profits']:
+                #     return_total_profits(QUEEN=QUEEN)
             
                 if st.session_state['workerbees'] == True:
                     # hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_option_data', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
@@ -2368,23 +2368,23 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 print("ORDERS")
                 
                 """ Bottom Page """
-                bottom_buttons = {'old_orders':0, 'refresh_bee':1}
-                cols = st.columns(len(bottom_buttons))
-                for col_name, col_n in bottom_buttons.items():
-                    with cols[col_n]:
-                        if col_name == 'old_orders':
-                            cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                # bottom_buttons = {'old_orders':0, 'refresh_bee':1}
+                # cols = st.columns(len(bottom_buttons))
+                # for col_name, col_n in bottom_buttons.items():
+                #     with cols[col_n]:
+                #         if col_name == 'old_orders':
+                #             cust_Button("misc/knight_pawn.png", hoverText='Orders', key='old_orders', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
 
-                        if col_name == 'refresh_bee':
-                            cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText=None, key='bottom_page')
+                #         if col_name == 'refresh_bee':
+                #             cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText=None, key='bottom_page')
                 
-                ### Display when Buttons Pressed ###
-                if st.session_state['old_orders']:
-                    orders_agrid()
+                # ### Display when Buttons Pressed ###
+                # if st.session_state['old_orders']:
+                #     orders_agrid()
 
 
 
-                page_session_state__cleanUp(page=page)
+                # page_session_state__cleanUp(page=page)
 
                 def all_button_keys():
                     return {
