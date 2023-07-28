@@ -1,8 +1,10 @@
 import streamlit as st
 from custom_grid import st_custom_grid, GridOptionsBuilder
+from chess_piece.king import get_ip_address
 
 
 def main():
+    ip_address = get_ip_address()
     gb = GridOptionsBuilder.create()
     gb.configure_grid_options(
         pagination=True, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
@@ -60,11 +62,11 @@ def main():
     go = gb.build()
     st_custom_grid(
         username="F:/Work/2023-04/stefan/pollen/client_user_dbs/db__sven0227_82402505",
-        api="http://127.0.0.1:8000/api/data/queen",
+        api=f"http://{ip_address}:8000/api/data/queen",
         api_update="http://127.0.0.1:8000/api/data/update_orders",
-        refresh_sec=10,
+        refresh_sec=0,
         refresh_cutoff_sec=500,
-        prod=True,
+        prod=False,
         key='maingrid',
         grid_options=go,
         # kwargs from here
@@ -78,16 +80,17 @@ def main():
                   'col_width': 100,
                   },
                  {'button_name': 'button2',
-                  'button_api': "api2",
+                  'button_api': f"http://{ip_address}:8000/api/data/queen_sell_orders",
                   'prompt_message': 'edit orders',
-                  'prompt_field': 'order_rules',
+                  'prompt_field': 'honey',
                   'col_headername': 'Sell button',
                   'col_width': 100,
                   'pinned': 'left',
-                  'prompt_order_rules': ['theme', 'sell_out', 'take_profit'] # default to None or empty list
+                  # 'prompt_order_rules': ['theme', 'sell_out', 'take_profit'],
                   },
                  ],
         grid_height='350px',
+        # toggle_views = ['buys', 'sells', 'today', 'closed']
     )
 
 
