@@ -195,7 +195,7 @@ def app_archive_queen_order(username, prod, selected_row, default_value):
     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     return True
 
-def get_queen_orders_json(username, prod):
+def get_queen_orders_json(username, prod, toggle_view_selection):
   
   # QUEEN = load_queen_pkl(username, prod)
   if prod:
@@ -397,6 +397,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
 
         if return_type == 'waves':
            df_main = revrec.get('waveview')
+          #  print(df_main['star'].tolist())
           #  df_main['color_row'] = k_colors.get('default_background_color')
            df_main['color_row_text'] = default_text_color
            df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')

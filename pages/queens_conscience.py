@@ -684,6 +684,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     allow_queen_to_update_chessboard = st.checkbox("Allow QUEEN to update chessboard for all themes", True)
                     with st.form(f'ChessBoard_form{admin}'):
                         try:
+                            from chess_piece.app_hive import return_page_tabs
+                            # tabs_on = ['df_ticker']
+                            cb_tab_list = ['board', 'waveview', 'revrec']
+                            tabs = st.tabs(cb_tab_list)
                             cols = st.columns((1,5))
 
                             with cols[0]:
@@ -702,6 +706,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
                                 headers+=1
                             # RevRec
+                            print('RevRec')
                             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
                             QUEEN_KING['revrec'] = revrec
                             QUEEN_KING['chess_board__revrec'] = revrec
@@ -1568,7 +1573,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=tickers)
                     st.write(resp.get('df_storyview'))
                     st.write(resp.get('df_storyguage'))
-                    print(resp.get('df_storyguage').dtypes)
                     st.write(resp.get('df_waveview'))
                     st.write(resp.get('df_storyview_down'))
 
@@ -1700,7 +1704,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             st.write("KOR PENDING WORK")
 
 
-        def order_grid(KING, ip_address):
+        def order_grid(KING, queen_orders, ip_address):
             gb = GridOptionsBuilder.create()
             gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
             gb.configure_default_column(column_width=100, resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
@@ -1773,7 +1777,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             config_cols = config_cols()
             for col, config_values in config_cols.items():
                 gb.configure_column(col, config_values)
-            mmissing = [i for i in kings_order_rules().keys() if i not in config_cols.keys()]
+            mmissing = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
             if len(mmissing) > 0:
                 for col in mmissing:
                     gb.configure_column(col, {'hide': True})
@@ -1786,7 +1790,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             # print(f'http://{ip_address}:8000/api/data/update_orders')
             st_custom_grid(
                 username=KING['users_allowed_queen_emailname__db'].get(client_user), 
-                api="http://127.0.0.1:8000/api/data/queen",
+                api=f'http://{ip_address}:8000/api/data/queen',
                 api_update=f'http://{ip_address}:8000/api/data/update_orders',
                 refresh_sec=refresh_sec, 
                 refresh_cutoff_sec=seconds_to_market_close, 
@@ -1805,12 +1809,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'pinned': 'left'
                         },
                         {'button_name': 'Order Rules',
-                        'button_api': f'http://{ip_address}:8000/api/data/',
+                        'button_api': f'http://{ip_address}:8000/api/data/update_queen_order_kors',
                         'prompt_message': 'Edit Rules',
                         'prompt_field': 'order_rules',
                         'col_headername': 'Order Rules',
                         'col_width':89,
                         'pinned': 'right',
+                        'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today'],
                         },
                         {'button_name': 'Archive',
                         'button_api': f'http://{ip_address}:8000/api/data/queen_archive_queen_order',
@@ -1822,6 +1827,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         },
                         ],
                 grid_height='300px',
+                toggle_views = ['buys', 'sells', 'today', 'castle', 'knight', 'bishop'],
             )
 
         
@@ -1829,7 +1835,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             refresh_sec = 3 if seconds_to_market_close > 0 and mkhrs == 'open' else None
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
-            gb.configure_index('star')
+            gb.configure_index('ticker_time_frame')
             gb.configure_theme('ag-theme-material')
 
             def config_cols():
@@ -1839,7 +1845,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     'enableCellChangeFlash': True,
                     # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
                     }
-                return {'star': {'initialWidth': 168,},
+                return {'ticker_time_frame': {'initialWidth': 168,},
                         'macd_state': {'initialWidth':123},
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
@@ -2319,7 +2325,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             if st.session_state['orders']:
                                 cols = st.columns((4,2))
                                 # with cols[0]:
-                                order_grid(KING, ip_address)
+                                queen_orders = QUEEN['queen_orders']
+                                order_grid(KING, queen_orders, ip_address)
                                 # with st.expander("Waves", True):
                                 symbols = QUEEN['heartbeat'].get('active_tickers')
                                 symbols = ['SPY'] if len(symbols) == 0 else symbols

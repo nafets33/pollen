@@ -112,3 +112,8 @@ pip freeze >> requirements.txt
 netstat
 # or 
 lsof -Pn -i4
+
+# bash profile bash_profile
+umask 0000 (all permissions)
+
+cd /etc ( all config files)

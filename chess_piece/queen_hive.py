@@ -734,8 +734,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         storygauge = resp.get('df_storyguage')
         waveview = resp.get('df_waveview')
 
-        waveview['star'] = waveview.index
-        waveview['symbol'] = waveview['star'].apply(lambda x: return_symbol_from_ttf(x))
+        # waveview['star'] = waveview.index
+        waveview['symbol'] = waveview['ticker_time_frame'].apply(lambda x: return_symbol_from_ttf(x))
         waveview['bs_position'] = waveview['macd_state'].apply(lambda x: x.split("_")[0])
 
         waveview_buy = waveview[waveview['macd_state'].str.contains('buy')]
@@ -755,12 +755,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         wave_analysis_length_sell = wave_analysis_length_sell.set_index('star')
 
         for ttf in waveview.index.to_list():
-            waveview.at[ttf, 'star_total_budget'] = df_stars.loc[ttf].get('star_total_budget')
-            waveview.at[ttf, 'star_borrow_budget'] = df_stars.loc[ttf].get('star_borrow_budget')
-            waveview.at[ttf, 'remaining_budget'] = df_stars.loc[ttf].get('remaining_budget')
-            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.loc[ttf].get('remaining_budget_borrow')
-            waveview.at[ttf, 'star_at_play'] = df_stars.loc[ttf].get('star_at_play')
-            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.loc[ttf].get('star_at_play_borrow')
+            waveview.at[ttf, 'star_total_budget'] = df_stars.at[ttf, 'star_total_budget']
+            waveview.at[ttf, 'star_borrow_budget'] = df_stars.at[ttf, 'star_borrow_budget']
+            waveview.at[ttf, 'remaining_budget'] = df_stars.at[ttf, 'remaining_budget']
+            waveview.at[ttf, 'remaining_budget_borrow'] = df_stars.at[ttf, 'remaining_budget_borrow']
+            waveview.at[ttf, 'star_at_play'] = df_stars.at[ttf, 'star_at_play']
+            waveview.at[ttf, 'star_at_play_borrow'] = df_stars.at[ttf, 'star_at_play_borrow']
+            waveview.at[ttf, 'star_time'] = df_stars.at[ttf, 'star']
 
         for ttf in waveview_buy.index:
             # print(wave_analysis.at[ttf, 'star_avg_time_to_max_profit'][0])
@@ -795,12 +796,32 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview['allocation_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
         waveview['allocation_borrow_deploy'] = np.where(waveview['allocation_borrow'] < 0, waveview['star_at_play_borrow'] - (waveview['allocation_borrow'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
-
         # rules, main budget stays on len vs starmark. add budget when past mark? if in wave deviation. 
         # If current_tmp_deviation > tmp_multiplier, then 0. 
         # if l == tmp and > starmark, push out starmark to + 1?
 
-
+        # ttf_wave_multiplier = MACD + VWAP + RSI / trading_model_weights
+        def trinity_weights(star_time):
+            if star_time == '1Minute_1Day':
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+            elif star_time == '5Minute_5Day':
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+            elif star_time == '30Minute_1Month':
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+            elif star_time == '1Hour_3Month':
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+            elif star_time == '2Hour_6Month':
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+            elif star_time == '1Day_1Year':
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+            else:
+                print("star_time not defined", star_time)
+                return {'macd': .1, 'vwap': .1, 'rsi': .1}
+        model_eight_tier = 8
+        # print(waveview.columns)
+        # waveview['macd_weight'] = (waveview['end_macd_tier'] / model_eight_tier) # np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        # waveview['macd_weight'] = waveview['macd_weight'].apply(lambda x: trinity_weights(x)) # np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+        # print(waveview['macd_weight'])
 
         e_ = datetime.now(est)
         return {'cycle_time': (e_-s_).total_seconds(), 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
@@ -4353,6 +4374,7 @@ def return_queen_controls(stars=stars):
             "sell_cross-0": "active",
             "ready_buy_cross": "not_active",
         },
+        'use_margin': False,
     }
     return queen_controls_dict
 
@@ -4685,6 +4707,7 @@ def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
     weight_short = ['1Minute_1Day', '5Minute_5Day']
     weight_mid = ['30Minute_1Month', '1Hour_3Month']
     weight_long = ['2Hour_6Month', '1Day_1Year']
+    # print(df_waves.columns)
     if trading_model:
         for ticker_time_frame in df_waves.index:
             ticker, tframe, tperiod = ticker_time_frame.split("_")
@@ -4713,9 +4736,16 @@ def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
         df_waves[f'{weight_}_weight_base'] = df_waves[weight_] * model_eight_tier
         df_waves[f'{weight_}_macd_weight_sum'] = df_waves[weight_] * df_waves['current_macd_tier']
         df_waves[f'{weight_}_hist_weight_sum'] = df_waves[weight_] * df_waves['current_hist_tier']
+        df_waves[f'{weight_}_vwap_weight_sum'] = df_waves[weight_] * df_waves['end_tier_vwap']
+        # df_waves[f'{weight_}_rsi_weight_sum'] = df_waves[weight_] * df_waves['end_tier_rsi']
+
+        
         # Macd Tier Position 
         guage_return[f'{weight_}_macd_tier_position'] = sum(df_waves[f'{weight_}_macd_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
         guage_return[f'{weight_}_hist_tier_position'] = sum(df_waves[f'{weight_}_hist_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+
+        guage_return[f'{weight_}_vwap_tier_position'] = sum(df_waves[f'{weight_}_vwap_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+        # guage_return[f'{weight_}_rsi_tier_position'] = sum(df_waves[f'{weight_}_rsi_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
 
 
     return guage_return, df_waves

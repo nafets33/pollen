@@ -12,6 +12,17 @@ router = APIRouter(
     tags=["auth"]
 )
 
+
+def grid_row_button_resp(status='success', description='success', message_type='fade', close_modal=True, color_text='red'):
+    return {'status': status, # success / error
+            'data':{
+                'close_modal': close_modal, # T/F
+                'color_text': color_text, #? test if it works
+                'message_type': message_type # click / fade
+            },
+            'description': description,
+            }
+
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
 def load_wavestories_json(username: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
     try:
@@ -59,12 +70,13 @@ def load_queen_messages_logfile_json(username: str=Body(...), api_key = Body(...
 
 
 @router.post("/queen", status_code=status.HTTP_200_OK)
-def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
+def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...), toggle_view_selection=Body(...)):
     try:
+        print(toggle_view_selection)
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = get_queen_orders_json(username, prod)
+        json_data = get_queen_orders_json(username, prod, toggle_view_selection)
         return JSONResponse(content=json_data)
     except Exception as e:
         print("router queen error", e)
@@ -83,12 +95,14 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
 def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
     try:
-        print("router", username, prod, selected_row, default_value)
+        # print("router", username, prod, selected_row, default_value)
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        app_Sellorder_request(username, prod, selected_row, default_value)
-        return JSONResponse(content="Selling Order")
+
+        
+        # app_Sellorder_request(username, prod, selected_row, default_value)
+        return JSONResponse(content=grid_row_button_resp())
     except Exception as e:
         print("router err ", e)
 
@@ -99,7 +113,7 @@ def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(.
         return "NOTAUTH"
 
     app_buy_wave_order_request(username, prod, selected_row, ready_buy=False)
-    return JSONResponse(content="ssuccess")
+    return JSONResponse(content=grid_row_button_resp())
 
 @router.post("/queen_buy_wave_orders__ready_buy", status_code=status.HTTP_200_OK)
 def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):
@@ -108,7 +122,7 @@ def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(.
         return "NOTAUTH"
 
     app_buy_wave_order_request(username, prod, selected_row, ready_buy=True)
-    return JSONResponse(content="ssuccess")
+    return JSONResponse(content=grid_row_button_resp())
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
 def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
@@ -127,8 +141,7 @@ def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data=
     # print(new_data)
     df = pd.DataFrame(new_data).T
     print(df.columns)
-    ret = {"status":True, "data":{"rows_updated":len(new_data)}}
-    return JSONResponse(content=str(ret))
+    return JSONResponse(content=grid_row_button_resp())
 
 
 

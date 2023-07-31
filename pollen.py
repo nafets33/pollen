@@ -471,13 +471,13 @@ def pollenq(admin_pq):
         def portfolio_header__QC(acct_info):
             try:
            
-                # with st.expander("Portfolio: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
+                with st.expander("Portfolio: " + '${:,.2f}'.format(acct_info['portfolio_value']),  False):
                     # st.write(":heavy_minus_sign:" * 34)
-                mark_down_text(fontsize='18', text="Total Buying Power: " + '${:,.2f}'.format(acct_info['buying_power']))
-                mark_down_text(fontsize='15', text="last_equity: " + '${:,.2f}'.format(acct_info['last_equity']))
-                mark_down_text(fontsize='15', text="portfolio_value: " + '${:,.2f}'.format(acct_info['portfolio_value']))
-                mark_down_text(fontsize='15', text="Cash: " + '${:,.2f}'.format(acct_info['cash']))
-                mark_down_text(fontsize='12', text="Total Fees: " + '${:,.2f}'.format(acct_info['accrued_fees']))
+                    mark_down_text(fontsize='18', text="Total Buying Power: " + '${:,.2f}'.format(acct_info['buying_power']))
+                    mark_down_text(fontsize='15', text="last_equity: " + '${:,.2f}'.format(acct_info['last_equity']))
+                    mark_down_text(fontsize='15', text="portfolio_value: " + '${:,.2f}'.format(acct_info['portfolio_value']))
+                    mark_down_text(fontsize='15', text="Cash: " + '${:,.2f}'.format(acct_info['cash']))
+                    mark_down_text(fontsize='12', text="Total Fees: " + '${:,.2f}'.format(acct_info['accrued_fees']))
                 return True
             except Exception as e:
                 er, erline=print_line_of_error()
@@ -513,65 +513,69 @@ def pollenq(admin_pq):
         # print("MENU Buttons")
         def menu_buttons(cols):
             # sb = st.sidebar
-            off_size = 54
-            on_size = 54
-            # with sb:
-            # cols = st.columns(7)
-            height = 54
-            with cols[0]:
-                # wb = hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
-                # st.session_state['workerbees'] = True if st.session_state['workerbees_m'] == 'workerbees' else False
-                # height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
-                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-            with cols[1]:
-                # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                # st.session_state['orders'] = True
-                # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
-                cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                st.session_state['orders'] = True if cb == True or cb == 0 else False
-                if st.session_state['orders'] == True:
-                    print("yes")
-                    page_line_seperator(color=default_font)
-            with cols[2]:
-                # hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                # st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
+            try:
+                off_size = 54
+                on_size = 54
+                # with sb:
+                # cols = st.columns(7)
+                height = 54
+                with cols[0]:
+
+                    # wb = hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
+                    # st.session_state['workerbees'] = True if st.session_state['workerbees_m'] == 'workerbees' else False
+                    # height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
+                    cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                with cols[1]:
+                    # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    # st.session_state['orders'] = True
+                    # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
+                    cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                    st.session_state['orders'] = True if cb == True or cb == 0 else False
+                    if st.session_state['orders'] == True:
+                        print("yes")
+                        page_line_seperator(color=default_font)
+                with cols[2]:
+                    hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                    
+                    # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
+                    # cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
+                    st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
+                    # if st.session_state['chess_board']:
+                    #     hc.option_bar(option_definition=pq_buttons.get('option_data'),title='Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                with cols[3]:
+                    # height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
+                    cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
+                # st.session_state['queens_mind'] = True if st.session_state['queens_mind'] in ['queens_mind'] or st.session_state['queens_mind'] == None else False
+
+                # if st.session_state['queens_mind']:
+                #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+                with cols[4]:
+                # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Board', key='charts_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                # st.session_state['charts'] = True if st.session_state['charts_m'] in ['charts_id'] else False
                 
-                # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
-                cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
-                # if st.session_state['chess_board']:
-                #     hc.option_bar(option_definition=pq_buttons.get('option_data'),title='Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-            with cols[3]:
-                # height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
-                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
-            # st.session_state['queens_mind'] = True if st.session_state['queens_mind'] in ['queens_mind'] or st.session_state['queens_mind'] == None else False
+                    height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
+                    cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
+                    # st.session_state['charts'] = True if st.session_state['charts_m'] == True else False
+                # print(st.session_state['charts_m'])
 
-            # if st.session_state['queens_mind']:
-            #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                # if st.session_state['charts']:
+                #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-            with cols[4]:
-            # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Board', key='charts_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-            # st.session_state['charts'] = True if st.session_state['charts_m'] in ['charts_id'] else False
-            
-                height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
-                cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
-                # st.session_state['charts'] = True if st.session_state['charts_m'] == True else False
-            # print(st.session_state['charts_m'])
+                with cols[5]:
+                    height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
+                    cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
+                
+                with cols[6]:              
+                    height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
+                    cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px', default=False)
+                    st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
 
-            # if st.session_state['charts']:
-            #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-
-            with cols[5]:
-                height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
-                cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
-            
-            with cols[6]:              
-                height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
-                cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px', default=False)
-                st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
-
-                # if st.session_state['waves']:
-                #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-
+                    # if st.session_state['waves']:
+                    #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+            except Exception as e:
+                print(e)
+                print_line_of_error()
 
         def queen_messages_logfile_grid(KING, log_file, grid_key, f_api, varss={'seconds_to_market_close': None, 'refresh_sec': None}):
             gb = GridOptionsBuilder.create()
@@ -683,6 +687,9 @@ def pollenq(admin_pq):
             display_for_unAuth_client_user()
             st.stop()
 
+        seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+
+
         with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
             # mark_down_text(fontsize='15', text='QuantQueen', font='friz-quadrata')
@@ -710,7 +717,6 @@ def pollenq(admin_pq):
                 if KING_req.get('update'):
                     KING = KING_req['KING']
                     PickleData(KING.get('source'), KING)
-            
             # with st.sidebar:
             #     st.write("testing fastpi")
 
@@ -731,6 +737,7 @@ def pollenq(admin_pq):
                 QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
                 QUEEN_KING['prod'] = st.session_state['production']          
                 QUEEN = read_QUEEN()
+                print(QUEEN['queen_controls'].keys())
 
                 if QUEEN.get('revrec') == 'init':
                     st.warning("missing revrec, add revrec to QUEEN")
@@ -806,25 +813,30 @@ def pollenq(admin_pq):
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
             # with st.expander('Master Controls', False):
             # with cols[0]:
-            with st.expander("Master Menu"):
-                cols = st.columns((1,1,1,1,1,1,1,1,4,4))
-                menu_buttons(cols)
+            cols = st.columns((1,8,4,4))
+            with cols[0]:
+                print("Heart")
+                now = datetime.now(est)
+                beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
+                beat_size = 66 if beat > 100 else beat
+                beat_size = 45 if beat_size < 10 else beat_size
+                cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
+                seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+            
+            with cols[1]:
+                with st.expander("Master Menu"):
+                    colss = st.columns((1,1,1,1,1,1,1,1))
+                    menu_buttons(cols=colss)
                 # with cols[0]:
                 #     st.write("stefan")
-                with cols[7]:
-                    # queensheart
-                    print("Heart")
-                    now = datetime.now(est)
-                    beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
-                    beat_size = 66 if beat > 100 else beat
-                    beat_size = 45 if beat_size < 10 else beat_size
-                    cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
-                    seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
-                
-                with cols[8]:
-                    custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api="http://localhost:8000/api/data/account_info")
-                with cols[9]:
-                    portfolio_header__QC(acct_info)
+                # with cols[7]:
+                #     # queensheart
+
+
+            with cols[2]:
+                custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api="http://localhost:8000/api/data/account_info")
+            with cols[3]:
+                portfolio_header__QC(acct_info)
             
 
             if menu_id == 'PlayGround':
@@ -846,7 +858,6 @@ def pollenq(admin_pq):
             # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
             trading_days = hive_dates(api=api)['trading_days']
             mkhrs = return_market_hours(trading_days=trading_days)
-            seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
             seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
             if mkhrs != 'open':
                 seconds_to_market_close = 1
@@ -884,8 +895,7 @@ def pollenq(admin_pq):
                 QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.now(est)}
                 st.success("Hive Master Notified and You should receive contact soon")
 
-            def return_page_tabs():
-                func_list = ['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']
+            def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
                 func_list = [i for i in func_list if st.session_state[i]]
                 if len(func_list) == 0:
                     st.info("I would Suggest Checking our Your ChessBoard This Morning")
