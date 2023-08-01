@@ -568,8 +568,8 @@ def pollenq(admin_pq):
                 
                 with cols[6]:              
                     height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
-                    cust_Button("misc/waves.png", hoverText='Waves', key='waves_m', height=f'{height}px', default=False)
-                    st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
+                    cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px', default=False)
+                    # st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
 
                     # if st.session_state['waves']:
                     #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -676,8 +676,11 @@ def pollenq(admin_pq):
         log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
         # Call the function to get the IP address
-        ip_address = get_ip_address()
-        st.session_state['ip_address'] = ip_address
+        if 'ip_address' in st.session_state:
+            ip_address = st.session_state['ip_address']
+        else:
+            ip_address = get_ip_address()
+            st.session_state['ip_address'] = ip_address
         print("IP Address:", ip_address)
         # if ip_address == '10.202.0.2':
         #    ip_address = 'pollenq.com'

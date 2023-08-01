@@ -1497,10 +1497,22 @@ def pollen_story(pollen_nectar):
                     "vwap_deviation_high": df["vwap_deviation"].max(),
                     "vwap_deviation_low": df["vwap_deviation"].min(),
                 }
-                
+
+                # Story Bee >>> Wave Info
+
                 STORY_bee[ticker_time_frame]["story"]["macd_singal_deviation"] = df.iloc[-1]["macd_singal_deviation"]
                 STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1]["vwap_deviation"]
                 STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1]["vwap_deviation_pct"]
+                current_ask = df.iloc[-1].get("current_ask")
+                current_bid = df.iloc[-1].get("current_bid")
+                STORY_bee[ticker_time_frame]["story"]["current_ask"] = current_ask
+                STORY_bee[ticker_time_frame]["story"]["current_bid"] = current_bid
+                best_limit_price = get_best_limit_price(ask=current_ask, 
+                                                        bid=current_bid )
+                maker_middle = best_limit_price['maker_middle']
+                ask_bid_variance = None if current_ask is None else current_bid / current_ask
+                STORY_bee[ticker_time_frame]["story"]["maker_middle"] = maker_middle
+                STORY_bee[ticker_time_frame]["story"]["ask_bid_variance"] = ask_bid_variance
 
                 # Measure MACD WAVES
                 # change % shifts for each, close, macd, signal, hist....
@@ -1570,6 +1582,16 @@ def pollen_story(pollen_nectar):
                 knights_sight_word[ticker_time_frame] = knights_word
                 STORY_bee[ticker_time_frame]["KNIGHTSWORD"] = knights_word
 
+
+                macd_state = df["macd_cross"].iloc[-1]
+                macd_state_side = macd_state.split("_")[0]  # buy_cross-num
+                middle_crossname = macd_state.split("_")[1].split("-")[0]
+                state_count = macd_state.split("-")[1]  # buy/sell_name_number
+                STORY_bee[ticker_time_frame]["story"]["macd_state"] = macd_state
+                STORY_bee[ticker_time_frame]["story"]["macd_state_side"] = macd_state_side
+                STORY_bee[ticker_time_frame]["story"]["time_since_macd_change"] = state_count
+
+
                 # # # return degree angle 0, 45, 90
                 # try:
                 #     s_timetoken = datetime.now(est)
@@ -1613,16 +1635,6 @@ def pollen_story(pollen_nectar):
                     "time_state"
                 ] = datetime.now().astimezone(est)
 
-
-
-                # MACD WAVE
-                macd_state = df["macd_cross"].iloc[-1]
-                macd_state_side = macd_state.split("_")[0]  # buy_cross-num
-                middle_crossname = macd_state.split("_")[1].split("-")[0]
-                state_count = macd_state.split("-")[1]  # buy/sell_name_number
-                STORY_bee[ticker_time_frame]["story"]["macd_state"] = macd_state
-                STORY_bee[ticker_time_frame]["story"]["macd_state_side"] = macd_state_side
-                STORY_bee[ticker_time_frame]["story"]["time_since_macd_change"] = state_count
 
                 # last time there was buycross
                 if "buy_cross-0" in knights_word.keys():
@@ -2365,6 +2377,9 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
 
 
 def get_best_limit_price(ask, bid):
+    if ask is None or bid is None:
+        return {"maker_middle": None, "maker_delta": None}
+    
     maker_dif = ask - bid
     maker_delta = (maker_dif / ask) * 100
     # check to ensure bid / ask not far
@@ -3261,7 +3276,7 @@ def kings_order_rules( # rules created for 1Minute
     doubledowns_allowed=2,
     close_order_today=False,
     close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
-    
+
     # Not Used
     short_position=False,
     revisit_trade_frequency=60,
@@ -4084,6 +4099,7 @@ def order_vars__queen_order_items(
     sell_reason={},
     running_close_legs=False,
     wave_at_creation={},
+    assigned_wave={},
     sell_qty=False,
     first_sell=False,
     time_intrade=False,
@@ -4091,6 +4107,7 @@ def order_vars__queen_order_items(
     trigbee=False,
     tm_trig=False,
     borrowed_funds=False,
+    ready_buy=False,
 ):
     if order_side:
         order_vars = {}
@@ -4135,6 +4152,8 @@ def order_vars__queen_order_items(
                 order_vars["limit_price"] = False
                 order_vars["order_trig_sell_stop_limit"] = False
 
+            
+            order_vars["assigned_wave"] = assigned_wave
             order_vars["origin_wave"] = origin_wave
             order_vars["power_up"] = sum(power_up_rangers.values())
             order_vars["wave_amo"] = wave_amo
@@ -4155,6 +4174,7 @@ def order_vars__queen_order_items(
             order_vars["trigbee"] = trigbee
             order_vars["tm_trig"] = tm_trig
             order_vars["borrowed_funds"] = borrowed_funds
+            order_vars["ready_buy"] = ready_buy
 
             return order_vars
 
@@ -4236,6 +4256,8 @@ def create_QueenOrderBee(
         revisit_trade_datetime=datetime.now(est),
         datetime=datetime.now(est),
         borrowed_funds=False,
+        ready_buy=None,
+
     ):
         date_mark = datetime.now(est)
         if queen_init:
@@ -4254,19 +4276,20 @@ def create_QueenOrderBee(
                 "running_close_legs": False,
                 "ticker_time_frame": ticker_time_frame,
                 "star": star,
-                "double_down_trade": order_vars["double_down_trade"],
-                "order_trig_sell_stop_limit": order_vars["order_trig_sell_stop_limit"],
-                "req_limit_price": order_vars["limit_price"],
-                "limit_price": order_vars["limit_price"],
-                "order_rules": order_vars["king_order_rules"],
-                "origin_wave": order_vars["origin_wave"],
-                "wave_at_creation": order_vars["wave_at_creation"],
-                "power_up": order_vars["power_up"],
-                "power_up_rangers": order_vars["power_up_rangers"],
-                "ticker_time_frame_origin": order_vars["ticker_time_frame_origin"],
-                "wave_amo": order_vars["wave_amo"],
-                "sell_reason": order_vars["sell_reason"],
+                "double_down_trade": order_vars.get("double_down_trade"),
+                "order_trig_sell_stop_limit": order_vars.get("order_trig_sell_stop_limit"),
+                "req_limit_price": order_vars.get("limit_price"),
+                "limit_price": order_vars.get("limit_price"),
+                "order_rules": order_vars.get("king_order_rules"),
+                "origin_wave": order_vars.get("origin_wave"),
+                "wave_at_creation": order_vars.get("wave_at_creation"),
+                "power_up": order_vars.get("power_up"),
+                "power_up_rangers": order_vars.get("power_up_rangers"),
+                "ticker_time_frame_origin": order_vars.get("ticker_time_frame_origin"),
+                "wave_amo": order_vars.get("wave_amo"),
+                "sell_reason": order_vars.get("sell_reason"),
                 "borrowed_funds": order_vars.get('borrowed_funds'),
+                "ready_buy": order_vars.get('ready_buy'),
                 "assigned_wave": {},
                 "trigname": trig,
                 "datetime": date_mark,
@@ -4276,17 +4299,17 @@ def create_QueenOrderBee(
                 "client_order_id": order["client_order_id"],
                 "system_recon": False,
                 "order": "alpaca",
-                "side": order["side"],
-                "ticker": order["symbol"],
-                "symbol": order["symbol"],
-                "req_qty": order["qty"],
-                "qty": order["qty"],
-                "filled_qty": order["filled_qty"],
-                "qty_available": order["filled_qty"],
-                "filled_avg_price": order["filled_avg_price"],
-                "price_time_of_request": priceinfo["price"],
-                "bid": priceinfo["bid"],
-                "ask": priceinfo["ask"],
+                "side": order.get("side"),
+                "ticker": order.get("symbol"),
+                "symbol": order.get("symbol"),
+                "req_qty": order.get("qty"),
+                "qty": order.get("qty"),
+                "filled_qty": order.get("filled_qty"),
+                "qty_available": order.get("filled_qty"),
+                "filled_avg_price": order.get("filled_avg_price"),
+                "price_time_of_request": priceinfo.get("price"),
+                "bid": priceinfo.get("bid"),
+                "ask": priceinfo.get("ask"),
                 "honey_gauge": deque([], 89),
                 "macd_gauge": deque([], 89),
                 "money": 0,

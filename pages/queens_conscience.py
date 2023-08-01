@@ -1732,17 +1732,18 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                     'suppressMenu': False,
                                                     # 'editable': True,
                                                     },          # gb.configure_column('Sell Button', {'pinned': 'right'})
-                        'Star Time':
+                        'ticker_time_frame':
                                             {
                                                 # "wrapText": True,
                                                 # "autoHeight": True,
                                                 # "wrapHeaderText": True,
                                                 # "autoHeaderHeight": True,
                                                 'initialWidth': 168,
-                                                "sortable":True
+                                                "sortable":True,
+                                                'headerName': 'Star Time',
                                             },
-                        'trigname': {'initialWidth': 140,},
-                        'Current MACD': {},
+                        'trigname': {'headerName': 'TrigWave', 'initialWidth': 140,},
+                        'current_macd': {'headerName': 'Current MACD',},
                         'datetime':
                                 {'type': ["dateColumnFilter", "customDateTimeFormat"],
                                 "custom_format_string": "MM/dd/yy HH:mm"},
@@ -1827,7 +1828,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         },
                         ],
                 grid_height='300px',
-                toggle_views = ['buys', 'sells', 'today', 'castle', 'knight', 'bishop'],
+                # toggle_views = ['buys', 'sells', 'today', 'castle', 'knight', 'bishop'],
             )
 
         
@@ -1850,6 +1851,22 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
                         
+                        'star_at_play': {'headerName':'At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                        #    'custom_currency_symbol':"$",
+                                                        'initialWidth':123,
+                                                        },
+                        'star_at_play_borrow': {'headerName':'Borrow Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                        #    'custom_currency_symbol':"$",
+                                                        'initialWidth':123,
+                                                        },
+                        'allocation_deploy': {'headerName':'Allocation Deploy', 'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                                    'initialWidth':123,
+                                    },
+                        'allocation_borrow_deploy': {'headerName':'Allocation Borrow Deploy', 'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                                    'initialWidth':123,
+                                    },
                         'allocation': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                                     'initialWidth':123,
@@ -1859,24 +1876,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                                     'initialWidth':123,
                                     },
-                        'allocation_deploy': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                                    'initialWidth':123,
-                                    },
-                        'allocation_borrow_deploy': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                                    'initialWidth':123,
-                                    },
 
-                        'star_at_play': {'header_name':'At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                        #    'custom_currency_symbol':"$",
-                                                        'initialWidth':123,
-                                                        },
                         'remaining_budget': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                        #    'custom_currency_symbol':"$",
-                                                        'initialWidth':123,
-                                                        },
-                        'star_at_play_borrow': {'header_name':'Borrow Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
@@ -1934,8 +1935,17 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'col_width':100,
                         'pinned': 'left',
                         },
+                        {'button_name': 'XBuy',
+                        'button_api': f'http://{ip_address}:8000/api/data/queen_buy_wave_orders__x_buy',
+                        'prompt_message': 'X Buy Wave',
+                        'prompt_field': 'macd_state',
+                        'col_headername': 'X Buy',
+                        'col_width':89,
+                        'pinned': 'right',
+                        },
                         ],
                 grid_height='300px',
+                toggle_views = ['Main', 'Buys', 'Sells', 'Flash', 'Whale', 'castle' 'bishop', 'knight'],
             ) 
         
 
