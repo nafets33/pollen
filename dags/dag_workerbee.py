@@ -6,7 +6,7 @@ from airflow.models import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
-from chess_piece.queen_worker_bees import queen_workerbees
+from chess_piece.workerbees import queen_workerbees
 
 # bee better
 
@@ -34,12 +34,21 @@ dag = DAG(
 # Define jobs
 start = EmptyOperator(task_id="start", dag=dag)
 
+qcp_s = ["castle", "bishop", "knight", 'pawn1', 'pawn_5']
+
 task_1_operator = PythonOperator(
     task_id="task_job_1",
     python_callable=queen_workerbees,
     dag=dag,
-    op_kwargs={"prod": True, "queens_chess_piece": "workerbee"},
+    op_kwargs={"prod": True, "queens_chess_piece": "workerbee", 'qcp_s': 'castle'},
 )
+
+# task_2_operator = PythonOperator(
+#     task_id="task_job_1",
+#     python_callable=queen_workerbees,
+#     dag=dag,
+#     op_kwargs={"prod": True, "queens_chess_piece": "workerbee", 'qcp_s': 'bishop'},
+# )
 
 end = EmptyOperator(task_id="end", dag=dag)
 
