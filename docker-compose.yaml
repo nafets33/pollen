@@ -59,7 +59,7 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
-    PYTHONPATH: ${PYTHONPATH}:/opt/pollen:/opt/airflow:/opt/chess_piece
+    PYTHONPATH: ${PYTHONPATH}:/opt/pollen:/opt/airflow:/opt/pollen/chess_piece:/opt/pollen/custom_grid
   env_file:
     - .env
   volumes:
@@ -69,6 +69,7 @@ x-airflow-common:
 #     - ./chess_piece:/opt/airflow/chess_piece
     # - ./ozz:/opt/pollen/ozz
     - ./chess_piece:/opt/pollen/chess_piece
+    - ./custom_grid:/opt/pollen/custom_grid
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/pollen/plugins
