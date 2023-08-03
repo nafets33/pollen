@@ -14,3 +14,4 @@ logs/*
 .env_jq
 .venv
 jed_playground.py
+airflow_home

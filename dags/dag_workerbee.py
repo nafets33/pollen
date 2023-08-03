@@ -33,23 +33,18 @@ dag = DAG(
 )
 # Define jobs
 start = EmptyOperator(task_id="start", dag=dag)
-
-qcp_s = ["castle", "bishop", "knight", 'pawn1', 'pawn_5']
-
-task_1_operator = PythonOperator(
-    task_id="task_job_1",
-    python_callable=queen_workerbees,
-    dag=dag,
-    op_kwargs={"prod": True, "queens_chess_piece": "workerbee", 'qcp_s': 'castle'},
-)
-
-# task_2_operator = PythonOperator(
-#     task_id="task_job_1",
-#     python_callable=queen_workerbees,
-#     dag=dag,
-#     op_kwargs={"prod": True, "queens_chess_piece": "workerbee", 'qcp_s': 'bishop'},
-# )
-
 end = EmptyOperator(task_id="end", dag=dag)
 
-start >> task_1_operator >> end
+qcp_s = ["castle", "bishop", "knight", "pawn1", "pawn_5"]
+
+for val in qcp_s:
+    dynamic_operator = PythonOperator(
+        task_id=f"{val}-operator",
+        python_callable=queen_workerbees,
+        dag=dag,
+        op_kwargs={"prod": True, "queens_chess_piece": "workerbee", "qcp_s": val},
+    )
+    start.set_downstream(dynamic_operator)
+    dynamic_operator.set_downstream(end)
+
+# start >> task_1_operator >> end
