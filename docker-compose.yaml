@@ -75,6 +75,7 @@ x-airflow-common:
     - ./plugins:/opt/pollen/plugins
     - ./db:/opt/pollen/db
     - ./misc:/opt/pollen/misc
+    - ./backtesting:/opt/pollen/backtesting
     - ./symbols_pollenstory_dbs:/opt/pollen/symbols_pollenstory_dbs
     - ./symbols_STORY_bee_dbs:/opt/pollen/symbols_STORY_bee_dbs
     - ./client_user_dbs:/opt/pollen/client_user_dbs
