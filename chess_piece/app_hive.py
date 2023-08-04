@@ -1,7 +1,7 @@
 import argparse
 import base64
 import os
-import pickle
+import time
 import smtplib
 import ssl
 from datetime import datetime
@@ -114,6 +114,18 @@ def create_AppRequest_package(request_name, archive_bucket=None, client_order_id
 def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
     local_gif(gif_path=gif)
     st.success(title)
+
+
+
+def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
+    func_list = [i for i in func_list if st.session_state[i]]
+    if len(func_list) == 0:
+        st.info("I would Suggest Checking our Your ChessBoard This Morning")
+        tabs = False
+    else:
+        tabs = st.tabs(func_list)
+    
+    return tabs, func_list
 
 
 ################ AUTH ###################
@@ -1431,6 +1443,8 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
 
                     QUEEN_KING["users_secrets"] = user_secrets
                     PickleData(PB_App_Pickle, QUEEN_KING)
+                    time.sleep(2)
+                    st.experimental_rerun()
 
     return True
 

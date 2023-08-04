@@ -737,10 +737,12 @@ def pollenq(admin_pq):
 
             # print("QUEEN_KING")
             if authorized_user:
+                # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece) # handled in signin auth
+
                 QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
                 QUEEN_KING['prod'] = st.session_state['production']          
-                QUEEN = read_QUEEN()
-                print(QUEEN['queen_controls'].keys())
+                QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+                print(QUEEN_KING['king_controls_queen'].keys())
 
                 if QUEEN.get('revrec') == 'init':
                     st.warning("missing revrec, add revrec to QUEEN")
@@ -837,6 +839,7 @@ def pollenq(admin_pq):
 
 
             with cols[2]:
+                print('ss', seconds_to_market_close)
                 custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api="http://localhost:8000/api/data/account_info")
             with cols[3]:
                 portfolio_header__QC(acct_info)

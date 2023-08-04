@@ -72,7 +72,6 @@ def load_queen_messages_logfile_json(username: str=Body(...), api_key = Body(...
 @router.post("/queen", status_code=status.HTTP_200_OK)
 def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...), toggle_view_selection=Body(...)):
     try:
-        print(toggle_view_selection)
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
@@ -92,6 +91,19 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
     except Exception as e:
         print("router queen error", e)
 
+@router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK)
+def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    try:
+        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+            print("Auth Failed", api_key)
+            return "NOTAUTH"
+        print(default_value)
+        # json_data = app_archive_queen_order(username, prod, selected_row, default_value)
+        # app_queen_order_update_order_rules(username, prod, selected_row, default_value)
+        return JSONResponse(content=grid_row_button_resp())
+    except Exception as e:
+        print("router queen error", e)
+
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
 def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
     try:
@@ -101,8 +113,9 @@ def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(
             return "NOTAUTH"
 
         
-        # app_Sellorder_request(username, prod, selected_row, default_value)
-        return JSONResponse(content=grid_row_button_resp())
+        rep = app_Sellorder_request(username, prod, selected_row, default_value)
+        if rep.get('status') == 'success':
+            return JSONResponse(content=grid_row_button_resp())
     except Exception as e:
         print("router err ", e)
 
@@ -112,8 +125,10 @@ def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(.
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    app_buy_wave_order_request(username, prod, selected_row, ready_buy=False)
-    return JSONResponse(content=grid_row_button_resp())
+    if app_buy_wave_order_request(username, prod, selected_row, ready_buy=False):
+        return JSONResponse(content=grid_row_button_resp())
+    else:
+        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
 
 @router.post("/queen_buy_wave_orders__ready_buy", status_code=status.HTTP_200_OK)
 def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):
@@ -121,8 +136,22 @@ def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(.
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    app_buy_wave_order_request(username, prod, selected_row, ready_buy=True)
-    return JSONResponse(content=grid_row_button_resp())
+    if app_buy_wave_order_request(username, prod, selected_row, ready_buy=True):
+        return JSONResponse(content=grid_row_button_resp())
+    else:
+        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
+
+@router.post("/queen_buy_wave_orders__x_buy", status_code=status.HTTP_200_OK)
+def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+
+    if app_buy_wave_order_request(username, prod, selected_row, default_value, ready_buy=False, x_buy=True):
+        return JSONResponse(content=grid_row_button_resp())
+    else:
+        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
+
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
 def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):

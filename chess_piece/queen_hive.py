@@ -323,6 +323,7 @@ def hive_dates(api):
 def init_queen(queens_chess_piece):
 
     QUEEN = {  # The Queens Mind
+        "version": 2,
         "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
         "account_info": 'init',
         "prod": "",
@@ -431,6 +432,7 @@ def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, q
 def init_QUEEN_App():
 
     app = {
+        "version": 2,
         "prod": 'init',
         "db__client_user": 'init',
         "pickle_file": 'init',
@@ -442,7 +444,6 @@ def init_QUEEN_App():
         "chess_board": generate_chess_board(),
         "revrec": "init",
         "STORY_bee_wave_analysis": 'init',
-        
         "trigger_queen": {
             "dag": "init",
             "last_trig_date": datetime.now(est),
@@ -519,6 +520,9 @@ def add_key_to_app(QUEEN_KING):  # returns QUEES
     
     q_keys = QUEEN_KING.keys()
     latest_queen = init_QUEEN_App()
+    latest_controls = return_queen_controls()
+    latest_qcp = init_qcp()
+
     for k, v in latest_queen.items():
         if k not in q_keys:
             QUEEN_KING[k] = v
@@ -527,8 +531,15 @@ def add_key_to_app(QUEEN_KING):  # returns QUEES
             print(msg)
             logging.info(msg)
             update_msg[k] = msg
+    for k, v in latest_controls.items():
+        if k not in QUEEN_KING['king_controls_queen'].keys():
+            QUEEN_KING['king_controls_queen'][k] = v
+            update = True
+            msg = f'{k}{" : Control Key Added to QUEEN_KING"}'
+            print(msg)
+            logging.info(msg)
+            update_msg[k] = msg
     
-    latest_qcp = init_qcp()
     for k, v in latest_qcp.items():
         for qcp, qcp_vars in QUEEN_KING['chess_board'].items():
             qcp_keys = qcp_vars.keys()
@@ -613,7 +624,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         all_workers = list(QUEEN_KING['chess_board'].keys())
         revrec_buying_power = acct_info.get('buying_power')
         revrec_last_equity = acct_info.get('last_equity')
-        total_costbasis_active = return_remaining_budget(QUEEN, active_queen_order_states)
+        # total_costbasis_active = return_remaining_budget(QUEEN, active_queen_order_states)
         cash = acct_info.get('last_equity')
         # ttf_remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
         queen_order_states = king_G.get('RUNNING_Orders')
@@ -684,8 +695,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 budget_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
                 borrowed_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
                 
-                budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
-                borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
+                budget_cost_basis = sum(budget_orders['cost_basis_current']) if len(budget_orders) > 0 else 0
+                borrowed_cost_basis = sum(borrowed_orders['cost_basis_current']) if len(borrowed_orders) > 0 else 0
 
                 df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
                 bp = sum(df_temp['ticker_buying_power'])
@@ -733,6 +744,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         wave_analysis_down = resp.get('df_storyview_down')
         storygauge = resp.get('df_storyguage')
         waveview = resp.get('df_waveview')
+
+        waveview['wave_state'] = waveview['macd_state'].str.split("-").str[-1]
 
         # waveview['star'] = waveview.index
         waveview['symbol'] = waveview['ticker_time_frame'].apply(lambda x: return_symbol_from_ttf(x))
@@ -863,14 +876,14 @@ def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=Fal
 
     return orders
 
-def return_remaining_budget(QUEEN, active_queen_order_states):
+# def return_remaining_budget(QUEEN, active_queen_order_states):
     
-    # Total In Running, Remaining
-    queen_orders = QUEEN['queen_orders']
-    active_orders = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states)]
-    cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
+#     # Total In Running, Remaining
+#     queen_orders = QUEEN['queen_orders']
+#     active_orders = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states)]
+#     cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
     
-    return active_orders, cost_basis
+#     return active_orders, cost_basis
 
 def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen_order_states, ticker=False, star=False, ticker_time_frame=False, info='only takes 1 ttf, ticker or star'):
     try:
@@ -888,8 +901,8 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         budget_orders = active_orders[active_orders['borrowed_funds'] == False].copy() if num_active_orders > 0 else pd.DataFrame()
         borrowed_orders = active_orders[active_orders['borrowed_funds'] != False].copy() if num_active_orders > 0 else pd.DataFrame()
         
-        budget_cost_basis = sum(budget_orders['cost_basis']) if len(budget_orders) > 0 else 0
-        borrowed_cost_basis = sum(borrowed_orders['cost_basis']) if len(borrowed_orders) > 0 else 0
+        budget_cost_basis = sum(budget_orders['cost_basis_current']) if len(budget_orders) > 0 else 0
+        borrowed_cost_basis = sum(borrowed_orders['cost_basis_current']) if len(borrowed_orders) > 0 else 0
 
 
         if num_active_orders == 0:
@@ -3246,7 +3259,7 @@ def KOR_close_order_today_vars(take_profit=True):
     }
 
 def kings_order_rules( # rules created for 1Minute
-    KOR_version=2,
+    KOR_version=3,
     # Global, Buy, Sell
     theme='nuetral',
     status='active',
@@ -3276,7 +3289,7 @@ def kings_order_rules( # rules created for 1Minute
     doubledowns_allowed=2,
     close_order_today=False,
     close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
-
+    borrow_qty=0,
     # Not Used
     short_position=False,
     revisit_trade_frequency=60,
@@ -3340,6 +3353,7 @@ def kings_order_rules( # rules created for 1Minute
         'vwap_tier_multiplier': {},
         'rsi_tier_multiplier': {},
         'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
+        'borrow_qty': borrow_qty,
 
     }
 
@@ -3945,7 +3959,7 @@ def generate_TradingModel(
 
         return return_dict
 
-    def model_vars(trading_model_name, star, stars_vars):
+    def model_vars(trading_model_name, star, stars_vars, stars=stars):
         return {
             # 'status': stars_vars[star]['status'],
             "buyingpower_allocation_LongTerm": stars_vars[star]["buyingpower_allocation_LongTerm"],
@@ -3970,6 +3984,7 @@ def generate_TradingModel(
         stars=stars,
         portfolio_name=portfolio_name,
         theme=theme,):
+        
         afterhours = True if ticker in crypto_currency_symbols else False
         afternoon = True if ticker in crypto_currency_symbols else True
         lunch = True if ticker in crypto_currency_symbols else True
@@ -3988,7 +4003,7 @@ def generate_TradingModel(
         }
 
         allow_for_margin = [False if ticker in crypto_currency_symbols else True][0]
-        etf_X_direction = ["1X", "2X", "3X"]  # Determined by QUEEN
+        # etf_X_direction = ["1X", "2X", "3X"]  # Determined by QUEEN
 
         def init_stars_allocation():
             return {}
@@ -4069,9 +4084,11 @@ def process_order_submission(trading_model, order, order_vars, trig, symbol, tic
         exit_order_link=exit_order_link, 
         priceinfo=priceinfo
         )
-
+        # ipdb.set_trace()
         # Append Order
         new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id")
+        new_queen_order_df['cost_basis_current'] = new_queen_order_df.get('wave_amo')
+        # QUEEN['queen_orders'].at[new_queen_order_df.get('client_order_id'), 'cost_basis_current'] = 100
 
         # QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0) # , ignore_index=True
         # QUEEN['queen_orders']['client_order_id'] = QUEEN['queen_orders'].index
@@ -4108,6 +4125,7 @@ def order_vars__queen_order_items(
     tm_trig=False,
     borrowed_funds=False,
     ready_buy=False,
+    borrow_qty=0,
 ):
     if order_side:
         order_vars = {}
@@ -4175,6 +4193,7 @@ def order_vars__queen_order_items(
             order_vars["tm_trig"] = tm_trig
             order_vars["borrowed_funds"] = borrowed_funds
             order_vars["ready_buy"] = ready_buy
+            order_vars["borrow_qty"] = borrow_qty
 
             return order_vars
 
@@ -4247,6 +4266,7 @@ def create_QueenOrderBee(
         sell_reason=False,
         honey_time_in_profit=0,
         cost_basis=0,
+        cost_basis_current=0,
         honey=0,
         money=0,
         order=order,
@@ -4290,7 +4310,8 @@ def create_QueenOrderBee(
                 "sell_reason": order_vars.get("sell_reason"),
                 "borrowed_funds": order_vars.get('borrowed_funds'),
                 "ready_buy": order_vars.get('ready_buy'),
-                "assigned_wave": {},
+                "qty_order": order_vars.get('qty_order'),
+                "assigned_wave": order_vars.get("wave_at_creation"),
                 "trigname": trig,
                 "datetime": date_mark,
                 "status_q": status_q,
@@ -4315,6 +4336,7 @@ def create_QueenOrderBee(
                 "money": 0,
                 "honey": 0,
                 "cost_basis": 0,
+                'cost_basis_current': 0,
                 "honey_time_in_profit": {},
                 "profit_loss": 0,
                 "revisit_trade_datetime": revisit_trade_datetime,
@@ -4379,9 +4401,31 @@ def generate_chessboards_trading_models(chessboard):
             tradingmodels[ticker] = generate_TradingModel(ticker=ticker, theme=chesspiece.get('theme'), init=True)["MACD"][ticker]
     return tradingmodels
 
+def star_power(stars):
+    star_main = {}
+    for star in stars().keys():
+        if star == "1Minute_1Day":
+            star_main[star] = .5
+        elif star == "5Minute_5Day":
+            star_main[star] = .5
+        elif star == "30Minute_1Month":
+            star_main[star] = .5
+        elif star == "1Hour_3Month":
+            star_main[star] = .5
+        elif star == "2Hour_6Month":
+            star_main[star] = .5
+        elif star == "1Day_1Year":
+            star_main[star] = .5 
+        else:
+            print("no way")
+    
+    return star_main
+
 def return_queen_controls(stars=stars):
     chessboard = generate_chess_board()
     tradingmodels = generate_chessboards_trading_models(chessboard)
+    star_powers = star_power(stars)
+    x_power = star_power(stars)
 
     queen_controls_dict = {
         "theme": "nuetral",
@@ -4398,6 +4442,14 @@ def return_queen_controls(stars=stars):
             "ready_buy_cross": "not_active",
         },
         'use_margin': False,
+        'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},
+                                # 'stars_power': star_powers,
+                                # 'x_power': x_power,
+                                'budget_type': 'star'}, # {'qcp', 'symbol', 'star'}
+        'x_power': x_power,
+        'star_power': star_powers,
+        # 'star_powers': star_powers,
+        # 'daylongterm_risk_takes': {'morning': 1, 'lunch': 1, 'afternoon':1},
     }
     return queen_controls_dict
 
@@ -4727,52 +4779,56 @@ def analyze_waves(STORY_bee, ticker_time_frame=False, top_waves=8):
 
 # weight the MACD tier // slice by selected tiers?
 def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
-    weight_short = ['1Minute_1Day', '5Minute_5Day']
-    weight_mid = ['30Minute_1Month', '1Hour_3Month']
-    weight_long = ['2Hour_6Month', '1Day_1Year']
-    # print(df_waves.columns)
-    if trading_model:
-        for ticker_time_frame in df_waves.index:
-            ticker, tframe, tperiod = ticker_time_frame.split("_")
-            df_waves.at[ticker_time_frame, 'weight_L'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            df_waves.at[ticker_time_frame, 'weight_S'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_ShortTerm")
+    try:
+        weight_short = ['1Minute_1Day', '5Minute_5Day']
+        weight_mid = ['30Minute_1Month', '1Hour_3Month']
+        weight_long = ['2Hour_6Month', '1Day_1Year']
+        # print(df_waves.columns)
+        if trading_model:
+            for ticker_time_frame in df_waves.index:
+                ticker, tframe, tperiod = ticker_time_frame.split("_")
+                df_waves.at[ticker_time_frame, 'weight_L'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                df_waves.at[ticker_time_frame, 'weight_S'] = trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_ShortTerm")
 
-            if f'{tframe}_{tperiod}' in weight_short:
-                df_waves.at[ticker_time_frame, 'weight_L_15'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            elif f'{tframe}_{tperiod}' in weight_mid:
-                df_waves.at[ticker_time_frame, 'weight_L_30'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            elif f'{tframe}_{tperiod}' in weight_long:
-                df_waves.at[ticker_time_frame, 'weight_L_54'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-            else:
-                df_waves.at[ticker_time_frame, 'weight_L_15'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-                df_waves.at[ticker_time_frame, 'weight_L_30'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-                df_waves.at[ticker_time_frame, 'weight_L_54'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
-
-
-    else:
-        df_waves['weight_L'] = 1 # change to join on based on ticker or groups of ticker models considered
-        df_waves['weight_S'] = 1
-
-    guage_return = {}
-    df_waves = df_waves.fillna(0)
-    for weight_ in ['weight_L', 'weight_S', 'weight_L_15', 'weight_L_30', 'weight_L_54']:
-        df_waves[f'{weight_}_weight_base'] = df_waves[weight_] * model_eight_tier
-        df_waves[f'{weight_}_macd_weight_sum'] = df_waves[weight_] * df_waves['current_macd_tier']
-        df_waves[f'{weight_}_hist_weight_sum'] = df_waves[weight_] * df_waves['current_hist_tier']
-        df_waves[f'{weight_}_vwap_weight_sum'] = df_waves[weight_] * df_waves['end_tier_vwap']
-        # df_waves[f'{weight_}_rsi_weight_sum'] = df_waves[weight_] * df_waves['end_tier_rsi']
-
-        
-        # Macd Tier Position 
-        guage_return[f'{weight_}_macd_tier_position'] = sum(df_waves[f'{weight_}_macd_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
-        guage_return[f'{weight_}_hist_tier_position'] = sum(df_waves[f'{weight_}_hist_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
-
-        guage_return[f'{weight_}_vwap_tier_position'] = sum(df_waves[f'{weight_}_vwap_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
-        # guage_return[f'{weight_}_rsi_tier_position'] = sum(df_waves[f'{weight_}_rsi_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+                if f'{tframe}_{tperiod}' in weight_short:
+                    df_waves.at[ticker_time_frame, 'weight_L_15'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                elif f'{tframe}_{tperiod}' in weight_mid:
+                    df_waves.at[ticker_time_frame, 'weight_L_30'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                elif f'{tframe}_{tperiod}' in weight_long:
+                    df_waves.at[ticker_time_frame, 'weight_L_54'] = .89 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                else:
+                    df_waves.at[ticker_time_frame, 'weight_L_15'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                    df_waves.at[ticker_time_frame, 'weight_L_30'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
+                    df_waves.at[ticker_time_frame, 'weight_L_54'] = .11 # trading_model['stars_kings_order_rules'][f'{tframe}_{tperiod}'].get("buyingpower_allocation_LongTerm")
 
 
-    return guage_return, df_waves
+        else:
+            df_waves['weight_L'] = 1 # change to join on based on ticker or groups of ticker models considered
+            df_waves['weight_S'] = 1
 
+        guage_return = {}
+        df_waves = df_waves.fillna(0)
+        for weight_ in ['weight_L', 'weight_S', 'weight_L_15', 'weight_L_30', 'weight_L_54']:
+            df_waves[f'{weight_}_weight_base'] = df_waves[weight_] * model_eight_tier
+            df_waves[f'{weight_}_macd_weight_sum'] = df_waves[weight_] * df_waves['current_macd_tier']
+            df_waves[f'{weight_}_hist_weight_sum'] = df_waves[weight_] * df_waves['current_hist_tier']
+            # df_waves[f'{weight_}_vwap_weight_sum'] = df_waves[weight_] * df_waves['end_tier_vwap'] ## skip out on OLD tickers that haven't been refreshed
+            # df_waves[f'{weight_}_rsi_weight_sum'] = df_waves[weight_] * df_waves['end_tier_rsi']
+
+            
+            # Macd Tier Position 
+            guage_return[f'{weight_}_macd_tier_position'] = sum(df_waves[f'{weight_}_macd_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+            guage_return[f'{weight_}_hist_tier_position'] = sum(df_waves[f'{weight_}_hist_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+
+            # guage_return[f'{weight_}_vwap_tier_position'] = sum(df_waves[f'{weight_}_vwap_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+            # guage_return[f'{weight_}_rsi_tier_position'] = sum(df_waves[f'{weight_}_rsi_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
+
+
+        return guage_return, df_waves
+    except Exception as e:
+        print('gauge trace')
+        print_line_of_error()
+        ipdb.set_trace()
 
 def story_view(STORY_bee, ticker):  # --> returns dataframe
     s_ = datetime.now(est)

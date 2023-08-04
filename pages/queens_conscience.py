@@ -648,7 +648,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 er, er_line = print_line_of_error()
                 st.write(f'{qcp_bees_key} {qcp} failed {er_line}')
         
-        def chessboard(acct_info, QUEEN_KING, ticker_allowed, themes, admin=False):
+        def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False):
             try:
                 
                 def handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=False):
@@ -707,7 +707,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 headers+=1
                             # RevRec
                             print('RevRec')
-                            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+                            # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
                             QUEEN_KING['revrec'] = revrec
                             QUEEN_KING['chess_board__revrec'] = revrec
                             df_qcp = revrec.get('df_qcp')
@@ -1718,7 +1718,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 money_def = {
                     'cellRenderer': 'agAnimateShowChangeCellRenderer',
                     'enableCellChangeFlash': True,
-                    'pinned':'right',
+                    'pinned':'left',
                     }
                 honey_options = {'pinned': 'left',
                                  'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
@@ -1767,7 +1767,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                 'rows': 10,
                                                 'cols': 50,
                                                 }, },
-                        'cost_basis': {"type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                        'cost_basis': {'headerName': 'Cost Basis', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                                    #    'custom_currency_symbol':"$",
+                                                                    "sortable":True,
+                                                                    "pinned": 'right',
+                                                                    'initialWidth': 115,
+                                                                    },
+                        'cost_basis_current': {'headerName': 'Cost Basis Current', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                                     #    'custom_currency_symbol':"$",
                                                                     "sortable":True,
                                                                     "pinned": 'right',
@@ -1800,7 +1806,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 grid_options=go,
                 # kwargs from here
                 api_key=os.environ.get("fastAPI_key"),
-                filter={"status": "running", "para1": "value1"},
                 buttons=[{'button_name': 'sell',
                         'button_api': f'http://{ip_address}:8000/api/data/queen_sell_orders',
                         'prompt_message': 'Select Qty to Sell',
@@ -1894,7 +1899,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
             if len(mmissing) > 0:
                 for col in mmissing:
-                    gb.configure_column(col, {'hide': False})
+                    gb.configure_column(col, {'hide': True})
 
             go = gb.build()
 
@@ -1943,9 +1948,18 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'col_width':89,
                         'pinned': 'right',
                         },
+                        {'button_name': 'Pbuy',
+                        'button_api': f'http://{ip_address}:8000/api/data/queen_powerbuy_buy_wave_orders',
+                        'prompt_message': 'Edit Buy',
+                        'prompt_field': 'powers',
+                        'col_headername': 'Power Buy',
+                        'col_width':89,
+                        'pinned': 'right',
+                        # 'prompt_order_rules': ['budget_type', ''],
+                        },
                         ],
                 grid_height='300px',
-                toggle_views = ['Main', 'Buys', 'Sells', 'Flash', 'Whale', 'castle' 'bishop', 'knight'],
+                toggle_views = ['Main', 'Deploy', 'Buys', 'Sells', 'Flash', 'Whale', 'castle' 'bishop', 'knight'],
             ) 
         
 
@@ -2206,7 +2220,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
             if authorized_user:
                 revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-                # st.write(STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
+                # st.write(revrec.get('waveview').head())
                 clear_subconscious_Thought(QUEEN, QUEEN_KING)
 
                 if st.session_state['show_queenheart']:
@@ -2302,7 +2316,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 if st.session_state['chess_board_m'] == "admin_workerbees":
                                     QB_workerbees(QUEENBEE=QUEENBEE, admin=admin)
                                 else:
-                                    chessboard(acct_info=acct_info, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+                                    chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
                                 
                                                                 # if st.button("showwavebutton"):
                                 # st.write("df_storyview_down")                                
