@@ -33,7 +33,6 @@ from custom_text import custom_text, TextOptionsBuilder
 # import hydralit_components as hc
 from pages.playground import PlayGround
 from pages.queens_conscience import queens_conscience
-from pages.queen import queen
 from pages.account import account
 from pages.trading_models import trading_models
 from pages.pollen_engine import pollen_engine
@@ -94,24 +93,6 @@ def pollenq(admin_pq):
                                 st.write("refresh time ", (e - s).total_seconds())
                 except Exception as e:
                     print(e, print_line_of_error())
-
-        def refresh_workerbees_manager(QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
-            with st.form("workerbees refresh"):
-                if st.session_state['admin']:
-                    reset_only = st.checkbox("reset_only", reset_only)
-                    backtesting = st.checkbox("backtesting", backtesting)
-                    run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
-
-                    refresh = st.form_submit_button("Run WorkerBees", use_container_width=True)
-                    if refresh:
-                        with st.spinner("Running WorkerBees"):
-                            s = datetime.now(est)
-                            workerbees_multiprocess_pool(qcp_s=['castle', 'knight', 'bishop'], 
-                                                prod=QUEEN_KING.get('prod'), 
-                                                reset_only=reset_only, )
-                            st.success("WorkerBees Completed")
-                            e = datetime.now(est)
-                            st.write("refresh time ", (e - s).total_seconds())
 
         def setup_page():
             try:
@@ -577,38 +558,6 @@ def pollenq(admin_pq):
                 print(e)
                 print_line_of_error()
 
-        def queen_messages_logfile_grid(KING, log_file, grid_key, f_api, varss={'seconds_to_market_close': None, 'refresh_sec': None}):
-            gb = GridOptionsBuilder.create()
-            gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-            gb.configure_default_column(column_width=100, resizable=True,
-                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
-            #Configure index field
-            gb.configure_index('idx')
-            gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
-            gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True, "sortable":True})
-            go = gb.build()
-
-            st_custom_grid(
-                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
-                api=f_api,
-                api_update=None,
-                refresh_sec=varss.get('refresh_sec'), 
-                refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
-                prod=st.session_state['production'],
-                grid_options=go,
-                key=f'{grid_key}',
-
-                # kwargs from here
-                api_key=os.environ.get("fastAPI_key"),
-                buttons = [],
-
-                grid_height='300px',
-                log_file=log_file
-
-            ) 
-
-            return True
-
         def custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close=8, prod=False, api="http://localhost:8000/api/data/account_info"):
             # Total Account info
             to_builder = TextOptionsBuilder.create()
@@ -672,7 +621,7 @@ def pollenq(admin_pq):
 
         with st.spinner("Verifying Your Scent, Hang Tight"):
             signin_main(page="pollenq")
-
+        
         log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
         # Call the function to get the IP address
@@ -720,15 +669,15 @@ def pollenq(admin_pq):
                 if KING_req.get('update'):
                     KING = KING_req['KING']
                     PickleData(KING.get('source'), KING)
-            # with st.sidebar:
-            #     st.write("testing fastpi")
 
-            with st.sidebar:
-                cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
-                hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
-                cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
+                with st.sidebar:
+                    with st.expander("admin"):
+                        cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
+                        hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
+                        cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
-            hey = st.info("Sandbox Paper Money Account") if st.session_state['production'] == False else ""
+            if st.session_state['production'] == False:
+                st.warning("Sandbox Paper Money Account") 
 
             if st.session_state['admin_queens']:
                 admin_send_queen_airflow(KING)
@@ -736,28 +685,39 @@ def pollenq(admin_pq):
                 admin_queens_active(KING.get('source'), KING)
 
             # print("QUEEN_KING")
-            if authorized_user:
-                # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece) # handled in signin auth
+            print(authorized_user)
+            if authorized_user != True:
+                st.error("Your Account is Not Yet Authorized by a pollen admin")
+                st.stop()
 
-                QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
-                QUEEN_KING['prod'] = st.session_state['production']          
-                QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-                print(QUEEN_KING['king_controls_queen'].keys())
+            # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece) # handled in signin auth
 
-                if QUEEN.get('revrec') == 'init':
-                    st.warning("missing revrec, add revrec to QUEEN")
+            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
+            QUEEN_KING['prod'] = st.session_state['production']          
+            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+            print("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
+            
+            # PROD vs SANDBOX
+            live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
+            if live_sb_button:
+                st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                st.experimental_rerun()
 
-                ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
-                print("QUEEN_KING")
-                if st.sidebar.button("Check for new KORs"):
-                    QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
-                APP_req = add_key_to_app(QUEEN_KING)
-                QUEEN_KING = APP_req['QUEEN_KING']
-                if APP_req['update']:
-                    print("Updating KING QUEEN db")
-                    PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
-                QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
-                QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
+            stop_queenbee(QUEEN_KING, sidebar=True)
+
+            if QUEEN.get('revrec') == 'init':
+                st.warning("missing revrec, add revrec to QUEEN")
+
+            ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
+            if st.sidebar.button("Check for new KORs"):
+                QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
+            APP_req = add_key_to_app(QUEEN_KING)
+            QUEEN_KING = APP_req['QUEEN_KING']
+            if APP_req['update']:
+                print("Updating KING QUEEN db")
+                PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
+            QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
+            QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
 
 
 
@@ -878,7 +838,10 @@ def pollenq(admin_pq):
                 # num = cash/pv
                 # num = 0 if num <=1 else
                 # try:
-# 
+
+#       #### SPINNER END ##### #       #### SPINNER END #####
+#       #### SPINNER END ##### #       #### SPINNER END #####
+
                     # progress_bar(value=num, text=f"Cash % {round(num,2)}")
 
             # with cols[1]:
@@ -892,7 +855,7 @@ def pollenq(admin_pq):
             
             # with cols[2]:            
             
-
+            ### NEW SECTION ####
             print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
@@ -916,10 +879,7 @@ def pollenq(admin_pq):
             print("PLAYGROUND")
             switch_page("playground")
             # PlayGround()
-        
-        if menu_id == 'QC':
-            print("QUEEN")
-            queen()
+
         # if menu_id == 'TradingModels':
         #     print("TRADINGMODELS")
         #     trading_models()
@@ -953,15 +913,12 @@ def pollenq(admin_pq):
             log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
             with st.expander(log_file):
                 log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
-                
+                # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                from chess_piece.app_hive import queen_messages_grid__apphive
+                queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
 
         with cols[1]:
             with st.expander("control buttons"):
-                live_sb_button = st.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
-                if live_sb_button:
-                    st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                    st.experimental_rerun()
                 refresh_chess_board__button(QUEEN_KING)
                 refresh_queen_controls_button(QUEEN_KING)
                 refresh_trading_models_button(QUEEN_KING)
@@ -980,7 +937,6 @@ def pollenq(admin_pq):
         st.button("Refresh", use_container_width=True)
             # cust_Button(file_path_url='misc/runaway_bee_gif.gif', height='23px', hoverText="Refresh")
         # with cols[7]:
-        stop_queenbee(QUEEN_KING)
 
 
         st.stop()

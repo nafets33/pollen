@@ -87,9 +87,10 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
             print("Auth Failed", api_key)
             return "NOTAUTH"
         json_data = app_archive_queen_order(username, prod, selected_row, default_value)
-        return JSONResponse(content=json_data)
+        return JSONResponse(content=grid_row_button_resp())
     except Exception as e:
         print("router queen error", e)
+        return JSONResponse(content=grid_row_button_resp(status='error'))
 
 @router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK)
 def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
@@ -116,16 +117,18 @@ def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(
         rep = app_Sellorder_request(username, prod, selected_row, default_value)
         if rep.get('status') == 'success':
             return JSONResponse(content=grid_row_button_resp())
+        else:
+            return JSONResponse(content=grid_row_button_resp(status='error'))
     except Exception as e:
         print("router err ", e)
 
 @router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
-def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):
+def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    if app_buy_wave_order_request(username, prod, selected_row, ready_buy=False):
+    if app_buy_wave_order_request(username, prod, selected_row, default_value=default_value, ready_buy=False):
         return JSONResponse(content=grid_row_button_resp())
     else:
         return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))

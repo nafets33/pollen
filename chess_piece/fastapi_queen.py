@@ -5,13 +5,15 @@ import json
 import pandas as pd
 import numpy as np
 import random
-from chess_piece.king import streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error
-from chess_piece.queen_hive import wave_analysis__storybee_model, init_logging, split_today_vs_prior, story_view, refresh_chess_board__revrec
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import pytz
 import ipdb
 import time
+
+from chess_piece.king import streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error
+from chess_piece.queen_hive import return_symbol_from_ttf, trigger_bees, stars, init_logging, split_today_vs_prior, story_view, refresh_chess_board__revrec
+
 est = pytz.timezone("US/Eastern")
 
 main_root = hive_master_root() # os.getcwd()  # hive root
@@ -41,18 +43,21 @@ def load_queen_App_pkl(username, prod):
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
 
-def load_queen_pkl(username, prod):
-  if prod == False:
-    queen_pkl_path = username+'/queen_sandbox.pkl'
+def load_queen_pkl(username, prod):  
+  if prod:
+    QUEEN = ReadPickleData(username + '/queen.pkl')
   else:
-    queen_pkl_path = username+'/queen.pkl'
+    QUEEN = ReadPickleData(username + '/queen_sandbox.pkl')
   
-  queen_pkl = ReadPickleData(queen_pkl_path)
-  if len(queen_pkl) == 0:
-     print("WHY????")
-     queen_pkl = ReadPickleData(queen_pkl_path)
+  return QUEEN
+
+def load_queen_order_pkl(username, prod):
+  if prod:
+    ORDERS = ReadPickleData(username + '/queen_Orders_.pkl')
+  else:
+    ORDERS = ReadPickleData(username + '/queen_Orders__sandbox.pkl')
   
-  return queen_pkl
+  return ORDERS
 
 def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod):
     try:
@@ -65,7 +70,7 @@ def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, usernam
     except Exception as e:
        print("pp", e)
 
-def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy):
+def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy, order_rules):
    trigbee = macd_state
    return {'ticker': ticker_time_frame.split("_")[0],
     'ticker_time_frame': ticker_time_frame,
@@ -76,7 +81,10 @@ def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy
     'macd_state': trigbee,
     'ready_buy': ready_buy,
     'x_buy': x_buy,
+    'order_rules': order_rules,
     }
+
+
 ####### Router Calls
 def symbols_wave_guage(username, prod):
    return True
@@ -113,7 +121,7 @@ def app_buy_order_request(username, prod, selected_row, default_value): # index 
      print(e)
      logging.error(("fastapi", e))
 
-def app_buy_wave_order_request(username, prod, selected_row, default_value=False, ready_buy=False, x_buy=False): # index & wave_amount
+def app_buy_wave_order_request(username, prod, selected_row, default_value=False, ready_buy=False, x_buy=False, order_rules=False): # index & wave_amount
   try:
     QUEEN_KING = load_queen_App_pkl(username, prod)
     # buy_package = create_AppRequest_package(request_name='buy_orders')
@@ -125,7 +133,7 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
        print(default_value)
     
     wave_trigger = {ticker_time_frame: [trigbee]}
-    order_dict = wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy)
+    order_dict = wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy, order_rules)
 
     QUEEN_KING['wave_triggers'].append(order_dict)
     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
@@ -216,33 +224,47 @@ def app_queen_order_update_order_rules(username, prod, selected_row, default_val
 def get_queen_orders_json(username, prod, toggle_view_selection):
   
   try:
-      if prod:
-        QUEEN = ReadPickleData(username + '/queen_Orders_.pkl')
-      else:
-        QUEEN = ReadPickleData(username + '/queen_Orders__sandbox.pkl')
-      
-      if type(QUEEN) != dict:
+      ORDERS = load_queen_order_pkl(username, prod)
+
+      QUEEN_KING = load_queen_App_pkl(username, prod)
+
+      if type(ORDERS) != dict:
         return pd.DataFrame().to_json()
 
-      qo = QUEEN['queen_orders']
+      df = ORDERS['queen_orders']
 
-      if type(qo) != pd.core.frame.DataFrame:
+      if type(df) != pd.core.frame.DataFrame:
         return pd.DataFrame().to_json()
 
-      if len(qo) == 1:
+      if len(df) == 1:
         print("init queen")
         return pd.DataFrame().to_json()
 
+      # Colors
       k_colors = streamlit_config_colors()
       default_text_color = k_colors['default_text_color'] # = '#59490A'
       default_font = k_colors['default_font'] # = "sans serif"
       default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-
-      df = pd.DataFrame(qo)
+      df['ttf_symbol'] = df['ticker_time_frame'].apply(lambda x: return_symbol_from_ttf(x))
+      # KORS
+      # stars = stars.keys()
+      # t_kors ={}
+      # for symbol in set(df['ttf_symbol'].tolist()):
+      #   trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+      #   # t_kors[symbol] = {}
+      #   for star in stars:
+      #     ttf_key = f'{symbol}_{star}'
+      #     t_kors[symbol][star] = {}
+      #     for trigbee in trigger_bees().keys():
+      #        king_order_rules = trading_model['stars_kings_order_rules'][star]['trigbees'][trigbee].get('morning_9-11')
+      #        t_kors[symbol][star][trigbee] = king_order_rules
+      
+      # king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][current_wave_blocktime]
+      # kors_dict = {ttf: kors.get('ttf')}
 
       df.reset_index(drop=True, inplace=True)
       df = df[df['client_order_id']!='init']
-      df["order_rules"] = df["order_rules"].astype(str)
+      # df["order_rules"] = df["order_rules"].astype(str)
       # df["take_profit"] = df["order_rules"].apply(lambda x: x.get("take_profit"))
       # df['client_order_id'] = df.index
       df["money"] = pd.to_numeric(df["money"], errors='coerce')
@@ -250,21 +272,21 @@ def get_queen_orders_json(username, prod, toggle_view_selection):
       df["honey"] = round(df["honey"] * 100,2)
       df["money"] = round(df["money"],0)
       df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
-      df['color_row_text'] = default_text_color
+      df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
       
       # df.at[len(df)-1, 'color_row'] = '#24A92A'
       print(toggle_view_selection)
       qos_view = ['running', 'running_close', 'running_open']
       df = df[df['queen_order_state'].isin(qos_view)]
       
-      # Totals Index
-      df.loc['Total', 'money'] = df['money'].sum()
-      df.loc['Total', 'honey'] = df['honey'].sum()
-      df.loc['Total', 'datetime'] = ''
-      df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
-      df.loc['Total', 'cost_basis_current'] = df['cost_basis_current'].sum()
-      newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-      df=df.reindex(index=newIndex)
+      # # Totals Index
+      # df.loc['Total', 'money'] = df['money'].sum()
+      # df.loc['Total', 'honey'] = df['honey'].sum()
+      # df.loc['Total', 'datetime'] = ''
+      # df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
+      # df.loc['Total', 'cost_basis_current'] = df['cost_basis_current'].sum()
+      # newIndex=['Total']+[ind for ind in df.index if ind!='Total']
+      # df=df.reindex(index=newIndex)
 
       json_data = df.to_json(orient='records')
       return json_data

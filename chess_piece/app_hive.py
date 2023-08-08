@@ -375,16 +375,18 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
     return True
 
 
-def queen_messages_grid(KING, f_api="http://127.0.0.1:8000/api/data/queen_messages", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
     gb = GOB.create()
-    gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, enableFilters=True)            
-    
+    gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
+    gb.configure_default_column(column_width=100, resizable=True,
+                        textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
+    gb.configure_theme('ag-theme-material')
+
     #Configure index field
     gb.configure_index('idx')
-    gb.configure_column('idx')
-    gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True})
+    gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
+    gb.configure_column('message', {'initialWidth':1200, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
     go = gb.build()
-
 
     st_custom_grid(
         username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
@@ -394,15 +396,18 @@ def queen_messages_grid(KING, f_api="http://127.0.0.1:8000/api/data/queen_messag
         refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
         prod=st.session_state['production'],
         grid_options=go,
-        key=f'{"queen_messages"}',
-        button_name='insight',
-        api_url=None,
+        key=grid_key,
+
         # kwargs from here
         api_key=os.environ.get("fastAPI_key"),
-        prompt_message ="message",
-        prompt_field = "idx", # "current_macd_tier",
+        buttons = [],
+
+        grid_height='300px',
+        log_file=log_file
 
     ) 
+
+    return True
 
     return True
 

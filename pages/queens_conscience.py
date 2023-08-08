@@ -596,7 +596,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     # Headers
                     c=0
                     chess_board_names = list(QUEEN_KING[qcp_bees_key]['castle'].keys())
-                    chess_board_names = ["pq", 'symbols', 'Model', 'theme', 'BuyingP.Alloc', 'BorrowP.Alloc', 'Total Budget', 'Cash']
+                    chess_board_names = ["pq", 'symbols', 'Model', 'Theme', 'BuyP.Alloc', 'BorrowP.Alloc']
                     for qcpvar in chess_board_names:
                         try:
                             with cols[c]:
@@ -624,9 +624,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         with cols[3]:
                             qcp_vars['theme'] = st.selectbox(label=f'-', options=themes, index=themes.index(qcp_vars.get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
                         with cols[4]:
-                            qcp_vars['total_buyng_power_allocation'] = st.number_input(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
+                            qcp_vars['total_buyng_power_allocation'] = st.slider(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
                         with cols[5]:
-                            qcp_vars['total_borrow_power_allocation'] = st.number_input(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
+                            qcp_vars['total_borrow_power_allocation'] = st.slider(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
                             # QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = 
                     return qcp_vars
                 
@@ -639,9 +639,9 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                     with cols[3]:
                         QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'-', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
                     with cols[4]:
-                        QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.number_input(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
+                        QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
                     with cols[5]:
-                        QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = st.number_input(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
+                        QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = st.slider(label=f'-', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
                 return True
             
             except Exception as e:
@@ -698,7 +698,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             with cols[1]:
                                 st.subheader(name)
                             
-                            cols = st.columns((1,5,2,2,2,2,2,3,2,2))
+                            cols = st.columns((1,5,2,2,2,2,2,3))
                             
 
                             headers = 0
@@ -1697,7 +1697,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                             df = ordertables__agrid["data"][ordertables__agrid["data"].orderrules == "clicked"]
                             if len(df) > 0:
                                 st.write("KOR: ", client_order_id)
-                                # kings_order_rules__forum(order_rules)
                             else:
                                 st.write("Nothing KOR clicked")
                         except:
@@ -1759,14 +1758,14 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                                             "cellEditor":"agSelectCellEditor",
                                                                             },
                         'client_order_id': {},
-                        'order_rules': {        'initialWidth': 100,
-                                                "editable":True, 'cellEditorPopup': True,
-                                                'cellEditor': 'agLargeTextCellEditor',
-                                                'cellEditorParams': {
-                                                'maxLength': 1000,
-                                                'rows': 10,
-                                                'cols': 50,
-                                                }, },
+                        # 'order_rules': {        'initialWidth': 100,
+                        #                         "editable":True, 'cellEditorPopup': True,
+                        #                         'cellEditor': 'agLargeTextCellEditor',
+                        #                         'cellEditorParams': {
+                        #                         'maxLength': 1000,
+                        #                         'rows': 10,
+                        #                         'cols': 50,
+                        #                         }, },
                         'cost_basis': {'headerName': 'Cost Basis', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                                     #    'custom_currency_symbol':"$",
                                                                     "sortable":True,
@@ -1860,7 +1859,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
-                        'star_at_play_borrow': {'headerName':'Borrow Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                        'star_at_play_borrow': {'headerName':'At Play Borrow', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                         #    'custom_currency_symbol':"$",
                                                         'initialWidth':123,
                                                         },
