@@ -925,33 +925,19 @@ def queen_workerbees(
                     macd_part_fname,
                 )
             )
-            # print(save_all_pollenstory)
-            # for ttf in pollens_honey["pollen_story"]:
-            #     ticker, ttime, tframe = ttf.split("_")
-            #     ttf_db = os.path.join(symbols_pollenstory_dbs, f"{ttf}{macd_part_fname}.pkl")
-            #     if backtesting and backtesting_star != f'{ttime}_{tframe}':
-            #         continue
-            #     PickleData(
-            #         ttf_db,
-            #         {"pollen_story": pollens_honey["pollen_story"][ttf]},
-            #         write_temp=False,
-            #     )
 
-            # for ttf in pollens_honey["conscience"]["STORY_bee"]:
-            #     ticker, ttime, tframe = ttf.split("_")
-            #     ttf_db = os.path.join(symbols_STORY_bee_root, f"{ttf}{macd_part_fname}.pkl")
-            #     if backtesting and backtesting_star != f'{ttime}_{tframe}':
-            #         continue
-            #     PickleData(
-            #         ttf_db,
-            #         {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ttf]},
-            #         write_temp=False,
-            #     )
+            return True
 
+        
         write_pollenstory_storybee(pollens_honey, backtesting, backtesting_star)
 
         qcp_hunt = (datetime.now(est) - start_time).total_seconds()
         betty_bee[f"{queens_chess_piece}_cycle_time.pkl"] = qcp_hunt
+        # WORKERBEE add deque([], 89)
+        if f"{queens_chess_piece}_avg_cycle_time.pkl" not in betty_bee.keys():
+           betty_bee[f"{queens_chess_piece}_avg_cycle_time"] = deque([], 1500)
+        else:
+            betty_bee[f"{queens_chess_piece}_avg_cycle_time"].append(qcp_hunt)
 
         PickleData(
             pickle_file=os.path.join(db_root, f"{queens_chess_piece}_betty_bee.pkl"),

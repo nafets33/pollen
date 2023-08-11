@@ -10,9 +10,26 @@ from dotenv import load_dotenv
 import pytz
 import ipdb
 import time
+import sys
+from chess_piece.king import (streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
+from chess_piece.queen_hive import (return_symbol_from_ttf, 
+                                    trigger_bees, 
+                                    stars, 
+                                    init_logging, 
+                                    split_today_vs_prior, 
+                                    story_view, 
+                                    refresh_chess_board__revrec, 
+                                    buy_button_dict_items,
+                                    order_vars__queen_order_items,
+                                    find_symbol,
+                                    power_amo,
+                                    init_queenbee,
+                                    return_trading_model_trigbee,
+                                    init_charlie_bee)
+from chess_piece.queen_bee import execute_order
 
-from chess_piece.king import streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error
-from chess_piece.queen_hive import return_symbol_from_ttf, trigger_bees, stars, init_logging, split_today_vs_prior, story_view, refresh_chess_board__revrec
+
+pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
 
 est = pytz.timezone("US/Eastern")
 
@@ -84,42 +101,121 @@ def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy
     'order_rules': order_rules,
     }
 
-
 ####### Router Calls
 def symbols_wave_guage(username, prod):
    return True
 
-def app_buy_order_request(username, prod, selected_row, default_value): # index & wave_amount
+
+def app_buy_order_request(client_user, username, prod, selected_row, default_value, ready_buy=False, x_buy=False): # index & wave_amount
   try:
-    QUEEN_KING = load_queen_App_pkl(username, prod)
+    # QUEEN = load_queen_pkl(username, prod)
+    # QUEEN_KING = load_queen_App_pkl(username, prod)
+    button_buy = default_value
+    QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
     buy_package = create_AppRequest_package(request_name='buy_orders')
+    buy_package.update({'buy_order': {}})
+
+    revrec = QUEEN.get('revrec')
+    blessing={} #{i: '': for i in []}, # order_vars
+    ticker = selected_row.get('symbol') # update symbol on X
+    ticker_time_frame = selected_row.get('ticker_time_frame')
+    star_time = selected_row.get('star_time')
+    trigbee = selected_row.get('macd_state')
+    wave_blocktime = selected_row.get('wave_blocktime')
     
-    # ticker_time_frame = selected_row.get('star')
-    # macd_state = selected_row.get('macd_state')
-    # buy_package.update()
-    # blessing=blessing, # order_vars
-    # side=blessing.get('order_side'),
-    # wave_amo=blessing.get('wave_amo'),
-    # order_type=blessing.get('order_type'),
-    # limit_price=blessing.get('limit_price'),
-    # trading_model=blessing.get('trading_model'),
-    # king_resp=True, 
-    # king_eval_order=False, 
-    # ticker=blessing.get('symbol'), 
-    # ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
-    # trig=blessing.get('trigbee'), 
-    # portfolio=portfolio, 
-    # crypto=crypto
+    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+    symbol, etf_long_tier, etf_inverse_tier = find_symbol(QUEEN, ticker, trading_model, trigbee)
 
-
-    # QUEEN_KING['buy_orders'].append(buy_package)
-    # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
+    if ready_buy:
+      tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
     
+    king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
+    # king_order_rules = revrec['waveview'].at[ticker_time_frame, 'king_order_rules']
+    
+    crypto=False
+    king_resp=True, 
+    king_eval_order=False, 
+    
+    trading_model_theme = trading_model.get('theme')
+    maker_middle = False
+    current_wave = revrec['waveview'].get('current_wave')
+    current_macd_cross__wave = QUEEN['heartbeat'].get('current_wave')
+    power_up_amo = power_amo()
+    order_side = 'buy'
 
-    return True
+    borrowed_funds = False
+    borrow_qty = False
+    print(button_buy.keys())
+    if type(button_buy) is dict:
+       for rule, value in button_buy.items():
+          if rule in ['wave_amo', 'close_order_today']: # validated items to add orules
+            if rule == 'wave_amo':
+              #  print(type(value), value)
+               if type(value) != float:
+                  value = float(value)
+               wave_amo = value
+            if rule == 'close_order_today':
+               if type(value) != bool:
+                  print("ERRROR BOOL CLOSE ORDER")
+                  continue
+            print("updateing", rule, value)
+            king_order_rules.update({rule: value})
+       
+      # #  trig=button_buy.get('trigbee'),
+      #  order_side=button_buy.get('order_side'),
+      #  order_type = button_buy.get('order_type'),
+      #  limit_price=button_buy.get('limit_price'),
+
+    order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
+                                                king_order_rules=king_order_rules, 
+                                                order_side='buy', 
+                                                wave_amo=wave_amo, 
+                                                maker_middle=maker_middle, 
+                                                origin_wave=current_wave, 
+                                                power_up_rangers=power_up_amo, 
+                                                ticker_time_frame_origin=ticker_time_frame, 
+                                                double_down_trade=True, 
+                                                wave_at_creation=current_macd_cross__wave,
+                                                symbol=symbol,
+                                                trigbee=trigbee,
+                                                tm_trig=tm_trig,
+                                                borrowed_funds=borrowed_funds,
+                                                ready_buy=ready_buy,
+                                                assigned_wave=current_macd_cross__wave,
+                                                borrow_qty=borrow_qty,
+                                                )
+    blessing = order_vars
+
+    exx = execute_order(api=api, QUEEN=QUEEN, blessing=blessing,
+                    side=blessing.get('order_side'),
+                    wave_amo=blessing.get('wave_amo'),
+                    order_type=blessing.get('order_type'),
+                    limit_price=blessing.get('limit_price'),
+                    trading_model=blessing.get('trading_model'),
+                    king_resp=True, 
+                    king_eval_order=False, 
+                    ticker=blessing.get('symbol'), 
+                    ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
+                    trig=blessing.get('trigbee'), 
+                    crypto=crypto)
+    if exx.get('executed'):
+      print("APP EXX Order")
+
+      buy_package.update({'new_queen_order_df': exx.get('new_queen_order_df')})   
+
+      # save
+      QUEEN_KING['buy_orders'].append(buy_package)
+      PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+      return {'status': True}
+    else:
+       print("Ex Failed")
+       return {'status': False}
+    
   except Exception as e:
-     print(e)
+     print_line_of_error()
      logging.error(("fastapi", e))
+
 
 def app_buy_wave_order_request(username, prod, selected_row, default_value=False, ready_buy=False, x_buy=False, order_rules=False): # index & wave_amount
   try:
@@ -160,6 +256,7 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
      print(e)
      logging.error(("fastapi", e))
 
+
 def app_Sellorder_request(username, prod, selected_row, default_value):
   try:
 
@@ -197,6 +294,7 @@ def app_Sellorder_request(username, prod, selected_row, default_value):
      print_line_of_error()
      return {'status': 'error', 'error': e}
 
+
 def app_archive_queen_order(username, prod, selected_row, default_value):
     # number_shares = default_value
     # print(default_value)
@@ -208,6 +306,7 @@ def app_archive_queen_order(username, prod, selected_row, default_value):
     QUEEN_KING['update_queen_order'].append(order_update_package)
     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     return True
+
 
 def app_queen_order_update_order_rules(username, prod, selected_row, default_value):
     # number_shares = default_value
@@ -221,17 +320,20 @@ def app_queen_order_update_order_rules(username, prod, selected_row, default_val
     # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     return True
 
-def get_queen_orders_json(username, prod, toggle_view_selection):
+## MAIN GRIDS
+def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
   try:
-      ORDERS = load_queen_order_pkl(username, prod)
+      # ORDERS = load_queen_order_pkl(username, prod)
 
-      QUEEN_KING = load_queen_App_pkl(username, prod)
+      # QUEEN_KING = load_queen_App_pkl(username, prod)
+      QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
+
 
       if type(ORDERS) != dict:
         return pd.DataFrame().to_json()
 
-      df = ORDERS['queen_orders']
+      df = QUEEN['queen_orders']
 
       if type(df) != pd.core.frame.DataFrame:
         return pd.DataFrame().to_json()
@@ -245,7 +347,6 @@ def get_queen_orders_json(username, prod, toggle_view_selection):
       default_text_color = k_colors['default_text_color'] # = '#59490A'
       default_font = k_colors['default_font'] # = "sans serif"
       default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-      df['ttf_symbol'] = df['ticker_time_frame'].apply(lambda x: return_symbol_from_ttf(x))
       # KORS
       # stars = stars.keys()
       # t_kors ={}
@@ -260,10 +361,15 @@ def get_queen_orders_json(username, prod, toggle_view_selection):
       #        t_kors[symbol][star][trigbee] = king_order_rules
       
       # king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][current_wave_blocktime]
-      # kors_dict = {ttf: kors.get('ttf')}
+      
 
-      df.reset_index(drop=True, inplace=True)
+
+      # df.reset_index(drop=True, inplace=True)
       df = df[df['client_order_id']!='init']
+      df = df.fillna('000')
+      df = df[df['ticker_time_frame']!='000'] ## who are you?? WORKERBEE
+      # print(df_)
+      df['ttf_symbol'] = df['ticker_time_frame'].apply(lambda x: return_symbol_from_ttf(x))
       # df["order_rules"] = df["order_rules"].astype(str)
       # df["take_profit"] = df["order_rules"].apply(lambda x: x.get("take_profit"))
       # df['client_order_id'] = df.index
@@ -275,7 +381,7 @@ def get_queen_orders_json(username, prod, toggle_view_selection):
       df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
       
       # df.at[len(df)-1, 'color_row'] = '#24A92A'
-      print(toggle_view_selection)
+      print('tview', toggle_view_selection)
       qos_view = ['running', 'running_close', 'running_open']
       df = df[df['queen_order_state'].isin(qos_view)]
       
@@ -293,32 +399,6 @@ def get_queen_orders_json(username, prod, toggle_view_selection):
   except Exception as e:
     print('hey now')
     print_line_of_error()
-
-def get_ticker_data(symbols, prod):
-
-  ticker_db = read_QUEENs__pollenstory(
-      symbols=symbols,
-      read_storybee=False, 
-      read_pollenstory=True,
-  )
-  
-  df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
-  df_main = df[['timestamp_est', 'close', 'vwap']]
-  df_main = split_today_vs_prior(df_main).get('df_today')
-  # df_main['timestamp_est'] = str(df_main['timestamp_est'])
-  
-  # df_main.at[len(df) -1, 'timestamp_est'] = df_main.at[len(df) -2, 'timestamp_est'] + timedelta(minutes=1)
-  # df_token = df_.tail(1)
-  # df_token['timestamp_est'] = df_token['timestamp_est'] + timedelta(seconds=1)
-  # df_token['close'] = df_token['close'] + random.randint(1,10)
-  # df_main = pd.concat([df_main, df_token])
-  # print(df_main.iloc[-1].get('timestamp_est'))
-  # df_main['timestamp_est'] = df_main['timestamp_est'].apply(lambda x: str(datetime.strptime(str(x)[:16], '%Y-%m-%d %H:%M'))[6:16])
-
-
-  json_data = df_main.to_json(orient='records')
-
-  return json_data
 
 
 def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'):
@@ -346,43 +426,46 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
 
         def get_darker_shade(base_color, shade_number, var_col=False):
             # Dictionary of base colors and their corresponding RGB values
-            color_codes = {
-                "black": (0, 0, 0),
-                "white": (255, 255, 255),
-                "red": (255, 0, 0),
-                "green": (0, 128, 0),
-                "blue": (0, 0, 255),
-                # Add more colors and their RGB values as needed
-            }
-            if var_col:
-              m_wave, m_num = var_col.split("_")
-              base_color = 'green' if 'buy' in m_wave else 'red'
-              shade_number = int(m_num.split("-")[-1])
-              # if shade_number > 10:
-              #    shade_number = 8
-            
-            # Retrieve the RGB values of the base color
-            if base_color.lower() not in color_codes:
-                print("Invalid base color")
-                return "Invalid base color"
+            try:
+              color_codes = {
+                  "black": (0, 0, 0),
+                  "white": (255, 255, 255),
+                  "red": (255, 0, 0),
+                  "green": (0, 128, 0),
+                  "blue": (0, 0, 255),
+                  # Add more colors and their RGB values as needed
+              }
+              if var_col:
+                m_wave, m_num = var_col.split("_")
+                base_color = 'green' if 'buy' in m_wave else 'red'
+                shade_number = int(m_num.split("-")[-1])
+                # if shade_number > 10:
+                #    shade_number = 8
+              
+              # Retrieve the RGB values of the base color
+              if base_color.lower() not in color_codes:
+                  print("Invalid base color")
+                  return "Invalid base color"
 
-            r, g, b = color_codes[base_color.lower()]
+              r, g, b = color_codes[base_color.lower()]
 
-            # Calculate the shade based on the shade number
-            middle_shade = 15
-            shade_factor = (shade_number - middle_shade) / 100
+              # Calculate the shade based on the shade number
+              middle_shade = 15
+              shade_factor = (shade_number - middle_shade) / 100
 
-            # Adjust the RGB values based on the shade factor
-            darker_r = max(int(r - (r * abs(shade_factor))), 0)
-            darker_g = max(int(g - (g * abs(shade_factor))), 0)
-            darker_b = max(int(b - (b * abs(shade_factor))), 0)
+              # Adjust the RGB values based on the shade factor
+              darker_r = max(int(r - (r * abs(shade_factor))), 0)
+              darker_g = max(int(g - (g * abs(shade_factor))), 0)
+              darker_b = max(int(b - (b * abs(shade_factor))), 0)
 
-            # Convert the RGB values to hex format
-            hex_color = '#{:02x}{:02x}{:02x}'.format(darker_r, darker_g, darker_b)
-            # print(print(var_col, hex_color))
+              # Convert the RGB values to hex format
+              hex_color = '#{:02x}{:02x}{:02x}'.format(darker_r, darker_g, darker_b)
+              # print(print(var_col, hex_color))
 
-            hex_color = '#ddf3d5' if base_color == 'green' else '#f4cccc'
-            return hex_color
+              hex_color = '#ddf3d5' if base_color == 'green' else '#f4cccc'
+              return hex_color
+            except Exception as e:
+              print_line_of_error()
         
         # base_color = "green"
         # shade_number = 9
@@ -390,14 +473,19 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         # print(darker_shade)
 
         if return_type == 'waves':
-           df_main = revrec.get('waveview')
-           df_main['powers'] = df_main['star_time'].map(star_powers)
-           df_main['color_row_text'] = default_text_color
-           df_main["maxprofit"] = pd.to_numeric(df_main["maxprofit"], errors='coerce')
-           df_main["maxprofit"] = round(df_main["maxprofit"] * 100,2).fillna(0)
-           df_main['color_row'] = df_main['macd_state'].apply(lambda x: get_darker_shade(base_color=False, shade_number=False, var_col=x))
-          #  df_main.at['SPY_1Minute_1Day', 'color_row'] = '#a1b357'
-           json_data = df_main.to_json(orient='records')
+           df = revrec.get('waveview')
+           kors_dict = buy_button_dict_items()
+           df['kors'] = [kors_dict for _ in range(df.shape[0])]
+          #  for ttf in df_main.index.tolist():
+          #     df_main.at[ttf, 'king_order_rules'] = df_main.at[ttf, 'king_order_rules'].update({'wave_amo':
+          #                                                                                       df_main.at[ttf, 'allocation_deploy']})
+           df['powers'] = df['star_time'].map(star_powers)
+           df['color_row_text'] = default_text_color
+           df["maxprofit"] = pd.to_numeric(df["maxprofit"], errors='coerce')
+           df["maxprofit"] = round(df["maxprofit"] * 100,2).fillna(0)
+           df['color_row'] = df['macd_state'].apply(lambda x: get_darker_shade(base_color=False, shade_number=False, var_col=x))
+          #  df.at['SPY_1Minute_1Day', 'color_row'] = '#a1b357'
+           json_data = df.to_json(orient='records')
            return json_data
 
     
@@ -405,22 +493,63 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
        print("mmm error", print_line_of_error(e))
 
 
-def get_account_info(username, prod):
+
+## RETURN TEXT STRING
+def get_account_info(client_user, username, prod):
   # QUEEN = load_queen_pkl(username, prod)
-  if prod:
-    QUEEN = ReadPickleData(username +'/queen_account_info.pkl')
-  else:
-     QUEEN = ReadPickleData(username +'/queen_account_info_sandbox.pkl')
+  # print(username, client_user, prod)
+  # if prod:
+  #   acct = ReadPickleData(username +'/queen_account_info.pkl')
+  # else:
+  #    acct = ReadPickleData(username +'/queen_account_info_sandbox.pkl')
+
+  QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True)
+  QUEENsHeart = ReadPickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'))
+  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds())
+  
   acct_info = QUEEN['account_info']
   if len(acct_info) > 0:
     honey_text = "Today" + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
     money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-
-    return f'{honey_text} {money_text}'
+    buying_power = round(acct_info.get('buying_power'))
+    cash = round(acct_info.get('cash'))
+    daytrade_count = round(acct_info.get('daytrade_count'))
+    portfolio_value = round(acct_info.get('portfolio_value'))
+    long = None # QUEEN['heartbeat'].get('long')
+    short = None # QUEEN['heartbeat'].get('short')
+    # df = QUEEN['queen_orders']
+    # buys = df[df['trigname'].str.contains('buy')]
+    # sells = df[df['trigname'].str.contains('sell')]
+    # long = sum(buys['cost_basis_current'])
+    # short = sum(sells['cost_basis_current'])
+    return f'{honey_text} {money_text} _+_ Heart {beat}  _+_ BP {buying_power} Cash {cash} daytrade {daytrade_count} L {long} S{short}'
   else:
      return 'NO QUEEN'
 
 
+## GRAPH
+def get_ticker_data(symbols, prod):
+
+  ticker_db = read_QUEENs__pollenstory(
+      symbols=symbols,
+      read_storybee=False, 
+      read_pollenstory=True,
+  )
+  
+  df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
+  df_main = df[['timestamp_est', 'close', 'vwap']]
+  df_main = split_today_vs_prior(df_main).get('df_today')
+
+  json_data = df_main.to_json(orient='records')
+
+  return json_data
+
+def get_charlie_bee():
+  main_db_root = os.path.join(hive_master_root(), 'db')
+  queens_charlie_bee, charlie_bee = init_charlie_bee(main_db_root)
+
+  return f'{charlie_bee}'
+## MESSAGES LOGS
 def get_queen_messages_json(username, prod,):
 
   QUEEN = load_queen_pkl(username, prod)
@@ -443,6 +572,7 @@ def get_queen_messages_logfile_json(username, log_file):
   # log_dir = os.path.join(username, 'logs')
   # logs = os.listdir(log_dir)
   # logs = [i for i in logs if i.endswith(".log")]
+
   k_colors = streamlit_config_colors()
   with open(log_file, 'r') as f:
       content = f.readlines()

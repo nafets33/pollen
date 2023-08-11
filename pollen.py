@@ -572,7 +572,8 @@ def pollenq(admin_pq):
                         text_option=to, 
                         api_key=os.environ.get("fastAPI_key"), 
                         prod=prod, 
-                        username=KING['users_allowed_queen_emailname__db'].get(client_user))            
+                        username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                        client_user=client_user)            
 
             return True
        
@@ -743,7 +744,9 @@ def pollenq(admin_pq):
                         api_failed = True
 
                 alpaca_acct_info = refresh_account_info(api=api)
-                # st.write(alpaca_acct_info)
+                with st.sidebar:
+                    if st.button('acct info'):
+                        st.write(alpaca_acct_info)
                 # ap_info=alpaca_acct_info
                 # st.write(float(ap_info['info'].get('daytrading_buying_power')) - 4 * (float(ap_info['info'].get('last_equity')) - float(ap_info['info'].get('last_maintenance_margin'))))
                 acct_info = alpaca_acct_info.get('info_converted')
@@ -800,7 +803,7 @@ def pollenq(admin_pq):
 
             with cols[2]:
                 print('ss', seconds_to_market_close)
-                custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api="http://localhost:8000/api/data/account_info")
+                custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api=f'http://{ip_address}:8000/api/data/account_info') 
             with cols[3]:
                 portfolio_header__QC(acct_info)
             

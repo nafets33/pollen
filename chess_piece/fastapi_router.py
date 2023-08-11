@@ -35,13 +35,6 @@ def load_wavestories_json(username: str=Body(...), symbols: list=Body(...), prod
     except Exception as e:
         print(e)
 
-@router.post("/workerbees", status_code=status.HTTP_200_OK)
-def load_workebees_json(username: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    json_data = queen_wavestories__get_macdwave(username, prod, symbols)
-    return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph", status_code=status.HTTP_200_OK)
 def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
@@ -70,12 +63,12 @@ def load_queen_messages_logfile_json(username: str=Body(...), api_key = Body(...
 
 
 @router.post("/queen", status_code=status.HTTP_200_OK)
-def load_queen_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...), toggle_view_selection=Body(...)):
+def load_queen_json(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), api_key = Body(...), toggle_view_selection=Body(...)):
     try:
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = get_queen_orders_json(username, prod, toggle_view_selection)
+        json_data = get_queen_orders_json(client_user, username, prod, toggle_view_selection)
         return JSONResponse(content=json_data)
     except Exception as e:
         print("router queen error", e)
@@ -150,20 +143,23 @@ def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(.
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    if app_buy_wave_order_request(username, prod, selected_row, default_value, ready_buy=False, x_buy=True):
+    if app_buy_wave_order_request(username, prod, selected_row, default_value, x_buy=True):
         return JSONResponse(content=grid_row_button_resp())
     else:
         return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
 
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
-def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
+def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    app_buy_order_request(username, prod, selected_row, default_value)
-    return JSONResponse(content="ssuccess")
+    req = app_buy_order_request(client_user, username, prod, selected_row, default_value)
+    if req.get('status'):
+        return JSONResponse(content=grid_row_button_resp())
+    else:
+        return JSONResponse(content=grid_row_button_resp(status='error'))
 
 @router.post("/update_orders", status_code=status.HTTP_200_OK)
 def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data= Body(...), api_key=Body(...)):
@@ -192,10 +188,11 @@ def load_account_info(kwargs=Body(...)):
     username=kwargs.get('username')
     prod=kwargs.get('prod')
     api_key=kwargs.get('api_key')
+    client_user=kwargs.get('client_user')
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
-    json_data = get_account_info(username, prod)
+    json_data = get_account_info(client_user, username, prod)
     return JSONResponse(content=json_data)
 
 
