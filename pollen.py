@@ -666,6 +666,19 @@ def pollenq(admin_pq):
             KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
             QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False)
 
+            def update_queen_orders(QUEEN): # for revrec
+                # update queen orders ## IMPROVE / REMOVE ## WORKERBEE
+                qo = QUEEN['queen_orders']
+                qo_cols = qo.columns.tolist()
+                latest_order = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
+                missing = [i for i in latest_order.columns.tolist() if i not in qo_cols]
+                if missing:
+                    for col in missing:
+                        print("adding new column to queens orders: ", col)
+                        QUEEN['queen_orders'][col] = latest_order.iloc[0].get(col)
+
+            update_queen_orders(QUEEN)
+            
             admin_check(admin_pq)
             with st.sidebar:
                 hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
@@ -772,16 +785,17 @@ def pollenq(admin_pq):
                 st.stop()
 
             ### TOP OF PAGE
-            if check_fastapi_status(ip_address) == False:
-                print("fastapi")
-                if st.button('API'):
-                    # Define the path to your Python script
-                    script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
-                    # Run the Python script using subprocess
-                    try:
-                        subprocess.run(['python', script_path, '-i',])
-                    except subprocess.CalledProcessError as e:
-                        print(f"Error: {e}")
+            if st.session_state['admin']:
+                if check_fastapi_status(ip_address) == False:
+                    print("fastapi")
+                    if st.button('API'):
+                        # Define the path to your Python script
+                        script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
+                        # Run the Python script using subprocess
+                        try:
+                            subprocess.run(['python', script_path, '-i',])
+                        except subprocess.CalledProcessError as e:
+                            print(f"Error: {e}")
 
             with st.sidebar:
                 # Master Controls #

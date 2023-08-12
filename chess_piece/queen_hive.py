@@ -4453,13 +4453,14 @@ def order_vars__queen_order_items(
 
 
 def create_QueenOrderBee(
+    queen_order_version=1,
     trading_model="init",
-    ticker_time_frame="Ticker_TFrame_TPeriod",
-    symbol="init",
-    star='init',
-    portfolio_name="init",
+    ticker_time_frame="SPY_1Minute_1Day",
+    symbol="SPY",
+    star='1Minute_1Day',
+    portfolio_name="Jq",
     status_q="init",
-    trig="init",
+    trig="buy_cross-0",
     exit_order_link="init",
     order_vars={},
     order={},
@@ -4467,7 +4468,7 @@ def create_QueenOrderBee(
     queen_init=False,
 ):  # Create Running Order
     def gen_queen_order(
-        queen_order_version=1,
+        queen_order_version=queen_order_version,
         trading_model=trading_model,
         double_down_trade=False,
         queen_order_state="submitted",
@@ -4508,6 +4509,7 @@ def create_QueenOrderBee(
         honey_time_in_profit=0,
         cost_basis=0,
         cost_basis_current=0,
+        market_value=0,
         honey=0,
         money=0,
         order=order,
@@ -4518,12 +4520,14 @@ def create_QueenOrderBee(
         datetime=datetime.now(est),
         borrowed_funds=False,
         ready_buy=None,
+        date_mark = datetime.now(est),
 
     ):
-        date_mark = datetime.now(est)
+        # date_mark = datetime.now(est)
         if queen_init:
+            qo = gen_queen_order()
             return {
-                name: "init"
+                name: qo.get(name)
                 for name in gen_queen_order.__code__.co_varnames
                 if name not in ["order", "order_vars", "priceinfo"]
             }
@@ -4558,9 +4562,9 @@ def create_QueenOrderBee(
                 "status_q": status_q,
                 "portfolio_name": portfolio_name,
                 "exit_order_link": exit_order_link,
-                "client_order_id": order["client_order_id"],
                 "system_recon": False,
                 "order": "alpaca",
+                "client_order_id": order.get("client_order_id"),
                 "side": order.get("side"),
                 "ticker": order.get("symbol"),
                 "symbol": order.get("symbol"),
@@ -4578,6 +4582,7 @@ def create_QueenOrderBee(
                 "honey": 0,
                 "cost_basis": 0,
                 'cost_basis_current': 0,
+                'market_value': market_value,
                 "honey_time_in_profit": {},
                 "profit_loss": 0,
                 "revisit_trade_datetime": revisit_trade_datetime,
@@ -4585,7 +4590,6 @@ def create_QueenOrderBee(
 
     if queen_init:
         # print("Queen Template Initalized")
-        logging_log_message(msg="QueenHive Queen Template Initalized")
         running_order = gen_queen_order(queen_init=True)
     elif order["side"] == "buy" or order["side"] == "sell":
         # print("create buy running order")
