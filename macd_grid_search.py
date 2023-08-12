@@ -83,6 +83,7 @@ def read_backtest_folder_assert_insight(backtest_folder):
     # st.dataframe(df_backtest)
     # standard_AGgrid(df_backtest_ttf)
     # standard_AGgrid(df_backtest)
+    return_len = 33
     stars_times = stars().keys()
     tickers = set([i.split("_")[0] for i in df_backtest_ttf['ttf'].tolist()])
     results = []
@@ -90,10 +91,10 @@ def read_backtest_folder_assert_insight(backtest_folder):
     for ticker in tickers:
         for tframes in stars_times:
             spy = df_backtest_ttf[df_backtest_ttf['ttf'] == f'{ticker}_{tframes}']
-            spy_ = spy[spy.index.isin(spy['maxprofit'].nlargest(n=5).index.tolist())]
-            mf = int(round(sum(spy_['macd_fast']) / 5,0))
-            ms = int(round(sum(spy_['macd_slow']) / 5,0))
-            mss = int(round(sum(spy_['macd_smooth']) / 5,0))
+            spy_ = spy[spy.index.isin(spy['maxprofit'].nlargest(n=return_len).index.tolist())]
+            mf = int(round(sum(spy_['macd_fast']) / return_len,0))
+            ms = int(round(sum(spy_['macd_slow']) / return_len,0))
+            mss = int(round(sum(spy_['macd_smooth']) / return_len,0))
             spy_['avg_ratio'] = f'{mf}_{ms}_{mss}'
             spy_result = spy_[['ttf', 'avg_ratio']].drop_duplicates()
             results_top.append(spy_result)
@@ -109,10 +110,10 @@ def read_backtest_folder_assert_insight(backtest_folder):
     send_email(subject=f"BackTesting Wave Analysis {run_time}")
 
 
-def run_backtesting_pollenstory(run_wave_analysis=True):
+def run_backtesting_pollenstory(run_wave_analysis=True, qcp_s=['castle', 'knight', 'bishop']):
 
     s = datetime.now()
-    for fast_val in fast_vals:
+    for fast_val in tqdm(fast_vals):
         for slow_val in slow_vals:
             for smooth_val in smooth_vals:
                 if fast_val >= smooth_val or smooth_val >= slow_val:
@@ -136,7 +137,7 @@ def run_backtesting_pollenstory(run_wave_analysis=True):
                 # if to_continue:
                 #     continue
                 try:
-                    queen_workerbees(qcp_s=['castle', 'knight', 'bishop'],
+                    queen_workerbees(qcp_s=qcp_s,
                                      prod = False, 
                                      backtesting = True, 
                                      macd = macd,

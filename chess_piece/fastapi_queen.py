@@ -511,8 +511,8 @@ def get_account_info(client_user, username, prod):
   if len(acct_info) > 0:
     honey_text = "Today" + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
     money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-    buying_power = round(acct_info.get('buying_power'))
-    cash = round(acct_info.get('cash'))
+    buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
+    cash = '${:,.2f}'.format(round(acct_info.get('cash')))
     daytrade_count = round(acct_info.get('daytrade_count'))
     portfolio_value = round(acct_info.get('portfolio_value'))
     long = None # QUEEN['heartbeat'].get('long')
@@ -522,7 +522,7 @@ def get_account_info(client_user, username, prod):
     # sells = df[df['trigname'].str.contains('sell')]
     # long = sum(buys['cost_basis_current'])
     # short = sum(sells['cost_basis_current'])
-    return f'{honey_text} {money_text} _+_ Heart {beat}  _+_ BP {buying_power} Cash {cash} daytrade {daytrade_count} L {long} S{short}'
+    return f'{honey_text} {money_text} + Heart-{beat}  + BP: {buying_power} Cash: {cash} daytrade: {daytrade_count} L: {long} S: {short}'
   else:
      return 'NO QUEEN'
 

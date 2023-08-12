@@ -748,8 +748,8 @@ def queen_workerbees(
                 "block_timeit": str((e_mainbeetime - s_mainbeetime)),
                 "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
             }
-            logging.info(msg)
-            print(msg)
+            # logging.info(msg)
+            # print(msg)
             return QUEEN
         except Exception as e:
             print("mainaa", e)

@@ -696,7 +696,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         try:
                             from chess_piece.app_hive import return_page_tabs
                             # tabs_on = ['df_ticker']
-                            cb_tab_list = ['board', 'waveview', 'revrec']
+                            cb_tab_list = ['board', 'waveview', 'revrec', 'story']
                             tabs = st.tabs(cb_tab_list)
                             cols = st.columns((1,5))
 

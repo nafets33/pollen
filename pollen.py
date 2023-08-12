@@ -26,7 +26,7 @@ from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_pollen_dbs, pollen_themes, hive_dates, return_market_hours
+from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 from custom_button import cust_Button
 from custom_text import custom_text, TextOptionsBuilder
 
@@ -73,13 +73,15 @@ def pollenq(admin_pq):
                         backtesting = st.checkbox("backtesting", backtesting)
                         run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
                         qcp_options = list(QUEENBEE['workerbees'].keys())
-                        pieces = st.multiselect('qcp', options=qcp_options, default=['castle'])
+                        pieces = st.multiselect('qcp', options=qcp_options, default=['castle', 'bishop', 'knight'])
 
                         refresh = st.form_submit_button("Run WorkerBees", use_container_width=True)
                         if refresh:
                             with st.spinner("Running WorkerBees"):
                                 s = datetime.now(est)
                                 if backtesting:
+                                    msg=("executing backtesting")
+                                    st.info(msg)
                                     subprocess.run([f"{sys.executable}", os.path.join(hive_master_root(), 'macd_grid_search.py')])
                                 else:
                                     queen_workerbees(qcp_s=pieces, 
@@ -500,56 +502,56 @@ def pollenq(admin_pq):
                 # with sb:
                 # cols = st.columns(7)
                 height = 54
-                with cols[0]:
+                # with cols[0]:
 
                     # wb = hc.option_bar(option_definition=pq_buttons.get('workerbees_option_data'),title='WorkerBees', key='workerbees_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)   
                     # st.session_state['workerbees'] = True if st.session_state['workerbees_m'] == 'workerbees' else False
                     # height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
-                    cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                with cols[1]:
+                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                # with cols[1]:
                     # hc.option_bar(option_definition=pq_buttons.get('option_data_orders'),title='Orders', key='orders_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                     # st.session_state['orders'] = True
                     # height = on_size if 'orders' in st.session_state and st.session_state['orders'] == True else off_size
-                    cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                    st.session_state['orders'] = True if cb == True or cb == 0 else False
-                    if st.session_state['orders'] == True:
-                        print("yes")
-                        page_line_seperator(color=default_font)
-                with cols[2]:
-                    hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                    
-                    # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
-                    # cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
-                    st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
+                cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                st.session_state['orders'] = True if cb == True or cb == 0 else False
+                if st.session_state['orders'] == True:
+                    print("yes")
+                    page_line_seperator(color=default_font)
+                # with cols[2]:
+                hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                
+                # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
+                # cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
+                st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
                     # if st.session_state['chess_board']:
                     #     hc.option_bar(option_definition=pq_buttons.get('option_data'),title='Board', key='admin_workerbees', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                with cols[3]:
+                # with cols[3]:
                     # height = on_size if 'queens_mind' in st.session_state and st.session_state['queens_mind'] == True else off_size
-                    cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
+                cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
                 # st.session_state['queens_mind'] = True if st.session_state['queens_mind'] in ['queens_mind'] or st.session_state['queens_mind'] == None else False
 
                 # if st.session_state['queens_mind']:
                 #     hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-                with cols[4]:
+                # with cols[4]:
                 # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Board', key='charts_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
                 # st.session_state['charts'] = True if st.session_state['charts_m'] in ['charts_id'] else False
                 
-                    height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
-                    cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
+                height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
+                cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
                     # st.session_state['charts'] = True if st.session_state['charts_m'] == True else False
                 # print(st.session_state['charts_m'])
 
                 # if st.session_state['charts']:
                 #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Charts', key='charts_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-                with cols[5]:
-                    height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
-                    cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
+                # with cols[5]:
+                height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
+                cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
                 
-                with cols[6]:              
-                    height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
-                    cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px', default=False)
+                # with cols[6]:              
+                height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
+                cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px', default=False)
                     # st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
 
                     # if st.session_state['waves']:
@@ -662,6 +664,8 @@ def pollenq(admin_pq):
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
             QUEENBEE['source'] = PB_QUEENBEE_Pickle
             KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+            QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False)
+
             admin_check(admin_pq)
             if st.session_state['admin'] == True:
                 st.sidebar.write('admin:', st.session_state["admin"])
@@ -670,7 +674,7 @@ def pollenq(admin_pq):
                 if KING_req.get('update'):
                     KING = KING_req['KING']
                     PickleData(KING.get('source'), KING)
-
+                
                 with st.sidebar:
                     with st.expander("admin"):
                         cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
@@ -680,9 +684,9 @@ def pollenq(admin_pq):
             if st.session_state['production'] == False:
                 st.warning("Sandbox Paper Money Account") 
 
-            if st.session_state['admin_queens']:
+            if st.session_state.get('admin_queens'):
                 admin_send_queen_airflow(KING)
-            if st.session_state['admin_users']:
+            if st.session_state.get('admin_users'):
                 admin_queens_active(KING.get('source'), KING)
 
             # print("QUEEN_KING")
@@ -693,16 +697,18 @@ def pollenq(admin_pq):
 
             # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece) # handled in signin auth
 
-            QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
+            # QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
             QUEEN_KING['prod'] = st.session_state['production']          
-            QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+            # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
             print("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
             
             # PROD vs SANDBOX
             live_sb_button = st.sidebar.button(f'Switch to {prod_name_oppiste}', key='pollenq', use_container_width=True)
             if live_sb_button:
                 st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                st.experimental_rerun()
+                prod = st.session_state['production']
+                QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False)
+
 
             stop_queenbee(QUEEN_KING, sidebar=True)
 
@@ -781,7 +787,7 @@ def pollenq(admin_pq):
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
             # with st.expander('Master Controls', False):
             # with cols[0]:
-            cols = st.columns((1,8,4,4))
+            cols = st.columns((1,8,1))
             with cols[0]:
                 print("Heart")
                 now = datetime.now(est)
@@ -791,7 +797,8 @@ def pollenq(admin_pq):
                 cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
                 seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
             
-            with cols[1]:
+            # with cols[1]:
+            with st.sidebar:
                 with st.expander("Master Menu"):
                     colss = st.columns((1,1,1,1,1,1,1,1))
                     menu_buttons(cols=colss)
@@ -801,11 +808,11 @@ def pollenq(admin_pq):
                 #     # queensheart
 
 
-            with cols[2]:
+            with cols[1]:
                 print('ss', seconds_to_market_close)
                 custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api=f'http://{ip_address}:8000/api/data/account_info') 
-            with cols[3]:
-                portfolio_header__QC(acct_info)
+            # with cols[3]:
+            #     portfolio_header__QC(acct_info)
             
 
             if menu_id == 'PlayGround':

@@ -1359,6 +1359,7 @@ def pollen_story(pollen_nectar):
                 return profit_loss
 
         def macd_cross_WaveLength(df_waves, x):
+            # WORKERBEE np.where shift ipdb.set_trace()
             if x == 0:
                 return 0
             else:
@@ -1371,6 +1372,7 @@ def pollen_story(pollen_nectar):
 
         def macd_cross_WaveBlocktime(df_waves, x):
             # Assign each waves timeblock
+            # WORKERBEE preset times and turn this func into np.where
             if x == 0:
                 return 0
             if "Day" in tframe:
@@ -4268,7 +4270,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     # if queenKING: # WORKERBEE Test integration with streamlit
     #   from pq_auth import signin_main
     #   signin_main(page="pollenq")
-    
+    # WORKERBEE Async the reading of files
     db_root = init_clientUser_dbroot(client_username=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
 
     queens_chess_piece="queen"
@@ -4291,6 +4293,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     if QUEEN:
         QUEEN['dbs'] = init_pollen
         QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE'])
+        QUEEN['heartbeat']['beat'] = QUEENsHeart
         
     
     """ Keys """ 
@@ -5254,8 +5257,8 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
             story_guages_view.append(story_guages)
 
         df_storyguage = pd.DataFrame(story_guages_view)
-        # trinity = trinity_weights()
-        # df_storyguage['trinity_m'] = df_storyguage['w_L_macd_tier_position'] * trinity.get('macd')
+        trinity = trinity_weights()
+        df_storyguage['trinity'] = (df_storyguage['w_L_macd_tier_position'] + df_storyguage['w_L_vwap_tier_position'] + df_storyguage['w_L_rsi_tier_position']) / 3
         
         return {'df_storyview': df_storyview, 
                 'df_storyguage': df_storyguage, 
@@ -5573,14 +5576,14 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
     return db_root
 
 
-def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False):
+def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False):
     def init_queen_orders(pickle_file):
         db = {}
         db["queen_orders"] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
         PickleData(pickle_file=pickle_file, data_to_store=db)
         print("Order init")
         logging_log_message(msg="Orders init")
-
+    # WORKERBEE don't check if file exists, only check on init
     if prod:
         # print("My Queen Production")
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
