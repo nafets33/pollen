@@ -40,5 +40,6 @@ def check():
 
 if __name__ == '__main__':
     ip_address = get_ip_address()
-    print("IP Address:", ip_address)
+    # print("IP Address:", ip_address)
+    ip_address = "127.0.0.1"
     uvicorn.run(app, host=ip_address, port=8000) # '10.3.144.157'
