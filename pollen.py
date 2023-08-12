@@ -667,6 +667,8 @@ def pollenq(admin_pq):
             QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False)
 
             admin_check(admin_pq)
+            with st.sidebar:
+                hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
             if st.session_state['admin'] == True:
                 st.sidebar.write('admin:', st.session_state["admin"])
                 # add new keys
@@ -678,7 +680,6 @@ def pollenq(admin_pq):
                 with st.sidebar:
                     with st.expander("admin"):
                         cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
-                        hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
                         cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
             if st.session_state['production'] == False:
