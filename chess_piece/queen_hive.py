@@ -808,6 +808,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview = resp.get('df_waveview') # up
         wave_analysis_down = resp.get('df_storyview_down') # down
         storygauge = resp.get('df_storyguage') # wave_gauge
+        storygauge = storygauge.set_index('symbol', drop=False)
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         waveview['wave_blocktime'] = current_wave.get('wave_blocktime')
 
@@ -906,31 +907,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # If current_tmp_deviation > tmp_multiplier, then 0. 
         # if l == tmp and > starmark, push out starmark to + 1?
 
-        # ttf_wave_multiplier = MACD + VWAP + RSI / trading_model_weights
-        def trinity_weights(star_time):
-            if star_time == '1Minute_1Day':
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-            elif star_time == '5Minute_5Day':
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-            elif star_time == '30Minute_1Month':
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-            elif star_time == '1Hour_3Month':
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-            elif star_time == '2Hour_6Month':
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-            elif star_time == '1Day_1Year':
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-            else:
-                print("star_time not defined", star_time)
-                return {'macd': .1, 'vwap': .1, 'rsi': .1}
-        model_eight_tier = 8
-        # print(waveview.columns)
-        # waveview['macd_weight'] = (waveview['end_macd_tier'] / model_eight_tier) # np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-        # waveview['macd_weight'] = waveview['macd_weight'].apply(lambda x: trinity_weights(x)) # np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-        # print(waveview['macd_weight'])
-        # storygauge
-        # trinity position, weighted * value
-        # storygauge['']
         e_ = datetime.now(est)
         return {'cycle_time': (e_-s_).total_seconds(), 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
                 'wave_analysis': wave_analysis, 'storygauge': storygauge, 'waveview': waveview}
@@ -4266,7 +4242,7 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, queenKING=False):
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, queenKING=False, init=False):
     # if queenKING: # WORKERBEE Test integration with streamlit
     #   from pq_auth import signin_main
     #   signin_main(page="pollenq")
@@ -4277,7 +4253,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     # init_logging(queens_chess_piece="queen", db_root=db_root, prod=prod)
 
     # init files needed
-    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece)
+    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init)
     PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
     PB_App_Pickle = init_pollen['PB_App_Pickle']
     PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
@@ -5023,8 +4999,9 @@ def analyze_waves(STORY_bee, ticker_time_frame=False, top_waves=8):
 
 
 # weight the MACD tier // slice by selected tiers?
-def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
+def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8):
     try:
+        # weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
         weight__short = ['1Minute_1Day', '5Minute_5Day']
         weight__mid = ['30Minute_1Month', '1Hour_3Month']
         weight__long = ['2Hour_6Month', '1Day_1Year']
@@ -5054,7 +5031,7 @@ def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
             # ttf_gauge = {}
             guage_return = {}
             df_waves = df_waves.fillna(0)
-            for weight_ in ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']:
+            for weight_ in weight_team:
                 df_waves[f'{weight_}_weight_base'] = df_waves[weight_] * model_eight_tier
                 df_waves[f'{weight_}_macd_weight_sum'] = df_waves[weight_] * df_waves['current_macd_tier']
                 df_waves[f'{weight_}_hist_weight_sum'] = df_waves[weight_] * df_waves['current_hist_tier']
@@ -5068,12 +5045,7 @@ def wave_gauge(df_waves, trading_model=False, model_eight_tier=8):
 
                 guage_return[f'{weight_}_vwap_tier_position'] = sum(df_waves[f'{weight_}_vwap_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
                 guage_return[f'{weight_}_rsi_tier_position'] = sum(df_waves[f'{weight_}_rsi_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
-
-            # # Trinity Position
-            # macd=.5
-            # vwap=.5
-            # rsi=.5
-            # df_waves['trinity_early'] =  
+ 
         except Exception as e:
             print_line_of_error(e=e)
         
@@ -5216,6 +5188,7 @@ def trinity_weights():
 
 def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbols=1000):
     try:
+        weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54'] # WORKERBEE put weight team in revrec or stars in hive?
         df_waveview = pd.DataFrame()
         df_storyview = pd.DataFrame()
         df_storyview_down = pd.DataFrame()
@@ -5256,14 +5229,17 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
             if trading_model == None:
                 print("no tm")
                 continue
-            story_guages, delme = wave_gauge(df_waves=df, trading_model=trading_model)
+            story_guages, delme = wave_gauge(df_waves=df, trading_model=trading_model, weight_team=weight_team)
             story_guages['symbol'] = symbol
             story_guages_view.append(story_guages)
 
         df_storyguage = pd.DataFrame(story_guages_view)
-        trinity = trinity_weights()
-        df_storyguage['trinity'] = (df_storyguage['w_L_macd_tier_position'] + df_storyguage['w_L_vwap_tier_position'] + df_storyguage['w_L_rsi_tier_position']) / 3
         
+        # Trinity 
+        trinity = trinity_weights()
+        for w_t in weight_team:
+            df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
+
         return {'df_storyview': df_storyview, 
                 'df_storyguage': df_storyguage, 
                 'df_waveview': df_waveview, 
@@ -5610,48 +5586,49 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}{".pkl"}')
         PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
 
-    if os.path.exists(PB_account_info_PICKLE) == False:
-        print("Init PB_account_info_PICKLE")
-        PickleData(PB_account_info_PICKLE, {'account_info': {}})
+    if init:
+        if os.path.exists(PB_account_info_PICKLE) == False:
+            print("Init PB_account_info_PICKLE")
+            PickleData(PB_account_info_PICKLE, {'account_info': {}})
 
-    if os.path.exists(PB_RevRec_PICKLE) == False:
-        print("Init PB_RevRec_PICKLE")
-        PickleData(PB_RevRec_PICKLE, {'revrec': {}})
+        if os.path.exists(PB_RevRec_PICKLE) == False:
+            print("Init PB_RevRec_PICKLE")
+            PickleData(PB_RevRec_PICKLE, {'revrec': {}})
 
-    if os.path.exists(PB_QUEENsHeart_PICKLE) == False:
-        print("Init PB_QUEENsHeart_PICKLE")
-        heart = {"heartbeat_time": datetime.now(est)}
-        PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=queens_heart(heart))
+        if os.path.exists(PB_QUEENsHeart_PICKLE) == False:
+            print("Init PB_QUEENsHeart_PICKLE")
+            heart = {"heartbeat_time": datetime.now(est)}
+            PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=queens_heart(heart))
 
-    if os.path.exists(PB_queen_Archives_Pickle) == False:
-        print("Init queen archives")
-        queens_archived = {"queens": [{"queen_id": 0}]}
-        PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+        if os.path.exists(PB_queen_Archives_Pickle) == False:
+            print("Init queen archives")
+            queens_archived = {"queens": [{"queen_id": 0}]}
+            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
-    if os.path.exists(PB_QUEEN_Pickle) == False:
-        print("You Need a Queen")
-        queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
-        l = len(queens_archived["queens"])
-        QUEEN = init_queen(queens_chess_piece=queens_chess_piece)
-        QUEEN["id"] = f'{"V1"}{"__"}{l}'
-        queens_archived["queens"].append({"queen_id": QUEEN["id"]})
-        PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+        if os.path.exists(PB_QUEEN_Pickle) == False:
+            print("You Need a Queen")
+            queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
+            l = len(queens_archived["queens"])
+            QUEEN = init_queen(queens_chess_piece=queens_chess_piece)
+            QUEEN["id"] = f'{"V1"}{"__"}{l}'
+            queens_archived["queens"].append({"queen_id": QUEEN["id"]})
+            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
 
-        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-        logging.info(("queen created", timestamp_string()))
+            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            logging.info(("queen created", timestamp_string()))
 
-    if os.path.exists(PB_App_Pickle) == False:
-        print("You Need an QueenApp")
-        init_app(pickle_file=PB_App_Pickle)
+        if os.path.exists(PB_App_Pickle) == False:
+            print("You Need an QueenApp")
+            init_app(pickle_file=PB_App_Pickle)
 
-    if os.path.exists(PB_Orders_Pickle) == False:
-        print("You Need an QueenOrders")
-        init_queen_orders(pickle_file=PB_Orders_Pickle)
+        if os.path.exists(PB_Orders_Pickle) == False:
+            print("You Need an QueenOrders")
+            init_queen_orders(pickle_file=PB_Orders_Pickle)
 
-    if os.path.exists(PB_KING_Pickle) == False:
-        print("You Need a King")
-        KING = init_KING()
-        PickleData(pickle_file=PB_KING_Pickle, data_to_store=KING)
+        if os.path.exists(PB_KING_Pickle) == False:
+            print("You Need a King")
+            KING = init_KING()
+            PickleData(pickle_file=PB_KING_Pickle, data_to_store=KING)
 
 
     if queenKING:

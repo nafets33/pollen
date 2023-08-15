@@ -39,6 +39,49 @@ db_root = os.path.join(main_root, "db")
 init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
  ###### Helpers UTILS
+
+def generate_shade(number_variable, base_color=False, wave=False):
+    try:
+      # Validate the input range
+      red = '#FBC0C0'
+      green = '#C0FBD3'
+      if wave:
+        m_wave, m_num = number_variable.split("_")
+        base_color = green if 'buy' in m_wave else red
+        number_variable = int(m_num.split("-")[-1])
+        # number_variable = 33
+      else:
+        # print(number_variable)
+
+        base_color = green if (number_variable) > 0 else red
+        number_variable = round(abs(number_variable * 100))
+        print(number_variable)
+      # if number_variable < -100 or number_variable > 100:
+      #     raise ValueError("Number variable must be between -100 and 100")
+
+      if base_color:
+          pass
+      else:
+        base_color = green if number_variable > 0 else red
+
+      # Convert base_color to RGB values
+      base_color = base_color.lstrip('#')
+      base_color_rgb = tuple(int(base_color[i:i+2], 16) for i in (0, 2, 4))
+
+      # Calculate shade amount based on number_variable
+      shade_amount = abs(number_variable) / 100  # Map to range [0, 1]
+
+      # Calculate shaded RGB values
+      shaded_rgb = tuple(int(base_color_comp * (1 - shade_amount)) for base_color_comp in base_color_rgb)
+
+      # Convert RGB to hex color code
+      shaded_color = "#{:02X}{:02X}{:02X}".format(*shaded_rgb)
+
+      return shaded_color
+    except Exception as e:
+      print_line_of_error(e)
+
+
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
     return datetime.now(tz).strftime(format)
 
@@ -327,13 +370,14 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       # ORDERS = load_queen_order_pkl(username, prod)
 
       # QUEEN_KING = load_queen_App_pkl(username, prod)
-      QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
+      QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, orders=True)
 
 
       if type(ORDERS) != dict:
+        print("NO ORDERS")
         return pd.DataFrame().to_json()
 
-      df = QUEEN['queen_orders']
+      df = ORDERS['queen_orders']
 
       if type(df) != pd.core.frame.DataFrame:
         return pd.DataFrame().to_json()
@@ -408,8 +452,8 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         else:
            revrec = ReadPickleData(username + '/queen_revrec_sandbox.pkl').get('revrec')
 
-        QUEEN_KING = load_queen_App_pkl(username, prod)
-        star_powers = QUEEN_KING['king_controls_queen'].get('star_power')
+        # QUEEN_KING = load_queen_App_pkl(username, prod)
+        # star_powers = QUEEN_KING['king_controls_queen'].get('star_power')
         # print(QUEEN_KING['king_controls_queen'].keys())
 
         if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
@@ -424,7 +468,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-        def get_darker_shade(base_color, shade_number, var_col=False):
+        def get_darker_shade(var_col, macdwave=False, base_color=False, shade_number=False):
             # Dictionary of base colors and their corresponding RGB values
             try:
               color_codes = {
@@ -436,11 +480,17 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
                   # Add more colors and their RGB values as needed
               }
               if var_col:
-                m_wave, m_num = var_col.split("_")
-                base_color = 'green' if 'buy' in m_wave else 'red'
-                shade_number = int(m_num.split("-")[-1])
-                # if shade_number > 10:
-                #    shade_number = 8
+                if macdwave == True:
+                  m_wave, m_num = var_col.split("_")
+                  base_color = 'green' if 'buy' in m_wave else 'red'
+                  shade_number = int(m_num.split("-")[-1])
+                  shade_factor_div = 33
+                else:
+                   var_col * 100
+                   base_color = 'green' if var_col > 0 else 'red'
+                   shade_number = int(round(abs(var_col)))
+                   shade_factor_div = 100
+
               
               # Retrieve the RGB values of the base color
               if base_color.lower() not in color_codes:
@@ -450,8 +500,12 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
               r, g, b = color_codes[base_color.lower()]
 
               # Calculate the shade based on the shade number
-              middle_shade = 15
-              shade_factor = (shade_number - middle_shade) / 100
+              if shade_number == 0 or shade_number == 1:
+                middle_shade = 15
+                shade_factor = (shade_number - middle_shade) / shade_factor_div
+              else:
+                middle_shade = round(shade_number / 2)
+                shade_factor = round((shade_number - middle_shade) / shade_factor_div)
 
               # Adjust the RGB values based on the shade factor
               darker_r = max(int(r - (r * abs(shade_factor))), 0)
@@ -479,12 +533,22 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
           #  for ttf in df_main.index.tolist():
           #     df_main.at[ttf, 'king_order_rules'] = df_main.at[ttf, 'king_order_rules'].update({'wave_amo':
           #                                                                                       df_main.at[ttf, 'allocation_deploy']})
-           df['powers'] = df['star_time'].map(star_powers)
-           df['color_row_text'] = default_text_color
            df["maxprofit"] = pd.to_numeric(df["maxprofit"], errors='coerce')
            df["maxprofit"] = round(df["maxprofit"] * 100,2).fillna(0)
-           df['color_row'] = df['macd_state'].apply(lambda x: get_darker_shade(base_color=False, shade_number=False, var_col=x))
+           df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
+           df['color_row_text'] = default_text_color
           #  df.at['SPY_1Minute_1Day', 'color_row'] = '#a1b357'
+           json_data = df.to_json(orient='records')
+           return json_data
+        elif return_type == 'story':
+
+           df = revrec.get('storygauge')           
+           df = df[[i for i in df.columns.tolist() if i == 'symbol' or 'trinity' in i]]
+           kors_dict = buy_button_dict_items()
+           df['kors'] = [kors_dict for _ in range(df.shape[0])]
+           df['trinity_w_L'] = pd.to_numeric(df["trinity_w_L"], errors='coerce')
+           df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
+           df['color_row_text'] = default_text_color
            json_data = df.to_json(orient='records')
            return json_data
 
@@ -505,7 +569,9 @@ def get_account_info(client_user, username, prod):
 
   QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True)
   QUEENsHeart = ReadPickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'))
-  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds())
+  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
+  charlie_bee = QUEENsHeart.get('charlie_bee')
+  avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
   
   acct_info = QUEEN['account_info']
   if len(acct_info) > 0:
@@ -514,7 +580,7 @@ def get_account_info(client_user, username, prod):
     buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
     cash = '${:,.2f}'.format(round(acct_info.get('cash')))
     daytrade_count = round(acct_info.get('daytrade_count'))
-    portfolio_value = round(acct_info.get('portfolio_value'))
+    portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
     long = None # QUEEN['heartbeat'].get('long')
     short = None # QUEEN['heartbeat'].get('short')
     # df = QUEEN['queen_orders']
@@ -522,7 +588,7 @@ def get_account_info(client_user, username, prod):
     # sells = df[df['trigname'].str.contains('sell')]
     # long = sum(buys['cost_basis_current'])
     # short = sum(sells['cost_basis_current'])
-    return f'{honey_text} {money_text} + Heart-{beat}  + BP: {buying_power} Cash: {cash} daytrade: {daytrade_count} L: {long} S: {short}'
+    return f'{honey_text} {money_text} ++ Heart {beat} Avg {avg_beat} + BP: {buying_power} Cash: {cash} Portfolio Value: {portfolio_value}  daytrade: {daytrade_count} L: {long} S: {short}'
   else:
      return 'NO QUEEN'
 

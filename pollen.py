@@ -637,7 +637,6 @@ def pollenq(admin_pq):
                ip_address = '127.0.0.1' #'pollenq.com'
         print("IP Address:", ip_address)
 
-
         if st.session_state['authentication_status'] != True: ## None or False
             display_for_unAuth_client_user()
             st.stop()
@@ -664,7 +663,7 @@ def pollenq(admin_pq):
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
             QUEENBEE['source'] = PB_QUEENBEE_Pickle
             KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-            QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False)
+            QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False, init=True)
 
             def update_queen_orders(QUEEN): # for revrec
                 # update queen orders ## IMPROVE / REMOVE ## WORKERBEE
@@ -825,7 +824,14 @@ def pollenq(admin_pq):
 
             with cols[1]:
                 print('ss', seconds_to_market_close)
-                custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close, prod, api=f'http://{ip_address}:8000/api/data/account_info') 
+                custom_fastapi_text(KING, 
+                                    client_user, 
+                                    default_text_color, 
+                                    default_yellow_color, 
+                                    default_font, 
+                                    seconds_to_market_close, 
+                                    prod, 
+                                    api=f'http://{ip_address}:8000/api/data/account_info') 
             # with cols[3]:
             #     portfolio_header__QC(acct_info)
             

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import uvicorn
 from chess_piece.king import get_ip_address
-# from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
@@ -25,11 +25,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.add_middleware(HTTPSRedirectMiddleware)
+# app.add_middleware(HTTPSRedirectMiddleware) # returned 307 temporary redirect but did not work
 
-@app.route('/{_:path}')
-async def https_redirect(request: Request):
-    return RedirectResponse(request.url.replace(scheme='https'))
+# @app.route('/{_:path}')
+# async def https_redirect(request: Request):
+#     return RedirectResponse(request.url.replace(scheme='https'))
 
 @app.get("/", status_code=status.HTTP_200_OK, tags=["API Check"])
 def check():

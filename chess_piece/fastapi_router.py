@@ -36,6 +36,21 @@ def load_wavestories_json(username: str=Body(...), symbols: list=Body(...), prod
         print(e)
 
 
+@router.post("/story", status_code=status.HTTP_200_OK)
+def load_story_json(client_user: str=Body(...), username: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
+    try:
+        print("trying")
+        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+            print("Auth Failed", api_key)
+            return "NOTAUTH"
+        json_data = queen_wavestories__get_macdwave(username, prod, symbols, return_type='story')
+        # print(json_data)
+        return JSONResponse(content=json_data)
+    except Exception as e:
+        print(e)
+
+
+
 @router.post("/symbol_graph", status_code=status.HTTP_200_OK)
 def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key

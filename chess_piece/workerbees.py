@@ -226,14 +226,14 @@ def queen_workerbees(
                         ].copy()
                         dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
 
-            e = datetime.now(est)
-            msg = {
-                "ticker_list": ticker_list,
-                "function": "Return Init ChartData",
-                "func_timeit": str((e - s)),
-                "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
-            }
-            print(msg)
+            # e = datetime.now(est)
+            # msg = {
+            #     "ticker_list": ticker_list,
+            #     "function": "Return Init ChartData",
+            #     "func_timeit": str((e - s)),
+            #     "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
+            # }
+            # print(msg)
             # dfs_index_tickers['SPY_5Minute']
             return {"init_charts": dfs_index_tickers, "errors": error_dict}
         except Exception as e:

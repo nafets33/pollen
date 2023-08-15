@@ -997,14 +997,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # wave amo tiering
             wave_amo, king_order_rules = knights_wave_amo(trigbee, wave_amo, revrec, ticker_time_frame, king_order_rules, star_total_budget_remaining, symbol_total_budget_remaining)
             order_side = 'buy'
-            print(order_side, wave_amo)
+            # print(order_side, wave_amo)
             if wave_amo > star_total_budget_remaining:
+                msg = (f"KN EXIT Amo > then star budget {wave_amo} {star_total_budget_remaining} {round(wave_amo_borrow)}")
                 logging.warning(msg)
                 print(msg)
                 wave_amo = star_total_budget_remaining
                 wave_amo_borrow = wave_amo - star_total_budget_remaining
             
-                msg = (f"KN EXIT Amo > then star budget {wave_amo} {star_total_budget_remaining} {round(wave_amo_borrow)}")
             # if wave_amo > # ticker price
             if wave_amo > 0:
                 if wave_amo < float(STORY_bee[ticker_time_frame]['story'].get('current_ask')):
@@ -1289,6 +1289,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     s_time = datetime.now(est)
                     # path to Knight
                     ticker, tframe, frame = ticker_time_frame.split("_")
+                    # trading model
+                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+                    
                     frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
                     
                     # trigbee
@@ -1298,17 +1301,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     on_wave_buy = True if trig_wave_length != '0' else False
                     if on_wave_buy:
                         tm_trig = 'buy_cross-0' if 'buy' in trig else 'sell_cross-0'
+                    
+                    trig_type = 'buy' if 'buy' in tm_trig else 'sell'
 
+                    # check global ticker level
+                    if frame_block in ['1Minute_1Day']:
+                        if trig_type == 'buy' and revrec['storygauge'].loc[ticker].get('trinity_w_15') > 0:
+                            # print(ticker, "trinity short 1min buy > 0 not buying")
+                            continue
+                        elif trig_type == 'sell' and revrec['storygauge'].loc[ticker].get('trinity_w_15') < 0:
+                            # print("shorting when trinity in negative")
+                            continue
+                    
                     if revrec.get('df_ticker').loc[ticker, 'ticker_buying_power'] == 0:
                         msg = (f'Conscience NO ticker_buying_power')
                         print(msg)
                         logging.warning(msg)
                         continue
                     
-                    # trading model
-                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
-                    
-                    # check global ticker level
                     if str(trading_model['status']) not in ['active', 'true']:
                         QUEEN['queens_messages'].update({'model_not_active': f'{ticker_time_frame}'})
                         print("model status not active")
@@ -2315,8 +2325,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if save_rr:
                 PickleData(QUEEN['dbs'].get('PB_RevRec_PICKLE'), {'revrec': QUEEN.get('revrec')})
             
-            if charlie_bee:
-                charlie_bee['queen_cyle_times']['God_Save_The_Queen__main'] = (datetime.now(est) - s_loop).total_seconds()
+            # if charlie_bee:
+            #     charlie_bee['queen_cyle_times']['God_Save_The_Queen__main'] = (datetime.now(est) - s_loop).total_seconds()
 
             return True
         except Exception as e:
@@ -3019,8 +3029,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'].append((datetime.now(est) - s).total_seconds())
                     charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'] = sum(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])/len(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])
                     PickleData(queens_charlie_bee, charlie_bee)
-                
+            
             e = datetime.now(est)
+            beat = (e - s).seconds
+            god_save_the_queen(QUEEN, QUEENsHeart, charlie_bee)
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
             if (e - s).seconds > 10:
                 logging.info((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))

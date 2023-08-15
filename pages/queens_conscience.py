@@ -1985,51 +1985,83 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             ) 
         
 
-        def wave_guage_grid(symbols, key='default', active=False):
-            
-            gb = GridOptionsBuilder.create()
-            gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
-            gb.configure_index('symbol')
+        def story_grid(client_user, ip_address, revrec, symbols, key='default', active=False, ):
+            try:
+                print("create story grid")
+                gb = GridOptionsBuilder.create()
+                gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+                gb.configure_index('symbol')
+                gb.configure_theme('ag-theme-material')
 
-            # gb.configure_column("symbol")
-            gb.configure_column('w_L')
-            gb.configure_column('w_S')
+                def config_cols():
+                    flash_def = {
+                        # 'pinned':'left',
+                        'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                        'enableCellChangeFlash': True,
+                        # 'type':["numericColumn", "numberColumnFilter", "customCurrencyFormat"],
+                        }
+                    return {
+                        'symbol': {'initialWidth':89},
+                        'trinity_w_L': flash_def,
+                        # 'trinity'
+                                    }
 
-            go = gb.build()
+                config_cols_ = config_cols()
+                for col, config_values in config_cols_.items():
+                    gb.configure_column(col, config_values)
 
-            refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-            refresh_sec = refresh_sec if active else None
-            # print(seconds_to_market_close, refresh_sec)
-            # st.write("buy waves")
-            st_custom_grid(
-                username=KING['users_allowed_queen_emailname__db'].get(client_user), 
-                api="http://127.0.0.1:8000/api/data/wave_stories",
-                api_update="http://127.0.0.1:8000/api/data/update_orders",
-                refresh_sec=refresh_sec, 
-                refresh_cutoff_sec=seconds_to_market_close, 
-                prod=st.session_state['production'],
-                grid_options=go,
-                key=f'{"wave_stories"}{key}',
-                # kwargs from here
-                api_key=os.environ.get("fastAPI_key"),
-                filter={"status": "running", "para1": "value1"},
-                prompt_message ="Buy Amount",
-                prompt_field = "star", # "current_macd_tier",
-                read_pollenstory = False,
-                read_storybee = True,
-                symbols=symbols,
-                buttons=[{'button_name': 'buy',
-                        'button_api': "http://127.0.0.1:8000/api/data/queen_buy_wave_orders",
-                        'prompt_message': 'Buy Wave',
-                        'prompt_field': 'macd_state',
-                        'col_headername': 'Buy Waves',
-                        'col_width':100,
-                        'pinned': 'left',
-                        },
+                mmissing = [i for i in revrec.get('storygauge').columns.tolist() if i not in config_cols_.keys()]
+                if len(mmissing) > 0:
+                    for col in mmissing:
+                        if 'trinity' in col:
+                            print('t', col)
+                            gb.configure_column(col, {'hide': False})
+                        else:
+                            gb.configure_column(col, {'hide': True})
 
-                        ]
-            ) 
 
+
+                go = gb.build()
+
+                refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                refresh_sec = refresh_sec if active else None
+                # print(seconds_to_market_close, refresh_sec)
+                # st.write("buy waves")
+                st_custom_grid(
+                    client_user=client_user,
+                    username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+                    api=f"http://{ip_address}:8000/api/data/story",
+                    api_update=f"http://{ip_address}:8000/api/data/story",
+                    refresh_sec=refresh_sec, 
+                    refresh_cutoff_sec=seconds_to_market_close, 
+                    prod=st.session_state['production'],
+                    grid_options=go,
+                    key=f'{"story"}{key}',
+                    # kwargs from here
+                    prompt_message = "symbol",
+                    prompt_field = "symbol", # "current_macd_tier",
+                    api_key=os.environ.get("fastAPI_key"),
+                    return_type='story',
+                    symbols=symbols,
+                    buttons=[
+                                {'button_name': 'Pbuy',
+                                'button_api': f'http://{ip_address}:8000/api/data/queen_buy_orders',
+                                'prompt_message': 'Edit Buy',
+                                'prompt_field': 'kors',
+                                'col_headername': 'Power Buy',
+                                'col_width':89,
+                                'pinned': 'right',
+                                'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
+                                },
+
+                            ],
+                grid_height='300px',
+                toggle_views = ['buys', 'sells', 'today', 'castle', 'knight', 'bishop'],
+                ) 
+                print("create story grid")
+
+            except Exception as e:
+                print_line_of_error(e)
 
         def queen_messages_grid(KING, f_api="http://127.0.0.1:8000/api/data/queen_messages", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
             gb = GridOptionsBuilder.create()
@@ -2347,13 +2379,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 # st.write(df_storyview)
                                 # st.write("storygauge")
                                 # print(df_storygauge.dtypes)
-                                for col in df_storygauge.columns:
-                                    # print(type(df_storygauge.iloc[-1].get(col)))
-                                    if type(df_storygauge.iloc[-1].get(col)) == np.float64:
-                                        # print(col)
-                                        df_storygauge[col] = df_storygauge[col] * 100
-                                df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['w_L_macd_tier_position'], axis=0, vmin=-100, vmax=100)                               
-                                st.write(df_storygauge)
+                                # for col in df_storygauge.columns:
+                                #     # print(type(df_storygauge.iloc[-1].get(col)))
+                                #     if type(df_storygauge.iloc[-1].get(col)) == np.float64:
+                                #         # print(col)
+                                #         df_storygauge[col] = df_storygauge[col] * 100
+                                # df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['w_L_macd_tier_position'], axis=0, vmin=-100, vmax=100)                               
+                                # st.write(df_storygauge)
                                 # st.write("waveview")
                                 # st.write(df_waveview)
                                 print("ChessBoard")
@@ -2368,20 +2400,28 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 model_wave_results(STORY_bee)
                                 print("TRADING MODELS")
                         if tab_name == 'orders':
+                            symbols = QUEEN['heartbeat'].get('active_tickers')
+                            symbols = ['SPY'] if len(symbols) == 0 else symbols
+                            queen_orders = QUEEN['queen_orders']
                             if st.session_state['orders']:
+                                
                                 cols = st.columns((4,2))
-                                # with cols[0]:
-                                queen_orders = QUEEN['queen_orders']
-                                order_grid(KING, queen_orders, ip_address)
-                                # with st.expander("Waves", True):
-                                symbols = QUEEN['heartbeat'].get('active_tickers')
-                                symbols = ['SPY'] if len(symbols) == 0 else symbols
+
                                 with cols[0]:
                                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
-                                        # with st.expander("Queens Thoughts"):
-                                        #     queen_messages_grid(KING, varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 8})
+                                    order_grid(KING, queen_orders, ip_address)
 
                                 with cols[1]:
+                                    # story gauge grid
+                                    story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, active=True)
+                                    # for col in df_storygauge.columns:
+                                    #     # print(type(df_storygauge.iloc[-1].get(col)))
+                                    #     if type(df_storygauge.iloc[-1].get(col)) == np.float64:
+                                    #         # print(col)
+                                    #         df_storygauge[col] = df_storygauge[col] * 100
+                                    # df_storygauge = df_storygauge[[i for i in df_storygauge.columns.tolist() if i =='symbol' or 'trinity' in i]]
+                                    # df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['trinity_w_L'], axis=0, vmin=-100, vmax=100)                               
+                                    # st.dataframe(df_storygauge)
                                     refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
                                     # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
                                     cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
@@ -2409,15 +2449,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                             refresh_button=True,
                                             graph_height=300,
                                             )
-                                    # with cols[1]:
-                                    # logs = os.listdir(log_dir)
-                                    # logs = [i for i in logs if i.endswith(".log")]
-                                    # log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                                    # log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                                    # with st.expander(log_file):
-                                    #     log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                                    #     queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
-                                
+
                                 print("ORDERS")
                 
                 """ Bottom Page """
