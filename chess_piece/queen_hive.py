@@ -297,6 +297,7 @@ def init_queen(queens_chess_piece):
         "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id"),
         "portfolio": {},
         "heartbeat": {
+            'need_order_info': [],
             'long': 0,
             'short': 0,
             'wave_blocktime': {},
@@ -308,6 +309,7 @@ def init_queen(queens_chess_piece):
         "queens_messages": {},
         "kings_order_rules": {},
         "queen_controls": return_queen_controls(stars),
+        "order_status_info": [],
 
         "workerbees": {
             "castle": {
@@ -1334,17 +1336,47 @@ def pollen_story(pollen_nectar):
                     profit_loss * -1
                 return profit_loss
 
+        # def profit_loss(df_waves):
+        #     close_prices = df_waves["close"].values
+        #     macd_cross_values = df_waves["macd_cross"].values
+            
+        #     profit_losses = []
+        #     for x in range(len(df_waves)):
+        #         if x == 0:
+        #             profit_losses.append(0)
+        #         else:
+        #             latest_price = close_prices[x]
+        #             origin_trig_price = close_prices[x - 1]
+        #             pl = (latest_price - origin_trig_price) / latest_price
+        #             if macd_cross_values[x] == "sell_cross-0":
+        #                 pl *= -1
+        #             profit_losses.append(pl)
+            
+        #     return profit_losses
+
+
+        # def macd_cross_WaveLength(df_waves, x):
+        #     # WORKERBEE np.where shift ipdb.set_trace()
+        #     if x == 0:
+        #         return 0
+        #     else:
+        #         prior_row = df_waves.iloc[x - 1]
+        #         current_row = df_waves.iloc[x]
+        #         latest_price = current_row["story_index"]
+        #         origin_trig_price = prior_row["story_index"]
+        #         length = latest_price - origin_trig_price
+        #         return length
+
         def macd_cross_WaveLength(df_waves, x):
-            # WORKERBEE np.where shift ipdb.set_trace()
             if x == 0:
                 return 0
             else:
-                prior_row = df_waves.iloc[x - 1]
-                current_row = df_waves.iloc[x]
-                latest_price = current_row["story_index"]
-                origin_trig_price = prior_row["story_index"]
-                length = latest_price - origin_trig_price
+                latest_prices = df_waves["story_index"].values
+                prior_prices = np.roll(latest_prices, 1)  # Shift the array to get previous prices
+                length = latest_prices[x] - prior_prices[x]
                 return length
+
+
 
         def macd_cross_WaveBlocktime(df_waves, x):
             # Assign each waves timeblock
@@ -1415,10 +1447,14 @@ def pollen_story(pollen_nectar):
         # set wave num
         df_waves = df[df["macd_cross"].isin(trigbees)].copy().reset_index()
         df_waves["wave_n"] = df_waves.index
-        df_waves["length"] = df_waves["wave_n"].apply(
-            lambda x: macd_cross_WaveLength(df_waves, x)
-        )
+        # df_waves["length"] = df_waves["wave_n"].apply(
+        #     lambda x: macd_cross_WaveLength(df_waves, x)
+        # )
+        df_waves['length'] = [macd_cross_WaveLength(df_waves, x) for x in range(len(df_waves))]
+
         df_waves["profits"] = df_waves["wave_n"].apply(lambda x: profit_loss(df_waves, x))
+        # df_waves['profits'] = profit_loss(df_waves)
+
         # df_waves['story_index_in_profit'] = np.where(df_waves['profits'] > 0, 1, 0)
         df_waves["active_wave"] = np.where(
             df_waves["wave_n"] == df_waves["wave_n"].iloc[-1], "active", "not_active"

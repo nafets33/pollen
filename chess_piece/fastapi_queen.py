@@ -26,7 +26,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     init_queenbee,
                                     return_trading_model_trigbee,
                                     init_charlie_bee)
-from chess_piece.queen_bee import execute_order
+from chess_piece.queen_bee import execute_order, sell_order__var_items
 
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
@@ -55,7 +55,6 @@ def generate_shade(number_variable, base_color=False, wave=False):
 
         base_color = green if (number_variable) > 0 else red
         number_variable = round(abs(number_variable * 100))
-        print(number_variable)
       # if number_variable < -100 or number_variable > 100:
       #     raise ValueError("Number variable must be between -100 and 100")
 
@@ -427,7 +426,17 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       # df.at[len(df)-1, 'color_row'] = '#24A92A'
       print('tview', toggle_view_selection)
       qos_view = ['running', 'running_close', 'running_open']
+      # if toggle_view_selection == 'today':
+      #    df = split_today_vs_prior(df=df, timestamp='datetime').get('df_today')
+      # elif toggle_view_selection == 'sells':
+      #    df = df[df['queen_order_state'].isin(['completed'])]
+      # else:
+      #   df = df[df['queen_order_state'].isin(qos_view)]
+
+      # sort
       df = df[df['queen_order_state'].isin(qos_view)]
+      sort_colname = 'cost_basis_current'
+      df = df.sort_values(sort_colname, ascending=False)
       
       # # Totals Index
       # df.loc['Total', 'money'] = df['money'].sum()
@@ -468,63 +477,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-        def get_darker_shade(var_col, macdwave=False, base_color=False, shade_number=False):
-            # Dictionary of base colors and their corresponding RGB values
-            try:
-              color_codes = {
-                  "black": (0, 0, 0),
-                  "white": (255, 255, 255),
-                  "red": (255, 0, 0),
-                  "green": (0, 128, 0),
-                  "blue": (0, 0, 255),
-                  # Add more colors and their RGB values as needed
-              }
-              if var_col:
-                if macdwave == True:
-                  m_wave, m_num = var_col.split("_")
-                  base_color = 'green' if 'buy' in m_wave else 'red'
-                  shade_number = int(m_num.split("-")[-1])
-                  shade_factor_div = 33
-                else:
-                   var_col * 100
-                   base_color = 'green' if var_col > 0 else 'red'
-                   shade_number = int(round(abs(var_col)))
-                   shade_factor_div = 100
-
-              
-              # Retrieve the RGB values of the base color
-              if base_color.lower() not in color_codes:
-                  print("Invalid base color")
-                  return "Invalid base color"
-
-              r, g, b = color_codes[base_color.lower()]
-
-              # Calculate the shade based on the shade number
-              if shade_number == 0 or shade_number == 1:
-                middle_shade = 15
-                shade_factor = (shade_number - middle_shade) / shade_factor_div
-              else:
-                middle_shade = round(shade_number / 2)
-                shade_factor = round((shade_number - middle_shade) / shade_factor_div)
-
-              # Adjust the RGB values based on the shade factor
-              darker_r = max(int(r - (r * abs(shade_factor))), 0)
-              darker_g = max(int(g - (g * abs(shade_factor))), 0)
-              darker_b = max(int(b - (b * abs(shade_factor))), 0)
-
-              # Convert the RGB values to hex format
-              hex_color = '#{:02x}{:02x}{:02x}'.format(darker_r, darker_g, darker_b)
-              # print(print(var_col, hex_color))
-
-              hex_color = '#ddf3d5' if base_color == 'green' else '#f4cccc'
-              return hex_color
-            except Exception as e:
-              print_line_of_error()
-        
-        # base_color = "green"
-        # shade_number = 9
-        # darker_shade = get_darker_shade(base_color, shade_number, var_col=False)
-        # print(darker_shade)
 
         if return_type == 'waves':
            df = revrec.get('waveview')
@@ -541,14 +493,40 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
            json_data = df.to_json(orient='records')
            return json_data
         elif return_type == 'story':
+            # def update_dictionary_column(df, dict_column_name, update_column_name, key_column_name):
+            #     def update_dictionary(dictionary, value, key):
+            #         dictionary[key] = value
+            #         return dictionary
+                
+            #     df[dict_column_name] = df.apply(lambda row: update_dictionary(row[dict_column_name], row[update_column_name], row[key_column_name]), axis=1)
 
-           df = revrec.get('storygauge')           
+            # # Example DataFrame
+            # data = {
+            #     'id': [1, 2, 3],
+            #     'data_dict': [{'a': 10, 'b': 20}, {'c': 30, 'd': 40}, {'e': 50, 'f': 60}],
+            #     'update_value': [100, 200, 300],
+            #     'update_key': ['a', 'd', 'f']
+            # }
+
+            # df = pd.DataFrame(data)
+
+            # # Call the function to update the dictionary column
+            # update_dictionary_column(df, 'data_dict', 'update_value', 'update_key')
+
+            # print(df)
+           df = revrec.get('storygauge')       
            df = df[[i for i in df.columns.tolist() if i == 'symbol' or 'trinity' in i]]
            kors_dict = buy_button_dict_items()
            df['kors'] = [kors_dict for _ in range(df.shape[0])]
-           df['trinity_w_L'] = pd.to_numeric(df["trinity_w_L"], errors='coerce')
+          #  df['kors'] = df['kors'].apply(lambda x: update_kors(x))
+          #  df['trinity_w_L'] = pd.to_numeric(df["trinity_w_L"], errors='coerce')
            df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
            df['color_row_text'] = default_text_color
+           for col in df.columns:
+              # print(type(df_storygauge.iloc[-1].get(col)))
+              if type(df.iloc[-1].get(col)) == np.float64:
+                  # print(col)
+                  df[col] = round(df[col] * 100,2)
            json_data = df.to_json(orient='records')
            return json_data
 
@@ -581,14 +559,19 @@ def get_account_info(client_user, username, prod):
     cash = '${:,.2f}'.format(round(acct_info.get('cash')))
     daytrade_count = round(acct_info.get('daytrade_count'))
     portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
-    long = None # QUEEN['heartbeat'].get('long')
-    short = None # QUEEN['heartbeat'].get('short')
+    long = QUEEN['heartbeat'].get('long')
+    short = QUEEN['heartbeat'].get('short')
+    long = '${:,}'.format(long)
+    short = '${:,}'.format(short)
     # df = QUEEN['queen_orders']
     # buys = df[df['trigname'].str.contains('buy')]
     # sells = df[df['trigname'].str.contains('sell')]
     # long = sum(buys['cost_basis_current'])
     # short = sum(sells['cost_basis_current'])
-    return f'{honey_text} {money_text} ++ Heart {beat} Avg {avg_beat} + BP: {buying_power} Cash: {cash} Portfolio Value: {portfolio_value}  daytrade: {daytrade_count} L: {long} S: {short}'
+    mmoney = f'{honey_text} {money_text}'
+    mmoney = "\u0332".join(mmoney)
+    msg = f'{mmoney} Heart {beat} Avg {avg_beat} $ BP: {buying_power} Cash: {cash} Portfolio Value: {portfolio_value}  daytrade: {daytrade_count} L: {long} S: {short}'
+    return msg
   else:
      return 'NO QUEEN'
 

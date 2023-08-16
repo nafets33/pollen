@@ -560,11 +560,11 @@ def pollenq(admin_pq):
                 print(e)
                 print_line_of_error()
 
-        def custom_fastapi_text(KING, client_user, default_text_color, default_yellow_color, default_font, seconds_to_market_close=8, prod=False, api="http://localhost:8000/api/data/account_info"):
+        def custom_fastapi_text(KING, client_user, default_background_color, default_text_color, default_font, seconds_to_market_close=8, prod=False, api="http://localhost:8000/api/data/account_info"):
             # Total Account info
             to_builder = TextOptionsBuilder.create()
-            to_builder.configure_background_color(default_text_color)
-            to_builder.configure_text_color(default_yellow_color)
+            to_builder.configure_background_color(default_background_color)
+            to_builder.configure_text_color(default_text_color)
             to_builder.configure_font_style(default_font)
             to = to_builder.build()
             custom_text(api=api, 
@@ -694,8 +694,6 @@ def pollenq(admin_pq):
                         cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
                         cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
-            if st.session_state['production'] == False:
-                st.warning("Sandbox Paper Money Account") 
 
             if st.session_state.get('admin_queens'):
                 admin_send_queen_airflow(KING)
@@ -722,6 +720,8 @@ def pollenq(admin_pq):
                 prod = st.session_state['production']
                 QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False)
 
+            if st.session_state['production'] == False:
+                st.warning("Sandbox Paper Money Account") 
 
             stop_queenbee(QUEEN_KING, sidebar=True)
 
@@ -826,8 +826,8 @@ def pollenq(admin_pq):
                 print('ss', seconds_to_market_close)
                 custom_fastapi_text(KING, 
                                     client_user, 
+                                    default_background_color, 
                                     default_text_color, 
-                                    default_yellow_color, 
                                     default_font, 
                                     seconds_to_market_close, 
                                     prod, 

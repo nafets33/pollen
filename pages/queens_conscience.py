@@ -1752,8 +1752,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                 "sortable":True,
                                                 'headerName': 'Star Time',
                                             },
-                        'trigname': {'headerName': 'TrigWave', 'initialWidth': 140,},
-                        'current_macd': {'headerName': 'Current MACD',},
+                        'trigname': {'headerName': 'TrigWave', 'initialWidth': 135,},
+                        'current_macd': {'headerName': 'Current MACD', 'initialWidth': 135,},
                         'datetime':
                                 {'type': ["dateColumnFilter", "customDateTimeFormat"],
                                 "custom_format_string": "MM/dd/yy HH:mm"},
@@ -1987,7 +1987,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
 
         def story_grid(client_user, ip_address, revrec, symbols, key='default', active=False, ):
             try:
-                print("create story grid")
                 gb = GridOptionsBuilder.create()
                 gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
                 gb.configure_index('symbol')
@@ -2014,8 +2013,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 if len(mmissing) > 0:
                     for col in mmissing:
                         if 'trinity' in col:
-                            print('t', col)
-                            gb.configure_column(col, {'hide': False})
+                            trin, we, num = col.split("_")
+                            gb.configure_column(col, {'headerName':f'{trin} {we} {num}', 'hide': False, "sortable":True})
                         else:
                             gb.configure_column(col, {'hide': True})
 
@@ -2050,7 +2049,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 'prompt_field': 'kors',
                                 'col_headername': 'Power Buy',
                                 'col_width':89,
-                                'pinned': 'right',
+                                'pinned': 'left',
                                 'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
                                 },
 
@@ -2058,7 +2057,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 grid_height='300px',
                 toggle_views = ['buys', 'sells', 'today', 'castle', 'knight', 'bishop'],
                 ) 
-                print("create story grid")
 
             except Exception as e:
                 print_line_of_error(e)
