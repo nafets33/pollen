@@ -17,15 +17,18 @@ import numpy as np
 import re
 import pickle
 from io import StringIO
-
+import os
 import docx
-
 import openai
 from transformers import GPT2TokenizerFast
-from chess_piece.king import print_line_of_error, ReadPickleData
 import ipdb
 import argparse
 import streamlit as st
+from dotenv import load_dotenv
+from datetime import datetime
+
+from chess_piece.king import hive_master_root, ReadPickleData, print_line_of_error
+load_dotenv(os.path.join(hive_master_root(), '.env'))
 
 # score text generation
 # However, you can use metrics like BLEU, METEOR, ROUGE, CIDEr etc to evaluate the quality of generated text.
@@ -33,112 +36,142 @@ import streamlit as st
 # You can use these metrics to compare the generated text with the reference text and get a score, but keep in mind that these metrics are not perfect, and the scores they provide are not always reliable indicators of text quality.
 
 try:
-    def send_ozz_call(query):
-        openai.api_key = "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"
-        csv_main = 'ozz/Learning walks data.txt'
-        vector_pickle = 'ozz/Learning walks embeddings.pickle'
-
-        def doc_to_string_main():
-            def docx_to_string(filename):
-                try:
-                    doc = docx.Document(filename)  # Creating word reader object.
-                    data = ""
-                    fullText = []
-                    for para in doc.paragraphs:
-                        fullText.append(para.text)
-                        data = '\n'.join(fullText)
-            
-                    return data
-            
-                except IOError:
-                    print('There was an error opening the file!')
-
-            filename = 'Learning walks_Main.docx'
-
-            contents = docx_to_string(filename)
-
-            df = pd.DataFrame([[filename, contents]], columns = ["File name", "contents"])
-
-        MAX_SECTION_LEN = 3000
+    def send_ozz_call(
+        query, 
+        filename='ozz/Learning walks data.txt', 
+        vector_pickle='ozz/Learning walks embeddings.pickle'
+    ):
+        openai.api_key = os.environ.get('ozz_api_key')
+        # openai.api_key_path = "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" #os.environ.get('stefan_openai_api_key')
+        
+        MAX_SECTION_LEN = 1024
         SEPARATOR = "\n* "
-
-        def preprocessing(df): 
-            #Removing unwanted characters
-            for i in range(df.shape[0]):
-                df['contents'][i] = df['contents'][i].replace('\n', '')
-                df['contents'][i] = re.sub(r'\(.*?\)', '', df['contents'][i])
-                df['contents'][i] = re.sub('[\(\[].*?[\)\]]', '', df['contents'][i])
-
-            prompt_column = []
-            completion_column = []
-
-            num_parts = (-df['contents'].map(len).max()//-1000)
-
-            for i in df['File name']:
-                for part_num in range(num_parts):
-                    prompt_column.append(i.lower() + " part" + str(part_num+1))
-
-
-
-            for j in df['contents']:
-                
-                split_data = j.split('.')
-                avg_len = len(split_data)//num_parts + 1
-                for part_num in range(num_parts - 1):
-                    completion_column.append('.'.join(split_data[part_num*avg_len:(part_num+1)*avg_len]))
-
-                completion_column.append('.'.join(split_data[(num_parts - 1)*avg_len:]))
-
-            df_cleaned = pd.DataFrame()
-            df_cleaned['File name'] = prompt_column
-            df_cleaned['contents'] = completion_column
-
-                    
-            return df_cleaned[df_cleaned['contents'] != '']
-
-
-        def count_tokens(input):
-            tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-            res = tokenizer(input)['input_ids']
-
-            return len(res)
-        # df_cleaned['tokens'] = df_cleaned['contents'].map(count_tokens)
-        # df_cleaned.to_csv('Learning walks data.csv', index = False)
-
-        df_cleaned = pd.read_csv(csv_main)
-
-
-        context_embeddings = ReadPickleData(vector_pickle)
 
         embedding_model = "text-embedding-ada-002"
         MODEL_NAME = "davinci"
 
-        # DOC_EMBEDDINGS_MODEL = f"text-search-{MODEL_NAME}-doc-001"
-        # QUERY_EMBEDDINGS_MODEL = f"text-search-{MODEL_NAME}-query-001"
+        # Create Model
+        def create_vector_model(vector_pickle, filename=filename, embedding_model="text-embedding-ada-002"):
 
+            def doc_to_string_main(filename):
+                def docx_to_string(filename):
+                    try:
+                        doc = docx.Document(filename)  # Creating word reader object.
+                        data = ""
+                        fullText = []
+                        for para in doc.paragraphs:
+                            fullText.append(para.text)
+                            data = '\n'.join(fullText)
+                
+                        return data
+                
+                    except IOError:
+                        print('There was an error opening the file!')
+
+                # filename = 'Learning walks_Main.docx'
+
+                contents = docx_to_string(filename)
+
+                df = pd.DataFrame([[filename, contents]], columns = ["File name", "contents"])
+
+                return df
+
+
+            def preprocessing(df): # df must be set as key content columns >> File name, contents
+                #Removing unwanted characters
+                for i in range(df.shape[0]):
+                    df['contents'][i] = df['contents'][i].replace('\n', '')
+                    df['contents'][i] = re.sub(r'\(.*?\)', '', df['contents'][i])
+                    df['contents'][i] = re.sub('[\(\[].*?[\)\]]', '', df['contents'][i])
+
+                prompt_column = []
+                completion_column = []
+
+                num_parts = (-df['contents'].map(len).max()//-1000)
+
+                for i in df['File name']:
+                    for part_num in range(num_parts):
+                        prompt_column.append(i.lower() + " part" + str(part_num+1))
+
+
+
+                for j in df['contents']:
+                    
+                    split_data = j.split('.')
+                    avg_len = len(split_data)//num_parts + 1
+                    for part_num in range(num_parts - 1):
+                        completion_column.append('.'.join(split_data[part_num*avg_len:(part_num+1)*avg_len]))
+
+                    completion_column.append('.'.join(split_data[(num_parts - 1)*avg_len:]))
+
+                df_cleaned = pd.DataFrame()
+                df_cleaned['File name'] = prompt_column
+                df_cleaned['contents'] = completion_column
+
+                        
+                return df_cleaned[df_cleaned['contents'] != '']
+
+
+            def count_tokens(input):
+                tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+                res = tokenizer(input)['input_ids']
+
+                return len(res)
+
+
+            # Train
+            # embedding_model = "text-embedding-ada-002"
+            MODEL_NAME = "davinci"
+
+
+            def get_embedding(text, model=embedding_model):
+                text = text.replace("\n", " ")
+                return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
+
+            def get_doc_embedding(text):
+                return get_embedding(text)
+
+            def compute_doc_embeddings(df):
+
+                return {
+                    idx: get_doc_embedding(r.contents.replace("\n", " ")) for idx, r in df.iterrows()
+                }
+
+            def train_model(df_cleaned, pickle_file):
+                ## Train Model
+
+                context_embeddings = compute_doc_embeddings(df_cleaned)
+
+                with open(pickle_file, 'wb') as pkl:
+                    pickle.dump(context_embeddings, pkl)
+
+            if filename.endswith('.docx'):
+                df = doc_to_string_main(filename)
+            else:
+                df = pd.read_csv(filename)
+ 
+            df_cleaned = preprocessing(df)
+
+            df_cleaned['tokens'] = df_cleaned['contents'].map(count_tokens)
+            df_cleaned.to_csv(f'{filename.split(".")[0]}_df_cleaned.txt', index = False)
+
+            train_model(df_cleaned, vector_pickle)
+
+        create_model = False
+        if create_model:
+            s = datetime.now()
+            create_vector_model(vector_pickle, filename=filename, embedding_model="text-embedding-ada-002")
+            time_take = (datetime.now() - s).total_seconds()
+            print(time_take)
+
+
+        # Handle Query
         def get_embedding(text, model=embedding_model):
             text = text.replace("\n", " ")
             return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
 
-        def get_doc_embedding(text):
-            return get_embedding(text)
-
         def get_query_embedding(text):
             return get_embedding(text)
-
-        def compute_doc_embeddings(df):
-
-            return {
-                idx: get_doc_embedding(r.contents.replace("\n", " ")) for idx, r in df.iterrows()
-            }
-
-        def train_model(pickle_file):
-            ## Train Model
-
-            context_embeddings = compute_doc_embeddings(df_cleaned)
-
-            with open(pickle_file, 'wb') as pkl:
-                pickle.dump(context_embeddings, pkl)
 
         def vector_similarity(x, y):
 
@@ -181,14 +214,6 @@ try:
             
             return header + "".join(chosen_sections) + "\n\n Q: " + question + "\n A:"
 
-        COMPLETIONS_MODEL = "text-davinci-003"
-
-        COMPLETIONS_API_PARAMS = {
-            "temperature": 0.0,
-            "max_tokens": 300,
-            "model": COMPLETIONS_MODEL,
-        }
-
         def answer_query_with_context(query, df, context_embeddings,show_prompt= False):
             prompt = construct_prompt(
                 query,
@@ -206,22 +231,35 @@ try:
 
             return response["choices"][0]["text"].strip(" \n")
 
-        # command = 'Y'
+
+        
+        
+        
+        # cleaned data
+        df_cleaned = pd.read_csv(filename)
+        # model index
+        context_embeddings = ReadPickleData(vector_pickle)
+
+
+        COMPLETIONS_MODEL = "text-davinci-003"
+
+        COMPLETIONS_API_PARAMS = {
+            "temperature": 0.0,
+            "max_tokens": 300,
+            "model": COMPLETIONS_MODEL,
+        }
+
+
+
+        # DOC_EMBEDDINGS_MODEL = f"text-search-{MODEL_NAME}-doc-001"
+        # QUERY_EMBEDDINGS_MODEL = f"text-search-{MODEL_NAME}-query-001"
+
 
         resp = answer_query_with_context(query, df=df_cleaned, context_embeddings=context_embeddings)
-        st.write(resp)
+        print(resp)
         
-        return answer_query_with_context(query, df=df_cleaned, context_embeddings=context_embeddings)
-    # def send_ozz_call(query):
-        # return answer_query_with_context(query, df=df_cleaned, context_embeddings=context_embeddings)
+        return resp
 
-    # while command == 'Y':
-
-    #   query = input("\nAsk me anything...\n")
-
-    #   print('\n', answer_query_with_context(query, df=df_cleaned, context_embeddings=context_embeddings))
-
-    #   command = input("\n\nWould you like to continue? Y or N : ")
 
 except Exception as e:
     print(e)
