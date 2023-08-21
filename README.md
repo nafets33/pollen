@@ -100,7 +100,7 @@ sudo vim .bashrc # when in home dir
 # find if port active
 sudo lsof -i :8501
 sudo lsof -i :8000
-sudo kill -9 PID
+sudo kill -9
 
 # Git
 git push origin sven-dev
@@ -117,3 +117,11 @@ lsof -Pn -i4
 umask 0000 (all permissions)
 
 cd /etc ( all config files)
+
+# nginx
+to stop nginx
+sudo systemctl stop nginx
+to start
+sudo systemctl start nginx
+to restart
+sudo systemctl restart nginx

@@ -281,7 +281,6 @@ def hive_dates(api):
     return {"trading_days": trading_days}
 
 
-
 def init_queen(queens_chess_piece):
 
     QUEEN = {  # The Queens Mind
@@ -429,6 +428,7 @@ def init_QUEEN_App():
         "character_image" : mainpage_bee_png,
         "risk_level": 0,
         "age": 0,
+        "update_order_rules": [],
         
         "app_order_requests": [], # depr.
         
@@ -484,43 +484,46 @@ def add_key_to_KING(KING):  # returns QUEES
 
 
 def add_key_to_app(QUEEN_KING):  # returns QUEES
-    update = False
-    update_msg = {}
-    
-    q_keys = QUEEN_KING.keys()
-    latest_queen = init_QUEEN_App()
-    latest_controls = return_queen_controls()
-    latest_qcp = init_qcp()
+    try:
+        update = False
+        update_msg = {}
+        
+        q_keys = QUEEN_KING.keys()
+        latest_queen = init_QUEEN_App()
+        latest_controls = return_queen_controls()
+        latest_qcp = init_qcp()
 
-    for k, v in latest_queen.items():
-        if k not in q_keys:
-            QUEEN_KING[k] = v
-            update = True
-            msg = f'{k}{" : Key Added to QUEEN_KING"}'
-            print(msg)
-            logging.info(msg)
-            update_msg[k] = msg
-    for k, v in latest_controls.items():
-        if k not in QUEEN_KING['king_controls_queen'].keys():
-            QUEEN_KING['king_controls_queen'][k] = v
-            update = True
-            msg = f'{k}{" : Control Key Added to QUEEN_KING"}'
-            print(msg)
-            logging.info(msg)
-            update_msg[k] = msg
-    
-    for k, v in latest_qcp.items():
-        for qcp, qcp_vars in QUEEN_KING['chess_board'].items():
-            qcp_keys = qcp_vars.keys()
-            if k not in qcp_keys:
-                QUEEN_KING['chess_board'][qcp][k] = latest_qcp.get(k)
+        for k, v in latest_queen.items():
+            if k not in q_keys:
+                QUEEN_KING[k] = v
                 update = True
-                msg = f'{qcp}: {k} -- {"Key Added to Chess Board"}'
+                msg = f'{k}{" : Key Added to QUEEN_KING"}'
                 print(msg)
                 logging.info(msg)
                 update_msg[k] = msg
+        for k, v in latest_controls.items():
+            if k not in QUEEN_KING['king_controls_queen'].keys():
+                QUEEN_KING['king_controls_queen'][k] = v
+                update = True
+                msg = f'{k}{" : Control Key Added to QUEEN_KING"}'
+                print(msg)
+                logging.info(msg)
+                update_msg[k] = msg
+        
+        for k, v in latest_qcp.items():
+            for qcp, qcp_vars in QUEEN_KING['chess_board'].items():
+                qcp_keys = qcp_vars.keys()
+                if k not in qcp_keys:
+                    QUEEN_KING['chess_board'][qcp][k] = latest_qcp.get(k)
+                    update = True
+                    msg = f'{qcp}: {k} -- {"Key Added to Chess Board"}'
+                    print(msg)
+                    logging.info(msg)
+                    update_msg[k] = msg
 
-    return {"QUEEN_KING": QUEEN_KING, "update": update}
+        return {"QUEEN_KING": QUEEN_KING, "update": update}
+    except Exception as e:
+        print_line_of_error(e)
 
 def set_chess_pieces_symbols(QUEEN_KING, qcp_bees_key):
     all_workers = list(QUEEN_KING[qcp_bees_key].keys())
@@ -1047,14 +1050,6 @@ def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=Fal
 
     return orders
 
-# def return_remaining_budget(QUEEN, active_queen_order_states):
-    
-#     # Total In Running, Remaining
-#     queen_orders = QUEEN['queen_orders']
-#     active_orders = queen_orders[queen_orders['queen_order_state'].isin(active_queen_order_states)]
-#     cost_basis = sum(active_orders['cost_basis']) if len(active_orders) > 0 else 0
-    
-#     return active_orders, cost_basis
 
 def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen_order_states, ticker_time_frame, cost_basis_ref='cost_basis_current'):
     try:
@@ -1110,7 +1105,6 @@ def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral")
             print("error in tm")
     except Exception as e:
         print('addTM ', e)
-
 
 
 def add_key_to_QUEEN(QUEEN, queens_chess_piece):  # returns QUEEN
@@ -1501,7 +1495,7 @@ def pollen_story(pollen_nectar):
         # create tier ranges
         # tiers_num = 8
 
-        def create_tier_range(m_high, m_low):
+        def create_tier_range(m_high, m_low, tiers_num):
             # m_high = mac_world_ranges[ftime]
             # m_low = mac_world_ranges[ftime] * -1
 
@@ -1546,7 +1540,25 @@ def pollen_story(pollen_nectar):
                     # print('0 really')
                     return 0
 
-        # select mac_world &  # apply tiers
+        # def assign_tier_num_vectorized(num_values, td, max_tier=8):
+        #     length_td = len(td)
+        #     max_num_value = td[length_td - 1][1]
+            
+        #     num_values = np.asarray(num_values, dtype=float)
+            
+        #     result = np.select(
+        #         [
+        #             (num_values > 0) & (num_values > td[i][0]) & (num_values < td[i][1]) for i in range(length_td - 1)
+        #         ] + [
+        #             (num_values > 0) & (num_values >= max_num_value),
+        #             (num_values < 0) & (num_values <= max_num_value),
+        #             (num_values == 0)
+        #         ],
+        #         list(range(1, length_td)) + [max_tier, length_td, length_td, 0],
+        #         default=0
+        #     )
+            
+        #     return result
 
         # "MACD"
         if mac_world["macd_high"] == 0:  # no max min exist yet (1day scenario)
@@ -1555,7 +1567,7 @@ def pollen_story(pollen_nectar):
         else:
             m_high = mac_world["macd_high"]
             m_low = mac_world["macd_low"]
-        tier_range = create_tier_range(m_high, m_low)
+        tier_range = create_tier_range(m_high, m_low, tiers_num)
         td_high = tier_range["td_high"]
         td_low = tier_range["td_low"]
         df["macd_tier"] = np.where(
@@ -1563,6 +1575,13 @@ def pollen_story(pollen_nectar):
             df["macd"].apply(lambda x: assign_tier_num(num_value=x, td=td_high)),
             df["macd"].apply(lambda x: assign_tier_num(num_value=x, td=td_low)),
         )
+
+        # df["macd_tier"] = np.where(
+        #     df["macd"] > 0,
+        #     assign_tier_num_vectorized(df["macd"], td=td_high),
+        #     assign_tier_num_vectorized(df["macd"], td=td_low),
+        # )
+
         df["macd_tier"] = np.where(df["macd"] > 0, df["macd_tier"], df["macd_tier"] * -1)
 
 
@@ -1664,7 +1683,27 @@ def pollen_story(pollen_nectar):
             return "black"
 
 
-
+    def power_ranger_mapping_vectorized(tier_values):
+        tier_values = np.asarray(tier_values, dtype=float)
+        
+        conditions = [
+            (tier_values >= -8) & (tier_values <= -7),
+            (tier_values >= -6) & (tier_values <= -5),
+            (tier_values >= -4) & (tier_values <= -3),
+            (tier_values >= -2) & (tier_values <= -1),
+            (tier_values > -1) & (tier_values <= 1),
+            (tier_values >= 2) & (tier_values <= 3),
+            (tier_values >= 4) & (tier_values <= 5),
+            (tier_values >= 6) & (tier_values <= 7)
+        ]
+        
+        choices = [
+            "red", "blue", "pink", "yellow",
+            "white", "green", "purple", "black"
+        ]
+        
+        result = np.select(conditions, choices, default="black")
+        return result
 
     try:
         s = datetime.now(est)
@@ -1734,10 +1773,13 @@ def pollen_story(pollen_nectar):
                 STORY_bee[ticker_time_frame]["story"]["current_macd_tier"] = df.iloc[-1]["macd_tier"]
                 STORY_bee[ticker_time_frame]["story"]["current_hist_tier"] = df.iloc[-1]["hist_tier"]
 
-                df["mac_ranger"] = df["macd_tier"].apply(lambda x: power_ranger_mapping(x))
-                df["hist_ranger"] = df["hist_tier"].apply(lambda x: power_ranger_mapping(x))
-                df["vwap_ranger"] = df["vwap_tier"].apply(lambda x: power_ranger_mapping(x))
-                df["rsi_ema"] = df["rsi_ema"].apply(lambda x: power_ranger_mapping(x))
+                # df["mac_ranger"] = df["macd_tier"].apply(lambda x: power_ranger_mapping(x)) ## OLD
+                df['mac_ranger'] = power_ranger_mapping_vectorized(df['macd_tier'])
+                df['hist_ranger'] = power_ranger_mapping_vectorized(df['hist_tier'])
+                df['vwap_ranger'] = power_ranger_mapping_vectorized(df['vwap_tier'])
+                df['rsi_ranger'] = power_ranger_mapping_vectorized(df['rsi_ema_tier'])
+
+
                 e_timetoken = datetime.now(est)
                 betty_bee[ticker_time_frame]["assign_Tier"] = e_timetoken - s_timetoken
 
@@ -3457,13 +3499,13 @@ def buy_button_dict_items():
                 'limit_price': False,
                 'take_profit': .01,
                 'sell_trigbee_trigger': True,
-                'sell_trigbee_trigger_timeduration': 100,
+                'sell_trigbee_trigger_timeduration': 5,
                 'close_order_today': False,
                 }
 
 
 def kings_order_rules( # rules created for 1Minute
-    KOR_version=3,
+    KOR_version=1,
     order_side='buy', # 'sell'
     order_type='market',
     wave_amo=100,
@@ -3474,10 +3516,10 @@ def kings_order_rules( # rules created for 1Minute
     limit_price=False,
     # BUYS
     doubledown_timeduration=60,
-    ignore_trigbee_in_macdstory_tier=[0],
-    ignore_trigbee_in_histstory_tier=[0],
+    # ignore_trigbee_in_macdstory_tier=[0],
+    # ignore_trigbee_in_histstory_tier=[0],
     # Not Used
-    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
     ignore_trigbee_at_power=0.01,
     macd_tier_multiplier = {},
     vwap_tier_multiplier = {},
@@ -3490,9 +3532,11 @@ def kings_order_rules( # rules created for 1Minute
     sell_out_scale={.05: {'take_pct': .25, 'take_mark': False}},
     max_profit_waveDeviation=1, ## Need to figure out expected waveDeivation from a top profit in wave to allow trade to exit (faster from seeking profit?)
     max_profit_waveDeviation_timeduration=5, # Minutes
-    timeduration=120,
+    timeduration=120, # Minutes ### DEPRECATE WORKERBEE
+    sell_date=datetime.now().replace(hour=0, minute=00, second=0) + timedelta(days=366), 
     sell_trigbee_trigger=True,
-    sell_trigbee_trigger_timeduration=60, # seconds
+    sell_trigbee_trigger_timeduration=60, # Minutes
+    sell_at_vwap = 1, # Sell pct at vwap
     use_wave_guage=False,
     doubledowns_allowed=2,
     close_order_today=False,
@@ -3512,18 +3556,6 @@ def kings_order_rules( # rules created for 1Minute
     use_margin=False,
 ):
 
-    def tier_multiplier(max_world=8, tiers=['macd', 'vwap', 'rsi'], trigbees=['buy_cross-0', 'sell_cross-0']):
-        ticker_time_frame__mp = {}
-        return_d = {}
-        for tier in tiers:
-            return_d[tier] = {}
-            for trig in trigbees:
-                if trig == 'buy_cross-0':
-                    return_d[tier][trig] = {i: .1 + (abs(i) / 1) for i in range(max_world)}
-                else:
-                    return_d[tier][trig] = {i: .1 + (abs(i) / 1) for i in range(max_world)}
-        return return_d
-
     return {
         "KOR_version": KOR_version,
         "theme": theme,
@@ -3537,6 +3569,8 @@ def kings_order_rules( # rules created for 1Minute
         "take_profit": take_profit,
         "sell_out": sell_out, # migrate
         "sell_trigbee_trigger": sell_trigbee_trigger,
+        "sell_date": sell_date,
+        "sell_at_vwap": sell_at_vwap,
         "stagger_profits": stagger_profits,
         "scalp_profits": scalp_profits,
         "scalp_profits_timeduration": scalp_profits_timeduration,
@@ -3545,9 +3579,9 @@ def kings_order_rules( # rules created for 1Minute
         "skip_buy_trigbee_distance_frequency": skip_buy_trigbee_distance_frequency,
         # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
         "ignore_trigbee_at_power": ignore_trigbee_at_power,
-        "ignore_trigbee_in_macdstory_tier": ignore_trigbee_in_macdstory_tier,
-        "ignore_trigbee_in_histstory_tier": ignore_trigbee_in_histstory_tier,
-        "ignore_trigbee_in_vwap_range": ignore_trigbee_in_vwap_range,
+        # "ignore_trigbee_in_macdstory_tier": ignore_trigbee_in_macdstory_tier,
+        # "ignore_trigbee_in_histstory_tier": ignore_trigbee_in_histstory_tier,
+        # "ignore_trigbee_in_vwap_range": ignore_trigbee_in_vwap_range,
         "take_profit_in_vwap_deviation_range": take_profit_in_vwap_deviation_range,
         "short_position": short_position,
         'use_wave_guage': use_wave_guage,
@@ -3662,9 +3696,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=1,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[0],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3689,9 +3721,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-1,0,1],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3716,9 +3746,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3743,9 +3771,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3770,9 +3796,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[0],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3797,9 +3821,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3866,9 +3888,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3892,9 +3912,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3918,9 +3936,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3943,9 +3959,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_histstory_tier=[-2,-1,0,1,2],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3968,9 +3982,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[-1, 0, 1],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,
@@ -3993,9 +4005,7 @@ def generate_TradingModel(
                                     limitprice_decay_timeduration=1,
                                     skip_sell_trigbee_distance_frequency=0,
                                     ignore_trigbee_at_power=0.01,
-                                    ignore_trigbee_in_macdstory_tier=[],
-                                    ignore_trigbee_in_histstory_tier=[],
-                                    ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
                                     take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
                                     short_position=False,
                                     use_wave_guage=False,

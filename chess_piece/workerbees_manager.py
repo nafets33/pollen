@@ -15,7 +15,7 @@ est = pytz.timezone("US/Eastern")
 
 
 def workerbees_multiprocess_pool(
-    prod, qcp_s, num_workers=3, reset_only=False
+    prod, qcp_s, num_workers=5, reset_only=False
 ):  ## improvement send in reset_only into pool
 
     if num_workers > 10:

@@ -789,7 +789,7 @@ def pollenq(admin_pq):
                     print("fastapi")
                     if st.button('API'):
                         # Define the path to your Python script
-                        script_path = os.path.join(hive_master_root(), 'fastapi_server.py') # path/to/your/script.py'
+                        script_path = os.path.join(hive_master_root(), 'pq_fastapi_server.py') # path/to/your/script.py'
                         # Run the Python script using subprocess
                         try:
                             subprocess.run(['python', script_path, '-i',])

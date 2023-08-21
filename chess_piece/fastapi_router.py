@@ -1,17 +1,25 @@
 from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse
-from chess_piece.fastapi_queen import get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, app_archive_queen_order
 import pandas as pd
 import random
 import json
 import ipdb
 import os
+from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
+                                       app_archive_queen_order,
+                                       app_queen_order_update_order_rules,)
 
 router = APIRouter(
     prefix="/api/data",
     tags=["auth"]
 )
 
+def confirm_auth_keys(api_key):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return False
+    else:
+        return True
 
 def grid_row_button_resp(status='success', description='success', message_type='fade', close_modal=True, color_text='red'):
     return {'status': status, # success / error
@@ -100,15 +108,18 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
         return JSONResponse(content=grid_row_button_resp(status='error'))
 
 @router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK)
-def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+def archive_queen_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     try:
-        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-            print("Auth Failed", api_key)
+        if confirm_auth_keys(api_key) == False:
             return "NOTAUTH"
-        print(default_value)
+
+        req = app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value)
+        if req.get('status'):
+            return JSONResponse(content=grid_row_button_resp(description=req.get('description')))
+        else:
+            return JSONResponse(content=grid_row_button_resp(status='error', description=req.get('description')))
         # json_data = app_archive_queen_order(username, prod, selected_row, default_value)
         # app_queen_order_update_order_rules(username, prod, selected_row, default_value)
-        return JSONResponse(content=grid_row_button_resp())
     except Exception as e:
         print("router queen error", e)
 

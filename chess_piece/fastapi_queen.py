@@ -18,7 +18,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     init_logging, 
                                     split_today_vs_prior, 
                                     story_view, 
-                                    refresh_chess_board__revrec, 
+                                    kings_order_rules, 
                                     buy_button_dict_items,
                                     order_vars__queen_order_items,
                                     find_symbol,
@@ -144,9 +144,6 @@ def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy
     }
 
 ####### Router Calls
-def symbols_wave_guage(username, prod):
-   return True
-
 
 def app_buy_order_request(client_user, username, prod, selected_row, default_value, ready_buy=False, x_buy=False): # index & wave_amount
   try:
@@ -350,17 +347,103 @@ def app_archive_queen_order(username, prod, selected_row, default_value):
     return True
 
 
-def app_queen_order_update_order_rules(username, prod, selected_row, default_value):
-    # number_shares = default_value
-    print(default_value)
-    queen_order = selected_row
-    client_order_id = queen_order.get('client_order_id')
-    QUEEN_KING = load_queen_App_pkl(username, prod)
-    order_update_package = create_AppRequest_package(request_name='update_order_rules', client_order_id=client_order_id)
-    order_update_package['update_order_rules'] = {client_order_id: {'queen_order_state': 'archived'}}
-    # QUEEN_KING['update_order_rules'].append(order_update_package)
-    # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-    return True
+def get_type_by_name(type_name):
+    return getattr(__builtins__, type_name)
+
+
+def parse_date(date_str):
+    date_formats = [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S",
+        "%m-%d-%Y %H:%M:%S",
+        "%m/%d/%Y %H:%M:%S",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%m-%d-%Y",
+        "%m/%d/%Y",
+    ]
+    
+    for format_str in date_formats:
+        try:
+            parsed_date = datetime.strptime(date_str, format_str)
+            return parsed_date
+        except ValueError:
+            pass
+        
+    return None
+
+# # Example usage
+# date_string = "2023-08-18 15:30:00"
+# parsed_date = parse_date(date_string)
+
+# if parsed_date:
+#     print("Parsed Date:", parsed_date)
+# else:
+#     print("Invalid Date Format")
+
+# the_type = get_type_by_name('float')
+def validate_kors_valueType(newvalue, current_value):
+
+  if type(newvalue) == type(current_value):
+      # print("update kor value", kor, newvalue)
+      return newvalue
+  else:
+      print("try to update type")
+      try:
+        if type(current_value) == datetime:
+           newvalue = parse_date(newvalue)
+           if newvalue:
+              return newvalue
+           else:
+              return False
+        else:
+          correct_type = type(current_value)
+          return correct_type(newvalue)
+      except Exception as e:
+        print(e)
+        print("unable to update type")
+        return False
+
+def app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value):
+    try:
+      current_kors = kings_order_rules()
+      queen_order = selected_row
+      client_order_id = queen_order.get('client_order_id')
+      # number_shares = default_value
+      QUEEN_KING = load_queen_App_pkl(username, prod)
+      order_update_package = create_AppRequest_package(request_name='update_order_rules', client_order_id=client_order_id)
+      order_update_package['update_order_rules'] = {}
+      
+      update_dict = {}
+      kors = queen_order.get('order_rules')
+      for kor, newvalue in default_value.items():
+        if newvalue:
+          if kor in kors.keys():
+            if newvalue == kors[kor]:
+              #  print("no update")
+              continue
+          current_value = current_kors[kor] # if current_value in current_kors else None
+          newvalue = validate_kors_valueType(newvalue, current_value)
+          if newvalue == False:
+            print('validation failed')
+            return {'status': False, 'description': f"date time conversion failed try mm/dd/yyyy"}
+          else:
+             update_dict[kor] = newvalue
+        
+      if update_dict:
+        order_update_package['update_order_rules'].update({client_order_id: update_dict})
+        print(order_update_package['update_order_rules'])
+      
+        QUEEN_KING['update_order_rules'].append(order_update_package)
+        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+        return {'status': True, 'description': 'kors updates'}
+      else:
+        msg = ("no updates to kors")
+        return {'status': False, 'description': msg}
+         
+    except Exception as e:
+       print_line_of_error(e)
+       return {'status': False, 'description': str(e)}
 
 ## MAIN GRIDS
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):

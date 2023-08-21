@@ -418,7 +418,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     except Exception as e:
                         print(e, 'failed to update QueenOrder')
                         logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
-                        QUEEN['queens_messages'].update({c_order_id: {'date': return_timestamp_string(), 'error': e, 'updates': (field_, new_value)}})
             if save:
                 PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
         except Exception as e:
@@ -462,7 +461,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     def process_app_requests(QUEEN, QUEEN_KING, request_name, archive_bucket=None):
         app_requests__bucket = 'app_requests__bucket'
         try:
-            if request_name == "buy_orders": # test
+            if request_name == "buy_orders": # ok
                 # archive_bucket = 'buy_orders_requests'
                 app_order_base = [i for i in QUEEN_KING[request_name]]
                 if app_order_base:
@@ -500,7 +499,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 else:
                     return {'app_flag': False}
             
-            elif request_name == "update_queen_order": # test
+            elif request_name == "update_queen_order": # ok
                 app_order_base = [i for i in QUEEN_KING[request_name]]
                 if app_order_base:
                     for app_request in app_order_base:
@@ -616,46 +615,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return active_trigs
             else:
                 return active_trigs
-
-
-
-
-    def buying_Power_cc(QUEEN_KING, api, client_args="TBD", daytrade=True):
-        info = api.get_account()
-        argu_validate = ['portfolio', 'daytrade_pct', 'longtrade_pct', 'waveup_pct', 'wavedown_pct']
-        
-        total_buying_power = info.buying_power # what is the % amount you want to buy?
-        cBoard = {}
-        qcp_ticker_index = {}
-        for qcp, piece in QUEEN_KING['chess_board'].items():
-            for ticker in piece.get("tickers"):
-                qcp_ticker_index[ticker] = qcp
-                
-
-        app_portfolio_day_trade_allowed = .8
-        app_portfolio_long_trade_allowed = .2
-        if app_portfolio_day_trade_allowed + app_portfolio_long_trade_allowed != 1:
-            print("Critical Error Fix buying power numbers")
-            sys.exit()
-        
-        # # wave power allowance
-        # app_portfolio_waveup_buying_power = .6
-        # app_portfolio_wavedown_buying_power = .4
-        # if app_portfolio_waveup_buying_power + app_portfolio_wavedown_buying_power != 1:
-        #     print("Critical Error Fix buying power numbers")
-        #     sys.exit()
-        
-        client_total_DAY_trade_amt_allowed = float(app_portfolio_day_trade_allowed) * float(total_buying_power)
-        client_total_LONG_trade_amt_allowed = float(app_portfolio_long_trade_allowed) * float(total_buying_power)
-        
-        return {
-            'total_buying_power': total_buying_power,
-            'client_total_DAY_trade_amt_allowed': client_total_DAY_trade_amt_allowed, 
-            'app_portfolio_day_trade_allowed': app_portfolio_day_trade_allowed,
-            'client_total_LONG_trade_amt_allowed': client_total_LONG_trade_amt_allowed,
-        }
-
-
 
 
     def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False):
@@ -951,17 +910,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             def ready_buy_star_timeduration_delay(star_time):
                 if star_time == '1Minute_1Day':
-                    return 60 * 5
+                    return 5
                 elif star_time == '5Minute_5Day':
-                    return 60 * 10
+                    return 10
                 elif star_time == '30Minute_1Month':
-                    return 60 * 30
+                    return 30
                 elif star_time == '1Hour_3Month':
-                    return 60 * 60
+                    return 60
                 elif star_time == '2Hour_6Month':
-                    return 60 * 120
+                    return 120
                 elif star_time == '1Day_1Year':
-                    return 60 * 360
+                    return 360 # fix to days
                 else:
                     print("star_time not defined", star_time)
                     return 500
@@ -1600,36 +1559,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return {'origin_order': ''}
 
 
-    def return_snap_priceinfo(api, ticker, crypto, exclude_conditions=exclude_conditions):
-        if crypto:
-            snap = api.get_crypto_snapshot(ticker, exchange=coin_exchange)
-        else:
-            snap = api.get_snapshot(ticker)
-            c=0
-            while True:
-                conditions = snap.latest_quote.conditions
-                valid = [j for j in conditions if j in exclude_conditions]
-                if len(valid) == 0 or c > 10:
-                    break
-                else:
-                    snap = api.get_snapshot(ticker) # return_last_quote from snapshot
-                    c+=1 
-
-        # current_price = STORY_bee[f'{ticker}{"_1Minute_1Day"}']['last_close_price']
-        current_price = snap.latest_trade.price
-        current_ask = snap.latest_quote.ask_price
-        current_bid = snap.latest_quote.bid_price
-
-        # best limit price
-        best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
-        maker_middle = best_limit_price['maker_middle']
-        ask_bid_variance = current_bid / current_ask
-        
-        priceinfo = {'ticker': ticker, 'snapshot': snap, 'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
-        
-        return priceinfo
-
-
     def return_snap_priceinfo__pollenData(QUEEN, STORY_bee, ticker, api):
         # read check if ticker is active...if it is return into from db ELSE if user data Pa
         call_snap = False
@@ -2070,8 +1999,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # when honey < , go through re-evalute ?
                 
                 sell_trigbee_trigger_timeduration = run_order.get('sell_trigbee_trigger_timeduration')
-                sell_trigbee_trigger_timeduration = 500 if type(sell_trigbee_trigger_timeduration) != int else sell_trigbee_trigger_timeduration
-                time_in_trade_past_selltrigbee = time_in_trade_datetime > timedelta(seconds=sell_trigbee_trigger_timeduration)
+                sell_trigbee_trigger_timeduration = 89 if type(sell_trigbee_trigger_timeduration) != int else sell_trigbee_trigger_timeduration
+                time_in_trade_past_selltrigbee = time_in_trade_datetime > timedelta(minutes=sell_trigbee_trigger_timeduration)
                 time_in_trade_past_selltrigbee_max_wave_profit = True if time_in_trade_datetime > timedelta(minutes=max_profit_waveDeviation_timeduration) and wave_past_max_profit else False
                 # if client_order_id == 'close__2-run__MSFT-buy_cross-0-8531-23-07-03 21.10.-23-07-03 44.10.':
                 #     print("here", run_order['trigname'], current_macd, time_in_trade_datetime.seconds)
@@ -2356,6 +2285,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if charlie_bee:
                 QUEENsHeart.update({"charlie_bee": charlie_bee})
             if QUEENsHeart:
+                QUEENsHeart['heartbeat'] = QUEEN['heartbeat']
                 QUEENsHeart.update({"heartbeat_time": datetime.now(est)})
                 PickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'), QUEENsHeart)
             if save_q:
@@ -2677,7 +2607,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         except Exception as e:
                             print("ee", e)
                 if errs:
-                    print('need order info ', len(errs))
+                    # print('need order info ', len(errs))
                     QUEEN['heartbeat']['need_order_info'] = errs
                 charlie_bee['queen_cyle_times']['om_order_status_api'] = (datetime.now(est) - s_time_qOrders).total_seconds()
 
@@ -2857,7 +2787,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             QUEEN['heartbeat']['active_tickers'] = [i for i in ticker_set if i in ticker_allowed]
             current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame='SPY_1Minute_1Day').get('current_wave')
-            QUEEN['heartbeat']['current_wave'] = current_wave
+            QUEEN['heartbeat']['current_wave'] = current_wave ## REMOVE?
             
             for old_item in ['added_list', 'active_tickerStars', 'dropped_list']:
                 if old_item in QUEEN['heartbeat'].keys():
@@ -2989,10 +2919,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         PickleData(pickle_file=QUEEN['dbs'].get('PB_QUEEN_Pickle'), data_to_store=QUEEN)
         print(f'ProdEnv {prod} Here we go Mario')
-        
-        pollen_theme_dict = pollen_themes(KING=KING)
-        workerbee_run_times = []
-
 
         ########################################################
         ########################################################
@@ -3001,97 +2927,92 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ########################################################
         ########################################################
 
-
-        
         queens_charlie_bee, charlie_bee = init_charlie_bee(db_root) # monitors queen order cycles, also seen in heart
 
         while True:
             s = datetime.now(est)
             # Should you operate now? I thnik the brain never sleeps ?
             mkhrs = return_market_hours(trading_days=trading_days)
+            if mkhrs != 'open':
+                print("Queen to ZzzzZZzzzZzzz")
+                sys.exit()
+            
+            # if queens_chess_piece.lower() == 'queen': # Rule On High
+            seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
+            
+            """ The Story of every Knight and their Quest """
+            s = datetime.now(est)
+            # refresh db
+            s_time = datetime.now(est)
+            # QUEEN Databases
+            KING = ReadPickleData(master_swarm_KING(prod=prod))
+            # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+            QUEEN_KING = ReadPickleData(QUEEN['dbs'].get('PB_App_Pickle'))
+            QUEEN['chess_board'] = QUEEN_KING['chess_board']
+            # QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
-            if queens_chess_piece.lower() == 'queen': # Rule On High
-                seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
-                
-                """ The Story of every Knight and their Quest """
-                s = datetime.now(est)
-                # refresh db
+            # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
+            ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
+            # POLLENSTORY = ticker_db['pollenstory']
+            STORY_bee = ticker_db['STORY_bee']
+
+            QUEEN = refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
+            charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.now(est) - s_time).total_seconds()
+
+            """Account Info"""
+            portfolio = return_alpc_portolio(api)['portfolio']
+            QUEEN['portfolio'] = portfolio
+            acct_info = refresh_account_info(api=api)['info_converted']
+            QUEEN['account_info'] = acct_info
+
+            PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')})
+
+            charlie_bee['queen_cyle_times']['cc_block1_account'] = (datetime.now(est) - s_time).total_seconds()
+
+            # Read client App Reqquests
+            s_time = datetime.now(est)
+            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_sleep', archive_bucket=False)
+            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious', archive_bucket='subconscious_requests')
+            charlie_bee['queen_cyle_times']['app'] = (datetime.now(est) - s_time).total_seconds()
+
+            ## """Rev Rec"""
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+            charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
+            QUEEN['revrec'] = revrec
+            god_save_the_queen(QUEEN=QUEEN, save_rr=True)
+
+            # Process All Orders
+            s_time = datetime.now(est)
+            order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, api=api, QUEENsHeart=QUEENsHeart, charlie_bee=charlie_bee)
+            charlie_bee['queen_cyle_times']['order management'] = (datetime.now(est) - s_time).total_seconds()
+
+
+            # Hunt for Triggers
+            if seconds_to_market_close > 30:
                 s_time = datetime.now(est)
-                # QUEEN Databases
-                KING = ReadPickleData(master_swarm_KING(prod=prod))
-                # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
-                QUEEN_KING = ReadPickleData(QUEEN['dbs'].get('PB_App_Pickle'))
-                QUEEN['chess_board'] = QUEEN_KING['chess_board']
-                # QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
-
-                # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
-                ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
-                # POLLENSTORY = ticker_db['pollenstory']
-                STORY_bee = ticker_db['STORY_bee']
-
-                QUEEN = refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
-                charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.now(est) - s_time).total_seconds()
-
-                """Account Info"""
-                portfolio = return_alpc_portolio(api)['portfolio']
-                QUEEN['portfolio'] = portfolio
-                acct_info = refresh_account_info(api=api)['info_converted']
-                QUEEN['account_info'] = acct_info
-
-                PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')})
-
-                charlie_bee['queen_cyle_times']['cc_block1_account'] = (datetime.now(est) - s_time).total_seconds()
-
-
-                # Read client App Reqquests
-                s_time = datetime.now(est)
-                process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_sleep', archive_bucket=False)
-                process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious', archive_bucket='subconscious_requests')
-                charlie_bee['queen_cyle_times']['app'] = (datetime.now(est) - s_time).total_seconds()
-
-                if mkhrs != 'open':
-                    print("ZzzzZZzzzZzzz")
+                if 'chess_board__revrec' not in QUEEN_KING.keys():
+                    print("QUEEN Not Enabled ChessBoard")
+                    logging.error((" queen not auth "))
                     sys.exit()
-                    time.sleep(60)
-                    continue # markets are not open for you
-
-                """Rev Rec"""
-                revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-                charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
-                QUEEN['revrec'] = revrec
-                god_save_the_queen(QUEEN=QUEEN, save_rr=True)
-
-                # Process All Orders
-                s_time = datetime.now(est)
-                order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, api=api, QUEENsHeart=QUEENsHeart, charlie_bee=charlie_bee)
-                charlie_bee['queen_cyle_times']['order management'] = (datetime.now(est) - s_time).total_seconds()
-
-
-                # Hunt for Triggers
-                if seconds_to_market_close > 30:
-                    s_time = datetime.now(est)
-                    if 'chess_board__revrec' not in QUEEN_KING.keys():
-                        print("QUEEN Not Enabled ChessBoard")
-                        logging.error((" queen not auth "))
-                        sys.exit()
-                    
-                    command_conscience(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING, api=api) ##### >   
-                    charlie_bee['queen_cyle_times']['command conscience'] = (datetime.now(est) - s_time).total_seconds()
-                    e = datetime.now(est)
-                    if 'QUEEN_avg_cycle' not in charlie_bee['queen_cyle_times'].keys():
-                        charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 89)
-                    charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'].append((datetime.now(est) - s).total_seconds())
-                    charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'] = sum(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])/len(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])
-                    PickleData(queens_charlie_bee, charlie_bee)
+                
+                command_conscience(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING, api=api) ##### >   
+                charlie_bee['queen_cyle_times']['command conscience'] = (datetime.now(est) - s_time).total_seconds()
+                e = datetime.now(est)
+                if 'QUEEN_avg_cycle' not in charlie_bee['queen_cyle_times'].keys():
+                    charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 89)
+                charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'].append((datetime.now(est) - s).total_seconds())
+                charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'] = sum(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])/len(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])
+                PickleData(queens_charlie_bee, charlie_bee)
             
             e = datetime.now(est)
             beat = (e - s).seconds
             god_save_the_queen(QUEEN, QUEENsHeart, charlie_bee, save_qo=True)
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
-            if (e - s).seconds > 10:
-                logging.info((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))
-                print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
+            if beat > 10:
+                logging.warning((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))
+                print(queens_chess_piece, str(beat),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
                 print('use price gauge') # (STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
+    
     except Exception as errbuz:
         print("eeerbuz", errbuz)
         er, erline = print_line_of_error()
