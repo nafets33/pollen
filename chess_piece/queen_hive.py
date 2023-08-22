@@ -678,10 +678,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         else:
             budget_remaining = df_temp.loc[ticker].get('total_budget') - cost_basis_current
             if budget_remaining < 0:
-                print(ticker, "over budget")
+                # print(ticker, "over budget")
                 borrowed_budget_remaining = df_temp.loc[ticker].get('borrow_budget') - abs(budget_remaining)
                 if borrowed_budget_remaining < 0:
-                    print("WHATT YOU WENT OVER BORROW BUDGET")
+                    # print("WHATT YOU WENT OVER BORROW BUDGET")
                     borrowed_budget_remaining = 0
             else:
                 budget_remaining = budget_remaining
@@ -1592,7 +1592,7 @@ def pollen_story(pollen_nectar):
         else:
             m_high = mac_world["hist_high"]
             m_low = mac_world["hist_low"]
-        tier_range = create_tier_range(m_high, m_low)
+        tier_range = create_tier_range(m_high, m_low, tiers_num)
         td_high = tier_range["td_high"]
         td_low = tier_range["td_low"]
         df["hist_tier"] = np.where(
@@ -1609,7 +1609,7 @@ def pollen_story(pollen_nectar):
         else:
             m_high = mac_world["rsi_ema_high"]
             m_low = mac_world["rsi_ema_low"]
-        tier_range = create_tier_range(m_high, m_low)
+        tier_range = create_tier_range(m_high, m_low, tiers_num)
         td_high = tier_range["td_high"]
         td_low = tier_range["td_low"]
         df["rsi_ema_tier"] = np.where(
@@ -1626,7 +1626,7 @@ def pollen_story(pollen_nectar):
         else:
             m_high = mac_world["vwap_deviation_high"]
             m_low = mac_world["vwap_deviation_low"]
-        tier_range = create_tier_range(m_high, m_low)
+        tier_range = create_tier_range(m_high, m_low, tiers_num)
         df["vwap_tier"] = np.where(
             (df["vwap_deviation"] > 0),
             df["vwap_deviation"].apply(lambda x: assign_tier_num(num_value=x, td=tier_range["td_high"])),

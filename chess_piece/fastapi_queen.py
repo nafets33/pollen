@@ -40,6 +40,31 @@ init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
  ###### Helpers UTILS
 
+# the_type = get_type_by_name('float')
+def validate_kors_valueType(newvalue, current_value):
+
+  try:
+    if type(newvalue) == type(current_value):
+        # print("update kor value", kor, newvalue)
+        return newvalue
+    elif newvalue:
+      # print("try to update type", newvalue)
+      if type(current_value) == datetime:
+        newvalue = parse_date(newvalue)
+        if newvalue:
+            return newvalue
+        else:
+            return 'error'
+      else:
+        correct_type = type(current_value)
+        return correct_type(newvalue)
+    else:
+       return current_value
+  except Exception as e:
+    print(e)
+    print("unable to update type")
+    return 'error'
+
 def generate_shade(number_variable, base_color=False, wave=False):
     try:
       # Validate the input range
@@ -79,7 +104,6 @@ def generate_shade(number_variable, base_color=False, wave=False):
       return shaded_color
     except Exception as e:
       print_line_of_error(e)
-
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
     return datetime.now(tz).strftime(format)
@@ -185,26 +209,43 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
 
     borrowed_funds = False
     borrow_qty = False
-    print(button_buy.keys())
-    if type(button_buy) is dict:
-       for rule, value in button_buy.items():
-          if rule in ['wave_amo', 'close_order_today']: # validated items to add orules
-            if rule == 'wave_amo':
-              #  print(type(value), value)
-               if type(value) != float:
-                  value = float(value)
-               wave_amo = value
-            if rule == 'close_order_today':
-               if type(value) != bool:
-                  print("ERRROR BOOL CLOSE ORDER")
-                  continue
-            print("updateing", rule, value)
-            king_order_rules.update({rule: value})
-       
-      # #  trig=button_buy.get('trigbee'),
-      #  order_side=button_buy.get('order_side'),
-      #  order_type = button_buy.get('order_type'),
-      #  limit_price=button_buy.get('limit_price'),
+    # print(button_buy.keys())
+
+    for rule, value in button_buy.items():
+      if rule in ['wave_amo', 'close_order_today', 'take_profit', 'sell_out', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration']: # validated items to add orules
+        # if value == king_order_rules[rule]:
+        # #  print("no update")
+        #   continue
+        # current_value = king_order_rules[rule] # if current_value in current_kors else None
+        # value = validate_kors_valueType(value, current_value)
+        # if value == 'error':
+        #    continue
+        if rule == 'wave_amo':
+          #  print(type(value), value)
+            if type(value) != float:
+              value = float(value)
+            wave_amo = value
+        elif rule == 'close_order_today':
+            if type(value) != bool:
+              print("ERRROR BOOL CLOSE ORDER")
+              continue
+        elif rule == 'take_profit':
+            if type(value) != float:
+              value = float(value)
+        elif rule == 'sell_out':
+            if type(value) != float:
+              value = float(value)
+        elif rule == 'sell_trigbee_trigger':
+            if type(value) != bool: ## BOOLS are already handled by frontend
+              print("ERRROR BOOL CLOSE ORDER")
+              continue
+        elif rule == 'sell_trigbee_trigger_timeduration':
+            if type(value) != int:
+              value = int(value)
+        
+        print("updateing", rule, value)
+        king_order_rules.update({rule: value})
+
 
     order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
                                                 king_order_rules=king_order_rules, 
@@ -372,37 +413,6 @@ def parse_date(date_str):
         
     return None
 
-# # Example usage
-# date_string = "2023-08-18 15:30:00"
-# parsed_date = parse_date(date_string)
-
-# if parsed_date:
-#     print("Parsed Date:", parsed_date)
-# else:
-#     print("Invalid Date Format")
-
-# the_type = get_type_by_name('float')
-def validate_kors_valueType(newvalue, current_value):
-
-  if type(newvalue) == type(current_value):
-      # print("update kor value", kor, newvalue)
-      return newvalue
-  else:
-      print("try to update type")
-      try:
-        if type(current_value) == datetime:
-           newvalue = parse_date(newvalue)
-           if newvalue:
-              return newvalue
-           else:
-              return False
-        else:
-          correct_type = type(current_value)
-          return correct_type(newvalue)
-      except Exception as e:
-        print(e)
-        print("unable to update type")
-        return False
 
 def app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value):
     try:
@@ -417,18 +427,17 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
       update_dict = {}
       kors = queen_order.get('order_rules')
       for kor, newvalue in default_value.items():
-        if newvalue:
-          if kor in kors.keys():
-            if newvalue == kors[kor]:
-              #  print("no update")
-              continue
-          current_value = current_kors[kor] # if current_value in current_kors else None
-          newvalue = validate_kors_valueType(newvalue, current_value)
-          if newvalue == False:
-            print('validation failed')
-            return {'status': False, 'description': f"date time conversion failed try mm/dd/yyyy"}
-          else:
-             update_dict[kor] = newvalue
+        if kor in kors.keys():
+          if newvalue == kors[kor]:
+            #  print("no update")
+            continue
+        current_value = current_kors[kor] # if current_value in current_kors else None
+        newvalue = validate_kors_valueType(newvalue, current_value)
+        if newvalue == 'error':
+          print('validation failed')
+          return {'status': False, 'description': f"date time conversion failed try mm/dd/yyyy"}
+        else:
+            update_dict[kor] = newvalue
         
       if update_dict:
         order_update_package['update_order_rules'].update({client_order_id: update_dict})

@@ -372,7 +372,7 @@ def sell_order__var_items(sell_order, sell_reason, order_side, limit_price):
 def queenbee(client_user, prod, queens_chess_piece='queen'):
 
 
-    prod = True if str(prod).lower() == 'true' else False
+    # prod = True if str(prod).lower() == 'true' else False
 
     if client_user not in users_allowed_queen_email: ## this db name for client_user # stefanstapinski
         print("failsafe away from user running function")
@@ -410,11 +410,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             for c_order_id, package in update_package['queen_order_updates'].items():
                 for field_, new_value in package.items():
                     try:
-                        if field_ in QUEEN['queen_orders'].at[c_order_id, 'order_rules'].keys():
-                            QUEEN['queen_orders'].at[c_order_id, 'order_rules'].update({field_: new_value})
-                            save = True
-                        else:
-                            print("wrong key")
+                        # if field_ in QUEEN['queen_orders'].at[c_order_id, 'order_rules'].keys():
+                        QUEEN['queen_orders'].at[c_order_id, 'order_rules'].update({field_: new_value})
+                        save = True
+                        logging.info((f'{field_} updated to {new_value}'))
                     except Exception as e:
                         print(e, 'failed to update QueenOrder')
                         logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
@@ -571,7 +570,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         
         except Exception as e:
             print(e, print_line_of_error())
-
 
     def trig_In_Action_cc(active_orders, trig, ticker_time_frame):
         
@@ -1803,11 +1801,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 in_running_close = True if client_order_id in running_close['exit_order_link'].tolist() else False
                 if in_running_close == False:
                     print("release order back to Bishop")
-                    logging.info(("Releaseing Order back to Bishop be Sold: ", client_order_id))
+                    # logging.info(("Releaseing Order back to Bishop be Sold: ", client_order_id))
                     QUEEN['queen_orders'].at[client_order_id, 'order_trig_sell_stop'] = False
             else:
                 print("release order back to Bishop no linked orders active")
-                logging.info(("Releaseing Order back to Bishop be Sold: ", client_order_id))
+                # logging.info(("Releaseing Order back to Bishop be Sold: ", client_order_id))
                 QUEEN['queen_orders'].at[client_order_id, 'order_trig_sell_stop'] = False    
             
             
@@ -2546,7 +2544,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     QUEEN['heartbeat']['long'] = round(long)
                     QUEEN['heartbeat']['short'] = round(short)
 
-                    return long, short
+                    return True
                 long_short_queenorders(df_active, QUEEN, col_metric='cost_basis_current')
                 
                 def gather_orders_as_dict(qo_active_index):
@@ -2612,9 +2610,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 charlie_bee['queen_cyle_times']['om_order_status_api'] = (datetime.now(est) - s_time_qOrders).total_seconds()
 
                 QUEEN['order_status_info'] = order_status_info
-                
 
-                
                 # 10 SECONDS X? ### WORKERBEE async initial route orders
                 s_time = datetime.now(est)
                 queen_orders__dict = {}
@@ -2935,7 +2931,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             mkhrs = return_market_hours(trading_days=trading_days)
             if mkhrs != 'open':
                 print("Queen to ZzzzZZzzzZzzz")
-                sys.exit()
+                break
             
             # if queens_chess_piece.lower() == 'queen': # Rule On High
             seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
@@ -2949,7 +2945,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
             QUEEN_KING = ReadPickleData(QUEEN['dbs'].get('PB_App_Pickle'))
             QUEEN['chess_board'] = QUEEN_KING['chess_board']
-            # QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
 
             # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
             ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
@@ -3028,7 +3023,7 @@ if __name__ == '__main__':
     # read
     def createParser():
         parser = argparse.ArgumentParser()
-        parser.add_argument ('-prod', default='false')
+        parser.add_argument ('-prod', default='true')
         parser.add_argument ('-client_user', default='stefanstapinski@gmail.com')
         return parser
     
@@ -3036,6 +3031,8 @@ if __name__ == '__main__':
     namespace = parser.parse_args()
     client_user = namespace.client_user
     prod = namespace.prod
+    prod = True if str(prod).lower() == 'true' else False
+
 
     while True:
         seconds_to_market_open = (
