@@ -1843,7 +1843,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                         'col_headername': 'Order Rules',
                         'col_width':89,
                         'pinned': 'right',
-                        'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today', 'close_order_today_allowed_timeduration', 'stagger_profits_tiers', 'trade_using_limits', 'sell_trigbee_trigger_timeduration', 'sell_date', 'use_wave_guage'],
+                        'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today', 'close_order_today_allowed_timeduration', 'stagger_profits_tiers', 'trade_using_limits', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration', 'sell_date', 'use_wave_guage'],
                         },
                         {'button_name': 'Archive',
                         'button_api': f'http://{ip_address}:8000/api/data/queen_archive_queen_order',
