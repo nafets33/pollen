@@ -628,13 +628,14 @@ def pollenq(admin_pq):
         log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
         # Call the function to get the IP address
-        if 'ip_address' in st.session_state:
-            ip_address = st.session_state['ip_address']
-        else:
-            ip_address = get_ip_address()
-            st.session_state['ip_address'] = ip_address
-            if ip_address == '10.202.0.2':
-                ip_address = "https://api.pollenq.com/"
+        # if 'ip_address' in st.session_state:
+        #     ip_address = st.session_state['ip_address']
+        # else:
+        #     ip_address = get_ip_address()
+        #     st.session_state['ip_address'] = ip_address
+        ip_address = get_ip_address()
+        if ip_address == '10.202.0.2':
+            ip_address = "https://api.pollenq.com/"
         
         print("IP Address:", ip_address)
 
