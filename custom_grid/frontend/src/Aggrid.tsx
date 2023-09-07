@@ -290,6 +290,11 @@ const AgGrid = (props: Props) => {
         toggle_view_selection: toggle_views ? toggle_views[viewId] : "none",
       })
       const array = JSON.parse(res.data)
+      console.log(
+        "toggle_views[viewId],viewId :>> ",
+        toggle_views[viewId],
+        viewId
+      )
       console.log("table data :>> ", array)
       if (array.status == false) {
         toastr.error(`Fetch Error: ${array.message}`)
@@ -319,7 +324,7 @@ const AgGrid = (props: Props) => {
         if (timeout) clearTimeout(timeout)
       }
     }
-  }, [props])
+  }, [props, viewId])
 
   const autoSizeAll = useCallback((skipHeader: boolean) => {
     const allColumnIds: string[] = []
@@ -483,7 +488,6 @@ const AgGrid = (props: Props) => {
   }
 
   const getRowStyle = (params: any) => {
-    console.log("AAAAAAAAAA :>> ", params)
     return {
       background: params.data["color_row"],
       color: params.data["color_row_text"],
@@ -532,6 +536,7 @@ const AgGrid = (props: Props) => {
                 </button>
               </span>
             ))}
+            viewId{viewId}
           </div>
         </div>
         <div

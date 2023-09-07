@@ -64,7 +64,7 @@ def main():
         username="F:/Work/2023-04/stefan/pollen/client_user_dbs/db__sven0227_82402505",
         api=f"http://{ip_address}:8000/api/data/queen",
         api_update="http://127.0.0.1:8000/api/data/update_orders",
-        refresh_sec=0,
+        refresh_sec=5,
         refresh_cutoff_sec=500,
         prod=False,
         key='maingrid',
