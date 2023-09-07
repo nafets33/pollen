@@ -635,7 +635,7 @@ def pollenq(admin_pq):
         #     st.session_state['ip_address'] = ip_address
         ip_address = get_ip_address()
         if ip_address == '10.202.0.2':
-            ip_address = "https://api.pollenq.com/"
+            ip_address = "https://api.pollenq.com"
         
         print("IP Address:", ip_address)
 
