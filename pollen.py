@@ -636,6 +636,10 @@ def pollenq(admin_pq):
         ip_address = get_ip_address()
         if ip_address == '10.202.0.2':
             ip_address = "https://api.pollenq.com"
+        else:
+            print("sandbox")
+            ip_address = "http://127.0.0.1:8000"
+        st.session_state['ip_address'] = ip_address
         
         print("IP Address:", ip_address)
 
