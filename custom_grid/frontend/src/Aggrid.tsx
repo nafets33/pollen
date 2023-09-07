@@ -5,26 +5,26 @@ import React, {
   useRef,
   useCallback,
   StrictMode,
-} from 'react'
-import { AgGridReact } from 'ag-grid-react'
-import toastr from 'toastr'
-import 'toastr/build/toastr.min.css'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
-import 'ag-grid-community/styles/ag-theme-balham.css'
-import 'ag-grid-community/styles/ag-theme-material.css'
-import Modal from 'react-modal'
-import 'ag-grid-enterprise'
-import { parseISO, compareAsc } from 'date-fns'
-import { format } from 'date-fns-tz'
-import { duration } from 'moment'
-import './styles.css'
-import axios from 'axios'
+} from "react"
+import { AgGridReact } from "ag-grid-react"
+import toastr from "toastr"
+import "toastr/build/toastr.min.css"
+import "ag-grid-community/styles/ag-grid.css"
+import "ag-grid-community/styles/ag-theme-alpine.css"
+import "ag-grid-community/styles/ag-theme-balham.css"
+import "ag-grid-community/styles/ag-theme-material.css"
+import Modal from "react-modal"
+import "ag-grid-enterprise"
+import { parseISO, compareAsc } from "date-fns"
+import { format } from "date-fns-tz"
+import { duration } from "moment"
+import "./styles.css"
+import axios from "axios"
 import {
   ComponentProps,
   Streamlit,
   withStreamlitConnection,
-} from 'streamlit-component-lib'
+} from "streamlit-component-lib"
 import {
   ColDef,
   ColGroupDef,
@@ -36,9 +36,9 @@ import {
   GridReadyEvent,
   SideBarDef,
   ValueParserParams,
-} from 'ag-grid-community'
-import MyModal from './components/Modal'
-import { order_rules_default } from './utils/order_rules'
+} from "ag-grid-community"
+import MyModal from "./components/Modal"
+import { order_rules_default } from "./utils/order_rules"
 
 type Props = {
   username: string
@@ -56,7 +56,7 @@ type Props = {
 let g_rowdata: any[] = []
 let g_newRowData: any = null
 
-function dateFormatter (isoString: string, formaterString: string): String {
+function dateFormatter(isoString: string, formaterString: string): String {
   try {
     let date = new Date(isoString)
     return format(date, formaterString)
@@ -66,7 +66,7 @@ function dateFormatter (isoString: string, formaterString: string): String {
   }
 }
 
-function currencyFormatter (number: any, currencySymbol: string): String {
+function currencyFormatter(number: any, currencySymbol: string): String {
   let n = Number.parseFloat(number)
   if (!Number.isNaN(n)) {
     return currencySymbol + n.toFixed(2)
@@ -75,7 +75,7 @@ function currencyFormatter (number: any, currencySymbol: string): String {
   }
 }
 
-function numberFormatter (number: any, precision: number): String {
+function numberFormatter(number: any, precision: number): String {
   let n = Number.parseFloat(number)
   if (!Number.isNaN(n)) {
     return n.toFixed(precision)
@@ -87,18 +87,18 @@ function numberFormatter (number: any, precision: number): String {
 const columnFormaters = {
   columnTypes: {
     dateColumnFilter: {
-      filter: 'agDateColumnFilter',
+      filter: "agDateColumnFilter",
       filterParams: {
         comparator: (filterValue: any, cellValue: string) =>
           compareAsc(parseISO(cellValue), filterValue),
       },
     },
     numberColumnFilter: {
-      filter: 'agNumberColumnFilter',
+      filter: "agNumberColumnFilter",
     },
     shortDateTimeFormat: {
       valueFormatter: (params: any) =>
-        dateFormatter(params.value, 'dd/MM/yyyy HH:mm'),
+        dateFormatter(params.value, "dd/MM/yyyy HH:mm"),
     },
     customDateTimeFormat: {
       valueFormatter: (params: any) =>
@@ -122,13 +122,13 @@ const columnFormaters = {
 }
 
 const HyperlinkRenderer = (props: any) => {
-  console.log('hyperlink', props)
+  console.log("hyperlink", props)
   return (
     <a
       href={`${props.column.colDef.baseURL}/${
-        props.data[props.column.colDef['linkField']]
+        props.data[props.column.colDef["linkField"]]
       }`}
-      target='_blank'
+      target="_blank"
     >
       {props.value}
     </a>
@@ -136,7 +136,7 @@ const HyperlinkRenderer = (props: any) => {
 }
 
 toastr.options = {
-  positionClass: 'toast-top-full-width',
+  positionClass: "toast-top-full-width",
   hideDuration: 300,
   timeOut: 3000,
 }
@@ -166,43 +166,39 @@ const AgGrid = (props: Props) => {
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
-  const [promptText, setPromptText] = useState('')
+  const [promptText, setPromptText] = useState("")
   const [viewId, setViewId] = useState(0)
 
   useEffect(() => {
     Streamlit.setFrameHeight()
-    console.log('buttons :>> ', buttons)
+    console.log("buttons :>> ", buttons)
     if (buttons.length) {
       buttons.map((button: any) => {
-        const {
-          prompt_field,
-          prompt_message,
-          button_api,
-          prompt_order_rules,
-        } = button
+        const { prompt_field, prompt_message, button_api, prompt_order_rules } =
+          button
         grid_options.columnDefs!.push({
           field: index,
-          headerName: button['col_headername'],
-          width: button['col_width'],
-          pinned: button['pinned'],
+          headerName: button["col_headername"],
+          width: button["col_width"],
+          pinned: button["pinned"],
           cellRenderer: BtnCellRenderer,
           cellRendererParams: {
-            buttonName: button['button_name'],
+            buttonName: button["button_name"],
             clicked: async function (field: any) {
               try {
-                const selectedRow = g_rowdata.find(row => row[index] == field)
+                const selectedRow = g_rowdata.find((row) => row[index] == field)
 
                 if (prompt_order_rules) {
                   const str = selectedRow[prompt_field]
                   const selectedField =
-                    typeof str === 'string'
+                    typeof str === "string"
                       ? JSON.parse(
                           selectedRow[prompt_field]
                             .replace(/'/g, '"')
-                            .replace(/\n/g, '')
-                            .replace(/\s/g, '')
-                            .replace(/False/g, 'false')
-                            .replace(/True/g, 'true')
+                            .replace(/\n/g, "")
+                            .replace(/\s/g, "")
+                            .replace(/False/g, "false")
+                            .replace(/True/g, "true")
                         )
                       : str
                   setModalshow(true)
@@ -250,7 +246,7 @@ const AgGrid = (props: Props) => {
                       ...kwargs,
                     })
                   }
-                  toastr.success('Success!')
+                  toastr.success("Success!")
                 }
               } catch (error) {
                 alert(`${error}`)
@@ -270,7 +266,7 @@ const AgGrid = (props: Props) => {
     const id_array = array.map((item: any) => item[index])
     const old_id_array = g_rowdata.map((item: any) => item[index])
     const toUpdate = array.filter((row: any) => id_array.includes(row[index]))
-    const toRemove = g_rowdata.filter(row => !id_array.includes(row[index]))
+    const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
     const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
     api.applyTransactionAsync({
       update: toUpdate,
@@ -291,10 +287,10 @@ const AgGrid = (props: Props) => {
         username: username,
         prod: prod,
         ...kwargs,
-        toggle_view_selection: toggle_views ? toggle_views[viewId] : 'none',
+        toggle_view_selection: toggle_views ? toggle_views[viewId] : "none",
       })
       const array = JSON.parse(res.data)
-      console.log('table data :>> ', array)
+      console.log("table data :>> ", array)
       if (array.status == false) {
         toastr.error(`Fetch Error: ${array.message}`)
         return false
@@ -314,10 +310,10 @@ const AgGrid = (props: Props) => {
         console.log(refresh_cutoff_sec)
         timeout = setTimeout(() => {
           clearInterval(interval)
-          console.log('Fetching data ended, refresh rate:', refresh_sec)
+          console.log("Fetching data ended, refresh rate:", refresh_sec)
         }, refresh_cutoff_sec * 1000)
       }
-      console.error('rendered==========', props)
+      console.error("rendered==========", props)
       return () => {
         clearInterval(interval)
         if (timeout) clearTimeout(timeout)
@@ -343,7 +339,7 @@ const AgGrid = (props: Props) => {
     setTimeout(async () => {
       try {
         const array = await fetchData()
-        console.log('AAAAAAAAAAAAAAAAAAAAAAA', array)
+        console.log("AAAAAAAAAAAAAAAAAAAAAAA", array)
         if (array == false) {
           // toastr.error(`Error: ${array.message}`)
           return
@@ -374,34 +370,34 @@ const AgGrid = (props: Props) => {
     return {
       toolPanels: [
         {
-          id: 'columns',
-          labelDefault: 'Columns',
-          labelKey: 'columns',
-          iconKey: 'columns',
-          toolPanel: 'agColumnsToolPanel',
+          id: "columns",
+          labelDefault: "Columns",
+          labelKey: "columns",
+          iconKey: "columns",
+          toolPanel: "agColumnsToolPanel",
         },
         {
-          id: 'filters',
-          labelDefault: 'Filters',
-          labelKey: 'filters',
-          iconKey: 'filter',
-          toolPanel: 'agFiltersToolPanel',
+          id: "filters",
+          labelDefault: "Filters",
+          labelKey: "filters",
+          iconKey: "filter",
+          toolPanel: "agFiltersToolPanel",
         },
       ],
-      defaultToolPanel: 'customStats',
+      defaultToolPanel: "customStats",
     }
   }, [])
 
-  const onCellValueChanged = useCallback(event => {
+  const onCellValueChanged = useCallback((event) => {
     if (g_newRowData == null) g_newRowData = {}
     g_newRowData[event.data[index]] = event.data
-    console.log('Data after change is', g_newRowData)
+    console.log("Data after change is", g_newRowData)
   }, [])
 
   const onRefresh = async () => {
     try {
       const success = await fetchAndSetData()
-      success && toastr.success('Refresh success!')
+      success && toastr.success("Refresh success!")
     } catch (error: any) {
       toastr.error(`Refresh Failed! ${error.message}`)
     }
@@ -430,18 +426,18 @@ const AgGrid = (props: Props) => {
   const columnTypes = useMemo<any>(() => {
     return {
       dateColumnFilter: {
-        filter: 'agDateColumnFilter',
+        filter: "agDateColumnFilter",
         filterParams: {
           comparator: (filterValue: any, cellValue: string) =>
             compareAsc(new Date(cellValue), filterValue),
         },
       },
       numberColumnFilter: {
-        filter: 'agNumberColumnFilter',
+        filter: "agNumberColumnFilter",
       },
       shortDateTimeFormat: {
         valueFormatter: (params: any) =>
-          dateFormatter(params.value, 'dd/MM/yyyy HH:mm'),
+          dateFormatter(params.value, "dd/MM/yyyy HH:mm"),
       },
       customDateTimeFormat: {
         valueFormatter: (params: any) =>
@@ -466,7 +462,7 @@ const AgGrid = (props: Props) => {
       },
       customNumberFormat: {
         valueFormatter: (params: any) =>
-          Number(params.value).toLocaleString('en-US', {
+          Number(params.value).toLocaleString("en-US", {
             minimumFractionDigits: 0,
           }),
       },
@@ -475,7 +471,7 @@ const AgGrid = (props: Props) => {
         //   params.column.colDef.baseURL + params.data.honey,
         cellRenderer: HyperlinkRenderer,
         cellRendererParams: {
-          baseURL: 'URLSearchParams.co',
+          baseURL: "URLSearchParams.co",
         },
       },
     }
@@ -487,10 +483,10 @@ const AgGrid = (props: Props) => {
   }
 
   const getRowStyle = (params: any) => {
-    console.log('AAAAAAAAAA :>> ', params)
+    console.log("AAAAAAAAAA :>> ", params)
     return {
-      background: params.data['color_row'],
-      color: params.data['color_row_text'],
+      background: params.data["color_row"],
+      color: params.data["color_row_text"],
     }
   }
 
@@ -505,30 +501,30 @@ const AgGrid = (props: Props) => {
         toastr={toastr}
       ></MyModal>
       <div
-        style={{ flexDirection: 'row', height: '100%', width: '100' }}
-        id='myGrid'
+        style={{ flexDirection: "row", height: "100%", width: "100" }}
+        id="myGrid"
       >
-        <div className='d-flex justify-content-between align-items-center'>
+        <div className="d-flex justify-content-between align-items-center">
           {(refresh_sec == undefined || refresh_sec == 0) && (
-            <div style={{ display: 'flex' }}>
-              <div style={{ margin: '10px 10px 10px 2px' }}>
-                <button className='btn btn-warning' onClick={onRefresh}>
+            <div style={{ display: "flex" }}>
+              <div style={{ margin: "10px 10px 10px 2px" }}>
+                <button className="btn btn-warning" onClick={onRefresh}>
                   Refresh
                 </button>
               </div>
-              <div style={{ margin: '10px 10px 10px 2px' }}>
-                <button className='btn btn-success' onClick={onUpdate}>
+              <div style={{ margin: "10px 10px 10px 2px" }}>
+                <button className="btn btn-success" onClick={onUpdate}>
                   Update
                 </button>
               </div>
             </div>
           )}
-          <div className='d-flex flex-row gap-6'>
+          <div className="d-flex flex-row gap-6">
             {toggle_views?.map((view: string, index: number) => (
-              <span className=''>
+              <span className="">
                 <button
                   className={`btn ${
-                    viewId == index ? 'btn-danger' : 'btn-secondary'
+                    viewId == index ? "btn-danger" : "btn-secondary"
                   }`}
                   onClick={() => setViewId(index)}
                 >
@@ -539,10 +535,10 @@ const AgGrid = (props: Props) => {
           </div>
         </div>
         <div
-          className={grid_options.theme || 'ag-theme-alpine-dark'}
+          className={grid_options.theme || "ag-theme-alpine-dark"}
           style={{
-            width: '100%',
-            height: kwargs['grid_height'] ? kwargs['grid_height'] : '100%',
+            width: "100%",
+            height: kwargs["grid_height"] ? kwargs["grid_height"] : "100%",
           }}
         >
           <AgGridReact

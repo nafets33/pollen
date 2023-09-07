@@ -1,22 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react'
 import {
   ComponentProps,
   Streamlit,
   withStreamlitConnection,
-} from "streamlit-component-lib";
-import 'ag-grid-community/styles/ag-grid.css';
+} from 'streamlit-component-lib'
+import 'ag-grid-community/styles/ag-grid.css'
 // import 'ag-grid-community/styles/ag-theme-alpine.css';
-import 'ag-grid-community/styles/ag-theme-balham.css';
-import Aggrid from "./Aggrid";
+import 'ag-grid-community/styles/ag-theme-balham.css'
+import Aggrid from './Aggrid'
 
 const Main = (props: ComponentProps) => {
-
-  const { username, api, api_update, refresh_sec, refresh_cutoff_sec, gridoption_build, prod } = props.args;
-  const { grid_options, kwargs = {} } = props.args;
-  const { index,theme } = grid_options;
-  console.log("AAAAAAAA", grid_options);
+  const {
+    username,
+    api,
+    api_update,
+    refresh_sec,
+    refresh_cutoff_sec,
+    gridoption_build,
+    prod,
+  } = props.args
+  const { grid_options, kwargs = {} } = props.args
+  const { index, theme } = grid_options
+  console.log('AAAAAAAA', grid_options)
   return (
-    <div >
+    <div>
       <Aggrid
         username={username}
         api={api}
@@ -30,7 +37,7 @@ const Main = (props: ComponentProps) => {
         kwargs={kwargs}
       />
     </div>
-  );
-};
+  )
+}
 
-export default withStreamlitConnection(Main);
+export default withStreamlitConnection(Main)

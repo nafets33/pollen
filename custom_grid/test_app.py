@@ -90,7 +90,7 @@ def main():
                   },
                  ],
         grid_height='350px',
-        # toggle_views = ['buys', 'sells', 'today', 'closed']
+        toggle_views = ['buys', 'sells', 'today', 'closed']
     )
 
 
