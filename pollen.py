@@ -442,7 +442,7 @@ def pollenq(admin_pq):
             try:
                 print("ip_address")
                 # ipdb.set_trace()
-                req = requests.get(f"http://{ip_address}:8000/api/data/", timeout=2) # http://127.0.0.1:8000/api/data/
+                req = requests.get(f"{ip_address}/api/data/", timeout=2) # http://127.0.0.1:8000/api/data/
                 print("req", req)
                 return True
             # except ConnectionError as e:
@@ -633,8 +633,9 @@ def pollenq(admin_pq):
         else:
             ip_address = get_ip_address()
             st.session_state['ip_address'] = ip_address
-            # if ip_address == '10.202.0.2':
-            ip_address = '127.0.0.1' #'pollenq.com'
+            if ip_address == '10.202.0.2':
+                ip_address = "https://api.pollenq.com/"
+        
         print("IP Address:", ip_address)
 
         if st.session_state['authentication_status'] != True: ## None or False
@@ -831,7 +832,7 @@ def pollenq(admin_pq):
                                     default_font, 
                                     seconds_to_market_close, 
                                     prod, 
-                                    api=f'http://{ip_address}:8000/api/data/account_info') 
+                                    api=f'{ip_address}/api/data/account_info') 
             # with cols[3]:
             #     portfolio_header__QC(acct_info)
             
@@ -946,7 +947,7 @@ def pollenq(admin_pq):
                 log_file = os.path.join(log_dir, log_file) # single until allow for multiple
                 # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
                 from chess_piece.app_hive import queen_messages_grid__apphive
-                queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
 
         with cols[1]:
             with st.expander("control buttons"):
