@@ -536,7 +536,6 @@ const AgGrid = (props: Props) => {
                 </button>
               </span>
             ))}
-            viewId{viewId}
           </div>
         </div>
         <div
