@@ -25,9 +25,11 @@ const MyModal = ({
   setPromptText,
   toastr,
 }) => {
-  const { prompt_field, prompt_order_rules, selectedRow } = modalData
+  const { prompt_field, prompt_order_rules, selectedRow, selectedField } =
+    modalData
 
   const ref = useRef()
+  const selectRef = useRef()
 
   const handleOk = async () => {
     if (isExecuting) return
@@ -90,9 +92,86 @@ const MyModal = ({
     isExecuting = false
   }
 
+  const handleOkOnArray = async () => {
+    console.log("selectRef.current.value :>> ", selectRef.current.value)
+    if (isExecuting) return
+    isExecuting = true
+    try {
+      const body = {
+        username: modalData.username,
+        prod: modalData.prod,
+        selected_row: modalData.selectedRow,
+        default_value: selectRef.current.value,
+        ...modalData.kwargs,
+      }
+      console.log("body :>> ", body)
+      const { data: res } = await axios.post(modalData.button_api, body)
+      const { status, data, description } = res
+      console.log("res :>> ", res)
+      if (status == "success") {
+        data.message_type == "fade"
+          ? toastr.success(description, "Success")
+          : alert("Success!\nDescription: " + description)
+      } else {
+        data.message_type == "fade"
+          ? toastr.error(description, "Error")
+          : alert("Error!\nDescription: " + description)
+      }
+      if (data?.close_modal != false) closeModal()
+    } catch (error) {
+      console.log("error :>> ", error)
+      toastr.error(error.message)
+    }
+    isExecuting = false
+  }
+
   useEffect(() => {
     if (isOpen) setTimeout(() => ref.current.focus(), 100)
   }, [isOpen])
+
+  if (Array.isArray(selectedField))
+    return (
+      <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
+        <div className="my-modal-content">
+          <div className="modal-header px-4">
+            <h4>{modalData.prompt_message}</h4>
+            <span className="close" onClick={closeModal}>
+              &times;
+            </span>
+          </div>
+          <div className="modal-body p-2">
+            <label className="px-1">{prompt_field} </label>
+            <select
+              name="cars"
+              id="cars"
+              defaultValue={selectedField[0]}
+              ref={selectRef}
+            >
+              {selectedField.map((item) => (
+                <option value={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleOkOnArray}
+              ref={ref}
+            >
+              Ok
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closeModal}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )
 
   if (prompt_order_rules)
     return (

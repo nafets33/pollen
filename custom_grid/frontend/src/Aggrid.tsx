@@ -211,6 +211,7 @@ const AgGrid = (props: Props) => {
                     kwargs: kwargs,
                     prompt_field,
                     prompt_order_rules,
+                    selectedField,
                   })
                   const rules_value: any = {}
                   prompt_order_rules.map((rule: string) => {
