@@ -15,3 +15,5 @@ logs/*
 .venv
 jed_playground.py
 airflow_home
+symbols_STORY_bee_dbs
+symbols_pollenstory_dbs
