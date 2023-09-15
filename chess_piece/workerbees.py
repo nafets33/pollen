@@ -1,16 +1,11 @@
 # QueenBee Workers
 import argparse
 import asyncio
-import collections
-import copy
 import logging
 import os
 import sys
 import time
-import json
-import numpy as np
 from collections import deque
-import datetime
 from datetime import datetime as dt
 from itertools import islice
 
@@ -846,7 +841,7 @@ def queen_workerbees(
                         PickleData(pickle_file, data)
 
                         PollenDatabase.upsert_data(key, data)
-                        TestPollenDatabase.test_upsert_retrieve()
+                        # TestPollenDatabase.test_upsert_retrieve()
                         return {
                             "status": "success",
                             "ticker_time_frame": ticker_time_frame,
@@ -1159,33 +1154,33 @@ def queen_workerbees(
 
 
 if __name__ == "__main__":
-    # def createParser_workerbees():
-    #     parser = argparse.ArgumentParser()
-    #     parser.add_argument("-prod", default=False)
-    #     parser.add_argument("-qcp_s", default="castle")
-    #     # parser.add_argument("-queens_chess_piece", default="bees_manager")
-    #     # parser.add_argument("-backtesting", default=True)
-    #     # parser.add_argument("-macd", default=None)
+    def createParser_workerbees():
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-prod", default=False)
+        parser.add_argument("-qcp_s", default="castle")
+        # parser.add_argument("-queens_chess_piece", default="bees_manager")
+        # parser.add_argument("-backtesting", default=True)
+        # parser.add_argument("-macd", default=None)
 
-    #     return parser
+        return parser
 
-    # # script arguments
-    # parser = createParser_workerbees()
-    # namespace = parser.parse_args()
-    # qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
-    # prod = True if str(namespace.prod).lower() == "true" else False
+    # script arguments
+    parser = createParser_workerbees()
+    namespace = parser.parse_args()
+    qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
+    prod = True if str(namespace.prod).lower() == "true" else False
 
-    # while True:
-    #     seconds_to_market_open = (
-    #         dt.now(est).replace(hour=9, minute=30, second=0) - dt.now(est)
-    #     ).total_seconds()
-    #     if seconds_to_market_open > 0:
-    #         print(seconds_to_market_open, " ZZzzzZZ")
-    #         time.sleep(3)
-    #     else:
-    #         break
+    while True:
+        seconds_to_market_open = (
+            dt.now(est).replace(hour=9, minute=30, second=0) - dt.now(est)
+        ).total_seconds()
+        if seconds_to_market_open > 0:
+            print(seconds_to_market_open, " ZZzzzZZ")
+            time.sleep(3)
+        else:
+            break
 
-    # queen_workerbees(qcp_s=qcp_s, prod=prod)
-    queen_workerbees(qcp_s="castle", prod=False, reset_only=True)
+    queen_workerbees(qcp_s=qcp_s, prod=prod)
+    # queen_workerbees(qcp_s="castle", prod=False, reset_only=True)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

@@ -51,11 +51,11 @@ class PollenDatabase:
     @staticmethod
     def get_connection():
         # Reading connection details from environment variables
-        DATABASE_HOST = os.getenv("POLLEN_DATABASE_HOST")
-        DATABASE_PORT = os.getenv("POLLEN_DATABASE_PORT")
-        DATABASE_NAME = os.getenv("POLLEN_DATABASE_NAME")
-        DATABASE_USER = os.getenv("POLLEN_DATABASE_USER")
-        DATABASE_PASS = os.getenv("POLLEN_DATABASE_PASS")
+        DATABASE_HOST = os.getenv("POLLEN_DATABASE_HOST", "localhost")
+        DATABASE_PORT = os.getenv("POLLEN_DATABASE_PORT", "5432")
+        DATABASE_NAME = os.getenv("POLLEN_DATABASE_NAME", "postgres")
+        DATABASE_USER = os.getenv("POLLEN_DATABASE_USER", "postgres")
+        DATABASE_PASS = os.getenv("POLLEN_DATABASE_PASS", "test1234")
 
         return psycopg2.connect(
             host=DATABASE_HOST,
@@ -80,7 +80,7 @@ class PollenDatabase:
 
             # Upserting using the configured table name
             cur.execute(
-                f"""
+            f"""
                 INSERT INTO {PollenDatabase.get_table_name()} (key, data) 
                 VALUES (%s, %s)
                 ON CONFLICT (key) 
