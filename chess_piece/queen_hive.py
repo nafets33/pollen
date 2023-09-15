@@ -5552,6 +5552,7 @@ def live_sandbox__setup_switch(client_username, queenKING=False, switch_env=Fals
             if "production" in st.session_state and st.session_state["production"] == True
             else False
         )
+    prod = False
     # try:
         # else:
         
@@ -5702,7 +5703,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
 def setup_instance(client_username, switch_env, force_db_root, queenKING):
     # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
     db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-    prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env, queenKING=queenKING)            
+    prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env, queenKING=queenKING)        
     init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
     
     return prod

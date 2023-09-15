@@ -16,7 +16,7 @@ from collections import defaultdict, deque
 import argparse
 from chess_piece.king import kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
 from chess_piece.queen_hive import init_charlie_bee, init_queenbee, power_amo, find_symbol, star_ticker_WaveAnalysis, return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, init_clientUser_dbroot, process_order_submission, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
-
+from chess_piece.db import PollenDatabase
 
 """ ideas 
 if prior day abs(change) > 1 ignore ticker for the day!
@@ -2875,9 +2875,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         # Ticker database of pollenstory ## Need to seperate out into tables 
         ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
         # POLLENSTORY = ticker_db.get('pollenstory')
+        ticker_db = PollenDatabase.retrieve_all_story_bee_data()
         STORY_bee = ticker_db.get('STORY_bee')
         QUEEN['heartbeat']['ticker_db'] =  {'errors': ticker_db.get('errors')}
-        
         
         # add new keys
         QUEEN_req = add_key_to_QUEEN(QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
@@ -3045,7 +3045,7 @@ if __name__ == '__main__':
             break
 
 
-    queenbee(client_user, prod, queens_chess_piece='queen')
+    queenbee(client_user, prod = False, queens_chess_piece='queen')
 
 """
 The Journey is Hard,

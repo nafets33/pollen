@@ -120,6 +120,42 @@ class PollenDatabase:
                 conn.close()
 
         return None
+    
+    @staticmethod
+    def retrieve_all_story_bee_data():
+        conn = None
+        merged_data = {"STORY_bee": {}}
+
+        try:
+            conn = PollenDatabase.get_connection()
+            cur = conn.cursor()
+
+            # Retrieve all rows with key that starts with "STORY_BEE" from the configured table name
+            cur.execute(
+                f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%';"
+            )
+            results = cur.fetchall()
+
+            for result in results:
+                key_name = result[0]
+                data_dict = result[1]  # Now data column is the second column
+                nested_key = key_name.replace('STORY_BEE_', '')
+
+                # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
+                merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
+
+            merged_data = json.dumps(merged_data)
+            # Always deserialize using custom decoder
+            return json.loads(merged_data, cls=PollenJsonDecoder)
+
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+        return None
+
 
 
 class TestPollenDatabase:
