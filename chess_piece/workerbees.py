@@ -1,17 +1,23 @@
 # QueenBee Workers
 import argparse
 import asyncio
+import collections
+import copy
 import logging
 import os
 import sys
 import time
+import json
+import numpy as np
 from collections import deque
-from datetime import datetime
+import datetime
+from datetime import datetime as dt
 from itertools import islice
 
 import aiohttp
 import pandas as pd
 import pytz
+from chess_piece.db import PollenDatabase, TestPollenDatabase
 
 from chess_piece.king import (
     PickleData,
@@ -42,6 +48,7 @@ os.environ["no_proxy"] = "*"
 
 est = pytz.timezone("US/Eastern")
 
+
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
 def queen_workerbees(
@@ -55,7 +62,6 @@ def queen_workerbees(
     run_all_pawns=False,
     backtesting_star=False,
 ):
-
     if backtesting:
         assert macd is not None
         reset_only = True
@@ -84,7 +90,6 @@ def queen_workerbees(
     # Macd Settings
     # MACD_12_26_9 = {'fast': 12, 'slow': 26, 'smooth': 9}
     def init_QUEENWORKER(queens_chess_piece):
-
         QUEEN = {  # To Go To The Queens Mind
             # Worker Bees
             queens_chess_piece: {
@@ -95,7 +100,7 @@ def queen_workerbees(
                 "pollenstory_info": {},  # Misc Info,
                 "client": {},
                 "heartbeat": {"cycle_time": deque([], 89)},
-                "last_modified": datetime.now(est),
+                "last_modified": dt.now(est),
                 "triggerBee_frequency": {},
             }
         }
@@ -106,15 +111,15 @@ def queen_workerbees(
     api = return_alpaca_api_keys(prod=prod)["api"]
 
     """# Dates """
-    current_date = datetime.now(est).strftime("%Y-%m-%d")
+    current_date = dt.now(est).strftime("%Y-%m-%d")
     trading_days = api.get_calendar()
     trading_days_df = pd.DataFrame([day._raw for day in trading_days])
 
     trading_days_df["date"] = pd.to_datetime(trading_days_df["date"])
 
-    current_day = datetime.now(est).day
-    current_month = datetime.now(est).month
-    current_year = datetime.now(est).year
+    current_day = dt.now(est).day
+    current_month = dt.now(est).month
+    current_year = dt.now(est).year
 
     # misc
     exclude_conditions = [
@@ -140,8 +145,8 @@ def queen_workerbees(
     """# Main Arguments """
 
     def close_worker(WORKERBEE_queens):
-        s = datetime.now(est)
-        date = datetime.now(est)
+        s = dt.now(est)
+        date = dt.now(est)
         date = date.replace(hour=16, minute=0, second=1)
         if s >= date:
             logging.info("Happy Bee Day End")
@@ -158,7 +163,7 @@ def queen_workerbees(
         # bars_data = return_bars(symbol, time, ndays, trading_days_df=trading_days_df)
 
         try:
-            # s = datetime.datetime.now(est) #TEST
+            # s = dt.dt.now(est) #TEST
             bars_data["vwap_original"] = bars_data["vwap"]
 
             df_vwap = return_VWAP(bars_data)
@@ -177,8 +182,8 @@ def queen_workerbees(
                 time_measure_list=[3, 6, 23, 33],
                 y_list=["close", "macd", "hist"],
             )
-            # e = datetime.datetime.now(est)
-            # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+            # e = dt.dt.now(est)
+            # print(str((e - s)) + ": " + dt.dt.now().strftime("%A, %d. %B %Y %I:%M%p"))
             # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
             return [True, df_vwap_rsi_macd_smaslope]
         except Exception as e:
@@ -199,7 +204,7 @@ def queen_workerbees(
             # print(msg)
 
             error_dict = {}
-            s = datetime.now(est)
+            s = dt.now(est)
             dfs_index_tickers = {}
             bars = return_bars_list(
                 api=api,
@@ -226,12 +231,12 @@ def queen_workerbees(
                         ].copy()
                         dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
 
-            # e = datetime.now(est)
+            # e = dt.now(est)
             # msg = {
             #     "ticker_list": ticker_list,
             #     "function": "Return Init ChartData",
             #     "func_timeit": str((e - s)),
-            #     "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
+            #     "datetime": dt.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
             # }
             # print(msg)
             # dfs_index_tickers['SPY_5Minute']
@@ -247,7 +252,7 @@ def queen_workerbees(
 
         ticker, timeframe, days = ticker_time.split("_")
         error_dict = {}
-        s = datetime.now(est)
+        s = dt.now(est)
         dfs_index_tickers = {}
         try:
             # return market hours data from bars
@@ -263,11 +268,11 @@ def queen_workerbees(
         except Exception as e:
             print("err__", ticker_time, e)
 
-        e = datetime.now(est)
+        e = dt.now(est)
         msg = {
             "function": "Return_Bars_Latest Day Rebuild",
             "func_timeit": str((e - s)),
-            "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
+            "datetime": dt.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
         }
         # print(msg)
         # dfs_index_tickers['SPY_5Minute']
@@ -377,9 +382,13 @@ def queen_workerbees(
                 }
                 symbol, timeframe, days = ticker_time.split("_")
                 if "day" in timeframe.lower():
-                    df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}']  # stapshot df
+                    df_day_snapshot = symbol_snapshots[
+                        f'{symbol}{"_day"}'
+                    ]  # stapshot df
                     df_day_snapshot["symbol"] = symbol
-                    df = df.head(-1)  # drop last row which has current day / added minute
+                    df = df.head(
+                        -1
+                    )  # drop last row which has current day / added minute
                     df_rebuild = pd.concat(
                         [df, df_day_snapshot], join="outer", axis=0
                     ).reset_index(
@@ -387,7 +396,9 @@ def queen_workerbees(
                     )  # concat minute
                     main_return_dict[ticker_time] = df_rebuild
                 else:
-                    df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}']  # stapshot df
+                    df_snapshot = symbol_snapshots[
+                        f'{symbol}{"_minute"}'
+                    ]  # stapshot df
                     df_snapshot["symbol"] = symbol
                     # df_snapshot['timestamp_est'] = df_snapshot["timestamp_est"].apply(lambda x: x.astimezone(est))
                     if init:
@@ -406,7 +417,7 @@ def queen_workerbees(
                         )  # concat minute
                         main_return_dict[ticker_time] = df_rebuild
 
-            s = datetime.now(est)
+            s = dt.now(est)
 
             async def main_func(session, ticker_time, df):
                 async with session:
@@ -418,7 +429,6 @@ def queen_workerbees(
                         return {"status": "error", "ttf": ticker_time, "error": e}
 
             async def main(df_tickers_data):
-
                 async with aiohttp.ClientSession() as session:
                     return_list = []
                     tasks = []
@@ -432,7 +442,7 @@ def queen_workerbees(
                     return return_list
 
             return_list = asyncio.run(main(df_tickers_data))
-            e = datetime.now(est)
+            e = dt.now(est)
             # print(f"async snapshots {df_tickers_data.keys()} --- {(e - s)} seconds ---")
 
             return main_return_dict  # df_tickers_data
@@ -441,7 +451,9 @@ def queen_workerbees(
             print("Error mate", e)
             print(queens_chess_piece)
 
-    def ReInitiate_Charts_Past_Their_Time(df_tickers_data):  # re-initiate for i timeframe
+    def ReInitiate_Charts_Past_Their_Time(
+        df_tickers_data,
+    ):  # re-initiate for i timeframe
         # IMPROVEMENT: use Return_bars_list for Return_Bars_LatestDayRebuild
         return_dict = {}
         rebuild_confirmation = {}
@@ -459,7 +471,7 @@ def queen_workerbees(
         def rebuild_ticker_time_frame(ticker_time_frame, df):
             ticker, timeframe, days = ticker_time_frame.split("_")
             last = df["timestamp_est"].iloc[-2]
-            now = datetime.now(est)
+            now = dt.now(est)
             timedelta_minutes = (now - last).seconds / 60
             now_day = now.day
             last_day = last.day
@@ -585,7 +597,7 @@ def queen_workerbees(
 
             return return_dict, rebuild_confirmation
 
-        s = datetime.now(est)
+        s = dt.now(est)
 
         async def get_changelog(session, ticker_time, df):
             async with session:
@@ -600,7 +612,6 @@ def queen_workerbees(
                     print("erhere_2: ", e, ticker_time)
 
         async def main(df_tickers_data):
-
             async with aiohttp.ClientSession() as session:
                 return_list = []
                 tasks = []
@@ -615,7 +626,7 @@ def queen_workerbees(
                 return return_list
 
         return_list = asyncio.run(main(df_tickers_data))
-        e = datetime.now(est)
+        e = dt.now(est)
         # print(f"async ReInitiate Past Times {df_tickers_data.keys()} --- {(e - s)} seconds ---")
 
         # add back in snapshot init
@@ -631,7 +642,7 @@ def queen_workerbees(
             df_tickers_data = res.get("df_tickers_data")
             if len(res["rebuild_confirmation"].keys()) > 0:
                 print(res["rebuild_confirmation"].keys())
-                print(datetime.now(est).strftime("%H:%M-%S"))
+                print(dt.now(est).strftime("%H:%M-%S"))
 
         # re-add snapshot
         if reset_only == False:
@@ -662,7 +673,7 @@ def queen_workerbees(
             else:
                 print("error", ticker_time)
 
-        s = datetime.now(est)
+        s = dt.now(est)
 
         async def main_func(session, ticker_time, df, MACD):
             async with session:
@@ -675,7 +686,6 @@ def queen_workerbees(
                     print("erhere_3", e, ticker_time)
 
         async def main(df_tickers_data):
-
             async with aiohttp.ClientSession() as session:
                 return_list = []
                 tasks = []
@@ -694,7 +704,7 @@ def queen_workerbees(
                 return return_list
 
         return_list = asyncio.run(main(df_tickers_data))
-        e = datetime.now(est)
+        e = dt.now(est)
         # print(f"async Techincals Join {df_tickers_data.keys()} --- {(e - s)} seconds ---")
 
         # for ticker_time, df in df_tickers_data.items():
@@ -711,10 +721,12 @@ def queen_workerbees(
         QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings, MACD_WAVES
     ):
         try:
-            s_mainbeetime = datetime.now(est)
+            s_mainbeetime = dt.now(est)
             df_all = {}
             for ticker in master_tickers:
-                res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
+                res = Return_Init_ChartData(
+                    ticker_list=[ticker], chart_times=star_times
+                )
                 errors = res["errors"]
                 if errors:
                     msg = ("Return_Init_ChartData Failed", "--", errors)
@@ -734,7 +746,9 @@ def queen_workerbees(
 
             """ give it all to the QUEEN put directkly in function """
             pollen = pollen_hunt(
-                df_tickers_data=df_tickers_data, MACD=MACD_settings, MACD_WAVES=MACD_WAVES
+                df_tickers_data=df_tickers_data,
+                MACD=MACD_settings,
+                MACD_WAVES=MACD_WAVES,
             )
             QUEEN[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
             QUEEN[queens_chess_piece]["pollencharts_nectar"] = pollen[
@@ -742,11 +756,11 @@ def queen_workerbees(
             ]
 
             """# mark final times and return values"""
-            e_mainbeetime = datetime.now(est)
+            e_mainbeetime = dt.now(est)
             msg = {
                 queens_chess_piece: "initiate ttframe charts",
                 "block_timeit": str((e_mainbeetime - s_mainbeetime)),
-                "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
+                "datetime": dt.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
             }
             # logging.info(msg)
             # print(msg)
@@ -763,7 +777,7 @@ def queen_workerbees(
     def ticker_star_hunter_bee(
         WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges, MACD_WAVES
     ):
-        start_time = datetime.now(est)
+        start_time = dt.now(est)
 
         QUEEN = WORKERBEE_queens[queens_chess_piece]  # castle [spy, qqq], knight,
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
@@ -796,8 +810,12 @@ def queen_workerbees(
         # STORY_bee = pollens_honey["conscience"]["STORY_bee"]
 
         # for each star append last macd state
-        for ticker_time_frame, i in pollens_honey["conscience"].get("STORY_bee").items():
-            speed_gauges[ticker_time_frame]["macd_gauge"].append(i["story"]["macd_state"])
+        for ticker_time_frame, i in (
+            pollens_honey["conscience"].get("STORY_bee").items()
+        ):
+            speed_gauges[ticker_time_frame]["macd_gauge"].append(
+                i["story"]["macd_state"]
+            )
             speed_gauges[ticker_time_frame]["price_gauge"].append(
                 i["story"]["last_close_price"]
             )
@@ -820,16 +838,20 @@ def queen_workerbees(
         # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         def write_pollenstory_storybee(pollens_honey, backtesting, backtesting_star):
-            s = datetime.now(est)
+            s = dt.now(est)
 
-            async def main_func(session, ticker_time_frame, pickle_file, data):
+            async def main_func(session, ticker_time_frame, pickle_file, key, data):
                 async with session:
                     try:
                         PickleData(pickle_file, data)
+
+                        PollenDatabase.upsert_data(key, data)
+                        TestPollenDatabase.test_upsert_retrieve()
                         return {
                             "status": "success",
                             "ticker_time_frame": ticker_time_frame,
                         }
+
                     except Exception as e:
                         print("ps_error", e, ticker_time_frame)
                         return {"status": "error", "error": e}
@@ -842,7 +864,6 @@ def queen_workerbees(
                 backtesting_star,
                 macd_part_fname,
             ):
-
                 async with aiohttp.ClientSession() as session:
                     return_list = []
                     tasks = []
@@ -863,7 +884,11 @@ def queen_workerbees(
                             tasks.append(
                                 asyncio.ensure_future(
                                     main_func(
-                                        session, ticker_time_frame, pickle_file, data
+                                        session,
+                                        ticker_time_frame,
+                                        pickle_file,
+                                        f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}",
+                                        data,
                                     )
                                 )
                             )
@@ -885,7 +910,11 @@ def queen_workerbees(
                             tasks.append(
                                 asyncio.ensure_future(
                                     main_func(
-                                        session, ticker_time_frame, pickle_file, data
+                                        session,
+                                        ticker_time_frame,
+                                        pickle_file,
+                                        f"STORY_BEE_{ticker_time_frame}{macd_part_fname}",
+                                        data,
                                     )
                                 )
                             )
@@ -897,7 +926,9 @@ def queen_workerbees(
 
             # for every ticker ticker write pickle file to db
             symbols_pollenstory_dbs = (
-                workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
+                workerbee_dbs_backtesting_root()
+                if backtesting
+                else workerbee_dbs_root()
             )
 
             symbols_STORY_bee_root = (
@@ -908,7 +939,9 @@ def queen_workerbees(
 
             if backtesting:
                 macd_part_fname = "__{}-{}-{}".format(
-                    MACD_settings["fast"], MACD_settings["slow"], MACD_settings["smooth"]
+                    MACD_settings["fast"],
+                    MACD_settings["slow"],
+                    MACD_settings["smooth"],
                 )
             else:
                 macd_part_fname = ""
@@ -928,14 +961,13 @@ def queen_workerbees(
 
             return True
 
-        
         write_pollenstory_storybee(pollens_honey, backtesting, backtesting_star)
 
-        qcp_hunt = (datetime.now(est) - start_time).total_seconds()
+        qcp_hunt = (dt.now(est) - start_time).total_seconds()
         betty_bee[f"{queens_chess_piece}_cycle_time.pkl"] = qcp_hunt
         # WORKERBEE add deque([], 89)
         if f"{queens_chess_piece}_avg_cycle_time.pkl" not in betty_bee.keys():
-           betty_bee[f"{queens_chess_piece}_avg_cycle_time"] = deque([], 1500)
+            betty_bee[f"{queens_chess_piece}_avg_cycle_time"] = deque([], 1500)
         else:
             betty_bee[f"{queens_chess_piece}_avg_cycle_time"].append(qcp_hunt)
 
@@ -947,7 +979,6 @@ def queen_workerbees(
         return True
 
     def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces, MACD_WAVES):
-
         speed_gauges = {}
 
         WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
@@ -1000,7 +1031,6 @@ def queen_workerbees(
             os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt")
         )
         MACD_WAVES = MACD_WAVES.set_index("ttf")
-
         queen_db = (
             os.path.join(db_root, "queen.pkl")
             if prod
@@ -1055,14 +1085,13 @@ def queen_workerbees(
             )
             WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
             speed_gauges = queen_workers["speed_gauges"]
-            now_time = datetime.now(est)
+            now_time = dt.now(est)
             time.sleep(1)
-            last_queen_call = {"last_call": datetime.now(est)}
+            last_queen_call = {"last_call": dt.now(est)}
 
             while True:
-
                 # if check_with_queen_frequency
-                now_time = datetime.now(est)
+                now_time = dt.now(est)
                 # print((now_time - last_queen_call.get('last_call')).total_seconds())
                 if (
                     now_time - last_queen_call.get("last_call")
@@ -1093,7 +1122,7 @@ def queen_workerbees(
 
                 try:
                     all_qcp_s = (WORKERBEE_queens.keys(),)
-                    s = datetime.now(est)
+                    s = dt.now(est)
                     for qcp in WORKERBEE_queens.keys():
                         ticker_star_hunter_bee(
                             WORKERBEE_queens=WORKERBEE_queens,
@@ -1102,7 +1131,7 @@ def queen_workerbees(
                             speed_gauges=speed_gauges,
                             MACD_WAVES=MACD_WAVES,
                         )
-                    e = datetime.now(est)
+                    e = dt.now(est)
                     print(
                         f"Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}"
                     )
@@ -1130,32 +1159,33 @@ def queen_workerbees(
 
 
 if __name__ == "__main__":
+    # def createParser_workerbees():
+    #     parser = argparse.ArgumentParser()
+    #     parser.add_argument("-prod", default=False)
+    #     parser.add_argument("-qcp_s", default="castle")
+    #     # parser.add_argument("-queens_chess_piece", default="bees_manager")
+    #     # parser.add_argument("-backtesting", default=True)
+    #     # parser.add_argument("-macd", default=None)
 
-    def createParser_workerbees():
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-prod", default=False)
-        parser.add_argument("-qcp_s", default="castle")
-        # parser.add_argument("-queens_chess_piece", default="bees_manager")
-        # parser.add_argument("-backtesting", default=True)
-        # parser.add_argument("-macd", default=None)
+    #     return parser
 
-        return parser
+    # # script arguments
+    # parser = createParser_workerbees()
+    # namespace = parser.parse_args()
+    # qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
+    # prod = True if str(namespace.prod).lower() == "true" else False
 
-    # script arguments
-    parser = createParser_workerbees()
-    namespace = parser.parse_args()
-    qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
-    prod = True if str(namespace.prod).lower() == "true" else False
-    while True:
-        seconds_to_market_open = (
-            datetime.now(est).replace(hour=9, minute=30, second=0) - datetime.now(est)
-        ).total_seconds()
-        if seconds_to_market_open > 0:
-            print(seconds_to_market_open, " ZZzzzZZ")
-            time.sleep(3)
-        else:
-            break
+    # while True:
+    #     seconds_to_market_open = (
+    #         dt.now(est).replace(hour=9, minute=30, second=0) - dt.now(est)
+    #     ).total_seconds()
+    #     if seconds_to_market_open > 0:
+    #         print(seconds_to_market_open, " ZZzzzZZ")
+    #         time.sleep(3)
+    #     else:
+    #         break
 
-    queen_workerbees(qcp_s=qcp_s, prod=prod)
+    # queen_workerbees(qcp_s=qcp_s, prod=prod)
+    queen_workerbees(qcp_s="castle", prod=False, reset_only=True)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
