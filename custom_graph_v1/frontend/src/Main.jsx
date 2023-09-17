@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import CanvasJSReact from '@canvasjs/react-charts';
+import moment from 'moment';
 
 import {
   ComponentProps,
@@ -31,7 +32,7 @@ class App extends Component {
   }
   componentDidMount() {
     const { kwargs } = this.props.args;
-    const { y_axis, api, y_max, refresh_sec,graph_height } = kwargs;
+    const { y_axis, api, y_max, refresh_sec, graph_height } = kwargs;
     Streamlit.setFrameHeight();
     this.updateChart();
     if (refresh_sec)
@@ -58,11 +59,20 @@ class App extends Component {
     try {
       const data = await this.fetchGraphData();
       const newSeries = [];
-      y_axis.map((axis, index) => {
-        return newSeries[index] = data.map((row, index) => {
-          return {
-            x: row[x_axis['field']],
-            y: row[axis['field']],
+      y_axis.map((axis, y_index) => {
+        return newSeries[y_index] = data.map((row, index) => {
+          if (index == data.length - 1)
+            return {
+              x: row[x_axis['field']],
+              y: row[axis['field']] + 2 + y_index * 2,
+              indexLabel: axis['name'] + ' ' + row[axis['field']].toFixed(3) + '                        \n.',
+              indexLabelFontColor: axis['color']
+            }
+          else {
+            return {
+              x: row[x_axis['field']],
+              y: row[axis['field']],
+            }
           }
         })
       })
@@ -86,9 +96,6 @@ class App extends Component {
 
 
   render() {
-
-
-
     const colorSet = []
     const { kwargs } = this.props.args;
     const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button } = kwargs;
@@ -114,7 +121,8 @@ class App extends Component {
       },
       axisX: {
         title: theme_options['x_axis_title'] ? theme_options['x_axis_title'] : '',
-        labelFormatter: (e) => e.value
+        labelFormatter: (e) => moment(e.value).format('DD/MM/YYYY hh'),
+        labelFontSize: 12
       },
       axisY: {
         suffix: "",
@@ -132,7 +140,7 @@ class App extends Component {
         itemclick: this.toggleDataSeries
       },
       data: dataY,
-      height:kwargs.graph_height?kwargs.graph_height:400
+      height: kwargs.graph_height ? kwargs.graph_height : 400
     }
     return (
       <div>
