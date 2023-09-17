@@ -1,164 +1,182 @@
-import React, { Component } from 'react';
-import CanvasJSReact from '@canvasjs/react-charts';
-import moment from 'moment';
+import React, { Component } from "react"
+import CanvasJSReact from "@canvasjs/react-charts"
+import moment from "moment"
 
 import {
   ComponentProps,
   Streamlit,
   withStreamlitConnection,
-} from "streamlit-component-lib";
+} from "streamlit-component-lib"
 
-import toastr from 'toastr';
-import 'toastr/build/toastr.min.css';
+import toastr from "toastr"
+import "toastr/build/toastr.min.css"
 
-import axios from 'axios';
+import axios from "axios"
 
-var CanvasJSChart = CanvasJSReact.CanvasJSChart;
-var CanvasJS = CanvasJSReact.CanvasJS;
-const dataPoints = [[], [], [], [], [], [], [], [], [], []];
+var CanvasJSChart = CanvasJSReact.CanvasJSChart
+var CanvasJS = CanvasJSReact.CanvasJS
+const dataPoints = [[], [], [], [], [], [], [], [], [], []]
 
 toastr.options = {
-  positionClass: 'toast-top-full-width',
+  positionClass: "toast-top-full-width",
   hideDuration: 300,
   timeOut: 3000,
-};
+}
 
 class App extends Component {
-
   constructor(props) {
-    super(props);
-    this.updateChart = this.updateChart.bind(this);
-    this.toggleDataSeries = this.toggleDataSeries.bind(this);
+    super(props)
+    this.updateChart = this.updateChart.bind(this)
+    this.toggleDataSeries = this.toggleDataSeries.bind(this)
   }
   componentDidMount() {
-    const { kwargs } = this.props.args;
-    const { y_axis, api, y_max, refresh_sec, graph_height } = kwargs;
-    Streamlit.setFrameHeight();
-    this.updateChart();
-    if (refresh_sec)
-      setInterval(this.updateChart, refresh_sec * 1000);
+    const { kwargs } = this.props.args
+    const { y_axis, api, y_max, refresh_sec, graph_height } = kwargs
+    Streamlit.setFrameHeight()
+    this.updateChart()
+    if (refresh_sec) setInterval(this.updateChart, refresh_sec * 1000)
   }
   toggleDataSeries(e) {
-    if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-      e.dataSeries.visible = false;
+    if (typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible) {
+      e.dataSeries.visible = false
+    } else {
+      e.dataSeries.visible = true
     }
-    else {
-      e.dataSeries.visible = true;
-    }
-    this.chart.render();
+    this.chart.render()
   }
   async fetchGraphData() {
-    const { kwargs } = this.props.args;
-    const { y_axis, api, y_max, refresh_sec } = kwargs;
-    const res = await axios.post(api, { ...kwargs });
-    return JSON.parse(res.data);
+    const { kwargs } = this.props.args
+    const { y_axis, api, y_max, refresh_sec } = kwargs
+    const res = await axios.post(api, { ...kwargs })
+    return JSON.parse(res.data)
   }
   async updateChart() {
-    const { kwargs } = this.props.args;
-    const { x_axis, y_axis, api, y_max, refresh_sec, refresh_button } = kwargs;
+    const { kwargs } = this.props.args
+    const {
+      x_axis,
+      y_axis,
+      api,
+      y_max,
+      refresh_sec,
+      refresh_button,
+      theme_options,
+    } = kwargs
     try {
-      const data = await this.fetchGraphData();
-      const newSeries = [];
+      const data = await this.fetchGraphData()
+      const newSeries = []
       y_axis.map((axis, y_index) => {
-        return newSeries[y_index] = data.map((row, index) => {
+        return (newSeries[y_index] = data.map((row, index) => {
           if (index == data.length - 1)
             return {
-              x: row[x_axis['field']],
-              y: row[axis['field']] + 2 + y_index * 2,
-              indexLabel: axis['name'] + ' ' + row[axis['field']].toFixed(3) + '                        \n.',
-              indexLabelFontColor: axis['color']
+              x: row[x_axis["field"]],
+              y: row[axis["field"]],
+              indexLabel:
+                axis["name"] +
+                " " +
+                row[axis["field"]].toFixed(3) +
+                "                        \n.",
+              indexLabelFontColor: axis["color"],
             }
           else {
             return {
-              x: row[x_axis['field']],
-              y: row[axis['field']],
+              x: row[x_axis["field"]],
+              y: row[axis["field"]],
             }
           }
-        })
+        }))
       })
 
       while (dataPoints[0].length) {
         y_axis.map((item, index) => {
-          dataPoints[index].pop();
+          dataPoints[index].pop()
         })
       }
-      console.log('fetchGraphData', dataPoints);
+      console.log("fetchGraphData", dataPoints)
       y_axis.map((item, index) => {
-        dataPoints[index].push(...newSeries[index]);
-        this.chart.options.data[index].legendText = item['name'] + newSeries[index].pop().y;
+        dataPoints[index].push(...newSeries[index])
+        // if (theme_options["show_y_axis_legend_on_header"]) {
+        //   this.chart.options.data[index].legendText =
+        //     item["name"] + newSeries[index].pop().y
+        // }
       })
-      this.chart.render();
-      refresh_button && !refresh_sec && toastr.success(`Success!`);
+      this.chart.render()
+      refresh_button && !refresh_sec && toastr.success(`Success!`)
     } catch (error) {
-      refresh_button && !refresh_sec && toastr.error(`Fetch Error: ${error.message}`);
+      refresh_button &&
+        !refresh_sec &&
+        toastr.error(`Fetch Error: ${error.message}`)
     }
   }
 
-
   render() {
     const colorSet = []
-    const { kwargs } = this.props.args;
-    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button } = kwargs;
+    const { kwargs } = this.props.args
+    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button } =
+      kwargs
     const dataY = y_axis.map((item, index) => {
-      colorSet.push(item['color']);
+      colorSet.push(item["color"])
       return {
         type: "spline",
         xValueFormatString: "#.##0 ",
         yValueFormatString: "#.##0",
         showInLegend: true,
-        name: item['name'],
+        name: item["name"],
         dataPoints: dataPoints[index],
         // lineColor: item['color'] ? item['color'] : ''
       }
     })
-    CanvasJS.addColorSet("greenShades", colorSet);
+    CanvasJS.addColorSet("greenShades", colorSet)
     const options = {
-      colorSet: 'greenShades',
-      backgroundColor: theme_options['backgroundColor'] ? theme_options['backgroundColor'] : 'white',
+      colorSet: "greenShades",
+      backgroundColor: theme_options["backgroundColor"]
+        ? theme_options["backgroundColor"]
+        : "white",
       zoomEnabled: true,
       title: {
-        text: theme_options['main_title'] ? theme_options['main_title'] : ''
+        text: theme_options["main_title"] ? theme_options["main_title"] : "",
       },
       axisX: {
-        title: theme_options['x_axis_title'] ? theme_options['x_axis_title'] : '',
-        labelFormatter: (e) => moment(e.value).format('DD/MM/YYYY hh'),
-        labelFontSize: 12
+        title: theme_options["x_axis_title"]
+          ? theme_options["x_axis_title"]
+          : "",
+        labelFormatter: (e) => moment(e.value).format("DD/MM/YYYY hh"),
+        labelFontSize: 12,
       },
       axisY: {
         suffix: "",
         maximum: y_max ? y_max : null,
-        gridColor: theme_options['grid_color'] ? theme_options['grid_color'] : '',
+        gridColor: theme_options["grid_color"]
+          ? theme_options["grid_color"]
+          : "",
       },
       toolTip: {
-        shared: true
+        shared: true,
       },
       legend: {
         cursor: "pointer",
         verticalAlign: "top",
         fontSize: 18,
         fontColor: "dimGrey",
-        itemclick: this.toggleDataSeries
+        itemclick: this.toggleDataSeries,
       },
       data: dataY,
-      height: kwargs.graph_height ? kwargs.graph_height : 400
+      height: kwargs.graph_height ? kwargs.graph_height : 400,
     }
     return (
       <div>
-        {
-          (refresh_button) && !refresh_sec &&
-          <div style={{ display: 'flex' }}>
+        {refresh_button && !refresh_sec && (
+          <div style={{ display: "flex" }}>
             <div style={{ margin: "10px 10px 10px 2px" }}>
-              <button className='btn btn-warning' onClick={this.updateChart}>Refresh</button>
+              <button className="btn btn-warning" onClick={this.updateChart}>
+                Refresh
+              </button>
             </div>
           </div>
-        }
-        <CanvasJSChart
-          options={options}
-          onRef={ref => this.chart = ref}
-        />
+        )}
+        <CanvasJSChart options={options} onRef={(ref) => (this.chart = ref)} />
       </div>
-    );
+    )
   }
 }
 
-export default withStreamlitConnection(App);
+export default withStreamlitConnection(App)
