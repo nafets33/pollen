@@ -66,7 +66,7 @@ class App extends Component {
       const newSeries = []
       y_axis.map((axis, y_index) => {
         return (newSeries[y_index] = data.map((row, index) => {
-          if (index == data.length - 1)
+          if (index == data.length - 1 && theme_options["showInLegendPerLine"])
             return {
               x: row[x_axis["field"]],
               y: row[axis["field"]],
@@ -94,10 +94,8 @@ class App extends Component {
       console.log("fetchGraphData", dataPoints)
       y_axis.map((item, index) => {
         dataPoints[index].push(...newSeries[index])
-        // if (theme_options["show_y_axis_legend_on_header"]) {
-        //   this.chart.options.data[index].legendText =
-        //     item["name"] + newSeries[index].pop().y
-        // }
+        this.chart.options.data[index].legendText =
+          item["name"] + newSeries[index].pop().y
       })
       this.chart.render()
       refresh_button && !refresh_sec && toastr.success(`Success!`)
@@ -119,7 +117,7 @@ class App extends Component {
         type: "spline",
         xValueFormatString: "#.##0 ",
         yValueFormatString: "#.##0",
-        showInLegend: true,
+        showInLegend: theme_options["showInLegend"],
         name: item["name"],
         dataPoints: dataPoints[index],
         // lineColor: item['color'] ? item['color'] : ''
