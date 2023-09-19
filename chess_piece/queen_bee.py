@@ -2948,9 +2948,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             QUEEN['chess_board'] = QUEEN_KING['chess_board']
 
             # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
-            ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
-            # POLLENSTORY = ticker_db['pollenstory']
-            STORY_bee = ticker_db['STORY_bee']
+
+            symbols = return_QUEENs__symbols(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
+            ticker_db = PollenDatabase.retrieve_all_story_bee_data(symbols)
+            STORY_bee = ticker_db.get('STORY_bee')
             
             QUEEN = refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
             charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.now(est) - s_time).total_seconds()
