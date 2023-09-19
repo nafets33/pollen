@@ -500,13 +500,13 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
     return {"queens_master_tickers": queens_master_tickers}
 
 
-def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
+def return_QUEENs__symbols(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False):
     def return_active_orders(QUEEN):
-        df = QUEEN["queen_orders"]
-        df["index"] = df.index
-        df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
+            df = QUEEN["queen_orders"]
+            df["index"] = df.index
+            df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
 
-        return df_active
+            return df_active
 
     # symbol ticker data # 1 all current pieces on chess board && all current running orders
     current_active_orders = return_active_orders(QUEEN=QUEEN)
@@ -520,7 +520,11 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
     
     if swarmQueen:
         symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
+    
+    return symbols
 
+def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
+    symbols = return_QUEENs__symbols(QUEEN, QUEEN_KING, swarmQueen)
     ticker_db = read_QUEENs__pollenstory(
         symbols=symbols,
         read_storybee=read_storybee, 

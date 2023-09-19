@@ -122,7 +122,7 @@ class PollenDatabase:
         return None
     
     @staticmethod
-    def retrieve_all_story_bee_data():
+    def retrieve_all_story_bee_data(symbols):
         conn = None
         merged_data = {"STORY_bee": {}}
 
@@ -130,10 +130,15 @@ class PollenDatabase:
             conn = PollenDatabase.get_connection()
             cur = conn.cursor()
 
-            # Retrieve all rows with key that starts with "STORY_BEE" from the configured table name
-            cur.execute(
-                f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%';"
-            )
+            # Base query
+            query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%';"
+            
+            # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
+            if symbols:
+                symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
+                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%' AND ({symbol_conditions});"
+            
+            cur.execute(query)
             results = cur.fetchall()
 
             for result in results:
@@ -155,8 +160,6 @@ class PollenDatabase:
                 conn.close()
 
         return None
-
-
 
 class TestPollenDatabase:
     @staticmethod
