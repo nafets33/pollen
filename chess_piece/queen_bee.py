@@ -2874,7 +2874,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         # Ticker database of pollenstory ## Need to seperate out into tables
         symbols = return_QUEENs__symbols(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
+        # ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
         # POLLENSTORY = ticker_db.get('pollenstory')
         ticker_db = PollenDatabase.retrieve_all_story_bee_data(symbols)
         STORY_bee = ticker_db.get('STORY_bee')
