@@ -25,6 +25,7 @@ import plotly.graph_objects as go
 import ipdb
 from custom_grid import st_custom_grid
 from custom_grid import GridOptionsBuilder as GOB
+from custom_graph_v1 import st_custom_graph
 
 from chess_piece.king import (
     PickleData,
@@ -82,6 +83,24 @@ default_text_color = k_colors["default_text_color"]  # = '#59490A'
 default_font = k_colors["default_font"]  # = "sans serif"
 default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 
+def set_streamlit_page_config_once():
+    try:
+        st.set_page_config(
+            page_title="pollenq",
+            page_icon=page_icon,
+            layout="wide",
+            initial_sidebar_state='collapsed',
+            #  menu_items={
+            #      'Get Help': 'https://www.extremelycoolapp.com/help',
+            #      'Report a bug': "https://www.extremelycoolapp.com/bug",
+            #      'About': "# This is a header. This is an *extremely* cool app!"
+            #  }
+        )            
+    except st.errors.StreamlitAPIException as e:
+        if "can only be called once per app" in e.__str__():
+            # ignore this error
+            return
+        raise e
 
 ## IMPROVE GLOBAL VARIABLES
 
@@ -115,6 +134,28 @@ def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
     local_gif(gif_path=gif)
     st.success(title)
 
+def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300):
+    st_custom_graph(
+        api=api,
+        x_axis={
+            'field': x_axis
+        },
+
+        y_axis=y_axis,
+        theme_options=theme_options,
+        refresh_button=refresh_button,
+        
+        #kwrags
+        username=username,
+        prod=prod,
+        symbols=symbols,
+        refresh_sec=refresh_sec,
+        api_key=os.environ.get("fastAPI_key"),
+        return_type=return_type,
+        graph_height=graph_height,
+        # y_max=420
+        )
+    return True
 
 
 def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
@@ -397,6 +438,7 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
         prod=st.session_state['production'],
         grid_options=go,
         key=grid_key,
+        toggle_views=[],
 
         # kwargs from here
         api_key=os.environ.get("fastAPI_key"),
@@ -1440,7 +1482,7 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                 if st.form_submit_button("Save API Keys"):
                     # test keys
                     if test_api_keys(user_secrets=user_secrets, prod=prod):
-                        st.success(f"{user_env_instance} Keys Added Refresh Page")
+                        st.success(f"{user_env_instance} Keys Added Refreshing Page")
                         user_secrets[f"{user_env_instance}_keys_confirmed"] = True
                     else:
                         st.error(f"{user_env_instance} Keys Failed")

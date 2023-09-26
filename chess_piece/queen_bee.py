@@ -930,8 +930,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             overrule_power = king_order_rules.get('overrule_power')
             overrule_power = 0 if king_order_rules.get('overrule_power') is None else overrule_power
 
-            symbol, etf_long_tier, etf_inverse_tier = find_symbol(QUEEN, ticker, trading_model, trigbee)
-            index_X_tier = True if etf_long_tier == False or etf_inverse_tier == False else False
+            symbol = find_symbol(QUEEN, ticker, trading_model, trigbee).get('ticker')
+            # index_X_tier = True if etf_long_tier == False or etf_inverse_tier == False else False
             ticker, tframe, tperiod = ticker_time_frame.split("_")
 
             # def waterfall_knight_buy_chain(trigbees, trading_model):
@@ -1536,7 +1536,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             # validate qty
             if sum(origin_closing_orders_df['filled_qty']) > float(queen_order['qty']):
-                print("There must be a limit order thats needs to be adjusted/cancelled")
+                msg = ("There must be a limit order thats needs to be adjusted/cancelled", origin_order_idx)
+                print(msg)
+                logging.error(msg)
                 pass
 
             QUEEN['queen_orders'].at[origin_order_idx, 'profit_loss'] = profit_loss
@@ -1825,24 +1827,28 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 current_macd_ = current_macd.split("_")[0]
                 
                 # alloc
-                al = abs(revrec['waveview'].loc[ticker_time_frame].get('allocation_deploy'))
-                cb = mm_cost
-                al_sellable = al -  cb
-                
-                
-                # sell qty update
-                if al_sellable < 0 and macd_state_ == current_macd_:
-                    original_sell_qty = sell_qty
-                    sell_qty_pct = abs(al_sellable / cb)
-                    sell_qty = round(sell_qty * sell_qty_pct)
-                    msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, original_sell_qty, sell_qty)
-                    print(msg)
-                    logging.warning(msg)
+                if ticker_time_frame in revrec['waveview'].index:
+                    al = abs(revrec['waveview'].loc[ticker_time_frame].get('allocation'))
+                    cb = mm_cost
+                    al_sellable = al -  cb
+                    
+                    
+                    # sell qty update
+                    if al_sellable < 0 and macd_state_ == current_macd_:
+                        original_sell_qty = sell_qty
+                        sell_qty_pct = abs(al_sellable / cb)
+                        sell_qty = round(sell_qty * sell_qty_pct)
+                        if original_sell_qty != sell_qty:
+                            msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, original_sell_qty, sell_qty)
+                            print(msg)
+                            logging.warning(msg)
+                else:
+                    print(ticker_time_frame, "missing in waveview")
                 
                 return sell_qty
             except Exception as e:
                 print_line_of_error(e)
-                return False
+                return 0
         
 
         """if you made it here you are running somewhere, I hope you find your way, I'll always bee here to help"""
@@ -2182,20 +2188,23 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     if sell_order:
                         mm_cost = priceinfo.get('maker_middle') * sell_qty
                         order_side = 'sell'
-                        ck_rr_sell_qty = check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame)
-                        sell_qty = ck_rr_sell_qty if ck_rr_sell_qty else sell_qty
-
-                        print("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost)
-                        logging.info(("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost))
-                        # conscience_update(root_name='bishop_sell_order', dict_to_add={'ticker_time_frame': ticker_time_frame, 'sell_reasons': sell_reasons}, list_len=33)
-                        return {'sell_order': True, 
-                        'sell_reason': sell_reason, 
-                        'order_side': order_side, 
-                        'order_type': order_type, 
-                        'sell_qty': sell_qty, 
-                        'limit_price': limit_price, 
-                        'app_request': app_request,
-                        'maker_middle_cost': mm_cost}    
+                        sell_qty = check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame)
+                        if sell_qty > 0:
+                            print("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost)
+                            logging.info(("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost))
+                            # conscience_update(root_name='bishop_sell_order', dict_to_add={'ticker_time_frame': ticker_time_frame, 'sell_reasons': sell_reasons}, list_len=33)
+                            return {'sell_order': True, 
+                            'sell_reason': sell_reason, 
+                            'order_side': order_side, 
+                            'order_type': order_type, 
+                            'sell_qty': sell_qty, 
+                            'limit_price': limit_price, 
+                            'app_request': app_request,
+                            'maker_middle_cost': mm_cost
+                            }
+                        else:
+                            print("Bishop DONOT SELL Min.Allocation Stop", ticker_time_frame)
+                            return {'sell_order': False}
                     else:
                         return {'sell_order': False}
                 
@@ -2275,7 +2284,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return False
 
     
-    def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False):
+    def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states):
         
         s_loop = datetime.now(est)
         try:
@@ -2289,7 +2298,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if save_q:
                 PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
             if save_qo:
-                PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': QUEEN.get('queen_orders')})
+                df = QUEEN.get('queen_orders')
+                df = df[df['queen_order_state'].isin(active_queen_order_states)]
+                PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': df})
             if save_acct:
                 PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')})
             if save_rr:

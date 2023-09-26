@@ -572,7 +572,7 @@ def ReadPickleData(pickle_file):
             except Exception as e:
                 print('pkl read error: ', os.path.basename(pickle_file), e, stop)
                 # logging.error(f'{e} error is pickle load')
-                if stop > 10:
+                if stop > 3:
                     print("CRITICAL read pickle failed ", e)
                     # logging.critical(f'{e} error is pickle load')
                     # send_email(subject='CRITICAL Read Pickle Break')

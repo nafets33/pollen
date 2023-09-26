@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
+import random
 
 # import streamlit as st
 # from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
@@ -1814,6 +1815,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             
 
             refresh_sec = 5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+            # refresh_sec = None
             # print(seconds_to_market_close, refresh_sec)
             # print(f'http://{ip_address}:8000/api/data/update_orders')
             st_custom_grid(
@@ -2131,7 +2133,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
             return True
 
 
-        def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300):
+        def cust_graph(username, api, x_axis, y_axis, theme_options, key="0_graph", refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300, trinity_weight='w_15'):
             st_custom_graph(
                 api=api,
                 x_axis={
@@ -2150,6 +2152,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                 api_key=os.environ.get("fastAPI_key"),
                 return_type=return_type,
                 graph_height=graph_height,
+                trinity_weight=trinity_weight,
+                key=key,
                 # y_max=420
                 )
             return True
@@ -2413,7 +2417,28 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                 with cols[0]:
                                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
                                     order_grid(KING, queen_orders, ip_address)
+                                    def return_user_symbol_colors(df, idx_field="symbol"):
+                                        symbol_dicts = []
+                                        
+                                        # Get unique names from the 'name' column
+                                        unique_names = df[idx_field].tolist()
+                                        
+                                        # Generate a list of unique colors for each unique name
+                                        unique_colors = ['#' + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for _ in range(len(unique_names))]
+                                        
+                                        for i, name in enumerate(unique_names):
+                                            # Customize the 'name' and 'color' values as needed
+                                            symbol_dict = {
+                                                "field": name,
+                                                "name": name,
+                                                "color": unique_colors[i]
+                                            }
+                                            symbol_dicts.append(symbol_dict)
+                                        
+                                        return symbol_dicts
 
+                                    # y_axis = return_user_symbol_colors(revrec.get('storygauge'))
+                                    # print(result)
                                 with cols[1]:
                                     # story gauge grid
                                     story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, active=True)
@@ -2427,9 +2452,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                     # st.dataframe(df_storygauge)
                                     refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
                                     # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
+                                    print("ORDERS")
                                     cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
                                             prod=prod,
-                                            api="http://localhost:8000/api/data/symbol_graph",
+                                            api=f'{ip_address}/api/data/symbol_graph',
                                             x_axis='timestamp_est',
                                             y_axis=[{
                                                 'field': 'close',
@@ -2440,20 +2466,61 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_
                                                 'field': 'vwap',
                                                 'name': 'VWAP',
                                                 'color': '#2133dd'
-                                            }
+                                            },
+                                            # {
+                                            #     'field': 'high',
+                                            #     'name': 'high',
+                                            #     'color': '#2133dd'
+                                            # }
                                             ],
                                             theme_options={
                                                 'backgroundColor': k_colors.get('default_background_color'),
                                                 'main_title': '',   # '' for none
                                                 'x_axis_title': '',
                                                 'grid_color': default_text_color,
+                                                "showInLegend": False,
+                                                "showInLegendPerLine": True,
                                             },
                                             refresh_sec=refresh_sec,
                                             refresh_button=True,
                                             graph_height=300,
                                             )
 
-                                print("ORDERS")
+                                
+                                print("trinity15")
+
+                                refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                                # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
+                                if len(revrec.get('storygauge')) > 0:
+                                    theme_options={
+                                        'backgroundColor': k_colors.get('default_background_color'),
+                                        'main_title': '',   # '' for none
+                                        'x_axis_title': '',
+                                        'grid_color': default_text_color,
+                                        "showInLegend": False,
+                                        "showInLegendPerLine": True,
+                                    },
+                                    st_custom_graph(
+                                        api=f'{ip_address}/api/data/trinity_graph',
+                                        x_axis={
+                                            'field': 'timestamp_est'
+                                        },
+
+                                        y_axis=return_user_symbol_colors(revrec.get('storygauge')),
+                                        theme_options=theme_options,
+                                        refresh_button=True,
+                                        
+                                        #kwrags
+                                        username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                                        prod=prod,
+                                        symbols=symbols,
+                                        refresh_sec=refresh_sec,
+                                        api_key=os.environ.get("fastAPI_key"),
+                                        graph_height=250,
+                                        trinity_weight='w_15',
+                                        key='trinity_graph',
+                                        # y_max=420
+                                        )
                 
                 """ Bottom Page """
                 # bottom_buttons = {'old_orders':0, 'refresh_bee':1}

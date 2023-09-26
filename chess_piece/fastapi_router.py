@@ -7,7 +7,8 @@ import ipdb
 import os
 from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
                                        app_archive_queen_order,
-                                       app_queen_order_update_order_rules,)
+                                       app_queen_order_update_order_rules,
+                                       get_revrec_trinity,)
 
 router = APIRouter(
     prefix="/api/data",
@@ -57,6 +58,15 @@ def load_story_json(client_user: str=Body(...), username: str=Body(...), symbols
         print(e)
 
 
+@router.post("/trinity_graph", status_code=status.HTTP_200_OK)
+def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), trinity_weight=Body(...)):
+    
+    print("trying trinitty")
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_revrec_trinity(username, prod, trinity_weight=trinity_weight) #'w_15')
+    return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph", status_code=status.HTTP_200_OK)
 def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Body(...)):

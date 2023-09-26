@@ -2,16 +2,18 @@ __pycache__/Hive_Utils.cpython-39.pyc
 *.log
 *.pyc
 .DS_Store
-*.pkl
 .idea/
-**/*.pkl
+symbols_pollenstory_dbs/*
+symbols_STORY_bee_dbs/*
+client_user_dbs/*
+dbs/*
+legal/*
 db/*
 logs/*
-**/*.db
+# **/*.db
 **/*.legal
 *.csv
 *.ipynb
-.env_jq
-.venv
+.env
 jed_playground.py
 airflow_home
