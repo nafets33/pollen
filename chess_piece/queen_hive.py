@@ -400,6 +400,7 @@ def init_QUEEN_App():
     app = {
         "version": 3,
         "prod": 'init',
+        "api": 'init',
         # 'long': 0,
         # 'short': 0,
         "db__client_user": 'init',
@@ -630,7 +631,7 @@ wavegrid_cols = ['Buy Waves',
  'X Buy',
  'Power Buy']
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}):
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False):
     s_ = datetime.now(est)
     def shape_revrec_chesspieces(dic_items, acct_info, chess_board__revrec_borrow):
         df_borrow = pd.DataFrame(chess_board__revrec_borrow.items())
@@ -730,6 +731,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     print(ticker, ' tradingmodel missing')
                     QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+                    save_queenking = True
 
                 # Ticker Allocation Budget
                 tm_keys = trading_model['stars_kings_order_rules'].keys()
@@ -762,9 +764,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             tickers = list(set(piece.get('tickers')))
 
             for ticker in tickers:
-                active_orders = return_queen_orders__query(QUEEN, queen_order_states, ticker=ticker, star=False, ticker_time_frame=False)       # total budget calc
-                num_active_orders = len(active_orders)
-                cost_basis_current = sum(active_orders['cost_basis_current']) if num_active_orders > 0 else 0
+                active_orders = return_queen_orders__query(QUEEN, active_queen_order_states, ticker=ticker, star=False, ticker_time_frame=False)       # total budget calc
+                cost_basis_current = sum(active_orders['cost_basis_current']) if len(active_orders) > 0 else 0
                 
                 # TICKER
                 df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
@@ -813,7 +814,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview = resp.get('df_waveview') # up
         wave_analysis_down = resp.get('df_storyview_down') # down
         storygauge = resp.get('df_storyguage') # wave_gauge
-        storygauge = storygauge.set_index('symbol', drop=False)
+        if len(storygauge) > 0:
+            storygauge = storygauge.set_index('symbol', drop=False)
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         waveview['wave_blocktime'] = current_wave.get('wave_blocktime')
 
@@ -911,6 +913,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # rules, main budget stays on len vs starmark. add budget when past mark? if in wave deviation. 
         # If current_tmp_deviation > tmp_multiplier, then 0. 
         # if l == tmp and > starmark, push out starmark to + 1?
+        if save_queenking:
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
 
         e_ = datetime.now(est)
         return {'cycle_time': (e_-s_).total_seconds(), 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
@@ -998,7 +1002,7 @@ def find_symbol(QUEEN, ticker, trading_model, trigbee, etf_long_tier=False, etf_
                 ticker = QUEEN['heartbeat']['main_indexes'][ticker][etf_inverse_tier]
 
 
-    return ticker, etf_long_tier, etf_inverse_tier
+    return {'ticker': ticker, 'etf_long_tier': etf_long_tier, 'etf_inverse_tier': etf_inverse_tier}
 
 
 
@@ -3554,6 +3558,7 @@ def kings_order_rules( # rules created for 1Minute
     skip_sell_trigbee_distance_frequency=0,
     skip_buy_trigbee_distance_frequency=0,
     use_margin=False,
+
 ):
 
     return {
@@ -3644,31 +3649,31 @@ def generate_TradingModel(
                 "5Minute_5Day" : {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .5,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .4,
                     'use_margin': False,
                     },
                 "30Minute_1Month": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .6,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .4,
                     'use_margin': False,
                     },
                 "1Hour_3Month": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .8,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .5,
                     'use_margin': False,
                     },
                 "2Hour_6Month": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .8,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .8,
                     'use_margin': False,
                     },
                 "1Day_1Year": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .8,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': .8,
                     'use_margin': False,
                     },
         }
@@ -3686,7 +3691,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=360,
-                                    take_profit=.08,
+                                    take_profit=.01,
                                     sell_out=-.04,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
@@ -3711,7 +3716,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=10,
                                     timeduration=320,
-                                    take_profit=.3,
+                                    take_profit=.02,
                                     sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
@@ -3761,7 +3766,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
-                                    take_profit=.05,
+                                    take_profit=.02,
                                     sell_out=-.02,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
@@ -3811,7 +3816,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
-                                    take_profit=.10,
+                                    take_profit=.08,
                                     sell_out=-.05,
                                     sell_trigbee_trigger=True,
                                     stagger_profits=False,
@@ -4311,8 +4316,10 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle) if queen_king else {}
     if QUEEN_KING:
         QUEEN_KING['source'] = PB_App_Pickle
+        QUEEN_KING['dbs'] = init_pollen
     QUEEN = ReadPickleData(PB_QUEEN_Pickle) if queen else {}
     if QUEEN:
+        QUEEN['source'] = PB_QUEEN_Pickle
         QUEEN['dbs'] = init_pollen
         QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE'])
         QUEEN['heartbeat']['beat'] = QUEENsHeart
@@ -4322,9 +4329,9 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod) if api else {}
     if api == False:
         print("API Keys Failed, Queen goes back to Sleep")
-        QUEEN['queens_messages'].update({"api_status": 'failed'})
-        PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
-        return False
+        QUEEN_KING['api'] = False
+        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+        # return False
     
     return QUEEN, QUEEN_KING, ORDERS, api
 
@@ -5045,7 +5052,7 @@ def analyze_waves(STORY_bee, ticker_time_frame=False, top_waves=8):
 
 
 # weight the MACD tier // slice by selected tiers?
-def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8):
+def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8, wave_guage_list=['current_macd_tier', 'current_hist_tier', 'end_tier_vwap', 'end_tier_rsi_ema']):
     try:
         # weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
         weight__short = ['1Minute_1Day', '5Minute_5Day']
@@ -5078,6 +5085,7 @@ def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8):
             guage_return = {}
             df_waves = df_waves.fillna(0)
             for weight_ in weight_team:
+
                 df_waves[f'{weight_}_weight_base'] = df_waves[weight_] * model_eight_tier
                 df_waves[f'{weight_}_macd_weight_sum'] = df_waves[weight_] * df_waves['current_macd_tier']
                 df_waves[f'{weight_}_hist_weight_sum'] = df_waves[weight_] * df_waves['current_hist_tier']
@@ -5091,9 +5099,9 @@ def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8):
 
                 guage_return[f'{weight_}_vwap_tier_position'] = sum(df_waves[f'{weight_}_vwap_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
                 guage_return[f'{weight_}_rsi_tier_position'] = sum(df_waves[f'{weight_}_rsi_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
- 
+
         except Exception as e:
-            print_line_of_error(e=e)
+            print_line_of_error("ERROR wave guage")
         
         return guage_return, df_waves
     
@@ -5276,15 +5284,16 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
                 print("no tm")
                 continue
             story_guages, delme = wave_gauge(df_waves=df, trading_model=trading_model, weight_team=weight_team)
-            story_guages['symbol'] = symbol
-            story_guages_view.append(story_guages)
+            if story_guages:
+                story_guages['symbol'] = symbol
+                story_guages_view.append(story_guages)
 
-        df_storyguage = pd.DataFrame(story_guages_view)
-        
-        # Trinity 
-        trinity = trinity_weights()
-        for w_t in weight_team:
-            df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
+                df_storyguage = pd.DataFrame(story_guages_view)
+
+                # Trinity 
+                trinity = trinity_weights()
+                for w_t in weight_team:
+                    df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
 
         return {'df_storyview': df_storyview, 
                 'df_storyguage': df_storyguage, 
@@ -5539,7 +5548,7 @@ def queens_heart(heart):
     return heart
 
 
-def live_sandbox__setup_switch(client_username, queenKING=False, switch_env=False):
+def live_sandbox__setup_switch(pq_env=False, queenKING=False, switch_env=False):
     # if queenKING:
         # if 'authoirzed_user' in st.session_state and st.session_state['authoirzed_user'] == True:
         #     if 'last_env' in st.session_state:
@@ -5564,17 +5573,20 @@ def live_sandbox__setup_switch(client_username, queenKING=False, switch_env=Fals
     st.session_state["prod_name"] = prod_name
     st.session_state["production"] = prod
 
-    if switch_env:
-        if prod:
-            prod = False
-            st.session_state["production"] = prod
-            prod_name = "Sanbox"
-            st.session_state["prod_name"] = prod_name
-        else:
-            prod = True
-            st.session_state["production"] = prod
-            prod_name = "LIVE"
-            st.session_state["prod_name"] = prod_name
+    if pq_env:
+        if switch_env:
+            if prod:
+                prod = False
+                st.session_state["production"] = prod
+                prod_name = "Sanbox"
+                st.session_state["prod_name"] = prod_name
+            else:
+                prod = True
+                st.session_state["production"] = prod
+                prod_name = "LIVE"
+                st.session_state["prod_name"] = prod_name
+            # save
+            PickleData(st.session_state["PB_env_PICKLE"], pq_env.update({'env': prod}))
 
     st.session_state['last_env'] = prod
 
@@ -5611,6 +5623,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         print("Order init")
         logging_log_message(msg="Orders init")
     # WORKERBEE don't check if file exists, only check on init
+    PB_env_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_env"}{".pkl"}')
     if prod:
         # print("My Queen Production")
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
@@ -5634,6 +5647,10 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
 
     if init:
+        if os.path.exists(PB_env_PICKLE) == False:
+            print("Init PB_env_PICKLE")
+            PickleData(PB_env_PICKLE, {'env': False})
+        
         if os.path.exists(PB_account_info_PICKLE) == False:
             print("Init PB_account_info_PICKLE")
             PickleData(PB_account_info_PICKLE, {'account_info': {}})
@@ -5686,6 +5703,8 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         st.session_state["PB_QUEENsHeart_PICKLE"] = PB_QUEENsHeart_PICKLE
         st.session_state["PB_KING_Pickle"] = PB_KING_Pickle
         st.session_state["PB_RevRec_PICKLE"] = PB_RevRec_PICKLE
+        st.session_state["PB_account_info_PICKLE"] = PB_account_info_PICKLE
+        st.session_state["PB_env_PICKLE"] = PB_env_PICKLE
 
 
     return {
@@ -5697,16 +5716,28 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         "PB_KING_Pickle": PB_KING_Pickle,
         "PB_RevRec_PICKLE": PB_RevRec_PICKLE,
         "PB_account_info_PICKLE": PB_account_info_PICKLE,
+        "PB_env_PICKLE": PB_env_PICKLE,
     }
 
 
 def setup_instance(client_username, switch_env, force_db_root, queenKING):
     # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
-    db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-    prod = live_sandbox__setup_switch(client_username=client_username, switch_env=switch_env, queenKING=queenKING)        
-    init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
-    
-    return prod
+    try:
+        db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+        if os.path.exists(os.path.join(db_root, 'PB_env_PICKLE')) == False:
+            prod = False
+            pq_env = False
+        else:
+            pq_env = ReadPickleData(os.path.join(db_root, 'PB_env_PICKLE'))
+            prod = pq_env.get('env')
+        
+        prod = live_sandbox__setup_switch(pq_env=pq_env, switch_env=switch_env, queenKING=queenKING)            
+        
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
+        
+        return prod
+    except Exception as e:
+        print_line_of_error("setup instance")
 
 
 

@@ -142,6 +142,15 @@ def load_queen_order_pkl(username, prod):
   
   return ORDERS
 
+def load_revrec_pkl(username, prod):
+  if prod == False:
+    queen_pkl_path = username+'/queen_revrec_sandbox.pkl'
+  else:
+    queen_pkl_path = username+'/queen_revrec.pkl'
+  queen_pkl = ReadPickleData(queen_pkl_path)
+  return queen_pkl
+
+
 def load_POLLENSTORY_STORY_pkl(symbols, read_storybee, read_pollenstory, username, prod):
     try:
       ticker_db = read_QUEENs__pollenstory(
@@ -177,38 +186,50 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
     QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
     buy_package = create_AppRequest_package(request_name='buy_orders')
     buy_package.update({'buy_order': {}})
-
-    revrec = QUEEN.get('revrec')
     blessing={} #{i: '': for i in []}, # order_vars
+    revrec = QUEEN.get('revrec')
+    # return trading model
+    def return_trading_model(QUEEN_KING,
+    ticker,
+    ticker_time_frame,
+    star_time,
+    trigbee,
+    wave_blocktime,
+    ready_buy=False
+    ):
+      trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+      tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
+      if ready_buy:
+        tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
+      king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
+      return king_order_rules
+    
     ticker = selected_row.get('symbol') # update symbol on X
     ticker_time_frame = selected_row.get('ticker_time_frame')
     star_time = selected_row.get('star_time')
     trigbee = selected_row.get('macd_state')
     wave_blocktime = selected_row.get('wave_blocktime')
-    
     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
-    symbol, etf_long_tier, etf_inverse_tier = find_symbol(QUEEN, ticker, trading_model, trigbee)
-
+    symbol = find_symbol(QUEEN, ticker, trading_model, trigbee).get('ticker')
+    
     tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
     if ready_buy:
       tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
-    
-    king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
+
     # king_order_rules = revrec['waveview'].at[ticker_time_frame, 'king_order_rules']
+    king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
+    # END
     
     crypto=False
-    king_resp=True, 
-    king_eval_order=False, 
-    
-    trading_model_theme = trading_model.get('theme')
+    king_resp=True,
+    king_eval_order=False,
     maker_middle = False
     current_wave = revrec['waveview'].get('current_wave')
     current_macd_cross__wave = QUEEN['heartbeat'].get('current_wave')
     power_up_amo = power_amo()
     order_side = 'buy'
-
-    borrowed_funds = False
-    borrow_qty = False
+    borrowed_funds = True # USER INITIATE
+    borrow_qty = False ## DEPRECIATE
     # print(button_buy.keys())
 
     for rule, value in button_buy.items():
@@ -246,8 +267,8 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
         print("updateing", rule, value)
         king_order_rules.update({rule: value})
 
-
-    order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
+    print(symbol)
+    order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
                                                 king_order_rules=king_order_rules, 
                                                 order_side='buy', 
                                                 wave_amo=wave_amo, 
@@ -293,7 +314,7 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
        return {'status': False}
     
   except Exception as e:
-     print_line_of_error()
+     print_line_of_error("fastapi buy button failed")
      logging.error(("fastapi", e))
 
 
@@ -678,12 +699,40 @@ def get_ticker_data(symbols, prod):
   )
   
   df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
-  df_main = df[['timestamp_est', 'close', 'vwap']]
+  df_main = df[['timestamp_est', 'close', 'vwap', 'high']]
   df_main = split_today_vs_prior(df_main).get('df_today')
 
   json_data = df_main.to_json(orient='records')
 
   return json_data
+
+
+def get_revrec_trinity(username, prod, trinity_weight='w_15'):
+  try:
+    revrec = load_revrec_pkl(username, prod).get('revrec')
+    df  = revrec.get('storygauge')
+    # df['symbol'] = df.index
+    df["trinity_w_15"] = pd.to_numeric(df["trinity_w_15"], errors='coerce')
+    df = df[['symbol', "trinity_w_15"]]
+    df = df.T.reset_index()
+    df['timestamp_est'] = datetime.now(est)
+    # df = df.set_index('timestamp_est', drop=True)
+    df = df[[i for i in df.columns if i != 'index']]
+    df = df.tail(1)
+    # df2 = df.copy()
+    # df2['timestamp_est'] = datetime.now(est).replace(minute=59)
+    df_n = df.copy()
+    for i in range(60):
+       df_n['timestamp_est'] = datetime.now(est).replace(minute=i)
+       df = pd.concat([df, df_n])
+
+    json_data = df.to_json(orient='records')
+    return json_data
+  except Exception as e:
+     print_line_of_error("trinity revrec fastapi")
+
+
+
 
 def get_charlie_bee():
   main_db_root = os.path.join(hive_master_root(), 'db')

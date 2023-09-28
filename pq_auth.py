@@ -9,7 +9,7 @@ import ssl
 from email.message import EmailMessage
 # from streamlit_extras.switch_page_button import switch_page
 from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc
-from chess_piece.queen_hive import setup_instance, print_line_of_error
+from chess_piece.queen_hive import setup_instance, print_line_of_error, init_queenbee
 import ipdb
 
 # from QueenHive import init_pollen_dbs
@@ -232,9 +232,10 @@ def signin_main(page):
                 send_email(recipient=os.environ.get('pollenq_gmail'), subject="QueenRequest", body=f'{st.session_state["username"]} Asking for a Queen')
                 st.success("Message Sent To Hive Master, We'll talk soon")
 
+
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True)
 
-        return True
+        return prod
 
     def define_authorized_user(key):
         if 'logout' in st.session_state and st.session_state["logout"] != True:
@@ -253,9 +254,8 @@ def signin_main(page):
                 if st.session_state["username"] in ["stefanstapinski@gmail.com"]
                 else False
             )
-            setup_user_pollenqdbs(key)
-
-            return True
+            
+            return setup_user_pollenqdbs(key)
 
     def read_user_db(cur):
         users = cur.execute("SELECT * FROM users").fetchall()

@@ -37,6 +37,7 @@ from chess_piece.queen_hive import (
     return_sma_slope,
     return_Ticker_Universe,
     return_VWAP,
+    return_market_hours,
 )
 
 os.environ["no_proxy"] = "*"
@@ -112,9 +113,17 @@ def queen_workerbees(
 
     trading_days_df["date"] = pd.to_datetime(trading_days_df["date"])
 
-    current_day = dt.now(est).day
-    current_month = dt.now(est).month
-    current_year = dt.now(est).year
+    if backtesting or reset_only:
+        pass
+    else:
+        mkhrs = return_market_hours(trading_days=trading_days)
+        if mkhrs != 'open':
+            print("Bee to ZzzzZZzzzZzzz")
+            sys.exit()
+
+    current_day = datetime.now(est).day
+    current_month = datetime.now(est).month
+    current_year = datetime.now(est).year
 
     # misc
     exclude_conditions = [

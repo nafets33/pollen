@@ -17,7 +17,5 @@ else:
 
 
 def st_custom_graph(**kwargs):
-    component_value = _component_func(
-        kwargs=kwargs
-    )
+    component_value = _component_func(kwargs=kwargs)
     return component_value

@@ -5,8 +5,8 @@ import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
 from chess_piece.queen_hive import print_line_of_error, return_Ticker_Universe, stars
-from chess_piece.app_hive import PickleData, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
-from chess_piece.king import master_swarm_KING, hive_master_root, local__filepaths_misc, ReadPickleData, return_QUEENs__symbols_data
+from chess_piece.app_hive import set_streamlit_page_config_once, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
+from chess_piece.king import master_swarm_KING, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
 from datetime import datetime, timedelta
@@ -21,32 +21,20 @@ import os
 # from st_on_hover_tabs import on_hover_tabs
 
 
-# https://extras.streamlit.app/Annotated%20text
-
-# st.set_page_config(
-#     page_title="playground",
-#     # page_icon=page_icon,
-#     layout="wide",
-#     # initial_sidebar_state='collapsed',
-#     #  menu_items={
-#     #      'Get Help': 'https://www.extremelycoolapp.com/help',
-#     #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-#     #      'About': "# This is a header. This is an *extremely* cool app!"
-#     #  }
-# )
+set_streamlit_page_config_once()
 
 
 def PlayGround():
     try:
-        st.write("Me")
+        # st.write("Me")
         with st.spinner("Verifying Your Scent, Hang Tight"):
             signin_main(page="playground")
 
-        pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
-        if st.button("test write new file"):
-            PickleData(pickle_file, {})
-        if st.button("test set file permissions"):
-            os.chmod(pickle_file, 0o400)
+        # pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
+        # if st.button("test write new file"):
+        #     PickleData(pickle_file, {})
+        # if st.button("test set file permissions"):
+        #     os.chmod(pickle_file, 0o400)
 
         # images
         MISC = local__filepaths_misc()
@@ -55,17 +43,20 @@ def PlayGround():
 
         est = pytz.timezone("US/Eastern")
         utc = pytz.timezone('UTC')
-        st.write(st.color_picker("colors"))
         
-        cols = st.columns(3)
+        
+        cols = st.columns(4)
         with cols[0]:
             st.write("# Welcome to Playground! 👋")
         with cols[1]:
-            st.image(MISC.get('mainpage_bee_png'))
+            # st.image(MISC.get('mainpage_bee_png'))
+            st.write(st.color_picker("colors"))
         with cols[2]:
             cB = cust_Button(file_path_url="misc/learningwalks_bee_jq.png", height='23px', key='b1', hoverText="HelloMate")
             if cB:
                 st.write("Thank you Akash")
+        with cols[3]:
+            st.image(MISC.get('mainpage_bee_png'))
     
         with st.expander("Ozz"):
             cols = st.columns(2)

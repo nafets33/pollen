@@ -24,7 +24,7 @@ import argparse
 from streamlit_extras.stoggle import stoggle
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.app_hive import set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 from custom_button import cust_Button
@@ -595,18 +595,8 @@ def pollenq(admin_pq):
         flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
         
         page_icon = Image.open(bee_image)
-        
-        st.set_page_config(
-            page_title="pollenq",
-            page_icon=page_icon,
-            layout="wide",
-            initial_sidebar_state='collapsed',
-            #  menu_items={
-            #      'Get Help': 'https://www.extremelycoolapp.com/help',
-            #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-            #      'About': "# This is a header. This is an *extremely* cool app!"
-            #  }
-        )
+  
+        set_streamlit_page_config_once()
 
 
         ##### STREAMLIT #####
@@ -624,6 +614,12 @@ def pollenq(admin_pq):
 
         with st.spinner("Verifying Your Scent, Hang Tight"):
             signin_main(page="pollenq")
+            prod = st.session_state['production']
+            print("prod", prod)
+            authorized_user = st.session_state['authorized_user']
+            client_user = st.session_state["username"]
+            prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
+            prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"   
         
         log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
@@ -652,15 +648,6 @@ def pollenq(admin_pq):
 
         with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
-            # mark_down_text(fontsize='15', text='QuantQueen', font='friz-quadrata')
-            # page_line_seperator("1") #############################################
-
-            prod = st.session_state['production']
-            authorized_user = st.session_state['authorized_user']
-            client_user = st.session_state["username"]
-            prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
-            prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"        
-
             ####### Welcome to Pollen ##########
             # use API keys from user
             
@@ -669,8 +656,9 @@ def pollenq(admin_pq):
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
             QUEENBEE['source'] = PB_QUEENBEE_Pickle
             KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-            QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=False, init=True)
-
+            QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
+            if 'chess_board__revrec' not in QUEEN_KING.keys():
+                st.warning("QUEEN Not Enabled ChessBoard")
             def update_queen_orders(QUEEN): # for revrec
                 # update queen orders ## IMPROVE / REMOVE ## WORKERBEE
                 qo = QUEEN['queen_orders']
@@ -712,11 +700,6 @@ def pollenq(admin_pq):
                 st.error("Your Account is Not Yet Authorized by a pollen admin")
                 st.stop()
 
-            # init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece) # handled in signin auth
-
-            # QUEEN_KING = ReadPickleData(pickle_file=st.session_state['PB_App_Pickle'])
-            QUEEN_KING['prod'] = st.session_state['production']          
-            # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
             print("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
             
             # PROD vs SANDBOX
@@ -745,29 +728,19 @@ def pollenq(admin_pq):
             QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
             QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
 
-
-
-
             print("API")
             if st.sidebar.button('show_keys'):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
 
             try:
-                api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
+                # api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
                 if api == False:
                     queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
                     api_failed = True
                     st.stop()
                 else:
-                    try:
-                        api_failed = False
-                        snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
-                    except Exception as e:
-                        # requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://data.alpaca.markets/v2/stocks/SPY/snapshot
-                        st.error("API Keys failed! You need to update, Please Go to your Alpaca Broker Account to Generate API Keys")
-                        queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
-                        api_failed = True
-
+                    api_failed = False
+                    snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
                 alpaca_acct_info = refresh_account_info(api=api)
                 with st.sidebar:
                     if st.button('acct info'):
@@ -802,12 +775,9 @@ def pollenq(admin_pq):
                         except subprocess.CalledProcessError as e:
                             print(f"Error: {e}")
 
-            with st.sidebar:
-                # Master Controls #
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-            # with st.expander('Master Controls', False):
-            # with cols[0]:
+
             cols = st.columns((1,8,1))
+            # with st.sidebar:
             with cols[0]:
                 print("Heart")
                 now = datetime.now(est)
@@ -817,16 +787,14 @@ def pollenq(admin_pq):
                 cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{beat_size}px', default=False)
                 seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
             
-            # with cols[1]:
+            with cols[2]:
+                # Master Controls #
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+
             with st.sidebar:
                 with st.expander("Master Menu"):
                     colss = st.columns((1,1,1,1,1,1,1,1))
                     menu_buttons(cols=colss)
-                # with cols[0]:
-                #     st.write("stefan")
-                # with cols[7]:
-                #     # queensheart
-
 
             with cols[1]:
                 print('ss', seconds_to_market_close)
@@ -838,9 +806,6 @@ def pollenq(admin_pq):
                                     seconds_to_market_close, 
                                     prod, 
                                     api=f'{ip_address}/api/data/account_info') 
-            # with cols[3]:
-            #     portfolio_header__QC(acct_info)
-            
 
             if menu_id == 'PlayGround':
                 print("PLAYGROUND")
@@ -951,7 +916,6 @@ def pollenq(admin_pq):
             with st.expander(log_file):
                 log_file = os.path.join(log_dir, log_file) # single until allow for multiple
                 # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
-                from chess_piece.app_hive import queen_messages_grid__apphive
                 queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
 
         with cols[1]:
