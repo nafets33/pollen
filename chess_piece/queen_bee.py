@@ -2874,10 +2874,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         # Ticker database of pollenstory ## Need to seperate out into tables
         symbols = return_QUEENs__symbols(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
-        # ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
+        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False) ## async'd func
+        ticker_db2 = PollenDatabase.retrieve_all_story_bee_data(symbols)
         # POLLENSTORY = ticker_db.get('pollenstory')
-        ticker_db = PollenDatabase.retrieve_all_story_bee_data(symbols)
-        STORY_bee = ticker_db.get('STORY_bee')
+        # ticker_db = PollenDatabase.retrieve_all_story_bee_data(symbols)
+        STORY_bee = ticker_db2.get('STORY_bee')
         QUEEN['heartbeat']['ticker_db'] =  {'errors': ticker_db.get('errors')}
         
         # add new keys
@@ -2950,8 +2951,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
 
             symbols = return_QUEENs__symbols(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
-            ticker_db = PollenDatabase.retrieve_all_story_bee_data(symbols)
-            STORY_bee = ticker_db.get('STORY_bee')
+            ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False)
+            ticker_db2 = PollenDatabase.retrieve_all_story_bee_data(symbols)
+            STORY_bee = ticker_db2.get('STORY_bee')
             
             QUEEN = refresh_QUEEN_starTickers(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker_allowed=ticker_allowed)
             charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.now(est) - s_time).total_seconds()
