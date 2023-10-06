@@ -121,9 +121,9 @@ def queen_workerbees(
             print("Bee to ZzzzZZzzzZzzz")
             sys.exit()
 
-    current_day = datetime.now(est).day
-    current_month = datetime.now(est).month
-    current_year = datetime.now(est).year
+    current_day = dt.now(est).day
+    current_month = dt.now(est).month
+    current_year = dt.now(est).year
 
     # misc
     exclude_conditions = [
@@ -847,7 +847,7 @@ def queen_workerbees(
             async def main_func(session, ticker_time_frame, pickle_file, key, data):
                 async with session:
                     try:
-                        # PickleData(pickle_file, data)
+                        PickleData(pickle_file, data)
 
                         PollenDatabase.upsert_data(key, data)
                         # TestPollenDatabase.test_upsert_retrieve()
