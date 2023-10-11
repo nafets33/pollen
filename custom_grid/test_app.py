@@ -104,6 +104,7 @@ def main():
                 "prompt_message": "message1",
                 "prompt_field": None,
                 "col_headername": "Buy button",
+                "col_header": "symbol",
                 "col_width": 100,
                 "border_color": "green",
             },

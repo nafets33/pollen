@@ -155,7 +155,7 @@ const AgGrid = (props: Props) => {
           borderColor: props.borderColor ? props.borderColor : "black",
         }}
       >
-        {props.value}
+        {props.value || props.buttonName}
       </button>
     )
   }
@@ -187,7 +187,7 @@ const AgGrid = (props: Props) => {
         const { prompt_field, prompt_message, button_api, prompt_order_rules } =
           button
         grid_options.columnDefs!.push({
-          field: "symbol",
+          field: button["col_header"],
           headerName: button["col_headername"],
           width: button["col_width"],
           pinned: button["pinned"],
