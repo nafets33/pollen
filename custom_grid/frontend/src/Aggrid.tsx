@@ -122,7 +122,6 @@ const columnFormaters = {
 }
 
 const HyperlinkRenderer = (props: any) => {
-  console.log("hyperlink", props)
   return (
     <a
       href={`${props.column.colDef.baseURL}/${
@@ -155,7 +154,9 @@ const AgGrid = (props: Props) => {
           borderColor: props.borderColor ? props.borderColor : "black",
         }}
       >
-        {props.value || props.buttonName}
+        {props.col_header
+          ? g_rowdata[props.rowIndex][props.col_header]
+          : props.buttonName}
       </button>
     )
   }
@@ -181,24 +182,23 @@ const AgGrid = (props: Props) => {
 
   useEffect(() => {
     Streamlit.setFrameHeight()
-    console.log("buttons :>> ", buttons)
     if (buttons.length) {
       buttons.map((button: any) => {
         const { prompt_field, prompt_message, button_api, prompt_order_rules } =
           button
         grid_options.columnDefs!.push({
-          field: button["col_header"],
+          field: index,
           headerName: button["col_headername"],
           width: button["col_width"],
           pinned: button["pinned"],
           cellRenderer: BtnCellRenderer,
           cellRendererParams: {
+            col_header: button["col_header"],
             buttonName: button["button_name"],
             borderColor: button["border_color"],
             clicked: async function (field: any) {
               try {
                 const selectedRow = g_rowdata.find((row) => row[index] == field)
-
                 if (prompt_order_rules) {
                   const str = selectedRow[prompt_field]
                   const selectedField =
@@ -356,7 +356,7 @@ const AgGrid = (props: Props) => {
     setTimeout(async () => {
       try {
         const array = await fetchData()
-        console.log("AAAAAAAAAAAAAAAAAAAAAAA", array)
+        // console.log("AAAAAAAAAAAAAAAAAAAAAAA", array)
         if (array == false) {
           // toastr.error(`Error: ${array.message}`)
           return
