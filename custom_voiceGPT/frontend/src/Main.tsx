@@ -4,7 +4,7 @@ import {
   Streamlit,
   withStreamlitConnection,
 } from "streamlit-component-lib"
-import VoiceGPT from "./VoiceGPT"
+import VoiceGPT from "./VoiceGPT.jsx"
 
 const Main = (props: ComponentProps) => {
   const { api, kwargs } = props.args
