@@ -50,5 +50,8 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "."
+  "homepage": ".",
+  "devDependencies": {
+    "@types/react-speech-recognition": "^3.9.2"
+  }
 }
