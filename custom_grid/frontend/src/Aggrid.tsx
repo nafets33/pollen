@@ -143,7 +143,7 @@ toastr.options = {
 const AgGrid = (props: Props) => {
   const BtnCellRenderer = (props: any) => {
     const btnClickedHandler = () => {
-      props.clicked(props.value)
+      props.clicked(props.node.id)
     }
     return (
       <button
@@ -154,9 +154,7 @@ const AgGrid = (props: Props) => {
           borderColor: props.borderColor ? props.borderColor : "black",
         }}
       >
-        {props.col_header
-          ? g_rowdata[props.rowIndex][props.col_header]
-          : props.buttonName}
+        {props.col_header ? props.value : props.buttonName}
       </button>
     )
   }
@@ -187,7 +185,7 @@ const AgGrid = (props: Props) => {
         const { prompt_field, prompt_message, button_api, prompt_order_rules } =
           button
         grid_options.columnDefs!.push({
-          field: index,
+          field: button["col_header"] ? button["col_header"] : index,
           headerName: button["col_headername"],
           width: button["col_width"],
           pinned: button["pinned"],
@@ -196,9 +194,11 @@ const AgGrid = (props: Props) => {
             col_header: button["col_header"],
             buttonName: button["button_name"],
             borderColor: button["border_color"],
-            clicked: async function (field: any) {
+            clicked: async function (row_index: any) {
               try {
-                const selectedRow = g_rowdata.find((row) => row[index] == field)
+                const selectedRow = g_rowdata.find(
+                  (row) => row[index] == row_index
+                )
                 if (prompt_order_rules) {
                   const str = selectedRow[prompt_field]
                   const selectedField =
