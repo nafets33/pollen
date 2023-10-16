@@ -1,6 +1,5 @@
 import os
 import streamlit.components.v1 as components
-from decouple import config
 from custom_voiceGPT.options_builder import OptionsBuilder as VoiceGPT_options_builder
 
 _RELEASE = True
