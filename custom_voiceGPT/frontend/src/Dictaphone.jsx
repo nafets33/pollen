@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react"
 import { useSpeechRecognition } from "react-speech-recognition"
 
 const Dictaphone = ({ commands }) => {
-  console.log('commands :>> ', commands);
   const [transcribing, setTranscribing] = useState(true)
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true)
   const toggleTranscribing = () => setTranscribing(!transcribing)
@@ -37,15 +36,15 @@ const Dictaphone = ({ commands }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <span>listening: {listening ? "on" : "off"}</span>
-      {/* <span>transcribing: {transcribing ? "on" : "off"}</span> */}
-      {/* <span>
+      <span>transcribing: {transcribing ? "on" : "off"}</span>
+      <span>
         clearTranscriptOnListen: {clearTranscriptOnListen ? "on" : "off"}
-      </span> */}
-      {/* <button onClick={resetTranscript}>Reset</button>
-      <button onClick={toggleTranscribing}>Toggle transcribing</button> */}
-      {/* <button onClick={toggleClearTranscriptOnListen}>
+      </span>
+      <button onClick={resetTranscript}>Reset</button>
+      <button onClick={toggleTranscribing}>Toggle transcribing</button>
+      <button onClick={toggleClearTranscriptOnListen}>
         Toggle clearTranscriptOnListen
-      </button> */}
+      </button>
       <span>{transcript}</span>
     </div>
   )
