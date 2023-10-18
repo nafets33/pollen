@@ -15,24 +15,57 @@ const imageUrls = {
   hootsAndHootie: "/hootsAndhootie.png",
 }
 
+let timer = null
+
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
-  console.log("kwargs :>> ", kwargs)
+  const [answer, setAnswer] = useState("")
+
+  const testFunc = async () => {
+    const audio = new Audio("./test_audio.mp3s")
+    console.log(audio.play())
+    const response = await axios.post(
+      "http://192.168.143.97:8000/api/data/voiceGPT",
+      {
+        api_key: "sdf",
+        text: "text",
+        self_image: "something",
+      }
+    )
+    console.log("response :>> ", response)
+  }
+
   const commands = useMemo(() => {
     return kwargs["commands"].map((command) => ({
       command: command["keywords"],
-      callback: async ({command:text}) => {
-        setMessage(`You said ${text}, (${command["api_body"]["keyword"]})`)
-        setImageSrc(command["image_on_listen"])
-        try {
-          console.log("api call on listen...", command)
-          await axios.post(api, command["api_body"])
-        } catch (error) {
-          console.log("api call on listen failded!")
+      callback: (ret) => {
+        const myFunc = async () => {
+          console.log("ret :>> ", ret)
+          setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
+          try {
+            console.log("api call on listen...", command)
+            const body = {
+              api_key: "api_key",
+              text: command["api_body"]["keyword"] + ret,
+              self_image: imageSrc,
+            }
+            const { data } = await axios.post(api, body)
+            data.self_image && setImageSrc(data.self_image)
+            setAnswer(data.text)
+            if (data.audio_path) {
+              const audio = new Audio(data.audio_path)
+              audio.play()
+            }
+          } catch (error) {
+            // console.log("api call on listen failded!")
+          }
         }
+        timer && clearTimeout(timer)
+        timer = setTimeout(myFunc, 1000)
       },
+      matchInterim: true,
     }))
   }, [kwargs.commands])
   // const commands = [
@@ -93,16 +126,18 @@ const CustomVoiceGPT = (props) => {
 
   return (
     <>
-      <span>
+      <div>
         <img src={imageSrc} height={100} />
-        {message}
+        <div> You: {message}</div>
+        <div>Answer: {answer}</div>
         <Dictaphone commands={commands} />
-      </span>
+      </div>
       <div>
         {/* <button onClick={listenOnce}>Listen Once</button> */}
         <button onClick={listenContinuously}>Listen continuously</button>
         {/* <button onClick={listenContinuouslyInChinese}></button> */}
         {/* <button onClick={SpeechRecognition.stopListening}>Stop</button> */}
+        {/* <button onClick={testFunc}>test</button> */}
       </div>
     </>
   )

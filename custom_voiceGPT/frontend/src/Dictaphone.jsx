@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react"
 import { useSpeechRecognition } from "react-speech-recognition"
 
 const Dictaphone = ({ commands }) => {
-  console.log('commands :>> ', commands);
   const [transcribing, setTranscribing] = useState(true)
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true)
   const toggleTranscribing = () => setTranscribing(!transcribing)
@@ -19,10 +18,10 @@ const Dictaphone = ({ commands }) => {
   } = useSpeechRecognition({ transcribing, clearTranscriptOnListen, commands })
   useEffect(() => {
     if (interimTranscript !== "") {
-      console.log("Got interim result:", interimTranscript)
+      // console.log("Got interim result:", interimTranscript)
     }
     if (finalTranscript !== "") {
-      console.log("Got final result:", finalTranscript)
+      // console.log("Got final result:", finalTranscript)
     }
   }, [interimTranscript, finalTranscript])
 
@@ -36,6 +35,7 @@ const Dictaphone = ({ commands }) => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
+      <span>All you said: {transcript}</span>
       <span>listening: {listening ? "on" : "off"}</span>
       {/* <span>transcribing: {transcribing ? "on" : "off"}</span> */}
       {/* <span>
@@ -46,7 +46,6 @@ const Dictaphone = ({ commands }) => {
       {/* <button onClick={toggleClearTranscriptOnListen}>
         Toggle clearTranscriptOnListen
       </button> */}
-      <span>{transcript}</span>
     </div>
   )
 }

@@ -17,13 +17,13 @@ def main():
         text_input=False,
         # keywords=["hey hootie", "hey hoots"],
         commands=[{
-            "keywords": ["hey Hoots", "hey Foods", "hello"],
-            "api_body": {"keyword": "hey_hoots"},
-            "image_on_listen": "hootsAndHootie.png"
+            "keywords": ["hey Hoots *", "hey Foods *", "hello *"],
+            "api_body": {"keyword": "hey hoots, "},
+            # "image_on_listen": "hootsAndHootie.png"
         },{
-            "keywords": ["bye Hoots", "bye Foods", "bye"],
-            "api_body": {"keyword": "bye_hoots"},
-            "image_on_listen": "hoots.png"
+            "keywords": ["bye Hoots *", "bye Foods *", "bye *"],
+            "api_body": {"keyword": "bye hoots, "},
+            # "image_on_listen": "hoots.png"
         }
         ]
     )
