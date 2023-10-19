@@ -21,7 +21,7 @@ const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
-  const [answer, setAnswer] = useState("")
+  const [answers, setAnswers] = useState([])
 
   const testFunc = async () => {
     const audio = new Audio("./test_audio.mp3s")
@@ -52,8 +52,9 @@ const CustomVoiceGPT = (props) => {
               self_image: imageSrc,
             }
             const { data } = await axios.post(api, body)
+            console.log("data :>> ", data)
             data.self_image && setImageSrc(data.self_image)
-            setAnswer(data.text)
+            setAnswers(data.text)
             if (data.audio_path) {
               const audio = new Audio(data.audio_path)
               audio.play()
@@ -128,13 +129,18 @@ const CustomVoiceGPT = (props) => {
     <>
       <div>
         <img src={imageSrc} height={100} />
-        <div> You: {message}</div>
-        <div>Answer: {answer}</div>
         <Dictaphone commands={commands} />
+        <button onClick={listenContinuously}>Listen continuously</button>
+        <div> You: {message}</div>
+        {answers.map((answer, idx) => (
+          <div key={idx}>
+            <div>-user: {answer.user}</div>
+            <div>-resp: {answer.resp}</div>
+          </div>
+        ))}
       </div>
       <div>
         {/* <button onClick={listenOnce}>Listen Once</button> */}
-        <button onClick={listenContinuously}>Listen continuously</button>
         {/* <button onClick={listenContinuouslyInChinese}></button> */}
         {/* <button onClick={SpeechRecognition.stopListening}>Stop</button> */}
         {/* <button onClick={testFunc}>test</button> */}
