@@ -16,6 +16,7 @@ const imageUrls = {
 }
 
 let timer = null
+let g_anwers = []
 
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
@@ -44,17 +45,23 @@ const CustomVoiceGPT = (props) => {
         const myFunc = async () => {
           console.log("ret :>> ", ret)
           setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
+          const text = [
+            ...g_anwers,
+            { user: command["api_body"]["keyword"] + ret },
+          ]
+          setAnswers([...text])
           try {
             console.log("api call on listen...", command)
             const body = {
               api_key: "api_key",
-              text: command["api_body"]["keyword"] + ret,
+              text: text,
               self_image: imageSrc,
             }
             const { data } = await axios.post(api, body)
             console.log("data :>> ", data)
             data.self_image && setImageSrc(data.self_image)
             setAnswers(data.text)
+            g_anwers = [...data.text]
             if (data.audio_path) {
               const audio = new Audio(data.audio_path)
               audio.play()
@@ -135,7 +142,7 @@ const CustomVoiceGPT = (props) => {
         {answers.map((answer, idx) => (
           <div key={idx}>
             <div>-user: {answer.user}</div>
-            <div>-resp: {answer.resp}</div>
+            <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
           </div>
         ))}
       </div>
