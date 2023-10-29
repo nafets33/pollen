@@ -23,6 +23,7 @@ const CustomVoiceGPT = (props) => {
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
   const [answers, setAnswers] = useState([])
+  const [listenAfterRelpy, setListenAfterReply] = useState(false)
 
   const testFunc = async () => {
     const audio = new Audio("./test_audio.mp3s")
@@ -38,40 +39,39 @@ const CustomVoiceGPT = (props) => {
     console.log("response :>> ", response)
   }
 
+  const myFunc = async (ret, command) => {
+    console.log("ret :>> ", ret)
+    setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
+    const text = [...g_anwers, { user: command["api_body"]["keyword"] + ret }]
+    setAnswers([...text])
+    try {
+      console.log("api call on listen...", command)
+      const body = {
+        api_key: "api_key",
+        text: text,
+        self_image: imageSrc,
+      }
+      const { data } = await axios.post(api, body)
+      console.log("data :>> ", data)
+      data["self_image"] && setImageSrc(data["self_image"])
+      data["listen_after_reply"] &&
+        setListenAfterReply(data["listen_after_reply"])
+      setAnswers(data["text"])
+      g_anwers = [...data["text"]]
+      if (data["audio_path"]) {
+        const audio = new Audio(data["audio_path"])
+        audio.play()
+      }
+    } catch (error) {
+      // console.log("api call on listen failded!")
+    }
+  }
   const commands = useMemo(() => {
     return kwargs["commands"].map((command) => ({
       command: command["keywords"],
       callback: (ret) => {
-        const myFunc = async () => {
-          console.log("ret :>> ", ret)
-          setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
-          const text = [
-            ...g_anwers,
-            { user: command["api_body"]["keyword"] + ret },
-          ]
-          setAnswers([...text])
-          try {
-            console.log("api call on listen...", command)
-            const body = {
-              api_key: "api_key",
-              text: text,
-              self_image: imageSrc,
-            }
-            const { data } = await axios.post(api, body)
-            console.log("data :>> ", data)
-            data.self_image && setImageSrc(data.self_image)
-            setAnswers(data.text)
-            g_anwers = [...data.text]
-            if (data.audio_path) {
-              const audio = new Audio(data.audio_path)
-              audio.play()
-            }
-          } catch (error) {
-            // console.log("api call on listen failded!")
-          }
-        }
         timer && clearTimeout(timer)
-        timer = setTimeout(myFunc, 1000)
+        timer = setTimeout(() => myFunc(ret, command), 1000)
       },
       matchInterim: true,
     }))
@@ -136,7 +136,11 @@ const CustomVoiceGPT = (props) => {
     <>
       <div>
         <img src={imageSrc} height={100} />
-        <Dictaphone commands={commands} />
+        <Dictaphone
+          commands={commands}
+          myFunc={myFunc}
+          listenAfterRelpy={listenAfterRelpy}
+        />
         <button onClick={listenContinuously}>Listen continuously</button>
         <div> You: {message}</div>
         {answers.map((answer, idx) => (
