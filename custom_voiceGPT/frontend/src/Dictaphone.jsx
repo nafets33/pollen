@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react"
 import { useSpeechRecognition } from "react-speech-recognition"
 
-const Dictaphone = ({ commands }) => {
+let timer
+
+const Dictaphone = ({ commands, myFunc, listenAfterRelpy }) => {
   const [transcribing, setTranscribing] = useState(true)
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true)
   const toggleTranscribing = () => setTranscribing(!transcribing)
@@ -16,14 +18,35 @@ const Dictaphone = ({ commands }) => {
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable,
   } = useSpeechRecognition({ transcribing, clearTranscriptOnListen, commands })
+  const [prevScript, setPrevScript] = useState("")
+
   useEffect(() => {
-    if (interimTranscript !== "") {
-      // console.log("Got interim result:", interimTranscript)
+    // console.log(
+    //   "Got interim result:",
+    //   interimTranscript.length,
+    //   interimTranscript
+    // )
+    // setPrevScript(interimTranscript)
+    // if (interimTranscript === "") {
+    //   console.log("prevScript :>> ", prevScript)
+    // }
+  }, [interimTranscript])
+
+  useEffect(() => {
+    if (finalTranscript != "" && listenAfterRelpy) {
+      console.log("Got final result:", finalTranscript)
+      timer && clearTimeout(timer)
+      timer = setTimeout(() => {
+        setPrevScript(finalTranscript)
+        myFunc(finalTranscript, { api_body: { keyword: "" } })
+        resetTranscript()
+      }, 1000)
     }
-    if (finalTranscript !== "") {
-      // console.log("Got final result:", finalTranscript)
+    if (finalTranscript != "" && !listenAfterRelpy) {
+      setPrevScript(finalTranscript)
+      resetTranscript()
     }
-  }, [interimTranscript, finalTranscript])
+  }, [finalTranscript, listenAfterRelpy])
 
   if (!browserSupportsSpeechRecognition) {
     return <span>No browser support</span>
@@ -35,12 +58,12 @@ const Dictaphone = ({ commands }) => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <span>All you said: {transcript}</span>
+      <span>you said: {prevScript}</span>
       <span>listening: {listening ? "on" : "off"}</span>
       {/* <span>transcribing: {transcribing ? "on" : "off"}</span> */}
-      {/* <span>
+      <span>
         clearTranscriptOnListen: {clearTranscriptOnListen ? "on" : "off"}
-      </span> */}
+      </span>
       {/* <button onClick={resetTranscript}>Reset</button>
       <button onClick={toggleTranscribing}>Toggle transcribing</button> */}
       {/* <button onClick={toggleClearTranscriptOnListen}>
