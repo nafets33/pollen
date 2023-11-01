@@ -480,7 +480,7 @@ def pollenq(admin_pq):
 
         ip_address = get_ip_address()
         if ip_address == '10.202.0.2':
-            ip_address = "https://api.pollenq.com"
+            ip_address = "https://api.quantqueen.com"
         else:
             print("IP sandbox")
             ip_address = "http://127.0.0.1:8000"
