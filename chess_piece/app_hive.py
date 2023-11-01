@@ -4,7 +4,7 @@ import os
 import time
 import smtplib
 import ssl
-from datetime import datetime
+from datetime import datetime, date
 from email.message import EmailMessage
 import alpaca_trade_api as tradeapi
 import matplotlib.pyplot as plt
@@ -26,6 +26,15 @@ import ipdb
 from custom_grid import st_custom_grid
 from custom_grid import GridOptionsBuilder as GOB
 from custom_graph_v1 import st_custom_graph
+import random
+
+
+# componenets
+from streamlit_extras.switch_page_button import switch_page
+from streamlit_extras.stoggle import stoggle
+import hydralit_components as hc
+from custom_button import cust_Button
+from custom_text import custom_text, TextOptionsBuilder
 
 from chess_piece.king import (
     PickleData,
@@ -419,14 +428,13 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
 def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
     gb = GOB.create()
     gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-    gb.configure_default_column(column_width=100, resizable=True,
-                        textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
+    gb.configure_default_column(column_width=100, resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
     gb.configure_theme('ag-theme-material')
 
     #Configure index field
     gb.configure_index('idx')
     gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
-    gb.configure_column('message', {'initialWidth':1200, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
+    gb.configure_column('message', {'initialWidth':500, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
     go = gb.build()
 
     st_custom_grid(
@@ -444,7 +452,7 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
         api_key=os.environ.get("fastAPI_key"),
         buttons = [],
 
-        grid_height='300px',
+        grid_height='250px',
         log_file=log_file
 
     ) 
@@ -1477,21 +1485,21 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                         APCA_API_SECRET_KEY=None,
                     )
                 
-                st.warning("NEVER Share your API KEYS WITH ANYONE!")
+                st.warning("NEVER EVER Share your API KEYS WITH ANYONE!")
 
                 if st.form_submit_button("Save API Keys"):
                     # test keys
                     if test_api_keys(user_secrets=user_secrets, prod=prod):
                         st.success(f"{user_env_instance} Keys Added Refreshing Page")
                         user_secrets[f"{user_env_instance}_keys_confirmed"] = True
+                        QUEEN_KING["users_secrets"] = user_secrets
+                        PickleData(PB_App_Pickle, QUEEN_KING)
+                        time.sleep(2)
+                        st.experimental_rerun()
                     else:
                         st.error(f"{user_env_instance} Keys Failed")
                         user_secrets[f"{user_env_instance}_keys_confirmed"] = False
 
-                    QUEEN_KING["users_secrets"] = user_secrets
-                    PickleData(PB_App_Pickle, QUEEN_KING)
-                    time.sleep(2)
-                    st.experimental_rerun()
 
     return True
 
@@ -1931,3 +1939,318 @@ def click_button_grid():
         st.write("Nothing was clicked")
 
 
+
+def create_ag_grid_column(
+    headerName="Column Header",
+    # field="dataField",
+    # colId="columnId",
+    type=None,
+    width=100,
+    initialWidth=None,  # Add initialWidth property
+    minWidth=None,
+    maxWidth=None,
+    sortable=True,
+    filter=False,
+    filterParams=None,
+    resizable=True,
+    pinned=None,
+    lockPosition=False,
+    suppressSizeToFit=False,
+    cellRenderer=None,
+    cellStyle=None,
+    headerCheckboxSelection=False,
+    checkboxSelection=False,
+    headerClass=None,
+    cellClass=None,
+    valueGetter=None,
+    valueFormatter=None,
+    cellEditor=None,
+    cellEditorParams=None,
+    floatingFilter=False,
+    floatingFilterComponent=None,
+    floatingFilterComponentParams=None,
+    enableRowGroup=False,
+    rowGroupIndex=None,
+    enablePivot=False,
+    pivotIndex=None,
+    aggFunc=None,
+    enableValue=False,
+    enableChangeDetection=False,
+    enableCellChangeFlash=False,
+    cellEditorPopup=False,
+    cellEditorPopupParent=None,
+):
+    # Create a dictionary with the provided field values
+    column = {
+        "headerName": headerName,
+        "type": type,
+        # "field": field,
+        # "colId": colId,
+        "width": width,
+        "initialWidth": initialWidth,  # Include initialWidth property
+        "minWidth": minWidth,
+        "maxWidth": maxWidth,
+        "sortable": sortable,
+        "filter": filter,
+        "filterParams": filterParams,
+        "resizable": resizable,
+        "pinned": pinned,
+        "lockPosition": lockPosition,
+        "suppressSizeToFit": suppressSizeToFit,
+        "cellRenderer": cellRenderer,
+        "cellStyle": cellStyle,
+        "headerCheckboxSelection": headerCheckboxSelection,
+        "checkboxSelection": checkboxSelection,
+        "headerClass": headerClass,
+        "cellClass": cellClass,
+        "valueGetter": valueGetter,
+        "valueFormatter": valueFormatter,
+        "cellEditor": cellEditor,
+        "cellEditorParams": cellEditorParams,
+        "floatingFilter": floatingFilter,
+        "floatingFilterComponent": floatingFilterComponent,
+        "floatingFilterComponentParams": floatingFilterComponentParams,
+        "enableRowGroup": enableRowGroup,
+        "rowGroupIndex": rowGroupIndex,
+        "enablePivot": enablePivot,
+        "pivotIndex": pivotIndex,
+        "aggFunc": aggFunc,
+        "enableValue": enableValue,
+        "enableChangeDetection": enableChangeDetection,
+        "enableCellChangeFlash": enableCellChangeFlash,
+        "cellEditorPopup": cellEditorPopup,
+        "cellEditorPopupParent": cellEditorPopupParent,
+    }
+    
+    # Remove fields with None values
+    column = {key: value for key, value in column.items() if value is not None}
+
+    return column
+
+#
+def setup_page(QUEEN_KING, theme_list):
+    try:
+        cols = st.columns((3,3))
+        with cols[0]:
+            st.title("Automate Your Portfolio With a AI.BeeBot")
+        with cols[1]:
+            cust_Button(file_path_url='misc/chess_board_king.gif', height='150px', hoverText='')
+            # return_custom_button_nav(file_path_url='misc/chess_board_king.gif', height='150', hoverText='Queens Conscience', key='qc2')
+
+        hive_setup, settings_queen, BrokerAPIKeys, YourPublicCharacter, help_me = st.tabs(["Setup Steps:gear:", "Risk Parameters:comet:", "BrokerAPIKeys:old_key:", "Choose A Queen:crown:", "Help:dizzy:"])
+
+        with hive_setup:
+            # st.subheader("Steps to get your QueenTraderBot")
+            cols = st.columns((1,1,1))
+                            
+            # cols = st.columns((5,3,3,2,2,2))
+            with cols[0]:
+                stoggle("1. Select your Broker",
+                "Alpaca is only current supported broker, Create your FREE account at https://app.alpaca.markets/brokerage/new-account"
+                )
+            with cols[1]:
+                stoggle("2. Add your Broker API keys",
+                """
+                This allows the Queen to place Trades for your portfolio. 
+                This will change the way you trade forever...everyone needs an AI
+                """
+                )
+            with cols[2]:
+                stoggle("3. Select A Queen",
+                """
+                Each Queen Offers different trading trading strategies with different levels of customization  
+                """
+                )
+            # with cols[3]:
+            #     stoggle("4. Command",
+            #     """
+            #     Select a Queen.TradingModel 
+            #     Trade alongside, make changes, talk with you Queen, Change strategy and Implement! 
+            #     Sit Back and watch your Queen Make You Money $$$
+            #     """
+            #     )
+
+            cols = st.columns((1,1,1))
+
+            with cols[0]:
+                page_line_seperator('.5')
+                st.image(mainpage_bee_png, width=100)
+            with cols[1]:
+                page_line_seperator('.5')
+                st.image(mainpage_bee_png, width=100)
+            with cols[2]:
+                page_line_seperator('.5')
+                st.image(mainpage_bee_png, width=100)
+        
+        with BrokerAPIKeys:
+            queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
+            # st.error("Account Needs to be Authoirzed First, Add Keys in QueensConscience")
+            pass
+        
+        with settings_queen:
+            st.subheader("QueenTraderBot Settings")
+            with st.expander("QueenTraderBot Settings", True):
+                mark_down_text(align='left', color=default_text_color, fontsize='23', text='Ensure to Complete Step 1 and an Create Alpaca Account', font=default_font, hyperlink="https://app.alpaca.markets/brokerage/new-account")
+                
+                # queen_controls__tabs = [""]
+                
+                cols = st.columns((3,4,1))
+
+                # with st.expander("Risk Levels"):
+                with cols[0]:
+                    # with st.form("Set How You Wish your Queen to Trade"):
+                    st.subheader("Set Your Risk Level")
+                # st.write(QUEEN_KING.keys())
+                    st.text("How Old are you?")
+                    if 'QueenTraders_Bithday' in QUEEN_KING.keys():
+                        birthday = st.date_input("Enter your birthday: YYYY/MM/DD")
+                    else:
+                        birthday = st.date_input("Enter your birthday: YYYY/MM/DD", date(year=1989, month=4, day=11))
+                    
+                    yrs_old = datetime.now().year - birthday.year
+                    if QUEEN_KING['age'] == 0:
+                        QUEEN_KING['age'] = yrs_old
+                    with cols[1]:
+                        QUEEN_KING['risk_level'] = st.slider("Risk Level", min_value=1, max_value=10, value=int(QUEEN_KING['risk_level']), help="Shoot for the Moon or Steady as she goes")            
+                    with cols[1]:
+                        QUEEN_KING['age'] = st.slider("Age..How you Feel to Risk", min_value=1, max_value=100, value=int(QUEEN_KING['age']))     
+                    QUEEN_KING['QueenTraders_Bithday'] = birthday
+                    
+                    
+                    # if st.form_submit_button('Save Risk Settings'):
+                    if st.button('Save Risk Settings'):
+                        PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+                        return_runningbee_gif__save(title='Risk Saved')
+                            
+            # with cols[1]:
+            with st.expander("Select a Theme, a Personality"):
+                update_queencontrol_theme(QUEEN_KING, theme_list)
+
+        with YourPublicCharacter:      
+            cols = st.columns((1,1,1))
+            with cols[0]:
+                set_button = True if QUEEN_KING['queen_tier'] == 'queen_1' else False
+                cBq = cust_Button(file_path_url="misc/pawn.png", height=f'100px', hoverText="Tier1 QUEEN", key="queen_1", default=set_button)
+                if cBq:
+                    QUEEN_KING['queen_tier'] = 'queen_1'
+
+        with help_me:
+            st.write("No Soup for You")
+            local_gif(gif_path=flyingbee_grey_gif_path)
+    except Exception as e:
+        print('setup', e, print_line_of_error())
+
+
+
+def cust_graph_trinity(username, api, x_axis, y_axis, theme_options, key="0_graph", refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=150, trinity_weight='w_15'):
+    st_custom_graph(
+        api=api,
+        x_axis={
+            'field': x_axis
+        },
+
+        y_axis=y_axis,
+        theme_options=theme_options,
+        refresh_button=refresh_button,
+        
+        #kwrags
+        username=username,
+        prod=prod,
+        symbols=symbols,
+        refresh_sec=refresh_sec,
+        api_key=os.environ.get("fastAPI_key"),
+        return_type=return_type,
+        graph_height=graph_height,
+        trinity_weight=trinity_weight,
+        key=key,
+        # y_max=420
+        )
+    return True
+
+def symbols_unique_color(unique_names, characterpool='0123456789ABCDEF'):
+    symbol_dicts = []
+    # Get unique names from the 'name' column
+    # Generate a list of unique colors for each unique name
+    unique_colors = ['#' + ''.join([random.choice(characterpool) for j in range(6)]) for _ in range(len(unique_names))]
+    
+    for i, name in enumerate(unique_names):
+        # Customize the 'name' and 'color' values as needed
+        if 'vwap' in name:
+            color = "#0000FF"
+        else:
+            color = unique_colors[i]
+        symbol_dict = {
+            "field": name,
+            "name": name,
+            "color": color
+        }
+        symbol_dicts.append(symbol_dict)
+    
+    return symbol_dicts
+
+def return_user_symbol_colors(QUEEN_KING, idx_field="symbol", qcp='bishop', unique=True, symbol_dicts=[]):
+    qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
+    df = QUEEN_KING['revrec'].get('waveview')
+    df = df[df[idx_field].isin(qcp_tickers)]
+    df = df[df.index.str.contains("1Minute")]
+    
+    for ttf in df.index:
+        symbol = ttf.split("_")[0]
+        if 'buy' in df.at[ttf, 'macd_state']:
+            color = '#13B107' 
+        else:
+            color = '#DE0C0C' # 'green'
+        
+        symbol_dict = {
+            "field": symbol,
+            "name": f'{symbol}',
+            "color": color # unique_colors[i]
+        }
+        symbol_dicts.append(symbol_dict)
+    
+    
+    if unique:
+        unique_names = df[idx_field].tolist()
+        symbol_dicts = symbols_unique_color(unique_names)
+
+    return symbol_dicts
+
+
+def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=200):
+# with cols[1]:
+    # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+    # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
+    k_colors = streamlit_config_colors()
+    try:
+        # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+        theme_options={
+            'backgroundColor': k_colors.get('default_background_color'),
+            'main_title': '',   # '' for none
+            'x_axis_title': '',
+            'grid_color': k_colors.get('default_text_color'),
+            "showInLegend": False,
+            "showInLegendPerLine": True,
+        }
+        st_custom_graph(
+            api=f'{ip_address}/api/data/ticker_time_frame',
+            x_axis={
+                'field': 'timestamp_est'
+            },
+
+            y_axis=return_user_symbol_colors(QUEEN_KING=QUEEN_KING, idx_field="symbol", qcp='bishop'),
+            theme_options=theme_options,
+            refresh_button=True,
+            
+            #kwrags
+            username=KING['users_allowed_queen_emailname__db'].get(client_user),
+            prod=prod,
+            symbols=QUEEN_KING['chess_board']['bishop'].get('tickers'), #'symbols,
+            refresh_sec=refresh_sec,
+            api_key=os.environ.get("fastAPI_key"),
+            graph_height=graph_height,
+            trinity_weight='w_15',
+            key='trinity_graph',
+            # y_max=420
+            )
+    except Exception as e:
+        print_line_of_error("ERROR cust graph trinity")

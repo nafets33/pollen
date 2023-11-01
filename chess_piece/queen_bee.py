@@ -253,7 +253,7 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
                 logging.warning(order_val.get('log_msg'))
                 # QUEEN['queen_orders'].at[run_order_idx, 'validation_correction'] = 'true' # WORKERBEE handle later
                 qty_order = order_val.get('qty')
-            
+
             order_submit = submit_order(api=api, 
                                         symbol=ticker, 
                                         type=order_type, 
@@ -1168,7 +1168,19 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             revrec = QUEEN['revrec']
             waveview = revrec.get('waveview')
             active_tickers = QUEEN['heartbeat']['active_tickers'] # ttf
-            
+
+            # check for missing tickers in price_info
+            symbols = active_tickers
+            price_info_missing = [s for s in symbols if s not in QUEEN['price_info_symbols'].index]
+            if price_info_missing:
+                msg = (f"Symbols MISSING PriceInfo Adding In {price_info_missing}")
+                logging.info(msg)
+                print(msg)
+                snapshot_price_symbols = async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN)
+                df_priceinfo_symbols = pd.DataFrame(snapshot_price_symbols)
+                df_priceinfo_symbols = df_priceinfo_symbols.set_index('ticker', drop=False)
+                update_queens_priceinfo_symbols(QUEEN, df_priceinfo_symbols)
+
             if 'stars' not in QUEEN.keys():
                 QUEEN['stars'] = {ttf: {'last_buy': datetime.now(est).replace(year=1989)} for ttf in active_tickers}           
             
@@ -1216,7 +1228,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 req = return_STORYbee_trigbees(QUEEN=QUEEN, STORY_bee=STORY_bee, tickers_filter=[ticker])
                 active_trigs = req.get('active_trigs') # {ttf: [waves]}
 
-                # waveview current ask                    
+                # waveview current ask
                 df = QUEEN.get('price_info_symbols')
                 df['current_ask'] = df['priceinfo'].apply(lambda x: x.get('current_ask'))
                 dict_join = dict(zip(df.index, df['current_ask']))
@@ -1246,9 +1258,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # print(bees_fly)
                     if ticker_time_frame in QUEEN['stars'].keys():
                         if (datetime.now(est) - QUEEN['stars'].get(ticker_time_frame).get('last_buy')) < timedelta(seconds=60):
-                            msg = (ticker_time_frame, 'you just bought why are you here?', bees_fly.at[ticker_time_frame, 'star_at_play'], bees_fly.at[ticker_time_frame, 'current_ask'])
+                            msg = (ticker_time_frame, 'Just Bought, Deploying Is Still', bees_fly.at[ticker_time_frame, 'allocation_deploy'], " StarAtPlay: ", bees_fly.at[ticker_time_frame, 'star_at_play'], " Ask Price", bees_fly.at[ticker_time_frame, 'current_ask'])
                             print(msg)
-                            logging.error(msg)
+                            logging.warning(msg)
                             continue
                     # if ticker not in ['SPY', 'GOOG']:
                     #     continue
@@ -1497,7 +1509,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             QUEEN['queen_orders'].at[queen_order_idx, 'cost_basis'] = float(order_status['filled_qty']) * float(order_status['filled_avg_price'])
             av_qty = float(QUEEN['queen_orders'].at[queen_order_idx, 'qty_available'])
             avg_price_fill = float(QUEEN['queen_orders'].at[queen_order_idx, 'filled_avg_price'])          
-            if QUEEN['queen_orders'].at[queen_order_idx, 'status'] == 'filled' and av_qty > 0:
+            if av_qty > 0:
                 QUEEN['queen_orders'].at[queen_order_idx, 'cost_basis_current'] = av_qty * avg_price_fill
                 
         return QUEEN['queen_orders'].loc[queen_order_idx].to_dict()
@@ -1560,14 +1572,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
 
     def return_snap_priceinfo__pollenData(QUEEN, STORY_bee, ticker, api):
-        # read check if ticker is active...if it is return into from db ELSE if user data Pa
+        # read check if ticker is active...if it is return into from db ELSE return broker data 
         call_snap = False
         ttf = f'{ticker}{"_1Minute_1Day"}'
         if ttf not in QUEEN['heartbeat']['available_tickers']: #STORY_bee.keys():
-            # print("tic needs call snapshot", ticker)
             call_snap = True
-            # if ticker in priceinfo.keys():
-            #     print("ticker already found")
         
         def api_alpaca__request_call(ticker, api, call_type='snapshot'):
 
@@ -2311,8 +2320,55 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             print_line_of_error()
             sys.exit()
     
-    
-    def order_management(STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee): 
+
+    def async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN, mkhrs='open'): # re-initiate for i timeframe 
+
+        async def get_priceinfo(session, ticker, api, STORY_bee, QUEEN):
+            async with session:
+                try:
+                    priceinfo = return_snap_priceinfo__pollenData(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker, api=api)
+                    return {'priceinfo': priceinfo, 'ticker': ticker}
+                except Exception as e:
+                    print(e)
+                    raise e
+        
+        async def main(symbols, STORY_bee, api, QUEEN):
+            async with aiohttp.ClientSession() as session:
+                return_list = []
+                tasks = []
+                # symbols = [qo['symbol'] for qo in queen_order__s]
+                for ticker in set(symbols):
+                    crypto = True if ticker in crypto_currency_symbols else False
+                    # Continue Only if Market Open
+                    if mkhrs != 'open':
+                        continue # markets are not open for you
+                    tasks.append(asyncio.ensure_future(get_priceinfo(session, ticker, api, STORY_bee, QUEEN)))
+                original_pokemon = await asyncio.gather(*tasks)
+                for pokemon in original_pokemon:
+                    return_list.append(pokemon)
+                
+                return return_list
+
+        list_return = asyncio.run(main(symbols, STORY_bee, api, QUEEN))
+
+        return list_return
+
+
+    def update_queens_priceinfo_symbols(QUEEN, df):
+        if type(QUEEN.get('price_info_symbols')) is not pd.core.frame.DataFrame:
+            QUEEN['price_info_symbols'] = df
+        else:
+            df_main = QUEEN['price_info_symbols']
+            # fitler out incoming symbols
+            df_main = df_main[~df_main.index.isin(df.index)]
+            # join in new data
+            df_main = pd.concat([df_main, df])
+            # set data back to QUEEN
+            QUEEN['price_info_symbols'] = df_main
+        
+        return True
+
+    def order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee): 
 
 
         def queen_orders_main(QUEEN, STORY_bee, QUEEN_KING, charlie_bee):
@@ -2321,7 +2377,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 s_loop = datetime.now(est)
                 revrec = QUEEN.get('revrec')
                 waveview = revrec.get('waveview')
-                wv_symbols = list(set(waveview['symbol'].to_list()))
+                # wv_symbols = list(set(waveview['symbol'].to_list()))
 
                 def route_queen_order(QUEEN, queen_order, queen_order_idx, order_status, priceinfo, charlie_bee):
                     s_time = datetime.now(est)
@@ -2349,6 +2405,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 if order_status['side'] == 'buy':
                                     QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_open'
                                 else:
+                                    #WORKERBEE IF SHORTING THIS WON"T WORK NEED TO FIX. CHECK IF SHORITNG
                                     QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_close'
 
                             # Handle Filled Orders #
@@ -2356,7 +2413,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 # route by order type buy sell
                                 if order_status['side'] == 'buy':
                                     if QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] in CLOSED_queenorders:
-                                        print("but why?")
+                                        print("but why? THIS SHOULD NOT HAPPEN")
                                         QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'completed'
                                         logging_log_message(log_type='critical', msg='but why?')
                                         #### CHECK to see if Origin ORDER has Completed LifeCycle ###
@@ -2371,37 +2428,40 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                                 QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'completed'
                                     else:
                                         QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = "running"
+                                        update_latest_queen_order_status(order_status=order_status, queen_order_idx=queen_order_idx)
                                         update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=queen_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
                                         update_queen_order_profits(ticker=queen_order.get('ticker'), queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
-
+                                        QUEEN['queen_orders'].at[queen_order_idx, 'status_q'] = "filled"
+                                
                                 elif order_status['side'] == 'sell':
 
                                     # closing order, update origin order profits attempt to close out order
                                     origin_order = return_origin_order(df_queenorders=QUEEN['queen_orders'], exit_order_link=queen_order['exit_order_link'])
                                     origin_order_idx = origin_order.get('origin_idx')
                                     origin_order = origin_order.get('origin_order')
-                                    # confirm profits
-                                    profit_loss_value = update_runCLOSE__queen_order_honey(queen_order=queen_order, origin_order=origin_order, queen_order_idx=queen_order_idx)['profit_loss_value']
-                                    QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'completed'
+                                    if origin_order_idx:
+                                        # confirm profits
+                                        profit_loss_value = update_runCLOSE__queen_order_honey(queen_order=queen_order, origin_order=origin_order, queen_order_idx=queen_order_idx)['profit_loss_value']
+                                        QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'completed'
 
                                     #### CHECK to see if Origin ORDER has Completed LifeCycle ###
-                                    res = update_origin_orders_profits(queen_order=queen_order, origin_order=origin_order, origin_order_idx=origin_order_idx)
-                                    closing_filled = res['closing_filled']
-                                    profit_loss = res['profit_loss']
-                                    print('closing filled: ', profit_loss_value, 'profit_loss: ', profit_loss)
-                                    logging.info(('closing filled: ', profit_loss_value, 'profit_loss: ', profit_loss))
-                                    # Qty Available
-                                    update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
-                                    # Check to complete Queen Order
-                                    check_origin_order_status(QUEEN=QUEEN, origin_order=origin_order, origin_idx=origin_order_idx, closing_filled=closing_filled)
+                                        res = update_origin_orders_profits(queen_order=queen_order, origin_order=origin_order, origin_order_idx=origin_order_idx)
+                                        closing_filled = res['closing_filled']
+                                        profit_loss = res['profit_loss']
+                                        print('closing filled: ', profit_loss_value, 'profit_loss: ', profit_loss)
+                                        logging.info(('closing filled: ', profit_loss_value, 'profit_loss: ', profit_loss))
+                                        # Qty Available
+                                        update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
+                                        # Check to complete Queen Order
+                                        check_origin_order_status(QUEEN=QUEEN, origin_order=origin_order, origin_idx=origin_order_idx, closing_filled=closing_filled)
 
                                     
                             elif alp_order_status in partially_filled:            
                                 if order_status['side'] == 'buy':
                                     QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = "running_open"
-                                    
+
+                                    update_latest_queen_order_status(order_status=order_status, queen_order_idx=queen_order_idx)
                                     update_queen_order_profits(ticker=queen_order.get('ticker'), queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
-                                    
                                     update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=queen_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
                                     return {'resp': "running_open"}
@@ -2411,13 +2471,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                     origin_order_idx = origin_order.get('origin_idx')
                                     origin_order = origin_order.get('origin_order')
                                     
-                                    # update profits keep in running 
-                                    update_runCLOSE__queen_order_honey(queen_order=queen_order, origin_order=origin_order, queen_order_idx=queen_order_idx)
-                                    QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_close'
-                                    
-                                    update_origin_orders_profits(queen_order=queen_order, origin_order=origin_order, origin_order_idx=origin_order_idx)
-                                    update_queen_order_profits(ticker=queen_order.get('ticker'), queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
-                                    update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
+                                    if origin_order_idx:
+                                        # update profits keep in running 
+                                        update_runCLOSE__queen_order_honey(queen_order=queen_order, origin_order=origin_order, queen_order_idx=queen_order_idx)
+                                        QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_close'
+                                        
+                                        update_origin_orders_profits(queen_order=queen_order, origin_order=origin_order, origin_order_idx=origin_order_idx)
+                                        update_queen_order_profits(ticker=queen_order.get('ticker'), queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
+                                        update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
                                 else:
                                     print("Critical Error New Order Side")
@@ -2440,21 +2501,21 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     try:
 
-                        ticker = queen_order['ticker']
-                        order_id = queen_order['client_order_id']
-                        current_updated_at = [queen_order['updated_at'] if 'updated_at' in queen_order.keys() else False][0]
                         # 1 check if order fulfilled
-                        # order_status = check_order_status(api=api, client_order_id=order_id, queen_order=queen_order)
                         # 2 update filled qty & $
-                        queen_order = update_latest_queen_order_status(order_status=order_status, queen_order_idx=queen_order_idx)
                         # 3 Process Queen Order State
-                        queen_order = alpaca_queen_order_state(QUEEN=QUEEN, order_status=order_status, queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
-                        # validate RUNNING # check if run_order needs to be arhived?
-
-                        QUEEN['queen_orders'].at[queen_order_idx, 'updated_at'] = order_status['updated_at']
+                        # 4 validate RUNNING # check if run_order needs to be arhived?
+                        
+                        current_updated_at = [queen_order['updated_at'] if 'updated_at' in queen_order.keys() else False][0]
                         
                         if current_updated_at != order_status['updated_at']:
                             print("Queen Order Updated")
+                        
+                        queen_order = update_latest_queen_order_status(order_status=order_status, queen_order_idx=queen_order_idx)
+                        queen_order = alpaca_queen_order_state(QUEEN=QUEEN, order_status=order_status, queen_order=queen_order, queen_order_idx=queen_order_idx, priceinfo=priceinfo)
+
+                        QUEEN['queen_orders'].at[queen_order_idx, 'updated_at'] = order_status['updated_at']
+                        
 
                         charlie_bee['queen_cyle_times']['om_route_queenorder__om'] = (datetime.now(est) - s_time).total_seconds()
 
@@ -2465,38 +2526,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         print("Unable to Route Queen Order")
                         logging.error({'queen order client id': queen_order['client_order_id'], 'msg': 'unable to route queen order', 'error': str(e)})
                 
-                def async_api_alpaca__snapshots_priceinfo(symbols, mkhrs, STORY_bee, api, QUEEN): # re-initiate for i timeframe 
-
-                    async def get_priceinfo(session, ticker, api, STORY_bee, QUEEN):
-                        async with session:
-                            try:
-                                priceinfo = return_snap_priceinfo__pollenData(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker, api=api)
-                                return {'priceinfo': priceinfo, 'ticker': ticker}
-                            except Exception as e:
-                                print(e)
-                                raise e
-                    
-                    async def main(symbols, STORY_bee, api, QUEEN):
-                        async with aiohttp.ClientSession() as session:
-                            return_list = []
-                            tasks = []
-                            # symbols = [qo['symbol'] for qo in queen_order__s]
-                            for ticker in set(symbols):
-                                crypto = True if ticker in crypto_currency_symbols else False
-                                # Continue Only if Market Open
-                                if mkhrs != 'open':
-                                    continue # markets are not open for you
-                                tasks.append(asyncio.ensure_future(get_priceinfo(session, ticker, api, STORY_bee, QUEEN)))
-                            original_pokemon = await asyncio.gather(*tasks)
-                            for pokemon in original_pokemon:
-                                return_list.append(pokemon)
-                            
-                            return return_list
-
-                    list_return = asyncio.run(main(symbols, STORY_bee, api, QUEEN))
-                    df = pd.DataFrame(list_return)
-                    df = df.set_index('ticker')
-                    return df
 
                 def async_send_queen_orders__to__kingsBishop_court(queen_orders__dict, revrec): 
 
@@ -2526,6 +2555,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     list_of_kingbishop_evals = asyncio.run(main_kingsBishop(queen_orders__dict, revrec))
                     return list_of_kingbishop_evals
+
 
                 try: # App Requests
                     s_app = datetime.now(est)
@@ -2570,91 +2600,58 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 charlie_bee['queen_cyle_times']['gather_orders_as_dict'] = (datetime.now(est) - s_loop).total_seconds()
 
                 s_time = datetime.now(est)
-                symbols = list(set(df_active['symbol'].to_list())) + wv_symbols
-                price_info_symbols = async_api_alpaca__snapshots_priceinfo(symbols, mkhrs, STORY_bee, api, QUEEN)
-
-                # df = df.rename(columns={0: 'priceinfo'})
-                QUEEN['price_info_symbols'] = price_info_symbols
+                symbols = list(set(df_active['symbol'].to_list()))
+                
+                # Price Info Symbols
+                snapshot_price_symbols = async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN)
+                df_priceinfo_symbols = pd.DataFrame(snapshot_price_symbols)
+                df_priceinfo_symbols = df_priceinfo_symbols.set_index('ticker', drop=False)
+                update_queens_priceinfo_symbols(QUEEN, df_priceinfo_symbols)
+                
                 charlie_bee['queen_cyle_times']['om_priceinfo_api'] = (datetime.now(est) - s_time).total_seconds()
 
                 s_time_qOrders = datetime.now(est)
                 if len(queen_order__s) == 0:
                     print("no orders")
                     return False
-                
-                # api
-                init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
-                init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-                api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date, symbols=False, limit=500)
-                queen_orders_closed = api_orders.get('closed')
-                queen_orders_open = api_orders.get('open')
-                c_order_ids_dict_closed = [vars(queen_orders_closed[n])['_raw'] for n in range(len(queen_orders_closed))]
-                c_order_ids_dict_open = [vars(queen_orders_open[n])['_raw'] for n in range(len(queen_orders_open))]
-                c_order_ids_list_dict = c_order_ids_dict_closed + c_order_ids_dict_open
-                
-                c_order_ids = [c_order_ids_list_dict[n].get("client_order_id") for n in range(len(c_order_ids_list_dict))]
-                
-                #check for missing?
-                mmm = [i for i in c_order_ids if i not in df['index'].tolist()]
-                # if len(mmm) > 0:
-                #     print("alpaca mising ids", len(mmm)," last", mmm[-1])
-                QUEEN['subc_last_coId_logged'] = deque([], 8)
 
-                order_status_info = c_order_ids_list_dict
-                errs = []
+                # api # refresh all broker orders which are still pending 
                 for c_order_id in qo_active_index:
-                    if c_order_id not in c_order_ids and c_order_id != 'init':
-                        errs.append(f'need order info, {c_order_id}')
-                        # print("need order info ", c_order_id)
+                    pull_order_status = df_active.at[c_order_id, 'status_q']
+                    if c_order_id not in BROKER['broker_orders'].index or pull_order_status == 'pending':
                         try:
-                            # if c_order_id not in [i.get("client_order_id") for i in QUEEN['subc_last_coId_logged']]:
-                            #     logging.info(("client order id missing need to fetch: ", c_order_id))
-                            #     QUEEN['subc_last_coId_logged'].append({'client_order_id': c_order_id, 'timestamp':datetime.now(est)})
-                            # print(c_order_id)
                             order_status = check_order_status(api=api, client_order_id=c_order_id)
-                            order_status_info.append(order_status)
+                            if order_status:
+                                update_broker_order_status(BROKER, order_status)
                         except Exception as e:
-                            print("ee", e)
-                if errs:
-                    # print('need order info ', len(errs))
-                    QUEEN['heartbeat']['need_order_info'] = errs
+                            print("reeally", e)
                 charlie_bee['queen_cyle_times']['om_order_status_api'] = (datetime.now(est) - s_time_qOrders).total_seconds()
 
-                QUEEN['order_status_info'] = order_status_info
+                # QUEEN['order_status_info'] = order_status_info # open key in QUEEN to use
 
-                # 10 SECONDS X? ### WORKERBEE async initial route orders
                 s_time = datetime.now(est)
                 queen_orders__dict = {}
                 for idx in qo_active_index:
-                    s_b1 = datetime.now(est)
                     # Queen Order Local Vars
                     run_order = QUEEN['queen_orders'].loc[idx].to_dict()
                     runorder_client_order_id = run_order['client_order_id']
                     symbol = run_order.get('symbol')
                     crypto = True if symbol in crypto_currency_symbols else False
                     
-                    try: # snapshot prices bar
-                        if symbol not in price_info_symbols.index:
-                            print("pi failed", symbol)
-                            priceinfo = return_snap_priceinfo__pollenData(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=symbol, api=api)
-                        else:
-                            priceinfo = price_info_symbols.at[symbol, 'priceinfo']
+                    try: 
+                        # snapshot prices bar
+                        priceinfo = QUEEN['price_info_symbols'].at[symbol, 'priceinfo']
                         
-                        order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
+                        # order_status = [ord_stat for ord_stat in order_status_info if ord_stat['client_order_id'] == runorder_client_order_id]
+                        order_status = BROKER['broker_orders'].loc[idx].to_dict()
+
                         # Process Queen Order States
-                        if len(order_status) > 0:
-                        
-                            if order_status[0]['status'] == 'failed':
-                                print("Order Failed To Turn From Alpaca, Archving Order to Error")
-                                logging.error(("client_order failed to return", runorder_client_order_id))
-                                QUEEN['queen_orders'].at[idx, 'queen_order_state'] = "failed"
-                                continue
-
-                            run_order = route_queen_order(QUEEN=QUEEN, queen_order=run_order, queen_order_idx=idx, order_status=order_status[0], priceinfo=priceinfo, charlie_bee=charlie_bee) ## send in order_status
-                        else: ## this can be removed ### 
-                            print(f'order status not returned c_order_id:{runorder_client_order_id}')
-                            continue
-
+                        run_order = route_queen_order(QUEEN=QUEEN, 
+                                                      queen_order=run_order, 
+                                                      queen_order_idx=idx, 
+                                                      order_status=order_status, 
+                                                      priceinfo=priceinfo, 
+                                                      charlie_bee=charlie_bee) ## send in order_status
 
                         if float(run_order.get('qty_available')) > 0 and run_order.get('order_trig_sell_stop') == True:
                             # print('run order')
@@ -2719,11 +2716,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             logging.info(exx.get('msg'))
                             print("exsell", exx.get('msg'))
 
-                            # if 'stars' not in QUEEN.keys():
-                            #     QUEEN['stars'] = {king_eval_order['bishop_keys'].get('ticker_time_frame'): {'last_sell': datetime.now(est)}}
-                            # else:
-                            #     QUEEN['stars'].update({king_eval_order['bishop_keys'].get('ticker_time_frame'): {'last_sell': datetime.now(est)}})
-                        
                             # Hold ORDER from being SOLD again until Release Validation
                             origin_order_idx = exx.get('new_queen_order_df').at[exx.get('new_queen_order_df').index[0], 'exit_order_link']
                             QUEEN['queen_orders'].at[origin_order_idx, 'order_trig_sell_stop'] = True
@@ -2831,7 +2823,87 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             print("ERROR", print_line_of_error())
     
     
+    def hanlde_missing_broker_orders_with_queen_orders(BROKER, QUEEN):
+
+        def add_missing_broker_order_to_queen_orders(QUEEN, broker_order):
+            # WORKERBEE append missing broker order new order to queen orders
+            return True
+        
+        broker_corder_ids = BROKER['broker_orders']['client_order_ids'].tolist() # only reconcile latest DAYs orders
+        for c_order_id in broker_corder_ids:
+            if c_order_id not in QUEEN['queen_orders'].index:
+                print("order in broker missing from queen orders add order to queen orders")
+
+    # def catch_up_queen_order_status(BROKER, QUEEN)
+    def update_broker_order_status(BROKER, order_status):
+        try:
+            broker_orders = BROKER['broker_orders']
+            df_token = pd.DataFrame([order_status]).set_index('client_order_id', drop=False)
+            if df_token.index[0] in broker_orders.index:
+                broker_orders = broker_orders[broker_orders['client_order_id'] != df_token.index[0]]
+            
+            broker_orders = pd.concat([broker_orders, df_token])
+            BROKER['broker_orders'] = broker_orders
+            
+            PickleData(BROKER.get('source'), BROKER)
+            return True
+        except Exception as e:
+            print_line_of_error("broker update failed")
+
+
+    def reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states, save_orders=False, b_order_init=False):
+        
+        if len(BROKER['broker_orders']) == 0:
+            print("INIT Broker ORDERS")
+            b_order_init = True
+            BROKER = init_broker_orders(api, BROKER)
+
+        # check for any missing orders
+        df = QUEEN.get('queen_orders')
+        df['status_q'] = df['status_q'].fillna('')
+        df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
+        df_active['client_order_id'] = df_active['client_order_id'].fillna('init')
+        qo_active_index = df_active['index'].to_list()
+        broker_corder_ids = BROKER['broker_orders']['client_order_id'].tolist()
+        for client_order_id in qo_active_index:
+            if client_order_id not in broker_corder_ids and client_order_id != 'init':
+                save_orders = True
+                try:
+                    order_status = check_order_status(api=api, client_order_id=client_order_id)
+                    if order_status:
+                        update_broker_order_status(BROKER, order_status)
+                    if b_order_init:
+                        if df_active.at[client_order_id, 'status'] == 'filled':
+                            QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'filled'
+                        else:
+                            QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'pending'
+                except Exception as e:
+                    print("weeeee", e)
+
+        if save_orders:
+            PickleData(QUEEN['dbs'].get('PB_broker_PICKLE'), BROKER)
+
+        return True
+        
+        
     
+    def init_broker_orders(api, BROKER):
+
+        init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
+        init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date, symbols=False, limit=500)
+        queen_orders_closed = api_orders.get('closed')
+        queen_orders_open = api_orders.get('open')
+        c_order_ids_dict_closed = [vars(queen_orders_closed[n])['_raw'] for n in range(len(queen_orders_closed))]
+        c_order_ids_dict_open = [vars(queen_orders_open[n])['_raw'] for n in range(len(queen_orders_open))]
+        broker_orders = c_order_ids_dict_closed + c_order_ids_dict_open
+        broker_orders = pd.DataFrame(broker_orders).set_index('client_order_id', drop=False)
+
+        BROKER['broker_orders'] = broker_orders
+
+        return BROKER
+
+
     ################################################################# pollen
     #################################################################
     ################################################################# 
@@ -2863,7 +2935,19 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         KING = ReadPickleData(master_swarm_KING(prod=prod))
         # init files needed
-        QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, orders=True)
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, broker=True, init=True)
+        QUEEN = qb.get('QUEEN')
+        QUEEN_KING = qb.get('QUEEN_KING')
+        api = qb.get('api')
+        QUEENsHeart = qb.get('QUEENsHeart')
+        BROKER = qb.get('BROKER')
+
+        ## """Rev Rec"""
+        if 'chess_board__revrec' not in QUEEN_KING.keys():
+            print("QUEEN Not Enabled ChessBoard")
+            logging.error((" queen not auth "))
+            send_email(subject=f'{client_user} running queen without Board', body=f'{client_user} running queen without Board')
+            sys.exit()
 
         if api == False:
             print("API Keys Failed, Queen goes back to Sleep")
@@ -2872,13 +2956,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             sys.exit()
 
         trading_days = hive_dates(api=api)['trading_days']
-        init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
-        init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-        api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
-
-        queen_orders_open = api_orders.get('open')
-        queen_orders_closed = api_orders.get('closed')
-        num__queen_orders_today = len(queen_orders_open) + len(queen_orders_closed)
+        
+        reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states, save_orders=False)
 
         # portfolio = return_alpc_portolio(api)['portfolio']
         ## !! Reconcile all orders processed in alpaca vs queen_order !! ##
@@ -2888,8 +2967,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         # POLLENSTORY = ticker_db.get('pollenstory')
         STORY_bee = ticker_db.get('STORY_bee')
         QUEEN['heartbeat']['ticker_db'] =  {'errors': ticker_db.get('errors')}
-        
-        
+
         # add new keys
         QUEEN_req = add_key_to_QUEEN(QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
         if QUEEN_req['update']:
@@ -2913,7 +2991,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         QUEEN['heartbeat']['active_order_state_list'] = active_order_state_list
         
-        # ticker_allowed = ['SPY', 'ETHUSD', 'BTCUSD', 'META', 'GOOG', 'AAPL', 'TSLA', 'SOFI']
         ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys())
 
         QUEEN = refresh_QUEEN_starTickers(QUEEN, STORY_bee, ticker_allowed)
@@ -2922,9 +2999,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         QUEEN['heartbeat']['available_triggerbees'] = available_triggerbees
 
-        QUEENsHeart = ReadPickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'))
-
-        PickleData(pickle_file=QUEEN['dbs'].get('PB_QUEEN_Pickle'), data_to_store=QUEEN)
+        PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
         print(f'ProdEnv {prod} Here we go Mario')
 
         ########################################################
@@ -2941,7 +3016,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # Should you operate now? I thnik the brain never sleeps ?
             mkhrs = return_market_hours(trading_days=trading_days)
             if mkhrs != 'open':
-                print("Queen to ZzzzZZzzzZzzz")
+                print("Queen to ZzzzZZzzzZzzz see you tomorrow")
                 break
             
             # if queens_chess_piece.lower() == 'queen': # Rule On High
@@ -2952,9 +3027,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # refresh db
             s_time = datetime.now(est)
             # QUEEN Databases
-            KING = ReadPickleData(master_swarm_KING(prod=prod))
+            KING = ReadPickleData(master_swarm_KING(prod=prod)) # WORKERBEE only check if KING needs to be reloaded
             # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
-            QUEEN_KING = ReadPickleData(QUEEN['dbs'].get('PB_App_Pickle'))
+            QUEEN_KING = ReadPickleData(QUEEN['dbs'].get('PB_App_Pickle')) # WORKERBEE only check if KING needs to be reloaded
             QUEEN['chess_board'] = QUEEN_KING['chess_board']
 
             # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
@@ -2968,8 +3043,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             """Account Info"""
             portfolio = return_alpc_portolio(api)['portfolio']
             QUEEN['portfolio'] = portfolio
+            
             acct_info = refresh_account_info(api=api)['info_converted']
-            QUEEN['account_info'] = acct_info
+            QUEEN['account_info'].update(acct_info)
 
             PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')})
 
@@ -2981,25 +3057,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious', archive_bucket='subconscious_requests')
             charlie_bee['queen_cyle_times']['app'] = (datetime.now(est) - s_time).total_seconds()
 
-            ## """Rev Rec"""
+            # Refresh Board
             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
             charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
             QUEEN['revrec'] = revrec
-            god_save_the_queen(QUEEN=QUEEN, save_rr=True)
+            god_save_the_queen(QUEEN=QUEEN, save_rr=True, save_acct=True) # WORKERBEE unessecary SAVING only save whats needed
 
             # Process All Orders
             s_time = datetime.now(est)
-            order_management(STORY_bee=STORY_bee, QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, api=api, QUEENsHeart=QUEENsHeart, charlie_bee=charlie_bee)
+            order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee)
             charlie_bee['queen_cyle_times']['order management'] = (datetime.now(est) - s_time).total_seconds()
-
 
             # Hunt for Triggers
             if seconds_to_market_close > 30:
                 s_time = datetime.now(est)
-                if 'chess_board__revrec' not in QUEEN_KING.keys():
-                    print("QUEEN Not Enabled ChessBoard")
-                    logging.error((" queen not auth "))
-                    sys.exit()
                 
                 command_conscience(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING, api=api) ##### >   
                 charlie_bee['queen_cyle_times']['command conscience'] = (datetime.now(est) - s_time).total_seconds()

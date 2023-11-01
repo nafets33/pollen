@@ -266,6 +266,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
                     )["api"]
                     return api
         else:
+            st.warning("USER NOT YET AUTHORIZED AND SHOWING PREVIEW")
             return return_alpaca_api_keys(prod=False)["api"]
     except Exception as e:
         print(e, print_line_of_error())
@@ -631,7 +632,9 @@ wavegrid_cols = ['Buy Waves',
  'X Buy',
  'Power Buy']
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False):
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False, fresh_board=True):
+    # Create/Refresh RevRec from Chess Board
+    # WORKERBEE: Add validation only 1 symbol per qcp 
     s_ = datetime.now(est)
     def shape_revrec_chesspieces(dic_items, acct_info, chess_board__revrec_borrow):
         df_borrow = pd.DataFrame(chess_board__revrec_borrow.items())
@@ -649,18 +652,19 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         
         df = pd.merge(df, df_borrow, how='left', on='qcp')
 
-        df = df.set_index('qcp')
+        df = df.set_index('qcp', drop=False)
         
         return df
 
-    def shape_revrec_tickers(dic_items):
+    def shape_revrec_tickers(dic_items, symbol_qcp_dict):
         df = pd.DataFrame(dic_items.items())
         df = df.rename(columns={0: 'qcp_ticker', 1: 'ticker_buying_power'})
-        df = df.set_index('qcp_ticker')
+        df = df.set_index('qcp_ticker', drop=False)
+        df['qcp'] = df['qcp_ticker'].map(symbol_qcp_dict)
         
         return df
 
-    def shape_revrec_stars(dic_items, revrec__stars_borrow):
+    def shape_revrec_stars(dic_items, revrec__stars_borrow, symbol_qcp_dict):
         df = pd.DataFrame(dic_items.items())
         df_main = df.rename(columns={0: 'qcp_ticker_star', 1: 'star_buying_power'})
 
@@ -668,7 +672,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         df = df.rename(columns={0: 'qcp_ticker_star', 1: 'star_borrow_buying_power'})
 
         df_main = df_main.merge(df, how='left', on='qcp_ticker_star')
-        df_main = df_main.set_index('qcp_ticker_star')
+        df_main = df_main.set_index('qcp_ticker_star', drop=False)
+        
+        df_main['ticker_time_frame'] = df_main.index
+        df_main['ticker'] = df_main['ticker_time_frame'].apply(lambda x: x.split("_")[0])
+        df_main['star'] = df_main['ticker_time_frame'].apply(lambda x: return_star_from_ttf(x))
+        
+        df_main['qcp'] = df_main['ticker'].map(symbol_qcp_dict)
 
         return df_main
 
@@ -690,18 +700,22 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         
         return budget_remaining, borrowed_budget_remaining
 
-    # chess_board__revrec_borrow={}
-    # chess_board__revrec={}
-    # revrec__ticker={}
-    # revrec__stars={}
-    # Create/Refresh RevRec from Chess Board
     try:
+        if fresh_board:
+            chess_board__revrec_borrow={}
+            chess_board__revrec={}
+            revrec__ticker={}
+            revrec__stars={}
+    
         revrec__stars_borrow = {}
+        symbol_qcp_dict = {}
+        # qcp_ticker_star_dict = []
         all_workers = list(QUEEN_KING['chess_board'].keys())
         # revrec_buying_power = acct_info.get('buying_power')
         # revrec_last_equity = acct_info.get('last_equity')
         # cash = acct_info.get('last_equity')
-        queen_order_states = king_G.get('RUNNING_Orders')
+        # queen_order_states = king_G.get('RUNNING_Orders')
+        # active_queen_order_states = king_G.get('active_queen_order_states') # not necessary to pash through func clean up work #WORKERBEE
         board_tickers = []
         for qcp in all_workers:
             if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
@@ -714,16 +728,15 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             chess_board__revrec_borrow[qcp] = qcp_borrow
             qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
             board_tickers = board_tickers + qcp_tickers
-            # qcp_tickers = [i for i in qcp_tickers if QUEEN_KING['chess_board'][qcp][i].get('ticker_buying_power') > 0]
+
             num_tickers = len(qcp_tickers)
             if num_tickers == 0:
                 print("No Tickers in Chess Piece")
                 continue
-
-
             
             # CONFIRM TRADING MODEL Ticker Budget Allocation
-            for ticker in qcp_tickers:                
+            for ticker in qcp_tickers:
+                symbol_qcp_dict['qcp'] = ticker              
                 trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
                 
                 # Handle missing TM
@@ -744,17 +757,20 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 
                 # Star Allocation Budget
                 for star in tm_keys:
+                    # qcp_ticker_star_dict.append({'star': qcp, 'symbol': ticker})
                     revrec__stars[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_LongTerm")
                     revrec__stars_borrow[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_ShortTerm")
 
+
+        # qcp_ticker_star_df = pd.DataFrame(qcp_ticker_star_dict)
+        
         # Refresh RevRec Total Budgets
         df_qcp = shape_revrec_chesspieces(chess_board__revrec, acct_info, chess_board__revrec_borrow)
-        df_ticker = shape_revrec_tickers(revrec__ticker)
-        df_stars = shape_revrec_stars(revrec__stars, revrec__stars_borrow)
+        df_ticker = shape_revrec_tickers(revrec__ticker, symbol_qcp_dict)
+        df_stars = shape_revrec_stars(revrec__stars, revrec__stars_borrow, symbol_qcp_dict)
         df_stars = df_stars.fillna(0) # tickers without budget move this to upstream in code and fillna only total budget column
-        df_stars['ticker_time_frame'] = df_stars.index
-        df_stars['ticker'] = df_stars['ticker_time_frame'].apply(lambda x: x.split("_")[0])
-        df_stars['star'] = df_stars['ticker_time_frame'].apply(lambda x: return_star_from_ttf(x))
+
+
 
         for qcp in all_workers:
             # if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
@@ -797,7 +813,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
                     star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
                     star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
-                    ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                    ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play = return_ttf_remaining_budget(QUEEN=QUEEN, 
                                                                         total_budget=star_total_budget,
                                                                         borrow_budget=star_borrow_budget,
                                                                         ticker_time_frame=ticker_time_frame, 
@@ -806,16 +822,25 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
                     df_stars.at[ticker_time_frame, 'star_at_play'] = budget_cost_basis
                     df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
+                    df_stars.at[ticker_time_frame, 'star_buys_at_play'] = buys_at_play
+                    df_stars.at[ticker_time_frame, 'star_sells_at_play'] = sells_at_play
+    
+        # cost basis at play
+        ticker_buys_at_play_dict = df_stars.groupby("ticker")[['star_buys_at_play']].sum().reset_index().set_index('ticker', drop=False)
+        ticker_sells_at_play_dict = df_stars.groupby("ticker")[['star_sells_at_play']].sum().reset_index().set_index('ticker', drop=False)
 
         # Wave Analysis 3 triforce view
-        # wave_analysis, storygauge, waveview = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
         resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
         wave_analysis = resp.get('df_storyview')
         waveview = resp.get('df_waveview') # up
         wave_analysis_down = resp.get('df_storyview_down') # down
         storygauge = resp.get('df_storyguage') # wave_gauge
-        if len(storygauge) > 0:
+        if len(storygauge) > 0: # should be able to remove this now WORKERBEE
             storygauge = storygauge.set_index('symbol', drop=False)
+            for symbol in storygauge.index:
+                storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
+                storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
+        
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         waveview['wave_blocktime'] = current_wave.get('wave_blocktime')
 
@@ -874,6 +899,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview.at[ttf, 'star_at_play'] = df_stars.at[ttf, 'star_at_play']
             waveview.at[ttf, 'star_at_play_borrow'] = df_stars.at[ttf, 'star_at_play_borrow']
             waveview.at[ttf, 'star_time'] = df_stars.at[ttf, 'star']
+            waveview.at[ttf, 'long_at_play'] = df_stars.at[ttf, 'star_buys_at_play']
+            waveview.at[ttf, 'short_at_play'] = df_stars.at[ttf, 'star_sells_at_play']
 
         for ttf in waveview_buy.index:
             # print(wave_analysis.at[ttf, 'star_avg_time_to_max_profit'][0])
@@ -921,9 +948,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 'wave_analysis': wave_analysis, 'storygauge': storygauge, 'waveview': waveview}
     
     except Exception as e:
-        print_line_of_error(e)
-        print('why')
-        ipdb.set_trace()
+        print_line_of_error("revrec failed")
 
 ### QUEEN UTILS
 def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy/sell cross
@@ -1037,7 +1062,7 @@ def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TB
     return {'open': open_orders, 'closed': closed_orders}
 
 
-def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, trigbee=False, info='1 can be queried at a time until feat update to return all'):
+def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, trigbee=False, info='1var able queried at a time'):
     queen_orders = QUEEN['queen_orders']
     if len(queen_orders) == 1: # init only
         return ''
@@ -1059,15 +1084,22 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
     try:
         # Total In Running, Remaining
         active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
-        num_active_orders = len(active_orders)
-        cost_basis_current = sum(active_orders[cost_basis_ref]) if num_active_orders > 0 else 0
-        
+        # handle long_short in update WORKERBEE
+        active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'short') 
+        buy_orders = active_orders[active_orders['long_short'] == 'long']
+        sell_orders = active_orders[active_orders['long_short'] == 'short']
+        # get cost basis
+        cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
+        buys_at_play = sum(active_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
+        sells_at_play = sum(active_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
+
+        # check current cost_basis
         if cost_basis_current == 0:
             budget_cost_basis = 0
             borrowed_cost_basis = 0
             remaining_budget = total_budget
             remaining_budget_borrow = borrow_budget
-            return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis
+            return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
         
         remaining_budget = total_budget - cost_basis_current
         if remaining_budget < 0:
@@ -1084,13 +1116,10 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
             remaining_budget = remaining_budget
             remaining_budget_borrow = borrow_budget
         
-        return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis
+        return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
     
     except Exception as e:
-        print(e)
-        print_line_of_error()
-        ipdb.set_trace()
-
+        print_line_of_error("return_ttf_remaining_budget")
 
 def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral"):
     # tradingmodel1["SPY"]["stars_kings_order_rules"]["1Minute_1Day"]["trigbees" ]["buy_cross-0"]["morning_9-11"].items()
@@ -1224,6 +1253,8 @@ def pollen_story(pollen_nectar):
 
                 row_1 = df_waveslice.iloc[0]["story_index"]
                 row_2 = df_waveslice.iloc[-1]["story_index"]
+                current_profit = (df_waveslice.iloc[-1].get('close') - df_waveslice.iloc[0].get('close')) / df_waveslice.iloc[-1].get('close')
+                current_profit = current_profit * -1 if 'sell' in trigger else current_profit
 
                 # we want to know the how long it took to get to low?
 
@@ -1244,7 +1275,6 @@ def pollen_story(pollen_nectar):
                         wave_blocktime = "afternoon_2-4"
                     else:
                         wave_blocktime = "afterhours"
-                        ipdb.set_trace()
 
                 MACDWAVE_story[trigger][wave_n].update(
                     {
@@ -1264,21 +1294,20 @@ def pollen_story(pollen_nectar):
                         # rsi
                         "start_tier_rsi_ema": df_waveslice.iloc[0].get('rsi_ema_tier'),
                         "end_tier_rsi_ema": df_waveslice.iloc[-1].get('rsi_ema_tier'),
+                        "current_profit": current_profit,
                     }
                 )
 
                 wave_height_value = max(df_waveslice[wave_col_name].values)
-                # df[f'{wave_col_name}_mp_deviation'] = df[wave_col_name] / wave_height_value
 
                 # how long was it profitable?
                 profit_df = df_waveslice[df_waveslice[wave_col_name] > 0].copy()
                 profit_length = len(profit_df)
+
                 if profit_length > 0:
                     max_profit_index = profit_df[profit_df[wave_col_name] == wave_height_value].iloc[0]["story_index"]
                     time_to_max_profit = max_profit_index - row_1
-                    mt = df_waveslice.at[max_profit_index, 'macd_tier']
-                    vt = df_waveslice.at[max_profit_index, 'vwap_tier']
-                    rst = df_waveslice.at[max_profit_index, 'rsi_ema_tier']                    
+                    # mx_profit_deviation = (current_profit - wave_height_value) / wave_height_value
                     
                     MACDWAVE_story[trigger][wave_n].update(
                         {
@@ -1295,9 +1324,9 @@ def pollen_story(pollen_nectar):
                     MACDWAVE_story[trigger][wave_n].update(
                         {"maxprofit": wave_height_value, 
                          "time_to_max_profit": 0,
-                        "mxp_macd_tier": 'NAN',
-                        "mxp_vwap_tier": 'NAN',
-                        "mxp_rsi_ema_tier": 'NAN',
+                        "mxp_macd_tier": None,
+                        "mxp_vwap_tier": None,
+                        "mxp_rsi_ema_tier": None,
                          }
                     )
 
@@ -1334,36 +1363,6 @@ def pollen_story(pollen_nectar):
                     profit_loss * -1
                 return profit_loss
 
-        # def profit_loss(df_waves):
-        #     close_prices = df_waves["close"].values
-        #     macd_cross_values = df_waves["macd_cross"].values
-            
-        #     profit_losses = []
-        #     for x in range(len(df_waves)):
-        #         if x == 0:
-        #             profit_losses.append(0)
-        #         else:
-        #             latest_price = close_prices[x]
-        #             origin_trig_price = close_prices[x - 1]
-        #             pl = (latest_price - origin_trig_price) / latest_price
-        #             if macd_cross_values[x] == "sell_cross-0":
-        #                 pl *= -1
-        #             profit_losses.append(pl)
-            
-        #     return profit_losses
-
-
-        # def macd_cross_WaveLength(df_waves, x):
-        #     # WORKERBEE np.where shift ipdb.set_trace()
-        #     if x == 0:
-        #         return 0
-        #     else:
-        #         prior_row = df_waves.iloc[x - 1]
-        #         current_row = df_waves.iloc[x]
-        #         latest_price = current_row["story_index"]
-        #         origin_trig_price = prior_row["story_index"]
-        #         length = latest_price - origin_trig_price
-        #         return length
 
         def macd_cross_WaveLength(df_waves, x):
             if x == 0:
@@ -2425,6 +2424,7 @@ def return_bars(
 ):
     try:
         s = datetime.now(est)
+        timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
         error_dict = {}
         # Fetch bars for prior ndays and then add on today
         # s_fetch = datetime.now()
@@ -2523,6 +2523,7 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
 
         for charttime, ndays in chart_times.items():
             timeframe = charttime.split("_")[0]  # '1Minute_1Day'
+            timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
             if s_date and e_date:
                 start_date = s_date
                 end_date = e_date
@@ -3162,7 +3163,7 @@ def return_macd(df_main, fast, slow, smooth):
 
 
 def return_VWAP(df):
-    if df.iloc[0]["timeframe"] == "1Minute":
+    if df.iloc[0]["timeframe"] == "1Min":
         d_token = split_today_vs_prior(df=df)
         df_today = d_token["df_today"]
         df_prior = d_token["df_prior"]
@@ -3496,15 +3497,18 @@ def KOR_close_order_today_vars(take_profit=True):
     }
 
 
-def buy_button_dict_items():
+def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=False,limit_price=False,take_profit=.01,sell_out=-.01,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, test_list=['a', 'b']):
     return {
-                'wave_amo': 1000,
-                'trade_using_limits': False,
-                'limit_price': False,
-                'take_profit': .01,
-                'sell_trigbee_trigger': True,
-                'sell_trigbee_trigger_timeduration': 5,
-                'close_order_today': False,
+                'star':star,
+                'wave_amo': wave_amo,
+                'trade_using_limits': trade_using_limits,
+                'limit_price': limit_price,
+                'take_profit': take_profit,
+                'sell_out': sell_out,
+                'sell_trigbee_trigger': sell_trigbee_trigger,
+                'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
+                'close_order_today': close_order_today,
+                'test_list': test_list,
                 }
 
 
@@ -4293,48 +4297,45 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, queenKING=False, init=False):
-    # if queenKING: # WORKERBEE Test integration with streamlit
-    #   from pq_auth import signin_main
-    #   signin_main(page="pollenq")
-    # WORKERBEE Async the reading of files
-    db_root = init_clientUser_dbroot(client_username=client_user) # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, init_pollen_ONLY=False):
+    db_root = init_clientUser_dbroot(client_username=client_user)
 
-    queens_chess_piece="queen"
-    # init_logging(queens_chess_piece="queen", db_root=db_root, prod=prod)
-
-    # init files needed
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init)
-    PB_QUEEN_Pickle = init_pollen['PB_QUEEN_Pickle']
-    PB_App_Pickle = init_pollen['PB_App_Pickle']
-    PB_Orders_Pickle = init_pollen['PB_Orders_Pickle']
-    # PB_QUEENsHeart_PICKLE = init_pollen['PB_QUEENsHeart_PICKLE']
-    # PB_RevRec_PICKLE = init_pollen['PB_RevRec_PICKLE']
-    # PB_account_info_PICKLE = os.path.join(db_root, 'queen_account_info.pkl')
+    if init_pollen_ONLY:
+        return {'init_pollen': init_pollen}
 
-    ORDERS = ReadPickleData(PB_Orders_Pickle) if orders else {}
-    QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle) if queen_king else {}
+    QUEEN = ReadPickleData(init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
+    QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen else {}
+    QUEEN_KING = ReadPickleData(init_pollen.get('PB_App_Pickle')) if queen_king else {}
+    ORDERS = ReadPickleData(init_pollen.get('PB_Orders_Pickle')) if orders else {}
+    BROKER = ReadPickleData(init_pollen.get('PB_broker_PICKLE')) if broker else {}
+    broker_info = ReadPickleData(init_pollen.get('PB_account_info_PICKLE')) if broker_info else {}
+
     if QUEEN_KING:
-        QUEEN_KING['source'] = PB_App_Pickle
+        QUEEN_KING['source'] = init_pollen.get('PB_App_Pickle')
         QUEEN_KING['dbs'] = init_pollen
-    QUEEN = ReadPickleData(PB_QUEEN_Pickle) if queen else {}
     if QUEEN:
-        QUEEN['source'] = PB_QUEEN_Pickle
+        QUEEN['source'] =  init_pollen.get('PB_QUEEN_Pickle')
         QUEEN['dbs'] = init_pollen
-        QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE'])
         QUEEN['heartbeat']['beat'] = QUEENsHeart
-        
-    
+    if BROKER:
+        BROKER['source'] = init_pollen.get('PB_broker_PICKLE')
+
     """ Keys """ 
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod) if api else {}
     if api == False:
-        print("API Keys Failed, Queen goes back to Sleep")
-        QUEEN_KING['api'] = False
-        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-        # return False
+        if QUEEN_KING:
+            print("API Keys Failed, Queen goes back to Sleep")
+            QUEEN_KING['api'] = False
+            PickleData(pickle_file=init_pollen.get('PB_App_Pickle'), data_to_store=QUEEN_KING)
     
-    return QUEEN, QUEEN_KING, ORDERS, api
-
+    return {"QUEEN": QUEEN, 
+            "QUEEN_KING": QUEEN_KING, 
+            "ORDERS": ORDERS, 
+            "api": api, 
+            'BROKER': BROKER, 
+            'QUEENsHeart': QUEENsHeart,
+            'broker_info': broker_info,}
 
 
 def process_order_submission(trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
@@ -4495,6 +4496,7 @@ def create_QueenOrderBee(
     order={},
     priceinfo={},
     queen_init=False,
+    long_short="init",
 ):  # Create Running Order
     def gen_queen_order(
         queen_order_version=queen_order_version,
@@ -4550,6 +4552,7 @@ def create_QueenOrderBee(
         borrowed_funds=False,
         ready_buy=None,
         date_mark = datetime.now(est),
+        long_short=long_short,
 
     ):
         # date_mark = datetime.now(est)
@@ -4563,6 +4566,7 @@ def create_QueenOrderBee(
         else:
 
             return {
+                "queen_order_version": queen_order_version,
                 "trading_model": trading_model,
                 "queen_order_state": queen_order_state,
                 "order_trig_buy_stop": True,
@@ -4615,6 +4619,7 @@ def create_QueenOrderBee(
                 "honey_time_in_profit": {},
                 "profit_loss": 0,
                 "revisit_trade_datetime": revisit_trade_datetime,
+                "long_short": long_short,
             }
 
     if queen_init:
@@ -5052,7 +5057,7 @@ def analyze_waves(STORY_bee, ticker_time_frame=False, top_waves=8):
 
 
 # weight the MACD tier // slice by selected tiers?
-def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8, wave_guage_list=['current_macd_tier', 'current_hist_tier', 'end_tier_vwap', 'end_tier_rsi_ema']):
+def wave_gauge(symbol, df_waves, weight_team, trading_model=False, model_eight_tier=8, wave_guage_list=['current_macd_tier', 'current_hist_tier', 'end_tier_vwap', 'end_tier_rsi_ema']):
     try:
         # weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
         weight__short = ['1Minute_1Day', '5Minute_5Day']
@@ -5101,14 +5106,13 @@ def wave_gauge(df_waves, weight_team, trading_model=False, model_eight_tier=8, w
                 guage_return[f'{weight_}_rsi_tier_position'] = sum(df_waves[f'{weight_}_rsi_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
 
         except Exception as e:
-            print_line_of_error("ERROR wave guage")
+            print_line_of_error(f"{symbol} ERROR wave guage")
         
         return guage_return, df_waves
     
     except Exception as e:
         print('gauge trace')
         print_line_of_error()
-        ipdb.set_trace()
 
 def story_view(STORY_bee, ticker):  # --> returns dataframe
     s_ = datetime.now(est)
@@ -5283,7 +5287,7 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
             if trading_model == None:
                 print("no tm")
                 continue
-            story_guages, delme = wave_gauge(df_waves=df, trading_model=trading_model, weight_team=weight_team)
+            story_guages, delme = wave_gauge(symbol=symbol, df_waves=df, trading_model=trading_model, weight_team=weight_team)
             if story_guages:
                 story_guages['symbol'] = symbol
                 story_guages_view.append(story_guages)
@@ -5548,31 +5552,20 @@ def queens_heart(heart):
     return heart
 
 
-def live_sandbox__setup_switch(pq_env=False, queenKING=False, switch_env=False):
-    # if queenKING:
-        # if 'authoirzed_user' in st.session_state and st.session_state['authoirzed_user'] == True:
-        #     if 'last_env' in st.session_state:
-        #         prod = st.session_state['last_env']
-    if "production" not in st.session_state:
-        prod = True if st.session_state['authorized_user'] else False
-    else:
-        prod = (
-            True
-            if "production" in st.session_state and st.session_state["production"] == True
-            else False
-        )
-    # try:
-        # else:
-        
-    prod_name = (
-        "LIVE"
-        if prod
-        else "Sandbox"
-    )
-    st.session_state["prod_name"] = prod_name
-    st.session_state["production"] = prod
+def live_sandbox__setup_switch(pq_env, switch_env=False):
 
-    if pq_env:
+    try:
+        prod = pq_env.get('env')
+
+        prod_name = (
+            "LIVE"
+            if prod
+            else "Sandbox"
+        )
+        
+        st.session_state["prod_name"] = prod_name
+        st.session_state["production"] = prod
+
         if switch_env:
             if prod:
                 prod = False
@@ -5585,14 +5578,12 @@ def live_sandbox__setup_switch(pq_env=False, queenKING=False, switch_env=False):
                 prod_name = "LIVE"
                 st.session_state["prod_name"] = prod_name
             # save
-            PickleData(st.session_state["PB_env_PICKLE"], pq_env.update({'env': prod}))
+            pq_env.update({'env': prod})
+            PickleData(pq_env.get('source'), pq_env)
 
-    st.session_state['last_env'] = prod
-
-
-    return prod
-    # except Exception as e:
-    #     print(e, print_line_of_error())
+        return prod
+    except Exception as e:
+        print_line_of_error("live sb switch")
 
 
 def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
@@ -5622,7 +5613,6 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         print("Order init")
         logging_log_message(msg="Orders init")
     # WORKERBEE don't check if file exists, only check on init
-    PB_env_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_env"}{".pkl"}')
     if prod:
         # print("My Queen Production")
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
@@ -5634,6 +5624,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{".pkl"}')
         PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{".pkl"}')
         PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{".pkl"}')
+        PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
@@ -5644,12 +5635,13 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}{".pkl"}')
         PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}{".pkl"}')
         PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
+        PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{"_sandbox"}{".pkl"}')
 
     if init:
-        if os.path.exists(PB_env_PICKLE) == False:
-            print("Init PB_env_PICKLE")
-            PickleData(PB_env_PICKLE, {'env': False})
-        
+        if os.path.exists(PB_broker_PICKLE) == False:
+            print("Init PB_broker_PICKLE")
+            PickleData(PB_broker_PICKLE, {'broker_orders': pd.DataFrame()})
+
         if os.path.exists(PB_account_info_PICKLE) == False:
             print("Init PB_account_info_PICKLE")
             PickleData(PB_account_info_PICKLE, {'account_info': {}})
@@ -5703,7 +5695,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         st.session_state["PB_KING_Pickle"] = PB_KING_Pickle
         st.session_state["PB_RevRec_PICKLE"] = PB_RevRec_PICKLE
         st.session_state["PB_account_info_PICKLE"] = PB_account_info_PICKLE
-        st.session_state["PB_env_PICKLE"] = PB_env_PICKLE
+        st.session_state["PB_broker_PICKLE"] = PB_broker_PICKLE
 
 
     return {
@@ -5715,24 +5707,23 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         "PB_KING_Pickle": PB_KING_Pickle,
         "PB_RevRec_PICKLE": PB_RevRec_PICKLE,
         "PB_account_info_PICKLE": PB_account_info_PICKLE,
-        "PB_env_PICKLE": PB_env_PICKLE,
+        "PB_broker_PICKLE": PB_broker_PICKLE,
     }
 
 
-def setup_instance(client_username, switch_env, force_db_root, queenKING):
+def setup_instance(client_username, switch_env, force_db_root, queenKING, init=False):
     # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
     try:
         db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-        if os.path.exists(os.path.join(db_root, 'PB_env_PICKLE')) == False:
-            prod = False
-            pq_env = False
-        else:
-            pq_env = ReadPickleData(os.path.join(db_root, 'PB_env_PICKLE'))
-            prod = pq_env.get('env')
+        # Ensure Environment
+        PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
+        if os.path.exists(PB_env_PICKLE) == False:
+            PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
         
-        prod = live_sandbox__setup_switch(pq_env=pq_env, switch_env=switch_env, queenKING=queenKING)            
+        pq_env = ReadPickleData(PB_env_PICKLE)
+        prod = live_sandbox__setup_switch(pq_env, switch_env)
         
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING)
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init)
         
         return prod
     except Exception as e:

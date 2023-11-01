@@ -8,7 +8,9 @@ import os
 from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
                                        app_archive_queen_order,
                                        app_queen_order_update_order_rules,
-                                       get_revrec_trinity,)
+                                       get_revrec_trinity,
+                                       get_ticker_time_frame,
+                                       get_heart,)
 
 router = APIRouter(
     prefix="/api/data",
@@ -66,6 +68,15 @@ def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), tr
         print("Auth Failed", api_key)
         return "NOTAUTH"
     json_data = get_revrec_trinity(username, prod, trinity_weight=trinity_weight) #'w_15')
+    return JSONResponse(content=json_data)
+
+@router.post("/ticker_time_frame", status_code=status.HTTP_200_OK)
+def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), symbols=Body(...)):
+    
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_ticker_time_frame(symbols) #'w_15')
     return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph", status_code=status.HTTP_200_OK)
@@ -230,6 +241,18 @@ def load_account_info(kwargs=Body(...)):
     json_data = get_account_info(client_user, username, prod)
     return JSONResponse(content=json_data)
 
+@router.post("/heart", status_code=status.HTTP_200_OK)
+def load_heart(kwargs=Body(...)):
+    # print(kwargs)
+    username=kwargs.get('username')
+    prod=kwargs.get('prod')
+    api_key=kwargs.get('api_key')
+    client_user=kwargs.get('client_user')
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_heart(client_user, username, prod)
+    return JSONResponse(content=json_data)
 
 
 
@@ -247,3 +270,62 @@ def load_queens_mind(username: str= Body(...), prod: bool=Body(...), api_key=Bod
 def check_api():
     print("online")
     return JSONResponse(content="online")
+
+
+@router.post("/voiceGPT", status_code=status.HTTP_200_OK)
+def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...)):
+    # print(kwargs)
+    # text = [{'user': 'hey hootie tell me a story'}]
+    # text = [  # future state
+    #         {'user': 'hey hootie tell me a story', 'resp': 'what story would you like to hear'}, 
+    #         {'user': 'could you make up a story?'}]
+    # ipdb.set_trace()
+    def handle_response(text):
+        text_obj = text[-1]['user']
+
+        # handle text_obj
+        # WORK take query/history of current question and attempt to handle reponse back ""
+        ## Scenarios 
+
+        call_llm=True # goal is to set it to False and figure action/response
+
+        def Scenarios(db_actions, self_image, current_query, first_ask=True, conv_history=False):
+            # is this first ask?
+            # saying hello, say hello based on whos talking? hoots or hootie, moody
+            # how are you...
+            # 
+            # if first_ask:
+            #     # based on question do we have similar listed type quetsion with response action?
+            #     if current_query is in db_actions.get('db_first_asks'):
+            #         text = db_actions.get('id')
+            #         self_image = db_actions.get('id')
+                
+            return True
+
+        # get final response
+        resp = 'what story would you like to hear?'
+        
+        # update reponse to self
+        text[-1].update({'resp': resp})
+
+        return text
+
+    text = handle_response(text)
+    
+    def handle_image(text, self_image):
+        # based on LLM response handle image if needs to change
+        self_image = 'hootsAndHootie.png'
+
+        return self_image
+
+    self_image = handle_image(text, self_image)
+    
+    # audio_file = 'pollen/db/audio_files/file1.mp4'
+    audio_file = 'test_audio.mp3'
+
+    page_direct='http://localhost:8501/heart'
+    
+    json_data = {'text': text, 'audio_path': audio_file, 'page_direct': page_direct, 'self_image': self_image, 'listen_after_reply': True}
+
+
+    return JSONResponse(content=json_data)

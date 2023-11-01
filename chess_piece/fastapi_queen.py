@@ -27,7 +27,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     return_trading_model_trigbee,
                                     init_charlie_bee)
 from chess_piece.queen_bee import execute_order, sell_order__var_items
-
+# import streamlit as st
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
 
@@ -40,7 +40,50 @@ init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
  ###### Helpers UTILS
 
+
+# KORS
+def return_trading_model_kors(QUEEN_KING, star__wave, current_wave_blocktime='morning_9-11'):
+  star, wave_state = star__wave.split("__")
+  symbol, tframe, tperoid = star.split("_")
+  star = f'{tframe}_{tperoid}'
+  trigbee = "buy_cross-0" if 'buy' in wave_state else 'sell_cross-0'
+  trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][symbol]['stars_kings_order_rules'][star]['trigbees'][trigbee].get(current_wave_blocktime)
+  return trading_model
+
+
+def return_kors(df, QUEEN_KING):
+  stars = stars.keys()
+  t_kors ={}
+  for symbol in set(df['ttf_symbol'].tolist()):
+    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+    # t_kors[symbol] = {}
+    for star in stars:
+      ttf_key = f'{symbol}_{star}'
+      t_kors[symbol][star] = {}
+      for trigbee in trigger_bees().keys():
+        king_order_rules = trading_model['stars_kings_order_rules'][star]['trigbees'][trigbee].get('morning_9-11')
+        t_kors[symbol][star][trigbee] = king_order_rules
+    # king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][current_wave_blocktime]
+  
+  return t_kors
+
 # the_type = get_type_by_name('float')
+def add_priorday_tic_value(df, story_indexes=1):
+  split_day = split_today_vs_prior(df)
+  df_p = split_day.get('df_prior')
+  df = split_day.get('df_today')
+  
+  df_pz = df_p.tail(story_indexes)
+  # for idx in len(df_pz):
+  prior_tic = df.iloc[0].get('timestamp_est').replace(minute=29)
+  
+  df_pz.at[df_pz.index[0], 'timestamp_est'] = prior_tic
+
+  df = pd.concat([df_pz, df])
+
+  return df
+
+
 def validate_kors_valueType(newvalue, current_value):
 
   try:
@@ -65,11 +108,12 @@ def validate_kors_valueType(newvalue, current_value):
     print("unable to update type")
     return 'error'
 
-def generate_shade(number_variable, base_color=False, wave=False):
+def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=100):
     try:
       # Validate the input range
       red = '#FBC0C0'
       green = '#C0FBD3'
+      blue = '#64D2EC'
       if wave:
         m_wave, m_num = number_variable.split("_")
         base_color = green if 'buy' in m_wave else red
@@ -78,8 +122,9 @@ def generate_shade(number_variable, base_color=False, wave=False):
       else:
         # print(number_variable)
 
-        base_color = green if (number_variable) > 0 else red
+        base_color = green if (number_variable) > 0 else blue
         number_variable = round(abs(number_variable * 100))
+        shade_num_var = shade_num_var * 3
       # if number_variable < -100 or number_variable > 100:
       #     raise ValueError("Number variable must be between -100 and 100")
 
@@ -93,7 +138,7 @@ def generate_shade(number_variable, base_color=False, wave=False):
       base_color_rgb = tuple(int(base_color[i:i+2], 16) for i in (0, 2, 4))
 
       # Calculate shade amount based on number_variable
-      shade_amount = abs(number_variable) / 100  # Map to range [0, 1]
+      shade_amount = abs(number_variable) / shade_num_var  # Map to range [0, 1]
 
       # Calculate shaded RGB values
       shaded_rgb = tuple(int(base_color_comp * (1 - shade_amount)) for base_color_comp in base_color_rgb)
@@ -180,29 +225,24 @@ def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy
 
 def app_buy_order_request(client_user, username, prod, selected_row, default_value, ready_buy=False, x_buy=False): # index & wave_amount
   try:
-    # QUEEN = load_queen_pkl(username, prod)
-    # QUEEN_KING = load_queen_App_pkl(username, prod)
-    button_buy = default_value
-    QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
+    # QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
+    # heartbeat = QUEENsHeart.get('heartbeat')
+    # revrec = load_revrec_pkl(username, prod).get('revrec')
+
+    button_buy = default_value # dictionary k,v return
+
+    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
+    QUEEN = qb.get('QUEEN')
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
+
     buy_package = create_AppRequest_package(request_name='buy_orders')
     buy_package.update({'buy_order': {}})
     blessing={} #{i: '': for i in []}, # order_vars
     revrec = QUEEN.get('revrec')
+    heartbeat = QUEEN.get('heartbeat')
     # return trading model
-    def return_trading_model(QUEEN_KING,
-    ticker,
-    ticker_time_frame,
-    star_time,
-    trigbee,
-    wave_blocktime,
-    ready_buy=False
-    ):
-      trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
-      tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
-      if ready_buy:
-        tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
-      king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
-      return king_order_rules
+
     
     ticker = selected_row.get('symbol') # update symbol on X
     ticker_time_frame = selected_row.get('ticker_time_frame')
@@ -225,7 +265,7 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
     king_eval_order=False,
     maker_middle = False
     current_wave = revrec['waveview'].get('current_wave')
-    current_macd_cross__wave = QUEEN['heartbeat'].get('current_wave')
+    current_macd_cross__wave = heartbeat.get('current_wave')
     power_up_amo = power_amo()
     order_side = 'buy'
     borrowed_funds = True # USER INITIATE
@@ -234,13 +274,7 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
 
     for rule, value in button_buy.items():
       if rule in ['wave_amo', 'close_order_today', 'take_profit', 'sell_out', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration']: # validated items to add orules
-        # if value == king_order_rules[rule]:
-        # #  print("no update")
-        #   continue
-        # current_value = king_order_rules[rule] # if current_value in current_kors else None
-        # value = validate_kors_valueType(value, current_value)
-        # if value == 'error':
-        #    continue
+
         if rule == 'wave_amo':
           #  print(type(value), value)
             if type(value) != float:
@@ -264,10 +298,9 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
             if type(value) != int:
               value = int(value)
         
-        print("updateing", rule, value)
+        print("updating", rule, value)
         king_order_rules.update({rule: value})
 
-    print(symbol)
     order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
                                                 king_order_rules=king_order_rules, 
                                                 order_side='buy', 
@@ -335,22 +368,6 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
     QUEEN_KING['wave_triggers'].append(order_dict)
     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     
-    # validate
-    # execute_order(QUEEN=QUEEN, blessing=blessing, # order_vars
-    #               side=blessing.get('order_side'),
-    #               wave_amo=blessing.get('wave_amo'),
-    #               order_type=blessing.get('order_type'),
-    #               limit_price=blessing.get('limit_price'),
-    #               trading_model=blessing.get('trading_model'),
-    #               king_resp=True, 
-    #               king_eval_order=False, 
-    #               ticker=blessing.get('symbol'), 
-    #               ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
-    #               trig=blessing.get('trigbee'), 
-    #               portfolio=portfolio, 
-    #               crypto=crypto)
-
-
 
     return True
   except Exception as e:
@@ -361,16 +378,17 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
 def app_Sellorder_request(username, prod, selected_row, default_value):
   try:
 
+    # print(default_value) selling qty
     number_shares = default_value
-    print(default_value)
-    client_order_id = selected_row.get('client_order_id')
     QUEEN_KING = load_queen_App_pkl(username, prod)
     QUEEN = load_queen_pkl(username, prod)
     queen_order = QUEEN['queen_orders']
+    
+    # if client id not on grid return then find client id that has the number of shares
+    client_order_id = selected_row.get('client_order_id')
     df = queen_order.loc[client_order_id]
-    # check against available_shares and validate amount
-    # if number_shares > 0: # validate
-    # print("Trying Request")
+    
+    # VALIDATE check against available_shares and validate amount
     qty_available = float(df.get('qty_available'))
     number_shares = qty_available if number_shares > qty_available else number_shares 
     status = None
@@ -479,10 +497,8 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
   try:
-      # ORDERS = load_queen_order_pkl(username, prod)
-
-      # QUEEN_KING = load_queen_App_pkl(username, prod)
-      QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, orders=True)
+      qb = init_queenbee(client_user=client_user, prod=prod, orders=True)
+      ORDERS = qb.get('ORDERS')
 
 
       if type(ORDERS) != dict:
@@ -503,23 +519,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       default_text_color = k_colors['default_text_color'] # = '#59490A'
       default_font = k_colors['default_font'] # = "sans serif"
       default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-      # KORS
-      # stars = stars.keys()
-      # t_kors ={}
-      # for symbol in set(df['ttf_symbol'].tolist()):
-      #   trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
-      #   # t_kors[symbol] = {}
-      #   for star in stars:
-      #     ttf_key = f'{symbol}_{star}'
-      #     t_kors[symbol][star] = {}
-      #     for trigbee in trigger_bees().keys():
-      #        king_order_rules = trading_model['stars_kings_order_rules'][star]['trigbees'][trigbee].get('morning_9-11')
-      #        t_kors[symbol][star][trigbee] = king_order_rules
       
-      # king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][current_wave_blocktime]
-      
-
-
       # df.reset_index(drop=True, inplace=True)
       df = df[df['client_order_id']!='init']
       df = df.fillna('000')
@@ -533,8 +533,9 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
       df["honey"] = round(df["honey"] * 100,2)
       df["money"] = round(df["money"],0)
-      df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
+      # df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
       df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
+      df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
       
       # df.at[len(df)-1, 'color_row'] = '#24A92A'
       print('tview', toggle_view_selection)
@@ -568,13 +569,23 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
 
 
 def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'):
+    def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit']):
+      for col in df.columns:
+        # print(type(df_storygauge.iloc[-1].get(col)))
+        if type(df.iloc[-1].get(col)) == np.float64:
+            if col in float_cols:
+              df[col] = round(df[col] * 100,2)
+            else:
+                df[col] = round(df[col],2)
+      return df
+    
     try:
         if prod:
           revrec = ReadPickleData(username + '/queen_revrec.pkl').get('revrec')
         else:
            revrec = ReadPickleData(username + '/queen_revrec_sandbox.pkl').get('revrec')
 
-        # QUEEN_KING = load_queen_App_pkl(username, prod)
+
         # star_powers = QUEEN_KING['king_controls_queen'].get('star_power')
         # print(QUEEN_KING['king_controls_queen'].keys())
 
@@ -590,56 +601,74 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
+        def ttf_grid_names(ttf_name):
+           symbol = ttf_name.split("_")[0]
+           if '1Minute_1Day' in ttf:
+              ttf_name = "Flash"
+           elif '5Minute_5Day' in ttf:
+              ttf_name = "Week"
+           elif '30Minute_1Month' in ttf:
+              ttf_name = "Month"
+           elif '1Hour_3Month' in ttf:
+              ttf_name = "Quarter"
+           elif '2Hour_6Month' in ttf:
+              ttf_name = "2 Quarters"
+           elif '1Day_1Year' in ttf:
+              ttf_name = "1 Year"
+           
+           return f'{symbol} {ttf_name}'
 
         if return_type == 'waves':
+           QUEEN_KING = load_queen_App_pkl(username, prod)
            df = revrec.get('waveview')
            kors_dict = buy_button_dict_items()
            df['kors'] = [kors_dict for _ in range(df.shape[0])]
-          #  for ttf in df_main.index.tolist():
-          #     df_main.at[ttf, 'king_order_rules'] = df_main.at[ttf, 'king_order_rules'].update({'wave_amo':
-          #                                                                                       df_main.at[ttf, 'allocation_deploy']})
-           df["maxprofit"] = pd.to_numeric(df["maxprofit"], errors='coerce')
-           df["maxprofit"] = round(df["maxprofit"] * 100,2).fillna(0)
+           df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
+           df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
+           for ttf in df.index.tolist():
+              # symbol, star = ttf.split("_")[1]
+              remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
+              take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
+              sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
+              sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
+              close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
+              sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+              margin = ''
+              if remaining_budget <0:
+                 margin = "Margin"
+                 remaining_budget = round(df.at[ttf, 'remaining_budget_borrow'])
+                 
+                 if remaining_budget <0:
+                    remaining_budget == 0
+              
+              kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today)
+              ttf_name = ttf_grid_names(ttf)
+
+              df.at[ttf, 'kors'] = kors
+              df.at[ttf, 'ticker_time_frame__budget'] = f"""{ttf_name} {margin} budget {"${:,}".format(remaining_budget)}"""
+
+           
+          #  df['remaining_budget'] = df['remaining_budget'].apply(lambda x: round(x,2))
+          #  df['ticker_time_frame__budget'] = df['ticker_time_frame'] + " remaining budget " + df['remaining_budget'].astype(str)
            df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
            df['color_row_text'] = default_text_color
-          #  df.at['SPY_1Minute_1Day', 'color_row'] = '#a1b357'
+
+           df = update_col_number_format(df)
+
            json_data = df.to_json(orient='records')
            return json_data
         elif return_type == 'story':
-            # def update_dictionary_column(df, dict_column_name, update_column_name, key_column_name):
-            #     def update_dictionary(dictionary, value, key):
-            #         dictionary[key] = value
-            #         return dictionary
-                
-            #     df[dict_column_name] = df.apply(lambda row: update_dictionary(row[dict_column_name], row[update_column_name], row[key_column_name]), axis=1)
 
-            # # Example DataFrame
-            # data = {
-            #     'id': [1, 2, 3],
-            #     'data_dict': [{'a': 10, 'b': 20}, {'c': 30, 'd': 40}, {'e': 50, 'f': 60}],
-            #     'update_value': [100, 200, 300],
-            #     'update_key': ['a', 'd', 'f']
-            # }
-
-            # df = pd.DataFrame(data)
-
-            # # Call the function to update the dictionary column
-            # update_dictionary_column(df, 'data_dict', 'update_value', 'update_key')
-
-            # print(df)
            df = revrec.get('storygauge')       
-           df = df[[i for i in df.columns.tolist() if i == 'symbol' or 'trinity' in i]]
            kors_dict = buy_button_dict_items()
+           kors_dict.update({'star': stars().keys()})
            df['kors'] = [kors_dict for _ in range(df.shape[0])]
-          #  df['kors'] = df['kors'].apply(lambda x: update_kors(x))
-          #  df['trinity_w_L'] = pd.to_numeric(df["trinity_w_L"], errors='coerce')
            df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
            df['color_row_text'] = default_text_color
-           for col in df.columns:
-              # print(type(df_storygauge.iloc[-1].get(col)))
-              if type(df.iloc[-1].get(col)) == np.float64:
-                  # print(col)
-                  df[col] = round(df[col] * 100,2)
+
+           df = update_col_number_format(df)
+
+              
            json_data = df.to_json(orient='records')
            return json_data
 
@@ -650,44 +679,58 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
 
 
 ## RETURN TEXT STRING
-def get_account_info(client_user, username, prod):
-  # QUEEN = load_queen_pkl(username, prod)
-  # print(username, client_user, prod)
-  # if prod:
-  #   acct = ReadPickleData(username +'/queen_account_info.pkl')
-  # else:
-  #    acct = ReadPickleData(username +'/queen_account_info_sandbox.pkl')
+def get_heart(client_user, username, prod):
 
-  QUEEN, QUEEN_KING, ORDERS, api = init_queenbee(client_user=client_user, prod=prod, queen=True)
-  QUEENsHeart = ReadPickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'))
-  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
-  charlie_bee = QUEENsHeart.get('charlie_bee')
-  avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+  QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
   
-  acct_info = QUEEN['account_info']
-  if len(acct_info) > 0:
-    honey_text = "Today" + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-    money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-    buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
-    cash = '${:,.2f}'.format(round(acct_info.get('cash')))
-    daytrade_count = round(acct_info.get('daytrade_count'))
-    portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
-    long = QUEEN['heartbeat'].get('long')
-    short = QUEEN['heartbeat'].get('short')
+  if QUEENsHeart:
+    beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
+    charlie_bee = QUEENsHeart.get('charlie_bee')
+    avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+    long = QUEENsHeart['heartbeat'].get('long')
+    short = QUEENsHeart['heartbeat'].get('short')
     long = '${:,}'.format(long)
     short = '${:,}'.format(short)
-    # df = QUEEN['queen_orders']
-    # buys = df[df['trigname'].str.contains('buy')]
-    # sells = df[df['trigname'].str.contains('sell')]
-    # long = sum(buys['cost_basis_current'])
-    # short = sum(sells['cost_basis_current'])
-    mmoney = f'{honey_text} {money_text}'
-    mmoney = "\u0332".join(mmoney)
-    msg = f'{mmoney} Heart {beat} Avg {avg_beat} $ BP: {buying_power} Cash: {cash} Portfolio Value: {portfolio_value}  daytrade: {daytrade_count} L: {long} S: {short}'
+    
+    msg_ls = f'Long: {long} Short: {short}'
+    
+    if beat > 89:
+       beat = "ZZzzzZZzzz"
+    msg = f"HeartRate {beat} Avg {avg_beat}"
+    msg = msg + "\n" + msg_ls
     return msg
   else:
      return 'NO QUEEN'
 
+def get_account_info(client_user, username, prod):
+
+  try:
+    # WORKERBEE
+    qb = init_queenbee(client_user=client_user, prod=prod, broker_info=True)
+    broker_info = qb.get('broker_info')
+
+
+    if broker_info:
+      acct_info = broker_info['account_info']
+      
+      honey_text = "Today" + '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+      money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+      mmoney = f'{honey_text} {money_text}'
+      mmoney = "\u0332".join(mmoney)
+      
+      buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
+      cash = '${:,.2f}'.format(round(acct_info.get('cash')))
+      daytrade_count = round(acct_info.get('daytrade_count'))
+      portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
+
+
+      msg = f'{mmoney}--BuyingPower: {buying_power}--Cash: {cash}--Portfolio Value: {portfolio_value}--daytrade: {daytrade_count}'
+      return msg
+    else:
+      return 'NO QUEEN'
+  except Exception as e:
+    print_line_of_error("heart in api")
+    return 'Queens Heart Not Found'
 
 ## GRAPH
 def get_ticker_data(symbols, prod):
@@ -697,17 +740,33 @@ def get_ticker_data(symbols, prod):
       read_storybee=False, 
       read_pollenstory=True,
   )
-  
-  df = ticker_db.get('pollenstory')[f'{symbols[0]}_{"1Minute_1Day"}']
-  df_main = df[['timestamp_est', 'close', 'vwap', 'high']]
-  df_main = split_today_vs_prior(df_main).get('df_today')
+  df_main = False
+  for symbol in symbols:
+    df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+    df = df[['timestamp_est', 'close', 'vwap']]
+    # df = split_today_vs_prior(df).get('df_today')
+    df = add_priorday_tic_value(df)
+    start_index = 0 if len(df) == 1 else 1
+    c_start = df.iloc[0]['close']
+    # df['vwap'] = (df['vwap'] / df['close'])
+    df[f'{symbol}'] = (df['close'] - c_start) / c_start * 100
+    df[f'{symbol} vwap'] = (df['vwap'] - df.iloc[0]['vwap']) / df.iloc[0]['vwap'] * 100
 
+    del df['close']
+    del df['vwap']
+
+    # df_main = pd.concat([df_main, df])
+    if type(df_main) == bool:
+        df_main = df
+    else:
+      df_main = df_main.merge(df, how='inner', on='timestamp_est')
+  
   json_data = df_main.to_json(orient='records')
 
   return json_data
 
 
-def get_revrec_trinity(username, prod, trinity_weight='w_15'):
+def get_revrec_trinity(username, prod, trinity_weight='w_15', symbols=['SPY']):
   try:
     revrec = load_revrec_pkl(username, prod).get('revrec')
     df  = revrec.get('storygauge')
@@ -728,10 +787,40 @@ def get_revrec_trinity(username, prod, trinity_weight='w_15'):
 
     json_data = df.to_json(orient='records')
     return json_data
+
+
   except Exception as e:
      print_line_of_error("trinity revrec fastapi")
 
+def get_ticker_time_frame(symbols=['SPY']):
+  try:
 
+
+    ticker_db = read_QUEENs__pollenstory(
+        symbols=symbols,
+        read_storybee=False, 
+        read_pollenstory=True,
+    )
+    df_main = False
+    # for star in stars().keys():
+    for symbol in symbols:
+      df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+      df = df[['timestamp_est', 'macd_tier']] #'ticker_time_frame',
+      df = df.rename(columns={'macd_tier': symbol})
+      df = add_priorday_tic_value(df)
+
+      if type(df_main) == bool:
+         df_main = df
+      else:
+        df_main = df_main.merge(df, how='inner', on='timestamp_est')
+
+    json_data = df_main.to_json(orient='records')
+
+    return json_data
+
+  except Exception as e:
+     print_line_of_error("trinity revrec fastapi")
+     return pd.DataFrame([{'error': 'list'}]).to_json()
 
 
 def get_charlie_bee():

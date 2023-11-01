@@ -138,26 +138,26 @@ def PlayGround():
         
         # with st.expander("button on grid"):
         #     click_button_grid()
+        if st.toggle("nested grid"):
+            with st.expander("nested grid"):
+                nested_grid()
 
-        with st.expander("nested grid"):
-            nested_grid()
+        if st.toggle("pollenstory"):
+            with st.expander("pollenstory"):
+                ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
+                data=POLLENSTORY[ttf]
+                default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number']
+                cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
+                data=data[cols].copy()
+                data = data.reset_index()
+                grid = standard_AGgrid(data=data, configure_side_bar=True)
 
 
-        with st.expander("pollenstory"):
-            ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
-            data=POLLENSTORY[ttf]
-            default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number']
-            cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
-            data=data[cols].copy()
-            data = data.reset_index()
-            grid = standard_AGgrid(data=data, configure_side_bar=True)
-
-
-
-        with st.expander("wave stories"):
-            ticker_option = st.selectbox("ticker", options=tickers_avail)
-            frame_option = st.selectbox("frame", options=KING['star_times'])
-            show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
+        if st.toggle("wave stories"):
+            with st.expander("wave stories"):
+                ticker_option = st.selectbox("ticker", options=tickers_avail)
+                frame_option = st.selectbox("frame", options=KING['star_times'])
+                show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
 
 
         def get_screen_processes():

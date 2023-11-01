@@ -1,36 +1,3 @@
-react component to return text
-
-
-
-def cust_Text(api, tx_size, refresh_sec, refresh_cutoff_sec):
-    component_value = _component_func(
-        api=api,
-        size=size,
-        height=refresh_sec,
-        hoverText=refresh_cutoff,
-    )
-    return component_value
-
-
-def cust_Grid(api_dataframe, refresh_sec, refresh_cutoff_sec, gridoptions_build):
-    component_value = _component_func(
-        api=api_dataframe,
-        refresh_sec=refresh_sec,
-        refresh_cutoff_sec=refresh_cutoff_sec,
-        gridoptions_build=gridoptions_build,
-
-    )
-    return component_value
-
-
-
-# Make Honey
-# lets really make Honey
-# PollenFamily33! 
-# WeLoveYou33!
-
-
-# variables
 
 """ Logic of Weights 
 # create 3 weights on how much to place buy

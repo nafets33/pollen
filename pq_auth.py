@@ -9,7 +9,7 @@ import ssl
 from email.message import EmailMessage
 # from streamlit_extras.switch_page_button import switch_page
 from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc
-from chess_piece.queen_hive import setup_instance, print_line_of_error, init_queenbee
+from chess_piece.queen_hive import setup_instance, print_line_of_error
 import ipdb
 
 # from QueenHive import init_pollen_dbs
@@ -215,7 +215,7 @@ def signin_main(page):
         con.commit()
         authenticator.credentials = read_user_db(cur=cur)
 
-    def setup_user_pollenqdbs(key):
+    def setup_user_pollenqdbs():
 
         if st.session_state["authorized_user"]:
             if 'admin__client_user' in st.session_state and st.session_state['admin__client_user'] != False:
@@ -233,29 +233,27 @@ def signin_main(page):
                 st.success("Message Sent To Hive Master, We'll talk soon")
 
 
-        prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True)
+        prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True, init=True)
+
+        st.session_state['instance_setup'] = True
 
         return prod
 
-    def define_authorized_user(key):
-        if 'logout' in st.session_state and st.session_state["logout"] != True:
-            (
-                KING,
-                users_allowed_queen_email,
-                users_allowed_queen_emailname__db,
-            ) = kingdom__grace_to_find_a_Queen()
-            if st.session_state["username"] in users_allowed_queen_email:
-                st.session_state["authorized_user"] = True
-            else:
-                st.session_state["authorized_user"] = False
+    def define_authorized_user():
+        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+        
+        if st.session_state["username"] in users_allowed_queen_email:
+            st.session_state["authorized_user"] = True
+        else:
+            st.session_state["authorized_user"] = False
 
-            st.session_state["admin"] = (
-                True
-                if st.session_state["username"] in ["stefanstapinski@gmail.com"]
-                else False
-            )
-            
-            return setup_user_pollenqdbs(key)
+        st.session_state["admin"] = (
+            True
+            if st.session_state["username"] in ["stefanstapinski@gmail.com"]
+            else False
+        )
+        
+        return setup_user_pollenqdbs()
 
     def read_user_db(cur):
         users = cur.execute("SELECT * FROM users").fetchall()
@@ -299,11 +297,13 @@ def signin_main(page):
                 
                 # Returning Customer
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
-                    define_authorized_user(key='34')
+                    if 'instance_setup' in st.session_state and st.session_state['instance_setup']:
+                        return True # no need to setup again right?
+                    define_authorized_user()
                     return True
                 else:    
                     update_db(cur=cur, email=email)
-                    define_authorized_user(key='33')
+                    define_authorized_user()
                     return True
 
         # login unsucessful; forgot password or create account

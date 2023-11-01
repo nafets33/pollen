@@ -60,6 +60,10 @@ def kingdom__global_vars():
         "running_close",
         "running_open",
     ],
+    'status_q_states': [
+        'pending',
+        'filled',
+    ],
     'CLOSED_queenorders': ["running_close", "completed", "completed_alpaca"],
     'RUNNING_Orders': ["running", "running_open"],
     'RUNNING_CLOSE_Orders': ["running_close"],
@@ -537,14 +541,17 @@ def handle__ttf_notactive__datastream(
 
 
 def PickleData(pickle_file, data_to_store, write_temp=False):
-    if write_temp:
-        root, name = os.path.split(pickle_file)
-        pickle_file_temp = os.path.join(root, ("temp" + name))
-        with open(pickle_file_temp, "wb+") as dbfile:
-            pickle.dump(data_to_store, dbfile)
+    if pickle_file:
+        if write_temp:
+            root, name = os.path.split(pickle_file)
+            pickle_file_temp = os.path.join(root, ("temp" + name))
+            with open(pickle_file_temp, "wb+") as dbfile:
+                pickle.dump(data_to_store, dbfile)
 
-    with open(pickle_file, "wb+") as dbfile:
-        pickle.dump(data_to_store, dbfile)
+        with open(pickle_file, "wb+") as dbfile:
+            pickle.dump(data_to_store, dbfile)
+    else:
+        print("saving a file without a file not a good idea")
 
     return True
 

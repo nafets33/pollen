@@ -14,6 +14,6 @@ logs/*
 **/*.legal
 *.csv
 *.ipynb
-.env
+*.env
 jed_playground.py
 airflow_home
