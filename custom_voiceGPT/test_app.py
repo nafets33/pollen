@@ -15,7 +15,9 @@ def main():
         self_image="hoots.png",
         hello_audio="test_audio.mp3",
         face_recon=True,
-        text_input=False,
+        text_input=True,
+        show_conversation=True,
+        no_response_time=3,
         commands=[{
             "keywords": ["hey Hoots *", "hey Foods *", "hello *"],
             "api_body": {"keyword": "hey hoots, "},

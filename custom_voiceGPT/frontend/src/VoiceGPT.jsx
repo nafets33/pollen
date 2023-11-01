@@ -230,15 +230,17 @@ const CustomVoiceGPT = (props) => {
           commands={commands}
           myFunc={myFunc}
           listenAfterRelpy={listenAfterRelpy}
+          noResponseTime={kwargs.no_response_time}
         />
         <button onClick={listenContinuously}>Listen continuously</button>
         <div> You: {message}</div>
-        {answers.map((answer, idx) => (
-          <div key={idx}>
-            <div>-user: {answer.user}</div>
-            <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
-          </div>
-        ))}
+        {kwargs.show_conversation === true &&
+          answers.map((answer, idx) => (
+            <div key={idx}>
+              <div>-user: {answer.user}</div>
+              <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
+            </div>
+          ))}
       </div>
       <div>
         {/* <button onClick={listenOnce}>Listen Once</button> */}

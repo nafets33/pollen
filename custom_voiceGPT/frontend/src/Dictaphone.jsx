@@ -3,7 +3,12 @@ import { useSpeechRecognition } from "react-speech-recognition"
 
 let timer
 
-const Dictaphone = ({ commands, myFunc, listenAfterRelpy }) => {
+const Dictaphone = ({
+  commands,
+  myFunc,
+  listenAfterRelpy,
+  noResponseTime = 1,
+}) => {
   const [transcribing, setTranscribing] = useState(true)
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true)
   const toggleTranscribing = () => setTranscribing(!transcribing)
@@ -40,7 +45,7 @@ const Dictaphone = ({ commands, myFunc, listenAfterRelpy }) => {
         setPrevScript(finalTranscript)
         myFunc(finalTranscript, { api_body: { keyword: "" } })
         resetTranscript()
-      }, 1000)
+      }, noResponseTime * 1000)
     }
     if (finalTranscript != "" && !listenAfterRelpy) {
       setPrevScript(finalTranscript)
