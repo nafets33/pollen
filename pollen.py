@@ -512,11 +512,16 @@ def pollenq(admin_pq):
 
 
         with st.spinner("Verifying Your Scent, Hang Tight"):
-            signin_main(page="pollenq")
+            authenticator = signin_main(page="pollenq")
             if st.session_state['authentication_status'] != True: ## None or False
                 display_for_unAuth_client_user()
                 st.stop()
-            
+
+            # if 'logout' in st.session_state and st.session_state["logout"] != True:
+            #     authenticator.logout("Logout", location='sidebar')
+            #     from chess_piece.auth_utils import reset_password, return_users_conn_cur
+            #     reset_password(cur=cur, authenticator=authenticator, email=st.session_state['auth_email'], location='sidebar')
+
             prod = st.session_state['production']
             print("ENVIRONMENT prod/sb", prod)
             authorized_user = st.session_state['authorized_user']
@@ -582,7 +587,6 @@ def pollenq(admin_pq):
                 QUEEN = qb.get('QUEEN')
                 QUEEN_KING = qb.get('QUEEN_KING')
                 api = qb.get('api')
-                ipdb.set_trace() # set
 
             if st.session_state['production'] == False:
                 st.warning("Sandbox Paper Money Account") 

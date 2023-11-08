@@ -626,27 +626,35 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
            df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
            df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
            for ttf in df.index.tolist():
-              # symbol, star = ttf.split("_")[1]
-              remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
-              take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
-              sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
-              sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
-              close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
-              sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
-              margin = ''
-              if remaining_budget <0:
-                 margin = "Margin"
-                 remaining_budget = round(df.at[ttf, 'remaining_budget_borrow'])
-                 
-                 if remaining_budget <0:
-                    remaining_budget == 0
-              
-              kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today)
-              ttf_name = ttf_grid_names(ttf)
+              try:
+                remaining_budget = df.at[ttf, 'remaining_budget'].astype(float)
+                # print(type(remaining_budget))
+                if type(remaining_budget) is np.float64:
+                   pass
+                else:
+                   print(ttf, "OBBBBJ", remaining_budget)
+                   continue
+                remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
+                take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
+                sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
+                sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
+                close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
+                sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+                margin = ''
+                if remaining_budget <0:
+                  margin = "Margin"
+                  remaining_budget = round(df.at[ttf, 'remaining_budget_borrow'])
+                  
+                  if remaining_budget <0:
+                      remaining_budget == 0
+                
+                kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today)
+                ttf_name = ttf_grid_names(ttf)
 
-              df.at[ttf, 'kors'] = kors
-              df.at[ttf, 'ticker_time_frame__budget'] = f"""{ttf_name} {margin} budget {"${:,}".format(remaining_budget)}"""
-
+                df.at[ttf, 'kors'] = kors
+                df.at[ttf, 'ticker_time_frame__budget'] = f"""{ttf_name} {margin} budget {"${:,}".format(remaining_budget)}"""
+              except Exception as e:
+                 print_line_of_error(f"{ttf} grid buttons {remaining_budget}")
            
           #  df['remaining_budget'] = df['remaining_budget'].apply(lambda x: round(x,2))
           #  df['ticker_time_frame__budget'] = df['ticker_time_frame'] + " remaining budget " + df['remaining_budget'].astype(str)

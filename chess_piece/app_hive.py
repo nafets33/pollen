@@ -95,7 +95,7 @@ default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 def set_streamlit_page_config_once():
     try:
         st.set_page_config(
-            page_title="pollenq",
+            page_title="QuantQueen",
             page_icon=page_icon,
             layout="wide",
             initial_sidebar_state='collapsed',
@@ -499,7 +499,7 @@ def display_for_unAuth_client_user(pct_queens_taken=47):
     # newuser = st.button("New User")
     # signin_button = st.button("SignIn")
 
-    cols = st.columns((6, 7, 2, 1))
+    cols = st.columns((6, 7, 2))
     with cols[0]:
         st.subheader("Create an Account Get a QueenTraderBot")
     with cols[1]:
@@ -515,8 +515,8 @@ def display_for_unAuth_client_user(pct_queens_taken=47):
             # switch_page("QueensConscience")
         else:
             st.session_state["sneak_peak"] = False
-    with cols[3]:
-        st.image(mainpage_bee_png, width=54)
+    # with cols[3]:
+    #     st.image(mainpage_bee_png, width=54)
     # with cols[1]:
     #     local_gif(floating_queen_gif, '100', '123')
     page_line_seperator("25")
@@ -2254,3 +2254,4 @@ def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_ad
             )
     except Exception as e:
         print_line_of_error("ERROR cust graph trinity")
+

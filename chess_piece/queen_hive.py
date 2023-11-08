@@ -779,10 +779,12 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             piece = QUEEN_KING['chess_board'].get(qcp)
             tickers = list(set(piece.get('tickers')))
 
+            ticker_active_orders = {}
             for ticker in tickers:
                 active_orders = return_queen_orders__query(QUEEN, active_queen_order_states, ticker=ticker, star=False, ticker_time_frame=False)       # total budget calc
+                ticker_active_orders[ticker] = active_orders
                 cost_basis_current = sum(active_orders['cost_basis_current']) if len(active_orders) > 0 else 0
-                
+
                 # TICKER
                 df_temp = df_ticker[df_ticker.index.isin(tickers)].copy()
                 bp = sum(df_temp['ticker_buying_power'])
@@ -805,7 +807,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
                 df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
                 df_temp['borrow_budget'] = (df_temp['star_borrow_buying_power'] * df_ticker.loc[ticker].get('ticker_borrow_budget')) / bp_borrow
-
+                
                 for star in df_temp['star'].to_list():
                     ticker_time_frame = f'{ticker}_{star}'
                     df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
@@ -813,7 +815,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
                     star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
                     star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
-                    ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                    active_orders, ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play = return_ttf_remaining_budget(QUEEN=QUEEN, 
                                                                         total_budget=star_total_budget,
                                                                         borrow_budget=star_borrow_budget,
                                                                         ticker_time_frame=ticker_time_frame, 
@@ -824,10 +826,12 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
                     df_stars.at[ticker_time_frame, 'star_buys_at_play'] = buys_at_play
                     df_stars.at[ticker_time_frame, 'star_sells_at_play'] = sells_at_play
-    
+                    # df_stars.at[ticker_time_frame, 'sell_reccomendation'] = 
+
         # cost basis at play
         ticker_buys_at_play_dict = df_stars.groupby("ticker")[['star_buys_at_play']].sum().reset_index().set_index('ticker', drop=False)
         ticker_sells_at_play_dict = df_stars.groupby("ticker")[['star_sells_at_play']].sum().reset_index().set_index('ticker', drop=False)
+        # ticker_buys_client_order_ids_buys = df_stars.groupby("ticker")[['star_sells_at_play']].sum().reset_index().set_index('ticker', drop=False)
 
         # Wave Analysis 3 triforce view
         resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
@@ -838,8 +842,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         if len(storygauge) > 0: # should be able to remove this now WORKERBEE
             storygauge = storygauge.set_index('symbol', drop=False)
             for symbol in storygauge.index:
+                # c_order_ids = ticker_active_orders[symbol]['symbol']['client_order_id'].tolist()
                 storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
                 storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
+                # storygauge.at[symbol, 'client_order_ids'] = c_order_ids
         
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         waveview['wave_blocktime'] = current_wave.get('wave_blocktime')
@@ -1090,8 +1096,8 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         sell_orders = active_orders[active_orders['long_short'] == 'short']
         # get cost basis
         cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
-        buys_at_play = sum(active_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
-        sells_at_play = sum(active_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
+        buys_at_play = sum(buy_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
+        sells_at_play = sum(sell_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
 
         # check current cost_basis
         if cost_basis_current == 0:
@@ -1116,7 +1122,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
             remaining_budget = remaining_budget
             remaining_budget_borrow = borrow_budget
         
-        return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
+        return active_orders, remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
     
     except Exception as e:
         print_line_of_error("return_ttf_remaining_budget")
@@ -3497,7 +3503,7 @@ def KOR_close_order_today_vars(take_profit=True):
     }
 
 
-def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=False,limit_price=False,take_profit=.01,sell_out=-.01,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, test_list=['a', 'b']):
+def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=False,limit_price=False,take_profit=.01,sell_out=-.01,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, test_list=['a', 'b',]):
     return {
                 'star':star,
                 'wave_amo': wave_amo,
@@ -4721,10 +4727,11 @@ def return_queen_controls(stars=stars):
             "ready_buy_cross": "not_active",
         },
         'use_margin': False,
+        'use_margin_pct': 0,
         'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},
-                                # 'stars_power': star_powers,
-                                # 'x_power': x_power,
-                                'budget_type': 'star'}, # {'qcp', 'symbol', 'star'}
+
+                                'budget_type': 'star'},
+        'throttle': .5,
         'x_power': x_power,
         'star_power': star_powers,
         # 'star_powers': star_powers,
@@ -5295,7 +5302,6 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
                 df_storyguage = pd.DataFrame(story_guages_view)
 
                 # Trinity 
-                trinity = trinity_weights()
                 for w_t in weight_team:
                     df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
 

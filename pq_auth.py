@@ -14,11 +14,11 @@ import ipdb
 
 # from QueenHive import init_pollen_dbs
 
+main_root = hive_master_root()  # os.getcwd()  # hive root
+load_dotenv(os.path.join(main_root, ".env"))
 
 def signin_main(page):
     """Return True or False if the user is signed in"""
-    main_root = hive_master_root()  # os.getcwd()  # hive root
-    load_dotenv(os.path.join(main_root, ".env"))
     MISC = local__filepaths_misc()
     floating_queen_gif = MISC["floating_queen_gif"]
 
@@ -288,6 +288,8 @@ def signin_main(page):
 
         # Check login. Automatically gets stored in session state
         name, authentication_status, email = authenticator.login("Login", "main")
+        st.session_state['auth_email'] = email
+        st.session_state['auth_name'] = name
 
         # login successful; proceed
         if authentication_status:
@@ -300,11 +302,11 @@ def signin_main(page):
                     if 'instance_setup' in st.session_state and st.session_state['instance_setup']:
                         return True # no need to setup again right?
                     define_authorized_user()
-                    return True
+                    return authenticator
                 else:    
                     update_db(cur=cur, email=email)
                     define_authorized_user()
-                    return True
+                    return authenticator
 
         # login unsucessful; forgot password or create account
         elif authentication_status == False:
@@ -315,7 +317,7 @@ def signin_main(page):
             with st.expander("New User"):
                 register_user()
             
-            return False
+            return authenticator
 
         # no login trial; create account
         elif authentication_status == None:
@@ -324,7 +326,7 @@ def signin_main(page):
 
             # display_for_unAuth_client_user()
 
-            return False
+            return authenticator
     
     except Exception as e:
         print('ERROR auth', e)

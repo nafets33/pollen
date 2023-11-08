@@ -575,7 +575,9 @@ def ReadPickleData(pickle_file):
         else:
             try:
                 with open(pickle_file, "rb") as f:
-                    return pickle.load(f)
+                    pk_load = pickle.load(f)
+                    pk_load['source'] = pickle_file
+                    return pk_load
             except Exception as e:
                 print('pkl read error: ', os.path.basename(pickle_file), e, stop)
                 # logging.error(f'{e} error is pickle load')
