@@ -1105,7 +1105,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
             borrowed_cost_basis = 0
             remaining_budget = total_budget
             remaining_budget_borrow = borrow_budget
-            return remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
+            return active_orders, remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
         
         remaining_budget = total_budget - cost_basis_current
         if remaining_budget < 0:
