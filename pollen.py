@@ -40,7 +40,7 @@ from custom_text import custom_text, TextOptionsBuilder
 
 
 # ozz
-from ozz.ozz_bee import send_ozz_call
+# from ozz.ozz_bee import send_ozz_call
 
 import ipdb
 
@@ -295,7 +295,7 @@ def pollenq(admin_pq):
                             st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
                             PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
                             # switch_page("pollenq")
-                            st.experimental_rerun()
+                            # st.experimental_rerun()
                     else:
                         return True
                 elif dag =='run_workerbees':
@@ -582,6 +582,7 @@ def pollenq(admin_pq):
                 QUEEN = qb.get('QUEEN')
                 QUEEN_KING = qb.get('QUEEN_KING')
                 api = qb.get('api')
+                ipdb.set_trace()
 
             if st.session_state['production'] == False:
                 st.warning("Sandbox Paper Money Account") 
@@ -656,11 +657,11 @@ def pollenq(admin_pq):
             seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
             if mkhrs != 'open':
                 seconds_to_market_close = 1
-
+            def save_queen_king():
+                st.session_state['save_queen_king'] = True
             cols = st.columns((3,8,1,2))
             with cols[3]:
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-
             if menu_id == 'PlayGround':
                 print("PLAYGROUND")
                 PlayGround()
@@ -706,6 +707,31 @@ def pollenq(admin_pq):
                 beat_size = 45 if beat_size < 10 else beat_size
                 height = 54
                 cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{height}px', default=False)
+            
+            with st.expander("Queen Controls"):
+                cols = st.columns((1,1,1,1,1,1))
+                with cols[0]:
+                    st.session_state['save_queen_king'] = False
+                    risk_margin_num = st.number_input('Margin Risk', value=QUEEN_KING['king_controls_queen'].get('use_margin_pct'), min_value=0, max_value=1, on_change=save_queen_king())
+                # with cols[1]:
+                #     morning_risk_num = st.number_input('Morning Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('morning'), min_value=0, max_value=3, on_change=save_queen_king())
+                # with cols[2]:
+                #     lunch_risk_num = st.number_input('Lunch Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('lunch'), min_value=0, max_value=3, on_change=save_queen_king())
+                # with cols[3]:
+                #     afternoon_risk_num = st.number_input('Afternoon Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('afternoon'), min_value=0, max_value=3, on_change=save_queen_king())
+                # with cols[4]:
+                #     throttle = st.number_input('Throttle', value=QUEEN_KING['king_controls_queen'].get('throttle'), format="%.2f", min_value=0, max_value=1, on_change=save_queen_king())
+
+                if 'save_queen_king' in st.session_state and st.session_state['save_queen_king']:
+                    # handle save info
+                    QUEEN_KING['king_controls_queen']['use_margin_pct'] = risk_margin_num
+                    # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['morning'] = morning_risk_num
+                    # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['lunch'] = lunch_risk_num
+                    # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['afternoon'] = afternoon_risk_num
+                    # # QUEEN_KING['king_controls_queen']['throttle'] = throttle
+                    # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+                    st.success("saved")
+                    st.session_state['save_queen_king'] = False
             
             
             # with cols[7]:
