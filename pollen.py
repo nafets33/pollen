@@ -582,7 +582,7 @@ def pollenq(admin_pq):
                 QUEEN = qb.get('QUEEN')
                 QUEEN_KING = qb.get('QUEEN_KING')
                 api = qb.get('api')
-                ipdb.set_trace()
+                ipdb.set_trace() # set
 
             if st.session_state['production'] == False:
                 st.warning("Sandbox Paper Money Account") 
