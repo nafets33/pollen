@@ -582,7 +582,7 @@ def pollenq(admin_pq):
                 admin_queens_active(KING.get('source'), KING)
             
             # PROD vs SANDBOX
-            sneak_peak = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
+            sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
             if sneak_peak:
                 pass
             else:
