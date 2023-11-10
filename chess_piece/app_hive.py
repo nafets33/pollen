@@ -425,6 +425,26 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
     return True
 
 
+    # markdown dataframe with color, color rows of dataframe df
+    # for col in df_storygauge.columns:
+    #     # print(type(df_storygauge.iloc[-1].get(col)))
+    #     if type(df_storygauge.iloc[-1].get(col)) == np.float64:
+    #         # print(col)
+    #         df_storygauge[col] = df_storygauge[col] * 100
+    # df_storygauge = df_storygauge[[i for i in df_storygauge.columns.tolist() if i =='symbol' or 'trinity' in i]]
+    # df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['trinity_w_L'], axis=0, vmin=-100, vmax=100)                               
+    # st.dataframe(df_storygauge)
+
+def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
+    func_list = [i for i in func_list if st.session_state[i]]
+    if len(func_list) == 0:
+        st.info("I would Suggest Checking our Your ChessBoard This Morning")
+        tabs = False
+    else:
+        tabs = st.tabs(func_list)
+    
+    return tabs, func_list
+
 def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
     gb = GOB.create()
     gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
@@ -495,23 +515,24 @@ def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=
 
 
 
-def display_for_unAuth_client_user(pct_queens_taken=47):
+def display_for_unAuth_client_user(pct_queens_taken=89):
     # newuser = st.button("New User")
     # signin_button = st.button("SignIn")
 
     cols = st.columns((6, 7, 2))
     with cols[0]:
-        st.subheader("Create an Account Get a QueenTraderBot")
+        st.subheader("Create an Account To Get a QueenTraderBot")
     with cols[1]:
         progress_bar(
-            value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Remaining"
+            value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
         )
     with cols[2]:
         sneak_peak = st.button(
-            "Watch a Bot Trade Live :honeybee:"
+            "Watch a QueenBot Trade Live"
         )
         if sneak_peak:
             st.session_state["sneak_peak"] = True
+            sneak_pw = st.text_input("Sneak Key", key='sneak_key')
             # switch_page("QueensConscience")
         else:
             st.session_state["sneak_peak"] = False
@@ -1939,7 +1960,6 @@ def click_button_grid():
         st.write("Nothing was clicked")
 
 
-
 def create_ag_grid_column(
     headerName="Column Header",
     # field="dataField",
@@ -1979,6 +1999,8 @@ def create_ag_grid_column(
     enableCellChangeFlash=False,
     cellEditorPopup=False,
     cellEditorPopupParent=None,
+    custom_format_string=None,
+    editable=None,
 ):
     # Create a dictionary with the provided field values
     column = {
@@ -2020,6 +2042,8 @@ def create_ag_grid_column(
         "enableCellChangeFlash": enableCellChangeFlash,
         "cellEditorPopup": cellEditorPopup,
         "cellEditorPopupParent": cellEditorPopupParent,
+        "custom_format_string": custom_format_string,
+        "editable": editable,
     }
     
     # Remove fields with None values
@@ -2228,7 +2252,7 @@ def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_ad
             'main_title': '',   # '' for none
             'x_axis_title': '',
             'grid_color': k_colors.get('default_text_color'),
-            "showInLegend": False,
+            "showInLegend": True,
             "showInLegendPerLine": True,
         }
         st_custom_graph(

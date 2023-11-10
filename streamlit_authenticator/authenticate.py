@@ -217,7 +217,6 @@ class Authenticate:
             st.session_state["name"],
             st.session_state["authentication_status"],
             st.session_state["username"],
-            self.password,
         )
 
     def login(self, form_name: str, location: str = "main") -> tuple:

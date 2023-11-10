@@ -26,6 +26,7 @@ from dotenv import load_dotenv
 from scipy import stats
 from stocksymbol import StockSymbol
 from tqdm import tqdm
+from logging.handlers import RotatingFileHandler
 
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
@@ -51,13 +52,13 @@ current_month = datetime.now(est).month
 current_year = datetime.now(est).year
 
 
-def init_logging(queens_chess_piece, db_root, prod):
+def init_logging(queens_chess_piece, db_root, prod, loglevel='info', max_log_size=10 * 1024 * 1024, backup_count=5):
     log_dir = os.path.join(db_root, "logs")
     log_dir_logs = os.path.join(log_dir, "logs")
 
-    if os.path.exists(log_dir) == False:
+    if not os.path.exists(log_dir):
         os.mkdir(log_dir)
-    if os.path.exists(log_dir_logs) == False:
+    if not os.path.exists(log_dir_logs):
         os.mkdir(log_dir_logs)
 
     if prod:
@@ -66,14 +67,31 @@ def init_logging(queens_chess_piece, db_root, prod):
         log_name = f'{"log_"}{queens_chess_piece}{"_sandbox_"}{".log"}'
 
     log_file = os.path.join(log_dir, log_name)
-    logging.basicConfig(
-        filename=log_file,
-        filemode="a",
-        format="%(asctime)s:%(name)s:%(levelname)s: %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        level=logging.INFO,
-        force=True,
-    )
+
+    # Set the logging level based on the provided loglevel parameter
+    if loglevel.lower() == 'info':
+        level = logging.INFO
+    elif loglevel.lower() == 'warning':
+        level = logging.WARNING
+    else:
+        level = logging.INFO  # Default to INFO if an invalid log level is provided
+
+    # Create a logger and set the level
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    # Create a formatter
+    formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
+
+    # Create a rotating file handler and set the formatter
+    file_handler = RotatingFileHandler(log_file, mode="a", maxBytes=max_log_size, backupCount=backup_count)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Create a stream handler (console) and set the formatter
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
 
     return True
 
@@ -1070,7 +1088,7 @@ def initialize_orders(api, start_date, end_date, symbols=False, limit=500): # TB
 
 def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, trigbee=False, info='1var able queried at a time'):
     queen_orders = QUEEN['queen_orders']
-    if len(queen_orders) == 1: # init only
+    if len(queen_orders) == 1 and queen_orders.index[0] == None: # init only
         return ''
     if ticker_time_frame:
         orders = queen_orders[queen_orders['queen_order_state'].isin(queen_order_states) & (queen_orders['ticker_time_frame'].isin([ticker_time_frame]))]
@@ -1090,6 +1108,9 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
     try:
         # Total In Running, Remaining
         active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
+        if len(active_orders) == 0:
+            return '', 0, 0, 0, 0, 0, 0
+        
         # handle long_short in update WORKERBEE
         active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'short') 
         buy_orders = active_orders[active_orders['long_short'] == 'long']
@@ -3439,7 +3460,7 @@ def pollen_themes(
     return pollen_themes
 
 
-def update_king_users(KING, init=False):
+def update_king_users(KING, init=False, users_allowed_queen_email=["stefanstapinski@gmail.com"]):
     con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
     with con:
         cur = con.cursor()
@@ -3502,19 +3523,41 @@ def KOR_close_order_today_vars(take_profit=True):
         'close_order_today_allowed_timeduration': 60,
     }
 
+def ttf_grid_names_list():
+    return ['Flash', 'Week', 'Month', 'Quarter', '2 Quarters', '1 Year']
 
-def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=False,limit_price=False,take_profit=.01,sell_out=-.01,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, test_list=['a', 'b',]):
+def ttf_grid_names(ttf_name, symbol=True):
+    symbol_n = ttf_name.split("_")[0]
+    if '1Minute_1Day' in ttf_name:
+      ttf_name = "Flash"
+    elif '5Minute_5Day' in ttf_name:
+      ttf_name = "Week"
+    elif '30Minute_1Month' in ttf_name:
+      ttf_name = "Month"
+    elif '1Hour_3Month' in ttf_name:
+      ttf_name = "Quarter"
+    elif '2Hour_6Month' in ttf_name:
+      ttf_name = "2 Quarters"
+    elif '1Day_1Year' in ttf_name:
+      ttf_name = "1 Year"
+    
+    if symbol:
+        return f'{symbol_n} {ttf_name}'
+    else:
+       return ttf_name
+
+def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=False,limit_price=False,take_profit=.03,sell_out=-.03,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, star_list=ttf_grid_names_list()):
     return {
                 'star':star,
                 'wave_amo': wave_amo,
-                'trade_using_limits': trade_using_limits,
+                # 'trade_using_limits': trade_using_limits,
                 'limit_price': limit_price,
                 'take_profit': take_profit,
                 'sell_out': sell_out,
                 'sell_trigbee_trigger': sell_trigbee_trigger,
                 'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
                 'close_order_today': close_order_today,
-                'test_list': test_list,
+                'star_list': star_list,
                 }
 
 
@@ -5717,21 +5760,25 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
     }
 
 
-def setup_instance(client_username, switch_env, force_db_root, queenKING, init=False):
+def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=None, init=False):
     # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
     try:
         db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-        # Ensure Environment
-        PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
-        if os.path.exists(PB_env_PICKLE) == False:
-            PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
-        
-        pq_env = ReadPickleData(PB_env_PICKLE)
-        prod = live_sandbox__setup_switch(pq_env, switch_env)
-        
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init)
-        
-        return prod
+        if prod is not None:
+            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init)
+            return prod
+        else:
+            # Ensure Environment
+            PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
+            if os.path.exists(PB_env_PICKLE) == False:
+                PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
+            
+            pq_env = ReadPickleData(PB_env_PICKLE)
+            prod = live_sandbox__setup_switch(pq_env, switch_env)
+            
+            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init)
+            
+            return prod
     except Exception as e:
         print_line_of_error("setup instance")
 

@@ -352,6 +352,7 @@ def kingdom__grace_to_find_a_Queen():
     KING = ReadPickleData(PB_KING_Pickle)
     users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
     users_allowed_queen_email.append("stefanstapinski@gmail.com")
+    users_allowed_queen_email.append("stefanstapinski@yahoo.com")
     users_allowed_queen_email.append("sven0227@gmail.com")
     users_allowed_queen_email.append("nitinrohan17@gmail.com")
 
@@ -442,57 +443,60 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, read_storybee=True,
         list_of_status = asyncio.run(main(ttf_file_paths))
         return list_of_status
 
-    # return beeworkers data
-    if read_swarmQueen:
-        qb = return_QUEEN_masterSymbols()
-        symbols = qb.get("queens_master_tickers")
-    else:
-        symbols = symbols
+    try:
+        # return beeworkers data
+        if read_swarmQueen:
+            qb = return_QUEEN_masterSymbols()
+            symbols = qb.get("queens_master_tickers")
+        else:
+            symbols = symbols
 
-    main_dir = workerbee_dbs_root()
-    main_story_dir = workerbee_dbs_root__STORY_bee()
+        main_dir = workerbee_dbs_root()
+        main_story_dir = workerbee_dbs_root__STORY_bee()
 
-    # Final Return
-    pollenstory = {}
-    STORY_bee = {}
-    errors = {}
+        # Final Return
+        pollenstory = {}
+        STORY_bee = {}
+        errors = {}
 
-    # pollen story // # story bee
-    ps_all_files_names = []
-    sb_all_files_names = []
-    for symbol in set(symbols):
+        # pollen story // # story bee
+        ps_all_files_names = []
+        sb_all_files_names = []
+        for symbol in set(symbols):
+            if read_pollenstory:
+                ps_all_files_names = ps_all_files_names + [
+                    os.path.join(main_dir, i)
+                    for i in os.listdir(main_dir)
+                    if symbol in i and "temp" not in i
+                ]  # SPY SPY_1Minute_1Day
+            
+            if read_storybee:
+                sb_all_files_names = sb_all_files_names + [
+                    os.path.join(main_story_dir, i)
+                    for i in os.listdir(main_story_dir)
+                    if symbol in i and "temp" not in i
+                ]  # SPY SPY_1Minute_1Day
+
+        # async read data
         if read_pollenstory:
-            ps_all_files_names = ps_all_files_names + [
-                os.path.join(main_dir, i)
-                for i in os.listdir(main_dir)
-                if symbol in i and "temp" not in i
-            ]  # SPY SPY_1Minute_1Day
-        
+            pollenstory_data = async__read_symbol_data(ttf_file_paths=ps_all_files_names)
+            # put into dictionary
+            for package_ in pollenstory_data:
+                if "error" not in package_.keys():
+                    pollenstory[package_["ttf"]] = package_["db"]["pollen_story"]
+                else:
+                    errors[package_["ttf"]] = package_["error"]
         if read_storybee:
-            sb_all_files_names = sb_all_files_names + [
-                os.path.join(main_story_dir, i)
-                for i in os.listdir(main_story_dir)
-                if symbol in i and "temp" not in i
-            ]  # SPY SPY_1Minute_1Day
+            storybee_data = async__read_symbol_data(ttf_file_paths=sb_all_files_names)
+            for package_ in storybee_data:
+                if "error" not in package_.keys():
+                    STORY_bee[package_["ttf"]] = package_["db"]["STORY_bee"]
+                else:
+                    errors[package_["ttf"]] = package_["error"]
 
-    # async read data
-    if read_pollenstory:
-        pollenstory_data = async__read_symbol_data(ttf_file_paths=ps_all_files_names)
-        # put into dictionary
-        for package_ in pollenstory_data:
-            if "error" not in package_.keys():
-                pollenstory[package_["ttf"]] = package_["db"]["pollen_story"]
-            else:
-                errors[package_["ttf"]] = package_["error"]
-    if read_storybee:
-        storybee_data = async__read_symbol_data(ttf_file_paths=sb_all_files_names)
-        for package_ in storybee_data:
-            if "error" not in package_.keys():
-                STORY_bee[package_["ttf"]] = package_["db"]["STORY_bee"]
-            else:
-                errors[package_["ttf"]] = package_["error"]
-
-    return {"pollenstory": pollenstory, "STORY_bee": STORY_bee, "errors": errors}
+        return {"pollenstory": pollenstory, "STORY_bee": STORY_bee, "errors": errors}
+    except Exception as e:
+        print_line_of_error("king return symbols failed")
 
 
 def return_QUEENs_workerbees_chessboard(QUEEN_KING):
@@ -511,28 +515,29 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
         df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
 
         return df_active
+    try:
+        # symbol ticker data # 1 all current pieces on chess board && all current running orders
+        current_active_orders = return_active_orders(QUEEN=QUEEN)
+        active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
+        chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 
-    # symbol ticker data # 1 all current pieces on chess board && all current running orders
-    current_active_orders = return_active_orders(QUEEN=QUEEN)
-    active_order_symbols = list(set(current_active_orders["symbol"].tolist()))
-    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
+        if symbols:
+            symbols = symbols + active_order_symbols + chessboard_symbols
+        else:
+            symbols = active_order_symbols + chessboard_symbols
+        
+        if swarmQueen:
+            symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
 
-    if symbols:
-        symbols = symbols + active_order_symbols + chessboard_symbols
-    else:
-        symbols = active_order_symbols + chessboard_symbols
-    
-    if swarmQueen:
-        symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
+        ticker_db = read_QUEENs__pollenstory(
+            symbols=symbols,
+            read_storybee=read_storybee, 
+            read_pollenstory=read_pollenstory,
+        )
 
-    ticker_db = read_QUEENs__pollenstory(
-        symbols=symbols,
-        read_storybee=read_storybee, 
-        read_pollenstory=read_pollenstory,
-    )
-
-    return ticker_db
-
+        return ticker_db
+    except Exception as e:
+        print_line_of_error('king symbols data')
 
 def handle__ttf_notactive__datastream(
     info="if ticker stream offline pull latest price by MasterApi",

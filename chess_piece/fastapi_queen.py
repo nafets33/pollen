@@ -25,7 +25,9 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     power_amo,
                                     init_queenbee,
                                     return_trading_model_trigbee,
-                                    init_charlie_bee)
+                                    init_charlie_bee,
+                                    ttf_grid_names,
+                                    ttf_grid_names_list,)
 from chess_piece.queen_bee import execute_order, sell_order__var_items
 # import streamlit as st
 
@@ -36,9 +38,11 @@ est = pytz.timezone("US/Eastern")
 main_root = hive_master_root() # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 db_root = os.path.join(main_root, "db")
+
 init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
  ###### Helpers UTILS
+
 
 
 # KORS
@@ -149,6 +153,24 @@ def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=
       return shaded_color
     except Exception as e:
       print_line_of_error(e)
+
+
+def filter_gridby_timeFrame_view(df, toggle_view_selection):
+    # 
+    ttf_gridnames = [i.lower() for i in ttf_grid_names_list()]
+    if 'ttf_grid_name' not in df.columns:
+      df['ttf_grid_name'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=False))
+    if toggle_view_selection.lower() in ttf_gridnames:
+      df = df[df['ttf_grid_name'] == toggle_view_selection]
+    
+    trigname = 'trigname' if 'trigname' in df.columns else 'macd_state'
+    if toggle_view_selection.lower() == 'buys':
+        df = df[df[trigname].str.contains('buy')]
+    elif toggle_view_selection.lower() == 'sells':
+        df = df[~df[trigname].str.contains('buy')]
+    
+    return df
+
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
     return datetime.now(tz).strftime(format)
@@ -497,8 +519,8 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
   try:
-      qb = init_queenbee(client_user=client_user, prod=prod, orders=True)
-      ORDERS = qb.get('ORDERS')
+      # qb = init_queenbee(client_user=client_user, prod=prod, orders=True)
+      ORDERS = init_queenbee(client_user=client_user, prod=prod, orders=True).get('ORDERS')
 
 
       if type(ORDERS) != dict:
@@ -536,10 +558,19 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       # df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
       df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
       df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
+      df['sell_reason'] = df['sell_reason'].astype(str)
+      df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
+      
       
       # df.at[len(df)-1, 'color_row'] = '#24A92A'
-      print('tview', toggle_view_selection)
-      qos_view = ['running', 'running_close', 'running_open']
+      # print('tview', toggle_view_selection)
+
+      
+      df = filter_gridby_timeFrame_view(df, toggle_view_selection)
+      
+      qos_view=['running', 'running_close', 'running_open']
+      df = df[df['queen_order_state'].isin(qos_view)]
+
       # if toggle_view_selection == 'today':
       #    df = split_today_vs_prior(df=df, timestamp='datetime').get('df_today')
       # elif toggle_view_selection == 'sells':
@@ -548,7 +579,6 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       #   df = df[df['queen_order_state'].isin(qos_view)]
 
       # sort
-      df = df[df['queen_order_state'].isin(qos_view)]
       sort_colname = 'cost_basis_current'
       df = df.sort_values(sort_colname, ascending=False)
       
@@ -568,7 +598,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
     print_line_of_error()
 
 
-def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'):
+def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selection, return_type='waves'):
     def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit']):
       for col in df.columns:
         # print(type(df_storygauge.iloc[-1].get(col)))
@@ -601,26 +631,16 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
         default_font = k_colors['default_font'] # = "sans serif"
         default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-        def ttf_grid_names(ttf_name):
-           symbol = ttf_name.split("_")[0]
-           if '1Minute_1Day' in ttf:
-              ttf_name = "Flash"
-           elif '5Minute_5Day' in ttf:
-              ttf_name = "Week"
-           elif '30Minute_1Month' in ttf:
-              ttf_name = "Month"
-           elif '1Hour_3Month' in ttf:
-              ttf_name = "Quarter"
-           elif '2Hour_6Month' in ttf:
-              ttf_name = "2 Quarters"
-           elif '1Day_1Year' in ttf:
-              ttf_name = "1 Year"
-           
-           return f'{symbol} {ttf_name}'
+
+        df_wave = revrec.get('waveview')
+        df_wave['sell_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] > 0), df_wave['star_at_play'] - df_wave['allocation_deploy'], 0)
+        df_wave['sellbuy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("sell")) & (df_wave['allocation_deploy'] > 0), df_wave['star_at_play'] - df_wave['allocation_deploy'], 0)
+        df_wave['sell_alloc_deploy'] = df_wave['sell_alloc_deploy'] + df_wave['sellbuy_alloc_deploy']
+        df_wave['buy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] < 0), round(abs(df_wave['allocation_deploy'])), 0)
 
         if return_type == 'waves':
            QUEEN_KING = load_queen_App_pkl(username, prod)
-           df = revrec.get('waveview')
+           df = df_wave
            kors_dict = buy_button_dict_items()
            df['kors'] = [kors_dict for _ in range(df.shape[0])]
            df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
@@ -636,7 +656,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
                    continue
                 remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
                 take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
-                sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
                 sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
                 close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
                 sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
@@ -662,23 +681,48 @@ def queen_wavestories__get_macdwave(username, prod, symbols, return_type='waves'
            df['color_row_text'] = default_text_color
 
            df = update_col_number_format(df)
+           df = filter_gridby_timeFrame_view(df, toggle_view_selection)
 
            json_data = df.to_json(orient='records')
            return json_data
         elif return_type == 'story':
 
-           df = revrec.get('storygauge')       
-           kors_dict = buy_button_dict_items()
-           kors_dict.update({'star': stars().keys()})
-           df['kors'] = [kors_dict for _ in range(df.shape[0])]
-           df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
-           df['color_row_text'] = default_text_color
+          df = revrec.get('storygauge')
+          
 
-           df = update_col_number_format(df)
+          
+          # symbol group by to join on story
+          num_cols = ['buy_alloc_deploy', 'long_at_play', 'sell_alloc_deploy', 'short_at_play', 'star_total_budget']
+          for col in num_cols:
+             df_wave[col] = round(df_wave[col], 2)
+          df_wave_symbol = df_wave.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
+          df_wave_symbol['sell_pct'] = (df_wave_symbol['sell_alloc_deploy'] / df_wave_symbol['long_at_play'] * 100).fillna(0)
+          df_wave_symbol['sell_pct'] = round(df_wave_symbol['sell_pct'],1)
+          df_wave_symbol['buy_pct'] = (df_wave_symbol['buy_alloc_deploy'] / df_wave_symbol['star_total_budget'] * 100).fillna(0)
+          df_wave_symbol['buy_pct'] = round(df_wave_symbol['buy_pct'],1)
+          df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '{}% {:,.0f}$'.format(row['sell_pct'], row['sell_alloc_deploy']), axis=1)
+          df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '{}% {:,.0f}$'.format(row['buy_pct'], row['buy_alloc_deploy']), axis=1)
 
+
+          sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
+          buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
+
+          for col in df.columns:
+            if 'trinity' in col:
+                df[col] = round(pd.to_numeric(df[col]),2)
+          kors_dict = buy_button_dict_items()
+          kors_dict.update({'star': stars().keys()})
+          df['kors'] = [kors_dict for _ in range(df.shape[0])]
+          df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
+          df['color_row_text'] = default_text_color
+          df['queens_suggested_sell'] =  df['symbol'].map(sell_msg)
+          df['queens_suggested_buy'] =  df['symbol'].map(buy_msg)
+          #  df = update_col_number_format(df)
+
+          # df = filter_gridby_timeFrame_view(df, toggle_view_selection)
               
-           json_data = df.to_json(orient='records')
-           return json_data
+          json_data = df.to_json(orient='records')
+          return json_data
 
     
     except Exception as e:
@@ -691,24 +735,25 @@ def get_heart(client_user, username, prod):
 
   QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
   
-  if QUEENsHeart:
-    beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
-    charlie_bee = QUEENsHeart.get('charlie_bee')
-    avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
-    long = QUEENsHeart['heartbeat'].get('long')
-    short = QUEENsHeart['heartbeat'].get('short')
-    long = '${:,}'.format(long)
-    short = '${:,}'.format(short)
-    
-    msg_ls = f'Long: {long} Short: {short}'
-    
-    if beat > 89:
-       beat = "ZZzzzZZzzz"
-    msg = f"HeartRate {beat} Avg {avg_beat}"
-    msg = msg + "\n" + msg_ls
-    return msg
-  else:
-     return 'NO QUEEN'
+  if 'charlie_bee' not in QUEENsHeart.keys():
+    return 'Pending QUEEN'
+  
+  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
+  charlie_bee = QUEENsHeart.get('charlie_bee')
+  avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+  long = QUEENsHeart['heartbeat'].get('long')
+  short = QUEENsHeart['heartbeat'].get('short')
+  long = '${:,}'.format(long)
+  short = '${:,}'.format(short)
+  
+  msg_ls = f'Long: {long} Short: {short}'
+  
+  if beat > 89:
+      beat = "ZZzzzZZzzz"
+  msg = f"HeartRate {beat} Avg {avg_beat}"
+  msg = msg + "\n" + msg_ls
+  return msg
+
 
 def get_account_info(client_user, username, prod):
 
@@ -716,29 +761,27 @@ def get_account_info(client_user, username, prod):
     # WORKERBEE
     qb = init_queenbee(client_user=client_user, prod=prod, broker_info=True)
     broker_info = qb.get('broker_info')
+    acct_info = broker_info['account_info']
+    if len(acct_info) == 0:
+       return 'PENDING QUEEN'
+
+    honey_text = "Today" + '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+    money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+    mmoney = f'{honey_text} {money_text}'
+    mmoney = "\u0332".join(mmoney)
+    
+    buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
+    cash = '${:,.2f}'.format(round(acct_info.get('cash')))
+    daytrade_count = round(acct_info.get('daytrade_count'))
+    portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
 
 
-    if broker_info:
-      acct_info = broker_info['account_info']
-      
-      honey_text = "Today" + '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-      money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-      mmoney = f'{honey_text} {money_text}'
-      mmoney = "\u0332".join(mmoney)
-      
-      buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
-      cash = '${:,.2f}'.format(round(acct_info.get('cash')))
-      daytrade_count = round(acct_info.get('daytrade_count'))
-      portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
+    msg = f'{mmoney} BuyingPower: {buying_power} Cash: {cash} Portfolio Value: {portfolio_value} daytrade: {daytrade_count}'
+    return msg
 
-
-      msg = f'{mmoney}--BuyingPower: {buying_power}--Cash: {cash}--Portfolio Value: {portfolio_value}--daytrade: {daytrade_count}'
-      return msg
-    else:
-      return 'NO QUEEN'
   except Exception as e:
     print_line_of_error("heart in api")
-    return 'Queens Heart Not Found'
+    return 'Error QUEENs Heart'
 
 ## GRAPH
 def get_ticker_data(symbols, prod):
@@ -757,8 +800,9 @@ def get_ticker_data(symbols, prod):
     start_index = 0 if len(df) == 1 else 1
     c_start = df.iloc[0]['close']
     # df['vwap'] = (df['vwap'] / df['close'])
-    df[f'{symbol}'] = (df['close'] - c_start) / c_start * 100
-    df[f'{symbol} vwap'] = (df['vwap'] - df.iloc[0]['vwap']) / df.iloc[0]['vwap'] * 100
+
+    df[f'{symbol}'] = round((df['close'] - c_start) / c_start * 100,2)
+    df[f'{symbol} vwap'] = round((df['vwap'] - df.iloc[0]['vwap']) / df.iloc[0]['vwap'] * 100,2)
 
     del df['close']
     del df['vwap']

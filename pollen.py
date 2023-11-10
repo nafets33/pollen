@@ -373,6 +373,7 @@ def pollenq(admin_pq):
         # print("MENU Buttons")
         def menu_buttons(cols, QUEENsHeart):
             # sb = st.sidebar
+            # cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
             try:
                 off_size = 23
                 on_size = 54
@@ -393,8 +394,8 @@ def pollenq(admin_pq):
                     cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
 
                     # with cols[3]:
-                    cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                    st.session_state['orders'] = True if cb == True or cb == 0 else False
+                    # cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                    # st.session_state['orders'] = True if cb == True or cb == 0 else False
                     
                     # with cols[2]:
                     # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
@@ -406,15 +407,15 @@ def pollenq(admin_pq):
                     
                     # with cols[5]:
                     # height = on_size if 'charts' in st.session_state and st.session_state['charts'] == True else off_size
-                    cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
+                    # cust_Button("misc/charts.png", hoverText='Charts', key='charts', height=f'{height}px', default=False)
 
                     # with cols[6]:
                     # height = on_size if 'the_flash' in st.session_state and st.session_state['the_flash'] == True else off_size
-                    cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
+                    # cust_Button("misc/power_gif.gif", hoverText='The Flash', key='the_flash', height=f'{height}px')
                     
                     # with cols[7]:              
                     # height = on_size if 'waves' in st.session_state and st.session_state['waves'] == True else off_size
-                    cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px', default=False)
+                    # cust_Button("misc/waves.png", hoverText='Waves', key='waves', height=f'{height}px', default=False)
                         # st.session_state['waves'] = True if st.session_state['waves_m'] == 'waves' else False
                         # if st.session_state['waves']:
                         #     hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -499,7 +500,7 @@ def pollenq(admin_pq):
 
 
         ##### STREAMLIT #####
-
+        st.session_state['orders'] = True
         if 'refresh_times' not in st.session_state:
             st.session_state['refresh_times'] = 0
             pq_buttons['chess_board'] = True
@@ -514,6 +515,7 @@ def pollenq(admin_pq):
         with st.spinner("Verifying Your Scent, Hang Tight"):
             authenticator = signin_main(page="pollenq")
             if st.session_state['authentication_status'] != True: ## None or False
+                
                 display_for_unAuth_client_user()
                 st.stop()
 
@@ -531,6 +533,7 @@ def pollenq(admin_pq):
             
             if authorized_user != True:
                 st.error("Your Account is Not Yet Authorized by a pollenq admin")
+                authenticator.logout("Logout", location='sidebar')
                 st.stop()
             
         
@@ -540,7 +543,7 @@ def pollenq(admin_pq):
 
             ####### Welcome to Pollen ##########
             # use API keys from user            
-
+            prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
             PB_QUEENBEE_Pickle = master_swarm_QUEENBEE(prod=prod)
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
             QUEENBEE['source'] = PB_QUEENBEE_Pickle
@@ -579,14 +582,18 @@ def pollenq(admin_pq):
                 admin_queens_active(KING.get('source'), KING)
             
             # PROD vs SANDBOX
-            live_sb_button = st.sidebar.button(f'Switch Enviroment', key='pollenq', use_container_width=True)
-            if live_sb_button:
-                st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                prod = st.session_state['production']
-                qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
-                QUEEN = qb.get('QUEEN')
-                QUEEN_KING = qb.get('QUEEN_KING')
-                api = qb.get('api')
+            sneak_peak = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
+            if sneak_peak:
+                pass
+            else:
+                live_sb_button = st.sidebar.button(f'Switch Enviroment', key='pollenq', use_container_width=True)
+                if live_sb_button:
+                    st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                    prod = st.session_state['production']
+                    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
+                    QUEEN = qb.get('QUEEN')
+                    QUEEN_KING = qb.get('QUEEN_KING')
+                    api = qb.get('api')
 
             if st.session_state['production'] == False:
                 st.warning("Sandbox Paper Money Account") 
@@ -673,12 +680,13 @@ def pollenq(admin_pq):
             
             with st.sidebar:
                 hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                
-                menu_buttons(cols, QUEENsHeart)
+                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+
+                # menu_buttons(cols, QUEENsHeart)
                         
             with cols[0]:
                 print('Market Closes in ', seconds_to_market_close)
-                with st.expander("Queens Heart", False):
+                with st.expander("Queens Heart", True):
                     custom_fastapi_text(KING=KING, 
                                         client_user=client_user, 
                                         default_background_color=default_background_color, 
@@ -691,7 +699,7 @@ def pollenq(admin_pq):
                                         key='header1',
                                         text_size=20)
             with cols[1]:
-                with st.expander("Account Summary"):
+                with st.expander("Account Summary", True):
                     custom_fastapi_text(KING=KING, 
                                         client_user=client_user, 
                                         default_background_color=default_background_color, 
@@ -712,30 +720,30 @@ def pollenq(admin_pq):
                 height = 54
                 cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{height}px', default=False)
             
-            with st.expander("Queen Controls"):
-                cols = st.columns((1,1,1,1,1,1))
-                with cols[0]:
-                    st.session_state['save_queen_king'] = False
-                    risk_margin_num = st.number_input('Margin Risk', value=QUEEN_KING['king_controls_queen'].get('use_margin_pct'), min_value=0, max_value=1, on_change=save_queen_king())
-                # with cols[1]:
-                #     morning_risk_num = st.number_input('Morning Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('morning'), min_value=0, max_value=3, on_change=save_queen_king())
-                # with cols[2]:
-                #     lunch_risk_num = st.number_input('Lunch Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('lunch'), min_value=0, max_value=3, on_change=save_queen_king())
-                # with cols[3]:
-                #     afternoon_risk_num = st.number_input('Afternoon Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('afternoon'), min_value=0, max_value=3, on_change=save_queen_king())
-                # with cols[4]:
-                #     throttle = st.number_input('Throttle', value=QUEEN_KING['king_controls_queen'].get('throttle'), format="%.2f", min_value=0, max_value=1, on_change=save_queen_king())
+            # with st.expander("Queen Controls"): # WORKERBEE 
+            #     cols = st.columns((1,1,1,1,1,1))
+            #     with cols[0]:
+            #         st.session_state['save_queen_king'] = False
+            #         risk_margin_num = st.number_input('Margin Risk', value=QUEEN_KING['king_controls_queen'].get('use_margin_pct'), min_value=0, max_value=1, on_change=save_queen_king())
+            #     # with cols[1]:
+            #     #     morning_risk_num = st.number_input('Morning Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('morning'), min_value=0, max_value=3, on_change=save_queen_king())
+            #     # with cols[2]:
+            #     #     lunch_risk_num = st.number_input('Lunch Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('lunch'), min_value=0, max_value=3, on_change=save_queen_king())
+            #     # with cols[3]:
+            #     #     afternoon_risk_num = st.number_input('Afternoon Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('afternoon'), min_value=0, max_value=3, on_change=save_queen_king())
+            #     # with cols[4]:
+            #     #     throttle = st.number_input('Throttle', value=QUEEN_KING['king_controls_queen'].get('throttle'), format="%.2f", min_value=0, max_value=1, on_change=save_queen_king())
 
-                if 'save_queen_king' in st.session_state and st.session_state['save_queen_king']:
-                    # handle save info
-                    QUEEN_KING['king_controls_queen']['use_margin_pct'] = risk_margin_num
-                    # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['morning'] = morning_risk_num
-                    # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['lunch'] = lunch_risk_num
-                    # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['afternoon'] = afternoon_risk_num
-                    # # QUEEN_KING['king_controls_queen']['throttle'] = throttle
-                    # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-                    st.success("saved")
-                    st.session_state['save_queen_king'] = False
+            #     if 'save_queen_king' in st.session_state and st.session_state['save_queen_king']:
+            #         # handle save info
+            #         QUEEN_KING['king_controls_queen']['use_margin_pct'] = risk_margin_num
+            #         # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['morning'] = morning_risk_num
+            #         # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['lunch'] = lunch_risk_num
+            #         # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['afternoon'] = afternoon_risk_num
+            #         # # QUEEN_KING['king_controls_queen']['throttle'] = throttle
+            #         # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+            #         st.success("saved")
+            #         st.session_state['save_queen_king'] = False
             
             
             # with cols[7]:
@@ -792,15 +800,16 @@ def pollenq(admin_pq):
         if authorized_user and 'pollenq' in menu_id: 
             print("QueensConscience")
             # with cols[0]:
-            tabs, func_list = return_page_tabs()
+            # tabs, func_list = return_page_tabs()
 
             if st.session_state['admin'] and st.session_state['workerbees']:
                 with st.expander("WorkerBees Tools"):
                     refresh_workerbees(QUEENBEE, QUEEN_KING)
+            
             if 'total_profits' not in st.session_state:
                 st.session_state['total_profits'] = False
 
-            queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, tabs, api, api_vars)
+            queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
             print("Back to Pollen")
             # with cols[1]:
             # cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
