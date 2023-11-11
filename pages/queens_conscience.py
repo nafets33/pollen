@@ -2242,7 +2242,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
         # ip_address = get_ip_address()
         ip_address = st.session_state['ip_address']
-        func_list = ['Trading Wave', 'Wave Race', 'Orders', 'Trading Board', 'Trading Models'] # 'waves', 'workerbees', 'charts'
+        func_list = ['Trading Wave', 'Orders', 'Trading Board', 'Trading Models'] # 'waves', 'workerbees', 'charts'
         # func_list = [i for i in func_list if st.session_state[i]]
         tabs = st.tabs(func_list)
         with st.spinner("Refreshing"): # ozzbot
@@ -2322,15 +2322,15 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 model_wave_results(STORY_bee)
                                 print("TRADING MODELS")
 
-                        if tab_name == 'Wave Race':
-                            # cols = st.columns(2)
-                            # with cols[0]:
-                            with st.expander("Wave Race", True):
-                                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-                                custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
+                        # if tab_name == 'Wave Race':
+
+                        #     with st.expander("Race", True):
+                        #         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                        #         custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
 
                         if tab_name == 'Trading Wave':
-                            cols = st.columns((5,2))
+
+                            cols = st.columns((5,3))
                             symbols = QUEEN['heartbeat'].get('active_tickers')
                             symbols = ['SPY'] if len(symbols) == 0 else symbols
                             queen_orders = QUEEN['queen_orders']
@@ -2368,6 +2368,11 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                                 graph_height=300,
                                                 symbols=['SPY', 'QQQ'],
                                                 )
+                                    
+                                    with st.expander("Wave Race", False):
+                                        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                                        custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
+
                                     with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
                                         jpg_root = os.path.join(main_root, "misc")
                                         queenbee = os.path.join(jpg_root, "bee.png")
