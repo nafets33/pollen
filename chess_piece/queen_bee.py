@@ -2931,7 +2931,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         """, timestamp_string()
         )
 
-        init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
+        init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel='warning')
 
         KING = ReadPickleData(master_swarm_KING(prod=prod))
         # init files needed
@@ -3041,11 +3041,18 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             charlie_bee['queen_cyle_times']['db_refresh'] = (datetime.now(est) - s_time).total_seconds()
 
             """Account Info"""
-            portfolio = return_alpc_portolio(api)['portfolio']
-            QUEEN['portfolio'] = portfolio
+            # WORKERBEE WHEN BROKER FAILS TO RETURN how to handle?
+            def refresh_broker_account_portolfio(api, QUEEN, account=False, portfolio=False):
+                if portfolio:
+                    portfolio = return_alpc_portolio(api)['portfolio']
+                    QUEEN['portfolio'] = portfolio
+                if account:
+                    acct_info = refresh_account_info(api=api)['info_converted']
+                    QUEEN['account_info'] = acct_info
             
-            acct_info = refresh_account_info(api=api)['info_converted']
-            QUEEN['account_info'].update(acct_info)
+            refresh_broker_account_portolfio(api, QUEEN, account=True, portfolio=True)
+            acct_info = QUEEN['account_info']
+            portfolio = QUEEN['portfolio']
 
             PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')})
 

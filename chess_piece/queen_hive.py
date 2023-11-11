@@ -305,14 +305,14 @@ def init_queen(queens_chess_piece):
     QUEEN = {  # The Queens Mind
         "version": 2,
         "init_id": f'{"queen"}{"_"}{return_timestamp_string()}',
-        "account_info": 'init',
+        "account_info": {},
         "prod": "",
         "source": "na",
         "source_account_info": 'init',
         "last_modified": datetime.now(est),
         "command_conscience": {}, ## ?
         "crypto_temp": {"trigbees": {}},
-        "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id"),
+        "queen_orders": pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id", drop=False),
         "portfolio": {},
         "heartbeat": {
             'need_order_info': [],
@@ -1109,7 +1109,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         # Total In Running, Remaining
         active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
         if len(active_orders) == 0:
-            return '', 0, 0, 0, 0, 0, 0
+            return '', total_budget, borrow_budget, 0, 0, 0, 0
         
         # handle long_short in update WORKERBEE
         active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'short') 

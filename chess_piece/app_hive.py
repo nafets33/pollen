@@ -61,6 +61,7 @@ load_dotenv(os.path.join(main_root, ".env"))
 jpg_root = os.path.join(main_root, "misc")
 MISC = local__filepaths_misc()
 # chess_pic_1 = os.path.join(jpg_root, 'chess_pic_1.jpg')
+queenbee = os.path.join(jpg_root, "bee.png")
 bee_image = os.path.join(jpg_root, "bee.jpg")
 bee_power_image = os.path.join(jpg_root, "power.jpg")
 hex_image = os.path.join(jpg_root, "hex_design.jpg")
@@ -84,7 +85,7 @@ chess_piece_queen = (
 )
 runaway_bee_gif = os.path.join(jpg_root, "runaway_bee_gif.gif")
 
-page_icon = Image.open(bee_image)
+page_icon = Image.open(queenbee)
 
 ##### STREAMLIT ###
 k_colors = streamlit_config_colors()
@@ -1211,6 +1212,27 @@ def download_df_as_CSV(df, button_name="download csv", file_name="name.csv"):
         file_name=file_name,
         mime="text/csv",
     )
+
+    return True
+
+def custom_fastapi_text(KING, client_user, default_background_color, default_text_color, default_font, refresh_sec=8, refresh_cutoff_sec=8, text_size=24, prod=False, api="http://localhost:8000/api/data/account_info", key='header1'):
+    # Total Account info
+    to_builder = TextOptionsBuilder.create()
+    to_builder.configure_background_color(default_background_color)
+    to_builder.configure_text_color(default_text_color)
+    to_builder.configure_font_style(default_font)
+    to = to_builder.build()
+    # print("mk close", seconds_to_market_close)
+    custom_text(api=api, 
+                text_size=text_size, 
+                refresh_sec=refresh_sec,
+                refresh_cutoff_sec=refresh_cutoff_sec,
+                text_option=to, 
+                api_key=os.environ.get("fastAPI_key"), 
+                prod=prod, 
+                username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                client_user=client_user,
+                key=key,)            
 
     return True
 

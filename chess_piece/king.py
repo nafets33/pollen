@@ -609,12 +609,15 @@ def print_line_of_error(e='print_error_message'):
 
 def streamlit_config_colors():
     # read config file and parse from there
-    return {
+    k_colors = {
         "default_text_color": "#055A6E",
         "default_font": "sans serif",
         "default_yellow_color": "#E6C93B",
         "default_background_color": '#F3FAFD',
     }
+    for k,v in k_colors.items():
+        st.session_state[k] = v
+    return k_colors
 
 
 def copy_directory(src, dst):

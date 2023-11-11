@@ -293,10 +293,12 @@ def signin_main(page):
         # Check login. Automatically gets stored in session state
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':
             authentication_status = True
+            st.session_state['name'] = 'stefanstapinski@yahoo.com'
             st.session_state['auth_email'] = "stefanstapinski@yahoo.com"
             st.session_state['auth_name'] = "Kings Guest"
             st.session_state['auth_pw'] = os.environ.get("quantqueen_pw")
             name, authentication_status, email = authenticator.direct_login(st.session_state['auth_email'], os.environ.get("quantqueen_pw"))
+            st.session_state['authentication_status'] = True
             authenticator.logout("Logout", location='sidebar')
             define_authorized_user()
             return authenticator

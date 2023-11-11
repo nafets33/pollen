@@ -25,7 +25,7 @@ import aiohttp
 import asyncio
 # import requests
 # from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import return_page_tabs, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
+from chess_piece.app_hive import queen_messages_grid__apphive, custom_fastapi_text, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart, page_session_state__cleanUp, queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import get_ip_address, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
 from chess_piece.queen_hive import ttf_grid_names_list, buy_button_dict_items, wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, story_view, return_alpc_portolio, pollen_themes,  return_timestamp_string, init_logging
 
@@ -764,7 +764,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 # with cols[1]:
                                 #     st.subheader(name)
                                 
-                                cols = st.columns((1,3,1,1,2,2,2))
+                                cols = st.columns((1,3,1,1,2,2))
                                 headers = 0
                                 for qcp in all_workers:
                                     setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
@@ -1939,9 +1939,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 grid_height='300px',
                 toggle_views = ["Main", 'Winners', 'Loser', 'Buys', 'Sells',] + ttf_grid_names_list(),
             ) 
-        
-        
-            
+
+      
         def story_grid(client_user, ip_address, revrec, symbols, key='default', active=False, ):
             try:
                 gb = GridOptionsBuilder.create()
@@ -1957,10 +1956,10 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     'long_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'short_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'trinity_w_L': create_ag_grid_column(headerName='Trinity Force',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
-                    'trinity_w_15': create_ag_grid_column(headerName='Flash',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
-                    'trinity_w_30': create_ag_grid_column(headerName='Mid Man',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
-                    'trinity_w_54': create_ag_grid_column(headerName='Old Man',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
-                    'trinity_w_S': create_ag_grid_column(headerName='Trinity DarkForce',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                    'trinity_w_15': create_ag_grid_column(headerName='Flash Force',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                    'trinity_w_30': create_ag_grid_column(headerName='Mid Force',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                    'trinity_w_54': create_ag_grid_column(headerName='Future Force',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                    'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
 
                     }
 
@@ -2294,6 +2293,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                     queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
                                 with st.expander('STORY_bee'):
                                     st.write(STORY_bee['SPY_1Minute_1Day']['story'])
+
                         if tab_name == 'workerbees':
                             if 'workerbees' in st.session_state and st.session_state['workerbees'] == True:
                                 st.write("waves")
@@ -2302,14 +2302,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                             if 'charts' in st.session_state and st.session_state['charts'] == True:
                                 with st.expander("charts", True):
                                     advanced_charts()
-                        
-                        
-                        # resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=tickers_avail)
-                        # df_storyview = resp.get('df_storyview')
-                        # df_storygauge = resp.get('df_storyguage')
-                        # # print(resp.get('df_storyguage').dtypes)
-                        # df_waveview = resp.get('df_waveview')
-                        # df_storyview_down = resp.get('df_storyview_down')
+
                         if tab_name == 'Trading Board':
                             st.session_state['chess_board'] = True
                             if 'chess_board' in st.session_state and st.session_state['chess_board'] == True:
@@ -2319,26 +2312,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                     QB_workerbees(QUEENBEE=QUEENBEE, admin=admin)
                                 else:
                                     chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
-                                
-                                                                # if st.button("showwavebutton"):
-                                # st.write("df_storyview_down")                                
-                                # st.write(df_storyview_down)
-                                # st.write("storyview")                                
-                                # st.write(df_storyview)
-                                # st.write("storygauge")
-                                # print(df_storygauge.dtypes)
-                                # for col in df_storygauge.columns:
-                                #     # print(type(df_storygauge.iloc[-1].get(col)))
-                                #     if type(df_storygauge.iloc[-1].get(col)) == np.float64:
-                                #         # print(col)
-                                #         df_storygauge[col] = df_storygauge[col] * 100
-                                # df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['w_L_macd_tier_position'], axis=0, vmin=-100, vmax=100)                               
-                                # st.write(df_storygauge)
-                                # st.write("waveview")
-                                # st.write(df_waveview)
-                                print("ChessBoard")
-
-                        
+                 
                         if tab_name == 'Trading Models':
                             if "queens_mind" in st.session_state and st.session_state['queens_mind']:
                                 # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
@@ -2347,13 +2321,13 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 
                                 model_wave_results(STORY_bee)
                                 print("TRADING MODELS")
+
                         if tab_name == 'Wave Race':
                             # cols = st.columns(2)
                             # with cols[0]:
-                            with st.expander("Wave Race", False):
+                            with st.expander("Wave Race", True):
                                 refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
                                 custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
-
 
                         if tab_name == 'Trading Wave':
                             cols = st.columns((5,2))
@@ -2366,11 +2340,16 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
                                     story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, active=True)
                                     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                                    if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
+                                        st.error("PENDING QUEEN")
+                                    else:
+                                        wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
+
 
                                 with cols[1]:
-                                    with st.expander("SPY QQQ Market Today %", True):
+                                    with st.expander("SPY-QQQ Today %", True):
 
-                                        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                                        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                                         cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
                                                 prod=prod,
                                                 api=f'{ip_address}/api/data/symbol_graph',
@@ -2389,15 +2368,27 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                                 graph_height=300,
                                                 symbols=['SPY', 'QQQ'],
                                                 )
-                                if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
-                                    st.error("PENDING QUEEN")
-                                else:
-                                    wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', active=True)
+                                    with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
+                                        jpg_root = os.path.join(main_root, "misc")
+                                        queenbee = os.path.join(jpg_root, "bee.png")
+                                        queen_logs = st.toggle("Queens Mind")
+                                        st.session_state['Queens Mind'] = queen_logs
 
+                                        if st.session_state['Queens Mind']:
+                                            logs = os.listdir(log_dir)
+                                            logs = [i for i in logs if i.endswith(".log")]
+                                            log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                                            log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                                            log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                                                # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                                            queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                                        st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
+                                        st.image(queenbee, width=33)
+                                
 
 
                         if tab_name == 'Orders':
-                            with st.expander("Orders 🔒"):
+                            with st.expander("Orders 🔒", True):
                                 refresh_sec = 2 if seconds_to_market_close > 0 and mkhrs == 'open' else None
                                 order_grid(KING, queen_orders, ip_address)
                 """ Bottom Page """
