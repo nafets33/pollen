@@ -520,6 +520,7 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
     # newuser = st.button("New User")
     # signin_button = st.button("SignIn")
 
+    
     cols = st.columns((6, 7, 2))
     with cols[0]:
         st.subheader("Create an Account To Get a QueenTraderBot")
@@ -528,21 +529,28 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
             value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
         )
     with cols[2]:
-        sneak_peak = st.button(
-            "Watch a QueenBot Trade Live"
-        )
-        if sneak_peak:
-            st.session_state["sneak_peak"] = True
-            sneak_pw = st.text_input("Sneak Key", key='sneak_key')
-            # switch_page("QueensConscience")
-        else:
-            st.session_state["sneak_peak"] = False
-    # with cols[3]:
-    #     st.image(mainpage_bee_png, width=54)
-    # with cols[1]:
-    #     local_gif(floating_queen_gif, '100', '123')
-    page_line_seperator("25")
 
+        cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+    
+    if st.session_state['SneakQueen']:
+        with cols[1]:
+            with st.form("Sneak Peak Access"):
+                st.session_state["sneak_peak"] = True
+                sneak_name = st.text_input("Your Name", key='sneak_name')
+                sneak_pw = st.text_input("Sneak Key", key='sneak_key')
+                if st.form_submit_button("Lets Go"):
+                    if len(sneak_name) == 0:
+                        st.error("Enter Your Name To Get In")
+                        st.stop()
+                    if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
+                        st.error("Incorrect Password")
+                        st.stop()
+                    
+
+    page_line_seperator("25")
+    sneak_peak = st.button("Watch a QueenBot Trade Live")
+    if sneak_peak:
+        switch_page("LiveBot")
     # st.error(
     #     "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
     # )
@@ -1992,7 +2000,7 @@ def create_ag_grid_column(
     minWidth=None,
     maxWidth=None,
     sortable=True,
-    filter=False,
+    filter=True,
     filterParams=None,
     resizable=True,
     pinned=None,
@@ -2023,6 +2031,7 @@ def create_ag_grid_column(
     cellEditorPopupParent=None,
     custom_format_string=None,
     editable=None,
+    cellClassRules=None,
 ):
     # Create a dictionary with the provided field values
     column = {
@@ -2066,6 +2075,7 @@ def create_ag_grid_column(
         "cellEditorPopupParent": cellEditorPopupParent,
         "custom_format_string": custom_format_string,
         "editable": editable,
+        "cellClassRules": cellClassRules,
     }
     
     # Remove fields with None values
@@ -2129,8 +2139,7 @@ def setup_page(QUEEN_KING, theme_list):
                 st.image(mainpage_bee_png, width=100)
         
         with BrokerAPIKeys:
-            queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True)
-            # st.error("Account Needs to be Authoirzed First, Add Keys in QueensConscience")
+            queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=st.session_state['authorized_user'], show_form=True)
             pass
         
         with settings_queen:
@@ -2262,7 +2271,7 @@ def return_user_symbol_colors(QUEEN_KING, idx_field="symbol", qcp='bishop', uniq
     return symbol_dicts
 
 
-def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=200):
+def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=300):
 # with cols[1]:
     # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
     # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))

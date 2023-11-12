@@ -638,6 +638,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
         df_wave['sell_alloc_deploy'] = df_wave['sell_alloc_deploy'] + df_wave['sellbuy_alloc_deploy']
         df_wave['buy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] < 0), round(abs(df_wave['allocation_deploy'])), 0)
 
+        
         if return_type == 'waves':
            QUEEN_KING = load_queen_App_pkl(username, prod)
            df = df_wave
@@ -648,6 +649,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
            for ttf in df.index.tolist():
               try:
                 remaining_budget = df.at[ttf, 'remaining_budget'].astype(float)
+                remaining_budget_borrow = df.at[ttf, 'remaining_budget_borrow'].astype(float)
                 # print(type(remaining_budget))
                 if type(remaining_budget) is np.float64:
                    pass
@@ -655,28 +657,31 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
                    print(ttf, "OBBBBJ", remaining_budget)
                    continue
                 remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
+                
+                # get kor variables
                 take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
                 sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
                 close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
                 sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+                
                 margin = ''
-                if remaining_budget <0:
+                if remaining_budget <0 and (remaining_budget_borrow + remaining_budget) > 0:
                   margin = "Margin"
-                  remaining_budget = round(df.at[ttf, 'remaining_budget_borrow'])
+                  remaining_budget = round((remaining_budget_borrow + remaining_budget))
                   
                   if remaining_budget <0:
                       remaining_budget == 0
                 
                 kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today)
-                ttf_name = ttf_grid_names(ttf)
-
+                ttf_name = ttf_grid_names(ttf, symbol=False)
+                df.at[ttf, 'time_frame'] = ttf_name
                 df.at[ttf, 'kors'] = kors
-                df.at[ttf, 'ticker_time_frame__budget'] = f"""{ttf_name} {margin} budget {"${:,}".format(remaining_budget)}"""
+                df.at[ttf, 'ticker_time_frame__budget'] = f"""{margin} {"${:,}".format(remaining_budget)}"""
+              
+              
               except Exception as e:
                  print_line_of_error(f"{ttf} grid buttons {remaining_budget}")
            
-          #  df['remaining_budget'] = df['remaining_budget'].apply(lambda x: round(x,2))
-          #  df['ticker_time_frame__budget'] = df['ticker_time_frame'] + " remaining budget " + df['remaining_budget'].astype(str)
            df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
            df['color_row_text'] = default_text_color
 
@@ -688,13 +693,15 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
         elif return_type == 'story':
 
           df = revrec.get('storygauge')
-          
-
+          storygauge_columns = df.columns.tolist()
           
           # symbol group by to join on story
-          num_cols = ['buy_alloc_deploy', 'long_at_play', 'sell_alloc_deploy', 'short_at_play', 'star_total_budget']
+          num_cols = ['buy_alloc_deploy', 'long_at_play', 'sell_alloc_deploy', 'short_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
           for col in num_cols:
-             df_wave[col] = round(df_wave[col], 2)
+             df_wave[col] = round(df_wave[col])
+             if col in storygauge_columns:
+                df[col] = round(df[col])
+          
           df_wave_symbol = df_wave.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
           df_wave_symbol['sell_pct'] = (df_wave_symbol['sell_alloc_deploy'] / df_wave_symbol['long_at_play'] * 100).fillna(0)
           df_wave_symbol['sell_pct'] = round(df_wave_symbol['sell_pct'],1)
@@ -703,24 +710,33 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '{}% {:,.0f}$'.format(row['sell_pct'], row['sell_alloc_deploy']), axis=1)
           df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '{}% {:,.0f}$'.format(row['buy_pct'], row['buy_alloc_deploy']), axis=1)
 
-
+          remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
+          remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
           sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
           buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
+          buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
 
+          df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
+          
+          # display whole number
           for col in df.columns:
             if 'trinity' in col:
-                df[col] = round(pd.to_numeric(df[col]),2)
-          kors_dict = buy_button_dict_items()
-          kors_dict.update({'star': stars().keys()})
-          df['kors'] = [kors_dict for _ in range(df.shape[0])]
-          df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
+                df[col] = round(pd.to_numeric(df[col]),2) * 100
+
           df['color_row_text'] = default_text_color
           df['queens_suggested_sell'] =  df['symbol'].map(sell_msg)
           df['queens_suggested_buy'] =  df['symbol'].map(buy_msg)
-          #  df = update_col_number_format(df)
+          
+          kors_dict = buy_button_dict_items()
+          df['kors'] = [kors_dict for _ in range(df.shape[0])]
+          # df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
+          # df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
+          for ttf in df.index.tolist():
+              kors = buy_button_dict_items(star=ttf)
+              df.at[ttf, 'kors'] = kors
+              df.at[ttf, 'remaining_budget'] = remaining_budget[ttf]
+              df.at[ttf, 'remaining_budget_borrow'] = remaining_budget_borrow[ttf]
 
-          # df = filter_gridby_timeFrame_view(df, toggle_view_selection)
-              
           json_data = df.to_json(orient='records')
           return json_data
 

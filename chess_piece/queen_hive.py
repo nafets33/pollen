@@ -650,6 +650,29 @@ wavegrid_cols = ['Buy Waves',
  'X Buy',
  'Power Buy']
 
+def return_trading_model_mapping(QUEEN_KING, waveview):
+    return_main = {}
+    for ttf in waveview.index.to_list():
+        try:
+            ticker = waveview.at[ttf, 'symbol']
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
+            star_time = waveview.at[ttf, 'star_time']
+            tm_trig = waveview.at[ttf, 'macd_state']
+            trig_wave_length = waveview.at[ttf, 'wave_state']
+            # on_wave_buy = True if trig_wave_length != '0' else False
+            # if on_wave_buy:
+            #     tm_trig = 'buy_cross-0' if 'buy' in tm_trig else 'sell_cross-0'
+            tm_trig = return_trading_model_trigbee(tm_trig, trig_wave_length)
+            wave_blocktime = waveview.at[ttf, 'wave_blocktime']
+            king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
+            return_main[ttf] = king_order_rules
+        except Exception as e:
+            print_line_of_error()
+            return_main[ttf] = {}
+    
+    return return_main
+
+
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False, fresh_board=True):
     # Create/Refresh RevRec from Chess Board
     # WORKERBEE: Add validation only 1 symbol per qcp 
@@ -864,7 +887,21 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
                 storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
                 # storygauge.at[symbol, 'client_order_ids'] = c_order_ids
-        
+
+        # tier divergence, how many tiers have been gain'd / lost MACD/RSI/VWAP // current profit deviation
+        waveview['macd_tier_divergence'] =  waveview['end_tier_macd'] - waveview['start_tier_macd']
+        waveview['vwap_tier_divergence'] =  waveview['end_tier_vwap'] - waveview['start_tier_vwap']
+        waveview['rsi_tier_divergence'] =  waveview['end_tier_rsi_ema'] - waveview['start_tier_rsi_ema']
+        waveview['macd_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & waveview['macd_tier_divergence'] > 0, waveview['macd_tier_divergence'], 0)
+        waveview['vwap_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & waveview['vwap_tier_divergence'] > 0, waveview['vwap_tier_divergence'], 0)
+        waveview['rsi_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & waveview['rsi_tier_divergence'] > 0, waveview['rsi_tier_divergence'], 0)
+
+        waveview['macd_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & waveview['macd_tier_divergence'] < 0, abs(waveview['macd_tier_divergence']), waveview['macd_tier_gain'])
+        waveview['vwap_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & waveview['vwap_tier_divergence'] < 0, abs(waveview['vwap_tier_divergence']), waveview['vwap_tier_gain'])
+        waveview['rsi_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & waveview['rsi_tier_divergence'] < 0, abs(waveview['rsi_tier_divergence']), waveview['rsi_tier_gain'])
+        waveview['trinity_tier_gain'] =  waveview['macd_tier_gain'] + waveview['vwap_tier_gain'] + waveview['rsi_tier_gain']
+
+
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         waveview['wave_blocktime'] = current_wave.get('wave_blocktime')
 
@@ -891,28 +928,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         wave_analysis_length_sell = wave_analysis_length_sell.set_index('star')
 
 
-        def return_trading_model_mapping(QUEEN_KING, waveview):
-            return_main = {}
-            for ttf in waveview.index.to_list():
-                try:
-                    ticker = waveview.at[ttf, 'symbol']
-                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
-                    star_time = waveview.at[ttf, 'star_time']
-                    tm_trig = waveview.at[ttf, 'macd_state']
-                    trig_wave_length = waveview.at[ttf, 'wave_state']
-                    # on_wave_buy = True if trig_wave_length != '0' else False
-                    # if on_wave_buy:
-                    #     tm_trig = 'buy_cross-0' if 'buy' in tm_trig else 'sell_cross-0'
-                    tm_trig = return_trading_model_trigbee(tm_trig, trig_wave_length)
-                    wave_blocktime = waveview.at[ttf, 'wave_blocktime']
-                    king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
-                    return_main[ttf] = king_order_rules
-                except Exception as e:
-                    print_line_of_error()
-                    return_main[ttf] = {}
-            
-            return return_main
-            
         for ttf in waveview.index.to_list():
 
             waveview.at[ttf, 'star_time'] = df_stars.at[ttf, 'star']
@@ -3546,8 +3561,8 @@ def ttf_grid_names(ttf_name, symbol=True):
     else:
        return ttf_name
 
-def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=False,limit_price=False,take_profit=.03,sell_out=-.03,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, star_list=ttf_grid_names_list()):
-    return {
+def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=None,limit_price=False,take_profit=.03,sell_out=-.03,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, reverse_buy=False, sell_at_vwap=False, star_list=ttf_grid_names_list()):
+    column = {
                 'star':star,
                 'wave_amo': wave_amo,
                 # 'trade_using_limits': trade_using_limits,
@@ -3557,8 +3572,11 @@ def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=
                 'sell_trigbee_trigger': sell_trigbee_trigger,
                 'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
                 'close_order_today': close_order_today,
+                'reverse_buy': reverse_buy,
+                'sell_at_vwap': sell_at_vwap,
                 'star_list': star_list,
                 }
+    return {key: value for key, value in column.items() if value is not None}
 
 
 def kings_order_rules( # rules created for 1Minute
@@ -4329,8 +4347,8 @@ def generate_TradingModel(
         # {ticker: model_vars}
         macd_model = tradingmodel_vars(symbol_theme_vars=symbol_theme_vars, stars_vars=stars_vars)
 
-        if init==False:
-            print(f'{trading_model_name} {ticker} {theme} Model Generated')
+        # if init==False:
+        #     print(f'{trading_model_name} {ticker} {theme} Model Generated')
 
         return {"MACD": macd_model}
     except Exception as e:

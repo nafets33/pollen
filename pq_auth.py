@@ -291,7 +291,7 @@ def signin_main(page):
 
 
         # Check login. Automatically gets stored in session state
-        if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':
+        if 'sneak_key' in st.session_state and st.session_state['sneak_key'].lower() == 'family':
             authentication_status = True
             st.session_state['name'] = 'stefanstapinski@yahoo.com'
             st.session_state['auth_email'] = "stefanstapinski@yahoo.com"

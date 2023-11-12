@@ -29,7 +29,7 @@ from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import custom_fastapi_text, custom_graph_ttf_qcp, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
+from chess_piece.queen_hive import main_root, initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 
 # componenets
 from streamlit_extras.switch_page_button import switch_page
@@ -51,8 +51,9 @@ est = pytz.timezone("US/Eastern")
 
 def pollenq(admin_pq):
     try:
+        main_page_start = datetime.now()
         king_G = kingdom__global_vars()
-
+        main_root = hive_master_root() 
         def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
             
             with st.form("workerbees refresh"):
@@ -317,10 +318,9 @@ def pollenq(admin_pq):
 
         def check_fastapi_status(ip_address):
             try:
-                print("ip_address")
-                # ipdb.set_trace()
+
                 req = requests.get(f"{ip_address}/api/data/", timeout=2) # http://127.0.0.1:8000/api/data/
-                # print("req", req)
+
                 return True
             # except ConnectionError as e:
             except Exception as e:
@@ -464,7 +464,6 @@ def pollenq(admin_pq):
         if ip_address == '10.202.0.2':
             ip_address = "https://api.quantqueen.com"
         else:
-            print("IP sandbox")
             ip_address = "http://127.0.0.1:8000"
         st.session_state['ip_address'] = ip_address
 
@@ -494,9 +493,13 @@ def pollenq(admin_pq):
 
         with st.spinner("Verifying Your Scent, Hang Tight"):
             authenticator = signin_main(page="pollenq")
+            st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
+            print(st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
+            
             if st.session_state['authentication_status'] != True: ## None or False
                 
                 display_for_unAuth_client_user()
+                st.error("Seeking Hive I see")
                 st.stop()
 
             # if 'logout' in st.session_state and st.session_state["logout"] != True:
@@ -505,7 +508,6 @@ def pollenq(admin_pq):
             #     reset_password(cur=cur, authenticator=authenticator, email=st.session_state['auth_email'], location='sidebar')
 
             prod = st.session_state['production']
-            print("ENVIRONMENT prod/sb", prod)
             authorized_user = st.session_state['authorized_user']
             client_user = st.session_state["username"]
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
@@ -594,7 +596,6 @@ def pollenq(admin_pq):
             QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
             QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
 
-            print("API")
             if st.sidebar.button('show_keys'):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
 
@@ -650,10 +651,25 @@ def pollenq(admin_pq):
                 seconds_to_market_close = 1
             def save_queen_king():
                 st.session_state['save_queen_king'] = True
-            cols = st.columns((3,6,1,2))
-            with cols[3]:
+            cols = st.columns((3,5,3))
+            with cols[2]:
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+                with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
+                    jpg_root = os.path.join(main_root, "misc")
+                    queenbee_png = os.path.join(jpg_root, "bee.png")
+                    queen_logs = st.toggle("Queens Mind")
+                    st.session_state['Queens Mind'] = queen_logs
 
+                    if st.session_state['Queens Mind']:
+                        logs = os.listdir(log_dir)
+                        logs = [i for i in logs if i.endswith(".log")]
+                        log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                        log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                            # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                        queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+                    st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
+                    st.image(queenbee_png, width=33)
             if menu_id == 'PlayGround':
                 print("PLAYGROUND")
                 PlayGround()
@@ -665,7 +681,6 @@ def pollenq(admin_pq):
                 # menu_buttons(cols, QUEENsHeart)
                         
             with cols[0]:
-                print('Market Closes in ', seconds_to_market_close)
                 with st.expander("Queens Heart :heartbeat:", True):
                     custom_fastapi_text(KING=KING, 
                                         client_user=client_user, 
@@ -691,15 +706,6 @@ def pollenq(admin_pq):
                                         api=f'{ip_address}/api/data/account_info',
                                         key='header2',
                                         text_size=20)
-            with cols[2]:
-                print("Heart")
-                # now = datetime.now(est)
-                # beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
-                # beat_size = 66 if beat > 100 else beat
-                # beat_size = 45 if beat_size < 10 else beat_size
-                height = 54
-                cust_Button("misc/zelda-icons.gif", hoverText=f'Inside Queens Heart', key='show_queenheart', height=f'{height}px', default=False)
-                
 
             # with st.expander("Queen Controls"): # WORKERBEE 
             #     cols = st.columns((1,1,1,1,1,1))
@@ -750,7 +756,6 @@ def pollenq(admin_pq):
    
             
             ### NEW SECTION ####
-            print("POLLENTHEMES")
             pollen_theme = pollen_themes(KING=KING)
             theme_list = list(pollen_theme.keys())
 
@@ -779,9 +784,6 @@ def pollenq(admin_pq):
             pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
         
         if authorized_user and 'pollenq' in menu_id: 
-            print("QueensConscience")
-            # with cols[0]:
-            # tabs, func_list = return_page_tabs()
 
             if st.session_state['admin'] and st.session_state['workerbees']:
                 with st.expander("WorkerBees Tools"):
@@ -791,21 +793,17 @@ def pollenq(admin_pq):
                 st.session_state['total_profits'] = False
 
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
-            print("Back to Pollen")
-            # with cols[1]:
-            # cust_Button("misc/dollar-symbol-unscreen.gif", hoverText=f'P/L', key='total_profits', height=f'53px', default=True)
- 
-        cols = st.columns((6,2))
-        # with cols[0]:
-        #     if st.toggle("Logs"):
-        #         logs = os.listdir(log_dir)
-        #         logs = [i for i in logs if i.endswith(".log")]
-        #         log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-        #         log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-        #         with st.expander(log_file):
-        #             log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-        #             # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
-        #             queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+
+        cols = st.columns(6)
+
+        with cols[0]:
+            # print("Heart")
+            # now = datetime.now(est)
+            # beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
+            # beat_size = 66 if beat > 100 else beat
+            # beat_size = 45 if beat_size < 10 else beat_size
+            height = 54
+            cust_Button("misc/zelda-icons.gif", hoverText=f'Inside Queens Heart', key='show_queenheart', height=f'{height}px', default=False)
 
         with cols[1]:
             if st.toggle("Control Settings"):
@@ -822,7 +820,8 @@ def pollenq(admin_pq):
 
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')
-        print(f'pollenq END >>>> {return_timestamp_string()}' )
+        
+        print(f'pollenq END >>>> {(datetime.now() - main_page_start).total_seconds()}' )
 
         # with cols[6]:
         # st.button("Refresh", use_container_width=True)
