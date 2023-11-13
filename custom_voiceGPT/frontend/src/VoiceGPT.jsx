@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FC, memo, useMemo } from "react"
+import React, { useState, useEffect, FC, memo, useMemo, useRef } from "react"
 import axios from "axios"
 import {
   ComponentProps,
@@ -22,21 +22,22 @@ let firstFace = false
 
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
-  const { height, width, show_conversation, text_input, no_response_time } =
+  const { height, width, show_conversation, input_text, no_response_time } =
     kwargs
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
   const [answers, setAnswers] = useState([])
   const [listenAfterRelpy, setListenAfterReply] = useState(false)
-  const [modelsLoaded, setModelsLoaded] = React.useState(false)
-  const [captureVideo, setCaptureVideo] = React.useState(false)
+  const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [captureVideo, setCaptureVideo] = useState(false)
+  const [textString, setTextString] = useState("")
 
-  const videoRef = React.useRef()
+  const videoRef = useRef()
   const videoHeight = 480
   const videoWidth = 640
-  const canvasRef = React.useRef()
+  const canvasRef = useRef()
 
-  React.useEffect(() => {
+  useEffect(() => {
     const loadModels = async () => {
       const MODEL_URL = process.env.PUBLIC_URL + "/models"
 
@@ -236,6 +237,15 @@ const CustomVoiceGPT = (props) => {
           show_conversation={show_conversation}
         />
         <button onClick={listenContinuously}>Listen continuously</button>
+        {input_text && (
+          <>
+            <input
+              type="text"
+              placeholder="ask to chatGPT"
+              value={textString}
+            />
+          </>
+        )}
         {show_conversation === true && (
           <>
             <div> You: {message}</div>
