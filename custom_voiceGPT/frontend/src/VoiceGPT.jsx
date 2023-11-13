@@ -17,13 +17,21 @@ const imageUrls = {
 }
 
 let timer = null
+let faceTimer = null
 let g_anwers = []
 let firstFace = false
 
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
-  const { height, width, show_conversation, input_text, no_response_time } =
-    kwargs
+  const {
+    height,
+    width,
+    show_conversation,
+    show_video,
+    input_text,
+    no_response_time,
+    face_recon,
+  } = kwargs
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
   const [answers, setAnswers] = useState([])
@@ -32,6 +40,8 @@ const CustomVoiceGPT = (props) => {
   const [captureVideo, setCaptureVideo] = useState(false)
   const [textString, setTextString] = useState("")
 
+  const faceData = useRef([])
+  const faceTriggered = useRef(false)
   const videoRef = useRef()
   const videoHeight = 480
   const videoWidth = 640
@@ -45,7 +55,7 @@ const CustomVoiceGPT = (props) => {
   const handleOnKeyDown = (e) => {
     if (e.key === "Enter") {
       console.log("textString :>> ", textString)
-      myFunc(textString, { api_body: { keyword: "" } })
+      myFunc(textString, { api_body: { keyword: "" } }, 4)
       setTextString("")
     }
   }
@@ -86,7 +96,20 @@ const CustomVoiceGPT = (props) => {
           .withFaceExpressions()
 
         const resizedDetections = faceapi.resizeResults(detections, displaySize)
-        console.log("resizedDetections :>> ", resizedDetections)
+
+        if (resizedDetections.length > 0) {
+          faceData.current = resizedDetections
+          if (!faceTriggered.current && face_recon) {
+            myFunc("", { api_body: { keyword: "" } }, 2)
+            faceTriggered.current = true
+          }
+        } else {
+          faceTimer && clearTimeout(faceTimer)
+          setTimeout(() => {
+            faceData.current = []
+          }, 1000)
+        }
+
         if (resizedDetections.length > 0 && !firstFace) {
           firstFace = true
           if (kwargs.hello_audio) {
@@ -94,6 +117,7 @@ const CustomVoiceGPT = (props) => {
             audio.play()
           }
         }
+
         canvasRef &&
           canvasRef.current &&
           canvasRef.current
@@ -131,8 +155,8 @@ const CustomVoiceGPT = (props) => {
     console.log("response :>> ", response)
   }
 
-  const myFunc = async (ret, command, type = 2) => {
-    if (type === 2 && listenAfterRelpy) {
+  const myFunc = async (ret, command, type) => {
+    if (type === 3 && listenAfterRelpy) {
       return
     }
     setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
@@ -141,12 +165,14 @@ const CustomVoiceGPT = (props) => {
     try {
       console.log("api call on listen...", command)
       const body = {
+        tigger_type: type,
         api_key: "api_key",
         text: text,
         self_image: imageSrc,
+        face_data: faceData.current,
       }
       const { data } = await axios.post(api, body)
-      console.log("data :>> ", data)
+      console.log("data :>> ", data, body)
       data["self_image"] && setImageSrc(data["self_image"])
       data["listen_after_reply"] &&
         setListenAfterReply(data["listen_after_reply"])
@@ -166,7 +192,7 @@ const CustomVoiceGPT = (props) => {
       command: command["keywords"],
       callback: (ret) => {
         timer && clearTimeout(timer)
-        timer = setTimeout(() => myFunc(ret, command), 1000)
+        timer = setTimeout(() => myFunc(ret, command, 1), 1000)
       },
       matchInterim: true,
     }))
@@ -239,6 +265,10 @@ const CustomVoiceGPT = (props) => {
       ]).then(setModelsLoaded(true))
     }
     loadModels()
+    const interval = setInterval(() => {
+      console.log("faceData.current :>> ", faceData.current)
+    }, 3000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -292,39 +322,41 @@ const CustomVoiceGPT = (props) => {
         {/* <button onClick={testFunc}>test</button> */}
       </div>
       <div>
-        <div style={{ textAlign: "center", padding: "10px" }}>
-          {captureVideo && modelsLoaded ? (
-            <button
-              onClick={closeWebcam}
-              style={{
-                cursor: "pointer",
-                backgroundColor: "green",
-                color: "white",
-                padding: "15px",
-                fontSize: "25px",
-                border: "none",
-                borderRadius: "10px",
-              }}
-            >
-              Close Webcam
-            </button>
-          ) : (
-            <button
-              onClick={startVideo}
-              style={{
-                cursor: "pointer",
-                backgroundColor: "green",
-                color: "white",
-                padding: "15px",
-                fontSize: "25px",
-                border: "none",
-                borderRadius: "10px",
-              }}
-            >
-              Open Webcam
-            </button>
-          )}
-        </div>
+        {face_recon && (
+          <div style={{ textAlign: "center", padding: "10px" }}>
+            {captureVideo && modelsLoaded ? (
+              <button
+                onClick={closeWebcam}
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: "green",
+                  color: "white",
+                  padding: "15px",
+                  fontSize: "25px",
+                  border: "none",
+                  borderRadius: "10px",
+                }}
+              >
+                Close Webcam
+              </button>
+            ) : (
+              <button
+                onClick={startVideo}
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: "green",
+                  color: "white",
+                  padding: "15px",
+                  fontSize: "25px",
+                  border: "none",
+                  borderRadius: "10px",
+                }}
+              >
+                Open Webcam
+              </button>
+            )}
+          </div>
+        )}
         {captureVideo ? (
           modelsLoaded ? (
             <div>
@@ -333,6 +365,8 @@ const CustomVoiceGPT = (props) => {
                   display: "flex",
                   justifyContent: "center",
                   padding: "10px",
+                  position: show_video ? "" : "absolute",
+                  opacity: show_video ? 1 : 0.3,
                 }}
               >
                 <video

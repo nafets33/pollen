@@ -44,7 +44,7 @@ const Dictaphone = ({
       timer && clearTimeout(timer)
       timer = setTimeout(() => {
         setPrevScript(finalTranscript)
-        myFunc(finalTranscript, { api_body: { keyword: "" } })
+        myFunc(finalTranscript, { api_body: { keyword: "" } }, 3)
         resetTranscript()
       }, noResponseTime * 1000)
     }

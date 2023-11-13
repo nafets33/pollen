@@ -17,7 +17,8 @@ def main():
         height=200,
         hello_audio="test_audio.mp3",
         face_recon=True,
-        text_input=True,
+        show_video=True,
+        input_text=True,
         show_conversation=True,
         no_response_time=3,
         commands=[{
