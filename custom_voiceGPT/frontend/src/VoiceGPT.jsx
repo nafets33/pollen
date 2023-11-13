@@ -131,8 +131,10 @@ const CustomVoiceGPT = (props) => {
     console.log("response :>> ", response)
   }
 
-  const myFunc = async (ret, command) => {
-    console.log("ret :>> ", ret)
+  const myFunc = async (ret, command, type = 2) => {
+    if (type === 2 && listenAfterRelpy) {
+      return
+    }
     setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
     const text = [...g_anwers, { user: command["api_body"]["keyword"] + ret }]
     setAnswers([...text])
@@ -241,7 +243,7 @@ const CustomVoiceGPT = (props) => {
 
   return (
     <>
-      <div>
+      <div className="p-2">
         <div>
           <img src={imageSrc} height={height || 100} width={width || 100} />
         </div>
