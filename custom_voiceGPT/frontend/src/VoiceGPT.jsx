@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FC, memo, useMemo } from "react"
+import React, { useState, useEffect, FC, memo, useMemo, useRef } from "react"
 import axios from "axios"
 import {
   ComponentProps,
@@ -17,36 +17,48 @@ const imageUrls = {
 }
 
 let timer = null
+let faceTimer = null
 let g_anwers = []
 let firstFace = false
 
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
+  const {
+    height,
+    width,
+    show_conversation,
+    show_video,
+    input_text,
+    no_response_time,
+    face_recon,
+  } = kwargs
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
   const [answers, setAnswers] = useState([])
   const [listenAfterRelpy, setListenAfterReply] = useState(false)
-  const [modelsLoaded, setModelsLoaded] = React.useState(false)
-  const [captureVideo, setCaptureVideo] = React.useState(false)
+  const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [captureVideo, setCaptureVideo] = useState(false)
+  const [textString, setTextString] = useState("")
 
-  const videoRef = React.useRef()
+  const faceData = useRef([])
+  const faceTriggered = useRef(false)
+  const videoRef = useRef()
   const videoHeight = 480
   const videoWidth = 640
-  const canvasRef = React.useRef()
+  const canvasRef = useRef()
 
-  React.useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = process.env.PUBLIC_URL + "/models"
+  const handleInputText = (e) => {
+    const { value } = e.target
+    setTextString(value)
+  }
 
-      Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-      ]).then(setModelsLoaded(true))
+  const handleOnKeyDown = (e) => {
+    if (e.key === "Enter") {
+      console.log("textString :>> ", textString)
+      myFunc(textString, { api_body: { keyword: "" } }, 4)
+      setTextString("")
     }
-    loadModels()
-  }, [])
+  }
 
   const startVideo = () => {
     setCaptureVideo(true)
@@ -84,7 +96,20 @@ const CustomVoiceGPT = (props) => {
           .withFaceExpressions()
 
         const resizedDetections = faceapi.resizeResults(detections, displaySize)
-        console.log("resizedDetections :>> ", resizedDetections)
+
+        if (resizedDetections.length > 0) {
+          faceData.current = resizedDetections
+          if (!faceTriggered.current && face_recon) {
+            myFunc("", { api_body: { keyword: "" } }, 2)
+            faceTriggered.current = true
+          }
+        } else {
+          faceTimer && clearTimeout(faceTimer)
+          setTimeout(() => {
+            faceData.current = []
+          }, 1000)
+        }
+
         if (resizedDetections.length > 0 && !firstFace) {
           firstFace = true
           if (kwargs.hello_audio) {
@@ -92,6 +117,7 @@ const CustomVoiceGPT = (props) => {
             audio.play()
           }
         }
+
         canvasRef &&
           canvasRef.current &&
           canvasRef.current
@@ -129,20 +155,24 @@ const CustomVoiceGPT = (props) => {
     console.log("response :>> ", response)
   }
 
-  const myFunc = async (ret, command) => {
-    console.log("ret :>> ", ret)
+  const myFunc = async (ret, command, type) => {
+    if (type === 3 && listenAfterRelpy) {
+      return
+    }
     setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
     const text = [...g_anwers, { user: command["api_body"]["keyword"] + ret }]
     setAnswers([...text])
     try {
       console.log("api call on listen...", command)
       const body = {
+        tigger_type: type,
         api_key: "api_key",
         text: text,
         self_image: imageSrc,
+        face_data: faceData.current,
       }
       const { data } = await axios.post(api, body)
-      console.log("data :>> ", data)
+      console.log("data :>> ", data, body)
       data["self_image"] && setImageSrc(data["self_image"])
       data["listen_after_reply"] &&
         setListenAfterReply(data["listen_after_reply"])
@@ -156,12 +186,13 @@ const CustomVoiceGPT = (props) => {
       // console.log("api call on listen failded!")
     }
   }
+
   const commands = useMemo(() => {
     return kwargs["commands"].map((command) => ({
       command: command["keywords"],
       callback: (ret) => {
         timer && clearTimeout(timer)
-        timer = setTimeout(() => myFunc(ret, command), 1000)
+        timer = setTimeout(() => myFunc(ret, command, 1), 1000)
       },
       matchInterim: true,
     }))
@@ -222,23 +253,67 @@ const CustomVoiceGPT = (props) => {
 
   useEffect(() => {}, [props])
 
+  useEffect(() => {
+    const loadModels = async () => {
+      const MODEL_URL = process.env.PUBLIC_URL + "/models"
+
+      Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+      ]).then(setModelsLoaded(true))
+    }
+    loadModels()
+    const interval = setInterval(() => {
+      console.log("faceData.current :>> ", faceData.current)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <>
-      <div>
-        <img src={imageSrc} height={100} />
-        <Dictaphone
-          commands={commands}
-          myFunc={myFunc}
-          listenAfterRelpy={listenAfterRelpy}
-        />
-        <button onClick={listenContinuously}>Listen continuously</button>
-        <div> You: {message}</div>
-        {answers.map((answer, idx) => (
-          <div key={idx}>
-            <div>-user: {answer.user}</div>
-            <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
+      <div className="p-2">
+        <div>
+          <img src={imageSrc} height={height || 100} width={width || 100} />
+        </div>
+        <div className="p-2">
+          <Dictaphone
+            commands={commands}
+            myFunc={myFunc}
+            listenAfterRelpy={listenAfterRelpy}
+            noResponseTime={no_response_time}
+            show_conversation={show_conversation}
+          />
+        </div>
+        <div className="form-group">
+          <button className="btn btn-primary" onClick={listenContinuously}>
+            Listen continuously
+          </button>
+        </div>
+        {input_text && (
+          <div className="form-group">
+            <input
+              className="form-control"
+              type="text"
+              placeholder="Chat with chatGPT"
+              value={textString}
+              onChange={handleInputText}
+              onKeyDown={handleOnKeyDown}
+            />
           </div>
-        ))}
+        )}
+        {show_conversation === true && (
+          <>
+            <div> You: {message}</div>
+            {answers.map((answer, idx) => (
+              <div key={idx}>
+                <div>-user: {answer.user}</div>
+                <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
       <div>
         {/* <button onClick={listenOnce}>Listen Once</button> */}
@@ -247,39 +322,41 @@ const CustomVoiceGPT = (props) => {
         {/* <button onClick={testFunc}>test</button> */}
       </div>
       <div>
-        <div style={{ textAlign: "center", padding: "10px" }}>
-          {captureVideo && modelsLoaded ? (
-            <button
-              onClick={closeWebcam}
-              style={{
-                cursor: "pointer",
-                backgroundColor: "green",
-                color: "white",
-                padding: "15px",
-                fontSize: "25px",
-                border: "none",
-                borderRadius: "10px",
-              }}
-            >
-              Close Webcam
-            </button>
-          ) : (
-            <button
-              onClick={startVideo}
-              style={{
-                cursor: "pointer",
-                backgroundColor: "green",
-                color: "white",
-                padding: "15px",
-                fontSize: "25px",
-                border: "none",
-                borderRadius: "10px",
-              }}
-            >
-              Open Webcam
-            </button>
-          )}
-        </div>
+        {face_recon && (
+          <div style={{ textAlign: "center", padding: "10px" }}>
+            {captureVideo && modelsLoaded ? (
+              <button
+                onClick={closeWebcam}
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: "green",
+                  color: "white",
+                  padding: "15px",
+                  fontSize: "25px",
+                  border: "none",
+                  borderRadius: "10px",
+                }}
+              >
+                Close Webcam
+              </button>
+            ) : (
+              <button
+                onClick={startVideo}
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: "green",
+                  color: "white",
+                  padding: "15px",
+                  fontSize: "25px",
+                  border: "none",
+                  borderRadius: "10px",
+                }}
+              >
+                Open Webcam
+              </button>
+            )}
+          </div>
+        )}
         {captureVideo ? (
           modelsLoaded ? (
             <div>
@@ -288,6 +365,8 @@ const CustomVoiceGPT = (props) => {
                   display: "flex",
                   justifyContent: "center",
                   padding: "10px",
+                  position: show_video ? "" : "absolute",
+                  opacity: show_video ? 1 : 0.3,
                 }}
               >
                 <video

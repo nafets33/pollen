@@ -1,7 +1,8 @@
 {
     "env": {
         "browser": true,
-        "es2021": true
+        "es2021": true,
+        "node": true
     },
     "extends": [
         "eslint:recommended",
@@ -20,8 +21,8 @@
         "react-hooks"
     ],
     "rules": {
-        "react/prop-types": [
-            false
-        ]
+        "no-unused-vars": "off",
+        "react/prop-types": "off",
+        "react-hooks/exhaustive-deps": "off"
     }
 }

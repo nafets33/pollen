@@ -3,7 +3,13 @@ import { useSpeechRecognition } from "react-speech-recognition"
 
 let timer
 
-const Dictaphone = ({ commands, myFunc, listenAfterRelpy }) => {
+const Dictaphone = ({
+  commands,
+  myFunc,
+  listenAfterRelpy,
+  noResponseTime = 1,
+  show_conversation = true,
+}) => {
   const [transcribing, setTranscribing] = useState(true)
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true)
   const toggleTranscribing = () => setTranscribing(!transcribing)
@@ -38,9 +44,9 @@ const Dictaphone = ({ commands, myFunc, listenAfterRelpy }) => {
       timer && clearTimeout(timer)
       timer = setTimeout(() => {
         setPrevScript(finalTranscript)
-        myFunc(finalTranscript, { api_body: { keyword: "" } })
+        myFunc(finalTranscript, { api_body: { keyword: "" } }, 3)
         resetTranscript()
-      }, 1000)
+      }, noResponseTime * 1000)
     }
     if (finalTranscript != "" && !listenAfterRelpy) {
       setPrevScript(finalTranscript)
@@ -57,19 +63,17 @@ const Dictaphone = ({ commands, myFunc, listenAfterRelpy }) => {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <span>you said: {prevScript}</span>
-      <span>listening: {listening ? "on" : "off"}</span>
-      {/* <span>transcribing: {transcribing ? "on" : "off"}</span> */}
-      <span>
-        clearTranscriptOnListen: {clearTranscriptOnListen ? "on" : "off"}
-      </span>
-      {/* <button onClick={resetTranscript}>Reset</button>
-      <button onClick={toggleTranscribing}>Toggle transcribing</button> */}
-      {/* <button onClick={toggleClearTranscriptOnListen}>
-        Toggle clearTranscriptOnListen
-      </button> */}
-    </div>
+    <>
+      {show_conversation && (
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span>you said: {prevScript}</span>
+          <span>listening: {listening ? "on" : "off"}</span>
+          <span>
+            clearTranscriptOnListen: {clearTranscriptOnListen ? "on" : "off"}
+          </span>
+        </div>
+      )}
+    </>
   )
 }
 

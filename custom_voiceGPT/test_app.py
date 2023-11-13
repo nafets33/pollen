@@ -13,9 +13,14 @@ def main():
     custom_voiceGPT(
         api=f"http://{ip_address}:8000/api/data/voiceGPT",
         self_image="hoots.png",
+        width=150,
+        height=200,
         hello_audio="test_audio.mp3",
         face_recon=True,
-        text_input=False,
+        show_video=True,
+        input_text=True,
+        show_conversation=True,
+        no_response_time=3,
         commands=[{
             "keywords": ["hey Hoots *", "hey Foods *", "hello *"],
             "api_body": {"keyword": "hey hoots, "},
