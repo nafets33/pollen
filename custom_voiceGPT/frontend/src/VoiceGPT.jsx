@@ -10,6 +10,7 @@ import SpeechRecognition, {
 } from "react-speech-recognition"
 import Dictaphone from "./Dictaphone"
 import * as faceapi from "@vladmandic/face-api"
+import useInputText from "./hooks/useInputText"
 
 const imageUrls = {
   hoots: "/hoots.png",
@@ -37,19 +38,17 @@ const CustomVoiceGPT = (props) => {
   const videoWidth = 640
   const canvasRef = useRef()
 
-  useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = process.env.PUBLIC_URL + "/models"
+  const handleInputText = (e) => {
+    const { value } = e.target
+    setTextString(value)
+  }
 
-      Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-      ]).then(setModelsLoaded(true))
+  const handleOnKeyDown = (e) => {
+    if (e.key === "Enter") {
+      console.log("textString :>> ", textString)
+      myFunc(textString, { api_body: { keyword: "" } })
     }
-    loadModels()
-  }, [])
+  }
 
   const startVideo = () => {
     setCaptureVideo(true)
@@ -159,6 +158,7 @@ const CustomVoiceGPT = (props) => {
       // console.log("api call on listen failded!")
     }
   }
+
   const commands = useMemo(() => {
     return kwargs["commands"].map((command) => ({
       command: command["keywords"],
@@ -225,26 +225,51 @@ const CustomVoiceGPT = (props) => {
 
   useEffect(() => {}, [props])
 
+  useEffect(() => {
+    const loadModels = async () => {
+      const MODEL_URL = process.env.PUBLIC_URL + "/models"
+
+      Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+      ]).then(setModelsLoaded(true))
+    }
+    loadModels()
+  }, [])
+
   return (
     <>
       <div>
-        <img src={imageSrc} height={height || 100} width={width || 100} />
-        <Dictaphone
-          commands={commands}
-          myFunc={myFunc}
-          listenAfterRelpy={listenAfterRelpy}
-          noResponseTime={no_response_time}
-          show_conversation={show_conversation}
-        />
-        <button onClick={listenContinuously}>Listen continuously</button>
+        <div>
+          <img src={imageSrc} height={height || 100} width={width || 100} />
+        </div>
+        <div className="p-2">
+          <Dictaphone
+            commands={commands}
+            myFunc={myFunc}
+            listenAfterRelpy={listenAfterRelpy}
+            noResponseTime={no_response_time}
+            show_conversation={show_conversation}
+          />
+        </div>
+        <div className="form-group">
+          <button className="btn btn-primary" onClick={listenContinuously}>
+            Listen continuously
+          </button>
+        </div>
         {input_text && (
-          <>
+          <div className="form-group">
             <input
+              className="form-control"
               type="text"
-              placeholder="ask to chatGPT"
+              placeholder="Chat with chatGPT"
               value={textString}
+              onChange={handleInputText}
+              onKeyDown={handleOnKeyDown}
             />
-          </>
+          </div>
         )}
         {show_conversation === true && (
           <>
