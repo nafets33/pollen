@@ -19,9 +19,5 @@
         "react",
         "react-hooks"
     ],
-    "rules": {
-        "react/prop-types": [
-            false
-        ]
-    }
+    "rules": {}
 }
