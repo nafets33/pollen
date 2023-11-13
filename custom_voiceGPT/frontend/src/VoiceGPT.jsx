@@ -225,7 +225,11 @@ const CustomVoiceGPT = (props) => {
   return (
     <>
       <div>
-        <img src={imageSrc} height={100} />
+        <img
+          src={imageSrc}
+          height={kwargs.height || 100}
+          width={kwargs.width || 100}
+        />
         <Dictaphone
           commands={commands}
           myFunc={myFunc}
