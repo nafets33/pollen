@@ -8,6 +8,7 @@ const Dictaphone = ({
   myFunc,
   listenAfterRelpy,
   noResponseTime = 1,
+  show_conversation = true,
 }) => {
   const [transcribing, setTranscribing] = useState(true)
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true)
@@ -62,19 +63,17 @@ const Dictaphone = ({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <span>you said: {prevScript}</span>
-      <span>listening: {listening ? "on" : "off"}</span>
-      {/* <span>transcribing: {transcribing ? "on" : "off"}</span> */}
-      <span>
-        clearTranscriptOnListen: {clearTranscriptOnListen ? "on" : "off"}
-      </span>
-      {/* <button onClick={resetTranscript}>Reset</button>
-      <button onClick={toggleTranscribing}>Toggle transcribing</button> */}
-      {/* <button onClick={toggleClearTranscriptOnListen}>
-        Toggle clearTranscriptOnListen
-      </button> */}
-    </div>
+    <>
+      {show_conversation && (
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span>you said: {prevScript}</span>
+          <span>listening: {listening ? "on" : "off"}</span>
+          <span>
+            clearTranscriptOnListen: {clearTranscriptOnListen ? "on" : "off"}
+          </span>
+        </div>
+      )}
+    </>
   )
 }
 

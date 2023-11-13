@@ -22,6 +22,7 @@ let firstFace = false
 
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
+  const { height, width, show_conversation, no_response_time } = kwargs
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
   const [answers, setAnswers] = useState([])
@@ -225,20 +226,17 @@ const CustomVoiceGPT = (props) => {
   return (
     <>
       <div>
-        <img
-          src={imageSrc}
-          height={kwargs.height || 100}
-          width={kwargs.width || 100}
-        />
+        <img src={imageSrc} height={height || 100} width={width || 100} />
         <Dictaphone
           commands={commands}
           myFunc={myFunc}
           listenAfterRelpy={listenAfterRelpy}
-          noResponseTime={kwargs.no_response_time}
+          noResponseTime={no_response_time}
+          show_conversation={show_conversation}
         />
         <button onClick={listenContinuously}>Listen continuously</button>
         <div> You: {message}</div>
-        {kwargs.show_conversation === true &&
+        {show_conversation === true &&
           answers.map((answer, idx) => (
             <div key={idx}>
               <div>-user: {answer.user}</div>
