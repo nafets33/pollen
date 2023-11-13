@@ -10,7 +10,6 @@ import SpeechRecognition, {
 } from "react-speech-recognition"
 import Dictaphone from "./Dictaphone"
 import * as faceapi from "@vladmandic/face-api"
-import useInputText from "./hooks/useInputText"
 
 const imageUrls = {
   hoots: "/hoots.png",
@@ -47,6 +46,7 @@ const CustomVoiceGPT = (props) => {
     if (e.key === "Enter") {
       console.log("textString :>> ", textString)
       myFunc(textString, { api_body: { keyword: "" } })
+      setTextString("")
     }
   }
 
