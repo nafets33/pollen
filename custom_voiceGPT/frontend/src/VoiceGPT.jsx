@@ -22,7 +22,8 @@ let firstFace = false
 
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
-  const { height, width, show_conversation, no_response_time } = kwargs
+  const { height, width, show_conversation, text_input, no_response_time } =
+    kwargs
   const [imageSrc, setImageSrc] = useState(kwargs.self_image)
   const [message, setMessage] = useState("")
   const [answers, setAnswers] = useState([])
@@ -235,14 +236,17 @@ const CustomVoiceGPT = (props) => {
           show_conversation={show_conversation}
         />
         <button onClick={listenContinuously}>Listen continuously</button>
-        <div> You: {message}</div>
-        {show_conversation === true &&
-          answers.map((answer, idx) => (
-            <div key={idx}>
-              <div>-user: {answer.user}</div>
-              <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
-            </div>
-          ))}
+        {show_conversation === true && (
+          <>
+            <div> You: {message}</div>
+            {answers.map((answer, idx) => (
+              <div key={idx}>
+                <div>-user: {answer.user}</div>
+                <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
       <div>
         {/* <button onClick={listenOnce}>Listen Once</button> */}
