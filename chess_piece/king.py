@@ -33,6 +33,19 @@ def get_ip_address():
     ip_address = socket.gethostbyname(hostname)
     return ip_address
 
+def return_app_ip(streamlit_ip="http://localhost:8502"):
+    ip_address = get_ip_address()
+    if ip_address == os.environ.get('gcp_ip'):
+        # print("IP", ip_address, os.environ.get('gcp_ip'))
+        ip_address = "https://api.quantqueen.com"
+        streamlit_ip = ip_address
+    else:
+        ip_address = "http://127.0.0.1:8000"
+
+    st.session_state['ip_address'] = ip_address
+    st.session_state['streamlit_ip'] = streamlit_ip
+
+    return ip_address, streamlit_ip
 
 def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est):
     return datetime.now(tz).strftime(format)

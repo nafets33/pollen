@@ -261,13 +261,13 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
                                         side=side, 
                                         client_order_id=client_order_id__gen, 
                                         limit_price=limit_price) # buy
-            if order_submit == False:
+            if 'error' in order_submit.keys():
                 print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
-                print(order_vars)
-                return {}
+                QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
+                return {'executed': False}
 
             # logging.info("order submit")
-            order = vars(order_submit)['_raw']
+            order = vars(order_submit.get('order'))['_raw']
 
             if 'borrowed_funds' not in order_vars.keys():
                 order_vars['borrowed_funds'] = False
@@ -326,6 +326,13 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
                                             type=order_type, 
                                             client_order_id=client_order_id__gen, 
                                             limit_price=limit_price) 
+
+            if 'error' in send_close_order.keys():
+                print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
+                QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
+                return {'executed': False}
+
+
             send_close_order = vars(send_close_order)['_raw']
                                 
             if limit_price:
@@ -702,6 +709,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 return False
 
+        def blessing_check(acct_info, wave_amo, QUEEN_KING):
+            if wave_amo > acct_info.get('daytrading_buying_power'):
+                print("day trade buying power exceeded")
+                wave_amo = acct_info.get('daytrading_buying_power') - wave_amo
+                if wave_amo <= 0:
+                    print("buying power is depleted")
+                    conscience_update(QUEEN, thought_dict={'msg': 'buying power is depleted'})
+
+                    return False
+
+            return True
 
 
         def trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, time_delta, trading_model_theme, 
@@ -972,6 +990,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 wave_amo = star_total_budget_remaining
                 wave_amo_borrow = wave_amo - star_total_budget_remaining
             
+            acct_info = QUEEN['account_info']
+            
+            if blessing_check(acct_info, wave_amo, QUEEN_KING) == False:
+                return {'kings_blessing': False}
+
             # if wave_amo > # ticker price
             if wave_amo > 0:
                 if wave_amo < float(STORY_bee[ticker_time_frame]['story'].get('current_ask')):
@@ -1757,31 +1780,37 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 profit_seeking_star = 'immediate'
             
             return profit_seeking_star
+    
 
-
-    def subconscious_update(root_name, dict_to_add, list_len=89):
+    def conscience_update(QUEEN, root_name='app_info', thought_dict={}, conscience=True):
+        def conscience_thought(QUEEN, thought, conscience):
+            try:
+                tho_id = len(QUEEN[conscience])
+                thought['id'] = tho_id
+                thought['timestamp_est'] = datetime.now(est)
+                return thought
+            except Exception as e:
+                print_line_of_error(e)
+                return None
+        
+        conscience = 'conscience' if conscience else 'sub_conscience'
+        
+        if root_name not in QUEEN[conscience].keys():
+            logging.warning(f'new conscience {root_name}')
+            return False
+        
         # store message
-        if root_name not in QUEEN['subconscious'].keys():
-            if dict_to_add not in QUEEN['subconscious'][root_name]:
-                QUEEN['subconscious'][root_name].append(dict_to_add)
-        else:
-            if dict_to_add not in QUEEN['subconscious'][root_name]:
-                QUEEN['subconscious'][root_name].append(dict_to_add)
+        if thought_dict not in QUEEN[conscience][root_name]:
+            thought_dict = conscience_thought(QUEEN, thought_dict, conscience)
+            if thought_dict:
+                QUEEN[conscience][root_name].append(thought_dict)
+        
+                QUEEN['heartbeat'][conscience] = QUEEN[conscience]
+                print("save message to queen", thought_dict)
+                
+                # god_save_the_queen(QUEEN, QUEENsHeart=True)
 
         return True
-
-    def conscience_update(root_name, dict_to_add, list_len=89):
-        # store message
-        try:
-            if root_name not in QUEEN['conscience'].keys():
-                QUEEN['conscience'][root_name] = deque([], list_len)
-            else:
-                if dict_to_add not in QUEEN['conscience'][root_name]:
-                    QUEEN['conscience'][root_name].append(dict_to_add)
-
-            return True
-        except Exception as e:
-            print(e, print_line_of_error())
 
     def subconscious_mind(root_name):
         # store message
@@ -2317,7 +2346,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             
             return True
         except Exception as e:
-            print_line_of_error()
+            print_line_of_error(e)
             sys.exit()
     
 
@@ -2669,10 +2698,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         ## subconsicous here ###
                         if run_order['ticker_time_frame'] not in STORY_bee.keys():
                             # Handle Order if Ticker Stream Turned off I.E. Not in STORY_bee
-                            subconscious_update(root_name='app_info', dict_to_add={'ticker_time_frame': run_order['ticker_time_frame'], 'msg': f'{run_order["symbol"]} open order and ticker not active Handle Order Manually'})                    
-                        else:
-                            subconscious_mind(root_name='app_info')
-                            queen_orders__dict[runorder_client_order_id] = {'run_order': run_order, 'priceinfo': priceinfo}
+                            conscience_update(QUEEN, root_name='app_info', thought_dict={'ticker_time_frame': run_order['ticker_time_frame'], 'msg': f'{run_order["symbol"]} open order and ticker not active Handle Order Manually'})                    
+                        # else:
+                        #     conscience_update(QUEEN, root_name='app_info', conscience=False)
+                        #     queen_orders__dict[runorder_client_order_id] = {'run_order': run_order, 'priceinfo': priceinfo}
                                     
                     except Exception as e:
                         print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())

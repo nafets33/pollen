@@ -17,203 +17,228 @@ import ipdb
 main_root = hive_master_root()  # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 
-def signin_main(page):
-    """Return True or False if the user is signed in"""
-    MISC = local__filepaths_misc()
-    floating_queen_gif = MISC["floating_queen_gif"]
 
-    def register_user():
-        # write_flying_bee(54, 54)
+def register_user(authenticator, con, cur):
+    # write_flying_bee(54, 54)
 
-        try:
-            register_status = authenticator.register_user(
-                form_name="Sign Up", preauthorization=False, location="main"
+    try:
+        register_status = authenticator.register_user(
+            form_name="Sign Up", preauthorization=False, location="main"
+        )
+
+        if ("register_status" not in st.session_state) or (
+            st.session_state["register_status"] == None
+        ):
+            st.session_state["register_status"] = register_status
+
+        # generate and store verification code
+        if "verification_code" not in st.session_state:
+            st.session_state["verification_code"] = randint(100000, 999999)
+        verification_code = st.session_state["verification_code"]
+
+        if register_status:
+
+            register_email = st.session_state["register_status"][0]
+
+            # send user verification code
+            send_email(
+                recipient=register_email,
+                subject="PollenQ. Verify Email",
+                body=f"""
+            Your PollenQ verification code is {verification_code}
+
+            Please enter this code in the website to complete your registration
+
+            Thank you,
+            PollenQ
+            """,
             )
+            st.success("A verification code has been sent to your email")
 
-            if ("register_status" not in st.session_state) or (
-                st.session_state["register_status"] == None
-            ):
-                st.session_state["register_status"] = register_status
+        entered_code = st.text_input("Verification Code", max_chars=6)
 
-            # generate and store verification code
-            if "verification_code" not in st.session_state:
-                st.session_state["verification_code"] = randint(100000, 999999)
-            verification_code = st.session_state["verification_code"]
+        if st.button("Submit"):
 
-            if register_status:
+            if int(entered_code) == verification_code:
 
                 register_email = st.session_state["register_status"][0]
+                register_password = st.session_state["register_status"][1]
 
-                # send user verification code
+                # verification successful
+                update_db(authenticator, con=con, cur=cur, email=register_email, append_db=True)
                 send_email(
                     recipient=register_email,
-                    subject="PollenQ. Verify Email",
+                    subject="Welcome On Board PollenQ!",
                     body=f"""
-                Your PollenQ verification code is {verification_code}
-
-                Please enter this code in the website to complete your registration
+                You have successful created a PollenQ account. Ensure you keep your login detials safe.
 
                 Thank you,
                 PollenQ
                 """,
                 )
-                st.success("A verification code has been sent to your email")
 
-            entered_code = st.text_input("Verification Code", max_chars=6)
+                authenticator.direct_login(register_email, register_password)
 
-            if st.button("Submit"):
+                # st.session_state["username"] = register_email
+                # self.password = register_password,
 
-                if int(entered_code) == verification_code:
+            else:
+                st.error("Incorrect Code")
 
-                    register_email = st.session_state["register_status"][0]
-                    register_password = st.session_state["register_status"][1]
+        # write_flying_bee(54, 54)
+    except Exception as e:
+        st.error(e)
 
-                    # verification successful
-                    update_db(cur=cur, email=register_email, append_db=True)
-                    send_email(
-                        recipient=register_email,
-                        subject="Welcome On Board PollenQ!",
-                        body=f"""
-                    You have successful created a PollenQ account. Ensure you keep your login detials safe.
+def return_db_conn():
+    con = sqlite3.connect("db/client_users.db")
+    cur = con.cursor()
+    return con, cur
 
-                    Thank you,
-                    PollenQ
-                    """,
-                    )
+def forgot_password(authenticator):
+    con, cur = return_db_conn()
 
-                    authenticator.direct_login(register_email, register_password)
+    try:
+        (email_forgot_pw, random_password,) = authenticator.forgot_password(
+            form_name="Reset Password", location="main"
+        )
 
-                    # st.session_state["username"] = register_email
-                    # self.password = register_password,
+        if email_forgot_pw:
+            # notify user and update password
+            send_email(
+                recipient=email_forgot_pw,
+                subject="PollenQ. Forgot Password",
+                body=f"""
+Dear {authenticator.credentials["usernames"][email_forgot_pw]["name"]},
 
-                else:
-                    st.error("Incorrect Code")
+Your new password for pollenq.com is {random_password}
 
-            # write_flying_bee(54, 54)
-        except Exception as e:
-            st.error(e)
+Please keep this password safe.
 
-    def forgot_password():
-        try:
-            (email_forgot_pw, random_password,) = authenticator.forgot_password(
-                form_name="Reset Password", location="main"
+Thank you,
+PollenQ
+""",
             )
+            update_db(authenticator, con=con, cur=cur, email=email_forgot_pw)
+            st.success("Your new password has been sent your email!")
 
-            if email_forgot_pw:
-                # notify user and update password
-                send_email(
-                    recipient=email_forgot_pw,
-                    subject="PollenQ. Forgot Password",
-                    body=f"""
-    Dear {authenticator.credentials["usernames"][email_forgot_pw]["name"]},
+        elif email_forgot_pw == False:
+            st.error("Email not found")
+    except Exception as e:
+        st.error(e)
 
-    Your new password for pollenq.com is {random_password}
 
-    Please keep this password safe.
+def send_email(recipient, subject, body):
 
-    Thank you,
-    PollenQ
-    """,
-                )
-                update_db(cur=cur, email=email_forgot_pw)
-                st.success("Your new password has been sent your email!")
+    # Define email sender and receiver
+    pollenq_gmail = os.environ.get("pollenq_gmail")
+    pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
 
-            elif email_forgot_pw == False:
-                st.error("Email not found")
-        except Exception as e:
-            st.error(e)
+    em = EmailMessage()
+    em["From"] = pollenq_gmail
+    em["To"] = recipient
+    em["Subject"] = subject
+    em.set_content(body)
 
-    def reset_password(authenticator, email, location):
-        try:
-            if authenticator.reset_password(email, "", location=location):
-                update_db(cur=cur, email=email)
-                send_email(
-                    recipient=email,
-                    subject="PollenQ. Password Changed",
-                    body=f"""
-    Dear {authenticator.credentials["usernames"][email]["name"]},
+    # Add SSL layer of security
+    context = ssl.create_default_context()
 
-    You are recieving this email because your password for pollenq.com has been changed.
-    If you did not authorize this change please contact us immediately.
+    # Log in and send the email
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+        smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
+        smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
-    Thank you,
-    PollenQ
-    """,
-                )
-                st.success("Password changed successfully")
+def update_db(authenticator, con, cur, email, append_db=False):
+    """Update a user's record, or add a new user"""
 
-        except Exception as e:
-            st.error(e)
+    # new user detials are stored in session state
+    if append_db:
+        detials = st.session_state["new_user_creds"]
+    else:
+        detials = authenticator.credentials["usernames"][email]
 
-    def send_email(recipient, subject, body):
+    password = detials["password"]
+    name = detials["name"]
+    phone_no = detials["phone_no"]
+    signup_date = detials["signup_date"]
+    last_login_date = detials["last_login_date"]
+    login_count = detials["login_count"]
 
-        # Define email sender and receiver
-        pollenq_gmail = os.environ.get("pollenq_gmail")
-        pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
+    # add new user
+    if append_db:
+        cur.execute(
+            "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?)",
+            (
+                email,
+                password,
+                name,
+                phone_no,
+                signup_date,
+                last_login_date,
+                login_count,
+            ),
+        )
 
-        em = EmailMessage()
-        em["From"] = pollenq_gmail
-        em["To"] = recipient
-        em["Subject"] = subject
-        em.set_content(body)
+    # update value
+    else:
+        cur.execute(
+            f"""
+        UPDATE users
+        SET password = "{password}",
+            name = "{name}",
+            phone_no = "{phone_no}",
+            signup_date = "{signup_date}",
+            last_login_date = "{last_login_date}",
+            login_count = "{login_count}"
+        
+        WHERE email = "{email}"
+        """
+        )
 
-        # Add SSL layer of security
-        context = ssl.create_default_context()
+    con.commit()
+    authenticator.credentials = read_user_db(cur=cur)
 
-        # Log in and send the email
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
-            smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
-            smtp.sendmail(pollenq_gmail, recipient, em.as_string())
+def reset_password(authenticator, email, location="main"):
+    con, cur = return_db_conn()
+    try:
+        if authenticator.reset_password(email, "", location=location):
+            update_db(authenticator, con=con, cur=cur, email=email)
+            send_email(
+                recipient=email,
+                subject="PollenQ. Password Changed",
+                body=f"""
+Dear {authenticator.credentials["usernames"][email]["name"]},
 
-    def update_db(cur, email, append_db=False):
-        """Update a user's record, or add a new user"""
+You are recieving this email because your password for pollenq.com has been changed.
+If you did not authorize this change please contact us immediately.
 
-        # new user detials are stored in session state
-        if append_db:
-            detials = st.session_state["new_user_creds"]
-        else:
-            detials = credentials["usernames"][email]
-
-        password = detials["password"]
-        name = detials["name"]
-        phone_no = detials["phone_no"]
-        signup_date = detials["signup_date"]
-        last_login_date = detials["last_login_date"]
-        login_count = detials["login_count"]
-
-        # add new user
-        if append_db:
-            cur.execute(
-                "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?)",
-                (
-                    email,
-                    password,
-                    name,
-                    phone_no,
-                    signup_date,
-                    last_login_date,
-                    login_count,
-                ),
+Thank you,
+PollenQ
+""",
             )
+            st.success("Password changed successfully")
 
-        # update value
-        else:
-            cur.execute(
-                f"""
-            UPDATE users
-            SET password = "{password}",
-                name = "{name}",
-                phone_no = "{phone_no}",
-                signup_date = "{signup_date}",
-                last_login_date = "{last_login_date}",
-                login_count = "{login_count}"
-            
-            WHERE email = "{email}"
-            """
-            )
+    except Exception as e:
+        st.error(e)
 
-        con.commit()
-        authenticator.credentials = read_user_db(cur=cur)
+def read_user_db(cur):
+    users = cur.execute("SELECT * FROM users").fetchall()
+
+    creds = {}
+    for user in users:
+        creds[user[0]] = {
+            "password": user[1],
+            "name": user[2],
+            "phone_no": user[3],
+            "signup_date": user[4],
+            "last_login_date": user[5],
+            "login_count": user[6],
+        }
+    return {"usernames": creds}
+
+def signin_main(page):
+    """Return True or False if the user is signed in"""
+    MISC = local__filepaths_misc()
+    floating_queen_gif = MISC["floating_queen_gif"]
 
     def setup_user_pollenqdbs():
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':
@@ -259,26 +284,11 @@ def signin_main(page):
         
         return setup_user_pollenqdbs()
 
-    def read_user_db(cur):
-        users = cur.execute("SELECT * FROM users").fetchall()
-
-        creds = {}
-        for user in users:
-            creds[user[0]] = {
-                "password": user[1],
-                "name": user[2],
-                "phone_no": user[3],
-                "signup_date": user[4],
-                "last_login_date": user[5],
-                "login_count": user[6],
-            }
-        return {"usernames": creds}
-    
     # def main_func__signIn():
     try:
         con = sqlite3.connect("db/client_users.db")
         cur = con.cursor()
-        credentials = read_user_db(cur=cur)
+        credentials = read_user_db(cur)
 
         # Create authenticator object
         authenticator = stauth.Authenticate(
@@ -309,8 +319,8 @@ def signin_main(page):
         
         if authentication_status:
             if 'logout' in st.session_state and st.session_state["logout"] != True:
-                authenticator.logout("Logout", location='sidebar')
-                reset_password(authenticator, email, location='sidebar')
+                # authenticator.logout("Logout", location='sidebar')
+                # reset_password(authenticator, email, location='sidebar')
                 
                 # Returning Customer
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
@@ -319,7 +329,7 @@ def signin_main(page):
                     define_authorized_user()
                     return authenticator
                 else:    
-                    update_db(cur=cur, email=email)
+                    update_db(authenticator, con=con, cur=cur, email=email)
                     define_authorized_user()
                     return authenticator
 
@@ -328,16 +338,16 @@ def signin_main(page):
             st.session_state["authorized_user"] = False
             st.error("Email/password is incorrect")
             with st.expander("Forgot Password", expanded=True):
-                forgot_password()
+                forgot_password(authenticator)
             with st.expander("New User"):
-                register_user()
+                register_user(authenticator, cur)
             
             return authenticator
 
         # no login trial; create account
         elif authentication_status == None:
             with st.expander("New User Create Account"):
-                register_user()
+                register_user(authenticator, cur)
 
             # display_for_unAuth_client_user()
 

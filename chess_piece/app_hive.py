@@ -30,6 +30,8 @@ import random
 
 
 # componenets
+import streamlit_antd_components as sac
+
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
 import hydralit_components as hc
@@ -201,6 +203,24 @@ def send_email(recipient, subject, body):
         smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
         smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
+
+def sac_menu_buttons(main='Queen'):
+    if main=='Queen':
+        sac_menu_buttons = sac.buttons([
+            sac.ButtonsItem(label='Queen', icon='robot'),
+            sac.ButtonsItem(label='Hive', icon='backpack4-fill'),
+            sac.ButtonsItem(label='Playground', icon='fire'),
+            sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
+            sac.ButtonsItem(label='Trading Models', disabled=True),
+            sac.ButtonsItem(label='account', icon='share-fill', href=f'{st.session_state["streamlit_ip"]}/account'),
+        ], format_func='title', align='end', type='text')
+    elif main == 'Account':
+        sac_menu_buttons = sac.buttons([
+            sac.ButtonsItem(label='Home', icon='house', href=f'{st.session_state["streamlit_ip"]}'),
+            # sac.ButtonsItem(label=main, icon='share-fill', href=f'{st.session_state["streamlit_ip"]}/account'),
+        ], format_func='title', align='end', type='text')
+
+    return sac_menu_buttons
 
 ################ AUTH ###################
 

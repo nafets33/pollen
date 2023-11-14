@@ -1,37 +1,33 @@
-from chess_piece.app_hive import setup_page
+from chess_piece.app_hive import sac_menu_buttons, set_streamlit_page_config_once
+from chess_piece.king import hive_master_root, return_app_ip
+from pq_auth import signin_main, reset_password, forgot_password
 
 import streamlit as st
 from custom_voiceGPT import custom_voiceGPT, VoiceGPT_options_builder
 from chess_piece.king import get_ip_address
+import os
+from dotenv import load_dotenv
+
+main_root = hive_master_root()  # os.getcwd()
+load_dotenv(os.path.join(main_root, ".env"))
+
+set_streamlit_page_config_once()
+
+ip_address, streamlit_ip = return_app_ip()
+
+st.title("Your Account")
+sac_menu_buttons("Account")
+
+authenticator = signin_main(page="account")
+email = st.session_state['auth_email']
+
+authenticator.logout("Logout", location='main')
+
+with st.expander("Forgot Password", expanded=True):
+    forgot_password(authenticator)
 
 
+reset_password(authenticator, email, location='main')
 
-st.title("Testing Streamlit custom components")
-
-# Add Streamlit widgets to define the parameters for the CustomSlider
-ip_address = get_ip_address()
-if ip_address == '10.202.0.2':
-    ip_address = "https://api.pollenq.com"
-else:
-    print("IP sandbox")
-    ip_address = "http://127.0.0.1:8000"
-st.session_state['ip_address'] = ip_address
-to_builder = VoiceGPT_options_builder.create()
-to = to_builder.build()
-custom_voiceGPT(
-    api=f"{ip_address}/api/data/voiceGPT",
-    self_image="hoots.png",
-    face_recon=True,
-    text_input=False,
-    hello_audio="test_audio.mp3",
-    commands=[{
-        "keywords": ["hey Hoots *", "hey hootie *", "hello *"],
-        "api_body": {"keyword": "hey_hoots"},
-    },{
-        "keywords": ["bye Hoots *", "bye hootie *", "bye *"],
-        "api_body": {"keyword": "bye_hoots"},
-    }
-    ]
-)
 
 

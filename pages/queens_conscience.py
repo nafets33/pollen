@@ -1719,14 +1719,15 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     'pinned':'left',
                     }
                 honey_options = {'headerName': '%Honey',
-                                'pinned': 'left',
+                                # 'pinned': 'left',
                                  'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                  'type': ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                                  'custom_currency_symbol':"%",
                                             }
                 return {
                         'honey': honey_options,
-                        # 'Take Money': create_ag_grid_column(headerName="Take Money", initialWidth=120),
+                        'symbol': create_ag_grid_column(headerName="Symbol", initialWidth=95),
+                        'ttf_grid_name': create_ag_grid_column(headerName='Star'),
                         'sell_reason': create_ag_grid_column(headerName="Reason To Sell", initialWidth=135, editable=True),
                         'cost_basis_current': {'headerName': 'Cost Basis Current', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                                     #    'custom_currency_symbol':"$",
@@ -1786,7 +1787,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         'prompt_field': "qty_available",
                         'col_headername': 'Take Money',
                         'col_width':135,
-                        'pinned': 'right',
+                        # 'pinned': 'right',
                         "col_header": "money",
                         "border_color": "green",
                         },
@@ -1796,7 +1797,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         'prompt_field': 'order_rules',
                         'col_headername': 'Order Rules',
                         'col_width':135,
-                        'pinned': 'right',
+                        # 'pinned': 'right',
                         'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today', 'close_order_today_allowed_timeduration', 'stagger_profits_tiers', 'trade_using_limits', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration', 'sell_date', 'use_wave_guage'],
                         "col_header": "time_frame",
                         "border_color": "green",
@@ -1832,7 +1833,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 return {
                     # 'ticker_time_frame': {'initialWidth': 168,},
                         'symbol': create_ag_grid_column(headerName='symbol'),
-                        'time_frame': create_ag_grid_column(headerName='Star'),
+                        'ttf_grid_name': create_ag_grid_column(headerName='Star'),
                         'current_profit': create_ag_grid_column(headerName='Curent Profit', initialWidth=89, type=["customNumberFormat", "numericColumn", "numberColumnFilter"], cellRenderer='agAnimateShowChangeCellRenderer', enableCellChangeFlash=True,),
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
@@ -1918,17 +1919,6 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         "border_color": "green",
                         # 'pinned': 'left',
                         },
-                        # {'button_name': 'Reverse WaveBuy',
-                        # 'button_api': f'{ip_address}/api/data/queen_buy_wave_orders',
-                        # 'prompt_message': 'Buy Wave Switch',
-                        # 'prompt_field': 'Reverse WayBuy',
-                        # 'col_headername': 'Reverse WaveBuy',
-                        # "col_header": "readybuy",
-                        # "col_width": 100,
-                        # "border_color": "grey",
-                        # # 'pinned': 'left',
-                        # 'prompt_order_rules': [i for i in buy_button_dict_items(reverse_buy=True).keys()],
-                        # },
 
                         {'button_name': 'Buy Wave',
                         'button_api': f'{ip_address}/api/data/queen_buy_orders',
@@ -2335,21 +2325,21 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                             if 'orders' in st.session_state and st.session_state['orders']:
                                 
                                 with cols[0]:
-                                    with st.expander("Story Grid", True):
+                                    with st.expander("Story Grid :fire:", True):
                                         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                                         refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                                         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                                     if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
                                         st.error("PENDING QUEEN")
                                     else:
-                                        with st.expander("Star Grid", True):
+                                        with st.expander("Star Grid :sparkles:", True):
                                             refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                                             refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                                             wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=refresh_sec)
 
 
                                 with cols[1]:
-                                    with st.expander("SPY-QQQ Today %", True):
+                                    with st.expander("SPY-QQQ Today % :chart_with_upwards_trend:", True):
 
                                         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                                         refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
@@ -2373,7 +2363,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                                 symbols=['SPY', 'QQQ'],
                                                 )
                                     
-                                    with st.expander("Wave Race", False):
+                                    with st.expander("Wave Race :ocean:", True):
                                         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                                         refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                                         custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)

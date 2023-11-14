@@ -366,6 +366,7 @@ def init_queen(queens_chess_piece):
         "saved_powerRangers": [],  # bucket of saved star settings to choose from
         "subconscious": {"app_info": deque([], 89)},
         "conscience": {"app_info": deque([], 89)},
+        "sub_conscience": {"app_info": deque([], 89)},
         # Worker Bees
         queens_chess_piece: {
             "conscience": {"STORY_bee": {}, "KNIGHTSWORD": {}, "ANGEL_bee": {}},
@@ -2995,6 +2996,8 @@ def submit_order(
     order_class=False,
     stop_loss=False,
     take_profit=False,):
+
+
     try:
         if type == "market":
             order = api.submit_order(
@@ -3016,13 +3019,13 @@ def submit_order(
                 limit_price=limit_price,
             )
         else:
-            return False
+            return {'error': 'wtf'}
 
-        return order
+        return {'error': 'wtf', 'order': order}
     except Exception as e:
-        print_line_of_error()
+        print_line_of_error(e)
         print(side, symbol, qty, type, limit_price, time_in_force, client_order_id)
-        return e
+        return {'error': e}
 
     """stop loss order"""
     # api.submit_order(symbol='TSLA',
@@ -3039,14 +3042,36 @@ def submit_order(
 
 def refresh_account_info(api):
     """
-    # Account({   'account_blocked': False, 'account_number': '603397580', 'accrued_fees': '0', 'buying_power': '80010',
-    #     'cash': '40005', 'created_at': '2022-01-23T22:11:15.978765Z', 'crypto_status': 'PAPER_ONLY', 'currency': 'USD', 'daytrade_count': 0,
-    #     'daytrading_buying_power': '0', 'equity': '40005', 'id': '2fae9699-b24f-4d06-80ec-d531b61e9458', 'initial_margin': '0',
-    #     'last_equity': '40005','last_maintenance_margin': '0','long_market_value': '0','maintenance_margin': '0',
-    #     'multiplier': '2','non_marginable_buying_power': '40005','pattern_day_trader': False,'pending_transfer_in': '40000',
-    #     'portfolio_value': '40005','regt_buying_power': '80010',
-    #     'short_market_value': '0','shorting_enabled': True,'sma': '40005','status': 'ACTIVE','trade_suspended_by_user': False,
-    #     'trading_blocked': False, 'transfers_blocked': False})
+    # Account({   
+    'account_blocked': False, 
+    'account_number': '603397580', 
+    'accrued_fees': '0', 
+    'buying_power': '80010',
+    'cash': '40005', 
+    'created_at': '2022-01-23T22:11:15.978765Z', 
+    'crypto_status': 'PAPER_ONLY', 
+    'currency': 'USD', 
+    'daytrade_count': 0,
+    'daytrading_buying_power': '0', 
+    'equity': '40005', 
+    'id': '2fae9699-b24f-4d06-80ec-d531b61e9458', 
+    'initial_margin': '0',
+    'last_equity': '40005',
+    'last_maintenance_margin': '0',
+    'long_market_value': '0',
+    'maintenance_margin': '0',
+    'multiplier': '2',
+    'non_marginable_buying_power': '40005',
+    'pattern_day_trader': False,
+    'pending_transfer_in': '40000',
+    'portfolio_value': '40005',
+    'regt_buying_power': '80010',
+    'short_market_value': '0',
+    'shorting_enabled': True,
+    'sma': '40005',
+    'status': 'ACTIVE',
+    'trade_suspended_by_user': False,
+    'trading_blocked': False, 'transfers_blocked': False})
     """
     info = api.get_account()
     info_ = {
@@ -3058,6 +3083,7 @@ def refresh_account_info(api):
             "daytrade_count": float(info.daytrade_count),
             "last_equity": float(info.last_equity),
             "portfolio_value": float(info.portfolio_value),
+            "daytrading_buying_power": float(info.daytrading_buying_power)
         },
     }
     # info_ = {k: v for (k,v) in (vars(info).get('_raw').keys()) if k not in info_}
@@ -3561,8 +3587,9 @@ def ttf_grid_names(ttf_name, symbol=True):
     else:
        return ttf_name
 
-def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=None,limit_price=False,take_profit=.03,sell_out=-.03,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, reverse_buy=False, sell_at_vwap=False, star_list=ttf_grid_names_list()):
+def buy_button_dict_items(queen_handles_trade=True, star='1Minute_1Day', wave_amo=1000,trade_using_limits=None,limit_price=False,take_profit=.03,sell_out=-.03,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, reverse_buy=False, sell_at_vwap=False, star_list=ttf_grid_names_list()):
     column = {
+                'queen_handles_trade': queen_handles_trade,
                 'star':star,
                 'wave_amo': wave_amo,
                 # 'trade_using_limits': trade_using_limits,
@@ -3580,7 +3607,8 @@ def buy_button_dict_items(star='1Minute_1Day', wave_amo=1000,trade_using_limits=
 
 
 def kings_order_rules( # rules created for 1Minute
-    KOR_version=1,
+    KOR_version=2,
+    queen_handles_trade=True,
     order_side='buy', # 'sell'
     order_type='market',
     wave_amo=100,
@@ -3605,6 +3633,7 @@ def kings_order_rules( # rules created for 1Minute
     take_profit_scale={.05: {'take_pct': .25, 'take_mark': False}},
     sell_out=-.0089,
     sell_out_scale={.05: {'take_pct': .25, 'take_mark': False}},
+    max_profit_Deviation=.5, # how far from max profit
     max_profit_waveDeviation=1, ## Need to figure out expected waveDeivation from a top profit in wave to allow trade to exit (faster from seeking profit?)
     max_profit_waveDeviation_timeduration=5, # Minutes
     timeduration=120, # Minutes ### DEPRECATE WORKERBEE
@@ -3634,11 +3663,13 @@ def kings_order_rules( # rules created for 1Minute
 
     return {
         "KOR_version": KOR_version,
+        "queen_handles_trade": queen_handles_trade,
         "theme": theme,
         "status": status,
         "trade_using_limits": trade_using_limits,
         "limitprice_decay_timeduration": limitprice_decay_timeduration,
         "doubledown_timeduration": doubledown_timeduration,
+        "max_profit_Deviation": max_profit_Deviation,
         "max_profit_waveDeviation": max_profit_waveDeviation,
         "max_profit_waveDeviation_timeduration": max_profit_waveDeviation_timeduration,
         "timeduration": timeduration,

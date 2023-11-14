@@ -324,8 +324,9 @@ def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...)):
     audio_file = 'test_audio.mp3'
 
     page_direct='http://localhost:8501/heart'
+    listen_after_reply = False
     
-    json_data = {'text': text, 'audio_path': audio_file, 'page_direct': page_direct, 'self_image': self_image, 'listen_after_reply': True}
+    json_data = {'text': text, 'audio_path': audio_file, 'page_direct': page_direct, 'self_image': self_image, 'listen_after_reply': listen_after_reply}
 
 
     return JSONResponse(content=json_data)

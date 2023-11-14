@@ -27,16 +27,17 @@ from pages.pollen_engine import pollen_engine
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import custom_fastapi_text, custom_graph_ttf_qcp, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.app_hive import custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import main_root, initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 
 # componenets
+import streamlit_antd_components as sac
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
 import hydralit_components as hc
 from custom_button import cust_Button
-from custom_text import custom_text, TextOptionsBuilder
+# from custom_text import custom_text, TextOptionsBuilder
 
 
 # ozz
@@ -53,7 +54,8 @@ def pollenq(admin_pq):
     try:
         main_page_start = datetime.now()
         king_G = kingdom__global_vars()
-        main_root = hive_master_root() 
+        main_root = hive_master_root()
+        load_dotenv(os.path.join(main_root, ".env"))
         def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
             
             with st.form("workerbees refresh"):
@@ -461,11 +463,15 @@ def pollenq(admin_pq):
         set_streamlit_page_config_once()
 
         ip_address = get_ip_address()
-        if ip_address == '10.202.0.2':
+        if ip_address == os.environ.get('gcp_ip'):
             ip_address = "https://api.quantqueen.com"
+            streamlit_ip = ip_address
         else:
             ip_address = "http://127.0.0.1:8000"
+            streamlit_ip = "http://localhost:8502"
+        
         st.session_state['ip_address'] = ip_address
+        st.session_state['streamlit_ip'] = streamlit_ip
 
         pq_buttons = pollenq_button_source()
         s = datetime.now(est)
@@ -499,13 +505,7 @@ def pollenq(admin_pq):
             if st.session_state['authentication_status'] != True: ## None or False
                 
                 display_for_unAuth_client_user()
-                st.error("Seeking Hive I see")
                 st.stop()
-
-            # if 'logout' in st.session_state and st.session_state["logout"] != True:
-            #     authenticator.logout("Logout", location='sidebar')
-            #     from chess_piece.auth_utils import reset_password, return_users_conn_cur
-            #     reset_password(cur=cur, authenticator=authenticator, email=st.session_state['auth_email'], location='sidebar')
 
             prod = st.session_state['production']
             authorized_user = st.session_state['authorized_user']
@@ -649,11 +649,13 @@ def pollenq(admin_pq):
             seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
             if mkhrs != 'open':
                 seconds_to_market_close = 1
-            def save_queen_king():
-                st.session_state['save_queen_king'] = True
+
+            sac_menu = sac_menu_buttons()
+
+            with st.sidebar:
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
             cols = st.columns((3,5,3))
             with cols[2]:
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
                 with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
                     jpg_root = os.path.join(main_root, "misc")
                     queenbee_png = os.path.join(jpg_root, "bee.png")
@@ -666,7 +668,6 @@ def pollenq(admin_pq):
                         log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
                         log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
                         log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                            # queen_messages_logfile_grid(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'http://{ip_address}:8000/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
                         queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
                     st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
                     st.image(queenbee_png, width=33)
