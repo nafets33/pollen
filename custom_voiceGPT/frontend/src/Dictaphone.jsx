@@ -23,7 +23,7 @@ const Dictaphone = ({
     listening,
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable,
-  } = useSpeechRecognition({ transcribing, clearTranscriptOnListen, commands })
+  } = useSpeechRecognition({ transcribing, clearTranscriptOnListen })
   const [prevScript, setPrevScript] = useState("")
 
   useEffect(() => {
@@ -39,12 +39,32 @@ const Dictaphone = ({
   }, [interimTranscript])
 
   useEffect(() => {
-    if (finalTranscript != "" && listenAfterRelpy) {
+    if (finalTranscript != "") {
       console.log("Got final result:", finalTranscript)
       timer && clearTimeout(timer)
       timer = setTimeout(() => {
         setPrevScript(finalTranscript)
-        myFunc(finalTranscript, { api_body: { keyword: "" } }, 3)
+        // keyword trigger
+        for (let i = 0; i < commands.length; i++) {
+          const { keywords, api_body } = commands[i]
+          for (let j = 0; j < keywords.length; j++) {
+            const keyword = new RegExp(keywords[j], "i")
+            const isKeywordFound = finalTranscript.search(keyword) != -1
+
+            if (isKeywordFound) {
+              myFunc(finalTranscript, commands[i], 1)
+              resetTranscript()
+              return
+            }
+          }
+        }
+        if (listenAfterRelpy) {
+          myFunc(finalTranscript, { api_body: { keyword: "" } }, 3)
+          resetTranscript()
+          return
+        }
+        //waiting for keyword
+        console.log("waiting for keyword")
         resetTranscript()
       }, noResponseTime * 1000)
     }
@@ -52,7 +72,7 @@ const Dictaphone = ({
       setPrevScript(finalTranscript)
       resetTranscript()
     }
-  }, [finalTranscript, listenAfterRelpy])
+  }, [finalTranscript, listenAfterRelpy, commands])
 
   if (!browserSupportsSpeechRecognition) {
     return <span>No browser support</span>

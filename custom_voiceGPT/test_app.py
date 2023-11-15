@@ -22,11 +22,11 @@ def main():
         show_conversation=True,
         no_response_time=3,
         commands=[{
-            "keywords": ["hey Hoots *", "hey Foods *", "hello *"],
-            "api_body": {"keyword": "hey hoots, "},
+            "keywords": ["hey Hoots", "hey Foods", "hello"], # keywords are case insensitive
+            "api_body": {"keyword": "hey hoots"},
         }, {
-            "keywords": ["bye Hoots *", "bye Foods *", "bye *"],
-            "api_body": {"keyword": "bye hoots, "},
+            "keywords": ["bye Hoots", "bye Foods", "bye"],
+            "api_body": {"keyword": "bye hoots"},
         }
         ]
     )
