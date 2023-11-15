@@ -24,6 +24,7 @@ let firstFace = false
 const CustomVoiceGPT = (props) => {
   const { api, kwargs = {} } = props
   const {
+    commands,
     height,
     width,
     show_conversation,
@@ -156,11 +157,8 @@ const CustomVoiceGPT = (props) => {
   }
 
   const myFunc = async (ret, command, type) => {
-    if (type === 3 && listenAfterRelpy) {
-      return
-    }
     setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
-    const text = [...g_anwers, { user: command["api_body"]["keyword"] + ret }]
+    const text = [...g_anwers, { user: ret }]
     setAnswers([...text])
     try {
       console.log("api call on listen...", command)
@@ -187,16 +185,16 @@ const CustomVoiceGPT = (props) => {
     }
   }
 
-  const commands = useMemo(() => {
-    return kwargs["commands"].map((command) => ({
-      command: command["keywords"],
-      callback: (ret) => {
-        timer && clearTimeout(timer)
-        timer = setTimeout(() => myFunc(ret, command, 1), 1000)
-      },
-      matchInterim: true,
-    }))
-  }, [kwargs.commands])
+  // const commands = useMemo(() => {
+  //   return kwargs["commands"].map((command) => ({
+  //     command: command["keywords"],
+  //     callback: (ret) => {
+  //       timer && clearTimeout(timer)
+  //       timer = setTimeout(() => myFunc(ret, command, 1), 1000)
+  //     },
+  //     matchInterim: true,
+  //   }))
+  // }, [kwargs.commands])
   // const commands = [
   //   {
   //     command: "I would like to order *",
