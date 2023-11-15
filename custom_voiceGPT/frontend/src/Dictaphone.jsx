@@ -61,7 +61,11 @@ const Dictaphone = ({
         if (listenAfterRelpy) {
           myFunc(finalTranscript, { api_body: { keyword: "" } }, 3)
           resetTranscript()
+          return
         }
+        //waiting for keyword
+        console.log("waiting for keyword")
+        resetTranscript()
       }, noResponseTime * 1000)
     }
     if (finalTranscript != "" && !listenAfterRelpy) {
