@@ -168,7 +168,7 @@ def filter_gridby_timeFrame_view(df, toggle_view_selection, grid=False, ttf_name
     
     if ttf_namefilter:
       if toggle_view_selection.lower() in ttf_gridnames:
-        df = df[df['ttf_grid_name'] == toggle_view_selection]
+        df = df[df['ttf_grid_name'].str.contains(toggle_view_selection)]
     
     if wave_state_filter:
       trigname = 'trigname' if 'trigname' in df.columns else 'macd_state'
