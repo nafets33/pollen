@@ -382,7 +382,7 @@ def pollenq(admin_pq):
                 # with sb:
                 # cols = st.columns(7)
                 height = 50
-                with st.expander("Menu Buttons"):
+                # with st.expander("Menu Buttons"):
 
                     # with cols[1]:
                     # print("Heart")
@@ -393,7 +393,7 @@ def pollenq(admin_pq):
                     # cust_Button("misc/zelda-icons.gif", hoverText=f'{beat}', key='show_queenheart', height=f'{height}px', default=False)
                     # with cols[2]:
                     # height = on_size if 'workerbees' in st.session_state and st.session_state['workerbees'] == True else off_size
-                    cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+                    # cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
 
                     # with cols[3]:
                     # cb = cust_Button("misc/knight_pawn.png", hoverText='Orders', key='orders_m', default=True, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
@@ -403,8 +403,8 @@ def pollenq(admin_pq):
                     # height = on_size if 'chess_board' in st.session_state and st.session_state['chess_board'] == True else off_size
                     # cust_Button("https://cdn.onlinewebfonts.com/svg/img_562964.png", hoverText='Chess Board', key='chess_board', height=f'{height}px', default=False)
                     # with cols[4]:
-                    st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
-                    cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
+                    # st.session_state['chess_board'] = True if st.session_state['chess_board_m'] in ['admin_workerbees', 'chess_board'] or st.session_state['chess_board_m'] == None else False
+                    # cust_Button("https://www.pngall.com/wp-content/uploads/2016/03/Chess-Free-PNG-Image.png", hoverText='Trading Models', key='queens_mind', height=f'{height}px', default=False)
                     # st.session_state['queens_mind'] = True if st.session_state['queens_mind'] in ['queens_mind'] or st.session_state['queens_mind'] == None else False
                     
                     # with cols[5]:
@@ -544,6 +544,7 @@ def pollenq(admin_pq):
             admin_check(admin_pq)
             with st.sidebar:
                 hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
+            
             if st.session_state['admin'] == True:
                 st.sidebar.write('admin:', st.session_state["admin"])
                 # add new keys
@@ -650,63 +651,61 @@ def pollenq(admin_pq):
             if mkhrs != 'open':
                 seconds_to_market_close = 1
 
-            sac_menu = sac_menu_buttons()
-
-            with st.sidebar:
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
             cols = st.columns((3,5,3))
             with cols[2]:
-                with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
-                    jpg_root = os.path.join(main_root, "misc")
-                    queenbee_png = os.path.join(jpg_root, "bee.png")
-                    queen_logs = st.toggle("Queens Mind")
-                    st.session_state['Queens Mind'] = queen_logs
+                sac_menu = sac_menu_buttons()
+                if sac_menu.lower() == 'playground':
+                    print("PLAYGROUND")
+                    PlayGround()
+                    st.stop()
+                if sac_menu.lower() == 'account':
+                    switch_page('account')
+                    
+                if sac_menu == 'pollen_engine':
+                    pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
+                    st.stop()
 
-                    if st.session_state['Queens Mind']:
-                        logs = os.listdir(log_dir)
-                        logs = [i for i in logs if i.endswith(".log")]
-                        log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                        log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                        log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                        queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
-                    st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
-                    st.image(queenbee_png, width=33)
-            if menu_id == 'PlayGround':
-                print("PLAYGROUND")
-                PlayGround()
-                st.stop()
-            
-            with st.sidebar:
-                hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-                # menu_buttons(cols, QUEENsHeart)
-                        
+
             with cols[0]:
-                with st.expander("Queens Heart :heartbeat:", True):
-                    custom_fastapi_text(KING=KING, 
-                                        client_user=client_user, 
-                                        default_background_color=default_background_color, 
-                                        default_text_color=default_text_color, 
-                                        default_font=default_font,
-                                        refresh_sec=8,
-                                        refresh_cutoff_sec=seconds_to_market_close, 
-                                        prod=prod, 
-                                        api=f'{ip_address}/api/data/heart',
-                                        key='header1',
-                                        text_size=20)
+                # with st.expander("Queens Heart :heartbeat:", False):
+                custom_fastapi_text(KING=KING, 
+                                    client_user=client_user, 
+                                    default_background_color=default_background_color, 
+                                    default_text_color=default_text_color, 
+                                    default_font=default_font,
+                                    refresh_sec=8,
+                                    refresh_cutoff_sec=seconds_to_market_close, 
+                                    prod=prod, 
+                                    api=f'{ip_address}/api/data/heart',
+                                    key='header1',
+                                    text_size=20)
             with cols[1]:
-                with st.expander("Account Summary :heavy_dollar_sign:", True):
-                    custom_fastapi_text(KING=KING, 
-                                        client_user=client_user, 
-                                        default_background_color=default_background_color, 
-                                        default_text_color=default_text_color, 
-                                        default_font=default_font,
-                                        refresh_sec=8,
-                                        refresh_cutoff_sec=seconds_to_market_close, 
-                                        prod=prod, 
-                                        api=f'{ip_address}/api/data/account_info',
-                                        key='header2',
-                                        text_size=20)
+                # with st.expander("Account Summary :heavy_dollar_sign:", False):
+                custom_fastapi_text(KING=KING, 
+                                    client_user=client_user, 
+                                    default_background_color=default_background_color, 
+                                    default_text_color=default_text_color, 
+                                    default_font=default_font,
+                                    refresh_sec=8,
+                                    refresh_cutoff_sec=seconds_to_market_close, 
+                                    prod=prod, 
+                                    api=f'{ip_address}/api/data/account_info',
+                                    key='header2',
+                                    text_size=20)
+            
+            
+            cols = st.columns((1,1,5))
+            with st.sidebar:
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+
+            with st.sidebar:
+                height=50
+                cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+
+            #     hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+            #     cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+            #     # menu_buttons(cols, QUEENsHeart)
+                        
 
             # with st.expander("Queen Controls"): # WORKERBEE 
             #     cols = st.columns((1,1,1,1,1,1))
@@ -777,14 +776,9 @@ def pollenq(admin_pq):
         # if menu_id == 'TradingModels':
         #     print("TRADINGMODELS")
         #     trading_models()
-        if menu_id == 'Account':
-            # account(st=st)
-            setup_page(QUEEN_KING, theme_list)
-            switch_page('account')
-        if menu_id == 'pollen_engine':
-            pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
+
         
-        if authorized_user and 'pollenq' in menu_id: 
+        if authorized_user and 'queen' in sac_menu.lower(): 
 
             if st.session_state['admin'] and st.session_state['workerbees']:
                 with st.expander("WorkerBees Tools"):
@@ -795,7 +789,7 @@ def pollenq(admin_pq):
 
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
-        cols = st.columns(6)
+        cols = st.columns((2,2,5))
 
         with cols[0]:
             # print("Heart")
@@ -818,6 +812,25 @@ def pollenq(admin_pq):
                         refresh_swarmqueen_workerbees(QUEEN_KING)
                         # refresh_workerbees(QUEEN_KING)
                         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
+
+
+        with cols[2]:
+            # with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
+            jpg_root = os.path.join(main_root, "misc")
+            queenbee_png = os.path.join(jpg_root, "bee.png")
+            queen_logs = st.toggle("Queens Mind")
+            st.session_state['Queens Mind'] = queen_logs
+
+            if st.session_state['Queens Mind']:
+                st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
+                st.image(queenbee_png, width=33)
+                logs = os.listdir(log_dir)
+                logs = [i for i in logs if i.endswith(".log")]
+                log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+                log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+                log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+                queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+
 
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')

@@ -340,14 +340,14 @@ def signin_main(page):
             with st.expander("Forgot Password", expanded=True):
                 forgot_password(authenticator)
             with st.expander("New User"):
-                register_user(authenticator, cur)
+                register_user(authenticator, con, cur)
             
             return authenticator
 
         # no login trial; create account
         elif authentication_status == None:
             with st.expander("New User Create Account"):
-                register_user(authenticator, cur)
+                register_user(authenticator, con, cur)
 
             # display_for_unAuth_client_user()
 

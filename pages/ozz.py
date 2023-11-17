@@ -22,24 +22,25 @@ st.title("Testing Streamlit custom components")
 
 to_builder = VoiceGPT_options_builder.create()
 to = to_builder.build()
+# if st.session_state['username'] not in users_allowed_queen_email
 custom_voiceGPT(
     api=f"{st.session_state['ip_address']}/api/data/voiceGPT",
-        self_image="hoots.png",
-        width=150,
-        height=200,
-        hello_audio="test_audio.mp3",
-        face_recon=True,
-        show_video=True,
-        input_text=True,
-        show_conversation=True,
-        no_response_time=3,
-        commands=[{
-            "keywords": ["hey Hoots *", "hey Foods *", "hello *"],
-            "api_body": {"keyword": "hey hoots, "},
-        }, {
-            "keywords": ["bye Hoots *", "bye Foods *", "bye *"],
-            "api_body": {"keyword": "bye hoots, "},
-        }
-        ]
-    )
+    self_image="hoots.png",
+    width=150,
+    height=200,
+    hello_audio="test_audio.mp3",
+    face_recon=True,
+    show_video=True,
+    input_text=True,
+    show_conversation=True,
+    no_response_time=3,
+    commands=[{
+        "keywords": ["hey Hoots", "hey Foods", "hello"], # keywords are case insensitive
+        "api_body": {"keyword": "hey hoots"},
+    }, {
+        "keywords": ["bye Hoots", "bye Foods", "bye"],
+        "api_body": {"keyword": "bye hoots"},
+    }
+    ]
+)
 

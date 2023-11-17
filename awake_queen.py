@@ -9,9 +9,9 @@ import subprocess
 import logging
 run = sys.argv[1]
 
-db_root = return_db_root()
+# db_root = return_db_root()
 
-init_logging('awake_queen', db_root=db_root, prod=True)
+# init_logging('awake_queen', db_root=db_root, prod=True)
 
 def call_job_queen(prod):
     # importlib.reload(sys.modules['chess_piece'])

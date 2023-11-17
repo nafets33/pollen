@@ -263,7 +263,7 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
                                         limit_price=limit_price) # buy
             if 'error' in order_submit.keys():
                 print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
-                QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
+                # QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
                 return {'executed': False}
 
             # logging.info("order submit")
@@ -2195,7 +2195,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                     order_side = 'sell'
                                     limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
                                     
-                                    if time_to_bell_close < 60:
+                                    if time_to_bell_close < 133:
                                         print("Selling Out, Trade Not Allowed to go past day")
                                         sell_reason = 'close_order_today'
                                         sell_order = True

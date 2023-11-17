@@ -27,7 +27,7 @@ import asyncio
 # from requests.auth import HTTPBasicAuth
 from chess_piece.app_hive import queen_messages_grid__apphive, custom_fastapi_text, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
 from chess_piece.king import get_ip_address, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import ttf_grid_names_list, buy_button_dict_items, wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, story_view, pollen_themes, return_timestamp_string, init_logging
+from chess_piece.queen_hive import sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, story_view, pollen_themes, return_timestamp_string, init_logging
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -749,100 +749,87 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
                 current_tickers = qcp_ticker_index.keys()
                 
-                with st.expander(name, True): # ChessBoard
-                    allow_queen_to_update_chessboard = st.checkbox("Allow QUEEN to update chessboard for all themes", True)
-                    cb_tab_list = ['Board', 'Star Allocation']
-                    tabs = st.tabs(cb_tab_list)
-                    with tabs[0]:
-                        with st.form(f'ChessBoard_form{admin}'):
-                            try:
-                                # cols = st.columns((1,3,2))
-                                # with cols[0]:
-                                #     hc.option_bar(option_definition=pq_buttons.get('chess_option_data'),title='', key='chess_search', horizontal_orientation=True)                                
-                                # with cols[1]:
-                                #     ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
-                                # with cols[1]:
-                                #     st.subheader(name)
+                # with st.expander(name, True): # ChessBoard
+                allow_queen_to_update_chessboard = st.checkbox("Allow QUEEN to update chessboard for all themes", True)
+                cb_tab_list = ['Board', 'Star Allocation']
+                tabs = st.tabs(cb_tab_list)
+                with tabs[0]:
+                    with st.form(f'ChessBoard_form{admin}'):
+                        try:
+                            # cols = st.columns((1,3,2))
+                            # with cols[0]:
+                            #     hc.option_bar(option_definition=pq_buttons.get('chess_option_data'),title='', key='chess_search', horizontal_orientation=True)                                
+                            # with cols[1]:
+                            #     ticker_search = st.text_input("Find Symbol") ####### WORKERBEE
+                            # with cols[1]:
+                            #     st.subheader(name)
+                            
+                            cols = st.columns((1,3,1,1,2,2))
+                            headers = 0
+                            for qcp in all_workers:
+                                setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
+                                headers+=1
+                            
+                            # RevRec
+                            # print('RevRec')
+                            QUEEN_KING['revrec'] = revrec
+                            QUEEN_KING['chess_board__revrec'] = revrec
+                            df_qcp = revrec.get('df_qcp')
+                            df_ticker = revrec.get('df_ticker')
+                            df_stars = revrec.get('df_stars')
+                            waveview = revrec.get('waveview')
+
+                            QUEEN_KING['chess_board__revrec'] = {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
+
+                            # symbol_total_budget_remaining = revrec['df_ticker'].loc["SPY"].get("ticker_remaining_budget")
+                            # symbol_total_borrow_remaining = revrec['df_ticker'].loc["SPY"].get("ticker_remaining_borrow")
+                            # st.write(symbol_total_budget_remaining, symbol_total_borrow_remaining)
+                            # for ticker_time_frame in df_stars.index.to_list():
+                            #     star_total_budget = df_stars.loc[ticker_time_frame].get('star_total_budget')
+                            #     ttf_remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
+                            #     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
+
+                            for qcp in all_workers:
+                                # if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
+                                #     continue
                                 
-                                cols = st.columns((1,3,1,1,2,2))
-                                headers = 0
-                                for qcp in all_workers:
-                                    setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
-                                    headers+=1
+                                total_ticker_budget = 0
+                                tickers_cost_basis = 0
+                                qcp_tickers = [i for i in qcp_ticker_index.keys() if qcp_ticker_index[i] == qcp]
+                                for ticker in qcp_tickers:
+
+                                    total_budget = df_ticker.loc[ticker].get('ticker_total_budget')
+                                    total_ticker_budget+=total_budget
+                                    q_orders = return_queen_orders__query(QUEEN=QUEEN, queen_order_states=RUNNING_Orders , ticker=ticker)
+                                    if len(q_orders) > 0:
+                                        current_running_cost_b = sum(q_orders['cost_basis'])
+                                        tickers_cost_basis+=current_running_cost_b
                                 
-                                # RevRec
-                                # print('RevRec')
-                                QUEEN_KING['revrec'] = revrec
-                                QUEEN_KING['chess_board__revrec'] = revrec
-                                df_qcp = revrec.get('df_qcp')
-                                df_ticker = revrec.get('df_ticker')
-                                df_stars = revrec.get('df_stars')
-                                waveview = revrec.get('waveview')
-
-                                QUEEN_KING['chess_board__revrec'] = {'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars,}
-
-                                # symbol_total_budget_remaining = revrec['df_ticker'].loc["SPY"].get("ticker_remaining_budget")
-                                # symbol_total_borrow_remaining = revrec['df_ticker'].loc["SPY"].get("ticker_remaining_borrow")
-                                # st.write(symbol_total_budget_remaining, symbol_total_borrow_remaining)
-                                # for ticker_time_frame in df_stars.index.to_list():
-                                #     star_total_budget = df_stars.loc[ticker_time_frame].get('star_total_budget')
-                                #     ttf_remaining_budget = return_ttf_remaining_budget(QUEEN, star_total_budget, ticker_time_frame, active_queen_order_states)
-                                #     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
-
-                                for qcp in all_workers:
-                                    # if qcp not in ['castle', 'castle_coin', 'bishop', 'knight']:
-                                    #     continue
+                                remaing_qcp_budget = total_ticker_budget - tickers_cost_basis
+                            cols = st.columns(2)
+                            with cols[0]:
+                                if st.form_submit_button('Save Board', use_container_width=True):
+                                    if authorized_user == False:
+                                        st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
+                                        return False
                                     
-                                    total_ticker_budget = 0
-                                    tickers_cost_basis = 0
-                                    qcp_tickers = [i for i in qcp_ticker_index.keys() if qcp_ticker_index[i] == qcp]
-                                    for ticker in qcp_tickers:
+                                    QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING)
+                                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                                    st.success("New Move Saved")
+                            with cols[1]:
+                                if st.form_submit_button('Reset ChessBoards Trading Models With Theme', on_click=on_click_ss_value_bool('reset_chessboard_theme'), use_container_width=True):
+                                    if authorized_user == False:
+                                        st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
+                                        return False
 
-                                        total_budget = df_ticker.loc[ticker].get('ticker_total_budget')
-                                        total_ticker_budget+=total_budget
-                                        q_orders = return_queen_orders__query(QUEEN=QUEEN, queen_order_states=RUNNING_Orders , ticker=ticker)
-                                        if len(q_orders) > 0:
-                                            current_running_cost_b = sum(q_orders['cost_basis'])
-                                            tickers_cost_basis+=current_running_cost_b
-                                    
-                                    remaing_qcp_budget = total_ticker_budget - tickers_cost_basis
-                                cols = st.columns(2)
-                                with cols[0]:
-                                    if st.form_submit_button('Save Board', use_container_width=True):
-                                        if authorized_user == False:
-                                            st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
-                                            return False
-                                        
-                                        QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING)
-                                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                                        st.success("New Move Saved")
-                                with cols[1]:
-                                    if st.form_submit_button('Reset ChessBoards Trading Models With Theme', on_click=on_click_ss_value_bool('reset_chessboard_theme'), use_container_width=True):
-                                        if authorized_user == False:
-                                            st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
-                                            return False
+                                    reset_theme = True if 'reset_chessboard_theme' in st.session_state and st.session_state['reset_chessboard_theme'] else False
+                                    print(reset_theme)
+                                    QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme)
+                                    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
+                                    st.success("All Trading Models Reset to Theme")
 
-                                        reset_theme = True if 'reset_chessboard_theme' in st.session_state and st.session_state['reset_chessboard_theme'] else False
-                                        print(reset_theme)
-                                        QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme)
-                                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-                                        st.success("All Trading Models Reset to Theme")
-
-                            except Exception as e:
-                                print_line_of_error()
-
-                        # with tabs[2]:                     
-                        #     cols = st.columns((2,3,1))
-                        #     with cols[0]:
-                        #         # edit_df_qcp = st.experimental_data_editor(df_qcp)
-                        #         st.dataframe(df_qcp)
-                        #     with cols[0]:
-                        #         # edit_df_ticker = st.experimental_data_editor(df_ticker, key='df_ticker')
-                        #         st.dataframe(df_ticker)
-                        #     with cols[1]:
-                        #         # edit_df_stars = st.experimental_data_editor(df_stars, key='df_stars')
-                        #         st.dataframe(df_stars)
-                        
+                        except Exception as e:
+                            print_line_of_error()
 
                         
                     # st.write("# Reallocation")
@@ -1832,8 +1819,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     }
                 return {
                     # 'ticker_time_frame': {'initialWidth': 168,},
-                        'symbol': create_ag_grid_column(headerName='symbol'),
-                        'ttf_grid_name': create_ag_grid_column(headerName='Star'),
+                        # 'symbol': create_ag_grid_column(headerName='symbol'),
+                        'ttf_grid_name': create_ag_grid_column(headerName='Star', initialWidth=125,),
                         'current_profit': create_ag_grid_column(headerName='Curent Profit', initialWidth=89, type=["customNumberFormat", "numericColumn", "numberColumnFilter"], cellRenderer='agAnimateShowChangeCellRenderer', enableCellChangeFlash=True,),
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
@@ -1948,6 +1935,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     return  {
                     # for col in cols:
                     'symbol': create_ag_grid_column(headerName='Symbol', initialWidth=89),
+                    'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, textWrap=True),
                     'long_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'short_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
@@ -1992,7 +1980,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     return_type='story',
                     symbols=symbols,
                     buttons=[
-                                {'button_name': 'Pbuy',
+                                {'button_name': None,
                                 'button_api': f'{ip_address}/api/data/queen_buy_orders',
                                 'prompt_message': 'Edit Buy',
                                 'prompt_field': 'kors',
@@ -2005,14 +1993,14 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 },
                                 {'button_name': None,
                                 'button_api': f'{ip_address}/api/data/queen_sell_orders',
-                                'prompt_message': 'Edit Buy',
+                                'prompt_message': 'Edit Sell',
                                 'prompt_field': 'kors',
                                 'col_headername': 'Sell',
                                 "col_header": "queens_suggested_sell",
                                 "border_color": "red",
                                 'col_width':135,
-                                # 'pinned': 'right',
-                                'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
+                                'pinned': 'right',
+                                'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
                                 },
 
                             ],
@@ -2131,7 +2119,33 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
 
 
+            def charts():
+                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
 
+                cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                            prod=prod,
+                            api=f'{ip_address}/api/data/symbol_graph',
+                            x_axis='timestamp_est',
+                            y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
+                            theme_options={
+                                'backgroundColor': k_colors.get('default_background_color'),
+                                'main_title': '',   # '' for none
+                                'x_axis_title': '',
+                                'grid_color': default_text_color,
+                                "showInLegend": True,
+                                "showInLegendPerLine": True,
+                            },
+                            refresh_sec=refresh_sec,
+                            refresh_button=True,
+                            graph_height=300,
+                            symbols=['SPY', 'QQQ'],
+                            )
+                # with cols[1]:
+                    # with st.expander("Wave Race :ocean:", True):
+                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
 
         ########################################################
         ########################################################
@@ -2152,7 +2166,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
             # st.session_state['username'] = 'stefanstapinski@gmail.com'
             # st.session_state['authorized_user'] = False
             # st.session_state['db_root'] = os.path.join(main_root, 'db')
-            st.info("Welcome and Watch A QueenBot in Action")
+            st.info("Welcome You must be Family -- This QueenBot is LIVE")
                     
             # init_pollen_dbs(db_root=st.session_state['db_root'], prod=True, queens_chess_piece='queen', queenKING=True)
 
@@ -2231,9 +2245,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
         # ip_address = get_ip_address()
         ip_address = st.session_state['ip_address']
-        func_list = ['Trading Wave', 'Orders', 'Trading Board', 'Trading Models'] # 'waves', 'workerbees', 'charts'
+        trading_tab, order_tab, charts_tab, board_tab, model_tab = st.tabs(['Trading Wave', 'Orders', 'Wave Charts', 'Trading Board', 'Trading Models',]) # 'waves', 'workerbees', 'charts'
         # func_list = [i for i in func_list if st.session_state[i]]
-        tabs = st.tabs(func_list)
         with st.spinner("Refreshing"): # ozzbot
 
             if authorized_user:
@@ -2264,118 +2277,115 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                             df_i = len(db.get(ticker_option))
                             for n in  range(df_i):
                                 st.write(db.get(ticker_option)[n])
-            
-
-                c = 0
-                for tab_name in func_list:
-                    with tabs[c]:
-                        # st.write(tab_name)
-                        c+=1
-                        if tab_name == 'waves':
-                            if 'waves' in st.session_state and st.session_state['waves'] == True:
-                                with st.expander("wave stories"):
-                                    ticker_option = st.selectbox("ticker", options=tickers_avail)
-                                    frame_option = st.selectbox("frame", options=KING['star_times'])
-                                    show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
-                                with st.expander('waves', True):
-                                    # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                    queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
-                                with st.expander('STORY_bee'):
-                                    st.write(STORY_bee['SPY_1Minute_1Day']['story'])
-
-                        if tab_name == 'workerbees':
-                            if 'workerbees' in st.session_state and st.session_state['workerbees'] == True:
-                                st.write("waves")
-
-                        if tab_name == 'charts':
-                            if 'charts' in st.session_state and st.session_state['charts'] == True:
-                                with st.expander("charts", True):
-                                    advanced_charts()
-
-                        if tab_name == 'Trading Board':
-                            st.session_state['chess_board'] = True
-                            if 'chess_board' in st.session_state and st.session_state['chess_board'] == True:
-                                themes = list(pollen_themes(KING).keys())
-
-                                if 'chess_board_m' in st.session_state and st.session_state['chess_board_m'] == "admin_workerbees":
-                                    QB_workerbees(QUEENBEE=QUEENBEE, admin=admin)
-                                else:
-                                    chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
-                 
-                        if tab_name == 'Trading Models':
-                            if "queens_mind" in st.session_state and st.session_state['queens_mind']:
-                                # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-                                with st.expander("Trading Models"):
-                                    update_trading_models(QUEEN_KING)                             
-                                
-                                model_wave_results(STORY_bee)
-                                print("TRADING MODELS")
-
-                        # if tab_name == 'Wave Race':
-
-                        #     with st.expander("Race", True):
-                        #         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                        #         custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
-
-                        if tab_name == 'Trading Wave':
-                            cols = st.columns((5,3))
-                            symbols = QUEEN['heartbeat'].get('active_tickers')
-                            symbols = ['SPY'] if len(symbols) == 0 else symbols
-                            queen_orders = QUEEN['queen_orders']
-                            if 'orders' in st.session_state and st.session_state['orders']:
-                                
-                                with cols[0]:
-                                    with st.expander("Story Grid :fire:", True):
-                                        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                                        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                                        story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
-                                    if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
-                                        st.error("PENDING QUEEN")
-                                    else:
-                                        with st.expander("Star Grid :sparkles:", True):
-                                            refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                                            refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                                            wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=refresh_sec)
 
 
-                                with cols[1]:
-                                    with st.expander("SPY-QQQ Today % :chart_with_upwards_trend:", True):
-
-                                        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                                        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-
-                                        cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                                                prod=prod,
-                                                api=f'{ip_address}/api/data/symbol_graph',
-                                                x_axis='timestamp_est',
-                                                y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
-                                                theme_options={
-                                                    'backgroundColor': k_colors.get('default_background_color'),
-                                                    'main_title': '',   # '' for none
-                                                    'x_axis_title': '',
-                                                    'grid_color': default_text_color,
-                                                    "showInLegend": True,
-                                                    "showInLegendPerLine": True,
-                                                },
-                                                refresh_sec=refresh_sec,
-                                                refresh_button=True,
-                                                graph_height=300,
-                                                symbols=['SPY', 'QQQ'],
-                                                )
-                                    
-                                    with st.expander("Wave Race :ocean:", True):
-                                        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                                        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                                        custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
-
-
-                        if tab_name == 'Orders':
-                            with st.expander("Orders 🔒", True):
-                                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                with trading_tab:
+                    cols = st.columns((8,1))
+                    symbols = QUEEN['heartbeat'].get('active_tickers')
+                    symbols = ['SPY'] if len(symbols) == 0 else symbols
+                    queen_orders = QUEEN['queen_orders']
+                    if 'orders' in st.session_state and st.session_state['orders']:
+                        
+                        with cols[0]:
+                            # with st.expander("Story Grid :fire:", True):
+                            refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                            refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                            story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
+                            if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
+                                st.error("PENDING QUEEN")
+                            else:
+                                # with st.expander("Star Grid :sparkles:", True):
+                                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                                 refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                                order_grid(KING, queen_orders, ip_address)
+                                wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=refresh_sec)
+
+                with order_tab:
+                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                    order_grid(KING, queen_orders, ip_address)
+
+                with charts_tab:
+                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+
+                    cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                                prod=prod,
+                                api=f'{ip_address}/api/data/symbol_graph',
+                                x_axis='timestamp_est',
+                                y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
+                                theme_options={
+                                    'backgroundColor': k_colors.get('default_background_color'),
+                                    'main_title': '',   # '' for none
+                                    'x_axis_title': '',
+                                    'grid_color': default_text_color,
+                                    "showInLegend": True,
+                                    "showInLegendPerLine": True,
+                                },
+                                refresh_sec=refresh_sec,
+                                refresh_button=True,
+                                graph_height=300,
+                                symbols=['SPY', 'QQQ'],
+                                )
+                    # with cols[1]:
+                        # with st.expander("Wave Race :ocean:", True):
+                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                    custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
+
+                with board_tab:
+                    if admin:
+                        chess_board_admin = st.toggle("Swarm Board", False, key='chess_board_m')
+                    chess_board = st.toggle("Trading Board", False, key='chess_board')
+                    
+                    if 'chess_board' in st.session_state and st.session_state['chess_board'] == True:
+                        themes = list(pollen_themes(KING).keys())
+
+                        if chess_board_admin:
+                            QB_workerbees(QUEENBEE=QUEENBEE, admin=admin)
+                        else:
+                            if chess_board:
+                                chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+
+
+                        # if tab_name == 'waves':
+                        #     if 'waves' in st.session_state and st.session_state['waves'] == True:
+                        #         with st.expander("wave stories"):
+                        #             ticker_option = st.selectbox("ticker", options=tickers_avail)
+                        #             frame_option = st.selectbox("frame", options=KING['star_times'])
+                        #             show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
+                        #         with st.expander('waves', True):
+                        #             # hc.option_bar(option_definition=pq_buttons.get('charts_option_data'),title='Waves', key='waves_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                        #             queen_wavestories(QUEEN, STORY_bee, POLLENSTORY, tickers_avail)
+                        #         with st.expander('STORY_bee'):
+                        #             st.write(STORY_bee['SPY_1Minute_1Day']['story'])
+
+                        # if tab_name == 'workerbees':
+                        #     if 'workerbees' in st.session_state and st.session_state['workerbees'] == True:
+                        #         st.write("waves")
+
+                        # if tab_name == 'charts':
+                        #     if 'charts' in st.session_state and st.session_state['charts'] == True:
+                        #         with st.expander("charts", True):
+                        #             advanced_charts()
+
+                with model_tab:
+                    if "queens_mind" in st.session_state and st.session_state['queens_mind']:
+                        # hc.option_bar(option_definition=pq_buttons.get('option_data_qm'),title='T.Models', key='queens_mind_toggle', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+                        with st.expander("Trading Models"):
+                            update_trading_models(QUEEN_KING)                             
+                        
+                        model_wave_results(STORY_bee)
+
+
+
+
+
+                
+                
+                
                 """ Bottom Page """
 
+                
 
         ##### END ####
     except Exception as e:

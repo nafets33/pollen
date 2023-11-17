@@ -384,6 +384,52 @@ def init_queen(queens_chess_piece):
     return QUEEN
 
 
+
+def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
+    models = ['MACD', 'story__AI']
+    qcp_pieces = QUEENBEE[qcp_bees_key].keys()
+    qcp = st.text_input(label='piece name', value=f'pawn_{len(qcp_pieces)}', help="Theme your names to match your strategy")
+    if qcp in qcp_pieces:
+        st.error("Chess Piece Name must be Unique")
+        st.stop()
+    cols = st.columns(2)
+    QUEENBEE[qcp_bees_key][qcp] = init_qcp(init_macd_vars={'fast': 12, 'slow': 26, 'smooth': 9}, ticker_list=[], model='story__AI')
+    with cols[0]:
+        QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+    with cols[1]:
+        QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+
+
+    with st.form('add new qcp'):
+        cols = st.columns((1,6,2,2,2,2))
+
+        with cols[0]:
+            st.image(MISC.get('queen_crown_url'), width=64)
+        
+        if QUEENBEE[qcp_bees_key][qcp]['model'] == 'story__AI':
+            # first_symbol = QUEENBEE[qcp_bees_key][qcp]['tickers'][0]
+            # ttf_macd_wave_ratios = ReadPickleData(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
+            st.write("Lets Let AI Wave Analysis Handle Wave")
+        else:
+            m_fast=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'])
+            m_slow=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'])
+            m_smooth=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'])
+        # with cols[1]:
+        #     QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
+        # with cols[2]:
+        #     QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+            with cols[3]:
+                QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=m_fast, key=f'{qcp}fast')
+            with cols[4]:
+                QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input("slow", min_value=1, max_value=33, value=m_slow, key=f'{qcp}slow')
+            with cols[5]:
+                QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input("smooth", min_value=1, max_value=33, value=m_smooth, key=f'{qcp}smooth')            
+        
+        if st.form_submit_button('Save New qcp'):
+            PickleData(QUEENBEE.get('source'), QUEENBEE)
+
+
+
 def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
              ticker_list=['SPY'], 
              theme='nuetral', 
@@ -3021,7 +3067,7 @@ def submit_order(
         else:
             return {'error': 'wtf'}
 
-        return {'error': 'wtf', 'order': order}
+        return {'order': order}
     except Exception as e:
         print_line_of_error(e)
         print(side, symbol, qty, type, limit_price, time_in_force, client_order_id)
@@ -3602,6 +3648,13 @@ def buy_button_dict_items(queen_handles_trade=True, star='1Minute_1Day', wave_am
                 'reverse_buy': reverse_buy,
                 'sell_at_vwap': sell_at_vwap,
                 'star_list': star_list,
+                }
+    return {key: value for key, value in column.items() if value is not None}
+
+def sell_button_dict_items(symbol="SPY", sell_qty=89):
+    column = {
+                'symbol': symbol,
+                'sell_qty':sell_qty,
                 }
     return {key: value for key, value in column.items() if value is not None}
 

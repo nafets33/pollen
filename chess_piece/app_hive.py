@@ -212,12 +212,14 @@ def sac_menu_buttons(main='Queen'):
             sac.ButtonsItem(label='Playground', icon='fire'),
             sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
             sac.ButtonsItem(label='Trading Models', disabled=True),
-            sac.ButtonsItem(label='account', icon='share-fill', href=f'{st.session_state["streamlit_ip"]}/account'),
+            sac.ButtonsItem(label='Account', icon='share-fill'),
         ], format_func='title', align='end', type='text')
     elif main == 'Account':
         sac_menu_buttons = sac.buttons([
-            sac.ButtonsItem(label='Home', icon='house', href=f'{st.session_state["streamlit_ip"]}'),
-            # sac.ButtonsItem(label=main, icon='share-fill', href=f'{st.session_state["streamlit_ip"]}/account'),
+            sac.ButtonsItem(label='account', icon='key'),
+
+            sac.ButtonsItem(label='Queen', icon='house'),
+            # sac.ButtonsItem(label='Log Out', icon='key'),
         ], format_func='title', align='end', type='text')
 
     return sac_menu_buttons
@@ -534,7 +536,19 @@ def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=
 
     return True
 
-
+def sneak_peak_form():
+    if st.session_state['SneakQueen']:
+        with st.form("Sneak Peak Access"):
+            st.session_state["sneak_peak"] = True
+            sneak_name = st.text_input("Your Name", key='sneak_name')
+            sneak_pw = st.text_input("Sneak Key", key='sneak_key')
+            if st.form_submit_button("Lets Go"):
+                if len(sneak_name) == 0:
+                    st.error("Enter Your Name To Get In")
+                    st.stop()
+                if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
+                    st.error("Incorrect Password")
+                    st.stop()
 
 def display_for_unAuth_client_user(pct_queens_taken=89):
     # newuser = st.button("New User")
@@ -551,20 +565,8 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
     with cols[2]:
 
         cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-    
-    if st.session_state['SneakQueen']:
-        with cols[1]:
-            with st.form("Sneak Peak Access"):
-                st.session_state["sneak_peak"] = True
-                sneak_name = st.text_input("Your Name", key='sneak_name')
-                sneak_pw = st.text_input("Sneak Key", key='sneak_key')
-                if st.form_submit_button("Lets Go"):
-                    if len(sneak_name) == 0:
-                        st.error("Enter Your Name To Get In")
-                        st.stop()
-                    if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
-                        st.error("Incorrect Password")
-                        st.stop()
+        sneak_peak_form()
+
                     
 
     page_line_seperator("25")
@@ -2015,6 +2017,7 @@ def create_ag_grid_column(
     # field="dataField",
     # colId="columnId",
     type=None,
+    textWrap=None,
     width=100,
     initialWidth=None,  # Add initialWidth property
     minWidth=None,
@@ -2096,6 +2099,7 @@ def create_ag_grid_column(
         "custom_format_string": custom_format_string,
         "editable": editable,
         "cellClassRules": cellClassRules,
+        "textWrap": textWrap,
     }
     
     # Remove fields with None values

@@ -27,7 +27,8 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     return_trading_model_trigbee,
                                     init_charlie_bee,
                                     ttf_grid_names,
-                                    ttf_grid_names_list,)
+                                    ttf_grid_names_list,
+                                    sell_button_dict_items,)
 from chess_piece.queen_bee import execute_order, sell_order__var_items
 # import streamlit as st
 
@@ -155,19 +156,26 @@ def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=
       print_line_of_error(e)
 
 
-def filter_gridby_timeFrame_view(df, toggle_view_selection):
-    # 
+def filter_gridby_timeFrame_view(df, toggle_view_selection, grid=False, ttf_namefilter=True, wave_state_filter=True):
+    #
     ttf_gridnames = [i.lower() for i in ttf_grid_names_list()]
-    if 'ttf_grid_name' not in df.columns:
-      df['ttf_grid_name'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=False))
-    if toggle_view_selection.lower() in ttf_gridnames:
-      df = df[df['ttf_grid_name'] == toggle_view_selection]
+    if grid == 'wave':
+      if 'ttf_grid_name' not in df.columns:
+        df['ttf_grid_name'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
+    else:
+      if 'ttf_grid_name' not in df.columns:
+        df['ttf_grid_name'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=False))
     
-    trigname = 'trigname' if 'trigname' in df.columns else 'macd_state'
-    if toggle_view_selection.lower() == 'buys':
-        df = df[df[trigname].str.contains('buy')]
-    elif toggle_view_selection.lower() == 'sells':
-        df = df[~df[trigname].str.contains('buy')]
+    if ttf_namefilter:
+      if toggle_view_selection.lower() in ttf_gridnames:
+        df = df[df['ttf_grid_name'] == toggle_view_selection]
+    
+    if wave_state_filter:
+      trigname = 'trigname' if 'trigname' in df.columns else 'macd_state'
+      if toggle_view_selection.lower() == 'buys':
+          df = df[df[trigname].str.contains('buy')]
+      elif toggle_view_selection.lower() == 'sells':
+          df = df[~df[trigname].str.contains('buy')]
     
     return df
 
@@ -369,8 +377,9 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
        return {'status': False}
     
   except Exception as e:
-     print_line_of_error("fastapi buy button failed")
+     print_line_of_error(f"fastapi buy button failed {e}")
      logging.error(("fastapi", e))
+     return {'status': False}
 
 
 def app_buy_wave_order_request(username, prod, selected_row, default_value=False, ready_buy=False, x_buy=False, order_rules=False): # index & wave_amount
@@ -627,7 +636,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
         df_wave['sellbuy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("sell")) & (df_wave['allocation_deploy'] > 0), df_wave['star_at_play'] - df_wave['allocation_deploy'], 0)
         df_wave['sell_alloc_deploy'] = df_wave['sell_alloc_deploy'] + df_wave['sellbuy_alloc_deploy']
         df_wave['buy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] < 0), round(abs(df_wave['allocation_deploy'])), 0)
-
+        # df_wave['queens_note'] = 
         
         if return_type == 'waves':
           QUEEN_KING = load_queen_App_pkl(username, prod)
@@ -672,31 +681,31 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
             except Exception as e:
                 print_line_of_error(f"{ttf} grid buttons {remaining_budget}")
            
-            df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
-            df['color_row_text'] = default_text_color
+          df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
+          df['color_row_text'] = default_text_color
 
-            df = update_col_number_format(df)
-            df = filter_gridby_timeFrame_view(df, toggle_view_selection)
+          df = update_col_number_format(df)
+          df = filter_gridby_timeFrame_view(df, toggle_view_selection, grid='wave')
 
-            wave_grid_num_cols = ['current_profit',
-            'maxprofit',
-            'star_at_play',
-            'star_at_play_borrow',
-            'allocation_deploy',
-            'allocation_borrow_deploy',
-            'remaining_budget',
-            'remaining_budget_borrow',
-            # 'trinity_w_S',
-            ]
-            # # Totals Index
-            for totalcols in wave_grid_num_cols:
-              df.loc['Total', totalcols] = df[totalcols].sum()
-            newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-            df=df.reindex(index=newIndex)
+          wave_grid_num_cols = ['current_profit',
+          'maxprofit',
+          'star_at_play',
+          'star_at_play_borrow',
+          'allocation_deploy',
+          'allocation_borrow_deploy',
+          'remaining_budget',
+          'remaining_budget_borrow',
+          # 'trinity_w_S',
+          ]
+          # # Totals Index
+          for totalcols in wave_grid_num_cols:
+            df.loc['Total', totalcols] = df[totalcols].sum()
+          newIndex=['Total']+[ind for ind in df.index if ind!='Total']
+          df=df.reindex(index=newIndex)
 
 
-            json_data = df.to_json(orient='records')
-            return json_data
+          json_data = df.to_json(orient='records')
+          return json_data
         elif return_type == 'story':
 
           df = revrec.get('storygauge')
@@ -722,6 +731,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
           buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
           buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
+          # queens_note = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['queens_note']))
 
           df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
 
@@ -734,15 +744,19 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           df['queens_suggested_sell'] =  df['symbol'].map(sell_msg)
           df['queens_suggested_buy'] =  df['symbol'].map(buy_msg)
 
-          kors_dict = buy_button_dict_items()
+          kors_dict = sell_button_dict_items()
           df['kors'] = [kors_dict for _ in range(df.shape[0])]
-          # df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
-          # df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
-          for ttf in df.index.tolist():
-              kors = buy_button_dict_items(star=ttf)
-              df.at[ttf, 'kors'] = kors
-              df.at[ttf, 'remaining_budget'] = remaining_budget[ttf]
-              df.at[ttf, 'remaining_budget_borrow'] = remaining_budget_borrow[ttf]
+          
+          for symbol in df.index.tolist():
+            # sell_amt = df_wave_symbol.at[symbol, 'sell_alloc_deploy']
+            # symbol_rate = df_wave_symbol
+            
+            sell_qty = df_wave_symbol.at[symbol, 'sell_alloc_deploy']
+            kors = sell_button_dict_items(symbol, sell_qty)
+            df.at[symbol, 'kors'] = kors
+            df.at[symbol, 'remaining_budget'] = remaining_budget[symbol]
+            df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
+            # df.at[symbol, 'queens_note'] = queens_suggested_sell
 
 
           story_grid_num_cols = ['long_at_play',
@@ -757,7 +771,10 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           ]
           # # Totals Index
           for totalcols in story_grid_num_cols:
-            df.loc['Total', totalcols] = df[totalcols].sum()
+            if 'trinity' in totalcols:
+              df.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
+            else:
+               df.loc['Total', totalcols] = df[totalcols].sum()
           newIndex=['Total']+[ind for ind in df.index if ind!='Total']
           df=df.reindex(index=newIndex)
           
@@ -818,7 +835,7 @@ def get_account_info(client_user, username, prod):
     portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
 
 
-    msg = f'{mmoney} BuyingPower: {buying_power} Cash: {cash} Portfolio Value: {portfolio_value} daytrade: {daytrade_count}'
+    msg = f'{mmoney} BuyPower: {buying_power} $cash: {cash} Portfolio Value: {portfolio_value} daytrade: {daytrade_count}'
     return msg
 
   except Exception as e:

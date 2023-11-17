@@ -283,7 +283,7 @@ class Authenticate:
             st.session_state["username"],
         )
 
-    def logout(self, button_name: str, location: str = "main"):
+    def logout(self, button_name: str, location: str = "main", use_container_width: bool=True):
         """
         Creates a logout button.
 
@@ -298,14 +298,14 @@ class Authenticate:
             raise ValueError("Location must be one of 'main' or 'sidebar'")
         if location == "main":
             # with st.expander('Logout'):
-            if st.button(button_name):
+            if st.button(button_name,  use_container_width=use_container_width):
                 self.cookie_manager.delete(self.cookie_name)
                 st.session_state["logout"] = True
                 st.session_state["name"] = None
                 st.session_state["username"] = None
                 st.session_state["authentication_status"] = None
         elif location == "sidebar":
-            if st.sidebar.button(button_name):
+            if st.sidebar.button(button_name,  use_container_width=use_container_width):
                 self.cookie_manager.delete(self.cookie_name)
                 st.session_state["logout"] = True
                 st.session_state["name"] = None
