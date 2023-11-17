@@ -2304,33 +2304,33 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                     order_grid(KING, queen_orders, ip_address)
 
-                with charts_tab:
-                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                # with charts_tab:
+                #     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                #     refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
 
-                    cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                                prod=prod,
-                                api=f'{ip_address}/api/data/symbol_graph',
-                                x_axis='timestamp_est',
-                                y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
-                                theme_options={
-                                    'backgroundColor': k_colors.get('default_background_color'),
-                                    'main_title': '',   # '' for none
-                                    'x_axis_title': '',
-                                    'grid_color': default_text_color,
-                                    "showInLegend": True,
-                                    "showInLegendPerLine": True,
-                                },
-                                refresh_sec=refresh_sec,
-                                refresh_button=True,
-                                graph_height=300,
-                                symbols=['SPY', 'QQQ'],
-                                )
-                    # with cols[1]:
-                        # with st.expander("Wave Race :ocean:", True):
-                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
+                #     cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                #                 prod=prod,
+                #                 api=f'{ip_address}/api/data/symbol_graph',
+                #                 x_axis='timestamp_est',
+                #                 y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
+                #                 theme_options={
+                #                     'backgroundColor': k_colors.get('default_background_color'),
+                #                     'main_title': '',   # '' for none
+                #                     'x_axis_title': '',
+                #                     'grid_color': default_text_color,
+                #                     "showInLegend": True,
+                #                     "showInLegendPerLine": True,
+                #                 },
+                #                 refresh_sec=refresh_sec,
+                #                 refresh_button=True,
+                #                 graph_height=300,
+                #                 symbols=['SPY', 'QQQ'],
+                #                 )
+                #     # with cols[1]:
+                #         # with st.expander("Wave Race :ocean:", True):
+                #     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                #     refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                #     custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
 
                 with board_tab:
                     if admin:
@@ -2384,8 +2384,31 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 
                 
                 """ Bottom Page """
-
-                
+                cols = st.columns(2)
+                with cols[0]:
+                    cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                                prod=prod,
+                                api=f'{ip_address}/api/data/symbol_graph',
+                                x_axis='timestamp_est',
+                                y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
+                                theme_options={
+                                    'backgroundColor': k_colors.get('default_background_color'),
+                                    'main_title': '',   # '' for none
+                                    'x_axis_title': '',
+                                    'grid_color': default_text_color,
+                                    "showInLegend": True,
+                                    "showInLegendPerLine": True,
+                                },
+                                refresh_sec=refresh_sec,
+                                refresh_button=True,
+                                graph_height=250,
+                                symbols=['SPY', 'QQQ'],
+                                )
+                with cols[1]:
+                    # with st.expander("Wave Race :ocean:", True):
+                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                    custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=250)
 
         ##### END ####
     except Exception as e:
