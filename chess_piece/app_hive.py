@@ -537,7 +537,8 @@ def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=
     return True
 
 def sneak_peak_form():
-    if st.session_state['SneakQueen']:
+    # if st.session_state['SneakQueen']:
+    if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
         with st.form("Sneak Peak Access"):
             st.session_state["sneak_peak"] = True
             sneak_name = st.text_input("Your Name", key='sneak_name')
@@ -549,6 +550,11 @@ def sneak_peak_form():
                 if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
                     st.error("Incorrect Password")
                     st.stop()
+                
+                return True
+    
+    return False
+
 
 def display_for_unAuth_client_user(pct_queens_taken=89):
     # newuser = st.button("New User")
@@ -563,8 +569,6 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
             value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
         )
     with cols[2]:
-
-        cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
         sneak_peak_form()
 
                     

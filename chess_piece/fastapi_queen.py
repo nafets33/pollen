@@ -408,7 +408,7 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
 
 def app_Sellorder_request(username, prod, selected_row, default_value):
   try:
-
+    # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
     # print(default_value) selling qty
     number_shares = default_value
     QUEEN_KING = load_queen_App_pkl(username, prod)
@@ -609,10 +609,12 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
       return df
     
     try:
-        if prod:
+        if toggle_view_selection.lower() == 'king':
+          revrec = load_queen_App_pkl(username, prod).get('revrec')
+        elif prod:
           revrec = ReadPickleData(username + '/queen_revrec.pkl').get('revrec')
         else:
-           revrec = ReadPickleData(username + '/queen_revrec_sandbox.pkl').get('revrec')
+          revrec = ReadPickleData(username + '/queen_revrec_sandbox.pkl').get('revrec')
 
 
         # star_powers = QUEEN_KING['king_controls_queen'].get('star_power')
@@ -706,6 +708,8 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
 
           json_data = df.to_json(orient='records')
           return json_data
+        
+        
         elif return_type == 'story':
 
           df = revrec.get('storygauge')

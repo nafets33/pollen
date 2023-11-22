@@ -333,7 +333,7 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
                 return {'executed': False}
 
 
-            send_close_order = vars(send_close_order)['_raw']
+            send_close_order = vars(send_close_order['order'])['_raw']
                                 
             if limit_price:
                 print("seeking Honey?")
@@ -2701,7 +2701,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             conscience_update(QUEEN, root_name='app_info', thought_dict={'ticker_time_frame': run_order['ticker_time_frame'], 'msg': f'{run_order["symbol"]} open order and ticker not active Handle Order Manually'})                    
                         # else:
                         #     conscience_update(QUEEN, root_name='app_info', conscience=False)
-                        #     queen_orders__dict[runorder_client_order_id] = {'run_order': run_order, 'priceinfo': priceinfo}
+                        
+                        queen_orders__dict[runorder_client_order_id] = {'run_order': run_order, 'priceinfo': priceinfo}
                                     
                     except Exception as e:
                         print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())

@@ -720,6 +720,18 @@ def return_trading_model_mapping(QUEEN_KING, waveview):
     return return_main
 
 
+def return_queenking_board_symbols(QUEEN_KING, active=True):
+    all_workers = list(QUEEN_KING['chess_board'].keys())
+    return_qcp_tickers = []
+    for qcp in all_workers:
+        if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
+            continue
+        # Refresh ChessBoard and RevRec
+        qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
+        return_qcp_tickers = return_qcp_tickers + qcp_tickers
+    
+    return return_qcp_tickers
+
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False, fresh_board=True):
     # Create/Refresh RevRec from Chess Board
     # WORKERBEE: Add validation only 1 symbol per qcp 
@@ -866,7 +878,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             
             piece = QUEEN_KING['chess_board'].get(qcp)
             tickers = list(set(piece.get('tickers')))
-
+            # WORKERBEE query return orders is being called twice, once for ticker and once for star ...
             ticker_active_orders = {}
             for ticker in tickers:
                 active_orders = return_queen_orders__query(QUEEN, active_queen_order_states, ticker=ticker, star=False, ticker_time_frame=False)       # total budget calc
@@ -3633,7 +3645,16 @@ def ttf_grid_names(ttf_name, symbol=True):
     else:
        return ttf_name
 
-def buy_button_dict_items(queen_handles_trade=True, star='1Minute_1Day', wave_amo=1000,trade_using_limits=None,limit_price=False,take_profit=.03,sell_out=-.03,sell_trigbee_trigger=True,sell_trigbee_trigger_timeduration=5,close_order_today=False, reverse_buy=False, sell_at_vwap=False, star_list=ttf_grid_names_list()):
+def buy_button_dict_items(queen_handles_trade=True, 
+                          star='1Minute_1Day', 
+                          wave_amo=1000,
+                          trade_using_limits=None,
+                          limit_price=False,
+                          take_profit=.03,sell_out=-.03,
+                          sell_trigbee_trigger=True,
+                          sell_trigbee_trigger_timeduration=5,
+                          close_order_today=False, reverse_buy=False, 
+                          sell_at_vwap=False, star_list=ttf_grid_names_list()):
     column = {
                 'queen_handles_trade': queen_handles_trade,
                 'star':star,
