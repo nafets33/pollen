@@ -29,7 +29,7 @@ from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import sneak_peak_form, custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import main_root, initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
+from chess_piece.queen_hive import analyze_waves, initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 
 # componenets
 import streamlit_antd_components as sac
@@ -496,12 +496,8 @@ def pollenq(admin_pq):
         default_background_color = k_colors.get('default_background_color')
         
 
-
         with st.spinner("Verifying Your Scent, Hang Tight"):
             authenticator = signin_main(page="pollenq")
-            st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
-            print(st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
-            
             if st.session_state['authentication_status'] != True: ## None or False
                 
                 display_for_unAuth_client_user()
@@ -512,6 +508,7 @@ def pollenq(admin_pq):
             client_user = st.session_state["username"]
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
             prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"   
+            switch_page('waves')
             
             if authorized_user != True:
                 st.error("Your Account is Not Yet Authorized by a pollenq admin")
@@ -520,7 +517,9 @@ def pollenq(admin_pq):
                     pass
                 else:
                     st.stop()
-            
+
+        st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
+        print(st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
         
         log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
@@ -529,6 +528,9 @@ def pollenq(admin_pq):
             ####### Welcome to Pollen ##########
             # use API keys from user            
             prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
+            sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
+            sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
+            
             PB_QUEENBEE_Pickle = master_swarm_QUEENBEE(prod=prod)
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
             QUEENBEE['source'] = PB_QUEENBEE_Pickle
@@ -568,7 +570,7 @@ def pollenq(admin_pq):
                 admin_queens_active(KING.get('source'), KING)
             
             # PROD vs SANDBOX
-            sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
+            
             if sneak_peak:
                 pass
             else:
@@ -751,35 +753,6 @@ def pollenq(admin_pq):
             # cols = st.columns((1,3,5))
             # honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
             # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-
-
-
-#       #### SPINNER END ##### #       #### SPINNER END #####
-#       #### SPINNER END ##### #       #### SPINNER END #####
-   
-            
-            ### NEW SECTION ####
-            pollen_theme = pollen_themes(KING=KING)
-            theme_list = list(pollen_theme.keys())
-
-            if 'init_queen_request' in st.session_state:
-                QUEEN_KING['init_queen_request'] = {'timestamp_est': datetime.now(est)}
-                st.success("Hive Master Notified and You should receive contact soon")
-
-            def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
-                func_list = [i for i in func_list if st.session_state[i]]
-                if len(func_list) == 0:
-                    st.info("I would Suggest Checking our Your ChessBoard This Morning")
-                    tabs = False
-                else:
-                    tabs = st.tabs(func_list)
-                
-                return tabs, func_list
-
-        # if menu_id == 'TradingModels':
-        #     print("TRADINGMODELS")
-        #     trading_models()
-
         
         if authorized_user and 'queen' in sac_menu.lower(): 
 
@@ -789,7 +762,6 @@ def pollenq(admin_pq):
             
             if 'total_profits' not in st.session_state:
                 st.session_state['total_profits'] = False
-
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
         cols = st.columns((2,2,5))
@@ -848,7 +820,7 @@ def pollenq(admin_pq):
 
         st.stop()
     except Exception as e:
-        print(e, print_line_of_error(), return_timestamp_string())
+        print_line_of_error(e)
 
 if __name__ == '__main__':
     def createParser():

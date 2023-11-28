@@ -17,7 +17,6 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     stars, 
                                     init_logging, 
                                     split_today_vs_prior, 
-                                    story_view, 
                                     kings_order_rules, 
                                     buy_button_dict_items,
                                     order_vars__queen_order_items,
@@ -598,7 +597,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
 
 
 def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selection, return_type='waves'):
-    def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit']):
+    def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit', 'current_profit_deviation']):
       for col in df.columns:
         # print(type(df_storygauge.iloc[-1].get(col)))
         if type(df.iloc[-1].get(col)) == np.float64:
@@ -697,7 +696,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           'allocation_borrow_deploy',
           'remaining_budget',
           'remaining_budget_borrow',
-          # 'trinity_w_S',
+          'current_profit_deviation',
           ]
           # # Totals Index
           for totalcols in wave_grid_num_cols:
@@ -709,7 +708,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           json_data = df.to_json(orient='records')
           return json_data
         
-        
+
         elif return_type == 'story':
 
           df = revrec.get('storygauge')
@@ -727,14 +726,16 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           df_wave_symbol['sell_pct'] = round(df_wave_symbol['sell_pct'],1)
           df_wave_symbol['buy_pct'] = (df_wave_symbol['buy_alloc_deploy'] / df_wave_symbol['star_total_budget'] * 100).fillna(0)
           df_wave_symbol['buy_pct'] = round(df_wave_symbol['buy_pct'],1)
-          df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '{}% {:,.0f}$'.format(row['sell_pct'], row['sell_alloc_deploy']), axis=1)
-          df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '{}% {:,.0f}$'.format(row['buy_pct'], row['buy_alloc_deploy']), axis=1)
+          df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '%{} ${:,.0f}'.format(row['sell_pct'], row['sell_alloc_deploy']), axis=1)
+          df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '%{} ${:,.0f}'.format(row['buy_pct'], row['buy_alloc_deploy']), axis=1)
 
           remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
           remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
           sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
           buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
           buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
+          buy_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_alloc_deploy']))
+          sell_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_alloc_deploy']))
           # queens_note = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['queens_note']))
 
           df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x))
@@ -747,6 +748,8 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           df['color_row_text'] = default_text_color
           df['queens_suggested_sell'] =  df['symbol'].map(sell_msg)
           df['queens_suggested_buy'] =  df['symbol'].map(buy_msg)
+          # df['buy_alloc_deploy'] =  df['symbol'].map(buy_alloc_deploy)
+          # df['sell_alloc_deploy'] =  df['symbol'].map(sell_alloc_deploy)
 
           kors_dict = sell_button_dict_items()
           df['kors'] = [kors_dict for _ in range(df.shape[0])]
@@ -760,7 +763,8 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
             df.at[symbol, 'kors'] = kors
             df.at[symbol, 'remaining_budget'] = remaining_budget[symbol]
             df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
-            # df.at[symbol, 'queens_note'] = queens_suggested_sell
+            df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
+            df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
 
 
           story_grid_num_cols = ['long_at_play',
@@ -772,11 +776,17 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           'trinity_w_30',
           'trinity_w_54',
           'trinity_w_S',
+          'queens_suggested_buy',
+          'queens_suggested_sell',
           ]
           # # Totals Index
           for totalcols in story_grid_num_cols:
             if 'trinity' in totalcols:
               df.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
+            elif totalcols == 'queens_suggested_buy':
+               df.loc['Total', totalcols] = '${:,.0f}'.format(round(df["buy_alloc_deploy"].sum()))
+            elif totalcols == 'queens_suggested_sell':
+               df.loc['Total', totalcols] = '${:,.0f}'.format(round(df["sell_alloc_deploy"].sum()))
             else:
                df.loc['Total', totalcols] = df[totalcols].sum()
           newIndex=['Total']+[ind for ind in df.index if ind!='Total']

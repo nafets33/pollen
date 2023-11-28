@@ -117,7 +117,7 @@ def submit_order_validation(QUEEN, ticker, qty, side, portfolio, run_order_idx=F
                 return func_return(qty, queen_order_state='completed_alpaca', stop_order=True, log_msg=msg, log=True)
             else:
                 msg = ("Sell Order Validated")
-                return func_return(log_msg=msg, log=True)
+                return func_return()
 
     except Exception as e:
         print("order validaiton", e)
@@ -1666,7 +1666,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if order_price > 0:
                 current_profit_loss = (current_price - order_price) / order_price
                 QUEEN['queen_orders'].at[queen_order_idx, 'honey'] = current_profit_loss
-                QUEEN['queen_orders'].at[queen_order_idx, 'money'] = (current_price * float(queen_order['filled_qty'])) - ( float(queen_order['filled_avg_price']) * float(queen_order['filled_qty']) )
+                QUEEN['queen_orders'].at[queen_order_idx, 'money'] = (current_price * float(queen_order['qty_available'])) - ( float(queen_order['filled_avg_price']) * float(queen_order['qty_available']) )
                 QUEEN['queen_orders'].at[queen_order_idx, 'current_ask'] = current_ask
                 QUEEN['queen_orders'].at[queen_order_idx, 'current_bid'] = current_bid
                 if QUEEN['queen_orders'].at[queen_order_idx, 'honey'] > 0:
@@ -1879,7 +1879,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         if original_sell_qty != sell_qty:
                             msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, original_sell_qty, sell_qty)
                             print(msg)
-                            logging.warning(msg)
+                            logging.info(msg)
                 else:
                     print(ticker_time_frame, "missing in waveview")
                 

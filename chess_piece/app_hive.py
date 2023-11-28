@@ -1357,13 +1357,13 @@ def queen_order_flow(QUEEN, active_order_state_list, order_buttons=False):
     return ordertables__agrid
 
 
-def page_session_state__cleanUp(page):
-    if page == 'QueensConscience':
-        st.session_state['option_sel'] = False
-        st.session_state['sneak_peak'] = False
-        st.session_state['last_page'] = page
+# def page_session_state__cleanUp(page):
+#     if page == 'QueensConscience':
+#         st.session_state['option_sel'] = False
+#         st.session_state['sneak_peak'] = False
+#         st.session_state['last_page'] = page
     
-    return True
+#     return True
 
 
 
@@ -1435,7 +1435,11 @@ def test_api_keys(user_secrets, prod=False):
 def pollenq_button_source():
     return{
         'chess_board': False,
-
+        'waves_queen_qk_source_toggle': [
+        {'id': "waves_revrec", 'icon': "fas fa-chess-pawn", 'label':"RevRec Refresh"},
+        {'id': "waves_revrec_queen", 'icon':"fas fa-chess-queen",'label':"Queen RevRec"},
+        {'id': "waves_revrec_king", 'icon': "fas fa-chess-king", 'label':"King RevRec"},
+        ],
         'option_data_orders': [
         # {'id': 'main_queenmind', 'icon': "fas fa-chess-queen", 'label':""},
         {'id': "orders", 'icon':"fas fa-chess-king",'label':"on"},

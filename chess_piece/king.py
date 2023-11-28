@@ -359,10 +359,12 @@ def return_all_client_users__db(query="SELECT * FROM users"):
 
     return df
 
-def kingdom__grace_to_find_a_Queen():
+
+
+def kingdom__grace_to_find_a_Queen(prod=True):
     # create list for userdb
-    PB_KING_Pickle = master_swarm_KING(prod=True)
-    KING = ReadPickleData(PB_KING_Pickle)
+    PB_KING_Pickle = master_swarm_KING(prod)
+    KING = ReadPickleData(master_swarm_KING(prod))
     users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
     users_allowed_queen_email.append("stefanstapinski@gmail.com")
     users_allowed_queen_email.append("stefanstapinski@yahoo.com")
@@ -547,6 +549,11 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
             read_storybee=read_storybee, 
             read_pollenstory=read_pollenstory,
         )
+        if 'STORY_bee' in ticker_db.keys():
+            STORY_bee = ticker_db['STORY_bee']
+            tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
+            ticker_db['STORY_bee']['tickers_avail'] =  tickers_avail
+
 
         return ticker_db
     except Exception as e:

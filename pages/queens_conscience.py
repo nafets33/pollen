@@ -6,18 +6,11 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import pytz
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 from itertools import islice
 from PIL import Image
 from dotenv import load_dotenv
 import random
 
-# import streamlit as st
-# from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
-# from streamlit_extras.stoggle import stoggle
-# from streamlit_extras.switch_page_button import switch_page
-import time
 import os
 import sqlite3
 import time
@@ -47,9 +40,7 @@ pd.options.mode.chained_assignment = None
 scriptname = os.path.basename(__file__)
 queens_chess_piece = os.path.basename(__file__)
 
-
 page = 'QueensConscience'
-
 # if st.button("sw"):
 #     switch_page("QueensConscience#no-ones-flying")
 
@@ -491,7 +482,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     continue
                 for app_req in QUEEN_KING[req_bucket]:
                     if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
-                        print(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
+                        # print(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
                         # st.info(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
                         archive_bucket = f'{req_bucket}{"_requests"}'
                         QUEEN_KING[req_bucket].remove(app_req)
@@ -1379,42 +1370,42 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     PickleData(PB_App_Pickle, QUEEN_KING)
                 st.write(QUEEN_KING.get('update_order_rules'))
 
-        def model_wave_results(STORY_bee):
-            with st.expander('model results of queens court'):
-                try:
-                    return_results = {}
-                    dict_list_ttf = analyze_waves(STORY_bee, ticker_time_frame=False)['d_agg_view_return']        
+        # def model_wave_results(STORY_bee):
+        #     with st.expander('model results of queens court'):
+        #         try:
+        #             return_results = {}
+        #             dict_list_ttf = analyze_waves(STORY_bee, ticker_time_frame=False)['d_agg_view_return']        
 
-                    ticker_list = set([i.split("_")[0] for i in dict_list_ttf.keys()])
-                    for ticker_option in ticker_list:
+        #             ticker_list = set([i.split("_")[0] for i in dict_list_ttf.keys()])
+        #             for ticker_option in ticker_list:
                     
-                        for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
+        #                 for trigbee in dict_list_ttf[list(dict_list_ttf.keys())[0]]:
                             
-                            ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
-                            buys = [data[trigbee] for k, data in ticker_selection.items()]
-                            df_trigbee_waves = pd.concat(buys, axis=0)
-                            col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
-                            df_trigbee_waves = df_trigbee_waves[col_view]
-                            color = 'Green' if 'buy' in trigbee else 'Red'
+        #                     ticker_selection = {k: v for k, v in dict_list_ttf.items() if ticker_option in k}
+        #                     buys = [data[trigbee] for k, data in ticker_selection.items()]
+        #                     df_trigbee_waves = pd.concat(buys, axis=0)
+        #                     col_view = ['ticker_time_frame'] + [i for i in df_trigbee_waves.columns if i not in 'ticker_time_frame']
+        #                     df_trigbee_waves = df_trigbee_waves[col_view]
+        #                     color = 'Green' if 'buy' in trigbee else 'Red'
 
-                            t_winners = sum(df_trigbee_waves['winners_n'])
-                            t_losers = sum(df_trigbee_waves['losers_n'])
-                            total_waves = t_winners + t_losers
-                            win_pct = 100 * round(t_winners / total_waves, 2)
+        #                     t_winners = sum(df_trigbee_waves['winners_n'])
+        #                     t_losers = sum(df_trigbee_waves['losers_n'])
+        #                     total_waves = t_winners + t_losers
+        #                     win_pct = 100 * round(t_winners / total_waves, 2)
 
-                            t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
+        #                     t_maxprofits = sum(df_trigbee_waves['sum_maxprofit'])
 
-                            return_results[f'{ticker_option}{"_bee_"}{trigbee}'] = f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}{"  ~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}'
-                        # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
+        #                     return_results[f'{ticker_option}{"_bee_"}{trigbee}'] = f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}{"  ~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}'
+        #                 # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
 
-                    df = pd.DataFrame(return_results.items())
-                    mark_down_text(color='#C5B743', text=f'{"Trigger Bee Model Results "}')
-                    st.write(df) 
+        #             df = pd.DataFrame(return_results.items())
+        #             mark_down_text(color='#C5B743', text=f'{"Trigger Bee Model Results "}')
+        #             st.write(df) 
 
-                    return True
-                except Exception as e:
-                    print_line_of_error()
-                    print("model calc error")
+        #             return True
+        #         except Exception as e:
+        #             print_line_of_error()
+        #             print("model calc error")
         
         def backtesting():
             with st.expander("backtesting"):
@@ -1820,7 +1811,8 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 return {
                     # 'ticker_time_frame': {'initialWidth': 168,},
                         # 'symbol': create_ag_grid_column(headerName='symbol'),
-                        'ttf_grid_name': create_ag_grid_column(headerName='Star', initialWidth=133,),
+                        'ttf_grid_name': create_ag_grid_column(headerName='Star', initialWidth=150, textWrap=True),
+                        # 'ttf_grid_name': {'headerName':'Star','initialWidth':123, 'textWrap':True},
                         'current_profit': create_ag_grid_column(headerName='Curent Profit', initialWidth=89, type=["customNumberFormat", "numericColumn", "numberColumnFilter"], cellRenderer='agAnimateShowChangeCellRenderer', enableCellChangeFlash=True,),
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
@@ -2155,7 +2147,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         ########################################################
 
     try:
-
+        # ipdb.set_trace()
         pq_buttons = pollenq_button_source()
 
 
@@ -2278,6 +2270,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                             df_i = len(db.get(ticker_option))
                             for n in  range(df_i):
                                 st.write(db.get(ticker_option)[n])
+                    st.stop()
 
                 with story_tab:
 
@@ -2285,7 +2278,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     # ipdb.set_trace()
                     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                     refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    
+                    refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
                     story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                
                 with trading_tab:
@@ -2377,7 +2370,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         with st.expander("Trading Models"):
                             update_trading_models(QUEEN_KING)                             
                         
-                        model_wave_results(STORY_bee)
+                        # model_wave_results(STORY_bee)
 
 
 
@@ -2415,7 +2408,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
         ##### END ####
     except Exception as e:
-        print('queensconscience', e, print_line_of_error(), return_timestamp_string())
+        print('queensconscience', print_line_of_error(e))
 
 if __name__ == '__main__':
     queens_conscience(None, None, None, None, None, None, None)

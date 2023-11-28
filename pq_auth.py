@@ -325,7 +325,7 @@ def signin_main(page):
                 # Returning Customer
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
                     if 'instance_setup' in st.session_state and st.session_state['instance_setup']:
-                        return True # no need to setup again right?
+                        return authenticator # no need to setup again right?
                     define_authorized_user()
                     return authenticator
                 else:    

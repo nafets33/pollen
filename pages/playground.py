@@ -19,16 +19,20 @@ import numpy as np
 from chat_bot import ozz_bot
 import os
 # from st_on_hover_tabs import on_hover_tabs
+from streamlit_extras.switch_page_button import switch_page
 
 
 set_streamlit_page_config_once()
 
 
+with st.spinner("Verifying Your Scent, Hang Tight"):
+    authenticator = signin_main(page="playground")
+    if st.session_state["authorized_user"] != True:
+        switch_page('pollen')
+
 def PlayGround():
     try:
         # st.write("Me")
-        with st.spinner("Verifying Your Scent, Hang Tight"):
-            signin_main(page="playground")
 
         # pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
         # if st.button("test write new file"):
