@@ -1,8 +1,10 @@
 
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
-from chess_piece.app_hive import set_streamlit_page_config_once
+from chess_piece.app_hive import set_streamlit_page_config_once, standard_AGgrid
+
 set_streamlit_page_config_once()
+
 if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
     switch_page('pollen')
 
@@ -24,7 +26,7 @@ import random
 import os
 import time
 
-from chess_piece.king import master_swarm_KING, ReadPickleData, kingdom__global_vars, return_QUEENs__symbols_data
+from chess_piece.king import master_swarm_KING, ReadPickleData, kingdom__global_vars, return_QUEENs__symbols_data, print_line_of_error
 from chess_piece.queen_hive import model_wave_results, init_queenbee, hive_master_root, refresh_chess_board__revrec, refresh_account_info
 from chess_piece.app_hive import show_waves, pollenq_button_source
 from custom_button import cust_Button
@@ -88,32 +90,49 @@ else:
     # acct_info = refresh_account_info(api=api)['info_converted']
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
 
-# ipdb.set_trace()
-# wave_analysis = revrec.get('df_storyview')
-# wave_analysis['wave_count'] = wave_analysis['winners'] + wave_analysis['losers']
+def move_columns_to_front(dataframe, column_list):
 
-# wave_analysis['sum_maxprofit'] = wave_analysis['sum_maxprofit'] / wave_analysis['wave_count']
-# st.write(wave_analysis)
+    # Ensure that all columns in column_list exist in the DataFrame
+    invalid_columns = [col for col in column_list if col not in dataframe.columns]
+    if invalid_columns:
+        raise ValueError(f"Columns not found in DataFrame: {', '.join(invalid_columns)}")
+
+    # Reorder columns
+    new_columns_order = column_list + [col for col in dataframe.columns if col not in column_list]
+    return dataframe[new_columns_order]
+
 tabs = st.tabs([key for key in revrec.keys()])
 tab = 0
+wave_view_input_cols = ['ticker_time_frame', 'star_avg_time_to_max_profit', 'length', 'current_profit', 'time_to_max_profit', 'maxprofit', 'maxprofit_shot', 'allocation', 'allocation_trinity', 'allocation_trinity_amt']
 for revrec_key in revrec.keys():
     with tabs[tab]:
         st.write(revrec_key)
-        st.write(revrec.get(revrec_key))
+        df = revrec.get(revrec_key)
+        if revrec_key == 'waveview':
+            df = move_columns_to_front(df, wave_view_input_cols)
+            standard_AGgrid(df)
+        elif isinstance(df, pd.DataFrame):
+            st.dataframe(df)
+        else:
+            st.write(df)
     
     tab+=1
 
-if st.toggle("wave stories", True):
-    with st.expander("wave stories"):
-        ticker_option = st.selectbox("ticker", options=STORY_bee.get('tickers_avail'))
-        frame_option = st.selectbox("frame", options=KING['star_times'])
-        show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
+if st.toggle("wave stories", False):
+    try:
+        with st.expander("wave stories"):
+            tic_avial = list(set([i.split("_")[0] for (i, v) in STORY_bee.items()]))
+            ticker_option = st.selectbox("ticker", options=tic_avial)
+            frame_option = st.selectbox("frame", options=KING['star_times'])
+            show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
 
-        ticker_time_frame = f'{ticker_option}_{frame_option}'
+            ticker_time_frame = f'{ticker_option}_{frame_option}'
 
-        wave_series = STORY_bee[ticker_time_frame]["waves"]["buy_cross-0"]
+            wave_series = STORY_bee[ticker_time_frame]["waves"]["buy_cross-0"]
 
-        st.dataframe(wave_series)
+            st.dataframe(wave_series)
+    except Exception as e:
+        print_line_of_error(e)
 
 # for key, value in revrec.items():
 #     st.write(key)

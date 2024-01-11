@@ -397,7 +397,7 @@ def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
     with cols[0]:
         QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed')
     with cols[1]:
-        QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+        QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model')
 
 
     with st.form('add new qcp'):
@@ -1028,10 +1028,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 waveview_map = return_trading_model_mapping(QUEEN_KING, waveview)
                 waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
             
-                alloc_weight = .3
-                alloc_powerlen_weight = .5
-                alloc_currentprofit_weight = 1.5
-                revrec_weight_sum = alloc_weight + alloc_powerlen_weight + alloc_currentprofit_weight
+                alloc_weight = .5
+                # alloc_powerlen_weight = .5
+                alloc_currentprofit_weight = 1
+                revrec_weight_sum = alloc_weight + alloc_currentprofit_weight # + alloc_powerlen_weight 
 
                 macd_weight = .8
                 vwap_weight = .5
@@ -1042,6 +1042,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 # power on current deviation
                 waveview['tmp_deivation'] = waveview['time_to_max_profit'] - waveview['star_avg_time_to_max_profit']        
                 # where we are you, tmp - len deviation
+                # ipdb.set_trace()
                 waveview['tmp_length_deivation'] = waveview['time_to_max_profit'] - waveview['length']
                 # len - star deviation
                 waveview['len__starmark_tmp_deviation'] = waveview['length'] - waveview['star_avg_time_to_max_profit']
@@ -1060,52 +1061,55 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 waveview['allocation'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
                 waveview['allocation_borrow'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_borrow_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
-                # Allocation PowerLength Time
-                waveview['alloc_powerlen'] = 1 - (waveview['allocation_power_powerlen'] / waveview['star_total_budget'])
-                waveview['alloc_powerlen_borrow'] = 1 - (waveview['allocation_power_powerlen'] / waveview['star_borrow_budget'])
+                # Allocation PowerLength Time ## NOT SURE WHAT I"M DOING HERE
+                # waveview['alloc_powerlen'] = 1 - (waveview['allocation_power_powerlen'] / waveview['star_total_budget'])
+                # waveview['alloc_powerlen_borrow'] = 1 - (waveview['allocation_power_powerlen'] / waveview['star_borrow_budget'])
 
                 # Allocation Profit Deviation
                 # current profit deviation
-                waveview['current_profit_deviation'] = waveview['current_profit'] - waveview['maxprofit']
+                waveview['current_profit_deviation'] = (waveview['current_profit'] - waveview['maxprofit']) / waveview['maxprofit']
                 waveview['current_profit_deviation_pct'] = np.where(waveview['current_profit_deviation'] < -1, 0, waveview['current_profit_deviation'])
                 waveview['maxprofit_shot'] = waveview.index.map(dict(zip(df_storyview.index, df_storyview['ttf_median_maxprofit_median']))) # join from wave analysis
                 waveview['maxprofit_shot_weight'] = np.where(waveview['current_profit_deviation_pct'] < 0, 1 - (waveview['maxprofit'] / waveview['maxprofit_shot']),0)
                 waveview['maxprofit_shot_weight_score'] = np.where(waveview['maxprofit_shot_weight'] > 0, (waveview['maxprofit_shot_weight'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-                waveview['maxprofit_deviation__shotweight__score'] = (sum(waveview['current_profit_deviation_pct']) + sum(waveview['maxprofit_shot_weight_score']) ) / 2
+                waveview['maxprofit_deviation__shotweight__score'] = ((waveview['current_profit_deviation_pct']) + (waveview['maxprofit_shot_weight_score']) ) / 2
 
                 # OG allocations
                 waveview['allocation_pct'] = waveview['allocation'] / waveview['star_total_budget']
-                waveview['alloc_powerlen_pct'] = np.where(waveview['alloc_powerlen'] >= 0, 0, waveview['alloc_powerlen'])
+                # waveview['alloc_powerlen_pct'] = np.where(waveview['alloc_powerlen'] >= 0, 0, waveview['alloc_powerlen'])
                 waveview['alloc_currentprofit_pct'] = waveview['maxprofit_deviation__shotweight__score']
+                
                 # weights
-                waveview['allocation_pct_w'] = (waveview['allocation_pct'] * alloc_weight) / revrec_weight_sum
-                waveview['alloc_powerlen_pct_w'] = (waveview['alloc_powerlen_pct'] * alloc_powerlen_weight) / revrec_weight_sum 
-                waveview['alloc_currentprofit_pct_w'] = (waveview['alloc_currentprofit_pct'] * alloc_currentprofit_weight) / revrec_weight_sum
+                waveview['allocation_pct_w'] = (waveview['allocation_pct'] * alloc_weight)
+                # waveview['alloc_powerlen_pct_w'] = (waveview['alloc_powerlen_pct'] * alloc_powerlen_weight) / revrec_weight_sum 
+                waveview['alloc_currentprofit_pct_w'] = (waveview['alloc_currentprofit_pct'] * alloc_currentprofit_weight)
 
-                waveview['allocation_trinity'] = waveview['allocation_pct_w'] + waveview['alloc_powerlen_pct_w'] + waveview['alloc_currentprofit_pct_w'] 
+
+                waveview['allocation_trinity'] = (waveview['allocation_pct_w']  + waveview['alloc_currentprofit_pct_w']) / 2 # waveview['alloc_powerlen_pct_w']
+                waveview['allocation_trinity_amt'] = waveview['allocation_trinity'] * waveview['star_total_budget']
+
                 waveview['allocation_trinity_deploy'] = np.where(waveview['allocation_trinity'] < 0, waveview['star_at_play'] - (waveview['allocation_trinity'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
                 waveview['allocation_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
                 waveview['allocation_borrow_deploy'] = np.where(waveview['allocation_borrow'] < 0, waveview['star_at_play_borrow'] - (waveview['allocation_borrow'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
+                # Final Allocation Weights
 
-                # trinity, macd, vwap, rsi allocation weights
+                # # trinity, macd, vwap, rsi allocation weights
 
+                # waveview['macd_tier_gain'] = 1 - (waveview['current_macd_tier'] / waveview['mxp_macd_tier'])
+                # waveview['vwap_tier_gain'] = 1 - (waveview['end_tier_vwap'] / waveview['mxp_vwap_tier'])
+                # waveview['rsi_tier_gain'] = 1 - (waveview['end_tier_rsi_ema'] / waveview['mxp_rsi_ema_tier'])
+                # waveview['macd_tier_gain_pct'] = np.where(waveview['macd_tier_gain'] < 0, waveview['macd_tier_gain'], waveview['macd_tier_gain'] * -1)
+                # waveview['vwap_tier_gain_pct'] = np.where(waveview['vwap_tier_gain'] < 0, waveview['vwap_tier_gain'], waveview['vwap_tier_gain'] * -1)
+                # waveview['rsi_tier_gain_pct'] = np.where(waveview['rsi_tier_gain'] < 0, waveview['rsi_tier_gain'], waveview['macd_tier_gain'] * -1)
 
-                waveview['macd_tier_gain'] = 1 - (waveview['current_macd_tier'] / waveview['mxp_macd_tier'])
-                waveview['macd_tier_gain_pct'] = np.where(waveview['macd_tier_gain'] < 0, waveview['macd_tier_gain'], waveview['macd_tier_gain'] * -1)
-                waveview['vwap_tier_gain'] = 1 - (waveview['current_vwap_tier'] / waveview['mxp_vwap_tier'])
-                waveview['vwap_tier_gain_pct'] = np.where(waveview['vwap_tier_gain'] < 0, waveview['vwap_tier_gain'], waveview['vwap_tier_gain'] * -1)
-                waveview['rsi_tier_gain'] = 1 - (waveview['current_rsi_tier'] / waveview['mxp_rsi_tier'])
-                waveview['rsi_tier_gain_pct'] = np.where(waveview['rsi_tier_gain'] < 0, waveview['rsi_tier_gain'], waveview['macd_tier_gain'] * -1)
+                # # 
+                # waveview['macd_tier_gain_pct_w'] = (waveview['macd_tier_gain_pct_w'] * macd_weight) / wavestat_weight_sum
+                # waveview['vwap_tier_gain_pct_w'] = (waveview['vwap_tier_gain_pct_w'] * vwap_weight) / wavestat_weight_sum
+                # waveview['rsi_tier_gain_pct_w'] = (waveview['rsi_tier_gain_pct_w'] * rsi_weight) / wavestat_weight_sum
 
-                waveview['macd_tier_gain_pct_w'] = (waveview['macd_tier_gain_pct_w'] * macd_weight) / wavestat_weight_sum
-
-                waveview['vwap_tier_gain_pct_w'] = (waveview['vwap_tier_gain_pct_w'] * vwap_weight) / wavestat_weight_sum
-
-                waveview['rsi_tier_gain_pct_w'] = (waveview['rsi_tier_gain_pct_w'] * rsi_weight) / wavestat_weight_sum
-
-                waveview['allocation_wavestat'] = (waveview['rsi_tier_gain_pct_w'] * rsi_weight) / wavestat_weight_sum
+                # waveview['allocation_wavestat'] = (waveview['rsi_tier_gain_pct_w'] * rsi_weight) / wavestat_weight_sum
 
 
             except Exception as e:
@@ -1115,10 +1119,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
 
         waveview = revrec_allocation(waveview, df_storyview, wave_analysis_down,  current_wave)
-        
-        # rules, main budget stays on len vs starmark. add budget when past mark? if in wave deviation. 
-        # If current_tmp_deviation > tmp_multiplier, then 0. 
-        # if l == tmp and > starmark, push out starmark to + 1?
         
         if save_queenking:
             PickleData(QUEEN_KING.get('source'), QUEEN_KING)
@@ -1660,6 +1660,10 @@ def pollen_story(pollen_nectar):
 
         # set wave num
         df_waves = df[df["macd_cross"].isin(trigbees)].copy().reset_index()
+
+        df_check = df[~df["macd_cross"].isin(trigbees)].copy().reset_index()
+        if len(df_check) <= 0:
+            print("wtf hive ", df_check)
         df_waves["wave_n"] = df_waves.index
         # df_waves["length"] = df_waves["wave_n"].apply(
         #     lambda x: macd_cross_WaveLength(df_waves, x)
@@ -1678,22 +1682,22 @@ def pollen_story(pollen_nectar):
         )
 
         index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_n"]))
-        df["wave_n"] = df["story_index"].map(index_wave_series).fillna("0")
+        df["wave_n"] = df["story_index"].map(index_wave_series).fillna("000")
 
         index_wave_series = dict(zip(df_waves["story_index"], df_waves["length"]))
-        df["length"] = df["story_index"].map(index_wave_series).fillna("0")
+        df["length"] = df["story_index"].map(index_wave_series).fillna("000")
 
         index_wave_series = dict(zip(df_waves["story_index"], df_waves["wave_blocktime"]))
-        df["wave_blocktime"] = df["story_index"].map(index_wave_series).fillna("0")
+        df["wave_blocktime"] = df["story_index"].map(index_wave_series).fillna("000")
 
         index_wave_series = dict(zip(df_waves["story_index"], df_waves["profits"]))
-        df["profits"] = df["story_index"].map(index_wave_series).fillna("0")
+        df["profits"] = df["story_index"].map(index_wave_series).fillna("000")
 
         # index_wave_series = dict(zip(df_waves['story_index'], df_waves['story_index_in_profit']))
         # df['story_index_in_profit'] = df['story_index'].map(index_wave_series).fillna("0")
 
         index_wave_series = dict(zip(df_waves["story_index"], df_waves["active_wave"]))
-        df["active_wave"] = df["story_index"].map(index_wave_series).fillna("0")
+        df["active_wave"] = df["story_index"].map(index_wave_series).fillna("000")
 
         df_waves = df_waves[
             [
@@ -5185,9 +5189,9 @@ def analyze_waves(STORY_bee, ticker_time_frame=False, top_waves=8):
                         "maxprofit": "sum",
                         "length": "mean",
                         "time_to_max_profit": "mean",
-                        "mxp_macd_tier": 'mean',
-                        "mxp_vwap_tier": 'mean',
-                        "mxp_rsi_tier": 'mean',
+                        # "mxp_macd_tier": 'mean',
+                        # "mxp_vwap_tier": 'mean',
+                        # "mxp_rsi_tier": 'mean',
                         
                     }
                 )
@@ -5469,7 +5473,6 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
             wave_analysis = []
             wave_analysis_df = pd.DataFrame()
             tickers = []
-            # ipdb.set_trace()
             for star_n in range(len(storyviews.get(df_agg))):
                 df = storyviews.get(df_agg).iloc[star_n][trigbee]
                 df['star_avg_length'] = sum(df['avg_length']) / len(df)
@@ -5517,8 +5520,8 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
                 queen_return = {"star": ttframe}
                 ttf_waves = {}
 
-                story = {k: v for (k, v) in conscience["story"].items()} # if k in storyview}
-                p_story = {k: v for (k, v) in conscience["story"]["current_mind"].items() } # if k in storyview}
+                story = {k: v for (k, v) in conscience["story"].items() if k in storyview}
+                p_story = {k: v for (k, v) in conscience["story"]["current_mind"].items() if k in storyview}
 
                 last_buy_wave = [v for (k, v) in conscience["waves"]["buy_cross-0"].items() if str((len(conscience["waves"]["buy_cross-0"].keys()) - 1)) == str(k)][0]
                 last_sell_wave = [v for (k, v) in conscience["waves"]["sell_cross-0"].items() if str((len(conscience["waves"]["sell_cross-0"].keys()) - 1)) == str(k)][0]

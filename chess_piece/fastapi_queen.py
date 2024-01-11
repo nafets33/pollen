@@ -565,16 +565,14 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
       df['sell_reason'] = df['sell_reason'].astype(str)
       df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
-      
-      
-      # df.at[len(df)-1, 'color_row'] = '#24A92A'
-      # print('tview', toggle_view_selection)
-
-      
+  
       df = filter_gridby_timeFrame_view(df, toggle_view_selection)
       
-      qos_view=['running', 'running_close', 'running_open']
-      df = df[df['queen_order_state'].isin(qos_view)]
+      if toggle_view_selection == 'today':
+         df = split_today_vs_prior(df).get('df_today')
+      else:
+        qos_view=['running', 'running_close', 'running_open']
+        df = df[df['queen_order_state'].isin(qos_view)]
 
       # sort
       sort_colname = 'cost_basis_current'

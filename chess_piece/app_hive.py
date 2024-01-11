@@ -568,8 +568,8 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
         progress_bar(
             value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
         )
-    with cols[2]:
-        sneak_peak_form()
+    # with cols[2]:
+    sneak_peak_form()
 
                     
 

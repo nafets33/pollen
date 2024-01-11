@@ -2810,7 +2810,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             now_time = datetime.now(est)
 
             original_state = QUEEN['heartbeat']['available_tickers']
-            
+
             QUEEN['heartbeat']['available_tickers'] = [i for (i, v) in STORY_bee.items() if (now_time - v['story']['time_state']).total_seconds() < story_heartrate]
             ticker_set = set([i.split("_")[0] for i in QUEEN['heartbeat']['available_tickers']])
 
@@ -2823,34 +2823,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     print('clean heart')
                     QUEEN['heartbeat'].pop(old_item)
 
-            # new_active = QUEEN['heartbeat']['available_tickers']
-
-            # # if 'story_lastseen' not in 
-            # # QUEEN['heartbeat']['story_lastseen'].update({i: datetime.now(est) for i in QUEEN['heartbeat']['available_tickers'].keys()})
-            # if original_state != new_active:
-            #     print('added dropped / updated tickers')
-            #     added_list = []
-            #     for ttframe in new_active:
-            #         if ttframe not in original_state:
-            #             added_list.append({ttframe: return_timestamp_string()})
-            #             # print("dropped", ttframe, return_timestamp_string())
-            #     if len(added_list) > 0:
-            #         print("Added ", added_list)
-                
-            #     dropped_list = []
-            #     for ttframe in original_state:
-            #         if ttframe not in new_active:
-            #             dropped_list.append({ttframe: return_timestamp_string()})
-            #             # print("dropped", ttframe, return_timestamp_string())
-            #     if len(dropped_list) > 0:
-            #         print("dropped ", dropped_list)
-
-                # QUEEN['heartbeat']['added_list'] = added_list
-                # QUEEN['heartbeat']['dropped_list'] = dropped_list
-
             return QUEEN
         except Exception as e:
-            print("ERROR", print_line_of_error())
+            print_line_of_error(e)
     
     
     def hanlde_missing_broker_orders_with_queen_orders(BROKER, QUEEN):
@@ -2960,7 +2935,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         Always Bee Better
         """, timestamp_string()
         )
-
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel='warning')
 
         KING = ReadPickleData(master_swarm_KING(prod=prod))

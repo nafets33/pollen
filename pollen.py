@@ -20,7 +20,7 @@ import argparse
 
 #pages
 from pages.playground import PlayGround
-from pages.queens_conscience import queens_conscience
+from pages.conscience import queens_conscience
 # from pages.account import account
 from pages.pollen_engine import pollen_engine
 
@@ -508,7 +508,6 @@ def pollenq(admin_pq):
             client_user = st.session_state["username"]
             prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
             prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"   
-            switch_page('waves')
             
             if authorized_user != True:
                 st.error("Your Account is Not Yet Authorized by a pollenq admin")

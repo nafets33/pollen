@@ -1791,7 +1791,7 @@ def queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         },
                         ],
                 grid_height='300px',
-                toggle_views = ['buys', 'sells', 'close today'] + ttf_grid_names_list(),
+                toggle_views = ['buys', 'sells', 'today', 'close today'] + ttf_grid_names_list(),
             )
 
         

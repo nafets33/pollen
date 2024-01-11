@@ -523,7 +523,7 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
     return {"queens_master_tickers": queens_master_tickers}
 
 
-def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
+def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
     def return_active_orders(QUEEN):
         df = QUEEN["queen_orders"]
         df["index"] = df.index
@@ -531,30 +531,25 @@ def return_QUEENs__symbols_data(QUEEN, QUEEN_KING, symbols=False, swarmQueen=Fal
 
         return df_active
     try:
-        # symbol ticker data # 1 all current pieces on chess board && all current running orders
-        current_active_orders = return_active_orders(QUEEN=QUEEN)
-        active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
-        chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
-
-        if symbols:
-            symbols = symbols + active_order_symbols + chessboard_symbols
-        else:
-            symbols = active_order_symbols + chessboard_symbols
-        
         if swarmQueen:
             symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
+        else:
+            # symbol ticker data # 1 all current pieces on chess board && all current running orders
+            current_active_orders = return_active_orders(QUEEN=QUEEN)
+            active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
+            chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
+
+            if symbols:
+                symbols = symbols + active_order_symbols + chessboard_symbols
+            else:
+                symbols = active_order_symbols + chessboard_symbols
+        
 
         ticker_db = read_QUEENs__pollenstory(
             symbols=symbols,
             read_storybee=read_storybee, 
             read_pollenstory=read_pollenstory,
         )
-        if 'STORY_bee' in ticker_db.keys():
-            STORY_bee = ticker_db['STORY_bee']
-            tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
-            ticker_db['STORY_bee']['tickers_avail'] =  tickers_avail
-
-
         return ticker_db
     except Exception as e:
         print_line_of_error('king symbols data')
