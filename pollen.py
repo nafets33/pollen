@@ -372,6 +372,19 @@ def pollenq(admin_pq):
             return True
 
 
+        def run_pq_fastapi_server():
+
+            script_path = os.path.join(hive_master_root(), 'pq_fastapi_server.py')
+
+            try:
+                # Use sys.executable to get the path to the Python interpreter
+                python_executable = sys.executable
+                subprocess.run([python_executable, script_path, '-i'])
+            except FileNotFoundError:
+                print(f"Error: Python interpreter not found. Make sure Python is installed.")
+            except Exception as e:
+                print(f"Error: {e}")
+
         # print("MENU Buttons")
         def menu_buttons(cols, QUEENsHeart):
             # sb = st.sidebar
@@ -639,13 +652,7 @@ def pollenq(admin_pq):
                 if check_fastapi_status(ip_address) == False:
                     st.error("api")
                     if st.button('API'):
-                        # Define the path to your Python script
-                        script_path = os.path.join(hive_master_root(), 'pq_fastapi_server.py') # path/to/your/script.py'
-                        # Run the Python script using subprocess
-                        try:
-                            subprocess.run(['python', script_path, '-i',])
-                        except subprocess.CalledProcessError as e:
-                            print(f"Error: {e}")
+                        run_pq_fastapi_server()
 
             trading_days = hive_dates(api=api)['trading_days']
             mkhrs = return_market_hours(trading_days=trading_days)
@@ -795,16 +802,25 @@ def pollenq(admin_pq):
             queen_logs = st.toggle("Queens Mind")
             st.session_state['Queens Mind'] = queen_logs
 
-            if st.session_state['Queens Mind']:
-                st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
-                st.image(queenbee_png, width=33)
-                logs = os.listdir(log_dir)
-                logs = [i for i in logs if i.endswith(".log")]
-                log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+        if st.session_state['Queens Mind']:
+            st.text_input("Ask Ozz", value="", help="Ozz is your AI trading bot that can help you with entire portfolio ask Any Question, what should I buy? what should I sell? can you reallocate to more cash")
+            st.image(queenbee_png, width=33)
+            logs = os.listdir(log_dir)
+            logs = [i for i in logs if i.endswith(".log")]
+            log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
+            log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
+            log_file = os.path.join(log_dir, log_file) # single until allow for multiple
+            queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': 4})
+            def return_log_file():
+                with open(log_file, 'r') as f:
+                    content = f.readlines()
 
+                df = pd.DataFrame(content).reset_index()
+                df = df.sort_index(ascending=False)
+                df = df.rename(columns={'index': 'idx', 0: 'message'})
+                df = df.head(500)
+                # st.dataframe(df, width=800)
+                return df
 
         st.session_state['refresh_times'] += 1
         page_line_seperator('5')

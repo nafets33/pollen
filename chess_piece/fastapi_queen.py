@@ -405,14 +405,20 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
      logging.error(("fastapi", e))
 
 
-def app_Sellorder_request(username, prod, selected_row, default_value):
+def app_Sellorder_request(client_user, username, prod, selected_row, default_value):
   try:
     # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
-    # print(default_value) selling qty
     number_shares = default_value
+
+    ORDERS = init_queenbee(client_user=client_user, prod=prod, orders=True).get('ORDERS')
+    if type(ORDERS) != dict:
+      print("NO ORDERS")
+      return pd.DataFrame().to_json()
+    queen_order = ORDERS['queen_orders']
+    # QUEEN = load_queen_pkl(username, prod)
+    # queen_order = QUEEN['queen_orders']
+    
     QUEEN_KING = load_queen_App_pkl(username, prod)
-    QUEEN = load_queen_pkl(username, prod)
-    queen_order = QUEEN['queen_orders']
     
     # if client id not on grid return then find client id that has the number of shares
     client_order_id = selected_row.get('client_order_id')
@@ -686,21 +692,21 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           df = update_col_number_format(df)
           df = filter_gridby_timeFrame_view(df, toggle_view_selection, grid='wave')
 
-          wave_grid_num_cols = ['current_profit',
-          'maxprofit',
-          'star_at_play',
-          'star_at_play_borrow',
-          'allocation_deploy',
-          'allocation_borrow_deploy',
-          'remaining_budget',
-          'remaining_budget_borrow',
-          'current_profit_deviation',
-          ]
-          # # Totals Index
-          for totalcols in wave_grid_num_cols:
-            df.loc['Total', totalcols] = df[totalcols].sum()
-          newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-          df=df.reindex(index=newIndex)
+          # wave_grid_num_cols = ['current_profit',
+          # 'maxprofit',
+          # 'star_at_play',
+          # 'star_at_play_borrow',
+          # 'allocation_deploy',
+          # 'allocation_borrow_deploy',
+          # 'remaining_budget',
+          # 'remaining_budget_borrow',
+          # 'current_profit_deviation',
+          # ]
+          # # # Totals Index
+          # for totalcols in wave_grid_num_cols:
+          #   df.loc['Total', totalcols] = df[totalcols].sum()
+          # newIndex=['Total']+[ind for ind in df.index if ind!='Total']
+          # df=df.reindex(index=newIndex)
 
 
           json_data = df.to_json(orient='records')
@@ -730,7 +736,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
           remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
           sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
-          buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
           buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
           buy_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_alloc_deploy']))
           sell_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_alloc_deploy']))

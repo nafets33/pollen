@@ -622,7 +622,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return active_trigs
 
 
-    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False):
+    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False):
         s_ = datetime.now(est)
         """answer all questions for order to be placed, compare against the rules"""
         # measure len of trigbee how long has trigger been there?
@@ -693,33 +693,33 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 return {ranger: 0 for ranger in power_rangers_universe}
 
         
-        def kings_blessing_checks(king_order_rules, trig_action_num, time_delta, macd_tier, trigbee, crypto):
-
-            if "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
-                if macd_tier in king_order_rules.get("ignore_trigbee_in_macdstory_tier"):
-                    # print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
-                    return False #(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
-            elif trig_action_num > 0:
-                if time_delta < timedelta(minutes=king_order_rules['doubledown_timeduration']):
-                    # print("Trig In Action time delta not Met for Double Down")
-                    return ("Trig In Action time delta not Met for Double Down")
-            elif 'sell' in trigbee: # == 'sell_cross-0':
-                if crypto:
-                    return (f'crypto not allowed')
-            else:
-                return False
-
-        def blessing_check(acct_info, wave_amo, QUEEN_KING):
+        def kings_blessing_checks(ticker_time_frame, acct_info, wave_amo, king_order_rules, trig_action_num, time_delta, macd_tier, trigbee, crypto):
+            
+            # ACCOUNT amo greater then available account
             if wave_amo > acct_info.get('daytrading_buying_power'):
                 print("day trade buying power exceeded")
                 wave_amo = acct_info.get('daytrading_buying_power') - wave_amo
                 if wave_amo <= 0:
-                    print("buying power is depleted")
+                    print(f"{ticker_time_frame} budget buying power is depleted for daytrading_buying_power")
                     conscience_update(QUEEN, thought_dict={'msg': 'buying power is depleted'})
-
-                    return False
-
-            return True
+                    return True
+            # Ignore Tiering, this looks like dup WORKERBEE
+            elif "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
+                if macd_tier in king_order_rules.get("ignore_trigbee_in_macdstory_tier"):
+                    # print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
+                    return True #(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
+            elif trig_action_num > 0: ## already happens in Water Fall
+                if time_delta < timedelta(minutes=king_order_rules['doubledown_timeduration']):
+                    # print("Trig In Action time delta not Met for Double Down")
+                    logging.info(f"{ticker_time_frame} TRIG In Action, DoubleDown Time Delta Not Met wave amo {wave_amo}")
+                    print("Trig In Action time delta not Met for Double Down")
+                    return True
+            elif 'sell' in trigbee: # == 'sell_cross-0':
+                if crypto:
+                    print(f'crypto not allowed')
+                    return True
+            else:
+                return False
 
 
         def trig_in_action_waterfall(ticker_time_frame, tm_trig, trigbee, symbol, trig_action_num, time_delta, trading_model_theme, 
@@ -729,9 +729,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                      info="returns kings_blessing, order_vars"):
             ready_buy = True if app_trig.get('ready_buy') == True else False
 
-            if trig_action_num > 0:
+            if trig_action_num > 0: ## move this to before KNIGHT
                 if time_delta > timedelta(minutes=king_order_rules['doubledown_timeduration']) or app_trig.get('trig') == True:
                     print("Trig In Action Double Down Trade")
+                    logging.info(f"Double Down Wave {ticker_time_frame} trigbee {trigbee}")
                     kings_blessing = True
                     order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
                                                                 king_order_rules=king_order_rules, 
@@ -786,9 +787,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             # vars
             ticker, tframe, tperiod = ticker_time_frame.split("_")
+            symbol = find_symbol(QUEEN, ticker, trading_model, trigbee).get('ticker') # for SPY & QQQ to get inverse X of trading model
             star_time = f'{tframe}{"_"}{tperiod}'
+
+            alloc_deploy = revrec['waveview'].at[ticker_time_frame, 'allocation_deploy']
+            wave_amo=alloc_deploy
             
-            ticker_priceinfo = QUEEN['price_info_symbols'].at[ticker, 'priceinfo']
+            ticker_priceinfo = QUEEN['price_info_symbols'].at[symbol, 'priceinfo']
             # RevRec # Allocation Star allowed df_qcp, df_ticker, df_stars
             # qcp_total_budget = revrec['df_qcp'].loc[qcp].get("qcp_total_budget")
             ticker_total_budget = revrec['df_ticker'].loc[ticker].get("ticker_total_budget")
@@ -803,19 +808,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             kings_blessing = False
 
             # how many trades have we completed today? whats our total profit loss with wave trades
-            # should you override your original order rules?
+            # should you override your original order rules? ### Handled in Allocation ###### 
 
-            # if star_total_budget_remaining == 0:
-            #     # print(f'{ticker_time_frame} all budget used up')
-            #     if ticker_time_frame not in QUEEN['queens_messages'].keys():
-            #         QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
-            #     else:
-            #         QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
-            #     return {'kings_blessing': False}
-
-            # if star_total_budget_remaining == 0 and star_total_borrow_remaining == 0:
-            #     return {'kings_blessing': False}
-            
             # trade scenarios / power ups / 
             trig_action_num = len(trig_action) # get trading model amount allowed?
             now_time = datetime.now(est)
@@ -825,8 +819,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 time_delta = now_time - datetime.now(est)
 
-            def knights_wave_amo(trigbee, wave_amo, revrec, ticker_time_frame, king_order_rules, star_total_budget_remaining, symbol_total_budget_remaining):
-                alloc_deploy = (revrec['waveview'].at[ticker_time_frame, 'allocation'] *-1)
+
+
+            def knights_wave_amo(alloc_deploy, trigbee, wave_amo, ticker_time_frame, king_order_rules, star_total_budget_remaining, symbol_total_budget_remaining):
                 if 'buy' in trigbee: # == 'buy_cross-0':
 
                     macd_rate = macd_tier / 8
@@ -882,6 +877,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             # macd_signal_wave_deviation
 
+            acct_info = QUEEN['account_info']
 
             # Theme
             theme = QUEEN_KING['king_controls_queen']['theme'] # what is the theme?
@@ -919,9 +915,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # wave_amo = theme_amo + power_up_amo['mac_ranger'] + power_up_amo['hist_ranger']
             power_up_amo = power_amo()
 
-            king_check = kings_blessing_checks(king_order_rules, trig_action_num, time_delta, macd_tier, trigbee, crypto)
-            if king_check:
-                print(king_check)
+            if kings_blessing_checks(ticker_time_frame, acct_info, wave_amo, king_order_rules, trig_action_num, time_delta, macd_tier, trigbee, crypto):
                 return {'kings_blessing': False}
 
             def ready_buy_star_timeduration_delay(star_time):
@@ -948,9 +942,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             overrule_power = king_order_rules.get('overrule_power')
             overrule_power = 0 if king_order_rules.get('overrule_power') is None else overrule_power
 
-            symbol = find_symbol(QUEEN, ticker, trading_model, trigbee).get('ticker')
-            # index_X_tier = True if etf_long_tier == False or etf_inverse_tier == False else False
-            ticker, tframe, tperiod = ticker_time_frame.split("_")
+
 
             # def waterfall_knight_buy_chain(trigbees, trading_model):
             #     return False
@@ -978,22 +970,19 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # if star_total_budget_remaining > 0: # STAR
             wave_amo_borrow = 0
             borrowed_funds = False
-            wave_amo = ticker_total_budget * rate
+            wave_amo = alloc_deploy
             # wave amo tiering
-            wave_amo, king_order_rules = knights_wave_amo(trigbee, wave_amo, revrec, ticker_time_frame, king_order_rules, star_total_budget_remaining, symbol_total_budget_remaining)
+            # wave_amo, king_order_rules = knights_wave_amo(alloc_deploy, trigbee, wave_amo, ticker_time_frame, king_order_rules, star_total_budget_remaining, symbol_total_budget_remaining)
             order_side = 'buy'
             # print(order_side, wave_amo)
             if wave_amo > star_total_budget_remaining:
-                msg = (f"KN EXIT {ticker} Amo > then star budget {round(wave_amo)} {round(star_total_budget_remaining)} {round(wave_amo_borrow)}")
+                msg = (f"KNIGHT {ticker_time_frame} Wave Amo > then star budget {round(wave_amo)} {round(star_total_budget_remaining)} {round(wave_amo_borrow)}")
                 logging.warning(msg)
                 print(msg)
                 wave_amo = star_total_budget_remaining
                 wave_amo_borrow = wave_amo - star_total_budget_remaining
             
-            acct_info = QUEEN['account_info']
-            
-            if blessing_check(acct_info, wave_amo, QUEEN_KING) == False:
-                return {'kings_blessing': False}
+
 
             # if wave_amo > # ticker price
             if wave_amo > 0:
@@ -1087,8 +1076,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if kings_blessing:
                 blessings.update({'kings_blessing': kings_blessing})
                 if not isinstance(order_vars.get('wave_amo'), float) or order_vars.get('wave_amo') <=0:
-                    send_email(subject="error check go check kings blessing")
-                    ipdb.set_trace()
+                    msg=(f"KNIGHT: Deploy for {ticker_time_frame} LESS then 0, reduce by wave amo {wave_amo}")
+                    print(msg)
+                    logging.info(msg)
                     return {'kings_blessing': False}
             
             charlie_bee['queen_cyle_times']['cc_knight'] = (datetime.now(est) - s_).total_seconds()
@@ -1115,7 +1105,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             except Exception as e:
                 print(e)
                 return x
-        # ipdb.set_trace()
         waveview['star'] = waveview.index
         waveview['symbol'] = waveview['star'].apply(lambda x: func(x))
 
@@ -1228,6 +1217,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 acct_info = QUEEN['account_info']
                 """Rev Rec"""
                 revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+                waveview = revrec.get('waveview')
                 QUEEN['revrec'] = revrec
                 god_save_the_queen(QUEEN, save_rr=True, save_q=True, save_qo=True)
             
@@ -1258,20 +1248,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 waveview['current_ask'] = waveview['symbol'].map(dict_join).fillna(8989)
             
                 bees_fly = waveview[(waveview['symbol'] == ticker) &
-                                    (waveview['allocation_deploy'] < 0) &
-                                    ((waveview['allocation_deploy'] * -1) > waveview['current_ask'])
-                                    ].copy()
-                bees_fly_borrow = waveview[
-                                    (waveview['allocation_borrow_deploy'] < 0) &
-                                    ((waveview['allocation_borrow_deploy'] * -1) > waveview['current_ask'])
-                                    ].copy()
-                bees_fly_home = waveview[
                                     (waveview['allocation_deploy'] > 0) &
                                     ((waveview['allocation_deploy']) > waveview['current_ask'])
-                                    ].copy()
-                bees_fly_home_borrow = waveview[
-                                    (waveview['allocation_borrow_deploy'] > 0) &
-                                    ((waveview['allocation_borrow_deploy']) > waveview['current_ask'])
                                     ].copy()
                 # conflicts your sellhomes are cancel out the flying
 
@@ -1279,15 +1257,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 for ticker_time_frame in bees_fly.index.tolist():
                     # print(bees_fly)
+                    # alloc_deploy = revrec['waveview'].at[ticker_time_frame, 'allocation_deploy']
                     if ticker_time_frame in QUEEN['stars'].keys():
                         if (datetime.now(est) - QUEEN['stars'].get(ticker_time_frame).get('last_buy')) < timedelta(seconds=60):
                             msg = (ticker_time_frame, 'Just Bought, Deploying Is Still', bees_fly.at[ticker_time_frame, 'allocation_deploy'], " StarAtPlay: ", bees_fly.at[ticker_time_frame, 'star_at_play'], " Ask Price", bees_fly.at[ticker_time_frame, 'current_ask'])
                             print(msg)
                             logging.warning(msg)
                             continue
-                    # if ticker not in ['SPY', 'GOOG']:
-                    #     continue
-                    # print(ticker_time_frame)
+
                     s_time = datetime.now(est)
                     # path to Knight
                     ticker, tframe, frame = ticker_time_frame.split("_")
@@ -1346,17 +1323,18 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         if len(ticker_trig_action) > 0 and trading_model.get('short_position') == True: # shorting allowed
                             print("Only 1 Trigger Allowed in ticker Shorting")
                             continue
-
-                        if revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget") == 0:
+                        timestamp_str = return_timestamp_string()
+                        if revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget") <= 0:
                             print(f'{ticker_time_frame} all budget used up')
                             if ticker_time_frame not in QUEEN['queens_messages'].keys():
-                                QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up'}
+                                QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up {timestamp_str}'}
                             else:
-                                QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up'})
+                                QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up {timestamp_str}'})
                             continue
 
                         if revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget") <= 0 and revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget_borrow") <= 0:
                             print("No Budget Remaining")
+                            print(f'{ticker_time_frame} No Budget Remaining')
                             continue
 
                         # if crypto: # Not currently supported
@@ -1371,7 +1349,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             STORY_bee=STORY_bee, 
                             revrec=revrec, 
                             tm_trig=tm_trig, 
-                            trigbee=trig, 
+                            trigbee=trig,
+                            ticker=ticker,
                             ticker_time_frame=ticker_time_frame, 
                             trading_model=trading_model, 
                             trig_action=trig_action, 
@@ -1441,7 +1420,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     """>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ORDER MANAGEMENT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< """
 
 
-
     def order_past_duration(queen_order):
         nowtime = datetime.now().astimezone(est)
         qorder_time = queen_order['datetime'].astimezone(est)
@@ -1486,7 +1464,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if qty_avail < 0 and qty_run < qty_avail and ro_delta > timedelta(minutes=1):
                     msg = ("run order: qty_avail < 0 and qty_run < qty_avail, adjust to remaining", run_order['queen_order_state'], run_order['client_order_id'])
 
-                    logging_log_message(log_type='critical', msg=msg, ticker=run_order['ticker_time_frame'])
+                    # logging_log_message(log_type='critical', msg=msg, ticker=run_order['ticker_time_frame'])
                     print("CRITICAL ERROR SHORT POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
 
                     QUEEN['queen_orders'].at[run_index, 'filled_qty'] = qty_avail
@@ -1497,7 +1475,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 # long and run > avail (10, 5)
                 if qty_avail > 0 and qty_run > qty_avail and ro_delta > timedelta(minutes=1):
                     msg = ("run order: qty_avail < 0 and qty_run < qty_avail, adjust to remaining", run_order['queen_order_state'], run_order['client_order_id'])
-                    logging_log_message(log_type='critical', msg=msg, ticker=run_order['ticker_time_frame'])
+                    # logging_log_message(log_type='critical', msg=msg, ticker=run_order['ticker_time_frame'])
                     print("CRITICAL ERROR LONG POSITION PORTFOLIO DOES NOT HAVE QTY AVAIL TO SELL adjust to remaining")
 
                     QUEEN['queen_orders'].at[run_index, 'filled_qty'] = qty_avail

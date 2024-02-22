@@ -96,9 +96,9 @@ if st.session_state['admin']:
     refresh_workerbees(QUEENBEE, QUEEN_KING)
 
 
-ticker_db = return_QUEENs__symbols_data(None, QUEEN_KING, swarmQueen=True, read_pollenstory=False, read_storybee=True)
+ticker_db = return_QUEENs__symbols_data(QUEEN, QUEEN_KING, swarmQueen=True, read_pollenstory=False, read_storybee=True)
 # POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
+tickers_avail = set([i.split("_")[0] for i in STORY_bee.keys()])
 
-ticker_option = st.selectbox("story keys", options=STORY_bee.get('tickers_avail'))
-st.write("Swarm tickers_available ", len(STORY_bee.get('tickers_avail')))
+ticker_option = st.selectbox("story keys", options=tickers_avail)

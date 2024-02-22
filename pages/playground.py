@@ -25,12 +25,12 @@ from streamlit_extras.switch_page_button import switch_page
 set_streamlit_page_config_once()
 
 
-with st.spinner("Verifying Your Scent, Hang Tight"):
-    authenticator = signin_main(page="playground")
-    if st.session_state["authorized_user"] != True:
-        switch_page('pollen')
-
 def PlayGround():
+    with st.spinner("Verifying Your Scent, Hang Tight"):
+        authenticator = signin_main(page="playground")
+        if st.session_state["authorized_user"] != True:
+            switch_page('pollen')
+
     try:
         # st.write("Me")
 

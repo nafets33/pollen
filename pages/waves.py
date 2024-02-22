@@ -103,14 +103,24 @@ def move_columns_to_front(dataframe, column_list):
 
 tabs = st.tabs([key for key in revrec.keys()])
 tab = 0
-wave_view_input_cols = ['ticker_time_frame', 'star_avg_time_to_max_profit', 'length', 'current_profit', 'time_to_max_profit', 'maxprofit', 'maxprofit_shot', 'allocation', 'allocation_trinity', 'allocation_trinity_amt']
+wave_view_input_cols = ['ticker_time_frame', 'macd_state', 'pct_budget_allocation', 'total_allocation_budget', 'star_total_budget', 'star_buys_at_play', 'star_sells_at_play',  'total_allocation_borrow_budget', 'star_borrow_budget', 'allocation_deploy', 'allocation_borrow_deploy', 'star_avg_time_to_max_profit', 'length', 'current_profit', 'time_to_max_profit', 'maxprofit', 'maxprofit_shot', 'end_tier_macd', 'end_tier_vwap', 'end_tier_rsi_ema', 'start_tier_macd', 'start_tier_vwap', 'start_tier_rsi_ema','macd_tier_gain', 'vwap_tier_gain', 'rsi_tier_gain' ] # 'allocation', 'allocation_trinity', 'allocation_trinity_amt'
 for revrec_key in revrec.keys():
     with tabs[tab]:
         st.write(revrec_key)
         df = revrec.get(revrec_key)
         if revrec_key == 'waveview':
+            buys = df[df['bs_position']=='buy']
+            sells = df[df['bs_position']!='buy']
+            market = df[df['symbol'].isin(['SPY', 'QQQ'])]
+            marketsells = market[market['bs_position']!='buy']
+            st.write(f"""buys ${round(sum(buys["total_allocation_budget"]),0)}$""")
+            st.write(f"""sells ${round(sum(sells["total_allocation_budget"]))}$""")
+            st.write(f"""marketsells ${round(sum(marketsells["total_allocation_budget"]))}$""")
+
             df = move_columns_to_front(df, wave_view_input_cols)
-            standard_AGgrid(df)
+            hide_cols = [i for i in df.columns.tolist() if i not in wave_view_input_cols]
+            df = df.rename(columns={i: i.replace('_', ' ') for i in df.columns.tolist()})
+            standard_AGgrid(df, hide_cols=hide_cols)
         elif isinstance(df, pd.DataFrame):
             st.dataframe(df)
         else:

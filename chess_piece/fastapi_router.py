@@ -145,7 +145,7 @@ def archive_queen_order(client_user: str=Body(...), username: str=Body(...), pro
         print("router queen error", e)
 
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
-def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
+def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
     try:
         # print("router", username, prod, selected_row, default_value)
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
@@ -153,7 +153,7 @@ def sell_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(
             return "NOTAUTH"
 
         
-        rep = app_Sellorder_request(username, prod, selected_row, default_value)
+        rep = app_Sellorder_request(client_user, username, prod, selected_row, default_value)
         if rep.get('status') == 'success':
             return JSONResponse(content=grid_row_button_resp())
         else:

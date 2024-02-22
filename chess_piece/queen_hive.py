@@ -639,64 +639,6 @@ def return_trading_model_trigbee(tm_trig, trig_wave_length):
     return tm_trig
 
 
-wavegrid_cols = ['Buy Waves',
- 'Ready Buy',
- 'ticker_time_frame',
- 'macd_state',
- 'maxprofit',
- 'At Play',
- 'At Play Borrow',
- 'Allocation Deploy',
- 'Allocation Borrow Deploy',
- 'allocation',
- 'allocation_borrow',
- 'remaining_budget',
- 'remaining_budget_borrow',
- 'current_macd_tier',
- 'current_hist_tier',
- 'wave_n',
- 'length',
- 'wave_blocktime',
- 'wave_start_time',
- 'wave_end_time',
- 'trigbee',
- 'wave_id',
- 'start_tier_macd',
- 'end_tier_macd',
- 'start_tier_vwap',
- 'end_tier_vwap',
- 'start_tier_rsi_ema',
- 'end_tier_rsi_ema',
- 'time_to_max_profit',
- 'mxp_macd_tier',
- 'mxp_vwap_tier',
- 'mxp_rsi_ema_tier',
- 'macd',
- 'hist',
- 'mac_ranger',
- 'hist_ranger',
- 'sort',
- 'wave_state',
- 'symbol',
- 'bs_position',
- 'star_time',
- 'star_total_budget',
- 'star_borrow_budget',
- 'star_avg_time_to_max_profit',
- 'star_avg_length',
- 'king_order_rules',
- 'tmp_deivation',
- 'tmp_length_deivation',
- 'len__starmark_tmp_deviation',
- 'tmp_deivation_multiplier',
- 'current_tmp_len_multiplier',
- 'lev_vs_starmark_tmp_multiplier',
- 'tmp_power',
- 'tmp_power_len',
- 'allocation_power_powerlen',
- 'X Buy',
- 'Power Buy']
-
 def return_trading_model_mapping(QUEEN_KING, waveview):
     return_main = {}
     for ttf in waveview.index.to_list():
@@ -731,6 +673,13 @@ def return_queenking_board_symbols(QUEEN_KING, active=True):
         return_qcp_tickers = return_qcp_tickers + qcp_tickers
     
     return return_qcp_tickers
+
+
+
+def reallocate_revrec(revrec, ticker_time_frame, ):
+    # return number of shares to sell
+    return 0
+
 
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False, fresh_board=True):
     # Create/Refresh RevRec from Chess Board
@@ -948,9 +897,17 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         # Wave Analysis 3 triforce view
         resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
-        print("revrec wave analysis")
-        df_storyview = resp.get('df_storyview')
+        star_longs = dict(zip(df_stars.index, df_stars['star_buys_at_play']))
+        star_short = dict(zip(df_stars.index, df_stars['star_sells_at_play']))
+
         waveview = resp.get('df_waveview') # up
+        waveview['star_buys_at_play'] = waveview.index.map(star_longs)
+        waveview['star_sells_at_play'] = waveview.index.map(star_short)
+        ## how to bring in current ask to equation
+        # waveview['current_ask'] = waveview['symbol']
+        # float(STORY_bee[ticker_time_frame]['story'].get('current_ask'))
+        
+        df_storyview = resp.get('df_storyview')
         wave_analysis_down = resp.get('df_storyview_down') # down
         storygauge = resp.get('df_storyguage') # wave_gauge
         if len(storygauge) > 0: # should be able to remove this now WORKERBEE
@@ -964,7 +921,41 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
 
         def revrec_allocation(waveview, df_storyview, wave_analysis_down, current_wave):
+            """ WORK ON
+            # handle star allocation, conflicts your sellhomes are cancel out the flying
+            """
             try:
+                """Weights of 3 sets (profit/len, tier_gain, tier_start) to the final allocation table"""
+
+
+                # Global
+                tier_max = 8
+                tier_max_universe = tier_max * 2 # 16
+                alloc_powerlen_base_weight = .23 #????
+
+                # Weight Tiers of Time and Profit
+                allloc_time_weight = 2
+                alloc_powerlen_weight = 1
+                alloc_currentprofit_weight = 4
+                alloc_maxprofit_shot_weight = 1
+                revrec_weight_sum = allloc_time_weight + alloc_powerlen_weight + alloc_currentprofit_weight + alloc_maxprofit_shot_weight
+
+                # Weight Tiers of Tier Gain
+                macd_weight = 3
+                vwap_weight = 2
+                rsi_weight = 3
+                wavestat_weight_sum = macd_weight + vwap_weight + rsi_weight
+
+                # Weight Tiers of Start Tier
+                macd_start_weight = 3
+                vwap_start_weight = 2
+                rsi_start_weight = 3
+                wavestat_start_weight_sum = macd_start_weight + vwap_start_weight + rsi_start_weight
+
+                alloc_trinity_of__len_and_profit = 1
+                wave_tiers_allocation = 1
+                wave_tier_start = 1
+            
                 # tier divergence, how many tiers have been gain'd / lost MACD/RSI/VWAP // current profit deviation
                 waveview['macd_tier_divergence'] =  waveview['end_tier_macd'] - waveview['start_tier_macd']
                 waveview['vwap_tier_divergence'] =  waveview['end_tier_vwap'] - waveview['start_tier_vwap']
@@ -1027,71 +1018,126 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
                 waveview_map = return_trading_model_mapping(QUEEN_KING, waveview)
                 waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
-            
-                alloc_weight = .5
-                # alloc_powerlen_weight = .5
-                alloc_currentprofit_weight = 1
-                revrec_weight_sum = alloc_weight + alloc_currentprofit_weight # + alloc_powerlen_weight 
-
-                macd_weight = .8
-                vwap_weight = .5
-                rsi_weight = .3
-                wavestat_weight_sum = macd_weight + vwap_weight + rsi_weight
 
 
+
+                # start pct
+                waveview['macd_start_tier_alloc'] =np.where(waveview['start_tier_macd']==tier_max, 0, waveview['start_tier_macd'] / tier_max)
+                waveview['vwap_start_tier_alloc'] =np.where(waveview['start_tier_vwap']==tier_max, 0, waveview['start_tier_vwap'] / tier_max)
+                waveview['rsi_start_tier_alloc'] =np.where(waveview['start_tier_rsi_ema']==tier_max, 0, waveview['start_tier_rsi_ema'] / tier_max)
+
+                # max growth
+                waveview['macd_tier_max_growth'] = tier_max - waveview['start_tier_macd']
+                waveview['vwap_tier_max_growth'] = tier_max - waveview['start_tier_vwap']
+                waveview['rsi_tier_max_growth'] = tier_max - waveview['start_tier_rsi_ema']
+                # distance to max
+                waveview['macd_tier_distance_max_growth'] = np.where(waveview['start_tier_macd']<=0, ((waveview['macd_tier_max_growth'] / tier_max_universe)) * -1, (waveview['macd_tier_max_growth'] / tier_max_universe))
+                waveview['vwap_tier_distance_max_growth'] = np.where(waveview['start_tier_vwap']<=0, ((waveview['vwap_tier_max_growth'] / tier_max_universe)) * -1, (waveview['vwap_tier_max_growth'] / tier_max_universe))
+                waveview['rsi_tier_distance_max_growth'] = np.where(waveview['start_tier_rsi_ema']<=0, ((waveview['rsi_tier_max_growth'] / tier_max_universe)) * -1, (waveview['rsi_tier_max_growth'] / tier_max_universe))
+
+                waveview['macd_start_tier_alloc'] = np.where(waveview['macd_tier_max_growth']==0, 0, (waveview['macd_start_tier_alloc'] + (waveview['end_tier_macd'] / waveview['macd_tier_max_growth'])))
+                waveview['vwap_start_tier_alloc'] = np.where(waveview['vwap_tier_max_growth']==0, 0, (waveview['vwap_start_tier_alloc'] + (waveview['end_tier_vwap'] / waveview['vwap_tier_max_growth'])))
+                waveview['rsi_start_tier_alloc'] = np.where(waveview['rsi_tier_max_growth']==0, 0, (waveview['rsi_start_tier_alloc'] + (waveview['end_tier_rsi_ema'] / waveview['rsi_tier_max_growth'])))
+
+                waveview['macd_start_tier_alloc'] = np.where(waveview['macd_start_tier_alloc'] >= 0, 1, waveview['macd_start_tier_alloc'] - 1)
+                waveview['vwap_start_tier_alloc'] = np.where(waveview['vwap_start_tier_alloc'] >= 0, 1, waveview['vwap_start_tier_alloc'] - 1)
+                waveview['rsi_start_tier_alloc'] = np.where(waveview['rsi_start_tier_alloc'] >= 0, 1, waveview['rsi_start_tier_alloc'] - 1)
+
+                waveview['macd_start_tier_alloc'] = np.where(waveview['macd_start_tier_alloc'] >= 1, 1, waveview['macd_start_tier_alloc'])
+                waveview['vwap_start_tier_alloc'] = np.where(waveview['vwap_start_tier_alloc'] >= 1, 1, waveview['vwap_start_tier_alloc'])
+                waveview['rsi_start_tier_alloc'] = np.where(waveview['rsi_start_tier_alloc'] >= 1, 1, waveview['rsi_start_tier_alloc'])
+
+                # Tier Gain
+                waveview['macd_start_tier_alloc'] = np.where(waveview['macd_start_tier_alloc'] == 0, -.5, waveview['macd_start_tier_alloc'])
+                waveview['vwap_start_tier_alloc'] = np.where(waveview['vwap_start_tier_alloc'] == 0, -.5, waveview['vwap_start_tier_alloc'])
+                waveview['rsi_start_tier_alloc'] = np.where(waveview['rsi_start_tier_alloc'] == 0, -.5, waveview['rsi_start_tier_alloc'])
+
+
+                ## base calc variables ##
                 # power on current deviation
-                waveview['tmp_deivation'] = waveview['time_to_max_profit'] - waveview['star_avg_time_to_max_profit']        
+                waveview['tmp_deivation'] = waveview['time_to_max_profit'] - waveview['star_avg_time_to_max_profit']
+                waveview['starmark_len_deivation'] = waveview['length'] / waveview['star_avg_time_to_max_profit']
                 # where we are you, tmp - len deviation
-                # ipdb.set_trace()
                 waveview['tmp_length_deivation'] = waveview['time_to_max_profit'] - waveview['length']
                 # len - star deviation
                 waveview['len__starmark_tmp_deviation'] = waveview['length'] - waveview['star_avg_time_to_max_profit']
 
                 waveview['tmp_deivation_multiplier'] = waveview['tmp_deivation'] / waveview['star_avg_time_to_max_profit']
                 waveview['current_tmp_len_multiplier'] = waveview['tmp_length_deivation'] / waveview['star_avg_time_to_max_profit']
-                waveview['lev_vs_starmark_tmp_multiplier'] = waveview['len__starmark_tmp_deviation'] / waveview['star_avg_time_to_max_profit']
+                waveview['lev_vs_starmark_tmp_multiplier'] = np.where(waveview['len__starmark_tmp_deviation']>=0, 0, waveview['len__starmark_tmp_deviation'] / waveview['star_avg_time_to_max_profit'])
 
-                waveview['tmp_power'] = np.where(waveview['tmp_deivation_multiplier'] < 0, waveview['star_total_budget'] * waveview['tmp_deivation_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-                waveview['tmp_power_len'] = np.where(waveview['current_tmp_len_multiplier'] < 0, waveview['star_total_budget'] * waveview['current_tmp_len_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                waveview['tmp_power'] = waveview['star_total_budget'] * waveview['tmp_deivation_multiplier'] # 
+                waveview['tmp_power_len'] = waveview['star_total_budget'] * waveview['current_tmp_len_multiplier'] # 
 
-                waveview['allocation_power_powerlen'] = waveview['tmp_power'] - waveview['tmp_power_len']
+                # waveview['allocation_power_powerlen'] = np.where((abs(waveview['tmp_power']) - abs(waveview['tmp_power_len'])) < 1, alloc_powerlen_base_weight * waveview['star_total_budget'], waveview['tmp_power'] - waveview['tmp_power_len'])
 
+                """ # TIME to Max Profit Delta from Current Length """
+                waveview['ttmp__length'] = waveview['time_to_max_profit'] + waveview['length']
+                waveview['tmp_len_delta'] = 1 - (waveview['tmp_length_deivation'] * waveview['ttmp__length']) # diff from tmp & len, total sum as base denominator
+                waveview['alloc_powerlen'] = np.where(waveview['time_to_max_profit'] == 0, 
+                                                      -1, 
+                                                      ((1- (waveview['length'] - waveview['time_to_max_profit']) / waveview['length']) * -1))
+                waveview['alloc_powerlen'] = np.where((waveview['alloc_powerlen'] == -1) & (waveview['length']>1), (1-waveview['starmark_len_deivation']) * -1 , waveview['alloc_powerlen']) # check if no mxprofit and length past 1, lose budget
+                # waveview['alloc_powerlen'] = np.where((waveview['starmark_len_deivation']-1) > 0, (waveview['starmark_len_deivation']-1), 0)
 
-                # OJ allocation time
-                waveview['allocation'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-                waveview['allocation_borrow'] = np.where(waveview['lev_vs_starmark_tmp_multiplier'] < 0, waveview['star_borrow_budget'] * waveview['lev_vs_starmark_tmp_multiplier'], 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                # OJ allocation time # Allow for Reverse budget outcome
+                waveview['allocation'] = waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'] # 
+                waveview['allocation_borrow'] = waveview['star_borrow_budget'] * waveview['lev_vs_starmark_tmp_multiplier'] # 
 
-                # Allocation PowerLength Time ## NOT SURE WHAT I"M DOING HERE
-                # waveview['alloc_powerlen'] = 1 - (waveview['allocation_power_powerlen'] / waveview['star_total_budget'])
-                # waveview['alloc_powerlen_borrow'] = 1 - (waveview['allocation_power_powerlen'] / waveview['star_borrow_budget'])
+                """# Allocation Profit Deviation # current profit deviation"""
+                waveview['current_profit_deviation'] = np.where(
+                    (waveview['current_profit'] == waveview['maxprofit']) | 
+                    (waveview['current_profit'] == 0) & (waveview['maxprofit'] == 0), 
+                    -1, -1 - (waveview['current_profit'] - waveview['maxprofit']) / waveview['maxprofit']
+                    )
+                waveview['current_profit_deviation'] = np.where(waveview['current_profit']< 0, 0, waveview['current_profit_deviation'] )
+                waveview['current_profit_deviation_pct'] = np.where(waveview['current_profit_deviation']== 0, 0, waveview['current_profit_deviation'] )
+                waveview['current_profit_deviation_pct'] = np.where(waveview['current_profit_deviation']== -1, -1, waveview['current_profit_deviation'] )
 
-                # Allocation Profit Deviation
-                # current profit deviation
-                waveview['current_profit_deviation'] = (waveview['current_profit'] - waveview['maxprofit']) / waveview['maxprofit']
-                waveview['current_profit_deviation_pct'] = np.where(waveview['current_profit_deviation'] < -1, 0, waveview['current_profit_deviation'])
                 waveview['maxprofit_shot'] = waveview.index.map(dict(zip(df_storyview.index, df_storyview['ttf_median_maxprofit_median']))) # join from wave analysis
-                waveview['maxprofit_shot_weight'] = np.where(waveview['current_profit_deviation_pct'] < 0, 1 - (waveview['maxprofit'] / waveview['maxprofit_shot']),0)
-                waveview['maxprofit_shot_weight_score'] = np.where(waveview['maxprofit_shot_weight'] > 0, (waveview['maxprofit_shot_weight'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-                waveview['maxprofit_deviation__shotweight__score'] = ((waveview['current_profit_deviation_pct']) + (waveview['maxprofit_shot_weight_score']) ) / 2
+                waveview['maxprofit_shot_weight'] = (waveview['maxprofit'] / waveview['maxprofit_shot'])
+                waveview['maxprofit_shot_weight_score'] = np.where(waveview['maxprofit_shot_weight'] == 0, -1, (waveview['maxprofit_shot_weight'] *-1))# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                waveview['maxprofit_shot_weight_score'] = np.where(waveview['maxprofit_shot_weight'] >= 1, 0, (waveview['maxprofit_shot_weight_score']))# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                # waveview['maxprofit_deviation__shotweight__score'] = ((waveview['current_profit_deviation']) + (waveview['maxprofit_shot_weight_score']) ) / 2
 
-                # OG allocations
-                waveview['allocation_pct'] = waveview['allocation'] / waveview['star_total_budget']
-                # waveview['alloc_powerlen_pct'] = np.where(waveview['alloc_powerlen'] >= 0, 0, waveview['alloc_powerlen'])
-                waveview['alloc_currentprofit_pct'] = waveview['maxprofit_deviation__shotweight__score']
+                # Top Level Allocations on Budget - Time, profit deviation, maxprofit shot
+                waveview['alloc_time'] = ((waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'])/waveview['star_total_budget']) * allloc_time_weight * (waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'])/revrec_weight_sum
+                waveview['alloc_ttmp_length'] = ((waveview['star_total_budget'] * waveview['alloc_powerlen'])/waveview['star_total_budget']) * alloc_powerlen_weight * (waveview['star_total_budget'] * waveview['alloc_powerlen'])/revrec_weight_sum
+                waveview['alloc_currentprofit'] = ((waveview['star_total_budget'] * waveview['current_profit_deviation_pct'])/waveview['star_total_budget']) * alloc_currentprofit_weight * (waveview['star_total_budget'] * waveview['current_profit_deviation_pct'])/revrec_weight_sum
+                waveview['alloc_maxprofit_shot'] = ((waveview['star_total_budget'] * waveview['maxprofit_shot_weight_score'])/waveview['star_total_budget']) * alloc_maxprofit_shot_weight * (waveview['star_total_budget'] * waveview['maxprofit_shot_weight_score'])/revrec_weight_sum
+                waveview['total_allocation_budget'] = waveview['alloc_time'] + waveview['alloc_ttmp_length'] + waveview['alloc_currentprofit'] + waveview['alloc_maxprofit_shot']
+                waveview['pct_budget_allocation'] = waveview['total_allocation_budget'] / waveview['star_total_budget']
+                waveview['total_allocation_borrow_budget'] = waveview['pct_budget_allocation'] * waveview['star_borrow_budget']
+
+                # -Tiers
+
+
+
+                # Deploy Allocation Number
+                waveview['allocation_deploy'] = np.where((waveview['bs_position']=='buy'), waveview['total_allocation_budget'] - waveview['star_buys_at_play'], waveview['total_allocation_budget'] - waveview['star_sells_at_play'])
+                waveview['allocation_borrow_deploy'] = np.where((waveview['bs_position']=='buy'), (waveview['total_allocation_borrow_budget'] - waveview['star_buys_at_play']) + waveview['allocation_deploy'], (waveview['total_allocation_borrow_budget'] - waveview['star_sells_at_play'])  + waveview['allocation_deploy'])
+
+                # # OG allocations
+                # waveview['allocation_pct'] = waveview['allocation'] / waveview['star_total_budget']
+                # waveview['alloc_powerlen_pct'] = waveview['allocation_powerlen'] / waveview['star_total_budget']
+                # waveview['alloc_currentprofit_pct'] = waveview['maxprofit_deviation__shotweight__score']
                 
-                # weights
-                waveview['allocation_pct_w'] = (waveview['allocation_pct'] * alloc_weight)
-                # waveview['alloc_powerlen_pct_w'] = (waveview['alloc_powerlen_pct'] * alloc_powerlen_weight) / revrec_weight_sum 
-                waveview['alloc_currentprofit_pct_w'] = (waveview['alloc_currentprofit_pct'] * alloc_currentprofit_weight)
+                # # weights
+                # # waveview['allocation_pct_w'] = (waveview['allocation_pct'] * alloc_weight)
+                # # waveview['alloc_powerlen_pct_w'] = (waveview['alloc_powerlen_pct'] * alloc_powerlen_weight) / revrec_weight_sum 
+                # # waveview['alloc_currentprofit_pct_w'] = (waveview['alloc_currentprofit_pct'] * alloc_currentprofit_weight)
+
+                # waveview['allocation_trinity'] = (waveview['allocation_pct_w']  + waveview['alloc_currentprofit_pct_w']) / 2 # waveview['alloc_powerlen_pct_w']
+                # waveview['allocation_trinity_amt'] = waveview['allocation_trinity'] * waveview['star_total_budget']
+                # waveview['allocation_borrow_trinity_amt'] = waveview['allocation_trinity'] * waveview['star_borrow_budget']
+                # waveview['trinity_allocation'] = (waveview['star_buys_at_play']) - (waveview['allocation_trinity_amt']*-1)
+
+                # waveview['allocation_trinity_deploy'] = np.where((waveview['bs_position']=='buy') & (waveview['trinity_allocation'] < 0), waveview['star_buys_at_play'] - (waveview['allocation_trinity_amt']*-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                # waveview['allocation_borrow_trinity_deploy'] = np.where(waveview['allocation_borrow_trinity_amt'] < 0, waveview['star_at_play_borrow'] - (waveview['allocation_borrow_trinity_amt']*-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
 
-                waveview['allocation_trinity'] = (waveview['allocation_pct_w']  + waveview['alloc_currentprofit_pct_w']) / 2 # waveview['alloc_powerlen_pct_w']
-                waveview['allocation_trinity_amt'] = waveview['allocation_trinity'] * waveview['star_total_budget']
-
-                waveview['allocation_trinity_deploy'] = np.where(waveview['allocation_trinity'] < 0, waveview['star_at_play'] - (waveview['allocation_trinity'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-
-                waveview['allocation_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
-                waveview['allocation_borrow_deploy'] = np.where(waveview['allocation_borrow'] < 0, waveview['star_at_play_borrow'] - (waveview['allocation_borrow'] *-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                # waveview['allocation_deploy'] = np.where(waveview['allocation'] < 0, waveview['star_at_play'] - (waveview['allocation'] *-1), 0) # np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
+                # waveview['allocation_borrow_deploy'] = np.where(waveview['allocation_borrow'] < 0, waveview['star_at_play_borrow'] - (waveview['allocation_borrow']*-1), 0)# np.where(waveview['tmp_mark_deivation'] < 0, waveview['tmp_mark_deivation'] * waveview['remaining_budget'], 0)
 
                 # Final Allocation Weights
 
@@ -3793,12 +3839,11 @@ def buy_button_dict_items(queen_handles_trade=True,
     return {key: value for key, value in column.items() if value is not None}
 
 def sell_button_dict_items(symbol="SPY", sell_qty=89):
-    column = {
+    var_s = {
                 'symbol': symbol,
                 'sell_qty':sell_qty,
                 }
-    return {key: value for key, value in column.items() if value is not None}
-
+    return var_s
 
 def kings_order_rules( # rules created for 1Minute
     KOR_version=2,

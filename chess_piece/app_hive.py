@@ -476,8 +476,8 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
 
     #Configure index field
     gb.configure_index('idx')
-    gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
-    gb.configure_column('message', {'initialWidth':500, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
+    gb.configure_column('idx', {"sortable":True, 'initialWidth':33})
+    gb.configure_column('message', {"sort": 'asc', "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
     go = gb.build()
 
     st_custom_grid(
@@ -1188,7 +1188,7 @@ def standard_AGgrid(
     update_mode_value="NO_UPDATE",
     paginationOn=False,
     use_checkbox=True,
-    oth_cols_hidden=False,
+    hide_cols=[],
     grid_type=False
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
@@ -1208,6 +1208,9 @@ def standard_AGgrid(
             lockPosition="left",
         )
 
+    if hide_cols:
+        for col in hide_cols:
+            gb.configure_column(col, hide=True)
     gridOptions = gb.build()
     gridOptions["rememberGroupStateWhenNewData"] = "true"
     gridOptions["resizable"] = "true"
