@@ -64,6 +64,7 @@ def kingdom__global_vars():
         "completed_alpaca",
         "running_open",
         "archived_bee",
+        "final",
     ],
     'active_queen_order_states': [
         "submitted",
@@ -157,68 +158,6 @@ exclude_conditions = [
 ]  # 'U'
 # script_path = os.path.abspath(__file__)
 # print(script_path)
-
-
-def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_markers=True):
-    k_colors = streamlit_config_colors()
-    default_text_color = k_colors['default_text_color'] # = '#59490A'
-    default_font = k_colors['default_font'] # = "sans serif"
-    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-    
-
-
-    if menu == 'main':
-        
-        menu_data = [
-            {'id':'QC','icon':"fa fa-fire",'label':"Queen"},
-            {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
-            {'icon': "fa fa-bug", 'label':"PlayGround"},
-            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 'submenu':[{'id':'pollen_engine', 'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
-            # {'id':'sb_liv_switch', 'icon': "fa fa-reply", 'label':f'Switch To {prod_name_oppiste}'},
-# 'submenu':[{'id': 'sb_liv_switch', 'label': f'Switch To {prod_name_oppiste}', 'icon': "fa fa-reply"}]
-        ]
-    elif menu == 'unAuth':
-        menu_data = [
-            {'id':'unauth','icon':"fa fa-fire",'label':"Welcome to pollenq"},
-
-            # {'id':'Copy','icon':"🐙",'label':"Copy"},
-            # {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
-            # {'icon': "far fa-chart-bar", 'label':"Chart"},#no tooltip message
-            # {'id':' Crazy return value 💀','icon': "💀", 'label':"Calendar"},
-            # {'icon': "fas fa-tachometer-alt", 'label':"Dashboard",'ttip':"I'm the Dashboard tooltip!"}, #can add a tooltip message
-            # {'icon': "far fa-copy", 'label':"Right End"},
-            # {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
-        ]
-        prod_name = ""
-
-    if prod:
-
-        menu_id = hc.nav_bar(
-            menu_definition=menu_data,
-            home_name=f'pollenq {prod_name}',
-            login_name='Account',
-            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
-            sticky_nav=True, #at the top or not
-            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
-        )
-    else:
-        over_theme = {'option_active':'#B7C8D6'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
-        # over_font = {'font-class':'h2','font-size':'100%'}
-        # over_theme = {'txc_inactive': "#0D93FB"}
-        menu_id = hc.nav_bar(
-            menu_definition=menu_data,
-            override_theme=over_theme,
-            # font_styling=over_font,
-            home_name=f'pollenq {prod_name}',
-            login_name='Account',
-            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
-            sticky_nav=True, #at the top or not
-            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
-        )
-
-    st.session_state['menu_id']= menu_id
-
-    return menu_id
 
 
 def hive_master_root(info='\pollen\pollen'):
@@ -530,6 +469,8 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
         df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
 
         return df_active
+    
+    
     try:
         if swarmQueen:
             symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]

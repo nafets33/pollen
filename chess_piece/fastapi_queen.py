@@ -637,12 +637,14 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
 
 
         df_wave = revrec.get('waveview')
-        df_wave['sell_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] > 0), df_wave['star_at_play'] - df_wave['allocation_deploy'], 0)
-        df_wave['sellbuy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("sell")) & (df_wave['allocation_deploy'] > 0), df_wave['star_at_play'] - df_wave['allocation_deploy'], 0)
+        df_wave['sell_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] < 0), round(df_wave['allocation_deploy']), 0)
+        df_wave['sellbuy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("sell")) & (df_wave['allocation_deploy'] > 0), round(df_wave['allocation_deploy']), 0)
         df_wave['sell_alloc_deploy'] = df_wave['sell_alloc_deploy'] + df_wave['sellbuy_alloc_deploy']
-        df_wave['buy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] < 0), round(abs(df_wave['allocation_deploy'])), 0)
-        # df_wave['queens_note'] = 
         
+        df_wave['buy_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("buy")) & (df_wave['allocation_deploy'] > 0), round((df_wave['allocation_deploy'])), 0)
+        df_wave['buysell_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("sell")) & (df_wave['allocation_deploy'] < 0), round(abs(df_wave['allocation_deploy'])), 0) 
+        df_wave['buy_alloc_deploy'] = df_wave['buy_alloc_deploy'] + df_wave['buysell_alloc_deploy']
+
         if return_type == 'waves':
           QUEEN_KING = load_queen_App_pkl(username, prod)
           df = df_wave
@@ -676,9 +678,10 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
                 if remaining_budget <0:
                     remaining_budget == 0
               
-              kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today)
-              # ttf_name = ttf_grid_names(ttf, symbol=False)
-              # df.at[ttf, 'time_frame'] = ttf_name
+              reverse_buy = False
+              # if 'sell' in df.at[ttf, 'macd_state'] and df.at[ttf, 'symbol']
+              kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
+
               df.at[ttf, 'kors'] = kors
               df.at[ttf, 'ticker_time_frame__budget'] = f"""{margin} {"${:,}".format(remaining_budget)}"""
             
@@ -691,23 +694,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
 
           df = update_col_number_format(df)
           df = filter_gridby_timeFrame_view(df, toggle_view_selection, grid='wave')
-
-          # wave_grid_num_cols = ['current_profit',
-          # 'maxprofit',
-          # 'star_at_play',
-          # 'star_at_play_borrow',
-          # 'allocation_deploy',
-          # 'allocation_borrow_deploy',
-          # 'remaining_budget',
-          # 'remaining_budget_borrow',
-          # 'current_profit_deviation',
-          # ]
-          # # # Totals Index
-          # for totalcols in wave_grid_num_cols:
-          #   df.loc['Total', totalcols] = df[totalcols].sum()
-          # newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-          # df=df.reindex(index=newIndex)
-
 
           json_data = df.to_json(orient='records')
           return json_data
@@ -726,12 +712,12 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
                 df[col] = round(df[col])
 
           df_wave_symbol = df_wave.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
-          df_wave_symbol['sell_pct'] = (df_wave_symbol['sell_alloc_deploy'] / df_wave_symbol['long_at_play'] * 100).fillna(0)
-          df_wave_symbol['sell_pct'] = round(df_wave_symbol['sell_pct'],1)
-          df_wave_symbol['buy_pct'] = (df_wave_symbol['buy_alloc_deploy'] / df_wave_symbol['star_total_budget'] * 100).fillna(0)
-          df_wave_symbol['buy_pct'] = round(df_wave_symbol['buy_pct'],1)
-          df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '%{} ${:,.0f}'.format(row['sell_pct'], row['sell_alloc_deploy']), axis=1)
-          df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '%{} ${:,.0f}'.format(row['buy_pct'], row['buy_alloc_deploy']), axis=1)
+          # df_wave_symbol['sell_pct'] = (df_wave_symbol['sell_alloc_deploy'] / df_wave_symbol['long_at_play'] * 100).fillna(0)
+          # df_wave_symbol['sell_pct'] = round(df_wave_symbol['sell_pct'],1)
+          # df_wave_symbol['buy_pct'] = (df_wave_symbol['buy_alloc_deploy'] / df_wave_symbol['star_total_budget'] * 100).fillna(0)
+          # df_wave_symbol['buy_pct'] = round(df_wave_symbol['buy_pct'],1)
+          df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['sell_alloc_deploy']), axis=1)
+          df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['buy_alloc_deploy']), axis=1)
 
           remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
           remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))

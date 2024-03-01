@@ -28,7 +28,7 @@ from pages.pollen_engine import pollen_engine
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import sneak_peak_form, custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, menu_bar_selection, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
+from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import analyze_waves, initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 
 # componenets
@@ -50,43 +50,76 @@ pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 
 
+
+def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_markers=True):
+    k_colors = streamlit_config_colors()
+    default_text_color = k_colors['default_text_color'] # = '#59490A'
+    default_font = k_colors['default_font'] # = "sans serif"
+    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+    
+
+
+    if menu == 'main':
+        
+        menu_data = [
+            {'id':'queen','icon':"fa fa-fire",'label':"Queen"},
+            {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
+            {'id':'PlayGround', 'icon': "fa fa-bug", 'label':"PlayGround"},
+            {'id':'Account', 'icon': "fa fa-bug", 'label':"Account"},
+            {'id':'waves', 'icon': "fas fa-chess-board", 'label':"RevRec"},
+            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 
+             'submenu':[{'id':'pollen_engine', 'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
+
+        ]
+    elif menu == 'unAuth':
+        menu_data = [
+            {'id':'unauth','icon':"fa fa-fire",'label':"Welcome to pollenq"},
+
+            # {'id':'Copy','icon':"🐙",'label':"Copy"},
+            # {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
+            # {'icon': "far fa-chart-bar", 'label':"Chart"},#no tooltip message
+            # {'id':' Crazy return value 💀','icon': "💀", 'label':"Calendar"},
+            # {'icon': "fas fa-tachometer-alt", 'label':"Dashboard",'ttip':"I'm the Dashboard tooltip!"}, #can add a tooltip message
+            # {'icon': "far fa-copy", 'label':"Right End"},
+            # {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
+        ]
+        prod_name = ""
+
+    if prod:
+
+        menu_id = hc.nav_bar(
+            menu_definition=menu_data,
+            home_name=f'pollen {prod_name}',
+            login_name='Account',
+            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
+            sticky_nav=True, #at the top or not
+            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+        )
+    else:
+        over_theme = {'option_active':'#B7C8D6'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
+        # over_font = {'font-class':'h2','font-size':'100%'}
+        # over_theme = {'txc_inactive': "#0D93FB"}
+        menu_id = hc.nav_bar(
+            menu_definition=menu_data,
+            override_theme=over_theme,
+            # font_styling=over_font,
+            home_name=f'pollen {prod_name}',
+            login_name='Account',
+            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
+            sticky_nav=True, #at the top or not
+            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+        )
+
+    st.session_state['menu_id']= menu_id
+
+    return menu_id
+
 def pollenq(admin_pq):
     try:
         main_page_start = datetime.now()
         king_G = kingdom__global_vars()
         main_root = hive_master_root()
         load_dotenv(os.path.join(main_root, ".env"))
-        def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
-            
-            with st.form("workerbees refresh"):
-                try:
-                    if st.session_state['admin']:
-                        reset_only = st.checkbox("reset_only", reset_only)
-                        backtesting = st.checkbox("backtesting", backtesting)
-                        run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
-                        qcp_options = list(QUEENBEE['workerbees'].keys())
-                        pieces = st.multiselect('qcp', options=qcp_options, default=['castle', 'bishop', 'knight'])
-
-                        refresh = st.form_submit_button("Run WorkerBees", use_container_width=True)
-                        if refresh:
-                            with st.spinner("Running WorkerBees"):
-                                s = datetime.now(est)
-                                if backtesting:
-                                    msg=("executing backtesting")
-                                    st.info(msg)
-                                    subprocess.run([f"{sys.executable}", os.path.join(hive_master_root(), 'macd_grid_search.py')])
-                                else:
-                                    queen_workerbees(qcp_s=pieces, 
-                                                        prod=QUEEN_KING.get('prod'), 
-                                                        reset_only=reset_only, 
-                                                        backtesting=False, 
-                                                        run_all_pawns=run_all_pawns, 
-                                                        macd=None)
-                                st.success("WorkerBees Completed")
-                                e = datetime.now(est)
-                                st.write("refresh time ", (e - s).total_seconds())
-                except Exception as e:
-                    print(e, print_line_of_error())
 
         def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
             # try:
@@ -550,9 +583,7 @@ def pollenq(admin_pq):
             qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
             QUEEN = qb.get('QUEEN')
             QUEEN_KING = qb.get('QUEEN_KING')
-            api = qb.get('api')
-                
-            
+            api = qb.get('api')            
             if 'chess_board__revrec' not in QUEEN_KING.keys():
                 st.error("QUEENBOT Not Enabled >>> Save Your Portfolio Board before your Queen Bot can start Trading")
 
@@ -618,7 +649,6 @@ def pollenq(admin_pq):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
 
             try:
-                # api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, prod=st.session_state['production'])
                 if api == False:
                     queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
                     api_failed = True
@@ -662,20 +692,27 @@ def pollenq(admin_pq):
             if mkhrs != 'open':
                 seconds_to_market_close = 1
 
-            cols = st.columns((3,5,3))
+            cols = st.columns((3,5,2))
+
             with cols[2]:
-                sac_menu = sac_menu_buttons()
-                if sac_menu.lower() == 'playground':
+                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+                if menu_id == 'waves':
+                    switch_page('waves')
+
+                if menu_id == 'PlayGround':
                     print("PLAYGROUND")
                     PlayGround()
                     st.stop()
-                if sac_menu.lower() == 'account':
+                
+                if menu_id == 'Account':
                     switch_page('account')
                     
-                if sac_menu == 'pollen_engine':
+                if menu_id == 'pollen_engine':
                     pollen_engine(st=st, pd=pd, acct_info=acct_info_raw, log_dir=log_dir)
                     st.stop()
 
+                if menu_id == 'TradingModels':
+                    switch_page('trading_models')
 
             with cols[0]:
                 # with st.expander("Queens Heart :heartbeat:", False):
@@ -706,78 +743,18 @@ def pollenq(admin_pq):
             
             
             cols = st.columns((1,1,5))
-            with st.sidebar:
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
 
             with st.sidebar:
                 height=50
                 cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
 
-            #     hc.option_bar(option_definition=pq_buttons.get('board_option_data'),title='Board', key='chess_board_m', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-            #     cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'33px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-            #     # menu_buttons(cols, QUEENsHeart)
-                        
-
-            # with st.expander("Queen Controls"): # WORKERBEE 
-            #     cols = st.columns((1,1,1,1,1,1))
-            #     with cols[0]:
-            #         st.session_state['save_queen_king'] = False
-            #         risk_margin_num = st.number_input('Margin Risk', value=QUEEN_KING['king_controls_queen'].get('use_margin_pct'), min_value=0, max_value=1, on_change=save_queen_king())
-            #     # with cols[1]:
-            #     #     morning_risk_num = st.number_input('Morning Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('morning'), min_value=0, max_value=3, on_change=save_queen_king())
-            #     # with cols[2]:
-            #     #     lunch_risk_num = st.number_input('Lunch Day Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('lunch'), min_value=0, max_value=3, on_change=save_queen_king())
-            #     # with cols[3]:
-            #     #     afternoon_risk_num = st.number_input('Afternoon Risk', value=QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks'].get('afternoon'), min_value=0, max_value=3, on_change=save_queen_king())
-            #     # with cols[4]:
-            #     #     throttle = st.number_input('Throttle', value=QUEEN_KING['king_controls_queen'].get('throttle'), format="%.2f", min_value=0, max_value=1, on_change=save_queen_king())
-
-            #     if 'save_queen_king' in st.session_state and st.session_state['save_queen_king']:
-            #         # handle save info
-            #         QUEEN_KING['king_controls_queen']['use_margin_pct'] = risk_margin_num
-            #         # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['morning'] = morning_risk_num
-            #         # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['lunch'] = lunch_risk_num
-            #         # QUEEN_KING['king_controls_queen']['daytrade_risk_takes']['frame_blocks']['afternoon'] = afternoon_risk_num
-            #         # # QUEEN_KING['king_controls_queen']['throttle'] = throttle
-            #         # PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-            #         st.success("saved")
-            #         st.session_state['save_queen_king'] = False
-            
-            
-            # with cols[7]:
-            #     # Master Controls #
-
-
-            # queen_offline = False
-            # if queenbee_online(cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_queenbee', api_failed=api_failed, prod=prod) == False:
-            #     queen_offline = True
-
-            # queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees', api_failed=api_failed, prod=prod)
-            # queenbee_online(cols=cols, QUEENsHeart=QUEENsHeart, admin=st.session_state['admin'], dag='run_workerbees_crypto', api_failed=api_failed, prod=prod)
-
-
-            # cols = st.columns((1,3,5))
-            # honey_text = "Honey: " + '%{:,.4f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-            # money_text = "Money: " + '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
         
-        if authorized_user and 'queen' in sac_menu.lower(): 
-
-            if st.session_state['admin'] and st.session_state['workerbees']:
-                with st.expander("WorkerBees Tools"):
-                    refresh_workerbees(QUEENBEE, QUEEN_KING)
-            
-            if 'total_profits' not in st.session_state:
-                st.session_state['total_profits'] = False
+        if authorized_user and 'pollen' in menu_id: 
             queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
         cols = st.columns((2,2,5))
 
         with cols[0]:
-            # print("Heart")
-            # now = datetime.now(est)
-            # beat = round((now - QUEENsHeart.get('heartbeat_time')).total_seconds())
-            # beat_size = 66 if beat > 100 else beat
-            # beat_size = 45 if beat_size < 10 else beat_size
             height = 54
             cust_Button("misc/zelda-icons.gif", hoverText=f'Inside Queens Heart', key='show_queenheart', height=f'{height}px', default=False)
 
@@ -791,7 +768,6 @@ def pollenq(admin_pq):
                     stash_queen(QUEEN)
                     if st.session_state['admin']:
                         refresh_swarmqueen_workerbees(QUEEN_KING)
-                        # refresh_workerbees(QUEEN_KING)
                         refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
 
 

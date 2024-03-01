@@ -211,7 +211,7 @@ def sac_menu_buttons(main='Queen'):
             sac.ButtonsItem(label='Hive', icon='backpack4-fill'),
             sac.ButtonsItem(label='Playground', icon='fire'),
             sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
-            sac.ButtonsItem(label='Trading Models', disabled=True),
+            sac.ButtonsItem(label='Trading Models', disabled=False),
             sac.ButtonsItem(label='Account', icon='share-fill'),
         ], format_func='title', align='end', type='text')
     elif main == 'Account':
@@ -448,25 +448,6 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
     return True
 
 
-    # markdown dataframe with color, color rows of dataframe df
-    # for col in df_storygauge.columns:
-    #     # print(type(df_storygauge.iloc[-1].get(col)))
-    #     if type(df_storygauge.iloc[-1].get(col)) == np.float64:
-    #         # print(col)
-    #         df_storygauge[col] = df_storygauge[col] * 100
-    # df_storygauge = df_storygauge[[i for i in df_storygauge.columns.tolist() if i =='symbol' or 'trinity' in i]]
-    # df_storygauge = df_storygauge.style.background_gradient(cmap="RdYlGn", gmap=df_storygauge['trinity_w_L'], axis=0, vmin=-100, vmax=100)                               
-    # st.dataframe(df_storygauge)
-
-def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
-    func_list = [i for i in func_list if st.session_state[i]]
-    if len(func_list) == 0:
-        st.info("I would Suggest Checking our Your ChessBoard This Morning")
-        tabs = False
-    else:
-        tabs = st.tabs(func_list)
-    
-    return tabs, func_list
 
 def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
     gb = GOB.create()
@@ -639,6 +620,10 @@ def url_gif(
 
     return True
 
+
+def return_image_upon_save(title="Saved", width=33, gif=power_gif):
+    local_gif(gif_path=gif)
+    st.success(title)
 
 def local_gif(gif_path, width="33", height="33", sidebar=False, url=False):
     if url:
@@ -1775,28 +1760,7 @@ def example__callback_function__set_session_state(state, key):
     st.session_state[state] = st.session_state[key]
 
 
-def example__color_coding__dataframe(row):
-    if row.mac_ranger == "white":
-        return ["background-color:white"] * len(row)
-    elif row.mac_ranger == "black":
-        return ["background-color:black"] * len(row)
-    elif row.mac_ranger == "blue":
-        return ["background-color:blue"] * len(row)
-    elif row.mac_ranger == "purple":
-        return ["background-color:purple"] * len(row)
-    elif row.mac_ranger == "pink":
-        return ["background-color:pink"] * len(row)
-    elif row.mac_ranger == "red":
-        return ["background-color:red"] * len(row)
-    elif row.mac_ranger == "green":
-        return ["background-color:green"] * len(row)
-    elif row.mac_ranger == "yellow":
-        return ["background-color:yellow"] * len(row)
 
-    import seaborn as sns
-
-    cm = sns.light_palette("green", as_cmap=True)
-    df.style.background_gradient(cmap=cm).set_precision(2)
 
 
 ############ utils ############
@@ -2265,10 +2229,17 @@ def symbols_unique_color(unique_names, characterpool='0123456789ABCDEF'):
     
     for i, name in enumerate(unique_names):
         # Customize the 'name' and 'color' values as needed
-        if 'vwap' in name:
-            color = "#0000FF"
+        if 'vwap' in name and 'QQQ' in name:
+            color = "#8BA6F3"
+        elif 'vwap' in name and 'SPY' in name:
+            color = "#96FEA5"
+        elif 'vwap' not in name and 'QQQ' in name:
+            color = "#285EF9"
+        elif 'vwap' not in name and 'SPY' in name:
+            color = "#2DAD40"
         else:
             color = unique_colors[i]
+
         symbol_dict = {
             "field": name,
             "name": name,

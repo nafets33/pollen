@@ -2,6 +2,7 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from chess_piece.app_hive import set_streamlit_page_config_once, standard_AGgrid
+from dotenv import load_dotenv
 
 set_streamlit_page_config_once()
 
@@ -20,7 +21,6 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from itertools import islice
 from PIL import Image
-from dotenv import load_dotenv
 import random
 
 import os
@@ -74,6 +74,11 @@ qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True)
 QUEEN = qb.get('QUEEN')
 QUEEN_KING = qb.get('QUEEN_KING')
 api = qb.get('api')
+
+st.info(QUEEN.keys())
+df = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
+st.write(df)
+
 
 coin_exchange = "CBSE"
 ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False)
@@ -144,89 +149,29 @@ if st.toggle("wave stories", False):
     except Exception as e:
         print_line_of_error(e)
 
-# for key, value in revrec.items():
-#     st.write(key)
-#     st.write(revrec.get(key))
+def king_knights_of_the_round_table(revrec):
+    waveview = revrec.get('waveview')
+    def func(x):
+        try:
+            return x.split("_")[0]
+        except Exception as e:
+            print(e)
+            return x
+    waveview['star'] = waveview.index
+    waveview['symbol'] = waveview['star'].apply(lambda x: func(x))
 
+    waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('buy')), True, False)
+    waveview_buys = waveview[waveview['symbol_filter'] == True]
+    buys = waveview_buys.groupby(['symbol']).agg({'allocation_deploy': 'sum'}).reset_index()
+    st.dataframe(buys)
 
-# ticker_option = st.selectbox("ticker", options=tickers_avail)
-# frame_option = st.selectbox("frame", options=KING['star_times'])
-# show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
-
-
-# waves, analyzed_waves = model_wave_results(STORY_bee)
-# st.write(waves)
-# st.write(analyzed_waves)
-
-# import streamlit as st
-# import streamlit_antd_components as sac
-# def display_tree_from_dict(data_dict):
-#     items = []
+    waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('sell')), True, False)
+    waveview_sells = waveview[waveview['symbol_filter'] == True]
+    sells = waveview_sells.groupby(['symbol']).agg({'allocation': 'sum'}).reset_index()
     
-#     def convert_to_tree_dict(data, parent_key=''):
-#         tree_dict = []
+    return True
 
-#         for key, value in data.items():
-#             item = {'title': key}
+king_knights_of_the_round_table(revrec)
 
-#             if isinstance(value, dict):
-#                 item['children'] = convert_to_tree_dict(value, parent_key=f"{parent_key}/{key}" if parent_key else key)
-#             elif isinstance(value, list):
-#                 item['children'] = [{'title': f"[{i}]" } for i in range(len(value))]
-#             elif isinstance(value, pd.DataFrame):
-#                 item['title'] = f"{key} (DataFrame)"
-#             else:
-#                 item['title'] = f"{key}: {value}"
 
-#             tree_dict.append(item)
-        
-#         return tree_dict
-
-#     items = convert_to_tree_dict(data_dict)
-    
-#     selected_items = st.checkbox("Select items:", True)
-#     selected_data = {}
-
-#     # Set default checked status based on selected_items
-#     default_checked = {item['title']: item['title'] in selected_items for item in items}
-
-#     tree_data = sac.checkbox_tree(
-#         items=items,
-#         label='label',
-#         index=0,
-#         format_func='title',
-#         icon='table',
-#         open_all=True,
-#         default=default_checked  # Use default to set checked status
-#     )
-
-#     # Process selected items
-#     def process_selected_items(tree_data, parent_key=''):
-#         nonlocal selected_data
-#         for item in tree_data:
-#             key = f"{parent_key}/{item['title']}" if parent_key else item['title']
-#             if item.get('checked', False):
-#                 selected_data[key] = data_dict.get(item['title'], None)
-#             if 'children' in item:
-#                 process_selected_items(item['children'], parent_key=key)
-
-#     process_selected_items(tree_data)
-    
-#     # Display selected data
-#     st.write("Selected Data:")
-#     st.write(selected_data)
-
-# # Example usage:
-# my_dict = {
-#     'name': 'John',
-#     'age': 30,
-#     'address': {
-#         'city': 'New York',
-#         'state': 'NY'
-#     },
-#     'grades': [90, 85, 92],
-#     'dataframe': pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-# }
-
-# st.title("Streamlit App with Checkbox Tree")
-# display_tree_from_dict(my_dict)
+st.write(QUEEN['price_info_symbols'])

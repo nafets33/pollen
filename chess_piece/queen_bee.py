@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
-from chess_piece.king import kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
+from chess_piece.king import hash_string, kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
 from chess_piece.queen_hive import init_charlie_bee, init_queenbee, power_amo, find_symbol, star_ticker_WaveAnalysis, return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, init_clientUser_dbroot, process_order_submission, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
 
 
@@ -47,26 +47,39 @@ exclude_conditions = [
 ] # 'U'
 
 
+def close_day__queen(QUEEN):
+    # dump all completed into FINAL orders bucket # WORKERBEE
+    final_orders = QUEEN['queen_orders']
+    final_orders = final_orders[final_orders['queen_order_state'] == 'final']
+    dump_final_orders = []
+    if len(final_orders) > 0:
+        for final_origin_order in final_orders:
+            dump_final_orders.append(final_origin_order['client_order_id'])
+            linked_orders = return_closing_orders_df(QUEEN, final_origin_order)
+            if len(linked_orders) > 0:
+                for order_idx in linked_orders['client_order_id']:
+                    dump_final_orders.append(order_idx)
+    if dump_final_orders:
+        pass # remove from queen orders and dump into FINAL orders
+
+    return True
+
 
 def generate_client_order_id(QUEEN, ticker, trig, sellside_client_order_id=False): # generate using main_order table and trig count
-    main_orders_table = QUEEN['queen_orders']
+
     temp_date = datetime.now(est).strftime("%y-%m-%d %M.%S.")
+    order_string = f'{ticker}-{trig}-{temp_date}'
+    order_id = hash_string(order_string)
     
     if sellside_client_order_id:
-        main_trigs_df = main_orders_table[main_orders_table['client_order_id'] == sellside_client_order_id].copy()
-        trig_num = len(main_trigs_df) + 1
-        order_id = f'{"close__"}{trig_num}-{sellside_client_order_id}-{temp_date}'
-    else:
-        main_trigs_df = main_orders_table[(main_orders_table['trigname']==trig) & (main_orders_table['exit_order_link'] != 'False')].copy()
-        
-        trig_num = len(main_trigs_df) + 1
-        order_id = f'{"run__"}{ticker}-{trig}-{trig_num}-{temp_date}'
+        order_id = f'{"close__"}{order_id}'
+    else:        
+        order_id = f'{"run__"}{order_id}'
 
     if order_id in QUEEN['client_order_ids_qgen']: # WORKERBEE check if also in api order client order ID
         msg = {"generate client_order_id()": "client order id already exists change"}
         print(msg)
         logging.error(msg)
-        # q_l = len(QUEEN['client_order_ids_qgen'])
         mill_s = datetime.now(est).microsecond
         order_id = f'{order_id}{"_qgen_"}{mill_s}'
     
@@ -151,7 +164,9 @@ def update_origin_order_qty_available(QUEEN, run_order_idx, RUNNING_CLOSE_Orders
 
                 # validate qty
                 if sum(closing_dfs['filled_qty']) > float(queen_order['qty']):
-                    print("wtf closing > origin order", queen_order['client_order_id'])
+                    msg=("wtf closing > origin order", queen_order['client_order_id'])
+                    print(msg)
+                    logging.error(msg)
                     pass
 
                 # update queen order
@@ -313,7 +328,7 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
                 logging.error(order_val.get('log_msg'))
             if order_val.get('stop_order'):
                 QUEEN['queen_orders'].at[run_order_idx, 'queen_order_state'] = 'completed_alpaca'
-                return {}
+                return order_val
             if order_val.get('qty_correction'):
                 logging.warning(order_val.get('log_msg'))
                 QUEEN['queen_orders'].at[run_order_idx, 'validation_correction'] = 'true'
@@ -391,10 +406,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         # update_package client_order id and field updates {client_order_id: {'queen_order_status': 'running'}}
         try:
             save = False
-            df = QUEEN['queen_orders']
             for c_order_id, package in update_package['queen_order_updates'].items():
-                # df_ = df[df['client_order_id'] == c_order_id].copy()
-                # order_idx = df_.iloc[-1].name
                 for field_, new_value in package.items():
                     try:
                         QUEEN['queen_orders'].at[c_order_id, field_] = new_value
@@ -417,7 +429,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             for c_order_id, package in update_package['queen_order_updates'].items():
                 for field_, new_value in package.items():
                     try:
-                        # if field_ in QUEEN['queen_orders'].at[c_order_id, 'order_rules'].keys():
                         QUEEN['queen_orders'].at[c_order_id, 'order_rules'].update({field_: new_value})
                         save = True
                         logging.info((f'{field_} updated to {new_value}'))
@@ -425,7 +436,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         print(e, 'failed to update QueenOrder')
                         logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
             if save:
-                PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+                god_save_the_queen(QUEEN, save_q=True, save_qo=True)
         except Exception as e:
             print(e, print_line_of_error())
             logging.CRITICAL({'error': e, 'msg': 'update queen order', 'update_package': update_package})
@@ -532,8 +543,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     queensleep = True
                     QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])                
                 if queensleep:
-                    print("exiting QUEEN stopping queen")
+                    print("WAIT for QUEEN to STOP")
                     PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+                    print("QUEEN STOPPED")
                     sys.exit()
 
             elif request_name == 'update_order_rules':
@@ -710,9 +722,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     return True #(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
             elif trig_action_num > 0: ## already happens in Water Fall
                 if time_delta < timedelta(minutes=king_order_rules['doubledown_timeduration']):
-                    # print("Trig In Action time delta not Met for Double Down")
-                    logging.info(f"{ticker_time_frame} TRIG In Action, DoubleDown Time Delta Not Met wave amo {wave_amo}")
-                    print("Trig In Action time delta not Met for Double Down")
+                    msg = (f"{ticker_time_frame} TRIG In Action, DoubleDown Time Delta Not Met wave amo {wave_amo}")
+                    logging.info(msg)
                     return True
             elif 'sell' in trigbee: # == 'sell_cross-0':
                 if crypto:
@@ -792,6 +803,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             alloc_deploy = revrec['waveview'].at[ticker_time_frame, 'allocation_deploy']
             wave_amo=alloc_deploy
+            if symbol not in QUEEN['price_info_symbols'].index:
+                msg = f'{symbol} NOT in QUEENs price_info_symbols'
+                return {'kings_blessing': False}
             
             ticker_priceinfo = QUEEN['price_info_symbols'].at[symbol, 'priceinfo']
             # RevRec # Allocation Star allowed df_qcp, df_ticker, df_stars
@@ -987,13 +1001,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # if wave_amo > # ticker price
             if wave_amo > 0:
                 if wave_amo < float(STORY_bee[ticker_time_frame]['story'].get('current_ask')):
-                    msg = (f'KNIGHT EXIT wave amo LESS then current ask {ticker_time_frame} {float(STORY_bee[ticker_time_frame]["story"].get("current_ask"))} {wave_amo}')
+                    msg = (f'KNIGHT EXIT wave amo LESS then current ask {ticker_time_frame} {float(STORY_bee[ticker_time_frame]["story"].get("current_ask"))} {round(wave_amo)}')
                     logging.warning(msg)
                     print(msg)
                     return {'kings_blessing': False}
             if wave_amo_borrow > 0:
                 if wave_amo_borrow < float(STORY_bee[ticker_time_frame]['story'].get('current_ask')):
-                    msg = (f'KNIGHT EXIT wave amo BORROW less then current ask {ticker_time_frame} {float(STORY_bee[ticker_time_frame]["story"].get("current_ask"))} {wave_amo}')
+                    msg = (f'KNIGHT EXIT wave amo BORROW less then current ask {ticker_time_frame} {float(STORY_bee[ticker_time_frame]["story"].get("current_ask"))} {round(wave_amo)}')
                     logging.warning(msg)
                     print(msg)
                     return {'kings_blessing': False}
@@ -1094,29 +1108,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         except Exception as e:
             print(e, print_line_of_error(), ticker_time_frame)
             print("logme")
-
-
-    def king_knights_of_the_round_table(QUEEN):
-        revrec = QUEEN.get('revrec')
-        waveview = revrec.get('waveview')
-        def func(x):
-            try:
-                return x.split("_")[0]
-            except Exception as e:
-                print(e)
-                return x
-        waveview['star'] = waveview.index
-        waveview['symbol'] = waveview['star'].apply(lambda x: func(x))
-
-        waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('buy')), True, False)
-        waveview_buys = waveview[waveview['symbol_filter'] == True]
-        buys = waveview_buys.groupby(['symbol']).agg({'allocation': 'sum'}).reset_index()
-
-        waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('sell')), True, False)
-        waveview_sells = waveview[waveview['symbol_filter'] == True]
-        sells = waveview_sells.groupby(['symbol']).agg({'allocation': 'sum'}).reset_index()
-        
-        return True
 
 
     def command_conscience(QUEENsHeart, QUEEN, STORY_bee, QUEEN_KING, api):
@@ -1325,7 +1316,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             continue
                         timestamp_str = return_timestamp_string()
                         if revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget") <= 0:
-                            print(f'{ticker_time_frame} all budget used up')
+                            # print(f'{ticker_time_frame} all budget used up') # WORKER BEE only LOG message if timestamp has elasped say X seconds 
                             if ticker_time_frame not in QUEEN['queens_messages'].keys():
                                 QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up {timestamp_str}'}
                             else:
@@ -1519,7 +1510,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     def check_origin_order_status(QUEEN, origin_order, origin_idx, closing_filled):
         if float(origin_order["filled_qty"]) == closing_filled: 
             print("# running order has been fully sold out and now we can archive")
-            QUEEN['queen_orders'].at[origin_idx, 'queen_order_state'] = 'completed'
+            QUEEN['queen_orders'].at[origin_idx, 'queen_order_state'] = 'final'
             return True
         else:
             return False
@@ -1844,9 +1835,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 
                 # alloc
                 if ticker_time_frame in revrec['waveview'].index:
-                    al = abs(revrec['waveview'].loc[ticker_time_frame].get('allocation'))
+                    al = revrec['waveview'].loc[ticker_time_frame].get('total_allocation_budget')
                     cb = mm_cost
-                    al_sellable = al -  cb
+                    al_sellable = al -  cb # budget 8, asking to sell 50
                     
                     
                     # sell qty update
@@ -1970,7 +1961,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 print(type(QUEEN['queen_orders'].at[client_order_id, 'assigned_wave']))
                 print("assign wave first pass do this at order creation?", QUEEN['queen_orders'].at[client_order_id, 'assigned_wave'])
                 QUEEN['queen_orders'].at[client_order_id, 'assigned_wave'] = current_wave
-                # god_save_the_queen(QUEEN, save_q=True, save_qo=True)
             
             assigned_wave = QUEEN['queen_orders'].at[client_order_id, 'assigned_wave']
             # compare current wave against it stats How Far away are you from max profit?
@@ -1984,17 +1974,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             current_wave_maxprofit_stat = wave_length - wave_time_tomaxprofit
             
             run_order_wave_changed = True if run_order['assigned_wave'].get('wave_id') != current_wave.get("wave_id") else False
-            # if run_order_wave_changed:
-                # print(f"{ticker_time_frame} Run Order On New Wave >> {client_order_id}")
-                # print(run_order['assigned_wave'].get('wave_id'))
-                # print(current_wave.get("wave_id"))
-                # if order_rules.get('ready_buy') != True:
-                #     print("Do Not Change Wave keep assigned wave as origin this is a Ready BUY")
-                # else:
-                # logging.warning((f"{ticker_time_frame} Run Order On New Wave >> {client_order_id}"))
-                # QUEEN['queen_orders'].at[client_order_id, 'assigned_wave'] = current_wave
-                # god_save_the_queen(QUEEN=QUEEN, save_q=True)
-            # ("RUN Order Changed")
 
             # trade is past excepted duration time 
             past_trade_duration = order_past_duration(queen_order=run_order)
@@ -2108,14 +2087,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         order_side = 'sell'
                         limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
-                    elif run_order.get('honey') > .01 and time_in_trade_past_selltrigbee_max_wave_profit:
-                        print("Selling Out from max_profit_waveDeviation: deviation>> ", current_wave_maxprofit_stat)
-                        sell_reason = 'order_rules__max_profit_waveDeviation'
-                        sell_reasons.append(sell_reason)
-                        sell_order = True
+                    # elif run_order.get('honey') > .01 and time_in_trade_past_selltrigbee_max_wave_profit:
+                    #     print("Selling Out from max_profit_waveDeviation: deviation>> ", current_wave_maxprofit_stat)
+                    #     sell_reason = 'order_rules__max_profit_waveDeviation'
+                    #     sell_reasons.append(sell_reason)
+                    #     sell_order = True
 
-                        order_side = 'sell'
-                        limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
+                    #     order_side = 'sell'
+                    #     limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     
                     # how to consider new triggers?
@@ -2206,9 +2185,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         order_side = 'sell'
                         sell_qty = check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame)
                         if sell_qty > 0:
-                            print("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost)
-                            logging.info(("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost))
-                            # conscience_update(root_name='bishop_sell_order', dict_to_add={'ticker_time_frame': ticker_time_frame, 'sell_reasons': sell_reasons}, list_len=33)
+                            msg = ("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost)
+                            print(msg)
+                            logging.info(msg)
+
                             return {'sell_order': True, 
                             'sell_reason': sell_reason, 
                             'order_side': order_side, 
@@ -2219,7 +2199,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             'maker_middle_cost': mm_cost
                             }
                         else:
-                            print("Bishop DONOT SELL Min.Allocation Stop", ticker_time_frame)
+                            # print("Bishop DONOT SELL Min.Allocation Stop", ticker_time_frame)
                             return {'sell_order': False}
                     else:
                         return {'sell_order': False}
@@ -2302,7 +2282,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
     
     def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states):
         
-        s_loop = datetime.now(est)
         try:
             # Save Heart to avoid saving Queen to improve speed
             if charlie_bee:
@@ -2765,15 +2744,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             s_loop = datetime.now(est)
             qo_main = queen_orders_main(QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING, charlie_bee=charlie_bee)
             charlie_bee['queen_cyle_times']['om_queen_orders___main'] = (datetime.now(est) - s_loop).total_seconds()
-
-            # # God Save the Queen
-            # if qo_main:
-            #     acct_info = QUEEN['account_info']
-            #     QUEEN['revrec'] = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-
-            #     god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
-            #                        save_q=True,
-            #                        save_rr=True,)
         
         except Exception as e:
             print(e)
@@ -3074,7 +3044,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             beat = (e - s).seconds
             god_save_the_queen(QUEEN, QUEENsHeart, charlie_bee, save_qo=True)
             # print(queens_chess_piece, str((e - s).seconds),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
-            if beat > 10:
+            if beat > 23:
                 logging.warning((queens_chess_piece, ": cycle time > 10 seconds:  SLOW cycle: ", (e - s).seconds ))
                 print(queens_chess_piece, str(beat),  "sec: ", datetime.now().strftime("%A,%d. %I:%M:%S%p"))
                 print('use price gauge') # (STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
