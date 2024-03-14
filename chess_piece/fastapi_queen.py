@@ -29,7 +29,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     ttf_grid_names_list,
                                     sell_button_dict_items,)
 from chess_piece.queen_bee import execute_order, sell_order__var_items
-# import streamlit as st
+import copy
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
 
@@ -286,7 +286,7 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
       tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
 
     # king_order_rules = revrec['waveview'].at[ticker_time_frame, 'king_order_rules']
-    king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime]
+    king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
     # END
     
     crypto=False
@@ -300,38 +300,41 @@ def app_buy_order_request(client_user, username, prod, selected_row, default_val
     borrowed_funds = True # USER INITIATE
     borrow_qty = False ## DEPRECIATE
     # print(button_buy.keys())
+    def validate_return_kors(king_order_rules, button_buy):
+      for rule, value in button_buy.items():
+        if rule in ['wave_amo', 'close_order_today', 'take_profit', 'sell_out', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration']: # validated items to add orules
 
-    for rule, value in button_buy.items():
-      if rule in ['wave_amo', 'close_order_today', 'take_profit', 'sell_out', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration']: # validated items to add orules
+          if rule == 'wave_amo':
+            if type(value) != float:
+              value = float(value)
+          elif rule == 'close_order_today':
+              if type(value) != bool:
+                print("ERRROR BOOL CLOSE ORDER")
+                continue
+          elif rule == 'take_profit':
+              if type(value) != float:
+                value = float(value)
+          elif rule == 'sell_out':
+              if type(value) != float:
+                value = float(value)
+          elif rule == 'sell_trigbee_trigger':
+              if type(value) != bool: ## BOOLS are already handled by frontend
+                print("ERRROR BOOL CLOSE ORDER")
+                continue
+          elif rule == 'sell_trigbee_trigger_timeduration':
+              if type(value) != int:
+                value = int(value)
+          
+          print("updating", rule, value)
+          king_order_rules.update({rule: value})
 
-        if rule == 'wave_amo':
-          #  print(type(value), value)
-            if type(value) != float:
-              value = float(value)
-            wave_amo = value
-        elif rule == 'close_order_today':
-            if type(value) != bool:
-              print("ERRROR BOOL CLOSE ORDER")
-              continue
-        elif rule == 'take_profit':
-            if type(value) != float:
-              value = float(value)
-        elif rule == 'sell_out':
-            if type(value) != float:
-              value = float(value)
-        elif rule == 'sell_trigbee_trigger':
-            if type(value) != bool: ## BOOLS are already handled by frontend
-              print("ERRROR BOOL CLOSE ORDER")
-              continue
-        elif rule == 'sell_trigbee_trigger_timeduration':
-            if type(value) != int:
-              value = int(value)
-        
-        print("updating", rule, value)
-        king_order_rules.update({rule: value})
+      return king_order_rules
+    
+    kors = validate_return_kors(king_order_rules, button_buy)
+    wave_amo = kors.get('wave_amo')
 
     order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
-                                                king_order_rules=king_order_rules, 
+                                                king_order_rules=kors, 
                                                 order_side='buy', 
                                                 wave_amo=wave_amo, 
                                                 maker_middle=maker_middle, 
@@ -754,6 +757,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
             df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
             df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
             df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
+            df.at[symbol, 'total_budget'] = round(revrec['df_ticker'].at[symbol, 'ticker_total_budget'])
 
 
           story_grid_num_cols = ['long_at_play',
@@ -767,17 +771,20 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           'trinity_w_S',
           'queens_suggested_buy',
           'queens_suggested_sell',
+          'total_budget'
           ]
           # # Totals Index
           for totalcols in story_grid_num_cols:
             if 'trinity' in totalcols:
               df.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
             elif totalcols == 'queens_suggested_buy':
-               df.loc['Total', totalcols] = '${:,.0f}'.format(round(df["buy_alloc_deploy"].sum()))
+              df.loc['Total', totalcols] = '${:,.0f}'.format(round(df["buy_alloc_deploy"].sum()))
             elif totalcols == 'queens_suggested_sell':
-               df.loc['Total', totalcols] = '${:,.0f}'.format(round(df["sell_alloc_deploy"].sum()))
+              df.loc['Total', totalcols] = '${:,.0f}'.format(round(df["sell_alloc_deploy"].sum()))
+            elif totalcols == 'total_budget':
+              df.loc['Total', totalcols] = df["total_budget"].sum()
             else:
-               df.loc['Total', totalcols] = df[totalcols].sum()
+              df.loc['Total', totalcols] = df[totalcols].sum()
           newIndex=['Total']+[ind for ind in df.index if ind!='Total']
           df=df.reindex(index=newIndex)
           
@@ -906,7 +913,7 @@ def get_revrec_trinity(username, prod, trinity_weight='w_15', symbols=['SPY']):
   except Exception as e:
      print_line_of_error("trinity revrec fastapi")
 
-def get_ticker_time_frame(symbols=['SPY']):
+def get_ticker_time_frame(symbols=['SPY'], ttf="1Minute_1Day"):
   try:
 
 
@@ -918,10 +925,11 @@ def get_ticker_time_frame(symbols=['SPY']):
     df_main = False
     # for star in stars().keys():
     for symbol in symbols:
-      df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+      df = ticker_db.get('pollenstory')[f'{symbol}_{ttf}']
       df = df[['timestamp_est', 'macd_tier']] #'ticker_time_frame',
       df = df.rename(columns={'macd_tier': symbol})
-      df = add_priorday_tic_value(df)
+      if ttf == '1Minute_1Day':
+        df = add_priorday_tic_value(df)
 
       if type(df_main) == bool:
          df_main = df

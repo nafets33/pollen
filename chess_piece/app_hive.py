@@ -146,7 +146,7 @@ def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
     local_gif(gif_path=gif)
     st.success(title)
 
-def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300):
+def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300, key='graph'):
     st_custom_graph(
         api=api,
         x_axis={
@@ -165,6 +165,7 @@ def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=Fals
         api_key=os.environ.get("fastAPI_key"),
         return_type=return_type,
         graph_height=graph_height,
+        key=key,
         # y_max=420
         )
     return True
@@ -2249,35 +2250,16 @@ def symbols_unique_color(unique_names, characterpool='0123456789ABCDEF'):
     
     return symbol_dicts
 
-def return_user_symbol_colors(QUEEN_KING, idx_field="symbol", qcp='bishop', unique=True, symbol_dicts=[]):
-    qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
-    df = QUEEN_KING['revrec'].get('waveview')
-    df = df[df[idx_field].isin(qcp_tickers)]
-    df = df[df.index.str.contains("1Minute")]
-    
-    for ttf in df.index:
-        symbol = ttf.split("_")[0]
-        if 'buy' in df.at[ttf, 'macd_state']:
-            color = '#13B107' 
-        else:
-            color = '#DE0C0C' # 'green'
-        
-        symbol_dict = {
-            "field": symbol,
-            "name": f'{symbol}',
-            "color": color # unique_colors[i]
-        }
-        symbol_dicts.append(symbol_dict)
-    
-    
-    if unique:
-        unique_names = df[idx_field].tolist()
-        symbol_dicts = symbols_unique_color(unique_names)
+def return_user_symbol_colors(QUEEN_KING, symbols=['SPY']):
+    # check if symbol is assigned a color and then use that color else use unique
+    # qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
+
+    symbol_dicts = symbols_unique_color(symbols)
 
     return symbol_dicts
 
 
-def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=300):
+def custom_graph_ttf_qcp(symbols, prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=300, ttf='1Minute_1Day', key='ttf_macd_graph'):
 # with cols[1]:
     # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
     # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
@@ -2298,19 +2280,19 @@ def custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_ad
                 'field': 'timestamp_est'
             },
 
-            y_axis=return_user_symbol_colors(QUEEN_KING=QUEEN_KING, idx_field="symbol", qcp='bishop'),
+            y_axis=return_user_symbol_colors(QUEEN_KING=QUEEN_KING, symbols=symbols),
             theme_options=theme_options,
             refresh_button=True,
             
             #kwrags
             username=KING['users_allowed_queen_emailname__db'].get(client_user),
             prod=prod,
-            symbols=QUEEN_KING['chess_board']['bishop'].get('tickers'), #'symbols,
+            symbols=symbols,
             refresh_sec=refresh_sec,
             api_key=os.environ.get("fastAPI_key"),
             graph_height=graph_height,
-            trinity_weight='w_15',
-            key='trinity_graph',
+            key=key,
+            ttf=ttf,
             # y_max=420
             )
     except Exception as e:

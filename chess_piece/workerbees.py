@@ -800,9 +800,6 @@ def queen_workerbees(
             print("PollenStory Failed continue")
             return False
         betty_bee = pollens_honey["betty_bee"]
-        # ANGEL_bee = pollens_honey["conscience"]["ANGEL_bee"]
-        # knights_sight_word = pollens_honey["conscience"]["KNIGHTSWORD"]
-        # STORY_bee = pollens_honey["conscience"]["STORY_bee"]
 
         # for each star append last macd state
         for ticker_time_frame, i in pollens_honey["conscience"].get("STORY_bee").items():
@@ -816,17 +813,6 @@ def queen_workerbees(
             pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"][
                 "price_gauge"
             ] = speed_gauges[ticker_time_frame]["price_gauge"]
-
-        # # add all charts
-        # QUEEN[queens_chess_piece]["pollenstory"] = pollens_honey["pollen_story"]
-
-        # # populate conscience
-        # QUEEN[queens_chess_piece]["conscience"]["ANGEL_bee"] = ANGEL_bee
-        # QUEEN[queens_chess_piece]["conscience"]["KNIGHTSWORD"] = knights_sight_word
-        # QUEEN[queens_chess_piece]["conscience"]["STORY_bee"] = STORY_bee
-        # QUEEN[queens_chess_piece]["conscience"]["SPEEDY_bee"] = SPEEDY_bee
-
-        # PickleData(pickle_file=PB_Story_Pickle, data_to_store=QUEEN)
 
         def write_pollenstory_storybee(pollens_honey, backtesting, backtesting_star):
             s = datetime.now(est)
@@ -1031,7 +1017,7 @@ def queen_workerbees(
             )
             all_pawns = []
             p_num = 0
-            for pawn in list(alpaca_symbols_dict.keys())[200:300]:
+            for pawn in list(alpaca_symbols_dict.keys()):
                 all_pawns.append(
                     init_qcp(
                         init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
@@ -1113,7 +1099,7 @@ def queen_workerbees(
                         )
                     e = datetime.now(est)
                     print(
-                        f"Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}"
+                        f"{e} Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}"
                     )
                     # return True
                 except Exception as e:

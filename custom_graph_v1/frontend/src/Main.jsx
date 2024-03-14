@@ -149,7 +149,25 @@ class App extends Component {
       },
       toolTip: {
         shared: true,
-      },
+        contentFormatter: function (e) {
+            let content = "";
+    
+            // Format the x-axis time and add it to the tooltip content
+            const formattedXValue = moment(e.entries[0].dataPoint.x).format("DD/MM/YYYY HH:mm");
+            content += `<strong>Date</strong>: ${formattedXValue}<br/>`;
+    
+            // Loop through other data points (excluding the x-axis time) and add them to the tooltip content
+            for (let i = 1; i < e.entries.length; i++) {
+                const entry = e.entries[i];
+                const dataSeries = entry.dataSeries;
+                const dataPoint = entry.dataPoint;
+                const color = dataSeries.color ? dataSeries.color : dataSeries.options.color;
+                content += `<strong style="color: ${color}">${dataSeries.name}</strong>: ${dataPoint.y}<br/>`;
+            }
+    
+            return content;
+        }
+    },
       legend: {
         cursor: "pointer",
         verticalAlign: "top",

@@ -750,7 +750,7 @@ def pollenq(admin_pq):
 
         
         if authorized_user and 'pollen' in menu_id: 
-            queens_conscience(st, hc, QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
+            queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
         cols = st.columns((2,2,5))
 

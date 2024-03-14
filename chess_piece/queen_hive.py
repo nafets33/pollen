@@ -433,7 +433,7 @@ def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
 def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
              ticker_list=['SPY'], 
              theme='nuetral', 
-             model='MACD', piece_name='king', buying_power=1, borrow_power=0, picture='knight_png'):
+             model='MACD', piece_name='king', buying_power=1, borrow_power=0, picture='knight_png', margin_power=0):
     return {
         "picture": picture,
         "piece_name": piece_name,
@@ -444,6 +444,7 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
         "theme": theme,
         "total_buyng_power_allocation": buying_power,
         "total_borrow_power_allocation": borrow_power,
+        "margin_power": margin_power,
     }
 
 
@@ -887,8 +888,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview['star_sells_at_play'] = waveview.index.map(star_short)
         main_indexes = QUEEN['heartbeat']['main_indexes']
         df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
-        # df_broker_portfolio['symbol'] = df_broker_portfolio['symbol'].apply(lambda x: find_symbol_reverse(main_indexes, x))
-        # df_broker_portfolio = df_broker_portfolio.groupby("symbol")[['qty_available']].sum().reset_index().set_index('symbol', drop=False)
         df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
 
         df_storyview = resp.get('df_storyview')
@@ -1008,8 +1007,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 waveview_map = return_trading_model_mapping(QUEEN_KING, waveview)
                 waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
 
-
-
                 # start pct
                 waveview['macd_start_tier_alloc'] =np.where(waveview['start_tier_macd']==tier_max, 0, waveview['start_tier_macd'] / tier_max)
                 waveview['vwap_start_tier_alloc'] =np.where(waveview['start_tier_vwap']==tier_max, 0, waveview['start_tier_vwap'] / tier_max)
@@ -1061,13 +1058,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 # waveview['allocation_power_powerlen'] = np.where((abs(waveview['tmp_power']) - abs(waveview['tmp_power_len'])) < 1, alloc_powerlen_base_weight * waveview['star_total_budget'], waveview['tmp_power'] - waveview['tmp_power_len'])
 
                 """ # TIME to Max Profit Delta from Current Length """
-                waveview['ttmp__length'] = waveview['time_to_max_profit'] + waveview['length']
-                waveview['tmp_len_delta'] = 1 - (waveview['tmp_length_deivation'] * waveview['ttmp__length']) # diff from tmp & len, total sum as base denominator
                 waveview['alloc_powerlen'] = np.where(waveview['time_to_max_profit'] == 0, 
                                                       -1, 
                                                       ((1- (waveview['length'] - waveview['time_to_max_profit']) / waveview['length']) * -1))
-                waveview['alloc_powerlen'] = np.where((waveview['alloc_powerlen'] == -1) & (waveview['length']>1), (1-waveview['starmark_len_deivation']) * -1 , waveview['alloc_powerlen']) # check if no mxprofit and length past 1, lose budget
-                # waveview['alloc_powerlen'] = np.where((waveview['starmark_len_deivation']-1) > 0, (waveview['starmark_len_deivation']-1), 0)
+                waveview['alloc_powerlen'] = np.where((waveview['alloc_powerlen'] == -1) & (waveview['length']>1), -.5, waveview['alloc_powerlen']) # check if no mxprofit and length past 1, lose budget
 
                 # OJ allocation time # Allow for Reverse budget outcome
                 waveview['allocation'] = waveview['star_total_budget'] * waveview['lev_vs_starmark_tmp_multiplier'] # 
@@ -1104,6 +1098,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 waveview['allocation_deploy'] = np.where((waveview['bs_position']=='buy'), waveview['total_allocation_budget'] - waveview['star_buys_at_play'], waveview['total_allocation_budget'] - waveview['star_sells_at_play'])
                 waveview['allocation_borrow_deploy'] = np.where((waveview['bs_position']=='buy'), (waveview['total_allocation_borrow_budget'] - waveview['star_buys_at_play']) + waveview['allocation_deploy'], (waveview['total_allocation_borrow_budget'] - waveview['star_sells_at_play'])  + waveview['allocation_deploy'])
 
+                waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), waveview['total_allocation_budget'], (waveview['star_total_budget'] - waveview['total_allocation_budget']))
+                waveview['allocation_long_deploy'] = np.where((waveview['bs_position']=='buy'), waveview['allocation_deploy'], (waveview['star_total_budget'] - waveview['total_allocation_budget'] - waveview['star_buys_at_play']))
+
+
             except Exception as e:
                 print_line_of_error(e)
 
@@ -1111,6 +1109,16 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
 
         waveview = revrec_allocation(waveview, df_storyview, wave_analysis_down,  current_wave)
+
+        for symbol in storygauge.index:
+            token = waveview[waveview['symbol'] == symbol]
+            # for _, row in token.iterrows():
+            #     mstate = row['macd_state']
+            #     ttf = row['ticker_time_frame']
+            #     name = f'{mstate}_{ttf}'
+            #     storygauge.at[symbol, name] = row['end_tier_macd']
+            if len(token) > 0:
+                storygauge.at[symbol, 'allocation_long_deploy'] = sum(token['allocation_long_deploy'])
         
         if save_queenking:
             PickleData(QUEEN_KING.get('source'), QUEEN_KING)
@@ -1331,7 +1339,7 @@ def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral")
         else:
             print("error in tm")
     except Exception as e:
-        print('addTM ', e)
+        print_line_of_error("adding trading model error")
 
 
 def add_key_to_QUEEN(QUEEN, queens_chess_piece):  # returns QUEEN
@@ -3821,14 +3829,11 @@ def kings_order_rules( # rules created for 1Minute
     limit_price=False,
     # BUYS
     doubledown_timeduration=60,
-    # ignore_trigbee_in_macdstory_tier=[0],
-    # ignore_trigbee_in_histstory_tier=[0],
-    # Not Used
-    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+
     ignore_trigbee_at_power=0.01,
-    macd_tier_multiplier = {},
-    vwap_tier_multiplier = {},
-    rsi_tier_multiplier = {},
+    macd_tier_multiplier = {}, # deprecate
+    vwap_tier_multiplier = {},# deprecate
+    rsi_tier_multiplier = {},# deprecate
 
     # SELLS
     take_profit=.01,
@@ -3997,7 +4002,7 @@ def generate_TradingModel(
                                     timeduration=360,
                                     take_profit=.01,
                                     sell_out=-.04,
-                                    sell_trigbee_trigger=True,
+                                    sell_trigbee_trigger=False,
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -4336,13 +4341,9 @@ def generate_TradingModel(
             for star in stars().keys():
                 star_kings_order_rules_dict[star] = {}
                 for trigbee in trigbees:
-                    # star_kings_order_rules_dict[star][trigbee] = copy.deepcopy(trigbee__default_settings[trigbee]) # theme=theme
                     star_kings_order_rules_dict[star][trigbee] = {}
                     for blocktime in waveBlocktimes:
                         star_kings_order_rules_dict[star][trigbee][blocktime] = wave_block_theme__kor.get(star) # theme=theme
-                        # star_kings_order_rules_dict[star][trigbee][blocktime].update({'star': star})
-                        # if blocktime == 'morning_9-11':
-                        # print(f""" {star_kings_order_rules_dict[star][trigbee][blocktime].get('timeduration')} queenhive {ticker} {star} {trigbee} {blocktime} {wave_block_theme__kor[star].get("timeduration")}""" )
 
             return star_kings_order_rules_dict
 
@@ -4469,7 +4470,6 @@ def generate_TradingModel(
 
         # Get Stars Trigbees and Blocktimes to create kings order rules
         all_stars = stars().keys()
-        # trigbees = ["buy_cross-0", "sell_cross-0", "ready_buy_cross"]
         waveBlocktimes = [
             "premarket",
             "morning_9-11",
@@ -4585,7 +4585,7 @@ def generate_TradingModel(
 
         return {"MACD": macd_model}
     except Exception as e:
-        print(e)
+        print_line_of_error("generate trading model error")
         return None
 
 
@@ -4996,8 +4996,8 @@ def star_power(stars):
 def return_queen_controls(stars=stars):
     chessboard = generate_chess_board()
     tradingmodels = generate_chessboards_trading_models(chessboard)
-    star_powers = star_power(stars)
-    x_power = star_power(stars)
+    star_powers = star_power(stars) # deprecate
+    x_power = star_power(stars) # deprecate
 
     queen_controls_dict = {
         "theme": "nuetral",
@@ -5019,10 +5019,9 @@ def return_queen_controls(stars=stars):
 
                                 'budget_type': 'star'},
         'throttle': .5,
-        'x_power': x_power,
-        'star_power': star_powers,
-        # 'star_powers': star_powers,
-        # 'daylongterm_risk_takes': {'morning': 1, 'lunch': 1, 'afternoon':1},
+        'x_power': x_power, # deprecate
+        'star_power': star_powers, # deprecate
+
     }
     return queen_controls_dict
 
@@ -5030,7 +5029,6 @@ def return_queen_controls(stars=stars):
 def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme):
     print("update generate trading model")
     tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme=theme)['MACD'][ticker]
-    # QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(tradingmodel1)
     QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
     return QUEEN_KING
 
@@ -5535,16 +5533,10 @@ def story_view(STORY_bee, ticker):  # --> returns dataframe
 
                 last_buy_wave = [v for (k, v) in conscience["waves"]["buy_cross-0"].items() if str((len(conscience["waves"]["buy_cross-0"].keys()) - 1)) == str(k)][0]
                 last_sell_wave = [v for (k, v) in conscience["waves"]["sell_cross-0"].items() if str((len(conscience["waves"]["sell_cross-0"].keys()) - 1)) == str(k)][0]
-                # last_ready_buy_wave = [v for (k,v) in conscience['waves']['ready_buy_cross'].items() if str((len(conscience['waves']['ready_buy_cross'].keys()) - 1)) == str(k)][0]
-
-                # all_buys = [v for (k,v) in conscience['waves']['buy_cross-0'].items()]
-                # all_sells = [v for (k,v) in conscience['waves']['sell_cross-0'].items()]
 
                 # ALL waves groups
                 trigbee_waves_analzyed = analyze_waves(STORY_bee, ticker_time_frame=ttframe)
                 return_agg_view.append(trigbee_waves_analzyed)
-                # return_analyzed_wavesup.append(trigbee_waves_analzyed.get('df_waveup'))
-                # return_analyzed_wavesdown.append(trigbee_waves_analzyed.get('df_wavedown'))
                 
                 # Current Wave View
                 if "buy" in story["macd_state"]:
@@ -6130,84 +6122,6 @@ def send_email(
 ################ NOT IN USE ######################
 ##################################################
 
-
-# ### NEEDS TO BE WORKED ON TO ADD TO WORKERBEE
-# def speedybee(QUEEN, queens_chess_piece, ticker_list): # if queens_chess_piece.lower() == 'workerbee': # return tics
-#     ticker_list = ['AAPL', 'TSLA', 'GOOG', 'META']
-
-#     s = datetime.now(est)
-#     r = rebuild_timeframe_bars(ticker_list=ticker_list, build_current_minute=False, min_input=0, sec_input=30) # return all tics
-#     resp = r['resp'] # return slope of collective tics
-#     speedybee_dict = {}
-#     slope_dict = {}
-#     for symbol in set(resp['symbol'].to_list()):
-#         df = resp[resp['symbol']==symbol].copy()
-#         df = df.reset_index()
-#         df_len = len(df)
-#         if df_len > 2:
-#             slope, intercept, r_value, p_value, std_err = stats.linregress(df.index, df['price'])
-#             slope_dict[df.iloc[0].symbol] = slope
-#     speedybee_dict['slope'] = slope_dict
-
-#     # QUEEN[queens_chess_piece]['pollenstory_info']['speedybee'] = speedybee_dict
-
-#     print("cum.slope", sum([v for k,v in slope_dict.items()]))
-#     return {'speedybee': speedybee_dict}
-
-
-# def return_snapshots(ticker_list):
-#     # ticker_list = ['SPY', 'AAPL'] # TEST
-#     """ The Following will convert get_snapshots into a dict"""
-#     snapshots = api.get_snapshots(ticker_list)
-#     # snapshots['AAPL'].latest_trade.price # FYI This also avhices same goal
-#     return_dict = {}
-
-#     # handle errors
-#     error_dict = {}
-#     for i in snapshots:
-#         if snapshots[i] == None:
-#             error_dict[i] = None
-
-#     try:
-#         for ticker in snapshots:
-#             if ticker not in error_dict.keys():
-#                     di = {ticker: {}}
-#                     token_dict = vars(snapshots[ticker])
-#                     temp_dict = {}
-#                     # for k, v in token_dict.items():
-#                     #     snapshots[ticker]
-
-
-#                     for i in token_dict:
-#                         unpack_dict = vars(token_dict[i])
-#                         data = unpack_dict["_raw"] # raw data
-#                         dataname = unpack_dict["_reversed_mapping"] # data names
-#                         temp_dict = {i : {}} # revised dict with datanames
-#                         for k, v in dataname.items():
-#                             if v in data.keys():
-#                                 t = {}
-#                                 t[str(k)] = data[v]
-#                                 temp_dict[i].update(t)
-#                                 # if v == 't':
-#                                 #     temp_dict[i]['timestamp_covert'] = convert_todatetime_string(data[v])
-#                                 #     # temp_dict[i]['timestamp_covert_est'] =  temp_dict[i]['timestamp_covert'].astimezone(est)
-#                                 #     # temp_dict[i]['timestamp_covert_est'] = data[v].astimezone(est)
-#                             di[ticker].update(temp_dict)
-#                     return_dict.update(di)
-
-#     except Exception as e:
-#         print("logme", ticker, e)
-#         error_dict[ticker] = "Failed To Unpack"
-
-#     return [return_dict, error_dict]
-# # data = return_snapshots(ticker_list=['SPY', 'AAPL'])
-
-
-def log_script(log_file, loginfo_dict):
-    loginfo_dict = {"type": "info", "lognote": "someones note"}
-    df = pd.read_csv(log_file, dtype=str, encoding="utf8")
-    for k, v in loginfo_dict.items():
-        df[k] = v.fillna(df[k])
 
 
 def datestr_UTC_to_EST(date_string, return_string=False):

@@ -1,77 +1,167 @@
 
 
 import pandas as pd
-import os
-import sys
-import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import pytz
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-from itertools import islice
-from PIL import Image
-from dotenv import load_dotenv
-import random
 
-# import streamlit as st
-# from st_aggrid import GridOptionsBuilder, AgGrid, GridUpdateMode, DataReturnMode, JsCode
-# from streamlit_extras.stoggle import stoggle
-# from streamlit_extras.switch_page_button import switch_page
-import time
+import hydralit_components as hc
+
+import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
 import os
-import sqlite3
 import time
-import aiohttp
-import asyncio
-# import requests
-# from requests.auth import HTTPBasicAuth
-from chess_piece.app_hive import queen_messages_grid__apphive, custom_fastapi_text, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif, pollen__story
-from chess_piece.king import get_ip_address, workerbee_dbs_backtesting_root__STORY_bee, return_all_client_users__db, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, wave_analysis__storybee_model, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, analyze_waves, pollen_themes, return_timestamp_string, init_logging
+
+from chess_piece.app_hive import create_slope_chart, pollenq_button_source, create_main_macd_chart, create_wave_chart, create_wave_chart_all, create_wave_chart_single
+from chess_piece.king import return_QUEENs__symbols_data, print_line_of_error
+from chess_piece.queen_hive import init_queenbee
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph
 
-from ozz.ozz_bee import send_ozz_call
-# from chat_bot import ozz_bot
-
-
-# from tqdm import tqdm
-
 import ipdb
 
+est = pytz.timezone("US/Eastern")
+pq_buttons = pollenq_button_source()
 
 pd.options.mode.chained_assignment = None
 
+prod=st.session_state['prod']
+client_user=st.session_state['client_user']
+qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True)
+QUEEN = qb.get('QUEEN')
+QUEEN_KING = qb.get('QUEEN_KING')
+api = qb.get('api')
 
-# with charts_tab:
-trading_days = hive_dates(api=api)['trading_days']
-mkhrs = return_market_hours(trading_days=trading_days)
-refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+call_all_ticker_data = st.sidebar.checkbox("swarmQueen Symbols", False)
 
-cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
-            prod=prod,
-            api=f'{ip_address}/api/data/symbol_graph',
-            x_axis='timestamp_est',
-            y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
-            theme_options={
-                'backgroundColor': k_colors.get('default_background_color'),
-                'main_title': '',   # '' for none
-                'x_axis_title': '',
-                'grid_color': default_text_color,
-                "showInLegend": True,
-                "showInLegendPerLine": True,
-            },
-            refresh_sec=refresh_sec,
-            refresh_button=True,
-            graph_height=300,
-            symbols=['SPY', 'QQQ'],
+ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=call_all_ticker_data)
+POLLENSTORY = ticker_db['pollenstory']
+STORY_bee = ticker_db['STORY_bee']
+
+tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
+
+def advanced_charts():
+    try:
+        # tickers_avail = [list(set(i.split("_")[0] for i in POLLENSTORY.keys()))][0]
+        cols = st.columns((1,5,1,1))
+        # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
+        stars_radio_dict = {'1Min':"1Minute_1Day", '5Min':"5Minute_5Day", '30m':"30Minute_1Month", '1hr':"1Hour_3Month", 
+        '2hr':"2Hour_6Month", '1Yr':"1Day_1Year", 'all':"all",}
+        with cols[0]:
+            ticker_option = st.selectbox("Tickers", tickers_avail, index=tickers_avail.index(["SPY" if "SPY" in tickers_avail else tickers_avail[0]][0]))
+            ticker = ticker_option
+        with cols[1]:
+            option__ = st.radio(
+                label="stars_radio",
+                options=list(stars_radio_dict.keys()),
+                key="signal_radio",
+                label_visibility='visible',
+                # disabled=st.session_state.disabled,
+                horizontal=True,
             )
-# with cols[1]:
-    # with st.expander("Wave Race :ocean:", True):
-refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-custom_graph_ttf_qcp(prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address)
+        
+        with cols[2]:
+            # day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
+            hc.option_bar(option_definition=pq_buttons.get('charts_day_option_data'),title='Show Today Only', key='day_only_option', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+        
+        if option__ != 'all':
+            ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
+        else:
+            ticker_time_frame = f'{ticker}_{"1Minute_1Day"}'
+
+        df = POLLENSTORY[ticker_time_frame].copy()
+
+        charts__view, waves__view, slopes__view = st.tabs(['charts', 'waves', 'slopes'])
+        
+        with charts__view:
+            try:
+
+                st.markdown('<div style="text-align: center;">{}</div>'.format(ticker_option), unsafe_allow_html=True)
+
+                if option__.lower() == 'all':
+                    min_1 = POLLENSTORY[f'{ticker_option}{"_"}{"1Minute_1Day"}'].copy()
+                    min_5 = POLLENSTORY[f'{ticker_option}{"_"}{"5Minute_5Day"}'].copy()
+                    min_30m = POLLENSTORY[f'{ticker_option}{"_"}{"30Minute_1Month"}'].copy()
+                    _1hr = POLLENSTORY[f'{ticker_option}{"_"}{"1Hour_3Month"}'].copy()
+                    _2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
+                    _1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
+
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.plotly_chart(create_main_macd_chart(min_1))
+                    with c2:
+                        st.plotly_chart(create_main_macd_chart(min_5))
+                    with c1:
+                        st.plotly_chart(create_main_macd_chart(min_30m))
+                    with c2:
+                        st.plotly_chart(create_main_macd_chart(_1hr))
+                    with c1:
+                        st.plotly_chart(create_main_macd_chart(_2hr))
+                    with c2:
+                        st.plotly_chart(create_main_macd_chart(_1yr))
+                else:
+                    # if day_only_option == 'yes':
+                    if st.session_state['day_only_option'] == 'charts_dayonly_yes':
+                        df_day = df['timestamp_est'].iloc[-1]
+                        df['date'] = df['timestamp_est'] # test
+
+                        df_today = df[df['timestamp_est'] > (datetime.now().replace(hour=1, minute=1, second=1)).astimezone(est)].copy()
+                        df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
+
+                        df = df_today
+                    
+                    st.plotly_chart(create_main_macd_chart(df=df, width=1500, height=550))
+            
+            except Exception as e:
+                print(e)
+                print_line_of_error()
+
+        # if slope_option == 'yes':
+        with slopes__view:
+            # df = POLLENSTORY[ticker_time_frame].copy()
+            slope_cols = [i for i in df.columns if "slope" in i]
+            slope_cols.append("close")
+            slope_cols.append("timestamp_est")
+            slopes_df = df[['timestamp_est', 'hist_slope-3', 'hist_slope-6', 'macd_slope-3']]
+            fig = create_slope_chart(df=df)
+            st.plotly_chart(fig)
+            st.dataframe(slopes_df)
+            
+        # if wave_option == "yes":
+        with waves__view:
+            # df = POLLENSTORY[ticker_time_frame].copy()
+            fig = create_wave_chart(df=df)
+            st.plotly_chart(fig)
+            
+            # dft = split_today_vs_prior(df=df)
+            # dft = dft['df_today']
+            fig=create_wave_chart_all(df=df, wave_col='buy_cross-0__wave')
+            st.plotly_chart(fig)
+
+            st.write("current wave")
+            current_buy_wave = df['buy_cross-0__wave_number'].tolist()
+            current_buy_wave = [int(i) for i in current_buy_wave]
+            current_buy_wave = max(current_buy_wave)
+            st.write("current wave number")
+            st.write(current_buy_wave)
+            dft = df[df['buy_cross-0__wave_number'] == str(current_buy_wave)].copy()
+            st.write({'current wave': [dft.iloc[0][['timestamp_est', 'close', 'macd']].values]})
+            fig=create_wave_chart_single(df=dft, wave_col='buy_cross-0__wave')
+            st.plotly_chart(fig)
+    
+    
+        st.session_state['last_page'] = 'queen'
+    
+    
+    except Exception as e:
+        print(e)
+        print_line_of_error()
+    
+    return True
+
+
+if __name__ == '__main__':
+    advanced_charts()

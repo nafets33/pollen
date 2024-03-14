@@ -84,7 +84,7 @@ def update_trading_models(QUEEN_KING, KING):
                 'portfolio_name': {'type': None}, # not allowed to change
                 'trigbees': {'type': 'trigbees', 'list': ['active', 'not_active']},
                 'time_blocks': {'type': 'time_blocks', 'list': ['active', 'not_active']},
-                'power_rangers': {'type': 'power_rangers', 'list': ['active', 'not_active']},
+                # 'power_rangers': {'type': 'power_rangers', 'list': ['active', 'not_active']},
                 # 'power_rangers_power': {'type': 'power_rangers_power'},
                 'kings_order_rules': {'type': 'PENDING'},
                 'stars_kings_order_rules': {'type': 'stars_kings_order_rules'},
@@ -122,7 +122,7 @@ def update_trading_models(QUEEN_KING, KING):
         'scalp_profits_timeduration': 'number',
         'stagger_profits_tiers': 'number',
         'limitprice_decay_timeduration': 'number',
-        'take_profit_in_vwap_deviation_range': 'take_profit_in_vwap_deviation_range',
+        # 'take_profit_in_vwap_deviation_range': 'take_profit_in_vwap_deviation_range',
         'skip_sell_trigbee_distance_frequency': 'skip_sell_trigbee_distance_frequency', # skip sell signal if frequency of last sell signal was X distance >> timeperiod over value, 1m: if sell was 1 story index ago
         'ignore_trigbee_at_power': 'ignore_trigbee_at_power',
         'ignore_trigbee_in_vwap_range': 'ignore_trigbee_in_vwap_range',
@@ -130,10 +130,8 @@ def update_trading_models(QUEEN_KING, KING):
         'ignore_trigbee_in_histstory_tier': 'ignore_trigbee_in_histstory_tier',
         'KOR_version': 'KOR_version',
         }
-        # take_profit_in_vwap_deviation_range={'low_range': -.05, 'high_range': .05}
 
 
-        # reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=False, formkey="tradingmodel_key")
 
         cols = st.columns(3)
 
@@ -145,6 +143,7 @@ def update_trading_models(QUEEN_KING, KING):
             # wave_blocks_option = st.selectbox("Block Time", KING['waveBlocktimes'])
             wave_blocks_option = st.selectbox("BlockTime", blocktime_avail, index=blocktime_avail.index(["morning_9-11" if "morning_9-11" in blocktime_avail else blocktime_avail[0]][0]))
 
+        st.write(trading_model['stars_kings_order_rules'])
 
         with st.form('trading model form'):
             st.subheader("Kings Order Rules Settings")
@@ -306,13 +305,6 @@ def update_trading_models(QUEEN_KING, KING):
                             st.write(kor_v)
                         if kor_option == 'theme':
                             st.write(kor_v)
-                        if kor_option == 'take_profit_in_vwap_deviation_range':
-                            # with cols[0]:
-                            #     st.write("vwap_deviation_range")
-                                low = st.number_input(label=f'{"vwap_deviation_low"}', value=kor_v['low_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"low_range"}', help="take_profit_in_vwap_deviation_range")
-                                high = st.number_input(label=f'{"vwap_deviation_high"}', value=kor_v['high_range'], key=f'{trigbee_sel}{"_"}{wave_blocks_option}{"_"}{"high_range"}')
-                                king_order_rules_update[kor_option] = {'high_range': high, "low_range": low}
-
                     
                     with cols[1]:
                         if kor_option == 'ignore_trigbee_in_vwap_range':

@@ -71,12 +71,12 @@ def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), tr
     return JSONResponse(content=json_data)
 
 @router.post("/ticker_time_frame", status_code=status.HTTP_200_OK)
-def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), symbols=Body(...)):
+def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), symbols=Body(...), ttf=Body(...)):
     
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
-    json_data = get_ticker_time_frame(symbols) #'w_15')
+    json_data = get_ticker_time_frame(symbols, ttf)
     return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph", status_code=status.HTTP_200_OK)
