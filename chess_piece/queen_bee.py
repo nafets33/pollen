@@ -170,7 +170,7 @@ def update_origin_order_qty_available(QUEEN, run_order_idx, RUNNING_CLOSE_Orders
                     pass
 
                 # update queen order
-                QUEEN['queen_orders'].at[run_order_idx, 'qty_available'] = float(queen_order['filled_qty']) - sum(closing_dfs['qty'])
+                QUEEN['queen_orders'].at[run_order_idx, 'qty_available'] = float(queen_order['filled_qty']) - sum(closing_dfs['filled_qty'])
                 QUEEN['queen_orders'].at[run_order_idx, 'qty_available_pending'] = float(queen_order['filled_qty']) - sum(closing_dfs['filled_qty'])
             else:
                 QUEEN['queen_orders'].at[run_order_idx, 'qty_available'] = float(queen_order['filled_qty'])
@@ -400,6 +400,26 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{client_user} you forgot to same something')
         sys.exit()
 
+    def update_queen_order(QUEEN, update_package):
+        # update_package client_order id and field updates {client_order_id: {'queen_order_status': 'running'}}
+        try:
+            save = False
+            for c_order_id, package in update_package['queen_order_updates'].items():
+                for field_, new_value in package.items():
+                    try:
+                        QUEEN['queen_orders'].at[c_order_id, field_] = new_value
+                        save = True
+                    except Exception as e:
+                        print(e, 'failed to update QueenOrder')
+                        logging.critical({'msg': 'failed to update queen orders', 'error': e, 'other': (field_, new_value)})
+                        QUEEN['queens_messages'].update({c_order_id: {'date': return_timestamp_string(), 'error': e, 'updates': (field_, new_value)}})
+            if save:
+                PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+        except Exception as e:
+            print(e, print_line_of_error())
+            logging.CRITICAL({'error': e, 'msg': 'update queen order', 'update_package': update_package})
+            QUEEN['queens_messages'].update({'CRITICAL_QueenOrdersUpdates': {'date': return_timestamp_string(), 'error': e, 'update_package': update_package}})
+        return True
 
     def update_queen_order_order_rules(QUEEN, update_package):
         try:
@@ -510,6 +530,22 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     print("QUEEN STOPPED")
                     sys.exit()
 
+            elif request_name == "update_queen_order": # ok
+                app_order_base = [i for i in QUEEN_KING[request_name]]
+                if app_order_base:
+                    for app_request in app_order_base:
+                        if app_request['app_requests_id'] in QUEEN['app_requests__bucket']:
+                            continue
+                            # return {'app_flag': False}
+                        else:
+                            QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
+                            print("queen update order trigger gather", app_request['queen_order_updates'])
+                            update_queen_order(QUEEN=QUEEN, update_package=app_request)
+                            
+                            return {'app_flag': True}
+                else:
+                    return {'app_flag': False}
+
             elif request_name == 'update_order_rules':
                 app_order_base = [i for i in QUEEN_KING[request_name]]
                 if app_order_base:
@@ -523,6 +559,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             update_queen_order_order_rules(QUEEN=QUEEN, update_package=app_request)
                             
                             return {'app_flag': True}
+            
             elif request_name == "subconscious": # ?
                 app_order_base = [i for i in QUEEN_KING[request_name]]
                 if app_order_base:
@@ -829,14 +866,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             storygauge = revrec.get('storygauge')
             storygauge = storygauge.set_index('symbol')
-            # x = storygauge.at[ticker, 'weight_L_15_macd_tier_position']
-            # print("storyg", ticker, x)
-
-            # # symbol family discord (model based allocation of budget compoletely)
-            # if storygauge.at[ticker, 'weight_L_macd_tier_position'] < -.3:
-            #     storygauge.at[ticker, 'weight_L_macd_tier_position']
-            #     starfox_alloc = star_total_budget_remaining * storygauge.at[ticker, 'weight_L_macd_tier_position']
-            #     # if starfox_alloc 
 
             # if star_total_budget_remaining > 0: # STAR
             wave_amo_borrow = 0
@@ -849,7 +878,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if wave_amo > star_total_budget_remaining:
                 msg = (f"KNIGHT {ticker_time_frame} Wave Amo > then star budget {round(wave_amo)} {round(star_total_budget_remaining)} {round(wave_amo_borrow)}")
                 logging.warning(msg)
-                print(msg)
                 wave_amo = star_total_budget_remaining
                 wave_amo_borrow = wave_amo - star_total_budget_remaining
             
@@ -859,14 +887,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if wave_amo > 0:
                 if wave_amo < float(STORY_bee[ticker_time_frame]['story'].get('current_ask')):
                     msg = (f'KNIGHT EXIT wave amo LESS then current ask {ticker_time_frame} {float(STORY_bee[ticker_time_frame]["story"].get("current_ask"))} {round(wave_amo)}')
-                    logging.warning(msg)
+                    # logging.warning(msg)
                     print(msg)
                     return {'kings_blessing': False}
             if wave_amo_borrow > 0:
                 if wave_amo_borrow < float(STORY_bee[ticker_time_frame]['story'].get('current_ask')):
                     msg = (f'KNIGHT EXIT wave amo BORROW less then current ask {ticker_time_frame} {float(STORY_bee[ticker_time_frame]["story"].get("current_ask"))} {round(wave_amo)}')
                     logging.warning(msg)
-                    print(msg)
                     return {'kings_blessing': False}
 
             kings_blessing = True
@@ -1690,7 +1717,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             order_rules = run_order.get('order_rules')
             client_order_id = run_order['client_order_id']
             take_profit = order_rules['take_profit']
-            sell_out = order_rules['sell_out']
+            sell_out = order_rules.get('sell_out')
             skip_sell_trigbee_distance_frequency = order_rules.get('skip_sell_trigbee_distance_frequency') # deprecate
             stagger_profits_tiers = order_rules.get('stagger_profits_tiers') # deprecate
             sell_qty = float(run_order['qty_available'])
@@ -1861,14 +1888,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         order_side = 'sell'
                         limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
-                    elif honey <= order_rules['sell_out']:
-                        print("selling out due STOP LOSS")
-                        sell_reason = 'order_rules__sellout'
-                        sell_reasons.append(sell_reason)
-                        sell_order = True
+                    elif sell_out: # can be None or 0==None
+                        if honey <= sell_out:
+                            print("selling out due STOP LOSS")
+                            sell_reason = 'order_rules__sellout'
+                            sell_reasons.append(sell_reason)
+                            sell_order = True
 
-                        order_side = 'sell'
-                        limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
+                            order_side = 'sell'
+                            limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                     elif past_trade_duration:
                         print("selling out due to TIME DURATION")
@@ -2337,6 +2365,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                 try: # App Requests
                     s_app = datetime.now(est)
+                    process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order')
                     process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_order_rules')
                     charlie_bee['queen_cyle_times']['om_app_req_om'] = (datetime.now(est) - s_app).total_seconds()
                 except Exception as e:

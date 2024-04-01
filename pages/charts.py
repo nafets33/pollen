@@ -42,6 +42,16 @@ STORY_bee = ticker_db['STORY_bee']
 
 tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
 
+# from custom_graph_candle_stick import st_custom_graph_candle_stick
+# st_custom_graph_candle_stick(
+#     api=f'{st.session_state["ip_address"]}/api/data/symbol_graph_candle_stick',
+#     api_key=os.environ.get("fastAPI_key"),
+#     selectedOption=['SPY', 'QQQ'],
+#     prod=prod,
+#     key="candle_stick"
+
+# )
+
 def advanced_charts():
     try:
         # tickers_avail = [list(set(i.split("_")[0] for i in POLLENSTORY.keys()))][0]
@@ -89,7 +99,7 @@ def advanced_charts():
                     _2hr = POLLENSTORY[f'{ticker_option}{"_"}{"2Hour_6Month"}'].copy()
                     _1yr = POLLENSTORY[f'{ticker_option}{"_"}{"1Day_1Year"}'].copy()
 
-                    c1, c2 = st.columns(2)
+                    c1, c2= st.columns(2)
                     with c1:
                         st.plotly_chart(create_main_macd_chart(min_1))
                     with c2:
@@ -165,3 +175,4 @@ def advanced_charts():
 
 if __name__ == '__main__':
     advanced_charts()
+    pass

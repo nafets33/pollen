@@ -750,6 +750,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # queen_order_states = king_G.get('RUNNING_Orders')
         # active_queen_order_states = king_G.get('active_queen_order_states') # not necessary to pash through func clean up work #WORKERBEE
         board_tickers = []
+        ticker_TradingModel = {}
         for qcp in all_workers:
             if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
                 continue
@@ -774,10 +775,12 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 
                 # Handle missing TM
                 if trading_model is None: 
-                    print(ticker, ' tradingmodel missing')
-                    QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
-                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
-                    save_queenking = True
+                    print(ticker, ' tradingmodel missing handling in revrec to default')
+                    # QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
+                    # save_queenking = True
+                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+
+                ticker_TradingModel[ticker] = trading_model
 
                 # Ticker Allocation Budget
                 tm_keys = trading_model['stars_kings_order_rules'].keys()
@@ -793,7 +796,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     revrec__stars[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_LongTerm")
                     revrec__stars_borrow[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_ShortTerm")
 
-        
         # Refresh RevRec Total Budgets
         df_qcp = shape_revrec_chesspieces(chess_board__revrec, acct_info, chess_board__revrec_borrow)
         df_ticker = shape_revrec_tickers(revrec__ticker, symbol_qcp_dict)
@@ -896,6 +898,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         if len(storygauge) > 0: # should be able to remove this now WORKERBEE
             storygauge = storygauge.set_index('symbol', drop=False)
             for symbol in storygauge.index:
+                # storygauge.at[symbol, 'trading_model'] = ticker_TradingModel.get(symbol)
                 # c_order_ids = ticker_active_orders[symbol]['symbol']['client_order_id'].tolist()
                 storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
                 storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
@@ -1098,9 +1101,11 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 waveview['allocation_deploy'] = np.where((waveview['bs_position']=='buy'), waveview['total_allocation_budget'] - waveview['star_buys_at_play'], waveview['total_allocation_budget'] - waveview['star_sells_at_play'])
                 waveview['allocation_borrow_deploy'] = np.where((waveview['bs_position']=='buy'), (waveview['total_allocation_borrow_budget'] - waveview['star_buys_at_play']) + waveview['allocation_deploy'], (waveview['total_allocation_borrow_budget'] - waveview['star_sells_at_play'])  + waveview['allocation_deploy'])
 
-                waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), waveview['total_allocation_budget'], (waveview['star_total_budget'] - waveview['total_allocation_budget']))
-                waveview['allocation_long_deploy'] = np.where((waveview['bs_position']=='buy'), waveview['allocation_deploy'], (waveview['star_total_budget'] - waveview['total_allocation_budget'] - waveview['star_buys_at_play']))
-
+                waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), 
+                        waveview['total_allocation_budget'], (waveview['star_total_budget'] - waveview['total_allocation_budget']))
+                waveview['allocation_long_deploy'] = np.where((waveview['bs_position']=='buy'), 
+                         waveview['allocation_deploy'], (waveview['star_total_budget'] - waveview['total_allocation_budget'] - waveview['star_buys_at_play']))
+                # waveview['alloc_long_sellable_qty'] = np.where(waveview['allocation_long_deploy'] <
 
             except Exception as e:
                 print_line_of_error(e)
@@ -1110,15 +1115,19 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         waveview = revrec_allocation(waveview, df_storyview, wave_analysis_down,  current_wave)
 
+        price_info_symbols = QUEEN['price_info_symbols']
         for symbol in storygauge.index:
             token = waveview[waveview['symbol'] == symbol]
-            # for _, row in token.iterrows():
-            #     mstate = row['macd_state']
-            #     ttf = row['ticker_time_frame']
-            #     name = f'{mstate}_{ttf}'
-            #     storygauge.at[symbol, name] = row['end_tier_macd']
             if len(token) > 0:
                 storygauge.at[symbol, 'allocation_long_deploy'] = sum(token['allocation_long_deploy'])
+            
+            # storybee OR price_info_symbols
+            if symbol in price_info_symbols.index:
+                storygauge.at[symbol, 'ask'] = price_info_symbols.loc[symbol]['priceinfo'].get('current_ask')
+                storygauge.at[symbol, 'bid'] = price_info_symbols.loc[symbol]['priceinfo'].get('current_bid')
+                storygauge.at[symbol, 'ask_bid_variance'] = price_info_symbols.loc[symbol]['priceinfo'].get('ask_bid_variance')
+                storygauge.at[symbol, 'maker_middle'] = price_info_symbols.loc[symbol]['priceinfo'].get('maker_middle')
+            
         
         if save_queenking:
             PickleData(QUEEN_KING.get('source'), QUEEN_KING)
@@ -5638,8 +5647,8 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbol
             
             trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
             if trading_model == None:
-                print("no tm")
-                continue
+                print("no tm using default")
+                trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
             story_guages, delme = wave_gauge(symbol=symbol, df_waves=df, trading_model=trading_model, weight_team=weight_team)
             if story_guages:
                 story_guages['symbol'] = symbol

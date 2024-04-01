@@ -170,7 +170,6 @@ def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=Fals
         )
     return True
 
-
 def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
     func_list = [i for i in func_list if st.session_state[i]]
     if len(func_list) == 0:
@@ -453,13 +452,13 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
 def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
     gb = GOB.create()
     gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-    gb.configure_default_column(column_width=100, resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
+    gb.configure_default_column(column_width=100, resizable=True, wrapText=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
     gb.configure_theme('ag-theme-material')
 
     #Configure index field
     gb.configure_index('idx')
-    gb.configure_column('idx', {"sortable":True, 'initialWidth':33})
-    gb.configure_column('message', {"sort": 'asc', "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
+    gb.configure_column('idx', {"sortable":True, 'initialWidth':89, 'sort':'desc'})
+    gb.configure_column('message', {'width':800, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
     go = gb.build()
 
     st_custom_grid(

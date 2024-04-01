@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react"
 import ReactModal from "react-modal"
 import "./modal.css"
 import axios from "axios"
+import DatePicker from 'react-datepicker'; // Import DatePicker component
+import 'react-datepicker/dist/react-datepicker.css'; // Import DatePicker CSS
 
 const modalStyle = {
   content: {
@@ -173,7 +175,13 @@ const MyModal = ({
       </div>
     )
 
+  const stringInputs = [];
+  const boolInputs = [];
+  const listInputs = [];
   if (prompt_order_rules)
+    console.log(typeof promptText[rule]); // Check the type of promptText[rule]
+    console.log(promptText[rule]); // Inspect the value of promptText[rule]
+  // Initialize arrays for each datatype
     return (
       <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
         <div className="my-modal-content">
@@ -208,6 +216,43 @@ const MyModal = ({
                     </label>
                   </div>
                 )
+              // If it's a list, render a select input
+              else if (Array.isArray(promptText[rule])) {
+                return (
+                  <div className="d-flex flex-row justify-content-end" key={index}>
+                    <label>
+                      {rule + ":  "}
+                      <select
+                        value={promptText[rule][0]} // Assuming the first option is selected by default
+                        onChange={(e) =>
+                          setPromptText({
+                            ...promptText,
+                            [rule]: [e.target.value],
+                          })
+                        }
+                      >
+                        {promptText[rule].map((item, i) => (
+                          <option key={i} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                );
+              }
+              else if (!isNaN(Date.parse(promptText[rule]))) {
+                return (
+                  <div className="d-flex flex-row justify-content-end" key={index}>
+                    <label>
+                      {rule.label + ':  '}
+                      {/* Render DatePicker component */}
+                      <DatePicker selected={promptText[rule]} onChange={(date) => setPromptText({ ...promptText, [rule]: date })} />
+                    </label>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   className="d-flex flex-row justify-content-end"

@@ -666,7 +666,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         def order_grid(KING, queen_orders, ip_address):
             gb = GridOptionsBuilder.create()
             gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-            gb.configure_default_column(column_width=100, resizable=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
+            gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
 
             #Configure index field
             gb.configure_index('client_order_id')
@@ -687,13 +687,13 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                             }
                 return {
                         'honey': honey_options,
-                        'symbol': create_ag_grid_column(headerName="Symbol", initialWidth=95),
-                        'ttf_grid_name': create_ag_grid_column(headerName='Star'),
+                        'symbol': {'hide':True},
+                        'ttf_grid_name': {'hide':True},
                         'sell_reason': create_ag_grid_column(headerName="Reason To Sell", initialWidth=135, editable=True),
                         'cost_basis_current': {'headerName': 'Cost Basis Current', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                                     #    'custom_currency_symbol':"$",
                                                                     "sortable":True,
-                                                                    # "pinned": 'right',
+                                                                    'sort':'desc',
                                                                     'initialWidth': 115,
                                                                     },
                         'filled_qty': {},
@@ -757,8 +757,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         'prompt_message': 'Edit Rules',
                         'prompt_field': 'order_rules',
                         'col_headername': 'Order Rules',
-                        'col_width':135,
-                        # 'pinned': 'right',
+                        'col_width':133,
+                        'pinned': 'left',
                         'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today', 'close_order_today_allowed_timeduration', 'stagger_profits_tiers', 'trade_using_limits', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration', 'sell_date', 'use_wave_guage'],
                         "col_header": "time_frame",
                         "border_color": "green",
@@ -773,14 +773,14 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         "border_color": "green",
                         },
                         ],
-                grid_height='300px',
+                grid_height='500px',
                 toggle_views = ['buys', 'sells', 'today', 'close today'] + ttf_grid_names_list(),
             )
 
         
         def wave_grid(revrec, symbols, ip_address, refresh_sec=8, key='default'):
             gb = GridOptionsBuilder.create()
-            gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+            gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
             gb.configure_index('ticker_time_frame')
             gb.configure_theme('ag-theme-material')
 
@@ -788,9 +788,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
                 return {
                     # 'ticker_time_frame': {'initialWidth': 168,},
-                        # 'symbol': create_ag_grid_column(headerName='symbol'),
+                        # 'symbol': {'headerName': 'Symbol', 'enableRowGroup':True, 'rowGroup': 'True'},
                         'ttf_grid_name': create_ag_grid_column(headerName='Star', width=148),
-                        # 'ttf_grid_name': {'headerName':'Star','initialWidth':123, 'textWrap':True},
                         'current_profit': create_ag_grid_column(headerName='Curent Profit', initialWidth=89, type=["customNumberFormat", "numericColumn", "numberColumnFilter"], cellRenderer='agAnimateShowChangeCellRenderer', enableCellChangeFlash=True,),
                         'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
@@ -893,7 +892,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, key='default'):
             try:
                 gb = GridOptionsBuilder.create()
-                gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+                gb.configure_default_column(column_width=100, resizable=True,wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
                 gb.configure_index('symbol')
                 gb.configure_theme('ag-theme-material')
 
@@ -902,7 +901,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     return  {
                     # for col in cols:
                     'symbol': create_ag_grid_column(headerName='Symbol', initialWidth=89),
-                    # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, textWrap=True),
+                    # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, wrapText=True),
                     'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                     'long_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'short_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
@@ -918,7 +917,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
                     }
 
-
+                chess_pieces = list(revrec['df_qcp'].index)
                 story_col = revrec.get('storygauge').columns.tolist()
                 config_cols_ = config_cols(story_col)
                 for col, config_values in config_cols_.items():
@@ -964,7 +963,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 {'button_name': None,
                                 'button_api': f'{ip_address}/api/data/queen_sell_orders',
                                 'prompt_message': 'Edit Sell',
-                                'prompt_field': 'kors',
+                                'prompt_field': 'sell_option',
                                 'col_headername': 'Sell',
                                 "col_header": "queens_suggested_sell",
                                 "border_color": "red",
@@ -974,8 +973,9 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 },
 
                             ],
-                grid_height='500px',
-                toggle_views = ['Queen'],
+                    grid_height='500px',
+                    toggle_views = ["Queen"] + chess_pieces,
+
                 ) 
 
             except Exception as e:
@@ -1023,72 +1023,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
             except Exception as e:
                 print_line_of_error("rev allocation error")
         
-        
-        def queen_messages_grid(KING, f_api="http://127.0.0.1:8000/api/data/queen_messages", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
-            gb = GridOptionsBuilder.create()
-            gb.configure_default_column(pagination=False, column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
-            
-            #Configure index field
-            gb.configure_index('idx')
-            gb.configure_column('idx')
-            gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True, 'filter': True})
-            go = gb.build()
-
-
-            st_custom_grid(
-                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
-                api=f_api,
-                api_update=None,
-                refresh_sec=varss.get('refresh_sec'), 
-                refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
-                prod=st.session_state['production'],
-                grid_options=go,
-                key=f'{"queen_messages"}',
-                button_name='insight',
-                api_url=None,
-                # kwargs from here
-                api_key=os.environ.get("fastAPI_key"),
-                prompt_message ="message",
-                prompt_field = "idx", # "current_macd_tier",
-
-            ) 
-
-            return True
-
-
-        def queen_messages_logfile_grid(KING, log_file, grid_key, f_api, varss={'seconds_to_market_close': None, 'refresh_sec': None}):
-            gb = GridOptionsBuilder.create()
-            gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=True, sideBar=False)
-            gb.configure_default_column(column_width=100, resizable=True,
-                                textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
-            #Configure index field
-            gb.configure_index('idx')
-            gb.configure_column('idx', {"sortable":True, 'initialWidth':23})
-            gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True, "sortable":True})
-            go = gb.build()
-
-            st_custom_grid(
-                username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
-                api=f_api,
-                api_update=None,
-                refresh_sec=varss.get('refresh_sec'), 
-                refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
-                prod=st.session_state['production'],
-                grid_options=go,
-                key=f'{grid_key}',
-
-                # kwargs from here
-                api_key=os.environ.get("fastAPI_key"),
-                buttons = [],
-
-                grid_height='300px',
-                log_file=log_file
-
-            ) 
-
-            return True
-
-
 
         ########################################################
         ########################################################
@@ -1115,7 +1049,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         elif st.session_state['authentication_status'] != True:
             st.write(st.session_state['authentication_status'])
             st.error("You Need to Log In")
-            # switch_page("pollenq")
             sneak_peak = False
             st.session_state['sneak_peak'] == False
             st.stop()

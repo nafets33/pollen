@@ -13,11 +13,8 @@ import pandas as pd
 import aiohttp
 import pytz
 import socket
-import ipdb
-# from pollenq_pages.queens_conscience import queens_conscience
-# from custom_button import cust_Button
+import json
 
-# from ozz.ozz_bee import send_ozz_call
 
 # HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)
 # <class 'requests.exceptions.ReadTimeout'> 2409
@@ -499,6 +496,17 @@ def handle__ttf_notactive__datastream(
     info="if ticker stream offline pull latest price by MasterApi",
 ):
     return True
+
+def load_local_json(file_path):
+    with open(file_path, 'r') as filee:
+        data = json.load(filee)
+        
+    return data
+
+def save_json(db_name, data):
+    if db_name:
+        with open(db_name, 'w') as file:
+            json.dump(data, file)
 
 
 def PickleData(pickle_file, data_to_store, write_temp=False):

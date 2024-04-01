@@ -11,7 +11,7 @@ import pytz
 import ipdb
 import time
 import sys
-from chess_piece.king import (streamlit_config_colors, hive_master_root, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
+from chess_piece.king import (streamlit_config_colors, hive_master_root, load_local_json, save_json, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
                                     trigger_bees, 
                                     stars, 
@@ -44,7 +44,6 @@ init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
  ###### Helpers UTILS
 
 
-
 # KORS
 def return_trading_model_kors(QUEEN_KING, star__wave, current_wave_blocktime='morning_9-11'):
   star, wave_state = star__wave.split("__")
@@ -54,7 +53,17 @@ def return_trading_model_kors(QUEEN_KING, star__wave, current_wave_blocktime='mo
   trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][symbol]['stars_kings_order_rules'][star]['trigbees'][trigbee].get(current_wave_blocktime)
   return trading_model
 
-
+def return_trading_model_kors_v2(QUEEN_KING, symbol='SPY', trigbee='buy_cross-0', star='1Day_1Year', current_wave_blocktime='morning_9-11'):
+  try:
+    QK_tradingModels = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
+    if symbol in QK_tradingModels.keys():
+      trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][symbol]['stars_kings_order_rules'][star]['trigbees'][trigbee].get(current_wave_blocktime)
+    else:
+      trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']['SPY']['stars_kings_order_rules'][star]['trigbees'][trigbee].get(current_wave_blocktime)
+    return trading_model
+  except Exception as e:
+     print_line_of_error("wwwwtf")
+     return {}
 def return_kors(df, QUEEN_KING):
   stars = stars.keys()
   t_kors ={}
@@ -126,7 +135,7 @@ def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=
       else:
         # print(number_variable)
 
-        base_color = green if (number_variable) > 0 else blue
+        base_color = green if (number_variable) > 0 else red
         number_variable = round(abs(number_variable * 100))
         shade_num_var = shade_num_var * 3
       # if number_variable < -100 or number_variable > 100:
@@ -648,8 +657,8 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
         df_wave['buysell_alloc_deploy'] =  np.where((df_wave['macd_state'].str.contains("sell")) & (df_wave['allocation_deploy'] < 0), round(abs(df_wave['allocation_deploy'])), 0) 
         df_wave['buy_alloc_deploy'] = df_wave['buy_alloc_deploy'] + df_wave['buysell_alloc_deploy']
 
+        QUEEN_KING = load_queen_App_pkl(username, prod)
         if return_type == 'waves':
-          QUEEN_KING = load_queen_App_pkl(username, prod)
           df = df_wave
           kors_dict = buy_button_dict_items()
           df['kors'] = [kors_dict for _ in range(df.shape[0])]
@@ -706,7 +715,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
 
           df = revrec.get('storygauge')
           storygauge_columns = df.columns.tolist()
-
           # symbol group by to join on story
           num_cols = ['buy_alloc_deploy', 'long_at_play', 'sell_alloc_deploy', 'short_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
           for col in num_cols:
@@ -743,22 +751,32 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
           # df['buy_alloc_deploy'] =  df['symbol'].map(buy_alloc_deploy)
           # df['sell_alloc_deploy'] =  df['symbol'].map(sell_alloc_deploy)
 
-          kors_dict = sell_button_dict_items()
+          kors_dict = buy_button_dict_items()
           df['kors'] = [kors_dict for _ in range(df.shape[0])]
+
+          sell_options = sell_button_dict_items()
+          df['sell_option'] = [sell_options for _ in range(df.shape[0])]
           
           for symbol in df.index.tolist():
-            # sell_amt = df_wave_symbol.at[symbol, 'sell_alloc_deploy']
-            # symbol_rate = df_wave_symbol
-            
-            sell_qty = df_wave_symbol.at[symbol, 'sell_alloc_deploy']
-            kors = sell_button_dict_items(symbol, sell_qty)
-            df.at[symbol, 'kors'] = kors
-            df.at[symbol, 'remaining_budget'] = remaining_budget[symbol]
+
+            sell_qty = df.at[symbol, 'qty_available']
+            sell_option = sell_button_dict_items(symbol, sell_qty)
+            df.at[symbol, 'sell_option'] = sell_option
+            remaining_budget__ = remaining_budget.get(symbol)
+            df.at[symbol, 'remaining_budget'] = remaining_budget__
             df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
             df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
             df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
             df.at[symbol, 'total_budget'] = round(revrec['df_ticker'].at[symbol, 'ticker_total_budget'])
 
+            df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
+            take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
+            sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
+            close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
+            sell_trigbee_trigger_timeduration = df.at[symbol, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+            reverse_buy = False
+            kors = buy_button_dict_items(star="1Day_1Year", wave_amo=remaining_budget__, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
+            df.at[symbol, 'kors'] = kors
 
           story_grid_num_cols = ['long_at_play',
           'short_at_play',
@@ -798,7 +816,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
        print("mmm error", print_line_of_error(e))
 
 
-
 ## RETURN TEXT STRING
 def get_heart(client_user, username, prod):
 
@@ -822,7 +839,6 @@ def get_heart(client_user, username, prod):
   msg = f"HeartRate {beat} Avg {avg_beat}"
   msg = msg + "\n" + msg_ls
   return msg
-
 
 def get_account_info(client_user, username, prod):
 
@@ -852,7 +868,7 @@ def get_account_info(client_user, username, prod):
     print_line_of_error("heart in api")
     return 'Error QUEENs Heart'
 
-## GRAPH
+### GRAPH
 def get_ticker_data(symbols, prod):
 
   ticker_db = read_QUEENs__pollenstory(
@@ -886,6 +902,23 @@ def get_ticker_data(symbols, prod):
 
   return json_data
 
+def get_ticker_data_candle_stick(selectedOption):
+  print("ssss", selectedOption)
+  symbol = selectedOption[0]
+  ticker_db = read_QUEENs__pollenstory(
+      symbols=[symbol],
+      read_storybee=False, 
+      read_pollenstory=True,
+  )
+  df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+  df = df[['timestamp_est', 'close', 'high', 'low', 'open']]
+  # df = split_today_vs_prior(df).get('df_today')
+  df = add_priorday_tic_value(df)
+
+  
+  json_data = df.to_json(orient='records')
+
+  return json_data
 
 def get_revrec_trinity(username, prod, trinity_weight='w_15', symbols=['SPY']):
   try:
@@ -950,6 +983,8 @@ def get_charlie_bee():
   queens_charlie_bee, charlie_bee = init_charlie_bee(main_db_root)
 
   return f'{charlie_bee}'
+
+
 ## MESSAGES LOGS
 def get_queen_messages_json(username, prod,):
 

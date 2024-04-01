@@ -7,6 +7,8 @@ import React, {
   StrictMode,
 } from "react"
 import { AgGridReact } from "ag-grid-react"
+import { RowClassParams } from 'ag-grid-community';
+
 import toastr from "toastr"
 import "toastr/build/toastr.min.css"
 import "ag-grid-community/styles/ag-grid.css"
@@ -499,12 +501,22 @@ const AgGrid = (props: Props) => {
     setTimeout(() => toastr.success(`Settings updated `), 300)
   }
 
-  const getRowStyle = (params: any) => {
-    return {
-      background: params.data["color_row"],
-      color: params.data["color_row_text"],
+  type RowStyle = {
+    background?: string;
+    color?: string;
+  };
+
+  const getRowStyle = (params: RowClassParams<any>): RowStyle | undefined => {
+    try {
+      const background = params.data["color_row"] ?? undefined;
+      const color = params.data["color_row_text"] ?? undefined;
+      return { background, color };
+    } catch (error) {
+      console.error("Error accessing row style:", error);
+      return undefined; // Return undefined when an error occurs
     }
-  }
+  };
+
 
   return (
     <>

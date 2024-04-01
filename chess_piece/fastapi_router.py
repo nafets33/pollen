@@ -10,7 +10,8 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_quee
                                        app_queen_order_update_order_rules,
                                        get_revrec_trinity,
                                        get_ticker_time_frame,
-                                       get_heart,)
+                                       get_heart,
+                                       get_ticker_data_candle_stick,)
 
 router = APIRouter(
     prefix="/api/data",
@@ -85,6 +86,15 @@ def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Bod
         print("Auth Failed", api_key)
         return "NOTAUTH"
     json_data = get_ticker_data(symbols, prod)
+    return JSONResponse(content=json_data)
+
+
+@router.post("/symbol_graph_candle_stick", status_code=status.HTTP_200_OK)
+def load_symbol_graph(selectedOption: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_ticker_data_candle_stick(selectedOption)
     return JSONResponse(content=json_data)
 
 
