@@ -221,7 +221,7 @@ def sac_menu_buttons(main='Queen'):
 
             sac.ButtonsItem(label='Queen', icon='house'),
             # sac.ButtonsItem(label='Log Out', icon='key'),
-        ], format_func='title', align='end', type='text')
+        ], format_func='title', align='end', variant='text')
 
     return sac_menu_buttons
 

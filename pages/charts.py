@@ -12,9 +12,10 @@ from streamlit_extras.switch_page_button import switch_page
 import os
 import time
 
-from chess_piece.app_hive import create_slope_chart, pollenq_button_source, create_main_macd_chart, create_wave_chart, create_wave_chart_all, create_wave_chart_single
-from chess_piece.king import return_QUEENs__symbols_data, print_line_of_error
+from chess_piece.app_hive import create_slope_chart, pollenq_button_source, symbols_unique_color, create_main_macd_chart, create_wave_chart, create_wave_chart_all, create_wave_chart_single
+from chess_piece.king import return_QUEENs__symbols_data, print_line_of_error, streamlit_config_colors
 from chess_piece.queen_hive import init_queenbee
+from custom_graph_candle_stick import st_custom_graph_candle_stick
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -41,9 +42,19 @@ POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
 
 tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
-
+k_colors = streamlit_config_colors()
+default_text_color = k_colors['default_text_color']
 def advanced_charts():
     try:
+        st_custom_graph_candle_stick(
+                api=f'{st.session_state["ip_address"]}/api/data/candle_stick',
+                api_key=os.environ.get("fastAPI_key"),
+                symbols=['SPY', 'QQQ'],
+                prod=prod,
+                key="candle_stick"
+            )
+
+
         # tickers_avail = [list(set(i.split("_")[0] for i in POLLENSTORY.keys()))][0]
         cols = st.columns((1,5,1,1))
         # fullstory_option = st.selectbox('POLLENSTORY', ['no', 'yes'], index=['yes'].index('yes'))
@@ -61,12 +72,41 @@ def advanced_charts():
                 # disabled=st.session_state.disabled,
                 horizontal=True,
             )
+            print("OPTION+++++",st.session_state["ip_address"])
+            # st_custom_graph(
+                # api=f'{st.session_state["ip_address"]}/api/data/ticker_time_frame', 
+                # x_axis={
+                #     'field': 'timestamp_est'
+                # },
+
+                # y_axis=symbols_unique_color(symbols),
+                # theme_options={
+                #         'backgroundColor': k_colors.get('default_background_color'),
+                #         'main_title': '',   # '' for none
+                #         'x_axis_title': '',
+                #         'grid_color': default_text_color,
+                #         "showInLegend": True,
+                #         "showInLegendPerLine": True,
+                #     },
+                # refresh_button=True,
+                
+                #kwrags
+                # username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                # prod=prod,
+                # symbols=symbols,
+                # refresh_sec=refresh_sec,
+                # api_key=os.environ.get("fastAPI_key"),
+                # return_type=None,
+                # graph_height=250,
+                # key='graph2',
+                # ttf=stars_radio_dict.get(option__),
+                # y_max=420
+                # )
         
         with cols[2]:
             # day_only_option = st.selectbox('Show Today Only', ['no', 'yes'], index=['no'].index('no'))
             hc.option_bar(option_definition=pq_buttons.get('charts_day_option_data'),title='Show Today Only', key='day_only_option', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-        
         if option__ != 'all':
             ticker_time_frame = f'{ticker}_{stars_radio_dict[option__]}'
         else:
@@ -112,7 +152,7 @@ def advanced_charts():
                         df_prior = df[~(df['timestamp_est'].isin(df_today['timestamp_est'].to_list()))].copy()
 
                         df = df_today
-                    
+                    print("+++++DF+++++", df)
                     st.plotly_chart(create_main_macd_chart(df=df, width=1500, height=550))
             
             except Exception as e:
@@ -161,6 +201,7 @@ def advanced_charts():
         print_line_of_error()
     
     return True
+
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
-aiohttp==3.8.1
+aiohttp==3.8.4
 aiosignal==1.2.0
-alpaca-trade-api==2.3.0
+alpaca-trade-api
 altair==4.2.0
 # apache-airflow[postgres]
 asttokens==2.0.8
@@ -48,7 +48,7 @@ MarkupSafe==2.1.1
 matplotlib-inline==0.1.6
 matplotlib==3.6.1
 msgpack==1.0.3
-multidict==6.0.2
+multidict
 multiprocess==0.70.14
 numpy==1.23.3
 packaging==21.3

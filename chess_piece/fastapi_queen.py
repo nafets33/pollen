@@ -112,6 +112,27 @@ def validate_kors_valueType(newvalue, current_value):
     print("unable to update type")
     return 'error'
 
+
+def get_ticker_data_candle_stick(selectedOption):
+    print("ssss", selectedOption)
+    symbol = selectedOption
+    ticker_db = read_QUEENs__pollenstory(
+        symbols=[symbol],
+        read_storybee=False,
+        read_pollenstory=True,
+    )
+    df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+    df = df[['timestamp_est', 'close', 'high', 'low', 'open']]
+    
+    df['time'] = pd.to_datetime(df['timestamp_est'], unit='ms').dt.strftime('%Y-%m-%d')
+    print(df['time'])
+    # df = split_today_vs_prior(df).get('df_today')
+    df = add_priorday_tic_value(df)
+    json_data = df.to_json(orient='records')
+    return json_data
+
+
+
 def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=100):
     try:
       # Validate the input range

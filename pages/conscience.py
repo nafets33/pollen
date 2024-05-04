@@ -1292,7 +1292,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                             
 
                     st_custom_graph(
-                        api=f'{ip_address}/api/data/ticker_time_frame',
+                        api=f'{ip_address}/api/data/ticker_time_frame', 
                         x_axis={
                             'field': 'timestamp_est'
                         },

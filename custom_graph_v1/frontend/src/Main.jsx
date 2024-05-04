@@ -3,7 +3,6 @@ import CanvasJSReact from "@canvasjs/react-charts"
 import moment from "moment"
 
 import {
-  ComponentProps,
   Streamlit,
   withStreamlitConnection,
 } from "streamlit-component-lib"
@@ -31,7 +30,7 @@ class App extends Component {
   }
   componentDidMount() {
     const { kwargs } = this.props.args
-    const { y_axis, api, y_max, refresh_sec, graph_height } = kwargs
+    const { refresh_sec } = kwargs
     Streamlit.setFrameHeight()
     this.updateChart()
     if (refresh_sec) setInterval(this.updateChart, refresh_sec * 1000)
@@ -44,9 +43,25 @@ class App extends Component {
     }
     this.chart.render()
   }
+  toggleDataSeries() {
+    const { chartType } = this.state;
+    const newChartType = chartType === "spline" ? "candlestick" : "spline";
+    this.setState({ chartType: newChartType }, () => {
+      const { kwargs } = this.props.args;
+      const data = kwargs.data; // Assuming data is stored in kwargs.data
+      const formattedData = data.map((item) => ({
+        x: new Date(item.timestamp_est),
+        y: [item.open, item.high, item.low, item.close],
+      }));
+      this.chart.options.data[0].type = newChartType;
+      this.chart.options.data[0].dataPoints = formattedData;
+      this.chart.render();
+    });
+  }
   async fetchGraphData() {
     const { kwargs } = this.props.args
-    const { y_axis, api, y_max, refresh_sec } = kwargs
+    const { api } = kwargs
+    console.log("sdkhgfvbosdjk",kwargs)
     const res = await axios.post(api, { ...kwargs })
     return JSON.parse(res.data)
   }
@@ -55,8 +70,6 @@ class App extends Component {
     const {
       x_axis,
       y_axis,
-      api,
-      y_max,
       refresh_sec,
       refresh_button,
       theme_options,
@@ -66,7 +79,7 @@ class App extends Component {
       const newSeries = []
       y_axis.map((axis, y_index) => {
         return (newSeries[y_index] = data.map((row, index) => {
-          if (index == data.length - 1 && theme_options["showInLegendPerLine"])
+          if (index === data.length - 1 && theme_options["showInLegendPerLine"])
             return {
               x: row[x_axis["field"]],
               y: row[axis["field"]],
@@ -88,15 +101,30 @@ class App extends Component {
 
       while (dataPoints[0].length) {
         y_axis.map((item, index) => {
-          dataPoints[index].pop()
+          return dataPoints[index].pop()
         })
       }
       console.log("fetchGraphData", dataPoints)
       y_axis.map((item, index) => {
         dataPoints[index].push(...newSeries[index])
-        this.chart.options.data[index].legendText =
-          item["name"] + newSeries[index].pop().y
+        return this.chart.options.data[index].legendText = item["name"] + newSeries[index].pop().y
       })
+
+      const chartType = this.state.chartType;
+    if (chartType === "spline") {
+      this.chart.options.data.forEach((series, index) => {
+        series.type = "spline";
+        series.dataPoints = dataPoints[index];
+      });
+    } else if (chartType === "candlestick") {
+      const formattedData = data.map((item) => ({
+        x: new Date(item.timestamp_est),
+        y: [item.open, item.high, item.low, item.close],
+      }));
+      this.chart.options.data[0].type = "candlestick";
+      this.chart.options.data[0].dataPoints = formattedData;
+    }
+
       this.chart.render()
       refresh_button && !refresh_sec && toastr.success(`Success!`)
     } catch (error) {
@@ -109,7 +137,7 @@ class App extends Component {
   render() {
     const colorSet = []
     const { kwargs } = this.props.args
-    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button } =
+    const { y_axis, y_max, refresh_sec, theme_options, refresh_button } =
       kwargs
     const dataY = y_axis.map((item, index) => {
       colorSet.push(item["color"])
@@ -185,6 +213,11 @@ class App extends Component {
             <div style={{ margin: "10px 10px 10px 2px" }}>
               <button className="btn btn-warning" onClick={this.updateChart}>
                 Refresh
+              </button>
+            </div>
+            <div style={{margin: "10px 10px 10px 2px"}}>
+              <button className="btn btn-warning" onClick={this.toggleDataSeries}>
+                Toggle Chart
               </button>
             </div>
           </div>

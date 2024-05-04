@@ -18,3 +18,4 @@ logs/*
 jed_playground.py
 airflow_home
 .env
+env/
