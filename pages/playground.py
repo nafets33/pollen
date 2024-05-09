@@ -4,7 +4,7 @@ from PIL import Image
 import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
-from chess_piece.queen_hive import print_line_of_error, return_Ticker_Universe, stars
+from chess_piece.queen_hive import print_line_of_error, return_Ticker_Universe, init_swarm_dbs
 from chess_piece.app_hive import set_streamlit_page_config_once, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
 from chess_piece.king import master_swarm_KING, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
@@ -20,9 +20,12 @@ from chat_bot import ozz_bot
 import os
 # from st_on_hover_tabs import on_hover_tabs
 from streamlit_extras.switch_page_button import switch_page
+import yfinance as yf
+import time
 
 
 set_streamlit_page_config_once()
+
 
 
 def PlayGround():
@@ -30,7 +33,9 @@ def PlayGround():
         authenticator = signin_main(page="playground")
         if st.session_state["authorized_user"] != True:
             switch_page('pollen')
-
+        prod = st.session_state['production']
+    db=init_swarm_dbs(prod)
+    BISHOP = ReadPickleData(db.get('BISHOP'))
     try:
         # st.write("Me")
 
@@ -188,7 +193,104 @@ def PlayGround():
 
             return screen_processes
     
-    
+        if st.toggle("yahoo", True):
+            db_qb_root = os.path.join(hive_master_root(), "db")
+            yahoo_stats_bee = os.path.join(db_qb_root, "yahoo_stats_bee.pkl")
+            db = ReadPickleData(yahoo_stats_bee)
+            # st.write(db['AAPL'])
+            
+            def refresh_yfinance_ticker_info(KING):
+                all_info = {}
+                sectors = {}
+                ticker_universe = KING['ticker_universe']
+                main_symbols_full_list = ticker_universe['main_symbols_full_list']
+                progress_text = "Operation in progress. Please wait."
+                my_bar = st.progress(0, text=progress_text)
+                max = len(main_symbols_full_list)
+                for idx, tic in enumerate(main_symbols_full_list):
+                    num = round(idx/max)
+                    try:
+                        ticker = yf.Ticker(tic)
+                        all_info[tic] = ticker.info
+                        sectors[tic] = ticker.info.get('sector')
+                        my_bar.progress(num, text=progress_text)
+                    except Exception as e:
+                        print_line_of_error(tic)
+
+                my_bar.empty()
+                # df = pd.DataFrame(sectors.items())
+                # st.write(df)
+
+                # if all_info:
+                df = pd.DataFrame()
+                # Initialize progress bar
+                progress_text = "Processing tickers..."
+                my_bar = st.progress(0, text=progress_text)
+
+                # Calculate total number of tickers
+                total_tickers = len(all_info)
+
+                # Iterate through ticker information
+                for idx, (tic, data) in enumerate(all_info.items(), start=1):
+                    # Calculate progress percentage
+                    progress_percent = round(idx / total_tickers * 100)
+                    
+                    # Update progress bar
+                    my_bar.progress(progress_percent, text=progress_text)
+                    
+                    # Process ticker data
+                    token = pd.DataFrame(data.items()).T
+                    headers=token.iloc[0]
+                    token.columns=headers
+                    token = token.drop(0)
+                    token['ticker'] = tic
+                    df = pd.concat([df, token], ignore_index=True)
+                    my_bar = st.empty()
+
+                    return df
+            
+            if st.button("Refresh ALL yahoo ticker info into BISHOP"):
+                df_info = refresh_yfinance_ticker_info(KING)
+                if type(df_info) == pd.core.frame.DataFrame:
+                    BISHOP['ticker_info'] = df_info
+                    PickleData(BISHOP.get('source'), BISHOP, console=True)
+        
+
+        if 'ticker_info' in BISHOP.keys():
+            df = BISHOP.get('ticker_info')
+            hide_cols = df.columns.tolist()
+            
+            view_cols = ['symbol', 'sector', 'shortName']
+            num_cols = ['dividendRate', 'dividendYield', 'volume', 'averageVolume', 'marketCap', 'shortRatio', 'ebitdaMargins']
+            hide_cols = [i for i in hide_cols if i not in view_cols + num_cols]
+            
+            def clean_ticker_info_df(df):
+                df = df.fillna('')
+                df = df[df['sector']!='']
+                for col in num_cols:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                return df
+            df=clean_ticker_info_df(df)
+            
+            
+            # screener
+            def stock_screen(df):
+                df = df[df['marketCap'] > 50000000]
+                df = df[df['volume'] > 1000000]
+                df = df[df['shortRatio'] < 2]
+                df = df[df['ebitdaMargins'] > .25]
+                return df
+
+            df = stock_screen(df)
+            screen_name = st.text_input('Screen Name')
+            if st.button("Save Screen to Bishop"):
+                BISHOP[screen_name] = df
+                PickleData(BISHOP.get('source'), BISHOP)
+
+            standard_AGgrid(df, hide_cols=hide_cols)
+
+
     except Exception as e:
         print("playground error: ", e,  print_line_of_error())
 if __name__ == '__main__':

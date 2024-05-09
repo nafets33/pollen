@@ -19,3 +19,4 @@ jed_playground.py
 airflow_home
 .env
 env
+node_modules/*

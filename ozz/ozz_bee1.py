@@ -7,10 +7,10 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import openai
 from dotenv import load_dotenv
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-chess_piece_dir = os.path.join(current_dir, "..", "chess_piece")
-sys.path.append(chess_piece_dir)
-from king import hive_master_root, print_line_of_error
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# chess_piece_dir = os.path.join(current_dir, "..", "chess_piece")
+# sys.path.append(chess_piece_dir)
+from chess_piece.king import hive_master_root, print_line_of_error
 
 load_dotenv(os.path.join(hive_master_root(), '.env'))
 
@@ -107,7 +107,8 @@ def closest_sentiment_match(dfs, query_sentiment):
 
 
 def main():
-    filename = "C:/Users/hp/Desktop/Viral Square/Stephan/largeDataset/pollen/ozz/fake_job_postings.csv"
+    # filename = "C:/Users/hp/Desktop/Viral Square/Stephan/largeDataset/pollen/ozz/fake_job_postings.csv"
+    filename="/Users/stefanstapinski/Downloads/fake_job_postings.csv"
     df = pd.read_csv(filename, engine='python', on_bad_lines='skip')
     df.dropna(subset=['title', 'location'], inplace=True)
     df.drop_duplicates(inplace=True)
@@ -115,7 +116,7 @@ def main():
     dfs_25 = [df.iloc[i:i+25] for i in range(0, len(df), 25)]
 
     analyzer = SentimentIntensityAnalyzer()
-    query = "tell me more about the jobs"
+    query = "do you have any finance jobs?"
     query_sentiment = analyzer.polarity_scores(query)['compound']
     matched_index = closest_sentiment_match(dfs_25, query_sentiment)
     

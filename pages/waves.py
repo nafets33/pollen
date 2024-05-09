@@ -2,9 +2,15 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from chess_piece.app_hive import set_streamlit_page_config_once, standard_AGgrid
+from chess_piece.king import master_swarm_QUEENBEE
+from chess_piece.queen_hive import setup_chess_board
 from dotenv import load_dotenv
+from pq_auth import signin_main
 
 set_streamlit_page_config_once()
+
+if 'authentication_status' not in st.session_state:
+    authenticator = signin_main(page="pollenq")
 
 if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
     switch_page('pollen')
@@ -27,8 +33,8 @@ import os
 import time
 
 from chess_piece.king import master_swarm_KING, ReadPickleData, kingdom__global_vars, return_QUEENs__symbols_data, print_line_of_error
-from chess_piece.queen_hive import model_wave_results, init_queenbee, hive_master_root, refresh_chess_board__revrec, refresh_account_info
-from chess_piece.app_hive import show_waves, pollenq_button_source
+from chess_piece.queen_hive import generate_chess_board, init_queenbee, hive_master_root, refresh_chess_board__revrec, refresh_account_info
+from chess_piece.app_hive import show_waves, pollenq_button_source, move_columns_to_front
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph
@@ -60,7 +66,15 @@ pq_buttons = pollenq_button_source()
 # q_or_qk_toggle = st.toggle("QUEEN King RevRec", False)
 # with st.sidebar:
 # q_or_qk_toggle = st.toggle("QUEEN RevRec", False)
-hc_source_option = hc.option_bar(option_definition=pq_buttons.get('waves_queen_qk_source_toggle'),title='Source', key='waves_revrec_source', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+# hc_source_option = hc.option_bar(option_definition=pq_buttons.get('waves_queen_qk_source_toggle'),title='Source', key='waves_revrec_source', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+all_portfolios = ['Queen', 'King', 'Bishop', "RevRec Refresh"]
+
+optoins = []
+for op in all_portfolios:
+    icon = "fas fa-chess-pawn"
+    optoins.append({'id': op, 'icon': "fas fa-chess-pawn", 'label':op})
+hc_source_option = hc.option_bar(option_definition=optoins,title='Source', key='waves_revrec_source', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
 KING = ReadPickleData(master_swarm_KING(st.session_state['prod']))
 king_G = kingdom__global_vars()
@@ -82,30 +96,25 @@ if st.toggle("broker portoflio"):
 
 
 coin_exchange = "CBSE"
-ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False)
-# POLLENSTORY = ticker_db['pollenstory']
-STORY_bee = ticker_db['STORY_bee']
-# ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) # + crypto_symbols__tickers_avail
-# st.write(STORY_bee.keys())
-if hc_source_option == 'waves_revrec_queen':
+
+
+all_portfolios_selection = st.selectbox("Portfolio", options=all_portfolios)
+
+acct_info = QUEEN.get('account_info')
+
+if hc_source_option == 'Queen':
     revrec = QUEEN.get('revrec')
-elif hc_source_option == 'waves_revrec_king':
+elif hc_source_option == 'King':
     revrec = QUEEN_KING.get('revrec')
-else:
-    acct_info = QUEEN.get('account_info')
-    # acct_info = refresh_account_info(api=api)['info_converted']
+elif hc_source_option == 'Bishop':
+    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+    QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
+    QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
+    STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-
-def move_columns_to_front(dataframe, column_list):
-
-    # Ensure that all columns in column_list exist in the DataFrame
-    invalid_columns = [col for col in column_list if col not in dataframe.columns]
-    if invalid_columns:
-        raise ValueError(f"Columns not found in DataFrame: {', '.join(invalid_columns)}")
-
-    # Reorder columns
-    new_columns_order = column_list + [col for col in dataframe.columns if col not in column_list]
-    return dataframe[new_columns_order]
+else:
+    STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
 
 cols = st.columns(3)
 tabs = st.tabs([key for key in revrec.keys()])

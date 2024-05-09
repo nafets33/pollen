@@ -1171,13 +1171,15 @@ def standard_AGgrid(
     fit_columns_on_grid_load=False,
     height=500,
     update_mode_value="NO_UPDATE",
-    paginationOn=False,
+    paginationOn=True,
     use_checkbox=True,
     hide_cols=[],
     grid_type=False
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
+    gb.configure_default_column(column_width=85, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)
+    gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=True)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
     if configure_side_bar:
@@ -2239,7 +2241,7 @@ def symbols_unique_color(unique_names, characterpool='0123456789ABCDEF'):
             color = "#2DAD40"
         else:
             color = unique_colors[i]
-
+        name = f'{name}'
         symbol_dict = {
             "field": name,
             "name": name,
@@ -2297,3 +2299,14 @@ def custom_graph_ttf_qcp(symbols, prod, KING, client_user, QUEEN_KING, refresh_s
     except Exception as e:
         print_line_of_error("ERROR cust graph trinity")
 
+
+def move_columns_to_front(dataframe, column_list):
+
+    # Ensure that all columns in column_list exist in the DataFrame
+    invalid_columns = [col for col in column_list if col not in dataframe.columns]
+    if invalid_columns:
+        raise ValueError(f"Columns not found in DataFrame: {', '.join(invalid_columns)}")
+
+    # Reorder columns
+    new_columns_order = column_list + [col for col in dataframe.columns if col not in column_list]
+    return dataframe[new_columns_order]

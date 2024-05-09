@@ -11,7 +11,9 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_quee
                                        get_revrec_trinity,
                                        get_ticker_time_frame,
                                        get_heart,
-                                       get_ticker_data_candle_stick,)
+                                       get_ticker_data_candle_stick,
+                                       get_ticker_data_v2,
+                                       grid_row_button_resp)
 
 router = APIRouter(
     prefix="/api/data",
@@ -25,15 +27,7 @@ def confirm_auth_keys(api_key):
     else:
         return True
 
-def grid_row_button_resp(status='success', description='success', message_type='fade', close_modal=True, color_text='red'):
-    return {'status': status, # success / error
-            'data':{
-                'close_modal': close_modal, # T/F
-                'color_text': color_text, #? test if it works
-                'message_type': message_type # click / fade
-            },
-            'description': description,
-            }
+
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
 def load_wavestories_json(username: str=Body(...), symbols: list=Body(...), toggle_view_selection: str=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
@@ -88,6 +82,13 @@ def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Bod
     json_data = get_ticker_data(symbols, prod)
     return JSONResponse(content=json_data)
 
+@router.post("/symbol_graph_v2", status_code=status.HTTP_200_OK)
+def load_symbol_graph(symbol: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    json_data = get_ticker_data_v2(symbol, prod)
+    return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph_candle_stick", status_code=status.HTTP_200_OK)
 def load_symbol_graph(selectedOption: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
@@ -155,19 +156,15 @@ def archive_queen_order(client_user: str=Body(...), username: str=Body(...), pro
         print("router queen error", e)
 
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
-def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value: int=Body(...), api_key=Body(...)):
+def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     try:
-        # print("router", username, prod, selected_row, default_value)
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
 
-        
         rep = app_Sellorder_request(client_user, username, prod, selected_row, default_value)
-        if rep.get('status') == 'success':
-            return JSONResponse(content=grid_row_button_resp())
-        else:
-            return JSONResponse(content=grid_row_button_resp(status='error'))
+        return JSONResponse(content=rep)
+
     except Exception as e:
         print("router err ", e)
 
@@ -206,16 +203,18 @@ def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(.
 
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
-def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
-
-    req = app_buy_order_request(client_user, username, prod, selected_row, default_value)
+    story = True if return_type == 'story' else False
+    kors = default_value
+    req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
     if req.get('status'):
-        return JSONResponse(content=grid_row_button_resp())
+        return JSONResponse(content=grid_row_button_resp(description=req.get('msg')))
     else:
-        return JSONResponse(content=grid_row_button_resp(status='error'))
+        return JSONResponse(content=grid_row_button_resp(status="ERROR", description=req.get('msg')))
+
 
 @router.post("/update_orders", status_code=status.HTTP_200_OK)
 def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data= Body(...), api_key=Body(...)):
@@ -226,7 +225,6 @@ def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data=
     df = pd.DataFrame(new_data).T
     print(df.columns)
     return JSONResponse(content=grid_row_button_resp())
-
 
 
 # info = api.get_account()

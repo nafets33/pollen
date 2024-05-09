@@ -227,32 +227,6 @@ def pollenq(admin_pq):
                 st.experimental_rerun()
                     
             return True
-
-        def refresh_swarmqueen_workerbees(QUEEN_KING):
-            refresh = st.button("Reset All Swarm QUEEN Workerbees to New chessboard", use_container_width=True)
-
-            if refresh:
-                chessboard = generate_chess_board()
-                QUEEN_KING['qcp_workerbees'] = chessboard
-                
-                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
-                with st.spinner("Saving Changes"):
-                    st.success("Swarm Workerbees Reset, Refreshing Page One Moment...")
-                    time.sleep(3)
-                    st.experimental_rerun()
-        
-        def refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING):
-            refresh = st.button("Save curernt QUEENKING workers to QUEEN", use_container_width=True)
-
-            if refresh:
-                # check to make sure QUEEN is asleep before making change!!!!
-                QUEEN['workerbees'] = QUEEN_KING['qcp_workerbees']
-                
-                PickleData(pickle_file=st.session_state['PB_Queen_Pickle'], data_to_store=QUEEN)
-                with st.spinner("Saving Changes"):
-                    st.success("Refreshed. Refreshing Page One Moment...")
-                    time.sleep(2)
-                    st.experimental_rerun()
         
         def refresh_queen_orders(QUEEN):
             refresh = st.button("Reset All Queen Orders", use_container_width=True)
@@ -472,8 +446,6 @@ def pollenq(admin_pq):
                 print_line_of_error()
 
 
-
-
         def update_queen_orders(QUEEN): # for revrec # WORKERBEE WORKING
             
             def refresh_long_short(QUEEN):
@@ -578,14 +550,13 @@ def pollenq(admin_pq):
             
             PB_QUEENBEE_Pickle = master_swarm_QUEENBEE(prod=prod)
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
-            QUEENBEE['source'] = PB_QUEENBEE_Pickle
             KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
             qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
             QUEEN = qb.get('QUEEN')
             QUEEN_KING = qb.get('QUEEN_KING')
             api = qb.get('api')            
             if 'chess_board__revrec' not in QUEEN_KING.keys():
-                st.error("QUEENBOT Not Enabled >>> Save Your Portfolio Board before your Queen Bot can start Trading")
+                switch_page('chessboard')
 
             update_queen_orders(QUEEN)
             
@@ -766,9 +737,7 @@ def pollenq(admin_pq):
                     refresh_trading_models_button(QUEEN_KING)
                     refresh_queen_orders(QUEEN)
                     stash_queen(QUEEN)
-                    if st.session_state['admin']:
-                        refresh_swarmqueen_workerbees(QUEEN_KING)
-                        refresh_swarmqueen_qcp_workerbees(QUEEN, QUEEN_KING)
+
 
 
         with cols[2]:

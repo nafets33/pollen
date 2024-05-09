@@ -15,7 +15,17 @@ import aiohttp
 from collections import defaultdict, deque
 import argparse
 from chess_piece.king import hash_string, kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
-from chess_piece.queen_hive import init_charlie_bee, init_queenbee, power_amo, find_symbol, star_ticker_WaveAnalysis, return_queen_orders__query, initialize_orders, refresh_account_info, refresh_chess_board__revrec, init_clientUser_dbroot, process_order_submission, get_best_limit_price, hive_dates, return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, order_vars__queen_order_items, init_pollen_dbs, story_view, logging_log_message, return_alpc_portolio, return_market_hours, pollen_themes, check_order_status,  timestamp_string, submit_order, return_timestamp_string, add_key_to_QUEEN
+from chess_piece.queen_hive import (wave_buy__var_items,
+                                    init_charlie_bee, 
+                                    init_queenbee, 
+                                    power_amo, 
+                                    find_symbol, star_ticker_WaveAnalysis, return_queen_orders__query, 
+                                    initialize_orders, refresh_account_info, refresh_chess_board__revrec, 
+                                    init_clientUser_dbroot, process_order_submission, get_best_limit_price, hive_dates, 
+                                    return_alpaca_user_apiKeys, send_email, return_STORYbee_trigbees, init_logging, convert_to_float, 
+                                    order_vars__queen_order_items, init_pollen_dbs, story_view, logging_log_message, 
+                                    return_alpc_portolio, return_market_hours, pollen_themes, check_order_status,  timestamp_string, 
+                                    submit_order, return_timestamp_string, add_key_to_QUEEN)
 
 
 """ ideas 
@@ -98,7 +108,7 @@ def submit_order_validation(QUEEN, ticker, qty, side, portfolio, run_order_idx=F
         }
     try:
         
-        position = float(portfolio[ticker]['qty_available']) if portfolio.get(ticker) else 0
+        position = int(float(portfolio[ticker]['qty_available'])) if portfolio.get(ticker) else 0
 
         if side == 'buy':
             # if crypto check avail cash to buy
@@ -343,7 +353,7 @@ def execute_order(api, QUEEN, blessing, king_resp, king_eval_order, side, order_
 
             if 'error' in send_close_order.keys():
                 print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
-                QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
+                # QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
                 return {'executed': False}
 
 
@@ -855,14 +865,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # def waterfall_knight_buy_chain(trigbees, trading_model):
             #     return False
             blessings = {'kings_blessing': kings_blessing, 'blessings': []}
-            
-            rate = .1
-            def pillar_rates(macd_tier):
-                macd_rate = macd_tier / 8
-                if macd_rate <0: 
-                    macd_rate = (macd_tier * -1)
-                
-                return macd_rate
 
             storygauge = revrec.get('storygauge')
             storygauge = storygauge.set_index('symbol')
@@ -1046,10 +1048,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             app_trig_ttf = False
             if app_wave_trig_req.get('app_flag'):
                 print('app flag', app_wave_trig_req.get('ticker_time_frame'))
-                app_trig_ttf = app_wave_trig_req.get('ticker_time_frame')
-                ready_buy = app_wave_trig_req.get('ready_buy')
-                x_buy = app_wave_trig_req.get('x_buy')
+                # app_wave_trig_req = wave_buy__var_items(ticker_time_frame=app_wave_trig_req.get('ticker_time_frame'), 
+                #                                         trigbee=app_wave_trig_req.get('trigbee'), 
+                #                                         macd_state=app_wave_trig_req.get('macd_state'), 
+                #                                         ready_buy=app_wave_trig_req.get('ready_buy'), 
+                #                                         x_buy=app_wave_trig_req.get('x_buy'), 
+                #                                         order_rules=app_wave_trig_req.get('order_rules'))
+                # buy current wave -- reallocate?
 
+            
             if type(QUEEN.get('price_info_symbols')) is not pd.core.frame.DataFrame:
                 print("OLD QUEEN")
                 return False
@@ -1104,7 +1111,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             buy_msg = QUEEN['stars'].get(ticker_time_frame).get('msg')
                             msg = (buy_msg, 'Just Bought, Deploying Is Still', bees_fly.at[ticker_time_frame, 'allocation_deploy'], " StarAtPlay: ", bees_fly.at[ticker_time_frame, 'star_at_play'], " Ask Price", bees_fly.at[ticker_time_frame, 'current_ask'])
                             print(msg)
-                            logging.warning(msg)
+                            # logging.warning(msg)
                             continue
 
                     s_time = datetime.now(est)
@@ -1675,37 +1682,48 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
     def king_bishops_QueenOrder(STORY_bee, run_order, priceinfo, revrec):
 
-        def check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame):
+        def check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame, makers_middle_price, close_order_today=False):
             try:
+                # at symbol level, the sell amount cannot exceed the min allocation
+
                 # wave
                 macd_state_ = trigname.split("_")[0]
                 current_macd_ = current_macd.split("_")[0]
+                if close_order_today:
+                    print("CLOSE ORDER TODAY SELL")
+                    return sell_qty
                 
-                # alloc
-                if ticker_time_frame in revrec['waveview'].index:
-                    al = revrec['waveview'].loc[ticker_time_frame].get('total_allocation_budget')
-                    cb = mm_cost
-                    al_sellable = al -  cb # budget 8, asking to sell 50
-                    
-                    
-                    # sell qty update
-                    if al_sellable < 0 and macd_state_ == current_macd_:
-                        original_sell_qty = sell_qty
-                        sell_qty_pct = abs(al_sellable / cb)
-                        sell_qty = round(sell_qty * sell_qty_pct)
-                        if original_sell_qty != sell_qty:
-                            msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, original_sell_qty, sell_qty)
+                symbol = ticker_time_frame.split("_")[0]
+                if symbol in revrec['storygauge'].index and 'buy' == macd_state_:
+                    min_allocation = revrec['storygauge'].loc[symbol].get('allocation_long_deploy')
+                    sellable_amount = min_allocation * -1 if min_allocation < 0 else 0
+                    if sellable_amount > 0:
+                        print("allowed to sell sellable_amount")
+                        sellable_allocation = sellable_amount - mm_cost
+                        if sellable_allocation > 0:
+                            print("Sell ALL")
+                            return sell_qty
+                        else:
+                            adjust_qty = round(abs(sellable_allocation / makers_middle_price))                       
+                            msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, " sell qty: ", sell_qty, " adjusted sell qty: ", adjust_qty)
                             print(msg)
-                            # logging.info(msg)
+                            return adjust_qty
+                    else:
+                        adjust_qty = 0
+                        msg = ("STOP SELL Min.ALLOCATION", ticker_time_frame, " min.alloc: ", min_allocation, " sell qty: ", sell_qty, " adjusted sell qty: ", adjust_qty)
+                        print(msg)
+                        return adjust_qty
                 else:
-                    print(ticker_time_frame, "missing in waveview")
+                    print(ticker_time_frame, "missing in revrec OR SHORT SIDE")
+                    return sell_qty
+                    
+
                 
                 return sell_qty
             except Exception as e:
                 print_line_of_error(e)
                 return 0
         
-
         """if you made it here you are running somewhere, I hope you find your way, I'll always bee here to help"""
         try:
             # # # Stars in Heaven
@@ -1725,6 +1743,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             ticker_time_frame_origin = run_order['ticker_time_frame_origin']
             entered_trade_time = run_order['datetime'].astimezone(est)
             origin_wave = run_order['origin_wave']
+            close_order_today = order_rules.get('close_order_today')
             ## if on new wave update origin_wave
             # trading_model = run_order['trading_model'] # in Future Turn this to TradingModel_Id
             time_in_trade_datetime = datetime.now(est) - entered_trade_time
@@ -1836,7 +1855,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             def waterfall_sellout_chain(client_order_id, macd_tier, trading_model, sell_order, run_order, order_type, limit_price, sell_trigbee_trigger, stagger_profits, scalp_profits, run_order_wave_changed, sell_qty, QUEEN=QUEEN):
                 # if honey go through sell options (i.e. should we split at honey ?)
                 # when honey < , go through re-evalute ?
-                
+                close_order_today = order_rules.get('close_order_today')
                 sell_trigbee_trigger_timeduration = run_order.get('sell_trigbee_trigger_timeduration')
                 sell_trigbee_trigger_timeduration = 89 if type(sell_trigbee_trigger_timeduration) != int else sell_trigbee_trigger_timeduration
                 time_in_trade_past_selltrigbee = time_in_trade_datetime > timedelta(minutes=sell_trigbee_trigger_timeduration)
@@ -1921,7 +1940,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     if sell_trigbee_trigger and time_in_trade_past_selltrigbee: #run_order.get('sell_trigbee_trigger_timeduration')
                         if "buy" in run_order['trigname'] and "sell" in current_macd and time_in_trade_datetime.seconds > 500: 
                             # if 'use_wave_guage' in order_rules.keys():
-                            logging.info(("looking to sell BUY-cross", ticker_time_frame, f"""{macd_gauge['metrics']['sell_cross-0'][5]['avg']}"""))
+                            # logging.info(("looking to sell BUY-cross", ticker_time_frame, f"""{macd_gauge['metrics']['sell_cross-0'][5]['avg']}"""))
                             if macd_gauge['metrics']['sell_cross-0'][5]['avg'] > .5:
                                 print("SELL ORDER change from buy to sell", current_macd, current_macd_time)
                                 sell_reason = 'order_rules__macd_cross_buytosell'
@@ -1931,7 +1950,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 limit_price = priceinfo['maker_middle'] if order_type == 'limit' else False
 
                         elif "sell" in run_order['trigname'] and "buy" in current_macd and time_in_trade_datetime.seconds > 500:
-                            logging.info(("looking to sell Sell-cross", ticker_time_frame, f"""{macd_gauge['metrics']['buy_cross-0'][5]['avg']}"""))
+                            # logging.info(("looking to sell Sell-cross", ticker_time_frame, f"""{macd_gauge['metrics']['buy_cross-0'][5]['avg']}"""))
                             if macd_gauge['metrics']['buy_cross-0'][5]['avg'] > .5:
                                 print("SELL ORDER change from Sell to Buy", current_macd, current_macd_time)
 
@@ -1954,7 +1973,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             # what does the family say?
                             # are you closing out today?
 
-                        close_order_today = order_rules.get('close_order_today')
+                        
                         time_to_bell_close = (now_time.replace(hour=16, minute=00, second=0) - now_time).total_seconds()
                         last_call_time = now_time.replace(hour=15, minute=58, second=0)
                     #     last_10min_time = now_time.replace(hour=15, minute=50, second=0)
@@ -2001,9 +2020,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     
                     
                     if sell_order:
+                        makers_middle_price = priceinfo.get('maker_middle')
                         mm_cost = priceinfo.get('maker_middle') * sell_qty
                         order_side = 'sell'
-                        sell_qty = check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame)
+                        sell_qty = check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame, makers_middle_price, close_order_today)
                         if sell_qty > 0:
                             msg = ("Bishop SELL ORDER:", ticker_time_frame, sell_reasons, current_macd, current_macd_time, mm_cost)
                             print(msg)
@@ -2480,7 +2500,46 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         # else:
                         #     conscience_update(QUEEN, root_name='app_info', conscience=False)
                         
-                        queen_orders__dict[runorder_client_order_id] = {'run_order': run_order, 'priceinfo': priceinfo}
+                        # queen_orders__dict[runorder_client_order_id] = {'run_order': run_order, 'priceinfo': priceinfo}
+
+                        king_eval_order = king_bishops_QueenOrder(STORY_bee=STORY_bee, run_order=run_order, priceinfo=priceinfo, revrec=QUEEN['revrec'])
+
+                        if king_eval_order['bee_sell']:
+                            exx = execute_order(
+                                    api=api, 
+                                    QUEEN=QUEEN,
+                                    blessing=king_eval_order['bishop_keys'],
+                                    king_resp=False, 
+                                    king_eval_order=king_eval_order,
+                                    side='sell',
+                                    order_type=king_eval_order['bishop_keys']['order_type'],
+                                    trading_model=None,
+                                    ticker=king_eval_order['bishop_keys']['ticker'], 
+                                    ticker_time_frame=king_eval_order['bishop_keys'].get('ticker_time_frame'),
+                                    trig=king_eval_order['bishop_keys']['trigname'], 
+                                    run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
+                                    crypto=king_eval_order['bishop_keys']['qo_crypto'],
+                                    app_request=king_eval_order['app_request']
+                                )
+                            if exx.get('executed'):
+                                append_queen_order(QUEEN, exx.get('new_queen_order_df'))
+                                logging.info(exx.get('msg'))
+                                print("exsell", exx.get('msg'))
+
+                                # Hold ORDER from being SOLD again until Release Validation
+                                origin_order_idx = exx.get('new_queen_order_df').at[exx.get('new_queen_order_df').index[0], 'exit_order_link']
+                                QUEEN['queen_orders'].at[origin_order_idx, 'order_trig_sell_stop'] = True
+                                
+                                update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
+
+                                QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+
+                                god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
+                                                save_q=True,
+                                                save_rr=True,
+                                                save_qo=True)
+
+
                                     
                     except Exception as e:
                         print('Queen Order Main FAILED PROCESSING ORDER', e, print_line_of_error())
@@ -2497,45 +2556,45 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 else:
                     return False
 
-                s_time_qOrders = datetime.now(est)
-                king_bishop_queen_order__EvalOrder = async_send_queen_orders__to__kingsBishop_court(queen_orders__dict, revrec)
-                charlie_bee['queen_cyle_times']['om_async_kingsBishop__queenOrders__om'] = (datetime.now(est) - s_time_qOrders).total_seconds()
+                # s_time_qOrders = datetime.now(est)
+                # king_bishop_queen_order__EvalOrder = async_send_queen_orders__to__kingsBishop_court(queen_orders__dict, revrec)
+                # charlie_bee['queen_cyle_times']['om_async_kingsBishop__queenOrders__om'] = (datetime.now(est) - s_time_qOrders).total_seconds()
 
-                for king_eval_order in king_bishop_queen_order__EvalOrder:
-                    if king_eval_order['bee_sell']:
-                        exx = execute_order(
-                                api=api, 
-                                QUEEN=QUEEN,
-                                blessing=king_eval_order['bishop_keys'],
-                                king_resp=False, 
-                                king_eval_order=king_eval_order,
-                                side='sell',
-                                order_type=king_eval_order['bishop_keys']['order_type'],
-                                trading_model=None,
-                                ticker=king_eval_order['bishop_keys']['ticker'], 
-                                ticker_time_frame=king_eval_order['bishop_keys'].get('ticker_time_frame'),
-                                trig=king_eval_order['bishop_keys']['trigname'], 
-                                run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
-                                crypto=king_eval_order['bishop_keys']['qo_crypto'],
-                                app_request=king_eval_order['app_request']
-                            )
-                        if exx.get('executed'):
-                            append_queen_order(QUEEN, exx.get('new_queen_order_df'))
-                            logging.info(exx.get('msg'))
-                            print("exsell", exx.get('msg'))
+                # for king_eval_order in king_bishop_queen_order__EvalOrder:
+                #     if king_eval_order['bee_sell']:
+                #         exx = execute_order(
+                #                 api=api, 
+                #                 QUEEN=QUEEN,
+                #                 blessing=king_eval_order['bishop_keys'],
+                #                 king_resp=False, 
+                #                 king_eval_order=king_eval_order,
+                #                 side='sell',
+                #                 order_type=king_eval_order['bishop_keys']['order_type'],
+                #                 trading_model=None,
+                #                 ticker=king_eval_order['bishop_keys']['ticker'], 
+                #                 ticker_time_frame=king_eval_order['bishop_keys'].get('ticker_time_frame'),
+                #                 trig=king_eval_order['bishop_keys']['trigname'], 
+                #                 run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
+                #                 crypto=king_eval_order['bishop_keys']['qo_crypto'],
+                #                 app_request=king_eval_order['app_request']
+                #             )
+                #         if exx.get('executed'):
+                #             append_queen_order(QUEEN, exx.get('new_queen_order_df'))
+                #             logging.info(exx.get('msg'))
+                #             print("exsell", exx.get('msg'))
 
-                            # Hold ORDER from being SOLD again until Release Validation
-                            origin_order_idx = exx.get('new_queen_order_df').at[exx.get('new_queen_order_df').index[0], 'exit_order_link']
-                            QUEEN['queen_orders'].at[origin_order_idx, 'order_trig_sell_stop'] = True
+                #             # Hold ORDER from being SOLD again until Release Validation
+                #             origin_order_idx = exx.get('new_queen_order_df').at[exx.get('new_queen_order_df').index[0], 'exit_order_link']
+                #             QUEEN['queen_orders'].at[origin_order_idx, 'order_trig_sell_stop'] = True
                             
-                            update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
+                #             update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
-                        QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+                #         QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
 
-                        god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
-                                        save_q=True,
-                                        save_rr=True,
-                                        save_qo=True)
+                #         god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
+                #                         save_q=True,
+                #                         save_rr=True,
+                #                         save_qo=True)
                 
                 charlie_bee['queen_cyle_times']['full_loop_queenorderS__om'] = (datetime.now(est) - s_loop).total_seconds()
                 

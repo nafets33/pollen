@@ -30,14 +30,12 @@ def get_ip_address():
     ip_address = socket.gethostbyname(hostname)
     return ip_address
 
-def return_app_ip(streamlit_ip="http://localhost:8502"):
+def return_app_ip(streamlit_ip="http://localhost:8502", ip_address="http://127.0.0.1:8000"):
     ip_address = get_ip_address()
     if ip_address == os.environ.get('gcp_ip'):
         # print("IP", ip_address, os.environ.get('gcp_ip'))
         ip_address = "https://api.quantqueen.com"
         streamlit_ip = ip_address
-    else:
-        ip_address = "http://127.0.0.1:8000"
 
     st.session_state['ip_address'] = ip_address
     st.session_state['streamlit_ip'] = streamlit_ip
@@ -164,7 +162,7 @@ def hive_master_root(info='\pollen\pollen'):
 # def pollenmain_root():
 #     return os.path.dirname(hive_master_root()) # \pollen
 
-def master_swarm_QUEENBEE(prod):
+def master_swarm_QUEENBEE(prod=True):
     if prod:
         PB_QUEENBEE_Pickle = os.path.join(os.path.join(hive_master_root(), "db"), "queen.pkl") # pollen/db
     else:
@@ -396,6 +394,7 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, read_storybee=True,
 
     try:
         # return beeworkers data
+
         if read_swarmQueen:
             qb = return_QUEEN_masterSymbols()
             symbols = qb.get("queens_master_tickers")
@@ -466,11 +465,10 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
         df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
 
         return df_active
-    
-    
+
     try:
-        if swarmQueen:
-            symbols = [i.split("_")[0] for i in os.listdir(os.path.join(hive_master_root(), 'symbols_STORY_bee_dbs'))]
+        if symbols:
+            symbols = symbols
         else:
             # symbol ticker data # 1 all current pieces on chess board && all current running orders
             current_active_orders = return_active_orders(QUEEN=QUEEN)
@@ -482,7 +480,6 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
             else:
                 symbols = active_order_symbols + chessboard_symbols
         
-
         ticker_db = read_QUEENs__pollenstory(
             symbols=symbols,
             read_storybee=read_storybee, 
@@ -509,7 +506,7 @@ def save_json(db_name, data):
             json.dump(data, file)
 
 
-def PickleData(pickle_file, data_to_store, write_temp=False):
+def PickleData(pickle_file, data_to_store, write_temp=False, console=False):
     if pickle_file:
         if write_temp:
             root, name = os.path.split(pickle_file)
@@ -519,6 +516,8 @@ def PickleData(pickle_file, data_to_store, write_temp=False):
 
         with open(pickle_file, "wb+") as dbfile:
             pickle.dump(data_to_store, dbfile)
+            if console:
+                print("saved: ", pickle_file)
     else:
         print("saving a file without a file not a good idea")
 
@@ -548,7 +547,7 @@ def ReadPickleData(pickle_file):
                     pk_load['source'] = pickle_file
                     return pk_load
             except Exception as e:
-                print('pkl read error: ', os.path.basename(pickle_file), e, stop)
+                print('pkl read error: ', pickle_file, e, stop)
                 # logging.error(f'{e} error is pickle load')
                 if stop > 3:
                     print("CRITICAL read pickle failed ", e)
@@ -556,7 +555,7 @@ def ReadPickleData(pickle_file):
                     # send_email(subject='CRITICAL Read Pickle Break')
                     return ''
                 stop += 1
-                time.sleep(0.033)
+                time.sleep(0.089)
 
         # Update the previous size and modification time
         prev_size = curr_size
@@ -676,10 +675,7 @@ def local__filepaths_misc(jpg_root=hive_master_root()):
         "pawn_png_url": pawn_png_url,
     }
 
-def create_blessing():
-    return{
-        
-    }
+
 
 #### #### if __name__ == '__main__'  ###
 

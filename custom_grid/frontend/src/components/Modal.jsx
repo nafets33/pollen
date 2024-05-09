@@ -175,124 +175,11 @@ const MyModal = ({
       </div>
     )
 
-  const stringInputs = [];
-  const boolInputs = [];
-  const listInputs = [];
+
   if (prompt_order_rules)
     console.log(typeof promptText[rule]); // Check the type of promptText[rule]
     console.log(promptText[rule]); // Inspect the value of promptText[rule]
   // Initialize arrays for each datatype
-    return (
-      <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
-        <div className="my-modal-content">
-          <div className="modal-header px-4">
-            <h4>{modalData.prompt_message}</h4>
-            <span className="close" onClick={closeModal}>
-              &times;
-            </span>
-          </div>
-          <div className="modal-body p-2">
-            {prompt_order_rules.map((rule, index) => {
-              if (typeof promptText[rule] == "boolean")
-                return (
-                  <div
-                    className="d-flex flex-row justify-content-end"
-                    key={index}
-                  >
-                    <label className="d-flex flex-row">
-                      {rule + ":  "}
-                      <div className="px-2" style={{ width: "193px" }}>
-                        <input
-                          type="checkbox"
-                          checked={promptText[rule]}
-                          onChange={(e) =>
-                            setPromptText({
-                              ...promptText,
-                              [rule]: e.target.checked,
-                            })
-                          }
-                        />
-                      </div>
-                    </label>
-                  </div>
-                )
-              // If it's a list, render a select input
-              else if (Array.isArray(promptText[rule])) {
-                return (
-                  <div className="d-flex flex-row justify-content-end" key={index}>
-                    <label>
-                      {rule + ":  "}
-                      <select
-                        value={promptText[rule][0]} // Assuming the first option is selected by default
-                        onChange={(e) =>
-                          setPromptText({
-                            ...promptText,
-                            [rule]: [e.target.value],
-                          })
-                        }
-                      >
-                        {promptText[rule].map((item, i) => (
-                          <option key={i} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                );
-              }
-              else if (!isNaN(Date.parse(promptText[rule]))) {
-                return (
-                  <div className="d-flex flex-row justify-content-end" key={index}>
-                    <label>
-                      {rule.label + ':  '}
-                      {/* Render DatePicker component */}
-                      <DatePicker selected={promptText[rule]} onChange={(date) => setPromptText({ ...promptText, [rule]: date })} />
-                    </label>
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  className="d-flex flex-row justify-content-end"
-                  key={index}
-                >
-                  <label>
-                    {rule + ":  "}
-                    <input
-                      type="text"
-                      value={promptText[rule]}
-                      onChange={(e) =>
-                        setPromptText({ ...promptText, [rule]: e.target.value })
-                      }
-                    />
-                  </label>
-                </div>
-              )
-            })}
-          </div>
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleOkSecond}
-              ref={ref}
-            >
-              Ok
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={closeModal}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-
   return (
     <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
       <div className="my-modal-content">
@@ -303,21 +190,72 @@ const MyModal = ({
           </span>
         </div>
         <div className="modal-body p-2">
-          <textarea
-            className="form-control"
-            rows={4}
-            cols={50}
-            type="text"
-            value={promptText}
-            placeholder="Please input text"
-            onChange={(e) => setPromptText(e.target.value)}
-          />
+          <div className="d-flex flex-column">
+            {prompt_order_rules.map((rule, index) => (
+              <div className="d-flex flex-row justify-content-end" key={index}>
+                <label className="d-flex flex-row">
+                  {rule + ":  "}
+                  {typeof promptText[rule] === "boolean" && (
+                    <input
+                      type="checkbox"
+                      checked={promptText[rule]}
+                      onChange={(e) =>
+                        setPromptText({
+                          ...promptText,
+                          [rule]: e.target.checked,
+                        })
+                      }
+                    />
+                  )}
+                  {Array.isArray(promptText[rule]) && (
+                    <select
+                      value={promptText[rule][0]} // Assuming the first option is selected by default
+                      onChange={(e) =>
+                        setPromptText({
+                          ...promptText,
+                          [rule]: [e.target.value],
+                        })
+                      }
+                    >
+                      {promptText[rule].map((item, i) => (
+                        <option key={i} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {!isNaN(Date.parse(promptText[rule])) && (
+                    <DatePicker
+                      selected={promptText[rule]}
+                      onChange={(date) =>
+                        setPromptText({ ...promptText, [rule]: date })
+                      }
+                    />
+                  )}
+                  {typeof promptText[rule] !== "boolean" &&
+                    !Array.isArray(promptText[rule]) &&
+                    isNaN(Date.parse(promptText[rule])) && (
+                      <input
+                        type="text"
+                        value={promptText[rule]}
+                        onChange={(e) =>
+                          setPromptText({
+                            ...promptText,
+                            [rule]: e.target.value,
+                          })
+                        }
+                      />
+                    )}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="modal-footer">
           <button
             type="button"
             className="btn btn-primary"
-            onClick={handleOk}
+            onClick={handleOkSecond}
             ref={ref}
           >
             Ok
@@ -332,7 +270,7 @@ const MyModal = ({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default MyModal

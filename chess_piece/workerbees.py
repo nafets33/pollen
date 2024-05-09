@@ -39,6 +39,8 @@ from chess_piece.queen_hive import (
     return_market_hours,
 )
 
+import ipdb
+
 os.environ["no_proxy"] = "*"
 
 est = pytz.timezone("US/Eastern")
@@ -638,9 +640,9 @@ def queen_workerbees(
         if reset_only == False:
             res = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
             df_tickers_data = res.get("df_tickers_data")
-            if len(res["rebuild_confirmation"].keys()) > 0:
-                print(res["rebuild_confirmation"].keys())
-                print(datetime.now(est).strftime("%H:%M-%S"))
+            # if len(res["rebuild_confirmation"].keys()) > 0:
+            #     # print(res["rebuild_confirmation"].keys())
+            #     print(datetime.now(est).strftime("%H:%M-%S"))
 
         # re-add snapshot
         if reset_only == False:
@@ -770,11 +772,11 @@ def queen_workerbees(
         return iter(lambda: tuple(islice(it, size)), ())
 
     def ticker_star_hunter_bee(
-        WORKERBEE_queens, QUEENBEE, queens_chess_piece, speed_gauges, MACD_WAVES
+        WORKERBEE, QUEENBEE, queens_chess_piece, speed_gauges, MACD_WAVES
     ):
         start_time = datetime.now(est)
 
-        QUEEN = WORKERBEE_queens[queens_chess_piece]  # castle [spy, qqq], knight,
+        # QUEEN = WORKERBEE_queens[queens_chess_piece]  # castle [spy, qqq], knight,
         PB_Story_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
 
         if backtesting:
@@ -786,12 +788,12 @@ def queen_workerbees(
 
         # main
         pollen = pollen_hunt(
-            df_tickers_data=QUEEN[queens_chess_piece]["pollencharts"],
+            df_tickers_data=WORKERBEE[queens_chess_piece]["pollencharts"],
             MACD=MACD_settings,
             MACD_WAVES=MACD_WAVES,
         )
-        QUEEN[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
-        QUEEN[queens_chess_piece]["pollencharts_nectar"] = pollen[
+        WORKERBEE[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
+        WORKERBEE[queens_chess_piece]["pollencharts_nectar"] = pollen[
             "pollencharts_nectar"
         ]  # bars and techicnals
 
@@ -1035,8 +1037,9 @@ def queen_workerbees(
         try:
             pq = read_QUEEN(queen_db=queen_db, qcp_s=qcp_s)  # castle, bishop
             QUEENBEE = pq.get("QUEENBEE")
-            queens_chess_pieces = pq.get("queens_chess_pieces")
+            queens_chess_pieces = qcp_s # pq.get("queens_chess_pieces")
             queens_master_tickers = pq.get("queens_master_tickers")
+            print("QCP: ", queens_master_tickers)
             if run_all_pawns:
                 for pawn in all_pawns:
                     QUEENBEE["workerbees"].update({pawn.get("piece_name"): pawn})
@@ -1053,15 +1056,25 @@ def queen_workerbees(
             now_time = datetime.now(est)
             time.sleep(1)
             last_queen_call = {"last_call": datetime.now(est)}
+            all_qcp_s = WORKERBEE_queens.keys()
+            # last_qcp_call = {k: {"last_call": datetime.now(est)} for k in all_qcp_s}
+            # last_modified
+
+            chart_times_refresh = {
+                "1Minute_1Day": 1,
+                "5Minute_5Day": 5*60,
+                "30Minute_1Month": 30*60,
+                "1Hour_3Month": 60*60,
+                "2Hour_6Month": 120*60,
+                "1Day_1Year": 360*60,
+            }
+
 
             while True:
 
                 # if check_with_queen_frequency
                 now_time = datetime.now(est)
-                # print((now_time - last_queen_call.get('last_call')).total_seconds())
-                if (
-                    now_time - last_queen_call.get("last_call")
-                ).total_seconds() > check_with_queen_frequency:
+                if (now_time - last_queen_call.get("last_call")).total_seconds() > check_with_queen_frequency:
                     print("Check Queen for New Tickers")
                     pq = read_QUEEN(queen_db=queen_db, qcp_s=qcp_s)
                     QUEENBEE = pq["QUEENBEE"]
@@ -1087,19 +1100,31 @@ def queen_workerbees(
                         )
 
                 try:
-                    all_qcp_s = (WORKERBEE_queens.keys(),)
+                    all_qcp_s = WORKERBEE_queens.keys()
                     s = datetime.now(est)
                     for qcp in WORKERBEE_queens.keys():
-                        ticker_star_hunter_bee(
-                            WORKERBEE_queens=WORKERBEE_queens,
-                            QUEENBEE=QUEENBEE,
-                            queens_chess_piece=qcp,
-                            speed_gauges=speed_gauges,
-                            MACD_WAVES=MACD_WAVES,
-                        )
+                        WORKERBEE = WORKERBEE_queens[qcp]
+                        # check to see if last call
+                        last_modified = WORKERBEE[qcp].get('last_modified')
+                        refresh_star = QUEENBEE['workerbees'][qcp].get('refresh_star')
+                        if refresh_star:
+                            star_frequency = chart_times_refresh[refresh_star]
+                        else:
+                            star_frequency = 1
+                        
+                        if (now_time - last_modified).total_seconds() > star_frequency:
+                            WORKERBEE['last_modified'] = now_time
+                        
+                            ticker_star_hunter_bee(
+                                WORKERBEE=WORKERBEE,
+                                QUEENBEE=QUEENBEE,
+                                queens_chess_piece=qcp,
+                                speed_gauges=speed_gauges,
+                                MACD_WAVES=MACD_WAVES,
+                            )
                     e = datetime.now(est)
                     print(
-                        f"{e} Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}"
+                        f"Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}"
                     )
                     # return True
                 except Exception as e:

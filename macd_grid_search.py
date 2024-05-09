@@ -26,7 +26,7 @@ else:
 # workerbee_dbs_backtesting_root()
 backtest_folder = workerbee_dbs_backtesting_root__STORY_bee()
 
-def read_backtest_folder_assert_insight(backtest_folder):
+def read_backtest_folder_assert_insight(backtest_folder, return_len=89):
     s = datetime.now()
     # pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
     # folder = "symbols_STORY_bee_dbs_backtesting"
@@ -83,7 +83,6 @@ def read_backtest_folder_assert_insight(backtest_folder):
     # st.dataframe(df_backtest)
     # standard_AGgrid(df_backtest_ttf)
     # standard_AGgrid(df_backtest)
-    return_len = 33
     stars_times = stars().keys()
     tickers = set([i.split("_")[0] for i in df_backtest_ttf['ttf'].tolist()])
     results = []

@@ -1,13 +1,14 @@
-from chess_piece import fastapi_router
+import uvicorn
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+# from starlette.responses import RedirectResponse
+# from starlette.requests import Request
+import argparse
 from dotenv import load_dotenv
-import uvicorn
-from chess_piece.king import get_ip_address
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from starlette.responses import RedirectResponse
-from starlette.requests import Request
 
+from chess_piece import fastapi_router
+from chess_piece.king import get_ip_address
 
 load_dotenv()
 
@@ -66,7 +67,15 @@ def check():
 
 
 if __name__ == '__main__':
-    # ip_address = get_ip_address()
-    # print("IP Address:", ip_address)
-    ip_address = "127.0.0.1"
-    uvicorn.run(app, host=ip_address, port=8000) # '10.3.144.157'
+    def ozzapi_script_Parser():
+        parser = argparse.ArgumentParser()
+        parser.add_argument ('-ip', default='127.0.0.1')
+        parser.add_argument ('-port', default='8000')
+        return parser
+
+    parser = ozzapi_script_Parser()
+    namespace = parser.parse_args()
+    ip_address = namespace.ip
+    port=int(namespace.port)
+
+    uvicorn.run(app, host=ip_address, port=port) # '10.3.144.157'
