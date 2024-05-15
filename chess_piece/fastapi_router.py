@@ -8,12 +8,12 @@ import os
 from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
                                        app_archive_queen_order,
                                        app_queen_order_update_order_rules,
-                                       get_revrec_trinity,
                                        get_ticker_time_frame,
                                        get_heart,
                                        get_ticker_data_candle_stick,
                                        get_ticker_data_v2,
-                                       grid_row_button_resp)
+                                       grid_row_button_resp,
+                                       update_queenking_chessboard,)
 
 router = APIRouter(
     prefix="/api/data",
@@ -54,16 +54,6 @@ def load_story_json(client_user: str=Body(...), username: str=Body(...), toggle_
     except Exception as e:
         print(e)
 
-
-@router.post("/trinity_graph", status_code=status.HTTP_200_OK)
-def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), trinity_weight=Body(...)):
-    
-    print("trying trinitty")
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    json_data = get_revrec_trinity(username, prod, trinity_weight=trinity_weight) #'w_15')
-    return JSONResponse(content=json_data)
 
 @router.post("/ticker_time_frame", status_code=status.HTTP_200_OK)
 def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), symbols=Body(...), ttf=Body(...)):
@@ -278,6 +268,17 @@ def load_queens_mind(username: str= Body(...), prod: bool=Body(...), api_key=Bod
 def check_api():
     print("online")
     return JSONResponse(content="online")
+
+@router.post("/update_queenking_chessboard", status_code=status.HTTP_200_OK)
+def update_qk_chessboard(username: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...)): # new_data for update entire row
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+    
+    # print("/data/queen", username, prod, kwargs)
+    json_data = update_queenking_chessboard(username, prod, selected_row)
+    return JSONResponse(content=json_data)
+
 
 
 @router.post("/voiceGPT", status_code=status.HTTP_200_OK)

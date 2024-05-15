@@ -2,16 +2,17 @@ import React, { Component } from "react"
 import CanvasJSReact from "@canvasjs/react-charts"
 import moment from "moment"
 
+import toastr from "toastr"
+import "toastr/build/toastr.min.css"
+
+import axios from "axios"
+
 import {
   ComponentProps,
   Streamlit,
   withStreamlitConnection,
 } from "streamlit-component-lib"
 
-import toastr from "toastr"
-import "toastr/build/toastr.min.css"
-
-import axios from "axios"
 
 var CanvasJSChart = CanvasJSReact.CanvasJSChart
 var CanvasJS = CanvasJSReact.CanvasJS
@@ -52,51 +53,38 @@ class App extends Component {
   }
   async updateChart() {
     const { kwargs } = this.props.args
-    const {
-      x_axis,
-      y_axis,
-      api,
-      y_max,
-      refresh_sec,
-      refresh_button,
-      theme_options,
-    } = kwargs
+    const { x_axis, y_axis, api, y_max, refresh_sec, refresh_button, theme_options } = kwargs
     try {
       const data = await this.fetchGraphData()
       const newSeries = []
       y_axis.map((axis, y_index) => {
         return (newSeries[y_index] = data.map((row, index) => {
-          if (index == data.length - 1 && theme_options["showInLegendPerLine"])
-            return {
-              x: row[x_axis["field"]],
-              y: row[axis["field"]],
-              indexLabel:
-                axis["name"] +
-                " " +
-                row[axis["field"]].toFixed(3) +
-                "                        \n.",
-              indexLabelFontColor: axis["color"],
-            }
-          else {
-            return {
-              x: row[x_axis["field"]],
-              y: row[axis["field"]],
-            }
+          return {
+            x: index, // Use index as x value instead of datetime
+            y: row[axis["field"]],
+            timeStamp: row[x_axis["field"]] // Store timestamp for each data point
           }
         }))
       })
-
+  
       while (dataPoints[0].length) {
         y_axis.map((item, index) => {
           dataPoints[index].pop()
         })
       }
-      console.log("fetchGraphData", dataPoints)
+  
       y_axis.map((item, index) => {
         dataPoints[index].push(...newSeries[index])
         this.chart.options.data[index].legendText =
           item["name"] + newSeries[index].pop().y
       })
+  
+      // Update x-axis label formatter to display actual timestamps
+      this.chart.options.axisX.labelFormatter = function (e) {
+        const dataPoint = dataPoints[0][e.value];
+        return moment(dataPoint.timeStamp).format("MM/DD/YY hh");
+      };
+  
       this.chart.render()
       refresh_button && !refresh_sec && toastr.success(`Success!`)
     } catch (error) {
@@ -105,7 +93,6 @@ class App extends Component {
         toastr.error(`Fetch Error: ${error.message}`)
     }
   }
-
   render() {
     const colorSet = []
     const { kwargs } = this.props.args
@@ -137,7 +124,7 @@ class App extends Component {
         title: theme_options["x_axis_title"]
           ? theme_options["x_axis_title"]
           : "",
-        labelFormatter: (e) => moment(e.value).format("DD/MM/YYYY hh"),
+        labelFormatter: (e) => moment(e.value).format("MM/DD/YY hh"),
         labelFontSize: 12,
       },
       axisY: {
@@ -150,24 +137,24 @@ class App extends Component {
       toolTip: {
         shared: true,
         contentFormatter: function (e) {
-            let content = "";
+          let content = "";
     
-            // Format the x-axis time and add it to the tooltip content
-            const formattedXValue = moment(e.entries[0].dataPoint.x).format("DD/MM/YYYY HH:mm");
-            content += `<strong>Date</strong>: ${formattedXValue}<br/>`;
+          // Format the x-axis time and add it to the tooltip content
+          const formattedXValue = moment(e.entries[0].dataPoint.timeStamp).format("MM/DD/YY HH:mm");
+          content += `<strong>Date</strong>: ${formattedXValue}<br/>`;
     
-            // Loop through other data points (excluding the x-axis time) and add them to the tooltip content
-            for (let i = 1; i < e.entries.length; i++) {
-                const entry = e.entries[i];
-                const dataSeries = entry.dataSeries;
-                const dataPoint = entry.dataPoint;
-                const color = dataSeries.color ? dataSeries.color : dataSeries.options.color;
-                content += `<strong style="color: ${color}">${dataSeries.name}</strong>: ${dataPoint.y}<br/>`;
-            }
+          // Loop through other data points (excluding the x-axis time) and add them to the tooltip content
+          for (let i = 1; i < e.entries.length; i++) {
+            const entry = e.entries[i];
+            const dataSeries = entry.dataSeries;
+            const dataPoint = entry.dataPoint;
+            const color = dataSeries.color ? dataSeries.color : dataSeries.options.color;
+            content += `<strong style="color: ${color}">${dataSeries.name}</strong>: ${dataPoint.y}<br/>`;
+          }
     
-            return content;
+          return content;
         }
-    },
+      },
       legend: {
         cursor: "pointer",
         verticalAlign: "top",

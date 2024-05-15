@@ -664,7 +664,7 @@ def pollenq(admin_pq):
                 seconds_to_market_close = 1
 
             cols = st.columns((3,5,2))
-
+            menu = sac_menu_buttons("Queen")
             with cols[2]:
                 menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
                 if menu_id == 'waves':

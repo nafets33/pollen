@@ -675,7 +675,20 @@ def local__filepaths_misc(jpg_root=hive_master_root()):
         "pawn_png_url": pawn_png_url,
     }
 
-
+def main_index_tickers():
+    main_indexes = {
+        'SPY': {'long1X': "SPY",
+                'long3X': 'SPXL', 
+                'inverse1X': 'SH', 
+                'inverse2X': 'SDS', 
+                'inverse3X': 'SPXU'},
+        'QQQ': {'long3X': 'TQQQ', 
+                'inverse1X': 'PSQ', 
+                'inverse2X': 'QID', 
+                'inverse3X': 'SQQQ'}
+        }
+    
+    return main_indexes
 
 #### #### if __name__ == '__main__'  ###
 

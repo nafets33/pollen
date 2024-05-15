@@ -59,9 +59,6 @@ with st.sidebar:
 
 acct_info = alpaca_acct_info.get('info_converted')
 
-ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False)
-POLLENSTORY = ticker_db['pollenstory']
-STORY_bee = ticker_db['STORY_bee']
 QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
 
 swarm_queen_symbols = []
@@ -110,11 +107,12 @@ def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key=
         
         if st.form_submit_button('Add New Piece'):
             QUEEN_KING[qcp_bees_key][qcp.get('piece_name')] = qcp
-            PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
+            QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING)
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
             st.success("New Piece Added Refresh")
 
 
-def reallocate_star_power(STORY_bee, QUEEN_KING, trading_model, ticker_option_qc, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=False, formkey='Star__Allocation'):
+def reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=False, formkey='Star__Allocation'):
     try:
         cols = st.columns((1,8))
         if func_selection:
@@ -137,16 +135,6 @@ def reallocate_star_power(STORY_bee, QUEEN_KING, trading_model, ticker_option_qc
                     c+=1
                     # with cols[0]:
                     #     mark_down_text(align='left', text=star)
-
-                if showguage:
-                    df_revrec = pd.DataFrame(trading_model_revrec.items())
-                    df_revrec_s = pd.DataFrame(trading_model_revrec_s.items())
-                    df = story_view(STORY_bee=STORY_bee, ticker=ticker_option_qc)['df']
-                    # df_write = pd.concat([df], axis=1) ## Need to fix
-                    df_style = df.style.background_gradient(cmap="RdYlGn", gmap=df['current_macd_tier'], axis=0, vmin=-8, vmax=8)
-                    # with cols[1]:
-                    st.write(df_style)
-                    # edited_df = st.experimental_data_editor(df_write)
                 
                 if st.form_submit_button("Reallocate Star Power"):
                     QUEEN_KING['saved_trading_models'].update(trading_model)
@@ -199,7 +187,7 @@ def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, them
             # Headers
             c=0
             chess_board_names = list(QUEEN_KING[qcp_bees_key]['castle'].keys())
-            chess_board_names = ["pq", 'symbols', 'Model', 'Theme', 'Budget Allocation', 'Margin Allocation', 'Margin Power']
+            chess_board_names = ["pq", "Name", 'symbols', 'Model', 'Theme', 'Budget Allocation', 'Margin Allocation', 'Margin Power']
             for qcpvar in chess_board_names:
                 try:
                     with cols[c]:
@@ -212,18 +200,20 @@ def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, them
         
         # chess board vars
         with cols[1]:
-            QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
+            QUEEN_KING[qcp_bees_key][qcp]['piece_name'] = st.text_input("Name", value=QUEEN_KING[qcp_bees_key][qcp]['piece_name'], key=f'{qcp}piece_name{admin}')
         with cols[2]:
-            QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+            QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
         with cols[3]:
-            QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'-', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+            QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
         with cols[4]:
-            QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'Budget Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
+            QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'-', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
         with cols[5]:
-            QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = st.slider(label=f'Margin Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
+            QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'Budget Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
         with cols[6]:
+            QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = st.slider(label=f'Margin Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
+        with cols[7]:
             QUEEN_KING[qcp_bees_key][qcp]['margin_power'] = st.slider(label=f'Margin Power', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['margin_power']), key=f'{qcp}margin_power{admin}', label_visibility='hidden')
-                
+
         return QUEEN_KING
     
     except Exception as e:
@@ -231,26 +221,28 @@ def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, them
         st.write(f'{qcp_bees_key} {qcp} failed {er_line}')
 
 
+def handle__new_tickers__AdjustTradingModels(QUEEN_KING, qcp_bees_key='chess_board', reset_theme=False):
+    # add new trading models if needed
+    # Castle 
+    trading_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
+    for qcp, bees_data in QUEEN_KING[qcp_bees_key].items():
+        tickers = bees_data.get('tickers')
+        if tickers:
+            for ticker in tickers:
+                try:
+                    if reset_theme:
+                        QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
+                    else:
+                        if ticker not in trading_models.keys():
+                            QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
+                except Exception as e:
+                    print('wtferr', e)
+    return QUEEN_KING
+
+
 def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees_key = 'chess_board'):
     try:
-        
-        def handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=False):
-            # add new trading models if needed
-            # Castle 
-            trading_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
-            for qcp, bees_data in QUEEN_KING[qcp_bees_key].items():
-                tickers = bees_data.get('tickers')
-                if tickers:
-                    for ticker in tickers:
-                        try:
-                            if reset_theme:
-                                QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
-                            else:
-                                if ticker not in trading_models.keys():
-                                    QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
-                        except Exception as e:
-                            print('wtferr', e)
-            return QUEEN_KING
+
 
         all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"]
 
@@ -266,12 +258,11 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             # WORKERBEE GET
             QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
             QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
+            STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
             QUEEN_KING['revrec'] = revrec
 
-
-        current_setup = copy.deepcopy(QUEEN_KING['chess_board'])
-
+        # current_setup = copy.deepcopy(QUEEN_KING['chess_board'])
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
         view = chess_pieces.get('view')
@@ -287,7 +278,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             with st.form(f'ChessBoard_form{admin}'):
                 try:
 
-                    cols = st.columns((1,3,1,1,2,2,2))
+                    cols = st.columns((1,1,4,1,2,2,2,2))
                     headers = 0
                     for qcp in all_workers:
                         QUEEN_KING=setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
@@ -314,8 +305,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                                 st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
                                 return False
 
-                            print(reset_theme)
-                            QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme)
+                            QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING, reset_theme=True)
                             PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING)
                             st.success("All Trading Models Reset to Theme")
 
@@ -325,7 +315,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                 
             # st.write("# Reallocation")
             with tabs[1]:
-                reallocate_star_power(STORY_bee, QUEEN_KING, trading_model=False, ticker_option_qc=False, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=True, formkey="Reallocate_Star")
+                reallocate_star_power(QUEEN_KING, trading_model=False, ticker_option_qc=False, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=True, formkey="Reallocate_Star")
 
 
         with st.expander("New Chess Piece"):
