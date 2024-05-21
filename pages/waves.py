@@ -6,9 +6,11 @@ from chess_piece.king import master_swarm_QUEENBEE
 from chess_piece.queen_hive import setup_chess_board
 from dotenv import load_dotenv
 from pq_auth import signin_main
+# import ipdb 
 
 set_streamlit_page_config_once()
 
+# ipdb.set_trace()
 if 'authentication_status' not in st.session_state:
     authenticator = signin_main(page="pollenq")
 
@@ -114,7 +116,7 @@ elif hc_source_option == 'Bishop':
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
 else:
     STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=False) ## Setup Board
 
 cols = st.columns(3)
 tabs = st.tabs([key for key in revrec.keys()])

@@ -11,7 +11,7 @@ import pytz
 import ipdb
 import time
 import sys
-from chess_piece.king import (main_index_tickers, streamlit_config_colors, hive_master_root, load_local_json, save_json, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
+from chess_piece.king import (return_QUEENs__symbols_data, kingdom__global_vars, main_index_tickers, streamlit_config_colors, hive_master_root, load_local_json, save_json, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
                                     trigger_bees, 
                                     stars, 
@@ -29,7 +29,8 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     ttf_grid_names_list,
                                     sell_button_dict_items,
                                     wave_buy__var_items,
-                                    star_names)
+                                    star_names,
+                                    refresh_chess_board__revrec)
 from chess_piece.queen_bee import execute_order, sell_order__var_items
 import copy
 
@@ -720,7 +721,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
     print_line_of_error()
 
 
-def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selection, return_type='waves', revrec=None):
+def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type='waves', revrec=None):
     def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit', 'current_profit_deviation']):
       for col in df.columns:
         # print(type(df_storygauge.iloc[-1].get(col)))
@@ -730,15 +731,19 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
             else:
                 df[col] = round(df[col],2)
       return df
+    
     # try:
     if toggle_view_selection.lower() == 'king':
-      revrec = load_queen_App_pkl(username, prod).get('revrec') # WORKERBEE update to refresh REVREC currently in waves.py page
-      # STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-      # revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-    elif prod:
-      revrec = ReadPickleData(username + '/queen_revrec.pkl').get('revrec')
+      king_G = kingdom__global_vars()
+      qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True)
+      QUEEN = qb.get('QUEEN')
+      QUEEN_KING = qb.get('QUEEN_KING')
+      STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+      revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
     else:
-      revrec = ReadPickleData(username + '/queen_revrec_sandbox.pkl').get('revrec')
+      qb = init_queenbee(client_user, prod, revrec=True, queen_king=True)
+      revrec = qb.get('revrec')
+      QUEEN_KING = qb.get('QUEEN_KING')
 
     if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
       print(f'rr not df null, {revrec}')
@@ -753,7 +758,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
     default_font = k_colors['default_font'] # = "sans serif"
     default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-
     waveview = revrec.get('waveview')
     waveview['sell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['allocation_deploy'] < 0), round(waveview['allocation_deploy']), 0)
     waveview['sellbuy_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] > 0), round(waveview['allocation_deploy']), 0)
@@ -763,7 +767,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
     waveview['buysell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] < 0), round(abs(waveview['allocation_deploy'])), 0) 
     waveview['buy_alloc_deploy'] = waveview['buy_alloc_deploy'] + waveview['buysell_alloc_deploy']
 
-    QUEEN_KING = load_queen_App_pkl(username, prod)
     
     def return_waveview_fillers(waveview):
       df = waveview
@@ -776,11 +779,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
       df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
       for ttf in df.index.tolist():
         # try:
-        # sell_qty = df.at[ttf, 'qty_available']
-        # symbol = ttf.split("_")[0]
-        # sell_option = sell_button_dict_items(symbol, sell_qty)
-        # df.at[ttf, 'sell_option'] = sell_option
-
         remaining_budget = df.at[ttf, 'remaining_budget'].astype(float)
         remaining_budget_borrow = df.at[ttf, 'remaining_budget_borrow'].astype(float)
         # print(type(remaining_budget))
@@ -833,7 +831,6 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
       return json_data
 
     elif return_type == 'story':
-
       df = revrec.get('storygauge')
 
       qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
@@ -886,8 +883,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
 
       for star in star_names().keys():
         # kors per star
-        star_kors = f'{star}_kors'
-        df[star_kors] = [kors_dict for _ in range(df.shape[0])]
+        df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
 
 
       for symbol in df.index.tolist():
@@ -916,27 +912,20 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
         reverse_buy = False
         kors = buy_button_dict_items(star="1Day_1Year", star_list=ttf_grid_names_list(), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
         df.at[symbol, 'kors'] = kors
-
-        # # buy_sell_count
-        # token = df_waveview[df_waveview['symbol']==symbol]
-        # buys = len(token[token['bs_position']=='buy'])
-        # sells = len(token[token['bs_position']=='sell'])
-        # df.at[symbol, 'buys'] = buys
-        # df.at[symbol, 'sells'] = sells
-
-        # star kors
-        for star in star_names().keys():
-          ttf = f'{symbol}_{star_names(star)}'
-          # kors per star
-          star_kors = f'{star}_kors'
-          # df[star_kors] = [kors_dict for _ in range(df.shape[0])]
-          df.at[symbol, star_kors] = df_waveview.at[ttf, 'kors']
-          # message
-          wavestate = f'{df_waveview.at[ttf, "bs_position"]} {df_waveview.at[ttf, "length"]}'
-          alloc_deploy_msg = '${:,.0f}'.format(round(df_waveview.at[ttf, "allocation_deploy"]))
-          df.at[symbol, f'{star}_state'] = f'{wavestate} {alloc_deploy_msg}'
-          df.at[symbol, f'{star}_value'] = df_waveview.at[ttf, "allocation_deploy"]
-
+      
+        try:
+          # star kors
+          for star in star_names().keys():
+            ttf = f'{symbol}_{star_names(star)}'
+            # kors per star
+            df.at[symbol, f'{star}_kors'] = df_waveview.at[ttf, 'kors']
+            # message
+            wavestate = f'{df_waveview.at[ttf, "bs_position"]} {df_waveview.at[ttf, "length"]}'
+            alloc_deploy_msg = '${:,.0f}'.format(round(df_waveview.at[ttf, "allocation_long_deploy"]))
+            df.at[symbol, f'{star}_state'] = f'{wavestate} {alloc_deploy_msg}'
+            df.at[symbol, f'{star}_value'] = df_waveview.at[ttf, "allocation_long_deploy"]
+        except Exception as e:
+          print("mmm error", ttf, print_line_of_error(e))
 
       story_grid_num_cols = ['long_at_play',
       'short_at_play',
@@ -988,8 +977,7 @@ def queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selecti
       return json_data
 
     
-    # except Exception as e:
-    #    print("mmm error", print_line_of_error(e))
+
 
 
 ## RETURN TEXT STRING

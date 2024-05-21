@@ -445,7 +445,7 @@ def setup_chess_board(QUEEN, qcp_bees_key='workerbees'):
     return QUEEN
 
 
-def init_QUEEN_App():
+def init_QUEEN_KING():
 
     app = {
         "version": 3,
@@ -463,6 +463,7 @@ def init_QUEEN_App():
         "chess_board": generate_chess_board(),
         "revrec": "init",
         "STORY_bee_wave_analysis": 'init',
+        "fresh_board_timer" : datetime.now(est),
         "trigger_queen": {
             "dag": "init",
             "last_trig_date": datetime.now(est),
@@ -540,7 +541,7 @@ def add_key_to_app(QUEEN_KING):  # returns QUEES
         update_msg = {}
         
         q_keys = QUEEN_KING.keys()
-        latest_queen = init_QUEEN_App()
+        latest_queen = init_QUEEN_KING()
         latest_controls = return_queen_controls()
         latest_qcp = init_qcp()
 
@@ -665,7 +666,9 @@ def reallocate_revrec(revrec, ticker_time_frame, ):
     return 0
 
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, save_queenking=False, fresh_board=True):
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, 
+                                chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, 
+                                marginPower={}, save_queenking=False, fresh_board=True):
     # Create/Refresh RevRec from Chess Board
     # WORKERBEE: Add validation only 1 symbol per qcp --- QUEEN not needed only need ORDERS and QUEEN_KING
     rr_starttime = datetime.now()
@@ -740,6 +743,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             revrec__ticker={}
             revrec__stars={}
     
+        # base line power allocation per qcp
         revrec__stars_borrow = {}
         symbol_qcp_dict = {}
 
@@ -868,6 +872,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                                                         borrow_budget=star_borrow_budget,
                                                                         ticker_time_frame=ticker_time_frame, 
                                                                         active_queen_order_states=active_queen_order_states)
+
                     df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
                     df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
                     df_stars.at[ticker_time_frame, 'star_at_play'] = budget_cost_basis
@@ -915,9 +920,31 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         # Wave Analysis 3 triforce view
         # print("WAVES")
-        s__rr = datetime.now()
-        resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols=board_tickers)
-        print("waves analysis: ", (datetime.now()-s__rr).total_seconds())
+        symbols=board_tickers
+        symbols = [i for i in symbols if df_ticker.loc[i].get('ticker_buying_power') > 0]
+
+        WAVE_ANALYSIS = ReadPickleData(QUEEN['dbs'].get('PB_Wave_Analysis_Pickle'))
+
+        if 'STORY_bee_wave_analysis' not in WAVE_ANALYSIS.keys():
+            print("INIT Board")
+            fresh_board = True
+        else:
+            missing_symbols = [i for i in symbols if i not in WAVE_ANALYSIS['STORY_bee_wave_analysis']['df_storyguage']['symbol'].tolist()]
+            if missing_symbols:
+                print("MISSING symbols Refresh Wave Analysis: ", missing_symbols)
+                fresh_board = True
+            if (datetime.now(est) - WAVE_ANALYSIS['fresh_board_timer']).total_seconds() > 1989:
+                print("Wave Analysis Refresh Timer")
+                fresh_board = True
+    
+        if fresh_board:
+            print("Fresh Board on Wave Analysis")
+            resp = wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols)
+            WAVE_ANALYSIS = {'fresh_board_timer': datetime.now(est), 'STORY_bee_wave_analysis': resp}
+            save_queenking = True
+        else:
+            print("using Cached Wave Analysis")
+            resp = WAVE_ANALYSIS['STORY_bee_wave_analysis']
 
         storygauge = resp.get('df_storyguage') # wave_gauge
         storygauge = storygauge.set_index('symbol', drop=False)
@@ -956,12 +983,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
                 storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
                 # storygauge.at[symbol, 'client_order_ids'] = c_order_ids
-            for symbol in df_broker_portfolio['symbol'].tolist():
-                if symbol in storygauge.index:
-                    storygauge.at[symbol, 'broker_qty_available'] = df_broker_portfolio.at[symbol, 'qty_available']
             for symbol in symbols_qty_avail.index:
                 if symbol in storygauge.index:
                     storygauge.at[symbol, 'qty_available'] = symbols_qty_avail.at[symbol, 'qty_available']
+            for symbol in df_broker_portfolio['symbol'].tolist():
+                if symbol in storygauge.index:
+                    storygauge.at[symbol, 'broker_qty_available'] = df_broker_portfolio.at[symbol, 'qty_available']
+                    storygauge.at[symbol, 'broker_qty_delta'] = float(storygauge.at[symbol, 'qty_available']) - float(df_broker_portfolio.at[symbol, 'qty_available'])
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         wave_blocktime = current_wave.get('wave_blocktime')
         
@@ -1174,10 +1202,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                                        (waveview['star_total_budget'] - waveview['total_allocation_budget'])
                                                        )
                 # Minimum Allocation
-                waveview['allocation_long_deploy'] = np.where((waveview['bs_position']=='buy'), 
-                                                              (waveview['allocation_deploy'] + waveview['allocation_borrow_deploy']), 
-                                                              ((waveview['star_total_budget'] + waveview['star_borrow_budget']) - (waveview['total_allocation_borrow_budget']) - waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'])
-                                                              )
+                waveview['allocation_long_deploy'] = (waveview['allocation_deploy'] + waveview['allocation_borrow_deploy'])
 
             except Exception as e:
                 print_line_of_error(e)
@@ -1194,6 +1219,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         for symbol in storygauge.index:
             token = waveview[waveview['symbol'] == symbol]
             if len(token) > 0:
+                storygauge.at[symbol, 'allocation_long'] = sum(token['allocation_long'])
                 storygauge.at[symbol, 'allocation_long_deploy'] = sum(token['allocation_long_deploy'])
             if symbol in tickers_money.index:
                 storygauge.at[symbol, 'money'] = tickers_money.at[symbol, 'money']
@@ -1213,7 +1239,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             
         
         if save_queenking:
-            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+            PickleData(QUEEN_KING['dbs'].get('PB_Wave_Analysis_Pickle'), WAVE_ANALYSIS)
 
         cycle_time = (datetime.now()-rr_starttime).total_seconds()
         print("cycle_time ", cycle_time)
@@ -2207,16 +2233,10 @@ def pollen_story(pollen_nectar):
 
                         STORY_bee[ticker_time_frame]["story"]["current_from_open"] = (
                             current_price - open_price
-                        ) / current_price
+                        ) / open_price
                         STORY_bee[ticker_time_frame]["story"]["current_from_yesterday"] = (
                             current_price - yesterday_price
-                        ) / current_price
-
-                        # # Current from Yesterdays Close
-                        # STORY_bee[ticker_time_frame]['story']['current_from_yesterday_close'] = (current_price - yesterday_close) / current_price
-
-                        # # how did day start ## this could be moved to queen and calculated once only
-                        # STORY_bee[ticker_time_frame]['story']['open_start_pct'] = (open_price - yesterday_close) / open_price
+                        ) / yesterday_price
 
                         e_timetoken = datetime.now(est)
                         slope, intercept, r_value, p_value, std_err = stats.linregress(
@@ -3631,7 +3651,7 @@ def init_app(pickle_file):
     if os.path.exists(pickle_file) == False:
         if "_App_" in pickle_file:
             print("init app")
-            data = init_QUEEN_App()
+            data = init_QUEEN_KING()
             PickleData(pickle_file=pickle_file, data_to_store=data)
         if "_Orders_" in pickle_file:
             print("init Orders")
@@ -4639,17 +4659,15 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     ORDERS = ReadPickleData(init_pollen.get('PB_Orders_Pickle')) if orders else {}
     BROKER = ReadPickleData(init_pollen.get('PB_broker_PICKLE')) if broker else {}
     broker_info = ReadPickleData(init_pollen.get('PB_account_info_PICKLE')) if broker_info else {}
-    queen_revrec = ReadPickleData(init_pollen.get('PB_RevRec_PICKLE')) if revrec else {}
+    revrec = ReadPickleData(init_pollen.get('PB_RevRec_PICKLE')).get('revrec') if revrec else {}
 
     if QUEEN_KING:
-        QUEEN_KING['source'] = init_pollen.get('PB_App_Pickle')
         QUEEN_KING['dbs'] = init_pollen
+        QUEEN_KING['last_modified'] = os.stat(init_pollen.get('PB_App_Pickle')).st_mtime
     if QUEEN:
-        QUEEN['source'] =  init_pollen.get('PB_QUEEN_Pickle')
         QUEEN['dbs'] = init_pollen
         QUEEN['heartbeat']['beat'] = QUEENsHeart
-    if BROKER:
-        BROKER['source'] = init_pollen.get('PB_broker_PICKLE')
+    # if BROKER:
 
     """ Keys """ 
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod) if api else {}
@@ -4666,7 +4684,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             'BROKER': BROKER, 
             'QUEENsHeart': QUEENsHeart,
             'broker_info': broker_info,
-            "queen_revrec": queen_revrec,}
+            "revrec": revrec,}
 
 
 def process_order_submission(trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
@@ -5632,25 +5650,6 @@ def wave_gauge(symbol, df_waves, weight_team, trading_model=False, model_eight_t
         return None
 
 
-# def wave_analysis_from_storyview(storyviews, trigbee='df_waveup', df_agg='df_agg'):
-#     wave_analysis = []
-#     wave_analysis_df = pd.DataFrame()
-#     tickers = []
-#     for star_n in range(len(storyviews.get(df_agg))):
-#         df = storyviews.get(df_agg).iloc[star_n][trigbee]
-#         df['star_avg_length'] = sum(df['avg_length']) / len(df)
-#         df['star_avg_time_to_max_profit'] = sum(df['avg_time_to_max_profit']) / len(df)
-#         wave_analysis.append(df)
-    
-#     for wave_df in wave_analysis:
-#         wave_analysis_df = pd.concat([wave_analysis_df, wave_df])
-    
-#     # group tickers
-#     for ttf in wave_analysis_df['ticker_time_frame'].tolist():
-#         tickers.append(ttf.split("_")[0])
-
-#     return wave_analysis_df
-
 def wave_analysis_from_storyview(storyviews, trigbee='df_waveup', df_agg='df_agg'):
     df_agg_data = storyviews.get(df_agg)
     wave_analysis_data = []
@@ -5677,7 +5676,7 @@ def story_view(STORY_bee, ticker):
 
     for ttframe, conscience in ticker_items.items():
         # Perform optimized analysis of waves for the ticker
-        trigbee_waves_analyzed = optimized_analyze_waves(STORY_bee, ticker_time_frame=ttframe)
+        trigbee_waves_analyzed = analyze_waves(STORY_bee, ticker_time_frame=ttframe)
         return_agg_view.append(trigbee_waves_analyzed)
         
         queen_return = {"star": ttframe}
@@ -5698,73 +5697,16 @@ def story_view(STORY_bee, ticker):
     df = pd.DataFrame(return_view)
     df_agg = pd.DataFrame(return_agg_view)
     
-    storyviews = {"df": df, "df_agg": df_agg, 'cycle_time': (datetime.now() - s_).total_seconds()}
+    storyviews = {"df": df, "df_agg": df_agg, 'symbol': ticker}
 
     if len(storyviews.get('df')) == 0:
-        return False
+        print(f"NO STORY FOUND FOR: {ticker}")
+        return {}
 
     storyviews.update({'wave_analysis_up': wave_analysis_from_storyview(storyviews, trigbee='df_waveup')})
     storyviews.update({'wave_analysis_down': wave_analysis_from_storyview(storyviews, trigbee='df_wavedown')})
 
     return storyviews
-
-
-# def story_view(STORY_bee, ticker):  # --> returns dataframe
-
-#     s_ = datetime.now()
-#     storyview = [
-#         "ticker_time_frame",
-#         "macd_state",
-#         "current_macd_tier",
-#         "current_hist_tier",
-#         "macd",
-#         "hist",
-#         "mac_ranger",
-#         "hist_ranger",
-#     ]
-
-#     wave_view = ["length", "maxprofit", "time_to_max_profit", "wave_n"]
-#     ttframe__items = {k: v for (k, v) in STORY_bee.items() if k.split("_")[0] == ticker}
-#     return_view = []  # queenmemory objects in conscience {}
-#     return_agg_view = []
-
-#     for ttframe, conscience in ttframe__items.items():
-#         # ALL waves groups
-#         trigbee_waves_analzyed = optimized_analyze_waves(STORY_bee, ticker_time_frame=ttframe)
-#         return_agg_view.append(trigbee_waves_analzyed)
-        
-#         # Wave Agg Return
-#         queen_return = {"star": ttframe}
-
-#         story = {k: v for (k, v) in conscience["story"].items() if k in storyview}
-#         p_story = {k: v for (k, v) in conscience["story"]["current_mind"].items() if k in storyview}
-
-#         last_buy_wave = [v for (k, v) in conscience["waves"]["buy_cross-0"].items() if str((len(conscience["waves"]["buy_cross-0"].keys()) - 1)) == str(k)][0]
-#         last_sell_wave = [v for (k, v) in conscience["waves"]["sell_cross-0"].items() if str((len(conscience["waves"]["sell_cross-0"].keys()) - 1)) == str(k)][0]
-#         current_wave = last_buy_wave if 'buy' in story['macd_state'] else last_sell_wave
-
-#         current_wave_view = {k: v for (k, v) in current_wave.items()}
-#         # print(current_wave_view)
-#         obj_return = {**story, **current_wave_view}
-#         obj_return_ = {**obj_return, **p_story}
-#         queen_return = {**queen_return, **obj_return_}
-#         """append view"""
-#         return_view.append(queen_return)
-
-#     df = pd.DataFrame(return_view)
-#     df_agg = pd.DataFrame(return_agg_view)
-    
-#     storyviews = {"df": df, "df_agg": df_agg, 'cycle_time': (datetime.now() - s_).total_seconds()}
-
-    
-#     if len(storyviews.get('df')) == 0:
-#         return False
-
-#     # wave analysis
-#     storyviews.update({'wave_analysis_up': wave_analysis_from_storyview(storyviews, trigbee='df_waveup')})
-#     storyviews.update({'wave_analysis_down': wave_analysis_from_storyview(storyviews, trigbee='df_wavedown')})
-
-#     return storyviews
 
 
 def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy, order_rules):
@@ -5781,13 +5723,16 @@ def wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy
     'order_rules': order_rules,
     }
 
+
+
 def async_waveAnalysis(symbols, STORY_bee): # re-initiate for i timeframe 
 
     async def get_func(session, ticker, STORY_bee):
         async with session:
             try:
                 story_views = story_view(STORY_bee=STORY_bee, ticker=ticker)
-                return {'story_views': story_views, 'ticker': ticker}
+                # remainder of code to 
+                return story_views
             except Exception as e:
                 print(e)
                 raise e
@@ -5811,66 +5756,73 @@ def async_waveAnalysis(symbols, STORY_bee): # re-initiate for i timeframe
     return list_return
 
 
-def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols, max_num_symbols=1000):
+def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols):
+    s = datetime.now()
+    symbols=async_waveAnalysis(symbols, STORY_bee)
+    print("waves analysis: ", (datetime.now()-s).total_seconds())
+
     weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54'] # WORKERBEE put weight team in revrec or stars in hive?
     df_waveview = pd.DataFrame()
     df_storyview = pd.DataFrame()
     df_storyview_down = pd.DataFrame()
     df_storyguage = pd.DataFrame()
     story_guages_view = []
-    for idx, symbol in enumerate(symbols):
-        if idx > max_num_symbols:
-            continue
+    s = datetime.now()
 
-        # story views wave analysis
-        story_views = story_view(STORY_bee=STORY_bee, ticker=symbol)
-        if story_views == False:
-            print(f"NO STORY FOUND FOR: {symbol}")
-            continue
+    for story_views in symbols:
+        # try:
+        # story_views = story_view(STORY_bee=STORY_bee, ticker=story_views)
+        if story_views:
+            symbol = story_views.get('symbol')
+            # story views wave analysis
+            
+            wave_analysis = story_views.get("wave_analysis_up").reset_index()
+            waves = wave_analysis.set_index("ticker_time_frame")
+            df_storyview = pd.concat([df_storyview, waves])
 
-        wave_analysis = story_views.get("wave_analysis_up").reset_index()
-        waves = wave_analysis.set_index("ticker_time_frame")
-        df_storyview = pd.concat([df_storyview, waves])
+            wave_analysis = story_views.get("wave_analysis_down").reset_index()
+            waves = wave_analysis.set_index("ticker_time_frame")
+            df_storyview_down = pd.concat([df_storyview_down, waves])
 
-        wave_analysis = story_views.get("wave_analysis_down").reset_index()
-        waves = wave_analysis.set_index("ticker_time_frame")
-        df_storyview_down = pd.concat([df_storyview_down, waves])
+            # wave_guage__story()
+            df = story_views.get('df')
+            df = df.set_index('star')
+            df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
+            df.at[f'{symbol}_{"5Minute_5Day"}', 'sort'] = 2
+            df.at[f'{symbol}_{"30Minute_1Month"}', 'sort'] = 3
+            df.at[f'{symbol}_{"1Hour_3Month"}', 'sort'] = 4
+            df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
+            df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
+            df = df.sort_values('sort')
+            df_waveview = pd.concat([df_waveview, df])
+            
+            
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+            if trading_model == None:
+                # print(f"{symbol} no tm using default")
+                trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+            story_guages, delme = wave_gauge(symbol=symbol, df_waves=df, trading_model=trading_model, weight_team=weight_team)
+            if story_guages:
+                story_guages['symbol'] = symbol
+                story_guages_view.append(story_guages)
 
-        # wave_guage__story()
-        df = story_views.get('df')
-        df = df.set_index('star')
-        df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
-        df.at[f'{symbol}_{"5Minute_5Day"}', 'sort'] = 2
-        df.at[f'{symbol}_{"30Minute_1Month"}', 'sort'] = 3
-        df.at[f'{symbol}_{"1Hour_3Month"}', 'sort'] = 4
-        df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
-        df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
-        df = df.sort_values('sort')
-        df_waveview = pd.concat([df_waveview, df])
-        
-        
-        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
-        if trading_model == None:
-            # print(f"{symbol} no tm using default")
-            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
-        story_guages, delme = wave_gauge(symbol=symbol, df_waves=df, trading_model=trading_model, weight_team=weight_team)
-        if story_guages:
-            story_guages['symbol'] = symbol
-            story_guages_view.append(story_guages)
+                df_storyguage = pd.DataFrame(story_guages_view)
 
-            df_storyguage = pd.DataFrame(story_guages_view)
+                # Trinity 
+                for w_t in weight_team:
+                    df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
+        # except Exception as e:
+        #     print_line_of_error("storyV")
 
-            # Trinity 
-            for w_t in weight_team:
-                df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
+    # print("waves analysis: ", (datetime.now()-s).total_seconds())
 
-
-    return {'df_storyview': df_storyview, 
+    STORY_bee_wave_analysis = {'df_storyview': df_storyview, 
             'df_storyguage': df_storyguage, 
             'df_waveview': df_waveview, 
             'df_storyview_down': df_storyview_down
     }
 
+    return STORY_bee_wave_analysis
 
 
 def queen_orders_view(
@@ -6207,6 +6159,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{".pkl"}')
         PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{".pkl"}')
         PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{".pkl"}')
+        PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{".pkl"}')
     else:
         # print("My Queen Sandbox")
         PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
@@ -6219,8 +6172,13 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
         PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{"_sandbox"}{".pkl"}')
         PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{"_sandbox"}{".pkl"}')
+        PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{"_sandbox"}{".pkl"}')
 
     if init:
+        if os.path.exists(PB_Wave_Analysis_Pickle) == False:
+            print("Init PB_Wave_Analysis_Pickle")
+            PickleData(PB_Wave_Analysis_Pickle, {})
+
         if os.path.exists(PB_broker_PICKLE) == False:
             print("Init PB_broker_PICKLE")
             PickleData(PB_broker_PICKLE, {'broker_orders': pd.DataFrame()})
@@ -6297,6 +6255,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         "PB_account_info_PICKLE": PB_account_info_PICKLE,
         "PB_broker_PICKLE": PB_broker_PICKLE,
         "PB_Orders_FINAL_Pickle": PB_Orders_FINAL_Pickle,
+        "PB_Wave_Analysis_Pickle": PB_Wave_Analysis_Pickle,
     }
 
 

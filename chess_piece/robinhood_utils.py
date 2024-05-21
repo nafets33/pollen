@@ -1,9 +1,14 @@
 import robin_stocks as rs
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 
 def login_robinhood():
     # Login to Robinhood
-    username = 'stapinski89@gmail.com'
-    password = 'robinhood33'
+    username = os.environ.get('username_robinhood')
+    password = os.environ.get('password_robinhood')
     login = rs.robinhood.login(username=username,password=password, mfa_code="otp")
 
     return login

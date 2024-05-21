@@ -50,7 +50,7 @@ est = pytz.timezone("US/Eastern")
 def queen_workerbees(
     qcp_s,  # =["castle", "bishop", "knight"],
     prod=True,
-    check_with_queen_frequency=60,
+    check_with_queen_frequency=360,
     queens_chess_piece="bees_manager",
     backtesting=False,
     macd=None,
@@ -822,7 +822,7 @@ def queen_workerbees(
             async def main_func(session, ticker_time_frame, pickle_file, data):
                 async with session:
                     try:
-                        PickleData(pickle_file, data)
+                        PickleData(pickle_file, data, console=False)
                         return {
                             "status": "success",
                             "ticker_time_frame": ticker_time_frame,
@@ -936,10 +936,10 @@ def queen_workerbees(
         else:
             betty_bee[f"{queens_chess_piece}_avg_cycle_time"].append(qcp_hunt)
 
-        PickleData(
-            pickle_file=os.path.join(db_root, f"{queens_chess_piece}_betty_bee.pkl"),
-            data_to_store=betty_bee,
-        )
+        # PickleData(
+        #     pickle_file=os.path.join(db_root, f"{queens_chess_piece}_betty_bee.pkl"),
+        #     data_to_store=betty_bee,
+        # )
 
         return True
 

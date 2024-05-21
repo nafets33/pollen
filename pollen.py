@@ -28,8 +28,8 @@ from pages.pollen_engine import pollen_engine
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import sneak_peak_form, custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
-from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, master_swarm_KING, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import analyze_waves, initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
+from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
+from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 
 # componenets
 import streamlit_antd_components as sac
@@ -480,16 +480,7 @@ def pollenq(admin_pq):
 
         set_streamlit_page_config_once()
 
-        ip_address = get_ip_address()
-        if ip_address == os.environ.get('gcp_ip'):
-            ip_address = "https://api.quantqueen.com"
-            streamlit_ip = ip_address
-        else:
-            ip_address = "http://127.0.0.1:8000"
-            streamlit_ip = "http://localhost:8502"
-        
-        st.session_state['ip_address'] = ip_address
-        st.session_state['streamlit_ip'] = streamlit_ip
+        ip_address = return_app_ip()
 
         pq_buttons = pollenq_button_source()
         s = datetime.now(est)
@@ -612,9 +603,9 @@ def pollenq(admin_pq):
             QUEEN_KING = APP_req['QUEEN_KING']
             if APP_req['update']:
                 print("Updating KING QUEEN db")
-                PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
-            QUEEN_KING['source'] = st.session_state['PB_App_Pickle']
-            QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
+                # PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
+
+            # QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
 
             if st.sidebar.button('show_keys'):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
@@ -662,6 +653,9 @@ def pollenq(admin_pq):
             seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
             if mkhrs != 'open':
                 seconds_to_market_close = 1
+            
+            st.session_state['mkhrs'] = mkhrs
+            st.session_state['seconds_to_market_close'] = seconds_to_market_close
 
             cols = st.columns((3,5,2))
             menu = sac_menu_buttons("Queen")

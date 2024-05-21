@@ -15,7 +15,7 @@ load_dotenv(os.path.join(main_root, ".env"))
 
 set_streamlit_page_config_once()
 
-ip_address, streamlit_ip = return_app_ip()
+ip_address = return_app_ip()
 
 st.title("Your Account")
 

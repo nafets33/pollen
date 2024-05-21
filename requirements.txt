@@ -98,6 +98,7 @@ streamlit-authenticator==0.2.1
 streamlit-extras==0.2.4
 streamlit==1.25.0
 streamlit-option-menu==0.3.2
+streamlit-antd-components==0.2.3
 ta==0.10.2
 tablib==3.2.1
 tenacity==8.1.0

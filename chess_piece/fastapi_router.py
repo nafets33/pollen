@@ -30,12 +30,12 @@ def confirm_auth_keys(api_key):
 
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
-def load_wavestories_json(username: str=Body(...), symbols: list=Body(...), toggle_view_selection: str=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
+def load_wavestories_json(client_user: str=Body(...), symbols: list=Body(...), toggle_view_selection: str=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
     try:
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selection, return_type=return_type)
+        json_data = queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type=return_type)
         # print(json_data)
         return JSONResponse(content=json_data)
     except Exception as e:
@@ -43,12 +43,12 @@ def load_wavestories_json(username: str=Body(...), symbols: list=Body(...), togg
 
 
 @router.post("/story", status_code=status.HTTP_200_OK)
-def load_story_json(client_user: str=Body(...), username: str=Body(...), toggle_view_selection: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
+def load_story_json(client_user: str=Body(...), toggle_view_selection: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...)):
     try:
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = queen_wavestories__get_macdwave(username, prod, symbols, toggle_view_selection, return_type='story')
+        json_data = queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type='story')
         # print(json_data)
         return JSONResponse(content=json_data)
     except Exception as e:
