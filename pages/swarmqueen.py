@@ -109,9 +109,10 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
         run_bishop = st.checkbox("run_bishop", False)
 
         if run_bishop:
-            QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
+            QUEENBEE = setup_chess_board(QUEEN=QUEENBEE, qcp_bees_key='bishop')
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key=qcp_bees_key)
+        st.write(chess_pieces.get('dups'))
         view = chess_pieces.get('view')
         all_workers = chess_pieces.get('all_workers')
         qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
@@ -135,21 +136,21 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
                 col_n = 0
                 for qcp in all_workers:
                     try:
-                        if qcp == 'castle_coin':
-                            with cols[col_n]:
-                                st.image(MISC.get('castle_png'), width=74)
-                        elif qcp == 'castle':
-                            with cols[col_n]:
-                                st.image(MISC.get('castle_png'), width=74)
-                        elif qcp == 'bishop':
-                            with cols[col_n]:
-                                st.image(MISC.get('bishop_png'), width=74)
-                        elif qcp == 'knight':
-                            with cols[col_n]:
-                                st.image(MISC.get('knight_png'), width=74)
-                        else:
-                            with cols[col_n]:
-                                st.image(MISC.get('knight_png'), width=74)
+                        # if qcp == 'castle_coin':
+                        #     with cols[col_n]:
+                        #         st.image(MISC.get('castle_png'), width=74)
+                        # elif qcp == 'castle':
+                        #     with cols[col_n]:
+                        #         st.image(MISC.get('castle_png'), width=74)
+                        # elif qcp == 'bishop':
+                        #     with cols[col_n]:
+                        #         st.image(MISC.get('bishop_png'), width=74)
+                        # elif qcp == 'knight':
+                        #     with cols[col_n]:
+                        #         st.image(MISC.get('knight_png'), width=74)
+                        # else:
+                        #     with cols[col_n]:
+                        #         st.image(MISC.get('knight_png'), width=74)
                         
                         ticker_list = QUEENBEE[qcp_bees_key][qcp]['tickers']
                         all_tickers = ticker_allowed # + crypto_symbols__tickers_avail
@@ -158,8 +159,8 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
 
                         with cols[col_n]:
                             QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp}', options=ticker_allowed, default=QUEENBEE[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-                        with cols[col_n]:
-                            st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
+                        # with cols[col_n]:
+                        #     st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
                         # with cols[col_n]:
                         #     QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input(f'fast', min_value=1, max_value=88, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast']), key=f'{qcp}fast{admin}')
                         # with cols[col_n]:
@@ -237,6 +238,48 @@ QUEEN = qb.get('QUEEN')
 QUEEN_KING = qb.get('QUEEN_KING')
 api = qb.get('api')
 
+chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board')
+tt = chess_pieces.get('ticker_qcp_index')
+
+chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key='workerbees')
+qq = chess_pieces.get('ticker_qcp_index')
+
+
+# df = pd.DataFrame(QUEEN_KING['chess_board'].items())
+def flatten_data(data):
+    flattened_data = []
+
+    for piece, attributes in data.items():
+        tickers = attributes.pop('tickers')
+        
+        for ticker in tickers:
+            flat_attributes = {'ticker': ticker, 'piece': piece}
+            flat_attributes.update(attributes)
+            # Flatten nested dictionaries
+            for key, value in attributes.items():
+                # if isinstance(value, dict):
+                #     for sub_key, sub_value in value.items():
+                #         flat_attributes[f"{key}_{sub_key}"] = sub_value
+                # else:
+                flat_attributes[key] = value
+            flattened_data.append(flat_attributes)
+    
+    return flattened_data
+
+cols = st.columns(2)
+
+flattened_data = flatten_data(data=copy.deepcopy(QUEENBEE['workerbees']))
+df = pd.DataFrame(flattened_data)
+df.set_index('ticker', inplace=True)
+with cols[0]:
+    st.data_editor(df)
+
+
+flattened_data = flatten_data(data=copy.deepcopy(QUEEN_KING['chess_board']))
+df = pd.DataFrame(flattened_data)
+df.set_index('ticker', inplace=True)
+with cols[1]:
+    st.data_editor(df)
 
 st.sidebar.write('admin:', st.session_state["admin"])
 # add new keys
@@ -257,3 +300,6 @@ if st.session_state.get('admin_users'):
     admin_queens_active(KING.get('source'), KING)
 
 QB_workerbees(KING, QUEENBEE, admin=True)
+
+with st.sidebar:
+    st.write(pd.DataFrame([i for i in qq if i not in tt]))

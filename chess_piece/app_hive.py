@@ -207,7 +207,7 @@ def send_email(recipient, subject, body):
 def sac_menu_buttons(main='Queen'):
     if main=='Queen':
         sac_menu_buttons = sac.buttons([
-            sac.ButtonsItem(label='Queen', icon='robot'),
+            sac.ButtonsItem(label='pollen', icon='robot'),
             sac.ButtonsItem(label='Hive', icon='backpack4-fill'),
             sac.ButtonsItem(label='Playground', icon='fire'),
             sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
@@ -446,6 +446,79 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
         st.success("Queen Sleeps")
     
     return True
+
+
+
+def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close):
+    try:
+        # gb = GridOptionsBuilder.create()
+        gb = GOB.create()
+        gb.configure_default_column(column_width=120, resizable=True,wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=True,filterable=False,sortable=True)            
+        # gb.configure_index('symbol')
+        gb.configure_theme('ag-theme-material')
+
+        cols=['Long',
+        'Short',
+        'Heart Beat',
+        'Avg Beat',
+        'Money',
+        'Todays Honey',
+        'Portfolio Value',
+        'Buying Power',
+        'Cash',
+        'daytrade count']  
+
+        def config_cols(cols):
+            backgroundColor = k_colors.get('default_background_color')
+            default_text_color = k_colors.get('default_text_color')
+            return  {
+        'Long': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},                  
+        'Short': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Heart Beat': {'width': 100, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Avg Beat': {'width': 80, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Money': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Todays Honey': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Portfolio Value': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Buying Power': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Cash': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'daytrade count': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}}
+            }
+              
+        config_cols_ = config_cols(cols)
+        for col, config_values in config_cols_.items():
+            config = config_values
+            gb.configure_column(col, config)
+        # mmissing = [i for i in story_col if i not in config_cols_.keys()]
+        # if len(mmissing) > 0:
+        #     for col in mmissing:
+        #         gb.configure_column(col, {'hide': True})
+
+        # g_buttons = story_grid_buttons()
+        go = gb.build()
+        print(go)
+        st_custom_grid(
+            client_user=client_user,
+            username=client_user, #KING['users_allowed_queen_emailname__db'].get(client_user), 
+            api=f"{ip_address}/api/data/account_header",
+            api_update= None, #f"{ip_address}/api/data/update_queenking_chessboard",
+            refresh_sec=refresh_sec, 
+            refresh_cutoff_sec=seconds_to_market_close, 
+            prod=st.session_state['production'],
+            grid_options=go,
+            key=f'account_header',
+            # kwargs from here
+            prompt_message = None, #"symbol",
+            prompt_field = None, #"symbol", # "current_macd_tier", # for signle value
+            api_key=os.environ.get("fastAPI_key"),
+            buttons=[],
+            grid_height='123px',
+            toggle_views=[],
+            ) 
+
+    except Exception as e:
+        print_line_of_error(e)
+
+
 
 
 
@@ -2310,3 +2383,74 @@ def move_columns_to_front(dataframe, column_list):
     # Reorder columns
     new_columns_order = column_list + [col for col in dataframe.columns if col not in column_list]
     return dataframe[new_columns_order]
+
+
+
+## del me
+
+
+
+def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_markers=True):
+    k_colors = streamlit_config_colors()
+    default_text_color = k_colors['default_text_color'] # = '#59490A'
+    default_font = k_colors['default_font'] # = "sans serif"
+    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+    
+
+
+    if menu == 'main':
+        
+        menu_data = [
+            {'id':'queen','icon':"fa fa-fire",'label':"Queen"},
+            {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
+            {'id':'PlayGround', 'icon': "fa fa-bug", 'label':"PlayGround"},
+            {'id':'Account', 'icon': "fa fa-bug", 'label':"Account"},
+            {'id':'waves', 'icon': "fas fa-chess-board", 'label':"RevRec"},
+            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 
+             'submenu':[{'id':'pollen_engine', 'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
+
+        ]
+    elif menu == 'unAuth':
+        menu_data = [
+            {'id':'unauth','icon':"fa fa-fire",'label':"Welcome to pollenq"},
+
+            # {'id':'Copy','icon':"🐙",'label':"Copy"},
+            # {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
+            # {'icon': "far fa-chart-bar", 'label':"Chart"},#no tooltip message
+            # {'id':' Crazy return value 💀','icon': "💀", 'label':"Calendar"},
+            # {'icon': "fas fa-tachometer-alt", 'label':"Dashboard",'ttip':"I'm the Dashboard tooltip!"}, #can add a tooltip message
+            # {'icon': "far fa-copy", 'label':"Right End"},
+            # {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
+        ]
+        prod_name = ""
+
+    if prod:
+
+        menu_id = hc.nav_bar(
+            menu_definition=menu_data,
+            home_name=f'pollen {prod_name}',
+            login_name='Account',
+            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
+            sticky_nav=True, #at the top or not
+            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+        )
+    else:
+        over_theme = {'option_active':'#B7C8D6'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
+        # over_font = {'font-class':'h2','font-size':'100%'}
+        # over_theme = {'txc_inactive': "#0D93FB"}
+        menu_id = hc.nav_bar(
+            menu_definition=menu_data,
+            override_theme=over_theme,
+            # font_styling=over_font,
+            home_name=f'pollen {prod_name}',
+            login_name='Account',
+            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
+            sticky_nav=True, #at the top or not
+            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+        )
+
+    st.session_state['menu_id']= menu_id
+
+    return menu_id
+
+

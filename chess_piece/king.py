@@ -537,9 +537,9 @@ def ReadPickleData(pickle_file):
 
         # Check if the size or modification time has changed
         if curr_size != prev_size or curr_mtime != prev_mtime:
-            pass
             # print(f"{pickle_file} is currently being written to")
             # logging.info(f'{pickle_file} is currently being written to')
+            pass
         else:
             try:
                 with open(pickle_file, "rb") as f:
@@ -547,8 +547,8 @@ def ReadPickleData(pickle_file):
                     pk_load['source'] = pickle_file
                     return pk_load
             except Exception as e:
-                print('pkl read error: ', pickle_file, e, stop)
-                # logging.error(f'{e} error is pickle load')
+                if stop > 0:
+                    print('pkl read error: ', pickle_file, e, stop)
                 if stop > 3:
                     print("CRITICAL read pickle failed ", e)
                     # logging.critical(f'{e} error is pickle load')

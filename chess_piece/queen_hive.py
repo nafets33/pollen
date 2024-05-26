@@ -434,6 +434,8 @@ def init_qcp_workerbees(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
     }
 
 def setup_chess_board(QUEEN, qcp_bees_key='workerbees'):
+    if qcp_bees_key not in QUEEN.keys():
+        QUEEN[qcp_bees_key] = {}
     db = init_swarm_dbs(prod)
     BISHOP = ReadPickleData(db.get('BISHOP'))
     df = BISHOP.get('screen_1')
@@ -578,18 +580,23 @@ def add_key_to_app(QUEEN_KING):  # returns QUEES
         print_line_of_error(e)
 
 def set_chess_pieces_symbols(QUEEN_KING, qcp_bees_key):
-    all_workers = list(QUEEN_KING[qcp_bees_key].keys())
-    
-    ticker_qcp_index = {}
-    view = []
+    try:
+        all_workers = list(QUEEN_KING[qcp_bees_key].keys())
+        
+        ticker_qcp_index = {}
+        view = []
+        dups = {}
 
-    for qcp in all_workers:
-        # if qcp in ['castle', 'bishop', 'knight', 'castle_coin']:
-        view.append(f'{qcp.upper()} ({QUEEN_KING[qcp_bees_key][qcp].get("tickers")} )')
-        for ticker in QUEEN_KING[qcp_bees_key][qcp].get("tickers"):
-            ticker_qcp_index[ticker] = qcp
-    
-    return {'ticker_qcp_index': ticker_qcp_index, 'view': view, 'all_workers': all_workers}
+        for qcp in all_workers:
+            view.append(f'{qcp.upper()} ({QUEEN_KING[qcp_bees_key][qcp].get("tickers")} )')
+            for ticker in QUEEN_KING[qcp_bees_key][qcp].get("tickers"):
+                ticker_qcp_index[ticker] = qcp
+                if ticker in dups.keys():
+                    dups[ticker] = qcp
+        
+        return {'ticker_qcp_index': ticker_qcp_index, 'view': view, 'all_workers': all_workers, 'dups': dups}
+    except Exception as e:
+        print_line_of_error(e)
 
 def return_ticker_qcp_index(QUEEN_KING, qcp_bees_key):
     all_workers = list(QUEEN_KING[qcp_bees_key].keys())
@@ -668,7 +675,7 @@ def reallocate_revrec(revrec, ticker_time_frame, ):
 
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, 
                                 chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, 
-                                marginPower={}, save_queenking=False, fresh_board=True):
+                                marginPower={}, save_queenking=False, fresh_board=False):
     # Create/Refresh RevRec from Chess Board
     # WORKERBEE: Add validation only 1 symbol per qcp --- QUEEN not needed only need ORDERS and QUEEN_KING
     rr_starttime = datetime.now()
@@ -943,7 +950,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             WAVE_ANALYSIS = {'fresh_board_timer': datetime.now(est), 'STORY_bee_wave_analysis': resp}
             save_queenking = True
         else:
-            print("using Cached Wave Analysis")
+            # print("using Cached Wave Analysis")
             resp = WAVE_ANALYSIS['STORY_bee_wave_analysis']
 
         storygauge = resp.get('df_storyguage') # wave_gauge
@@ -977,12 +984,21 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             for symbol in storygauge.index:
                 # STORYBEE
                 storygauge.at[symbol, 'current_from_open'] = STORY_bee[f'{symbol}_1Minute_1Day']['story'].get('current_from_open')
-
-                storygauge.at[symbol, 'ticker_buying_power'] = df_ticker.at[symbol, 'ticker_buying_power']
-
-                storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
-                storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
-                # storygauge.at[symbol, 'client_order_ids'] = c_order_ids
+                
+                if symbol in df_ticker.index:
+                    storygauge.at[symbol, 'ticker_buying_power'] = df_ticker.at[symbol, 'ticker_buying_power']
+                else:
+                    storygauge.at[symbol, 'ticker_buying_power'] = 0
+                
+                if symbol in ticker_buys_at_play_dict.index:
+                    storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
+                else:
+                    storygauge.at[symbol, 'long_at_play'] = 0
+                if symbol in ticker_sells_at_play_dict.index:
+                    storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
+                else:
+                    storygauge.at[symbol, 'short_at_play'] = 0
+         
             for symbol in symbols_qty_avail.index:
                 if symbol in storygauge.index:
                     storygauge.at[symbol, 'qty_available'] = symbols_qty_avail.at[symbol, 'qty_available']
@@ -1212,7 +1228,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # print("ALLOCATION")
         s__rr = datetime.now()
         waveview = revrec_allocation(waveview, df_storyview, wave_analysis_down, wave_blocktime)
-        print("rev alloc time: ", (datetime.now()-s__rr).total_seconds())
+        # print("rev alloc time: ", (datetime.now()-s__rr).total_seconds())
         
         # print("STORYGAUGE")
         price_info_symbols = QUEEN['price_info_symbols']
@@ -1242,7 +1258,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             PickleData(QUEEN_KING['dbs'].get('PB_Wave_Analysis_Pickle'), WAVE_ANALYSIS)
 
         cycle_time = (datetime.now()-rr_starttime).total_seconds()
-        print("cycle_time ", cycle_time)
+        if cycle_time > 10:
+            msg=("rervec cycle_time > 10 seconds", cycle_time)
+            print(msg)
+            logging.warning(msg)
         return {'cycle_time': cycle_time, 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
                 'df_storyview': df_storyview, 'storygauge': storygauge, 'waveview': waveview}
     
@@ -3138,7 +3157,7 @@ def check_order_status(api, client_order_id):  # return raw dict form
         order_ = vars(order)["_raw"]
         return order_
     except Exception as e:
-        print("qplcacae", e)
+        print(f"qplcacae {client_order_id} error {e}")
         return {}
 
 
@@ -4044,7 +4063,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=5,
                                     timeduration=360,
                                     take_profit=.01,
-                                    sell_out=-.04,
+                                    sell_out=0,
                                     sell_trigbee_trigger=False,
                                     sell_trigbee_trigger_timeduration=60,#mins
                                     stagger_profits=False,
@@ -4070,7 +4089,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=10,
                                     timeduration=320,
                                     take_profit=.05,
-                                    sell_out=-.01,
+                                    sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*5,#mins
                                     stagger_profits=False,
@@ -4096,7 +4115,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
                                     take_profit=.05,
-                                    sell_out=-.02,
+                                    sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*30,#mins
                                     stagger_profits=False,
@@ -4122,7 +4141,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
                                     take_profit=.05,
-                                    sell_out=-.05,
+                                    sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*60,#mins
                                     stagger_profits=False,
@@ -4148,7 +4167,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
                                     take_profit=.07,
-                                    sell_out=-.05,
+                                    sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*120,#mins
                                     stagger_profits=False,

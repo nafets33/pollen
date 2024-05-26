@@ -978,7 +978,45 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
 
     
 
+def header_account(client_user, prod):
+  QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
+  broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info')
 
+  if 'charlie_bee' not in QUEENsHeart.keys():
+    df = pd.DataFrame()
+  
+  # heart
+  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
+  if beat > 89:
+      beat = "zZzzz"
+  charlie_bee = QUEENsHeart.get('charlie_bee')
+  avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+  long = QUEENsHeart['heartbeat'].get('long')
+  short = QUEENsHeart['heartbeat'].get('short')
+  long = '${:,}'.format(long)
+  short = '${:,}'.format(short)
+  df_heart = pd.DataFrame([{'Long': long, 'Short': short, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
+
+  # Account Info
+  acct_info = broker_info['account_info']
+  if len(acct_info) == 0:
+      df_accountinfo = pd.DataFrame()
+
+  honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+  money_text = '${:,.0f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+  mmoney = f'{honey_text} {money_text}'
+  mmoney = "\u0332".join(mmoney)
+  
+  buying_power = '${:,}'.format(round(acct_info.get('buying_power')))
+  cash = '${:,}'.format(round(acct_info.get('cash')))
+  daytrade_count = round(acct_info.get('daytrade_count'))
+  portfolio_value = '${:,}'.format(round(acct_info.get('portfolio_value')))
+
+  df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count }])
+
+  df = pd.concat([df_heart, df_accountinfo], axis=1)
+
+  return df.to_json(orient='records')
 
 ## RETURN TEXT STRING
 def get_heart(client_user, username, prod):
@@ -1008,13 +1046,12 @@ def get_account_info(client_user, username, prod):
 
   try:
     # WORKERBEE
-    qb = init_queenbee(client_user=client_user, prod=prod, broker_info=True)
-    broker_info = qb.get('broker_info')
+    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info')
     acct_info = broker_info['account_info']
     if len(acct_info) == 0:
        return 'PENDING QUEEN'
 
-    honey_text = "Today" + '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+    honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
     money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
     mmoney = f'{honey_text} {money_text}'
     mmoney = "\u0332".join(mmoney)
@@ -1024,6 +1061,7 @@ def get_account_info(client_user, username, prod):
     daytrade_count = round(acct_info.get('daytrade_count'))
     portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
 
+    df = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Buying Power': buying_power, 'daytrade count': daytrade_count }])
 
     msg = f'{mmoney} BuyPower: {buying_power} $cash: {cash} Portfolio Value: {portfolio_value} daytrade: {daytrade_count}'
     return msg

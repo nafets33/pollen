@@ -1101,8 +1101,9 @@ def queen_workerbees(
 
                 try:
                     all_qcp_s = WORKERBEE_queens.keys()
-                    s = datetime.now(est)
+                    
                     for qcp in WORKERBEE_queens.keys():
+                        s = datetime.now(est)
                         WORKERBEE = WORKERBEE_queens[qcp]
                         # check to see if last call
                         last_modified = WORKERBEE[qcp].get('last_modified')
@@ -1114,7 +1115,6 @@ def queen_workerbees(
                         
                         if (now_time - last_modified).total_seconds() > star_frequency:
                             WORKERBEE['last_modified'] = now_time
-                        
                             ticker_star_hunter_bee(
                                 WORKERBEE=WORKERBEE,
                                 QUEENBEE=QUEENBEE,
@@ -1122,10 +1122,10 @@ def queen_workerbees(
                                 speed_gauges=speed_gauges,
                                 MACD_WAVES=MACD_WAVES,
                             )
-                    e = datetime.now(est)
-                    print(
-                        f"Worker Refreshed {all_qcp_s} --- {(e - s)} seconds --- {queens_master_tickers}"
-                    )
+                            e = datetime.now(est)
+                            print(
+                                f"Worker Refreshed {qcp} --- {(e - s)} seconds --- {queens_master_tickers}"
+                            )
                     # return True
                 except Exception as e:
                     print("qtf", e, print_line_of_error())

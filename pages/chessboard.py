@@ -17,7 +17,7 @@ from streamlit_extras.switch_page_button import switch_page
 
 from chess_piece.app_hive import sac_menu_buttons
 from chess_piece.king import master_swarm_QUEENBEE,  local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import pollen_themes, refresh_account_info, init_queenbee,setup_chess_board, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, story_view, init_qcp
+from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, story_view, init_qcp
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -240,10 +240,75 @@ def handle__new_tickers__AdjustTradingModels(QUEEN_KING, qcp_bees_key='chess_boa
     return QUEEN_KING
 
 
+def refresh_chess_board__button(QUEEN_KING):
+    refresh = st.button("Reset Chess Board",  use_container_width=True)
+
+    if refresh:
+        QUEEN_KING['chess_board'] = generate_chess_board()
+        PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+        st.success("Generated Default Chess Board")
+        time.sleep(1)
+        st.experimental_rerun()
+            
+    return True
+
+def refresh_queen_controls_button(QUEEN_KING):
+    refresh = st.button("Reset ALL QUEEN controls", use_container_width=True)
+
+    if refresh:
+        QUEEN_KING['king_controls_queen'] = return_queen_controls()
+        
+        PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+        st.success("All Queen Controls Reset")
+        st.experimental_rerun()
+            
+    return True
+
+def refresh_trading_models_button(QUEEN_KING):
+    refresh = st.button("Reset All Trading Models", use_container_width=True)
+
+    if refresh:
+        chessboard = QUEEN_KING['chess_board']
+        tradingmodels = generate_chessboards_trading_models(chessboard)
+        QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'] = tradingmodels
+        
+        PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
+        st.success("All Queen.TradingModels Reset")
+        st.experimental_rerun()
+            
+    return True
+
+def refresh_queen_orders(QUEEN):
+    refresh = st.button("Reset All Queen Orders", use_container_width=True)
+
+    if refresh:
+        QUEEN['queen_orders'] = pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id")
+        PickleData(pickle_file=st.session_state['PB_QUEEN_Pickle'], data_to_store=QUEEN)
+        st.success("Orders Reset")
+        st.experimental_rerun()
+
+def stash_queen(QUEEN):
+    refresh = st.button("Stash All Queen Orders", use_container_width=True)
+
+    if refresh:
+        queen_logs = os.path.join(st.session_state['db_root'], '/logs/logs/queens')
+        queen_log_filename = len(os.listdir(queen_logs))
+        queen_log_filename = f'{len(os.listdir(queen_logs)) + 1}_queen.pkl'
+        queen_logs = os.path.join(st.session_state['db_root'], queen_log_filename)
+        PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN)
+        st.success("Queen Stashed")
+
+
 def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees_key = 'chess_board'):
     try:
 
-
+        if st.toggle("Control Settings"):
+            with st.expander("control buttons"):
+                refresh_chess_board__button(QUEEN_KING)
+                refresh_queen_controls_button(QUEEN_KING)
+                refresh_trading_models_button(QUEEN_KING)
+                refresh_queen_orders(QUEEN)
+                stash_queen(QUEEN)
         all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"]
 
         optoins = []

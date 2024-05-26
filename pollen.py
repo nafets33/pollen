@@ -27,7 +27,7 @@ from pages.pollen_engine import pollen_engine
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import sneak_peak_form, custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+from chess_piece.app_hive import account_header_grid, sneak_peak_form, custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
 
@@ -35,7 +35,7 @@ from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, gene
 import streamlit_antd_components as sac
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
-import hydralit_components as hc
+# import hydralit_components as hc
 from custom_button import cust_Button
 # from custom_text import custom_text, TextOptionsBuilder
 
@@ -49,70 +49,6 @@ import ipdb
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 
-
-
-def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_markers=True):
-    k_colors = streamlit_config_colors()
-    default_text_color = k_colors['default_text_color'] # = '#59490A'
-    default_font = k_colors['default_font'] # = "sans serif"
-    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-    
-
-
-    if menu == 'main':
-        
-        menu_data = [
-            {'id':'queen','icon':"fa fa-fire",'label':"Queen"},
-            {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
-            {'id':'PlayGround', 'icon': "fa fa-bug", 'label':"PlayGround"},
-            {'id':'Account', 'icon': "fa fa-bug", 'label':"Account"},
-            {'id':'waves', 'icon': "fas fa-chess-board", 'label':"RevRec"},
-            {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 
-             'submenu':[{'id':'pollen_engine', 'label':"QUEEN", 'icon': "fa fa-heart"},{'label':"KING", 'icon': "fa fa-meh"}]},
-
-        ]
-    elif menu == 'unAuth':
-        menu_data = [
-            {'id':'unauth','icon':"fa fa-fire",'label':"Welcome to pollenq"},
-
-            # {'id':'Copy','icon':"🐙",'label':"Copy"},
-            # {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
-            # {'icon': "far fa-chart-bar", 'label':"Chart"},#no tooltip message
-            # {'id':' Crazy return value 💀','icon': "💀", 'label':"Calendar"},
-            # {'icon': "fas fa-tachometer-alt", 'label':"Dashboard",'ttip':"I'm the Dashboard tooltip!"}, #can add a tooltip message
-            # {'icon': "far fa-copy", 'label':"Right End"},
-            # {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
-        ]
-        prod_name = ""
-
-    if prod:
-
-        menu_id = hc.nav_bar(
-            menu_definition=menu_data,
-            home_name=f'pollen {prod_name}',
-            login_name='Account',
-            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
-            sticky_nav=True, #at the top or not
-            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
-        )
-    else:
-        over_theme = {'option_active':'#B7C8D6'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
-        # over_font = {'font-class':'h2','font-size':'100%'}
-        # over_theme = {'txc_inactive': "#0D93FB"}
-        menu_id = hc.nav_bar(
-            menu_definition=menu_data,
-            override_theme=over_theme,
-            # font_styling=over_font,
-            home_name=f'pollen {prod_name}',
-            login_name='Account',
-            hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
-            sticky_nav=True, #at the top or not
-            sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
-        )
-
-    st.session_state['menu_id']= menu_id
-
-    return menu_id
 
 def pollenq(admin_pq):
     try:
@@ -448,21 +384,6 @@ def pollenq(admin_pq):
 
         def update_queen_orders(QUEEN): # for revrec # WORKERBEE WORKING
             
-            def refresh_long_short(QUEEN):
-                queen_orders = QUEEN['queen_orders']
-                queen_orders['long_short'] = np.where(queen_orders['trigname'].str.contains('buy'), 'long', 'short')
-
-                return QUEEN
-                # queen_orders = queen_orders.fillna("")
-                # # Calculate the length of strings and apply the condition
-                # queen_orders['valid_order'] = queen_orders['trigname'].str.len() > 5 ## i.e. does not == "init" or any other value
-                # queen_orders['valid_order'] = queen_orders['valid_order'].astype(int)  # Convert boolean values to 0 or 1
-                # queen_orders = queen_orders[queen_orders['valid_order'] == 1]
-                # ls_missing = queen_orders[queen_orders['long_short'] == 'init']
-                # buy_orders = queen_orders[queen_orders['trigname'].str.contains('buy')]
-                # sell_orders = queen_orders[queen_orders['trigname'].str.contains('sell')]
-
-
             # update queen orders ## IMPROVE / REMOVE ## WORKERBEE
             qo = QUEEN['queen_orders']
             qo_cols = qo.columns.tolist()
@@ -552,9 +473,7 @@ def pollenq(admin_pq):
             update_queen_orders(QUEEN)
             
             admin_check(admin_pq)
-            with st.sidebar:
-                hide_streamlit_markers = False if st.button('show_dev-ham', use_container_width=True) else True
-            
+
             if st.session_state['admin'] == True:
                 st.sidebar.write('admin:', st.session_state["admin"])
                 # add new keys
@@ -568,13 +487,12 @@ def pollenq(admin_pq):
                         cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
                         cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
-
             if st.session_state.get('admin_queens'):
                 admin_send_queen_airflow(KING)
             if st.session_state.get('admin_users'):
                 admin_queens_active(KING.get('source'), KING)
             
-            # PROD vs SANDBOX
+            # PROD vs SANDBOX #
             
             if sneak_peak:
                 pass
@@ -603,9 +521,6 @@ def pollenq(admin_pq):
             QUEEN_KING = APP_req['QUEEN_KING']
             if APP_req['update']:
                 print("Updating KING QUEEN db")
-                # PickleData(st.session_state['PB_App_Pickle'], QUEEN_KING)
-
-            # QUEENsHeart = ReadPickleData(st.session_state['PB_QUEENsHeart_PICKLE'])   
 
             if st.sidebar.button('show_keys'):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
@@ -657,11 +572,12 @@ def pollenq(admin_pq):
             st.session_state['mkhrs'] = mkhrs
             st.session_state['seconds_to_market_close'] = seconds_to_market_close
 
-            cols = st.columns((3,5,2))
-            menu = sac_menu_buttons("Queen")
-            with cols[2]:
-                menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
-                if menu_id == 'waves':
+            cols = st.columns((3,4))
+            with cols[1]:
+                menu_id = sac_menu_buttons("Queen")
+
+                # menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+                if menu_id == 'Hive':
                     switch_page('waves')
 
                 if menu_id == 'PlayGround':
@@ -679,35 +595,37 @@ def pollenq(admin_pq):
                 if menu_id == 'TradingModels':
                     switch_page('trading_models')
 
-            with cols[0]:
-                # with st.expander("Queens Heart :heartbeat:", False):
-                custom_fastapi_text(KING=KING, 
-                                    client_user=client_user, 
-                                    default_background_color=default_background_color, 
-                                    default_text_color=default_text_color, 
-                                    default_font=default_font,
-                                    refresh_sec=8,
-                                    refresh_cutoff_sec=seconds_to_market_close, 
-                                    prod=prod, 
-                                    api=f'{ip_address}/api/data/heart',
-                                    key='header1',
-                                    text_size=20)
-            with cols[1]:
-                # with st.expander("Account Summary :heavy_dollar_sign:", False):
-                custom_fastapi_text(KING=KING, 
-                                    client_user=client_user, 
-                                    default_background_color=default_background_color, 
-                                    default_text_color=default_text_color, 
-                                    default_font=default_font,
-                                    refresh_sec=8,
-                                    refresh_cutoff_sec=seconds_to_market_close, 
-                                    prod=prod, 
-                                    api=f'{ip_address}/api/data/account_info',
-                                    key='header2',
-                                    text_size=20)
+            # with cols[0]:
+            refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
+            account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
+            # with cols[0]:
+            #     # with st.expander("Queens Heart :heartbeat:", False):
+            #     custom_fastapi_text(KING=KING, 
+            #                         client_user=client_user, 
+            #                         default_background_color=default_background_color, 
+            #                         default_text_color=default_text_color, 
+            #                         default_font=default_font,
+            #                         refresh_sec=8,
+            #                         refresh_cutoff_sec=seconds_to_market_close, 
+            #                         prod=prod, 
+            #                         api=f'{ip_address}/api/data/heart',
+            #                         key='header1',
+            #                         text_size=20)
+            # with cols[1]:
+            #     # with st.expander("Account Summary :heavy_dollar_sign:", False):
+            #     custom_fastapi_text(KING=KING, 
+            #                         client_user=client_user, 
+            #                         default_background_color=default_background_color, 
+            #                         default_text_color=default_text_color, 
+            #                         default_font=default_font,
+            #                         refresh_sec=8,
+            #                         refresh_cutoff_sec=seconds_to_market_close, 
+            #                         prod=prod, 
+            #                         api=f'{ip_address}/api/data/account_info',
+            #                         key='header2',
+            #                         text_size=20)
             
             
-            cols = st.columns((1,1,5))
 
             with st.sidebar:
                 height=50
@@ -719,26 +637,15 @@ def pollenq(admin_pq):
 
         cols = st.columns((2,2,5))
 
-        with cols[0]:
-            height = 54
-            cust_Button("misc/zelda-icons.gif", hoverText=f'Inside Queens Heart', key='show_queenheart', height=f'{height}px', default=False)
-
-        with cols[1]:
-            if st.toggle("Control Settings"):
-                with st.expander("control buttons"):
-                    refresh_chess_board__button(QUEEN_KING)
-                    refresh_queen_controls_button(QUEEN_KING)
-                    refresh_trading_models_button(QUEEN_KING)
-                    refresh_queen_orders(QUEEN)
-                    stash_queen(QUEEN)
-
-
+        # with cols[0]:
+        #     height = 54
+        #     cust_Button("misc/zelda-icons.gif", hoverText=f'Inside Queens Heart', key='show_queenheart', height=f'{height}px', default=False)
 
         with cols[2]:
             # with st.expander("Hey I'm Ozz Your AI Trading Bot, I'll help your Trades Win! Let Chat"):
             jpg_root = os.path.join(main_root, "misc")
             queenbee_png = os.path.join(jpg_root, "bee.png")
-            queen_logs = st.toggle("Queens Mind")
+            queen_logs = st.toggle("Queens Logs")
             st.session_state['Queens Mind'] = queen_logs
 
         if st.session_state['Queens Mind']:

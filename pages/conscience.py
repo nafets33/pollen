@@ -61,8 +61,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
     ##### STREAMLIT ###
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
-    default_font = k_colors['default_font'] # = "sans serif"
-    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
     
     with st.spinner("Welcome to the QueensMind"):
 
@@ -270,7 +268,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, key='default'):
             try:
                 gb = GridOptionsBuilder.create()
-                gb.configure_default_column(column_width=100, resizable=True,wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+                gb.configure_default_column(column_width=100, resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,)            
                 gb.configure_index('symbol')
                 gb.configure_theme('ag-theme-material')
                 def story_grid_buttons():
@@ -324,7 +322,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 "col_header": column_header,
                                 "border_color": "#BEE3FE",
                                 'col_width':135,
-                                'pinned': 'right',
+                                # 'pinned': 'right',
                                 'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
 # 'cellStyle': f"""
 #     function(params) {{
@@ -345,23 +343,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         buttons.append(temp)
                     
                     return buttons
-
-                # hh = JSCode("""
-                #         function(params) {
-                #             // Add your logic here to determine the style based on cell value
-                #             if (params.value > 0) {
-                #                 return {
-                #                     'background-color': 'green',
-                #                     'color': 'white'
-                #                 };
-                #             } else {
-                #                 return {
-                #                     'background-color': 'red',
-                #                     'color': 'white'
-                #                 };
-                #             }
-                #         }
-                #     """)
 
                 def config_cols(cols):
 
@@ -405,6 +386,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 g_buttons = story_grid_buttons()
 
                 go = gb.build()
+                # with st.expander("default build check"):
+                #     st.write(go)
                 st_custom_grid(
                     client_user=client_user,
                     username=KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -430,7 +413,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
             except Exception as e:
                 print_line_of_error(e)
-
 
         ########################################################
         ########################################################
@@ -526,17 +508,18 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
         # ip_address = get_ip_address()
         ip_address = st.session_state['ip_address']
-        story_tab, trading_tab, order_tab, charts_tab = st.tabs(['Story', 'Waves', 'Orders', 'Wave Charts',]) # 'waves', 'workerbees', 'charts'
         # func_list = [i for i in func_list if st.session_state[i]]
         with st.spinner("Refreshing"): # ozzbot
 
             if authorized_user:
                 revrec = QUEEN.get('revrec')
                 if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
-                    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+                    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=True) ## Setup Board
                     QUEEN_KING['revrec'] = revrec
                 
                 clear_subconscious_Thought(QUEEN, QUEEN_KING)
+
+                story_tab, trading_tab, order_tab, charts_tab = st.tabs(['Story', 'Waves', 'Orders', 'Wave Charts',]) # 'waves', 'workerbees', 'charts'
 
                 with story_tab:
                     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
@@ -690,5 +673,25 @@ if __name__ == '__main__':
     # # QUEEN_KING=
     # # api=
     # # api_var=
-    
+
+    # queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
+
     queens_conscience(None, None, None, None, None)
+
+
+                # hh = JSCode("""
+                #         function(params) {
+                #             // Add your logic here to determine the style based on cell value
+                #             if (params.value > 0) {
+                #                 return {
+                #                     'background-color': 'green',
+                #                     'color': 'white'
+                #                 };
+                #             } else {
+                #                 return {
+                #                     'background-color': 'red',
+                #                     'color': 'white'
+                #                 };
+                #             }
+                #         }
+                #     """)

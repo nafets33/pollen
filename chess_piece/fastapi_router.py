@@ -13,12 +13,20 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_quee
                                        get_ticker_data_candle_stick,
                                        get_ticker_data_v2,
                                        grid_row_button_resp,
-                                       update_queenking_chessboard,)
+                                       update_queenking_chessboard,
+                                       header_account,)
 
 router = APIRouter(
     prefix="/api/data",
     tags=["auth"]
 )
+
+def check_authKey(api_key):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return False
+    else:
+        return True
 
 def confirm_auth_keys(api_key):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
@@ -53,6 +61,16 @@ def load_story_json(client_user: str=Body(...), toggle_view_selection: str=Body(
         return JSONResponse(content=json_data)
     except Exception as e:
         print(e)
+
+
+@router.post("/account_header", status_code=status.HTTP_200_OK)
+def load_account_header(client_user: str=Body(...),prod: bool=Body(...), api_key = Body(...)):
+    if check_authKey(api_key):
+        json_data = header_account(client_user, prod)
+        return JSONResponse(content=json_data)
+    else:
+        return "NOAUTH"
+
 
 
 @router.post("/ticker_time_frame", status_code=status.HTTP_200_OK)
