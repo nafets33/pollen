@@ -31,29 +31,33 @@ def register_user(authenticator, con, cur):
         ):
             st.session_state["register_status"] = register_status
 
-        # generate and store verification code
-        if "verification_code" not in st.session_state:
-            st.session_state["verification_code"] = randint(100000, 999999)
-        verification_code = st.session_state["verification_code"]
+        if os.environ.get('env_verify') != "89":
+            verification_code = 0
+            entered_code = 0
+        else:
+            # generate and store verification code
+            if "verification_code" not in st.session_state:
+                st.session_state["verification_code"] = randint(100000, 999999)
+            verification_code = st.session_state["verification_code"]
 
-        if register_status:
+            if register_status:
 
-            register_email = st.session_state["register_status"][0]
+                register_email = st.session_state["register_status"][0]
 
-            # send user verification code
-            send_email(
-                recipient=register_email,
-                subject="PollenQ. Verify Email",
-                body=f"""
-            Your PollenQ verification code is {verification_code}
+                # send user verification code
+                send_email(
+                    recipient=register_email,
+                    subject="PollenQ. Verify Email",
+                    body=f"""
+                Your PollenQ verification code is {verification_code}
 
-            Please enter this code in the website to complete your registration
+                Please enter this code in the website to complete your registration
 
-            Thank you,
-            PollenQ
-            """,
-            )
-            st.success("A verification code has been sent to your email")
+                Thank you,
+                PollenQ
+                """,
+                )
+                st.success("A verification code has been sent to your email")
 
         entered_code = st.text_input("Verification Code", max_chars=6)
 
@@ -66,16 +70,17 @@ def register_user(authenticator, con, cur):
 
                 # verification successful
                 update_db(authenticator, con=con, cur=cur, email=register_email, append_db=True)
-                send_email(
-                    recipient=register_email,
-                    subject="Welcome On Board PollenQ!",
-                    body=f"""
-                You have successful created a PollenQ account. Ensure you keep your login detials safe.
+                if os.environ.get('env_verify') == "89":
+                    send_email(
+                        recipient=register_email,
+                        subject="Welcome On Board PollenQ!",
+                        body=f"""
+                    You have successful created a PollenQ account. Ensure you keep your login detials safe.
 
-                Thank you,
-                PollenQ
-                """,
-                )
+                    Thank you,
+                    PollenQ
+                    """,
+                    )
 
                 authenticator.direct_login(register_email, register_password)
 

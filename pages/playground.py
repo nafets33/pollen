@@ -11,7 +11,7 @@ from custom_button import cust_Button
 from streamlit_option_menu import option_menu
 from datetime import datetime, timedelta
 import hydralit_components as hc
-from ozz.ozz_bee import send_ozz_call
+# from ozz.ozz_bee import send_ozz_call
 import pytz
 import ipdb
 import pandas as pd
@@ -26,7 +26,57 @@ import time
 
 set_streamlit_page_config_once()
 
+def refresh_yfinance_ticker_info(KING):
+    s = datetime.now()
+    all_info = {}
+    sectors = {}
+    ticker_universe = KING['ticker_universe']
+    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    progress_text = "Operation in progress. Please wait."
+    my_bar = st.progress(0, text=progress_text)
+    max = len(main_symbols_full_list)
+    for idx, tic in enumerate(main_symbols_full_list):
+        num = round(idx/max)
+        try:
+            ticker = yf.Ticker(tic)
+            all_info[tic] = ticker.info
+            sectors[tic] = ticker.info.get('sector')
+            my_bar.progress(num, text=progress_text)
+        except Exception as e:
+            print_line_of_error(tic)
 
+    my_bar.empty()
+    # df = pd.DataFrame(sectors.items())
+    # st.write(df)
+
+    # if all_info:
+    df = pd.DataFrame()
+    # Initialize progress bar
+    progress_text = "Processing tickers..."
+    my_bar = st.progress(0, text=progress_text)
+
+    # Calculate total number of tickers
+    total_tickers = len(all_info)
+
+    # Iterate through ticker information
+    for idx, (tic, data) in enumerate(all_info.items(), start=1):
+        # Calculate progress percentage
+        progress_percent = round(idx / total_tickers * 100)
+        
+        # Update progress bar
+        my_bar.progress(progress_percent, text=progress_text)
+        
+        # Process ticker data
+        token = pd.DataFrame(data.items()).T
+        headers=token.iloc[0]
+        token.columns=headers
+        token = token.drop(0)
+        token['ticker'] = tic
+        df = pd.concat([df, token], ignore_index=True)
+        my_bar = st.empty()
+
+    print((datetime.now() - s).total_seconds())
+    return df
 
 def PlayGround():
     with st.spinner("Verifying Your Scent, Hang Tight"):
@@ -67,54 +117,6 @@ def PlayGround():
         with cols[3]:
             st.image(MISC.get('mainpage_bee_png'))
     
-        with st.expander("Ozz"):
-            cols = st.columns(2)
-            with cols[0]:
-                query = st.text_input('ozz learning walks call')
-                if st.button("ozz"):
-                    send_ozz_call(query=query)
-            with cols[1]:
-                OZZ = ozz_bot(api_key=os.environ.get("ozz_api_key"), username=st.session_state['username'])
-                st.write(OZZ)
-        
-        with st.sidebar:
-            option_data = [
-            {'icon': "bi bi-hand-thumbs-up", 'label':"Agree"},
-            {'icon':"fa fa-question-circle",'label':"Unsure"},
-            {'icon': "bi bi-hand-thumbs-down", 'label':"Disagree"},
-            ]
-            op = hc.option_bar(option_definition=option_data,title='Feedback Response',key='nul') #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-
-
-        with st.expander('feedback menu options examples'):
-            option_data = [
-            {'icon': "bi bi-hand-thumbs-up", 'label':"Agree"},
-            {'icon':"fa fa-question-circle",'label':"Unsure"},
-            {'icon': "bi bi-hand-thumbs-down", 'label':"Disagree"},
-            ]
-
-            # override the theme, else it will use the Streamlit applied theme
-            over_theme = {'txc_inactive': 'white','menu_background':'purple','txc_active':'yellow','option_active':'blue'}
-            font_fmt = {'font-class':'h2','font-size':'150%'}
-
-            # display a horizontal version of the option bar
-            op = hc.option_bar(option_definition=option_data,title='Feedback Response',key='PrimaryOption') #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-            st.write(op)
-
-            # display a version version of the option bar
-            op2 = hc.option_bar(option_definition=option_data,title='Feedback Response',key='PrimaryOption2', horizontal_orientation=False) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=False)
-            st.write(op2)
-
-
-            selected2 = option_menu(None, ["Home", "Upload", "Tasks", 'Settings'], 
-                icons=['house', 'cloud-upload', "list-task", 'gear'], 
-                menu_icon="cast", default_index=0, orientation="horizontal")
-            st.write(selected2)
-
-        view_ss_state = st.sidebar.button("View Session State")
-        if view_ss_state:
-            st.write(st.session_state)
-
         
         QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
@@ -147,26 +149,26 @@ def PlayGround():
         
         # with st.expander("button on grid"):
         #     click_button_grid()
-        if st.toggle("nested grid"):
-            with st.expander("nested grid"):
-                nested_grid()
+        # if st.toggle("nested grid"):
+        #     with st.expander("nested grid"):
+        #         nested_grid()
 
-        if st.toggle("pollenstory"):
-            with st.expander("pollenstory"):
-                ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
-                data=POLLENSTORY[ttf]
-                default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number']
-                cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
-                data=data[cols].copy()
-                data = data.reset_index()
-                grid = standard_AGgrid(data=data, configure_side_bar=True)
+        # if st.toggle("pollenstory"):
+        with st.expander("pollenstory"):
+            ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
+            data=POLLENSTORY[ttf]
+            default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number']
+            cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
+            data=data[cols].copy()
+            data = data.reset_index()
+            grid = standard_AGgrid(data=data, configure_side_bar=True)
 
 
-        if st.toggle("wave stories"):
-            with st.expander("wave stories"):
-                ticker_option = st.selectbox("ticker", options=tickers_avail)
-                frame_option = st.selectbox("frame", options=KING['star_times'])
-                show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
+        # if st.toggle("wave stories"):
+        with st.expander("wave stories"):
+            ticker_option = st.selectbox("ticker", options=tickers_avail)
+            frame_option = st.selectbox("frame", options=KING['star_times'])
+            show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
 
 
         def get_screen_processes():
@@ -199,55 +201,7 @@ def PlayGround():
             db = ReadPickleData(yahoo_stats_bee)
             # st.write(db['AAPL'])
             
-            def refresh_yfinance_ticker_info(KING):
-                all_info = {}
-                sectors = {}
-                ticker_universe = KING['ticker_universe']
-                main_symbols_full_list = ticker_universe['main_symbols_full_list']
-                progress_text = "Operation in progress. Please wait."
-                my_bar = st.progress(0, text=progress_text)
-                max = len(main_symbols_full_list)
-                for idx, tic in enumerate(main_symbols_full_list):
-                    num = round(idx/max)
-                    try:
-                        ticker = yf.Ticker(tic)
-                        all_info[tic] = ticker.info
-                        sectors[tic] = ticker.info.get('sector')
-                        my_bar.progress(num, text=progress_text)
-                    except Exception as e:
-                        print_line_of_error(tic)
 
-                my_bar.empty()
-                # df = pd.DataFrame(sectors.items())
-                # st.write(df)
-
-                # if all_info:
-                df = pd.DataFrame()
-                # Initialize progress bar
-                progress_text = "Processing tickers..."
-                my_bar = st.progress(0, text=progress_text)
-
-                # Calculate total number of tickers
-                total_tickers = len(all_info)
-
-                # Iterate through ticker information
-                for idx, (tic, data) in enumerate(all_info.items(), start=1):
-                    # Calculate progress percentage
-                    progress_percent = round(idx / total_tickers * 100)
-                    
-                    # Update progress bar
-                    my_bar.progress(progress_percent, text=progress_text)
-                    
-                    # Process ticker data
-                    token = pd.DataFrame(data.items()).T
-                    headers=token.iloc[0]
-                    token.columns=headers
-                    token = token.drop(0)
-                    token['ticker'] = tic
-                    df = pd.concat([df, token], ignore_index=True)
-                    my_bar = st.empty()
-
-                    return df
             
             if st.button("Refresh ALL yahoo ticker info into BISHOP"):
                 df_info = refresh_yfinance_ticker_info(KING)
@@ -255,8 +209,8 @@ def PlayGround():
                     BISHOP['ticker_info'] = df_info
                     PickleData(BISHOP.get('source'), BISHOP, console=True)
         
-
         if 'ticker_info' in BISHOP.keys():
+            show_all = st.toggle("show all tickers")
             df = BISHOP.get('ticker_info')
             hide_cols = df.columns.tolist()
             
@@ -271,18 +225,21 @@ def PlayGround():
                     df[col] = pd.to_numeric(df[col], errors='coerce')
                 
                 return df
+            
             df=clean_ticker_info_df(df)
             
             
             # screener
-            def stock_screen(df):
+            def stock_screen(df, show_all=False):
+                if show_all:
+                    return df
                 df = df[df['marketCap'] > 50000000]
                 df = df[df['volume'] > 1000000]
                 df = df[df['shortRatio'] < 2]
                 df = df[df['ebitdaMargins'] > .25]
                 return df
 
-            df = stock_screen(df)
+            df = stock_screen(df, show_all)
             screen_name = st.text_input('Screen Name')
             if st.button("Save Screen to Bishop"):
                 BISHOP[screen_name] = df

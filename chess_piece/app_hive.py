@@ -98,7 +98,7 @@ default_yellow_color = k_colors["default_yellow_color"]  # = '#C5B743'
 def set_streamlit_page_config_once():
     try:
         st.set_page_config(
-            page_title="QuantQueen",
+            page_title="pollen",
             page_icon=page_icon,
             layout="wide",
             initial_sidebar_state='collapsed',
@@ -208,10 +208,13 @@ def sac_menu_buttons(main='Queen'):
     if main=='Queen':
         sac_menu_buttons = sac.buttons([
             sac.ButtonsItem(label='pollen', icon='robot'),
-            sac.ButtonsItem(label='Hive', icon='backpack4-fill'),
-            sac.ButtonsItem(label='Playground', icon='fire'),
+            sac.ButtonsItem(label='Board', icon='box'),
+            sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
+            sac.ButtonsItem(label='PlayGround', icon='fire'),
             sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
             sac.ButtonsItem(label='Trading Models', disabled=False),
+            sac.ButtonsItem(label='Waves', icon='share-fill'),
+            sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
         ], format_func='title', align='end', type='text')
     elif main == 'Account':
@@ -531,7 +534,7 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
     #Configure index field
     gb.configure_index('idx')
     gb.configure_column('idx', {"sortable":True, 'initialWidth':89, 'sort':'desc'})
-    gb.configure_column('message', {'width':800, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
+    gb.configure_column('message', {'width':1250, "wrapText": True, "autoHeight": True, "sortable":True, 'cellStyle': {'fontSize': '15px'}})
     go = gb.build()
 
     st_custom_grid(
@@ -549,7 +552,7 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
         api_key=os.environ.get("fastAPI_key"),
         buttons = [],
 
-        grid_height='250px',
+        grid_height='350px',
         log_file=log_file
 
     ) 

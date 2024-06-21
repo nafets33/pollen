@@ -15,12 +15,12 @@ def pollen_engine(acct_info, log_dir):
         df_betty = df_betty.astype(str)
         st.write(df_betty)
     
-    with st.expander('users db'):
-        con = sqlite3.connect("db/client_users.db")
-        cur = con.cursor()
-
-        users = cur.execute("SELECT * FROM users").fetchall()
-        st.dataframe(pd.DataFrame(users))
+    if st.session_state['admin']:
+        with st.expander('users db'):
+            con = sqlite3.connect("db/client_users.db")
+            cur = con.cursor()
+            users = cur.execute("SELECT * FROM users").fetchall()
+            st.dataframe(pd.DataFrame(users))
 
     with st.expander('charlie_bee'):
 
@@ -29,12 +29,6 @@ def pollen_engine(acct_info, log_dir):
         df_charlie = df_charlie.astype(str)
         st.write(df_charlie)
     
-    with st.expander('queen logs'):
-        logs = os.listdir(log_dir)
-        logs = [i for i in logs if i.endswith(".log")]
-        log_file = st.selectbox('log files', list(logs))
-        with open(os.path.join(log_dir, log_file), 'r') as f:
-            content = f.readlines()
-            st.write(content)
+
     
     return True

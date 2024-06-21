@@ -15,7 +15,7 @@ import os
 
 from chess_piece.app_hive import set_streamlit_page_config_once, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import kingdom__grace_to_find_a_Queen, return_app_ip, kingdom__global_vars, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import init_queenbee, sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, story_view, pollen_themes, return_timestamp_string, init_logging
+from chess_piece.queen_hive import create_QueenOrderBee, init_queenbee, sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, return_queen_orders__query
 from pq_auth import signin_main
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -23,8 +23,51 @@ from custom_graph_v1 import st_custom_graph
 
 from streamlit_extras.switch_page_button import switch_page
 
+def config_cols(active_order_state_list):
+    money_def = {
+        'cellRenderer': 'agAnimateShowChangeCellRenderer',
+        'enableCellChangeFlash': True,
+        'pinned':'left',
+        }
+    honey_options = {'headerName': '%Honey',
+                    # 'pinned': 'left',
+                        'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                        'type': ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                        'custom_currency_symbol':"%",
+                                }
+    return {
+            'honey': honey_options,
+            'symbol': {},
+            'ttf_grid_name': {'hide':True},
+            'sell_reason': create_ag_grid_column(headerName="Reason To Sell", initialWidth=135, editable=True),
+            'cost_basis_current': {'headerName': 'Cost Basis Current', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                        #    'custom_currency_symbol':"$",
+                                                        "sortable":True,
+                                                        'sort':'desc',
+                                                        'initialWidth': 115,
+                                                        },
+            'filled_qty': {},
+            'qty_available': {},
+            'borrowed_funds': create_ag_grid_column(headerName="Borrowed Money", initialWidth=135),
+            'trigname': {'headerName': 'TrigWave', 'initialWidth': 135,},
+            'current_macd': {'headerName': 'Current MACD', 'initialWidth': 135,},
+            'queen_order_state': {"cellEditorParams": {"values": active_order_state_list},
+                                                                "editable":True,
+                                                                "cellEditor":"agSelectCellEditor",
+                                                                },
+            'client_order_id': {},
+            'cost_basis': {'headerName': 'Starting Cost Basis', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                        #    'custom_currency_symbol':"$",
+                                                        "sortable":True,
+                                                        # "pinned": 'right',
+                                                        'initialWidth': 115,
+                                                        },
+            'datetime': {'type': ["dateColumnFilter", "customDateTimeFormat"], "custom_format_string": "MM/dd/yy HH:mm", 'initialWidth': 133,},
 
-def order_grid(KING, queen_orders, ip_address):
+                    }
+
+
+def order_grid(client_user, config_cols, KING, missing_cols, ip_address, active_order_state_list):
     gb = GridOptionsBuilder.create()
     gb.configure_grid_options(pagination=True, enableRangeSelection=True, copyHeadersToClipboard=False, sideBar=False)
     gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
@@ -34,63 +77,20 @@ def order_grid(KING, queen_orders, ip_address):
     gb.configure_theme('ag-theme-material')
 
 
-    def config_cols():
-        money_def = {
-            'cellRenderer': 'agAnimateShowChangeCellRenderer',
-            'enableCellChangeFlash': True,
-            'pinned':'left',
-            }
-        honey_options = {'headerName': '%Honey',
-                        # 'pinned': 'left',
-                            'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                            'type': ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                            'custom_currency_symbol':"%",
-                                    }
-        return {
-                'honey': honey_options,
-                'symbol': {'hide':True},
-                'ttf_grid_name': {'hide':True},
-                'sell_reason': create_ag_grid_column(headerName="Reason To Sell", initialWidth=135, editable=True),
-                'cost_basis_current': {'headerName': 'Cost Basis Current', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                            #    'custom_currency_symbol':"$",
-                                                            "sortable":True,
-                                                            'sort':'desc',
-                                                            'initialWidth': 115,
-                                                            },
-                'filled_qty': {},
-                'qty_available': {},
-                'borrowed_funds': create_ag_grid_column(headerName="Borrowed Money", initialWidth=135),
-                'trigname': {'headerName': 'TrigWave', 'initialWidth': 135,},
-                'current_macd': {'headerName': 'Current MACD', 'initialWidth': 135,},
-                'queen_order_state': {"cellEditorParams": {"values": active_order_state_list},
-                                                                    "editable":True,
-                                                                    "cellEditor":"agSelectCellEditor",
-                                                                    },
-                'client_order_id': {},
-                'cost_basis': {'headerName': 'Starting Cost Basis', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                            #    'custom_currency_symbol':"$",
-                                                            "sortable":True,
-                                                            # "pinned": 'right',
-                                                            'initialWidth': 115,
-                                                            },
-                'datetime': {'type': ["dateColumnFilter", "customDateTimeFormat"], "custom_format_string": "MM/dd/yy HH:mm", 'initialWidth': 133,},
 
-                        }
-
-    config_cols = config_cols()
+    # config_cols = config_cols()
     for col, config_values in config_cols.items():
         config = config_values
         config['sortable'] = True
         gb.configure_column(col, config)
-    mmissing = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
-    if len(mmissing) > 0:
-        for col in mmissing:
+    if len(missing_cols) > 0:
+        for col in missing_cols:
             gb.configure_column(col, {'hide': True})
 
     go = gb.build()
     
 
-    refresh_sec = 5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+    refresh_sec = None #5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
     st_custom_grid(
         client_user=client_user,
         username=KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -157,12 +157,14 @@ if __name__ == '__main__':
     prod = st.session_state['production']
 
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-    qb = init_queenbee(client_user=client_user, prod=prod, queen=True)
-    QUEEN = qb.get('QUEEN')
+    # qb = init_queenbee(client_user=client_user, prod=prod, queen=True)
+    # QUEEN = qb.get('QUEEN')
     # QUEEN_KING = qb.get('QUEEN_KING')
-    queen_orders = QUEEN['queen_orders']
+    queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 
     king_G = kingdom__global_vars()
     active_order_state_list = king_G.get('active_order_state_list')
-
-    order_grid(KING, queen_orders, ip_address)
+    config_cols = config_cols(active_order_state_list)
+    missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
+    
+    order_grid(client_user, config_cols, KING, missing_cols, ip_address, active_order_state_list)

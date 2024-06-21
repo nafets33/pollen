@@ -13,7 +13,7 @@ import hydralit_components as hc
 
 from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, refresh_chess_board__revrec, return_queen_orders__query, add_trading_model, set_chess_pieces_symbols, init_pollen_dbs, init_qcp, wave_gauge, return_STORYbee_trigbees, generate_TradingModel, stars, story_view, pollen_themes, return_timestamp_string, init_logging
+from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, hive_dates, return_market_hours, refresh_chess_board__revrec, generate_TradingModel, init_logging
 from pages.orders import order_grid
 
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -31,8 +31,7 @@ queens_chess_piece = os.path.basename(__file__)
 
 page = 'QueensConscience'
 
-# print("here")
-# from random import randint
+
 main_root = hive_master_root() # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 est = pytz.timezone("US/Eastern")
@@ -76,8 +75,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     continue
                 for app_req in QUEEN_KING[req_bucket]:
                     if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
-                        # print(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
-                        # st.info(f'{app_req["client_order_id"]}__{req_bucket}__QUEEN Processed app Request__{app_req["app_requests_id"]}')
                         archive_bucket = f'{req_bucket}{"_requests"}'
                         QUEEN_KING[req_bucket].remove(app_req)
                         QUEEN_KING[archive_bucket].append(app_req)
@@ -124,7 +121,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     else:
                         slice1 = i[0] - 1
                         slice2 = i[-1] # [49 : 87]
-                    # print("chunk slice", (slice1, slice2))
                     chunk_n = chunk_list[slice1:slice2]
                     cols = st.columns(len(chunk_n) + 1)
                     with cols[0]:
@@ -149,7 +145,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 if write_type == 'pl_profits':
                                     st.write(ticker, v)
             except Exception as e:
-                print(e, print_line_of_error())
+                print_line_of_error()
 
             return True 
         
@@ -212,7 +208,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 gb.configure_column(col, config)
                 # gb.configure_column(col, {'pinned': 'left'})
             mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
-            # print(revrec.get('waveview').at['SPY_1Minute_1Day', 'king_order_rules'])
             if len(mmissing) > 0:
                 for col in mmissing:
                     gb.configure_column(col, {'hide': True})
@@ -367,12 +362,13 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     'trinity_w_54': create_ag_grid_column(headerName='Future Force',sortable=True, initialWidth=89, ),
                     'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
-                    'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
-                    'broker_qty_available': create_ag_grid_column(headerName='Broker Qty Avail', initialWidth=89, cellStyle={'backgroundColor': 'green', 'color': 'white', 'font': '18px'}),
+                    # 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
+                    'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': 'grey', 'color': 'white', 'font': '18px'}),
                     # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
                     }
 
-                chess_pieces = list(revrec['df_qcp'].index)
+                # chess_pieces = list(revrec['df_qcp'].index)
+                chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
                 story_col = revrec.get('storygauge').columns.tolist()
                 config_cols_ = config_cols(story_col)
                 for col, config_values in config_cols_.items():
@@ -490,7 +486,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
         tic_need_TM = [i for i in tickers_avail if i not in QUEEN_KING['king_controls_queen'].get('symbols_stars_TradingModel')]
         if len(tic_need_TM) > 0:
-            print("Adding Trading Model")
+            print("Adding Trading Model for: ", tic_need_TM)
             for ticker in tic_need_TM:
                 tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme="long_star")['MACD'][ticker]
                 QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
@@ -519,33 +515,33 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 
                 clear_subconscious_Thought(QUEEN, QUEEN_KING)
 
-                story_tab, trading_tab, order_tab, charts_tab = st.tabs(['Story', 'Waves', 'Orders', 'Wave Charts',]) # 'waves', 'workerbees', 'charts'
+                # story_tab, trading_tab, order_tab, charts_tab = st.tabs(['Story', 'Waves', 'Orders', 'Wave Charts',]) # 'waves', 'workerbees', 'charts'
 
-                with story_tab:
-                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
-                    story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
+                # with story_tab:
+                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+                refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
+                story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                
-                with trading_tab:
-                    symbols = QUEEN['heartbeat'].get('active_tickers')
-                    symbols = ['SPY'] if len(symbols) == 0 else symbols
-                    queen_orders = QUEEN['queen_orders']
-                    if 'orders' in st.session_state and st.session_state['orders']:
-                        if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
-                            st.error("PENDING QUEEN")
-                        else:
-                            # with st.expander("Star Grid :sparkles:", True):
-                            refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-                            refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                            if st.toggle("show wave grid"):
-                                wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
+                # with trading_tab:
+                symbols = QUEEN['heartbeat'].get('active_tickers')
+                symbols = ['SPY'] if len(symbols) == 0 else symbols
+                queen_orders = QUEEN['queen_orders']
+                if 'orders' in st.session_state and st.session_state['orders']:
+                    if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
+                        st.error("PENDING QUEEN")
+                    else:
+                        # with st.expander("Star Grid :sparkles:", True):
+                        refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+                        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                        if st.toggle("show wave grid"):
+                            wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
-                with order_tab:
-                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    if st.toggle("show Orders"):
-                        order_grid(KING, queen_orders, ip_address)
+                # with order_tab:
+                # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+                # refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                # if st.toggle("show Orders"):
+                #     order_grid(KING, queen_orders, ip_address)
 
 
                 cols = st.columns(2)

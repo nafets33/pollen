@@ -21,6 +21,7 @@ from chess_piece.king import (
     workerbee_dbs_backtesting_root__STORY_bee,
     workerbee_dbs_root,
     workerbee_dbs_root__STORY_bee,
+    return_QUEENs__symbols_data,
 )
 from chess_piece.queen_hive import (
     init_logging,
@@ -359,7 +360,7 @@ def queen_workerbees(
                     if len(invalid) == 0 or c > 10:
                         break
                     else:
-                        print("invalid trade-condition pull snapshot")
+                        print(f"{ticker} invalid trade-condition pull snapshot")
                         snapshot = api.get_snapshot(
                             ticker
                         )  # return_last_quote from snapshot
@@ -1046,6 +1047,9 @@ def queen_workerbees(
                     queens_chess_pieces.append(pawn.get("piece_name"))
                     queens_master_tickers = queens_master_tickers + pawn.get("tickers")
 
+            # check for tickers in portfolfio
+            # return_QUEENs__symbols_data()
+            
             queen_workers = init_QueenWorkersBees(
                 QUEENBEE=QUEENBEE,
                 queens_chess_pieces=queens_chess_pieces,

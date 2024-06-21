@@ -48,3 +48,8 @@ def get_portfolio_robinhood():
         print(f"Current Price: {data['price']}")
         print(f"Equity: {data['equity']}")
         print(f"--------------------------")
+
+
+if '__name__' is '__main__':
+    login_robinhood()
+    get_portfolio_robinhood()
