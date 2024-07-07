@@ -19,9 +19,10 @@ import time
 import argparse
 
 #pages
+from pages.orders import order_grid, config_orders_cols
 from pages.playground import PlayGround
 from pages.conscience import queens_conscience
-# from pages.account import account
+from pages.chessboard import chessboard
 
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
@@ -55,6 +56,8 @@ def pollenq(admin_pq):
         king_G = kingdom__global_vars()
         main_root = hive_master_root()
         load_dotenv(os.path.join(main_root, ".env"))
+        seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
+
 
         def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
             # try:
@@ -92,172 +95,6 @@ def pollenq(admin_pq):
             
             return QUEEN_KING
 
-        def add_new_kor__to_active_orders(QUEEN, QUEEN_KING):
-            # try:
-            save = False
-            all_orders = QUEEN['queen_orders']
-            active_orders = all_orders[all_orders['queen_order_state'].isin(king_G.get('active_queen_order_states'))].copy()
-            
-            all_models = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']
-            lastest_ticker_key = []
-            lastest_tframe_keys = []
-            latest_kors = kings_order_rules()
-            latest_rules = latest_kors.keys()
-            new_rules_confirmation = {}
-            # ipdb.set_trace()
-            for q_order in active_orders:
-                korules = q_order.get('order_rules')
-                missing_rules = [i for i in latest_rules if i not in korules.keys()]    
-                ticker = korules.get("symbol")
-                client_order_id = korules.get('client_order_id')
-                if len(missing_rules) > 0:
-                    save = True
-                    new_rules_confirmation[ticker] = []
-                    for new_rule in missing_rules:
-                        QUEEN['queen_orders'].at[client_order_id, 'order_rules'].update({new_rule: latest_kors.get(new_rule)})
-                        new_rules_confirmation[ticker].append(new_rule)
-                        print(f'New Rule Added: , {ticker}{new_rule}')
-                        st.write(f'New Rule Added: , {ticker}{new_rule}')
-
-            # if save:
-            #     st.write(new_rules_confirmation)
-            #     PickleData(st.session_state["PB_App_Pickle"], QUEEN_KING)
-            
-            return QUEEN
-            
-        def refresh_chess_board__button(QUEEN_KING):
-            refresh = st.button("Reset Chess Board",  use_container_width=True)
-
-            if refresh:
-                QUEEN_KING['chess_board'] = generate_chess_board()
-                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
-                st.success("Generated Default Chess Board")
-                time.sleep(1)
-                st.experimental_rerun()
-                    
-            return True
-
-        def refresh_queen_controls_button(QUEEN_KING):
-            refresh = st.button("Reset ALL QUEEN controls", use_container_width=True)
-
-            if refresh:
-                QUEEN_KING['king_controls_queen'] = return_queen_controls(stars)
-                
-                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
-                st.success("All Queen Controls Reset")
-                st.experimental_rerun()
-                    
-            return True
-
-        def refresh_trading_models_button(QUEEN_KING):
-            refresh = st.button("Reset All Trading Models", use_container_width=True)
-
-            if refresh:
-                chessboard = QUEEN_KING['chess_board']
-                tradingmodels = generate_chessboards_trading_models(chessboard)
-                QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'] = tradingmodels
-                
-                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
-                st.success("All Queen.TradingModels Reset")
-                st.experimental_rerun()
-                    
-            return True
-        
-        def refresh_queen_orders(QUEEN):
-            refresh = st.button("Reset All Queen Orders", use_container_width=True)
-
-            if refresh:
-                QUEEN['queen_orders'] = pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id")
-                PickleData(pickle_file=st.session_state['PB_QUEEN_Pickle'], data_to_store=QUEEN)
-                st.success("Orders Reset")
-                st.experimental_rerun()
-
-        def stash_queen(QUEEN):
-            refresh = st.button("Stash All Queen Orders", use_container_width=True)
-
-            if refresh:
-                queen_logs = os.path.join(st.session_state['db_root'], '/logs/logs/queens')
-                queen_log_filename = len(os.listdir(queen_logs))
-                queen_log_filename = f'{len(os.listdir(queen_logs)) + 1}_queen.pkl'
-                queen_logs = os.path.join(st.session_state['db_root'], queen_log_filename)
-                PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN)
-                st.success("Queen Stashed")
-
-        def queenbee_online(cols, QUEENsHeart, admin, dag, api_failed, prod):
-            # from airflow.dags.dag_queenbee_prod import run_trigger_dag
-
-            def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
-                return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
-            try:
-                users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
-                now = datetime.now(est)
-
-                if dag =='run_queenbee':
-                    def queen_checks():
-                        if 'chess_board__revrec' not in QUEEN_KING.keys():
-                            st.warning("You Need to Save your Chess Board before Proceeding")
-                            return False
-                        if (now - QUEEN_KING['trigger_queen'].get('last_trig_date')).total_seconds() < 60:
-                            st.write("Waking up your Queen")
-                            st.image(QUEEN_KING['character_image'], width=100)
-                            return False
-                
-                        if api_failed:
-                            st.error("you need to setup your Broker Queens to Turn on your Queen See Account Keys Below")
-                            return False
-
-                        if 'heartbeat_time' not in QUEENsHeart.keys():
-                            st.error("You Need a Queen")
-                            return False
-                        
-                        return True
-                    
-                    if queen_checks() == False:
-                        return False
-
-                    if (now - QUEENsHeart['heartbeat_time']).total_seconds() > 23:
-                        # st.write("YOUR QUEEN if OFFLINE")
-                        # st.error("Your Queen Is Asleep Wake Her UP!")
-                        with cols[0]:
-                            wake_up_queen_button = st.button("Your Queen Trading Bot Is Asleep Wake Her UP!", use_container_width=True)
-                            # local_gif(gif_path=flyingbee_grey_gif_path)
-                        if wake_up_queen_button and st.session_state['authorized_user']:
-                            # check to ensure queen is offline before proceeding 
-                            if (now - QUEENsHeart['heartbeat_time']).total_seconds() < 60:
-                                return False
-                            
-                            if st.session_state['username'] not in users_allowed_queen_email: ## this db name for client_user # stefanstapinski
-                                print("failsafe away from user running function")
-                                send_email(recipient='stapinski89@gmail.com', subject="NotAllowedQueen", body=f'{st.session_state["username"]} you forgot to say something')
-                                st.error("Your Account not Yet authorized")
-                                return False
-
-                            # execute trigger
-                            trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                            QUEEN_KING['trigger_queen'].update(trigger_queen_vars(dag=dag, client_username=st.session_state['username']))
-                            st.write("My Queen")
-                            st.image(QUEEN_KING['character_image'], width=100)  ## have this be the client_user character
-                            PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
-                            # switch_page("pollenq")
-                            # st.experimental_rerun()
-                    else:
-                        return True
-                elif dag =='run_workerbees':
-                    if admin:
-                        if st.sidebar.button("Flying Bees", use_container_width=True):
-                            trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                            st.write("Bees Fly")
-                    return True
-                elif dag =='run_workerbees_crypto':
-                    if admin:
-                        if st.sidebar.button("Flying Crypto Bees", use_container_width=True):
-                            trigger_airflow_dag(dag=dag, client_username=st.session_state['username'], prod=prod)
-                            st.write("Crypto Bees Fly")
-                    return True
-                else:
-                    return False
-            except Exception as e:
-                print_line_of_error()
 
         def check_fastapi_status(ip_address):
             try:
@@ -269,8 +106,6 @@ def pollenq(admin_pq):
             except Exception as e:
                 print(e)
                 return False
-
-
 
         def admin_check(admin_pq):
             if admin_pq:
@@ -337,15 +172,8 @@ def pollenq(admin_pq):
         pq_buttons = pollenq_button_source()
         s = datetime.now(est)
 
-        # images
-        # MISC = local__filepaths_misc()
-        # MISC_cb = local__filepaths_misc(jpg_root=os.path.join(hive_master_root(), '/custom_button/frontend/build/misc' ))
-        # bee_image = MISC['bee_image']
-        # mainpage_bee_png = MISC['mainpage_bee_png']
-        # flyingbee_grey_gif_path = MISC['flyingbee_grey_gif_path']
-
         ##### STREAMLIT #####
-        st.session_state['orders'] = True
+        # st.session_state['orders'] = True
         if 'refresh_times' not in st.session_state:
             st.session_state['refresh_times'] = 0
             pq_buttons['chess_board'] = True
@@ -362,8 +190,6 @@ def pollenq(admin_pq):
             prod = st.session_state['production']
             authorized_user = st.session_state['authorized_user']
             client_user = st.session_state["username"]
-            prod_name = "LIVE" if st.session_state['production'] else "Sandbox"    
-            prod_name_oppiste = "Sandbox" if st.session_state['production']  else "LIVE"   
             
             if authorized_user != True:
                 st.error("Your Account is Not Yet Authorized by a pollenq admin")
@@ -378,16 +204,45 @@ def pollenq(admin_pq):
         
         log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
+        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+
+        menu_id = sac_menu_buttons("Queen")
+        
         with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
             ####### Welcome to Pollen ##########
-
             # with cols[1]:
-            menu_id = sac_menu_buttons("Queen")
             # cols = st.columns((3,4))
             if menu_id == 'Board':
-                switch_page('chessboard')
-            # menu_id = menu_bar_selection(prod_name_oppiste=prod_name_oppiste, prod_name=prod_name, prod=st.session_state['production'], menu='main', hide_streamlit_markers=hide_streamlit_markers) 
+                switch_page("chessboard")
+                # wierd error on None Type QUEEN_KING WORKERBEE
+                # prod = st.session_state['production']
+                # qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
+                # QUEEN = qb.get('QUEEN')
+                # QUEEN_KING = qb.get('QUEEN_KING')
+                # api = qb.get('api')    
+                # revrec = QUEEN_KING.get('revrec')
+
+                # alpaca_acct_info = refresh_account_info(api=api)
+                # with st.sidebar:
+                #     if st.button('acct info'):
+                #         st.write(alpaca_acct_info)
+
+                # acct_info = alpaca_acct_info.get('info_converted')
+
+                # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+
+                # swarm_queen_symbols = []
+                # for qcp, va in QUEENBEE['workerbees'].items():
+                #     tickers = va.get('tickers')
+                #     if tickers:
+                #         for tic in tickers:
+                #             swarm_queen_symbols.append(tic)
+
+                # themes = list(pollen_themes(KING).keys())
+                # chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=swarm_queen_symbols, themes=themes, admin=False)
+                # st.stop()
+
             if menu_id == 'Waves':
                 switch_page('waves')
 
@@ -401,7 +256,15 @@ def pollenq(admin_pq):
                 switch_page('account')
 
             if menu_id == 'Orders':
-                switch_page('orders')
+                # switch_page('orders')
+                queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
+
+                active_order_state_list = king_G.get('active_order_state_list')
+                config_cols = config_orders_cols(active_order_state_list)
+                missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
+                order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close)
+
+                st.stop()
 
             if menu_id == 'TradingModels':
                 switch_page('trading_models')
@@ -413,7 +276,6 @@ def pollenq(admin_pq):
             
             PB_QUEENBEE_Pickle = master_swarm_QUEENBEE(prod=prod)
             QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
-            KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
             qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
             QUEEN = qb.get('QUEEN')
             QUEEN_KING = qb.get('QUEEN_KING')
@@ -515,7 +377,6 @@ def pollenq(admin_pq):
             trading_days = hive_dates(api=api)['trading_days']
             mkhrs = return_market_hours(trading_days=trading_days)
             
-            seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
             seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
             if mkhrs != 'open':
                 seconds_to_market_close = 1

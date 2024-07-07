@@ -15,7 +15,7 @@ import os
 
 from chess_piece.app_hive import set_streamlit_page_config_once, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import kingdom__grace_to_find_a_Queen, return_app_ip, kingdom__global_vars, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import create_QueenOrderBee, init_queenbee, sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, hive_dates, return_market_hours, init_ticker_stats__from_yahoo, return_queen_orders__query
+from chess_piece.queen_hive import create_QueenOrderBee, ttf_grid_names_list
 from pq_auth import signin_main
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -23,7 +23,12 @@ from custom_graph_v1 import st_custom_graph
 
 from streamlit_extras.switch_page_button import switch_page
 
-def config_cols(active_order_state_list):
+def symbol_requesting_to_sell(queen_orders, symbol):
+
+    return True
+
+
+def config_orders_cols(active_order_state_list):
     money_def = {
         'cellRenderer': 'agAnimateShowChangeCellRenderer',
         'enableCellChangeFlash': True,
@@ -67,7 +72,7 @@ def config_cols(active_order_state_list):
                     }
 
 
-def order_grid(client_user, config_cols, KING, missing_cols, ip_address, active_order_state_list):
+def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close):
     gb = GridOptionsBuilder.create()
     gb.configure_grid_options(pagination=True, enableRangeSelection=True, copyHeadersToClipboard=False, sideBar=False)
     gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
@@ -77,8 +82,6 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, active_
     gb.configure_theme('ag-theme-material')
 
 
-
-    # config_cols = config_cols()
     for col, config_values in config_cols.items():
         config = config_values
         config['sortable'] = True
@@ -164,7 +167,7 @@ if __name__ == '__main__':
 
     king_G = kingdom__global_vars()
     active_order_state_list = king_G.get('active_order_state_list')
-    config_cols = config_cols(active_order_state_list)
+    config_cols = config_orders_cols(active_order_state_list)
     missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
     
-    order_grid(client_user, config_cols, KING, missing_cols, ip_address, active_order_state_list)
+    order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close)

@@ -19,8 +19,6 @@ load_dotenv(os.path.join(main_root, ".env"))
 
 
 def register_user(authenticator, con, cur):
-    # write_flying_bee(54, 54)
-
     try:
         register_status = authenticator.register_user(
             form_name="Sign Up", preauthorization=False, location="main"
@@ -33,7 +31,6 @@ def register_user(authenticator, con, cur):
 
         if os.environ.get('env_verify') != "89":
             verification_code = 0
-            entered_code = 0
         else:
             # generate and store verification code
             if "verification_code" not in st.session_state:
@@ -62,14 +59,22 @@ def register_user(authenticator, con, cur):
         entered_code = st.text_input("Verification Code", max_chars=6)
 
         if st.button("Submit"):
+            if os.environ.get('env_verify') != "89":
+                register_email = st.session_state["register_status"][0]
+                register_password = st.session_state["register_status"][1]
+                # verification successful
+                update_db(authenticator, con=con, cur=cur, email=register_email, append_db=True)
+                authenticator.direct_login(register_email, register_password)
 
-            if int(entered_code) == verification_code:
+            elif int(entered_code) == verification_code:
 
                 register_email = st.session_state["register_status"][0]
                 register_password = st.session_state["register_status"][1]
 
                 # verification successful
                 update_db(authenticator, con=con, cur=cur, email=register_email, append_db=True)
+                authenticator.direct_login(register_email, register_password)
+
                 if os.environ.get('env_verify') == "89":
                     send_email(
                         recipient=register_email,

@@ -9,13 +9,12 @@ from PIL import Image
 from dotenv import load_dotenv
 import streamlit as st
 import os
-import copy
+import time
 import hydralit_components as hc
 
 from streamlit_extras.switch_page_button import switch_page
 
 
-from chess_piece.app_hive import sac_menu_buttons
 from chess_piece.king import master_swarm_QUEENBEE,  local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
 from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, story_view, init_qcp
 
@@ -23,51 +22,10 @@ from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph
 
-
 import ipdb
 
-menu_id = sac_menu_buttons()
-
-client_user = st.session_state['client_user']
-authorized_user = st.session_state['authorized_user']
-if authorized_user != True:
-    switch_page('pollen')
-
-
-king_G = kingdom__global_vars()
-active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-active_queen_order_states = king_G.get('active_queen_order_states')
-
-crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
-admin = st.session_state['admin']
-prod = st.session_state['production']
-
-
-reset_theme = False
-
-KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
-QUEEN = qb.get('QUEEN')
-QUEEN_KING = qb.get('QUEEN_KING')
-api = qb.get('api')    
-revrec = QUEEN_KING.get('revrec')
-
-alpaca_acct_info = refresh_account_info(api=api)
-with st.sidebar:
-    if st.button('acct info'):
-        st.write(alpaca_acct_info)
-
-acct_info = alpaca_acct_info.get('info_converted')
-
-QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
-
-swarm_queen_symbols = []
-for qcp, va in QUEENBEE['workerbees'].items():
-    tickers = va.get('tickers')
-    if tickers:
-        for tic in tickers:
-            swarm_queen_symbols.append(tic)
-
+if st.button("Return home"):
+    switch_page("pollen")
 
 def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key='chess_board'):
     models = ['MACD', 'story__AI']
@@ -110,6 +68,8 @@ def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key=
             QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING)
             PickleData(QUEEN_KING.get('source'), QUEEN_KING)
             st.success("New Piece Added Refresh")
+        
+        return QUEEN_KING
 
 
 def reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=False, formkey='Star__Allocation'):
@@ -217,7 +177,7 @@ def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, them
         return QUEEN_KING
     
     except Exception as e:
-        er, er_line = print_line_of_error()
+        er_line=print_line_of_error("chess board")
         st.write(f'{qcp_bees_key} {qcp} failed {er_line}')
 
 
@@ -384,8 +344,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
 
         with st.expander("New Chess Piece"):
-
-            add_new_qcp__to_chessboard(QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, qcp_bees_key='chess_board')
+            QUEEN_KING = add_new_qcp__to_chessboard(QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, qcp_bees_key='chess_board')
 
 
     except Exception as e:
@@ -393,5 +352,45 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
 
 if __name__ == '__main__':
+    client_user = st.session_state['client_user']
+    authorized_user = st.session_state['authorized_user']
+    if authorized_user != True:
+        switch_page('pollen')
+
+
+    king_G = kingdom__global_vars()
+    active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+    active_queen_order_states = king_G.get('active_queen_order_states')
+
+    crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
+    admin = st.session_state['admin']
+    prod = st.session_state['production']
+
+
+    reset_theme = False
+
+    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
+    QUEEN = qb.get('QUEEN')
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')    
+    revrec = QUEEN_KING.get('revrec')
+
+    alpaca_acct_info = refresh_account_info(api=api)
+    with st.sidebar:
+        if st.button('acct info'):
+            st.write(alpaca_acct_info)
+
+    acct_info = alpaca_acct_info.get('info_converted')
+
+    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+
+    swarm_queen_symbols = []
+    for qcp, va in QUEENBEE['workerbees'].items():
+        tickers = va.get('tickers')
+        if tickers:
+            for tic in tickers:
+                swarm_queen_symbols.append(tic)
+
     themes = list(pollen_themes(KING).keys())
     chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=swarm_queen_symbols, themes=themes, admin=False)
