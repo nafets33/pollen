@@ -59,7 +59,7 @@ class App extends Component {
     const { kwargs } = this.props.args
     const { y_axis, api, y_max, refresh_sec, toggles } = kwargs;
     const { viewId } = this.state;
-    const res = await axios.post(api, { ...kwargs, toggle_view_selection: toggles ? toggles[viewId] : "none", })
+    const res = await axios.post(api, { ...kwargs, toggles_selection: toggles ? toggles[viewId] : "none", })
     console.log(
       "toggles[viewId],viewId :>> ",
       toggles[viewId],
@@ -112,7 +112,9 @@ class App extends Component {
   render() {
     const colorSet = []
     const { kwargs } = this.props.args;
+    console.log(this.props);
     const {viewId} = this.state;
+    console.log(kwargs)
     const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button, toggles } =
       kwargs
     const dataY = y_axis.map((item, index) => {

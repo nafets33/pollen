@@ -25,6 +25,7 @@ def main():
         },
         refresh_button=True,
         graph_height=500,
+        toggles=['1m', '2m', '3m', '5m', '10m', '1y']
     )
 
 
