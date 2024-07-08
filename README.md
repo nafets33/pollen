@@ -1,17 +1,15 @@
 # Pollen
+Python == 3.9.9
 
-## Install ENV and pre-commit hooks
+## Create a Virtual ENV and pre-commit hooks
 - pip install -r requirements.txt
 - pre-commit install
 
 ## Run Locally  ## use folders from local_db_refence
 Create following Dir Manually inside pollen/
-symbols_pollenstory_dbs
-symbols_STORY_bee_dbs
-client_user_dbs
-
-# Download dbs into Folder
-# REQUEST TO OWNER
+unzip the folder into pollen symbols_pollenstory_dbs.zip
+unzip the folder into pollen symbols_STORY_bee_dbs.zip
+unzip the folder into pollen client_user_dbs
 
 ## Create .env and setup variables
 APCA_API_KEY_ID = ""
@@ -26,12 +24,13 @@ cookie_name = "pollen_user_auth"
 cookie_key = "pollen321"
 cookie_expiry_days = "30"
 
-
-
 ## Run the App Locally // runs on local:8501
 streamlit run pollen.py
 python pollen_api.py
 
+## After Running pollen.py
+Create a New User
+Use Verification Code 0
 
 # Optional
 pollenq_gmail = ""
