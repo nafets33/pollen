@@ -3,8 +3,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
-  useCallback,
-  StrictMode,
+  useCallback
 } from "react"
 import { AgGridReact } from "ag-grid-react"
 import { RowClassParams } from 'ag-grid-community';
@@ -15,7 +14,7 @@ import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
 import "ag-grid-community/styles/ag-theme-balham.css"
 import "ag-grid-community/styles/ag-theme-material.css"
-import Modal from "react-modal"
+import MyModal from './components/Modal'
 import "ag-grid-enterprise"
 import { parseISO, compareAsc } from "date-fns"
 import { format } from "date-fns-tz"
@@ -39,7 +38,6 @@ import {
   SideBarDef,
   ValueParserParams,
 } from "ag-grid-community"
-import MyModal from "./components/Modal"
 import { order_rules_default } from "./utils/order_rules"
 
 type Props = {
@@ -506,6 +504,24 @@ const AgGrid = (props: Props) => {
     color?: string;
   };
 
+  function parseJsCodeFromPython(v: string) {
+    const JS_PLACEHOLDER = "::JSCODE::"
+    let funcReg = new RegExp(
+      `${JS_PLACEHOLDER}\\s*((function|class)\\s*.*)\\s*${JS_PLACEHOLDER}`
+    )
+  
+    let match = funcReg.exec(v)
+  
+    if (match) {
+  
+      const funcStr = match[1]
+      // eslint-disable-next-line
+      return new Function("return " + funcStr)()
+    } else {
+      return v
+    }
+  }
+
   const getRowStyle = (params: RowClassParams<any>): RowStyle | undefined => {
     try {
       const background = params.data["color_row"] ?? undefined;
@@ -527,7 +543,7 @@ const AgGrid = (props: Props) => {
         promptText={promptText}
         setPromptText={setPromptText}
         toastr={toastr}
-      ></MyModal>
+      />
       <div
         style={{ flexDirection: "row", height: "100%", width: "100" }}
         id="myGrid"

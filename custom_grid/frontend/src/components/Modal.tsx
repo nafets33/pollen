@@ -19,7 +19,29 @@ const modalStyle = {
 ReactModal.setAppElement("#root")
 let isExecuting = false
 
-const MyModal = ({
+
+interface ModalData {
+  prompt_field: string;
+  prompt_order_rules?: string[];
+  selectedRow: any; // Define this type based on your data structure
+  selectedField?: string[];
+  button_api: string;
+  username: string;
+  prod: string;
+  prompt_message: string;
+  kwargs: Record<string, any>;
+}
+
+interface MyModalProps {
+  isOpen: boolean;
+  closeModal: () => void;
+  modalData: any;
+  promptText: any;
+  setPromptText: (value: any) => void;
+  toastr: any; // Define the toastr type if available
+}
+
+const MyModal: React.FC<MyModalProps> = ({
   isOpen,
   closeModal,
   modalData,
@@ -30,8 +52,8 @@ const MyModal = ({
   const { prompt_field, prompt_order_rules, selectedRow, selectedField } =
     modalData
 
-  const ref = useRef()
-  const selectRef = useRef()
+  const ref = useRef<HTMLButtonElement>(null)
+  const selectRef = useRef<HTMLSelectElement>(null)
 
   const handleOk = async () => {
     if (isExecuting) return
@@ -56,7 +78,7 @@ const MyModal = ({
           : alert("Error!\nDescription: " + description)
       }
       if (data?.close_modal != false) closeModal()
-    } catch (error) {
+    } catch (error: any) {
       console.log("error :>> ", error)
       toastr.error(error.message)
     }
@@ -87,7 +109,7 @@ const MyModal = ({
           : alert("Error!\nDescription: " + description)
       }
       if (data?.close_modal != false) closeModal()
-    } catch (error) {
+    } catch (error: any) {
       console.log("error :>> ", error)
       toastr.error(error.message)
     }
@@ -95,7 +117,7 @@ const MyModal = ({
   }
 
   const handleOkOnArray = async () => {
-    console.log("selectRef.current.value :>> ", selectRef.current.value)
+    console.log("selectRef.current.value :>> ", selectRef.current?.value)
     if (isExecuting) return
     isExecuting = true
     try {
@@ -103,7 +125,7 @@ const MyModal = ({
         username: modalData.username,
         prod: modalData.prod,
         selected_row: modalData.selectedRow,
-        default_value: selectRef.current.value,
+        default_value: selectRef.current?.value,
         ...modalData.kwargs,
       }
       console.log("body :>> ", body)
@@ -120,7 +142,7 @@ const MyModal = ({
           : alert("Error!\nDescription: " + description)
       }
       if (data?.close_modal != false) closeModal()
-    } catch (error) {
+    } catch (error: any) {
       console.log("error :>> ", error)
       toastr.error(error.message)
     }
@@ -128,7 +150,7 @@ const MyModal = ({
   }
 
   useEffect(() => {
-    if (isOpen) setTimeout(() => ref.current.focus(), 100)
+    if (isOpen) setTimeout(() => ref.current?.focus(), 100)
   }, [isOpen])
 
   if (Array.isArray(selectedField))
@@ -176,101 +198,104 @@ const MyModal = ({
     )
 
 
-  if (prompt_order_rules)
-    console.log(typeof promptText[rule]); // Check the type of promptText[rule]
-    console.log(promptText[rule]); // Inspect the value of promptText[rule]
-  // Initialize arrays for each datatype
-  return (
-    <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
-      <div className="my-modal-content">
-        <div className="modal-header px-4">
-          <h4>{modalData.prompt_message}</h4>
-          <span className="close" onClick={closeModal}>
-            &times;
-          </span>
-        </div>
-        <div className="modal-body p-2">
-          <div className="d-flex flex-column">
-            {prompt_order_rules.map((rule, index) => (
-              <div className="d-flex flex-row justify-content-end" key={index}>
-                <label className="d-flex flex-row">
-                  {rule + ":  "}
-                  {typeof promptText[rule] === "boolean" && (
-                    <input
-                      type="checkbox"
-                      checked={promptText[rule]}
-                      onChange={(e) =>
-                        setPromptText({
-                          ...promptText,
-                          [rule]: e.target.checked,
-                        })
-                      }
-                    />
-                  )}
-                  {Array.isArray(promptText[rule]) && (
-                    <select
-                      value={promptText[rule][0]} // Assuming the first option is selected by default
-                      onChange={(e) =>
-                        setPromptText({
-                          ...promptText,
-                          [rule]: [e.target.value],
-                        })
-                      }
-                    >
-                      {promptText[rule].map((item, i) => (
-                        <option key={i} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {!isNaN(Date.parse(promptText[rule])) && (
-                    <DatePicker
-                      selected={promptText[rule]}
-                      onChange={(date) =>
-                        setPromptText({ ...promptText, [rule]: date })
-                      }
-                    />
-                  )}
-                  {typeof promptText[rule] !== "boolean" &&
-                    !Array.isArray(promptText[rule]) &&
-                    isNaN(Date.parse(promptText[rule])) && (
+  if (prompt_order_rules) {
+    // console.log(typeof promptText[rule]); // Check the type of promptText[rule]
+    // console.log(promptText[rule]); // Inspect the value of promptText[rule]
+    // Initialize arrays for each datatype
+    return (
+      <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
+        <div className="my-modal-content">
+          <div className="modal-header px-4">
+            <h4>{modalData.prompt_message}</h4>
+            <span className="close" onClick={closeModal}>
+              &times;
+            </span>
+          </div>
+          <div className="modal-body p-2">
+            <div className="d-flex flex-column">
+              {prompt_order_rules.map((rule: any, index: number) => (
+                <div className="d-flex flex-row justify-content-end" key={index}>
+                  <label className="d-flex flex-row">
+                    {rule + ":  "}
+                    {typeof promptText[rule] === "boolean" && (
                       <input
-                        type="text"
-                        value={promptText[rule]}
+                        type="checkbox"
+                        checked={promptText[rule]}
                         onChange={(e) =>
                           setPromptText({
                             ...promptText,
-                            [rule]: e.target.value,
+                            [rule]: e.target.checked,
                           })
                         }
                       />
                     )}
-                </label>
-              </div>
-            ))}
+                    {Array.isArray(promptText[rule]) && (
+                      <select
+                        value={promptText[rule][0]} // Assuming the first option is selected by default
+                        onChange={(e) =>
+                          setPromptText({
+                            ...promptText,
+                            [rule]: [e.target.value],
+                          })
+                        }
+                      >
+                        {promptText[rule].map((item: any, i: number) => (
+                          <option key={i} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {!isNaN(Date.parse(promptText[rule])) && (
+                      <DatePicker
+                        selected={promptText[rule]}
+                        onChange={(date) =>
+                          setPromptText({ ...promptText, [rule]: date })
+                        }
+                      />
+                    )}
+                    {typeof promptText[rule] !== "boolean" &&
+                      !Array.isArray(promptText[rule]) &&
+                      isNaN(Date.parse(promptText[rule])) && (
+                        <input
+                          type="text"
+                          value={promptText[rule]}
+                          onChange={(e) =>
+                            setPromptText({
+                              ...promptText,
+                              [rule]: e.target.value,
+                            })
+                          }
+                        />
+                      )}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleOkSecond}
+              ref={ref}
+            >
+              Ok
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closeModal}
+            >
+              Cancel
+            </button>
           </div>
         </div>
-        <div className="modal-footer">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleOkSecond}
-            ref={ref}
-          >
-            Ok
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={closeModal}
-          >
-            Cancel
-          </button>
-        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
 
-export default MyModal
+export default MyModal;
