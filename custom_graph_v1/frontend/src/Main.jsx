@@ -110,6 +110,7 @@ class App extends Component {
     }
   }
   render() {
+    console.log(this.props, 'kwargs');
     const colorSet = []
     const { kwargs } = this.props.args;
     console.log(this.props);
