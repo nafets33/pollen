@@ -5,11 +5,10 @@ import random
 import json
 import ipdb
 import os
-from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, get_account_info, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
+from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
                                        app_archive_queen_order,
                                        app_queen_order_update_order_rules,
                                        get_ticker_time_frame,
-                                       get_heart,
                                        get_ticker_data_candle_stick,
                                        get_ticker_data_v2,
                                        grid_row_button_resp,
@@ -74,20 +73,20 @@ def load_account_header(client_user: str=Body(...),prod: bool=Body(...), api_key
 
 
 @router.post("/ticker_time_frame", status_code=status.HTTP_200_OK)
-def load_trinity_graph(username=Body(...), prod=Body(...), api_key=Body(...), symbols=Body(...), ttf=Body(...)):
+def load_trinity_graph(api_key=Body(...), symbols=Body(...), toggles_selection=Body(...)):
     
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
-    json_data = get_ticker_time_frame(symbols, ttf)
+    json_data = get_ticker_time_frame(symbols, toggles_selection)
     return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph", status_code=status.HTTP_200_OK)
-def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
+def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Body(...), toggles_selection=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
-    json_data = get_ticker_data(symbols, prod)
+    json_data = get_ticker_data(symbols, toggles_selection)
     return JSONResponse(content=json_data)
 
 @router.post("/symbol_graph_v2", status_code=status.HTTP_200_OK)
@@ -243,33 +242,6 @@ def get_text(api_key = Body(...)):
     print("/data/text")
     n = random.randrange(100)
     return JSONResponse(content=str(n))
-
-@router.post("/account_info", status_code=status.HTTP_200_OK)
-def load_account_info(kwargs=Body(...)):
-    # print(kwargs)
-    username=kwargs.get('username')
-    prod=kwargs.get('prod')
-    api_key=kwargs.get('api_key')
-    client_user=kwargs.get('client_user')
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    json_data = get_account_info(client_user, username, prod)
-    return JSONResponse(content=json_data)
-
-@router.post("/heart", status_code=status.HTTP_200_OK)
-def load_heart(kwargs=Body(...)):
-    # print(kwargs)
-    username=kwargs.get('username')
-    prod=kwargs.get('prod')
-    api_key=kwargs.get('api_key')
-    client_user=kwargs.get('client_user')
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    json_data = get_heart(client_user, username, prod)
-    return JSONResponse(content=json_data)
-
 
 
 @router.get("/queens_conscience", status_code=status.HTTP_200_OK)

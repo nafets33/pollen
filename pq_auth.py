@@ -245,7 +245,7 @@ def read_user_db(cur):
         }
     return {"usernames": creds}
 
-def signin_main(page):
+def signin_main(page=None):
     """Return True or False if the user is signed in"""
     MISC = local__filepaths_misc()
     floating_queen_gif = MISC["floating_queen_gif"]

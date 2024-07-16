@@ -1008,6 +1008,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 if symbol in storygauge.index:
                     storygauge.at[symbol, 'broker_qty_available'] = df_broker_portfolio.at[symbol, 'qty_available']
                     storygauge.at[symbol, 'broker_qty_delta'] = float(storygauge.at[symbol, 'qty_available']) - float(df_broker_portfolio.at[symbol, 'qty_available'])
+        
+        storygauge['broker_qty_delta'] = storygauge['broker_qty_delta'].fillna(0)
+        QUEEN['heartbeat']['broker_qty_delta'] = sum(storygauge['broker_qty_delta'])
+
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
         wave_blocktime = current_wave.get('wave_blocktime')
         
@@ -1214,11 +1218,15 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 waveview['allocation_borrow_deploy'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_deploy'])
                 
                 waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), 
-                                                       waveview['total_allocation_budget'], 
+                                                       waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'], 
                                                        (waveview['star_total_budget'] - waveview['total_allocation_budget'])
                                                        )
-                # Minimum Allocation
-                waveview['allocation_long_deploy'] = (waveview['allocation_deploy'] + waveview['allocation_borrow_deploy'])
+                waveview['allocation_borrow_long'] = np.where((waveview['bs_position']=='buy'), 
+                                                       waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'], 
+                                                       (waveview['star_borrow_budget'] - waveview['total_allocation_budget'])
+                                                       )
+                # Minimum Allocation // consider when sell, long shold be allocation_long
+                waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long'])
 
             except Exception as e:
                 print_line_of_error(e)
@@ -1367,6 +1375,59 @@ def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=Fal
     return orders
 
 
+def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, trigbee=False, info='1var able queried at a time'):
+    q_orders = QUEEN['queen_orders']
+    if len(q_orders) == 1 and q_orders.index[0] == None: # init only
+        return ''
+    if ticker_time_frame:
+        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['ticker_time_frame'].isin([ticker_time_frame]))]
+    elif ticker:
+        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['ticker'].isin([ticker]))]
+    elif star:
+        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['star'].isin([star]))] ## needs to be added to orders
+    elif trigbee:
+        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['trigbee'].isin([trigbee]))] ## needs to be added to orders
+    else:
+        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states)] ## needs to be added to orders
+
+    return orders
+
+
+def check_length(val):
+    if pd.isna(val):
+        return False
+    elif isinstance(val, dict):
+        return len(val) > 0
+    elif isinstance(val, str):
+        return len(val) > 0
+    elif isinstance(val, list):
+        return len(val) > 0
+    else:
+        return False
+
+
+def return_queen_orders__profit_loss(QUEEN, queen_orders, queen_order_states, ticker): # closed queen orders
+    # the check only happens if not currently on a hold QUEEN
+    queen_orders = QUEEN['queen_orders']
+    if len(queen_orders) == 1 and queen_orders.index[0] == None: # init only
+        return ''
+    orders = queen_orders[
+        queen_orders['queen_order_state'].isin(queen_order_states) & 
+        queen_orders['ticker'].isin([ticker]) & 
+        queen_orders['sell_reason'].apply(check_length)
+    ]
+    # filter to last 30 days 
+    start_date = datetime.now(est) - timedelta(days=30)
+    end_date = datetime.now(est)
+
+    # Filter the rows
+    filtered_orders = orders[(orders['datetime'] >= start_date) & (orders['datetime'] <= end_date)]
+    if len(filtered_orders) == 0:
+        return ''
+
+    return orders
+
+
 def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen_order_states, ticker_time_frame, cost_basis_ref='cost_basis_current'):
     try:
         # Total In Running, Remaining
@@ -1410,6 +1471,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
     
     except Exception as e:
         print_line_of_error("return_ttf_remaining_budget")
+
 
 def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral"):
     # tradingmodel1["SPY"]["stars_kings_order_rules"]["1Minute_1Day"]["trigbees" ]["buy_cross-0"]["morning_9-11"].items()
@@ -2232,13 +2294,15 @@ def pollen_story(pollen_nectar):
                             current_price - yesterday_price
                         ) / yesterday_price
 
-                        e_timetoken = datetime.now(est)
-                        slope, intercept, r_value, p_value, std_err = stats.linregress(
-                            theme_today_df.index, theme_today_df["close"]
-                        )
-                        STORY_bee[ticker_time_frame]["story"]["current_slope"] = slope
-                        e_timetoken = datetime.now(est)
-                        betty_bee[ticker_time_frame]["slope"] = e_timetoken - s_timetoken
+                        # SLOPE NEEDED HERE WORKERBEE?
+                        # e_timetoken = datetime.now(est)
+                        # slope, intercept, r_value, p_value, std_err = stats.linregress(
+                        #     theme_today_df.index, theme_today_df["close"]
+                        # )
+                        # STORY_bee[ticker_time_frame]["story"]["current_slope"] = slope
+                        # e_timetoken = datetime.now(est)
+                        # betty_bee[ticker_time_frame]["slope"] = e_timetoken - s_timetoken
+
                 except Exception as e:
                     print(f"PollenStory Error {ticker_time_frame} 1 Mintue {e}")
                     print_line_of_error()
@@ -3779,8 +3843,6 @@ def KOR_close_order_today_vars(take_profit=True):
         'close_order_today_allowed_timeduration': 60,
     }
 
-def ttf_grid_names_list():
-    return ['Flash', 'Week', 'Month', 'Quarter', '2 Quarters', '1 Year']
 
 def star_names(name=None):
     chart_times = {
@@ -3819,7 +3881,7 @@ def ttf_grid_names(ttf_name, symbol=True):
 
 def buy_button_dict_items(queen_handles_trade=True, 
                           star='1Minute_1Day',
-                          star_list=ttf_grid_names_list(),
+                          star_list=list(star_names().keys()),
                           wave_amo=1000,
                           trade_using_limits=None,
                           limit_price=False,
@@ -4639,7 +4701,7 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False):
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False):
     db_root = init_clientUser_dbroot(client_username=client_user)
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init)
@@ -4647,7 +4709,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         return {'init_pollen': init_pollen}
 
     QUEEN = ReadPickleData(init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
-    QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen else {}
+    QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
     QUEEN_KING = ReadPickleData(init_pollen.get('PB_App_Pickle')) if queen_king else {}
     ORDERS = ReadPickleData(init_pollen.get('PB_Orders_Pickle')) if orders else {}
     BROKER = ReadPickleData(init_pollen.get('PB_broker_PICKLE')) if broker else {}
