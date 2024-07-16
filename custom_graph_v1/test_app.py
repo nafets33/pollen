@@ -7,7 +7,7 @@ def main():
         api="http://172.25.208.1:8000/api/data/symbol_graph",
         prod=False,
         symbols=["SPY"],
-        api_key="api_key",
+        api_key="fastapi_pollenq_key",
         refresh_sec=0,
         x_axis={"field": "timestamp_est"},
         y_axis=[

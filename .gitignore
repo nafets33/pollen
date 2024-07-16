@@ -21,3 +21,4 @@ airflow_home
 env
 node_modules/*
 Honey.txt
+node_modules

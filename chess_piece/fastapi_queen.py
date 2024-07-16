@@ -978,8 +978,11 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       df = pd.concat([df_total, df])
       df.at['Total', 'symbol'] = 'Total'
       for star in star_names().keys():
-         df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
-         df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
+        try:
+          df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
+          df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
+        except Exception as e:
+          print(e)
       
       
       json_data = df.to_json(orient='records')

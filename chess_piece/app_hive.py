@@ -146,13 +146,13 @@ def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
     local_gif(gif_path=gif)
     st.success(title)
 
-def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300, key='graph'):
+def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300, key='graph', toggles=['a', 'b', 'c']):
     st_custom_graph(
         api=api,
         x_axis={
             'field': x_axis
         },
-
+        toggles=toggles,
         y_axis=y_axis,
         theme_options=theme_options,
         refresh_button=refresh_button,
