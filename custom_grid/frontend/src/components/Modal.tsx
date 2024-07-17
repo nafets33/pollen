@@ -4,6 +4,7 @@ import "./modal.css"
 import axios from "axios"
 import DatePicker from 'react-datepicker'; // Import DatePicker component
 import 'react-datepicker/dist/react-datepicker.css'; // Import DatePicker CSS
+import {utcToZonedTime, format} from 'date-fns-tz';
 
 const modalStyle = {
   content: {
@@ -55,6 +56,8 @@ const MyModal: React.FC<MyModalProps> = ({
   const ref = useRef<HTMLButtonElement>(null)
   const selectRef = useRef<HTMLSelectElement>(null)
 
+  console.log(promptText);
+
   const handleOk = async () => {
     if (isExecuting) return
     isExecuting = true
@@ -89,11 +92,16 @@ const MyModal: React.FC<MyModalProps> = ({
     if (isExecuting) return
     isExecuting = true
     try {
+      const formattedSellDate = format(new Date(promptText.sell_date), 'MM/dd/yyyy');
+
       const body = {
         username: modalData.username,
         prod: modalData.prod,
         selected_row: modalData.selectedRow,
-        default_value: promptText,
+        default_value: {
+          ...promptText,
+          sell_date: formattedSellDate
+        },
         ...modalData.kwargs,
       }
       console.log("body :>> ", body)
@@ -153,9 +161,16 @@ const MyModal: React.FC<MyModalProps> = ({
     if (isOpen) setTimeout(() => ref.current?.focus(), 100)
   }, [isOpen])
 
+  const formatToLocalDatetime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const zonedDate = utcToZonedTime(date, timeZone);
+    return format(zonedDate, 'yyyy-MM-dd\'T\'HH:mm');
+  };
+
   if (Array.isArray(selectedField))
     return (
-      <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
+      <div className="my-modal" style={{ ...modalStyle.content, display: isOpen ? "block" : "none" }}>
         <div className="my-modal-content">
           <div className="modal-header px-4">
             <h4>{modalData.prompt_message}</h4>
@@ -216,8 +231,8 @@ const MyModal: React.FC<MyModalProps> = ({
               {prompt_order_rules.map((rule: any, index: number) => (
                 <div className="d-flex flex-row justify-content-end" key={index}>
                   <label className="d-flex flex-row">
-                    {rule + ":  "}
-                    {typeof promptText[rule] === "boolean" && (
+                    {rule + ": "}
+                    {typeof promptText[rule] === "boolean" ? (
                       <input
                         type="checkbox"
                         checked={promptText[rule]}
@@ -228,8 +243,7 @@ const MyModal: React.FC<MyModalProps> = ({
                           })
                         }
                       />
-                    )}
-                    {Array.isArray(promptText[rule]) && (
+                    ) : Array.isArray(promptText[rule]) ? (
                       <select
                         value={promptText[rule][0]} // Assuming the first option is selected by default
                         onChange={(e) =>
@@ -245,29 +259,29 @@ const MyModal: React.FC<MyModalProps> = ({
                           </option>
                         ))}
                       </select>
-                    )}
-                    {!isNaN(Date.parse(promptText[rule])) && (
-                      <DatePicker
-                        selected={promptText[rule]}
-                        onChange={(date) =>
-                          setPromptText({ ...promptText, [rule]: date })
+                    ) : rule === "sell_date" ? (
+                      <input
+                        type="datetime-local"
+                        value={promptText[rule] && formatToLocalDatetime(promptText[rule])}
+                        onChange={(e) =>
+                          setPromptText({
+                            ...promptText,
+                            [rule]: e.target.value,
+                          })
+                        }
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={promptText[rule]}
+                        onChange={(e) =>
+                          setPromptText({
+                            ...promptText,
+                            [rule]: e.target.value,
+                          })
                         }
                       />
                     )}
-                    {typeof promptText[rule] !== "boolean" &&
-                      !Array.isArray(promptText[rule]) &&
-                      isNaN(Date.parse(promptText[rule])) && (
-                        <input
-                          type="text"
-                          value={promptText[rule]}
-                          onChange={(e) =>
-                            setPromptText({
-                              ...promptText,
-                              [rule]: e.target.value,
-                            })
-                          }
-                        />
-                      )}
                   </label>
                 </div>
               ))}

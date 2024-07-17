@@ -22,23 +22,15 @@ import { duration } from "moment"
 import "./styles.css"
 import axios from "axios"
 import {
-  ComponentProps,
   Streamlit,
-  withStreamlitConnection,
 } from "streamlit-component-lib"
 import {
   ColDef,
-  ColGroupDef,
-  ColumnResizedEvent,
   GetRowIdFunc,
   GetRowIdParams,
-  Grid,
-  GridOptions,
   GridReadyEvent,
   SideBarDef,
-  ValueParserParams,
 } from "ag-grid-community"
-import { order_rules_default } from "./utils/order_rules"
 
 type Props = {
   username: string
