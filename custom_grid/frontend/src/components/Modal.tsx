@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react"
 import ReactModal from "react-modal"
 import "./modal.css"
 import axios from "axios"
+import DatePicker from 'react-datepicker'; // Import DatePicker component
+import 'react-datepicker/dist/react-datepicker.css'; // Import DatePicker CSS
 import {utcToZonedTime, format} from 'date-fns-tz';
 
 const modalStyle = {
@@ -54,6 +56,8 @@ const MyModal: React.FC<MyModalProps> = ({
   const ref = useRef<HTMLButtonElement>(null)
   const selectRef = useRef<HTMLSelectElement>(null)
 
+  console.log(promptText);
+
   const handleOk = async () => {
     if (isExecuting) return
     isExecuting = true
@@ -88,7 +92,7 @@ const MyModal: React.FC<MyModalProps> = ({
     if (isExecuting) return
     isExecuting = true
     try {
-      const formattedSellDate = format(new Date(promptText.sell_date), 'MM/dd/yyyy HH:mm');
+      const formattedSellDate = format(new Date(promptText.sell_date), 'MM/dd/yyyy\'T\'HH:mm');
 
       const body = {
         username: modalData.username,
