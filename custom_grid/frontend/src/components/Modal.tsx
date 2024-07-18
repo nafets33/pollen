@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from "react"
 import ReactModal from "react-modal"
 import "./modal.css"
 import axios from "axios"
-import DatePicker from 'react-datepicker'; // Import DatePicker component
-import 'react-datepicker/dist/react-datepicker.css'; // Import DatePicker CSS
 import {utcToZonedTime, format} from 'date-fns-tz';
 
 const modalStyle = {

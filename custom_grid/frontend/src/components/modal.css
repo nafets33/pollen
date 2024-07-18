@@ -21,8 +21,8 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   max-width: 80%;
   width: fit-content;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust column width as needed */
+  /* display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); Adjust column width as needed */
   grid-gap: 20px; /* Adjust the gap between columns */
   -webkit-animation-name: animatetop;
   -webkit-animation-duration: 0.4s;

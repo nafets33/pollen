@@ -641,7 +641,7 @@ def update_queenking_chessboard(username, prod, selected_row):
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
     def update_order_rules(d):
         try:
-            d['sell_date'] = d['sell_date'].strftime('%m/%d/%YT%H:%M')
+            d['sell_date'] = d['sell_date'].strftime('%m/%d/%Y %H:%M')
             return d
         except Exception as e:
             return d
