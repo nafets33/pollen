@@ -639,84 +639,86 @@ def update_queenking_chessboard(username, prod, selected_row):
    return grid_row_button_resp(description=status)
 
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
-  
-  try:
-      if toggle_view_selection.lower() == 'queen':
-          ORDERS = init_queenbee(client_user, prod, queen=True).get('QUEEN')
-      else:
-          ORDERS = init_queenbee(client_user, prod, orders=True).get('ORDERS')
+    def update_order_rules(d):
+        try:
+            d['sell_date'] = d['sell_date'].strftime('%m/%d/%Y %H:%M')
+            return d
+        except Exception as e:
+            return d
 
+    try:
+        if toggle_view_selection.lower() == 'queen':
+            ORDERS = init_queenbee(client_user, prod, queen=True).get('QUEEN')
+        else:
+            ORDERS = init_queenbee(client_user, prod, orders=True).get('ORDERS')
 
-      if type(ORDERS) != dict:
-        print("NO ORDERS")
-        return pd.DataFrame().to_json()
+        if type(ORDERS) != dict:
+            print("NO ORDERS")
+            return pd.DataFrame().to_json()
 
-      df = ORDERS['queen_orders']
+        df = ORDERS['queen_orders']
 
-      if type(df) != pd.core.frame.DataFrame:
-        return pd.DataFrame().to_json()
+        if type(df) != pd.core.frame.DataFrame:
+            return pd.DataFrame().to_json()
 
-      if len(df) == 1:
-        print("init queen")
-        return pd.DataFrame().to_json()
+        if len(df) == 1:
+            print("init queen")
+            return pd.DataFrame().to_json()
 
-      # Colors
-      k_colors = streamlit_config_colors()
-      default_text_color = k_colors['default_text_color'] # = '#59490A'
-      default_font = k_colors['default_font'] # = "sans serif"
-      default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+        # Colors
+        k_colors = streamlit_config_colors()
+        default_text_color = k_colors['default_text_color']
+        default_font = k_colors['default_font']
+        default_yellow_color = k_colors['default_yellow_color']
 
-      sell_options = sell_button_dict_items()
-      df['sell_option'] = [sell_options for _ in range(df.shape[0])]
+        sell_options = sell_button_dict_items()
+        df['sell_option'] = [sell_options for _ in range(df.shape[0])]
 
-      df = df[df['client_order_id']!='init']
-      df = df.fillna('000')
-      df = df[df['ticker_time_frame']!='000'] ## who are you?? WORKERBEE
-      # print(df_)
-      df['ttf_symbol'] = df['ticker_time_frame'].apply(lambda x: return_symbol_from_ttf(x))
+        df = df[df['client_order_id'] != 'init']
+        df = df.fillna('000')
+        df = df[df['ticker_time_frame'] != '000']
+        df['ttf_symbol'] = df['ticker_time_frame'].apply(return_symbol_from_ttf)
 
-      df["money"] = pd.to_numeric(df["money"], errors='coerce')
-      df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
-      df["honey"] = round(df["honey"] * 100,2)
-      df["money"] = round(df["money"],0)
-      # df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
-      df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
-      df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
-      df['sell_reason'] = df['sell_reason'].astype(str)
-      df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
-  
-      df = filter_gridby_timeFrame_view(df, toggle_view_selection)
-      
-      if toggle_view_selection == 'today':
-         df = split_today_vs_prior(df, timestamp='datetime').get('df_today')
-      # else:
-      #   qos_view=['running', 'running_close', 'running_open']
-      #   df = df[df['queen_order_state'].isin(qos_view)]
+        df["money"] = pd.to_numeric(df["money"], errors='coerce')
+        df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
+        df["honey"] = round(df["honey"] * 100, 2)
+        df["money"] = round(df["money"], 0)
+        df['color_row_text'] = default_text_color
+        df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
+        df['sell_reason'] = df['sell_reason'].astype(str)
+        df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
 
-      for ttf in df.index:
-        symbol = df.at[ttf, 'symbol']
-        sell_qty = df.at[ttf, 'qty_available']
-        sell_option = sell_button_dict_items(symbol, sell_qty)
-        df.at[ttf, 'sell_option'] = sell_option
+        df = filter_gridby_timeFrame_view(df, toggle_view_selection)
+        
+        if toggle_view_selection == 'today':
+            df = split_today_vs_prior(df, timestamp='datetime').get('df_today')
 
-      # sort
-      sort_colname = 'cost_basis_current'
-      df = df.sort_values(sort_colname, ascending=False)
-      
-      # # Totals Index
-      df.loc['Total', 'money'] = df['money'].sum()
-      df.loc['Total', 'honey'] = df['honey'].sum()
-      # df.loc['Total', 'datetime'] = ''
-      df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
-      df.loc['Total', 'cost_basis_current'] = df['cost_basis_current'].sum()
-      newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-      df=df.reindex(index=newIndex)
+        for ttf in df.index:
+            symbol = df.at[ttf, 'symbol']
+            sell_qty = df.at[ttf, 'qty_available']
+            sell_option = sell_button_dict_items(symbol, sell_qty)
+            df.at[ttf, 'sell_option'] = sell_option
 
-      json_data = df.to_json(orient='records')
-      return json_data
-  except Exception as e:
-    print('hey now')
-    print_line_of_error()
+        # Apply update_order_rules to order_rules column
+        df['order_rules'] = df['order_rules'].apply(lambda cell: update_order_rules(cell) if isinstance(cell, dict) else cell)
+
+        # Sort
+        sort_colname = 'cost_basis_current'
+        df = df.sort_values(sort_colname, ascending=False)
+
+        # Totals Index
+        df.loc['Total', 'money'] = df['money'].sum()
+        df.loc['Total', 'honey'] = df['honey'].sum()
+        df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
+        df.loc['Total', 'cost_basis_current'] = df['cost_basis_current'].sum()
+        newIndex = ['Total'] + [ind for ind in df.index if ind != 'Total']
+        df = df.reindex(index=newIndex)
+
+        json_data = df.to_json(orient='records')
+        return json_data
+    except Exception as e:
+        print('hey now')
+        print_line_of_error()
 
 
 def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type='waves', revrec=None):

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import {
   ComponentProps,
-  Streamlit,
   withStreamlitConnection,
 } from 'streamlit-component-lib'
 import 'ag-grid-community/styles/ag-grid.css'
