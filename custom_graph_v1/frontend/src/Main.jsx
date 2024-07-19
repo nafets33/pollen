@@ -67,10 +67,9 @@ class App extends Component {
   }
   async fetchGraphData() {
     const { kwargs } = this.props.args
-    const { y_axis, api, y_max, refresh_sec, toggles, toggles } = kwargs;
-    const { viewId } = this.state;;
+    const { y_axis, api, y_max, refresh_sec, toggles } = kwargs;
     const { viewId } = this.state;
-    const res = await axios.post(api, { ...kwargs, toggles_selection: toggles ? toggles[viewId] : "none",, toggles_selection: toggles ? toggles[viewId] : "none", })
+    const res = await axios.post(api, { ...kwargs, toggles_selection: toggles ? toggles[viewId] : "none" })
     console.log(
       "toggles[viewId],viewId :>> ",
       toggles[viewId],
@@ -132,10 +131,7 @@ class App extends Component {
     console.log(this.props);
     const {viewId} = this.state;
     console.log(kwargs);
-    console.log(this.props);
-    const {viewId} = this.state;
-    console.log(kwargs)
-    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button, toggles, toggles } =
+    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button, toggles } =
       kwargs
     const dataY = y_axis.map((item, index) => {
       colorSet.push(item["color"])
@@ -216,20 +212,6 @@ class App extends Component {
           </div>
         )}
         <CanvasJSChart options={options} onRef={(ref) => (this.chart = ref)} />
-        <div className="d-flex flex-row gap-6">
-            {toggles?.map((view, index) => (
-              <span className="">
-                <button
-                  className={`btn ${
-                    viewId == index ? "btn-danger" : "btn-secondary"
-                  }`}
-                  onClick={() => this.setState({ viewId: index })}
-                >
-                  {view}
-                </button>
-              </span>
-            ))}
-          </div>
         <div className="d-flex flex-row gap-6">
             {toggles?.map((view, index) => (
               <span className="">
