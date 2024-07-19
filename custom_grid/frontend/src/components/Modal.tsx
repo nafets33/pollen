@@ -1,8 +1,11 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef } from "react"
 import ReactModal from "react-modal"
 import "./modal.css"
 import axios from "axios"
 import {utcToZonedTime, format} from 'date-fns-tz';
+import moment from "moment";
+
+const formats = ["YYYY-MM-DDTHH:mm", "MM/DD/YYYYTHH:mm", "MM/DD/YYYY HH:mm", "YYYY-MM-DD HH:mm"];
 
 const modalStyle = {
   content: {
@@ -17,19 +20,6 @@ const modalStyle = {
 }
 ReactModal.setAppElement("#root")
 let isExecuting = false
-
-
-interface ModalData {
-  prompt_field: string;
-  prompt_order_rules?: string[];
-  selectedRow: any; // Define this type based on your data structure
-  selectedField?: string[];
-  button_api: string;
-  username: string;
-  prod: string;
-  prompt_message: string;
-  kwargs: Record<string, any>;
-}
 
 interface MyModalProps {
   isOpen: boolean;
@@ -51,10 +41,8 @@ const MyModal: React.FC<MyModalProps> = ({
   const { prompt_field, prompt_order_rules, selectedRow, selectedField } =
     modalData
 
-  const ref = useRef<HTMLButtonElement>(null)
-  const selectRef = useRef<HTMLSelectElement>(null)
-
-  console.log(promptText);
+  const ref = useRef<HTMLButtonElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
 
   const handleOk = async () => {
     if (isExecuting) return
@@ -69,12 +57,12 @@ const MyModal: React.FC<MyModalProps> = ({
       })
       const { status, data, description } = res
       console.log("res :>> ", res)
-      if (status == "success") {
-        data.message_type == "fade"
+      if (status === "success") {
+        data.message_type === "fade"
           ? toastr.success(description, "Success")
           : alert("Success!\nDescription: " + description)
       } else {
-        data.message_type == "fade"
+        data.message_type === "fade"
           ? toastr.error(description, "Error")
           : alert("Error!\nDescription: " + description)
       }
@@ -105,12 +93,12 @@ const MyModal: React.FC<MyModalProps> = ({
       console.log("body :>> ", body)
       const { data: res } = await axios.post(modalData.button_api, body)
       const { status, data, description } = res
-      if (status == "success") {
-        data.message_type == "fade"
+      if (status === "success") {
+        data.message_type === "fade"
           ? toastr.success(description, "Success")
           : alert("Success!\nDescription: " + description)
       } else {
-        data.message_type == "fade"
+        data.message_type === "fade"
           ? toastr.error(description, "Error")
           : alert("Error!\nDescription: " + description)
       }
@@ -138,12 +126,12 @@ const MyModal: React.FC<MyModalProps> = ({
       const { data: res } = await axios.post(modalData.button_api, body)
       const { status, data, description } = res
       console.log("res :>> ", res)
-      if (status == "success") {
-        data.message_type == "fade"
+      if (status === "success") {
+        data.message_type === "fade"
           ? toastr.success(description, "Success")
           : alert("Success!\nDescription: " + description)
       } else {
-        data.message_type == "fade"
+        data.message_type === "fade"
           ? toastr.error(description, "Error")
           : alert("Error!\nDescription: " + description)
       }
@@ -157,7 +145,11 @@ const MyModal: React.FC<MyModalProps> = ({
 
   useEffect(() => {
     if (isOpen) setTimeout(() => ref.current?.focus(), 100)
-  }, [isOpen])
+  }, [isOpen]);
+
+  const isValidDate = (dateStr: string) => {
+    return formats.some(format => moment(dateStr, format, true).isValid());
+  };
 
   const formatToLocalDatetime = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -257,7 +249,7 @@ const MyModal: React.FC<MyModalProps> = ({
                           </option>
                         ))}
                       </select>
-                    ) : rule === "sell_date" ? (
+                    ) : isValidDate(promptText[rule]) ? (
                       <input
                         type="datetime-local"
                         value={promptText[rule] && formatToLocalDatetime(promptText[rule])}
@@ -270,7 +262,7 @@ const MyModal: React.FC<MyModalProps> = ({
                       />
                     ) : (
                       <input
-                        type="text"
+                        type={promptText[rule] && !isValidDate(promptText[rule]) ? 'text' : 'datetime-local'}
                         value={promptText[rule]}
                         onChange={(e) =>
                           setPromptText({
@@ -281,6 +273,7 @@ const MyModal: React.FC<MyModalProps> = ({
                       />
                     )}
                   </label>
+                  {isValidDate(promptText[rule])}
                 </div>
               ))}
             </div>
