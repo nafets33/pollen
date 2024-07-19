@@ -13,9 +13,9 @@ import streamlit as st
 import os
 
 
-from chess_piece.app_hive import set_streamlit_page_config_once, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
-from chess_piece.king import kingdom__grace_to_find_a_Queen, return_app_ip, kingdom__global_vars, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import create_QueenOrderBee, ttf_grid_names_list
+from chess_piece.app_hive import set_streamlit_page_config_once, create_ag_grid_column
+from chess_piece.king import kingdom__grace_to_find_a_Queen, kingdom__global_vars
+from chess_piece.queen_hive import create_QueenOrderBee, star_names
 from pq_auth import signin_main
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -138,7 +138,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
                 },
                 ],
         grid_height='650px',
-        toggle_views = ['buys', 'sells', 'today', 'close today'] + ttf_grid_names_list() + ['QUEEN'],
+        toggle_views = ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()) + ['QUEEN'],
     )
 
  
@@ -148,6 +148,7 @@ if __name__ == '__main__':
     set_streamlit_page_config_once()
 
     if 'authentication_status' not in st.session_state:
+        print("SIGN IN")
         authenticator = signin_main(page="pollenq")
 
     if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
@@ -160,9 +161,7 @@ if __name__ == '__main__':
     prod = st.session_state['production']
 
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-    # qb = init_queenbee(client_user=client_user, prod=prod, queen=True)
-    # QUEEN = qb.get('QUEEN')
-    # QUEEN_KING = qb.get('QUEEN_KING')
+
     queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 
     king_G = kingdom__global_vars()

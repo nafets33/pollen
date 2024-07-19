@@ -11,10 +11,10 @@ import os
 import copy
 import hydralit_components as hc
 
-from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, cust_graph, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
+from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
-from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, ttf_grid_names_list, buy_button_dict_items, hive_dates, return_market_hours, refresh_chess_board__revrec, generate_TradingModel, init_logging
-from pages.orders import order_grid
+from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, refresh_chess_board__revrec, generate_TradingModel, init_logging
+# from pages.orders import order_grid
 
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from st_aggrid import AgGrid, GridUpdateMode, JsCode
@@ -38,8 +38,96 @@ est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
 
 
+def chunk(it, size):
+    it = iter(it)
+    return iter(lambda: tuple(islice(it, size)), ())
+
+def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
+    save = False
+    for req_bucket in request_buckets:
+        if req_bucket not in QUEEN_KING.keys():
+            st.write("Verison Missing DB: ", req_bucket)
+            continue
+        for app_req in QUEEN_KING[req_bucket]:
+            if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
+                archive_bucket = f'{req_bucket}{"_requests"}'
+                QUEEN_KING[req_bucket].remove(app_req)
+                QUEEN_KING[archive_bucket].append(app_req)
+                save = True
+    if save:
+        PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
+    
+    return True
+
+
+def clear_subconscious_Thought(QUEEN, QUEEN_KING):
+    with st.sidebar.expander("clear subconscious thought"):
+        with st.form('clear subconscious'):
+            thoughts = QUEEN['subconscious'].keys()
+            clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
+            
+            if st.form_submit_button("Save"):
+                app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
+                app_req['subconscious_thought_to_clear'] = clear_thought
+                app_req['subconscious_thought_new_value'] = []
+                QUEEN_KING['subconscious'].append(app_req)
+                return_image_upon_save(title="subconscious thought cleared")
+                PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING)
+
+                return True
+
+
+def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
+    return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
+
+def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', title="Active Models", groupby_qcp=False, info_type='buy'):
+
+    try:
+        # chunk_list = chunk_list
+        num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
+        chunk_num = max_n if num_rr > max_n else num_rr
+        
+        # if num_rr > chunk_num:
+        chunks = list(chunk(range(num_rr), chunk_num))
+        for i in chunks:
+            if i[0] == 0:
+                slice1 = i[0]
+                slice2 = i[-1] # [0 : 49]
+            else:
+                slice1 = i[0] - 1
+                slice2 = i[-1] # [49 : 87]
+            chunk_n = chunk_list[slice1:slice2]
+            cols = st.columns(len(chunk_n) + 1)
+            with cols[0]:
+                if write_type == 'info':
+                    flying_bee_gif(width='53', height='53')
+                else:
+                    st.write(title)
+                # bees = [write_flying_bee(width='3') for i in chunk_n]
+            for idx, package in enumerate(chunk_n):
+                for ticker, v in package.items():
+                # ticker, value = package.items()
+                    with cols[idx + 1]:
+                        if write_type == 'checkbox':
+                            st.checkbox(ticker, v, key=f'{ticker}')  ## add as quick save to turn off and on Model
+                        if write_type == 'info':
+                            if info_type == 'buy':
+                                st.info(f'{ticker} {v}')
+                                # local_gif(gif_path=uparrow_gif, height='23', width='23')
+                            else:
+                                st.error(f'{ticker} {v}')
+                            # flying_bee_gif(width='43', height='40')
+                        if write_type == 'pl_profits':
+                            st.write(ticker, v)
+    except Exception as e:
+        print_line_of_error()
+
+    return True 
+
+
 def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
+    # print("Conscience Page")
 
     # ###### GLOBAL # ######
     king_G = kingdom__global_vars()
@@ -63,93 +151,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
     
     with st.spinner("Welcome to the QueensMind"):
 
-        def chunk(it, size):
-            it = iter(it)
-            return iter(lambda: tuple(islice(it, size)), ())
-
-        def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
-            save = False
-            for req_bucket in request_buckets:
-                if req_bucket not in QUEEN_KING.keys():
-                    st.write("Verison Missing DB: ", req_bucket)
-                    continue
-                for app_req in QUEEN_KING[req_bucket]:
-                    if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
-                        archive_bucket = f'{req_bucket}{"_requests"}'
-                        QUEEN_KING[req_bucket].remove(app_req)
-                        QUEEN_KING[archive_bucket].append(app_req)
-                        save = True
-            if save:
-                PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING, console="Cleared APP Requests")
-            
-            return True
-
-
-        def clear_subconscious_Thought(QUEEN, QUEEN_KING):
-            with st.sidebar.expander("clear subconscious thought"):
-                with st.form('clear subconscious'):
-                    thoughts = QUEEN['subconscious'].keys()
-                    clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
-                    
-                    if st.form_submit_button("Save"):
-                        app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
-                        app_req['subconscious_thought_to_clear'] = clear_thought
-                        app_req['subconscious_thought_new_value'] = []
-                        QUEEN_KING['subconscious'].append(app_req)
-                        return_image_upon_save(title="subconscious thought cleared")
-                        PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-
-                        return True
-
-
-        def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
-            return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
-        
-        def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', title="Active Models", groupby_qcp=False, info_type='buy'):
-
-            try:
-                # chunk_list = chunk_list
-                num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
-                chunk_num = max_n if num_rr > max_n else num_rr
-                
-                # if num_rr > chunk_num:
-                chunks = list(chunk(range(num_rr), chunk_num))
-                for i in chunks:
-                    if i[0] == 0:
-                        slice1 = i[0]
-                        slice2 = i[-1] # [0 : 49]
-                    else:
-                        slice1 = i[0] - 1
-                        slice2 = i[-1] # [49 : 87]
-                    chunk_n = chunk_list[slice1:slice2]
-                    cols = st.columns(len(chunk_n) + 1)
-                    with cols[0]:
-                        if write_type == 'info':
-                            flying_bee_gif(width='53', height='53')
-                        else:
-                            st.write(title)
-                        # bees = [write_flying_bee(width='3') for i in chunk_n]
-                    for idx, package in enumerate(chunk_n):
-                        for ticker, v in package.items():
-                        # ticker, value = package.items()
-                            with cols[idx + 1]:
-                                if write_type == 'checkbox':
-                                    st.checkbox(ticker, v, key=f'{ticker}')  ## add as quick save to turn off and on Model
-                                if write_type == 'info':
-                                    if info_type == 'buy':
-                                        st.info(f'{ticker} {v}')
-                                        # local_gif(gif_path=uparrow_gif, height='23', width='23')
-                                    else:
-                                        st.error(f'{ticker} {v}')
-                                    # flying_bee_gif(width='43', height='40')
-                                if write_type == 'pl_profits':
-                                    st.write(ticker, v)
-            except Exception as e:
-                print_line_of_error()
-
-            return True 
-        
-    
         def wave_grid(revrec, symbols, ip_address, refresh_sec=8, key='default'):
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
@@ -256,7 +257,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         },
                         ],
                 grid_height='350px',
-                toggle_views = ["Queen", 'Buys', 'Sells', ] + ttf_grid_names_list() + ['King'],
+                toggle_views = ["Queen", 'Buys', 'Sells', ] + star_names().keys() + ['King'],
             ) 
 
       
@@ -363,7 +364,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     # 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
-                    'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': 'grey', 'color': 'white', 'font': '18px'}),
+                    # 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': 'grey', 'color': 'white', 'font': '18px'}),
                     # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
                     }
 
@@ -418,7 +419,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         ########################################################kjm,mmmm
 
     try:
-
         pq_buttons = pollenq_button_source()
 
         db_root = st.session_state['db_root']
@@ -447,19 +447,9 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
             st.stop()
 
 
-        PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
-        PB_App_Pickle = st.session_state['PB_App_Pickle'] 
-        PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
-        PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
-        PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
-
-    
-        QUEENsHeart = ReadPickleData(PB_QUEENsHeart_PICKLE)
-
         acct_info = api_vars.get('acct_info')
         if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
             clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
-        
 
         # # if authorized_user: log type auth and none
         log_dir = os.path.join(db_root, 'logs')
@@ -513,7 +503,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=True) ## Setup Board
                     QUEEN_KING['revrec'] = revrec
                 
-                clear_subconscious_Thought(QUEEN, QUEEN_KING)
+                if st.sidebar.button("Clear Thoughts"):
+                    clear_subconscious_Thought(QUEEN, QUEEN_KING)
 
                 # story_tab, trading_tab, order_tab, charts_tab = st.tabs(['Story', 'Waves', 'Orders', 'Wave Charts',]) # 'waves', 'workerbees', 'charts'
 
@@ -521,19 +512,19 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
                 refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                 # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
+                # print("STORY GRID")
                 story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                
                 # with trading_tab:
                 symbols = QUEEN['heartbeat'].get('active_tickers')
                 symbols = ['SPY'] if len(symbols) == 0 else symbols
-                queen_orders = QUEEN['queen_orders']
                 if 'orders' in st.session_state and st.session_state['orders']:
                     if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
                         st.error("PENDING QUEEN")
                     else:
                         # with st.expander("Star Grid :sparkles:", True):
                         refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-                        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                        refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                         if st.toggle("show wave grid"):
                             wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
@@ -543,15 +534,19 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 # if st.toggle("show Orders"):
                 #     order_grid(KING, queen_orders, ip_address)
 
-
                 cols = st.columns(2)
                 with cols[0]:
-                    cust_graph(username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                                prod=prod,
-                                api=f'{ip_address}/api/data/symbol_graph',
-                                x_axis='timestamp_est',
-                                y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
-                                theme_options={
+                    refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+                    refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                    # print("GRAPHS")
+                    st_custom_graph(
+                        api=f'{ip_address}/api/data/symbol_graph',
+                        x_axis={
+                            'field': "timestamp_est"
+                        },
+
+                        y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
+                        theme_options={
                                     'backgroundColor': k_colors.get('default_background_color'),
                                     'main_title': '',   # '' for none
                                     'x_axis_title': '',
@@ -559,42 +554,22 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                     "showInLegend": True,
                                     "showInLegendPerLine": True,
                                 },
-                                refresh_sec=refresh_sec,
-                                refresh_button=True,
-                                graph_height=250,
-                                symbols=['SPY', 'QQQ'],
-                                )
-
-                    # symbol='SPY'
-                    # st_custom_graph(
-                    #     api=f'{ip_address}/api/data/symbol_graph_v2',
-                    #     x_axis={
-                    #         'field': 'timestamp_est'
-                    #     },
-
-                    #     y_axis=symbols_unique_color([symbol]),
-                    #     theme_options={
-                    #             'backgroundColor': k_colors.get('default_background_color'),
-                    #             'main_title': '',   # '' for none
-                    #             'x_axis_title': '',
-                    #             'grid_color': default_text_color,
-                    #             "showInLegend": True,
-                    #             "showInLegendPerLine": True,
-                    #         },
-                    #     refresh_button=True,
+                        refresh_button=True,
                         
-                    #     #kwrags
-                    #     username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                    #     prod=prod,
-                    #     symbol=symbol,
-                    #     refresh_sec=refresh_sec,
-                    #     api_key=os.environ.get("fastAPI_key"),
-                    #     return_type=None,
-                    #     graph_height=250,
-                    #     key='graph3',
-                    #     ttf='1Minute_1Day',
-                    #     # y_max=420
-                    #     )
+                        #kwrags
+                        username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                        prod=prod,
+                        symbols=['SPY', 'QQQ'],
+                        refresh_sec=refresh_sec,
+                        api_key=os.environ.get("fastAPI_key"),
+                        return_type=None,
+                        graph_height=300,
+                        key="Index_Graph",
+                        toggles=list(star_names().keys()),
+                        # y_max=420
+                        )
+
+
 
 
                 with cols[1]:
@@ -616,8 +591,9 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 continue
                             symbols.append(s)
                             c+=1
-                            
 
+                    refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+                    refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                     st_custom_graph(
                         api=f'{ip_address}/api/data/ticker_time_frame',
                         x_axis={
@@ -642,13 +618,13 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         refresh_sec=refresh_sec,
                         api_key=os.environ.get("fastAPI_key"),
                         return_type=None,
-                        graph_height=250,
+                        graph_height=300,
                         key='graph2',
                         ttf='1Minute_1Day',
-                        toggles=['1m', '5m', '30m'],
+                        toggles=list(star_names().keys()),
                         # y_max=420
                         )
-
+        # print("END CONSCIENCE")
         ##### END ####
     except Exception as e:
         print('queensconscience', print_line_of_error(e))
