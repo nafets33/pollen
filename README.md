@@ -6,16 +6,15 @@ Python == 3.9.9
 - pre-commit install
 
 ## Run Locally  ## use folders from local_db_refence
-Create following Dir Manually inside pollen/
-unzip the folder into pollen symbols_pollenstory_dbs.zip
-unzip the folder into pollen symbols_STORY_bee_dbs.zip
-unzip the folder into pollen client_user_dbs
+-unzip the folder into pollen symbols_pollenstory_dbs.zip
+-unzip the folder into pollen symbols_STORY_bee_dbs.zip
+-unzip the folder into pollen client_user_dbs
 
 ## Create .env and setup variables
-APCA_API_KEY_ID = ""
-APCA_API_SECRET_KEY = ""
-APCA_API_KEY_ID_PAPER = ""
-APCA_API_SECRET_KEY_PAPER = ""
+-APCA_API_KEY_ID = ""
+-APCA_API_SECRET_KEY = ""
+-APCA_API_KEY_ID_PAPER = ""
+-APCA_API_SECRET_KEY_PAPER = ""
 
 # Preset Variables
 fastAPI_key = "fastapi_pollenq_key"
@@ -49,7 +48,7 @@ AIRFLOW_UID=50000
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-$(uname -s)-$(uname -m)"  -o /usr/local/bin/docker-compose
 sudo mv /usr/local/bin/docker-compose /usr/bin/docker-compose
 sudo chmod +x /usr/bin/docker-compose
-# show status
+# Docker Commands show status
 docker ps 
 # stop docker
 docker stop $(docker ps -a -q)

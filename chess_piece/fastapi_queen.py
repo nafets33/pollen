@@ -23,13 +23,12 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     return_trading_model_trigbee,
                                     init_charlie_bee,
                                     ttf_grid_names,
-                                    ttf_grid_names_list,
                                     sell_button_dict_items,
                                     wave_buy__var_items,
                                     star_names,
                                     refresh_chess_board__revrec)
 
-from chess_piece.queen_bee import execute_order
+from chess_piece.queen_bee import execute_order, execute_buy_order
 from dotenv import load_dotenv
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
@@ -205,7 +204,7 @@ def generate_shade_story(number_variable, base_color=False, wave=False, shade_nu
 
 def filter_gridby_timeFrame_view(df, toggle_view_selection, grid=False, ttf_namefilter=True, wave_state_filter=True):
     try:
-      ttf_gridnames = [i.lower() for i in ttf_grid_names_list()]
+      ttf_gridnames = [i.lower() for i in star_names().keys()]
       if grid == 'wave':
         if 'ttf_grid_name' not in df.columns:
           df['ttf_grid_name'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
@@ -340,11 +339,14 @@ def return_startime_from_ttf(ticker_time_frame):
 def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False): # index & wave_amount
   try:
 
-    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, revrec=False)
-    QUEEN = qb.get('QUEEN')
+    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, revrec=True, queen_heart=True)
+    # QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
-    revrec = QUEEN.get('revrec') # qb.get('queen_revrec')
+    revrec = qb.get('revrec') # qb.get('queen_revrec')
+    QUEENsHeart = qb.get('QUEENsHeart')
+    
+    portfolio = QUEENsHeart['heartbeat'].get('portfolio')
 
     buy_package = create_AppRequest_package(request_name='buy_orders')
     buy_package.update({'buy_order': {}})
@@ -411,18 +413,38 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
                                                 )
     blessing = order_vars
 
-    exx = execute_order(api=api, QUEEN=QUEEN, blessing=blessing,
-                    side=blessing.get('order_side'),
-                    wave_amo=blessing.get('wave_amo'),
-                    order_type=blessing.get('order_type'),
-                    limit_price=blessing.get('limit_price'),
+    # exx = execute_order(
+    #                 api=api, 
+    #                 QUEEN=QUEEN, 
+    #                 blessing=blessing,
+    #                 side=blessing.get('order_side'),
+    #                 wave_amo=blessing.get('wave_amo'),
+    #                 order_type=blessing.get('order_type'),
+    #                 limit_price=blessing.get('limit_price'),
+    #                 trading_model=blessing.get('trading_model'),
+    #                 king_resp=True, 
+    #                 king_eval_order=False, 
+    #                 ticker=blessing.get('symbol'), 
+    #                 ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
+    #                 trig=blessing.get('trigbee'), 
+    #                 crypto=crypto
+    #                 )
+
+    exx = execute_buy_order(
+                    api=api, 
+                    portfolio=portfolio, 
+                    blessing=blessing,
                     trading_model=blessing.get('trading_model'),
-                    king_resp=True, 
-                    king_eval_order=False, 
                     ticker=blessing.get('symbol'), 
                     ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
                     trig=blessing.get('trigbee'), 
-                    crypto=crypto)
+                    wave_amo=blessing.get('wave_amo'),
+                    order_type=blessing.get('order_type'),
+                    side=blessing.get('order_side'),
+                    limit_price=blessing.get('limit_price'),
+                    crypto=crypto
+                    )
+
     if exx.get('executed'):
       print("APP EXX Order")
 
@@ -912,7 +934,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
         sell_trigbee_trigger_timeduration = df.at[symbol, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
         reverse_buy = False
-        kors = buy_button_dict_items(star="1Day_1Year", star_list=ttf_grid_names_list(), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
+        kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
         df.at[symbol, 'kors'] = kors
       
         try:
@@ -945,7 +967,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       'queens_suggested_sell',
       'total_budget',
       'allocation_long_deploy',
-      # 'current_from_yesterday',
+      'broker_qty_delta',
       'Month_value',
       # "Month_kors"
       ]
@@ -978,9 +1000,12 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       df = pd.concat([df_total, df])
       df.at['Total', 'symbol'] = 'Total'
       for star in star_names().keys():
-         df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
-         df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
-      
+        try:
+          df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
+          df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
+        except Exception as e:
+          print(e)
+          
       
       json_data = df.to_json(orient='records')
       return json_data
@@ -989,12 +1014,13 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
 
 def header_account(client_user, prod):
   QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
-  broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info')
+  broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
 
   if 'charlie_bee' not in QUEENsHeart.keys():
     df = pd.DataFrame()
   
   # heart
+  broker_qty_delta = QUEENsHeart['heartbeat'].get('broker_qty_delta')
   beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
   if beat > 89:
       beat = "zZzzz"
@@ -1021,68 +1047,18 @@ def header_account(client_user, prod):
   daytrade_count = round(acct_info.get('daytrade_count'))
   portfolio_value = '${:,}'.format(round(acct_info.get('portfolio_value')))
 
-  df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count }])
+  df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count, 'Broker Delta': broker_qty_delta }])
 
 
   df = pd.concat([df_heart, df_accountinfo], axis=1)
 
   return df.to_json(orient='records')
 
-## RETURN TEXT STRING
-def get_heart(client_user, username, prod):
 
-  QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
-  
-  if 'charlie_bee' not in QUEENsHeart.keys():
-    return 'Pending QUEEN'
-  
-  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
-  charlie_bee = QUEENsHeart.get('charlie_bee')
-  avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
-  long = QUEENsHeart['heartbeat'].get('long')
-  short = QUEENsHeart['heartbeat'].get('short')
-  long = '${:,}'.format(long)
-  short = '${:,}'.format(short)
-  
-  msg_ls = f'Long: {long} Short: {short}'
-  
-  if beat > 89:
-      beat = "ZZzzzZZzzz"
-  msg = f"HeartRate {beat} Avg {avg_beat}"
-  msg = msg + "\n" + msg_ls
-  return msg
-
-def get_account_info(client_user, username, prod):
-
-  try:
-    # WORKERBEE
-    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info')
-    acct_info = broker_info['account_info']
-    if len(acct_info) == 0:
-       return 'PENDING QUEEN'
-
-    honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-    money_text = '${:,.2f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-    mmoney = f'{honey_text} {money_text}'
-    mmoney = "\u0332".join(mmoney)
-    
-    buying_power = '${:,.2f}'.format(round(acct_info.get('buying_power')))
-    cash = '${:,.2f}'.format(round(acct_info.get('cash')))
-    daytrade_count = round(acct_info.get('daytrade_count'))
-    portfolio_value = '${:,.2f}'.format(round(acct_info.get('portfolio_value')))
-
-    df = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Buying Power': buying_power, 'daytrade count': daytrade_count }])
-
-    msg = f'{mmoney} BuyPower: {buying_power} $cash: {cash} Portfolio Value: {portfolio_value} daytrade: {daytrade_count}'
-    return msg
-
-  except Exception as e:
-    print_line_of_error("heart in api")
-    return 'Error QUEENs Heart'
 
 ### GRAPH
-def get_ticker_data(symbols, prod):
-
+def get_ticker_data(symbols, toggles_selection):
+  ttf = star_names(toggles_selection)
   ticker_db = read_QUEENs__pollenstory(
       symbols=symbols,
       read_storybee=False, 
@@ -1090,13 +1066,13 @@ def get_ticker_data(symbols, prod):
   )
   df_main = False
   for symbol in symbols:
-    df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+    df = ticker_db.get('pollenstory')[f'{symbol}_{ttf}']
     df = df[['timestamp_est', 'close', 'vwap']]
-    # df = split_today_vs_prior(df).get('df_today')
-    df = add_priorday_tic_value(df)
+    if ttf == '1Minute_1Day':
+      df = add_priorday_tic_value(df)
+    
     start_index = 0 if len(df) == 1 else 1
     c_start = df.iloc[0]['close']
-    # df['vwap'] = (df['vwap'] / df['close'])
 
     df[f'{symbol}'] = round((df['close'] - c_start) / c_start * 100,2)
     df[f'{symbol} vwap'] = round((df['vwap'] - df.iloc[0]['vwap']) / df.iloc[0]['vwap'] * 100,2)
@@ -1158,15 +1134,15 @@ def get_ticker_data_candle_stick(selectedOption):
   return json_data
 
 
-def get_ticker_time_frame(symbols=['SPY'], ttf="1Minute_1Day", df_main=False):
+def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
   try:
-
+    df_main=False
+    ttf = star_names(toggles_selection)
     ticker_db = read_QUEENs__pollenstory(
         symbols=symbols,
         read_storybee=False, 
         read_pollenstory=True,
     )
-    ttf="5Minute_5Day"
     for symbol in symbols:
       df = ticker_db.get('pollenstory')[f'{symbol}_{ttf}']
       if ttf == '1Minute_1Day':

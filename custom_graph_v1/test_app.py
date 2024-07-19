@@ -4,7 +4,7 @@ from custom_graph_v1 import st_custom_graph
 
 def main():
     st_custom_graph(
-        api="http://172.25.208.1:8000/api/data/symbol_graph",
+        api="http://127.0.0.1:8000/api/data/symbol_graph",
         prod=False,
         symbols=["SPY"],
         api_key="api_key",
@@ -25,6 +25,7 @@ def main():
         },
         refresh_button=True,
         graph_height=500,
+        toggles=['1m,5m,1m,3m,6m,1y'],
     )
 
 

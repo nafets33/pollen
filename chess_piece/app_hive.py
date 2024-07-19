@@ -146,29 +146,6 @@ def return_runningbee_gif__save(title="Saved", width=33, gif=runaway_bee_gif):
     local_gif(gif_path=gif)
     st.success(title)
 
-def cust_graph(username, api, x_axis, y_axis, theme_options, refresh_button=False, refresh_sec=8, return_type=None, prod=False, symbols=["SPY"], graph_height=300, key='graph'):
-    st_custom_graph(
-        api=api,
-        x_axis={
-            'field': x_axis
-        },
-
-        y_axis=y_axis,
-        theme_options=theme_options,
-        refresh_button=refresh_button,
-        
-        #kwrags
-        username=username,
-        prod=prod,
-        symbols=symbols,
-        refresh_sec=refresh_sec,
-        api_key=os.environ.get("fastAPI_key"),
-        return_type=return_type,
-        graph_height=graph_height,
-        key=key,
-        # y_max=420
-        )
-    return True
 
 def return_page_tabs(func_list=['orders', 'queens_mind', 'chess_board', 'waves', 'workerbees', 'charts', 'the_flash']):
     func_list = [i for i in func_list if st.session_state[i]]
@@ -456,7 +433,7 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
     try:
         # gb = GridOptionsBuilder.create()
         gb = GOB.create()
-        gb.configure_default_column(column_width=120, resizable=True,wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=True,filterable=False,sortable=True)            
+        gb.configure_default_column(column_width=120, resizable=True,wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=False,sortable=True)            
         # gb.configure_index('symbol')
         gb.configure_theme('ag-theme-material')
 
@@ -464,7 +441,7 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
         'Short',
         'Heart Beat',
         'Avg Beat',
-        'Money',
+        'Todays Money',
         'Todays Honey',
         'Portfolio Value',
         'Buying Power',
@@ -484,21 +461,17 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
         'Portfolio Value': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Buying Power': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Cash': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'daytrade count': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}}
+        'daytrade count': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
+        'Broker Delta': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
             }
               
         config_cols_ = config_cols(cols)
         for col, config_values in config_cols_.items():
             config = config_values
             gb.configure_column(col, config)
-        # mmissing = [i for i in story_col if i not in config_cols_.keys()]
-        # if len(mmissing) > 0:
-        #     for col in mmissing:
-        #         gb.configure_column(col, {'hide': True})
 
-        # g_buttons = story_grid_buttons()
         go = gb.build()
-        print(go)
+
         st_custom_grid(
             client_user=client_user,
             username=client_user, #KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -520,9 +493,6 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
 
     except Exception as e:
         print_line_of_error(e)
-
-
-
 
 
 def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
@@ -1315,26 +1285,25 @@ def download_df_as_CSV(df, button_name="download csv", file_name="name.csv"):
 
     return True
 
-def custom_fastapi_text(KING, client_user, default_background_color, default_text_color, default_font, refresh_sec=8, refresh_cutoff_sec=8, text_size=24, prod=False, api="http://localhost:8000/api/data/account_info", key='header1'):
-    # Total Account info
-    to_builder = TextOptionsBuilder.create()
-    to_builder.configure_background_color(default_background_color)
-    to_builder.configure_text_color(default_text_color)
-    to_builder.configure_font_style(default_font)
-    to = to_builder.build()
-    # print("mk close", seconds_to_market_close)
-    custom_text(api=api, 
-                text_size=text_size, 
-                refresh_sec=refresh_sec,
-                refresh_cutoff_sec=refresh_cutoff_sec,
-                text_option=to, 
-                api_key=os.environ.get("fastAPI_key"), 
-                prod=prod, 
-                username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                client_user=client_user,
-                key=key,)            
+# def custom_fastapi_text(KING, client_user, default_background_color, default_text_color, default_font, refresh_sec=8, refresh_cutoff_sec=8, text_size=24, prod=False, api="http://localhost:8000/api/data/account_info", key='header1'):
+#     # Total Account info
+#     to_builder = TextOptionsBuilder.create()
+#     to_builder.configure_background_color(default_background_color)
+#     to_builder.configure_text_color(default_text_color)
+#     to_builder.configure_font_style(default_font)
+#     to = to_builder.build()
+#     custom_text(api=api, 
+#                 text_size=text_size, 
+#                 refresh_sec=refresh_sec,
+#                 refresh_cutoff_sec=refresh_cutoff_sec,
+#                 text_option=to, 
+#                 api_key=os.environ.get("fastAPI_key"), 
+#                 prod=prod, 
+#                 username=KING['users_allowed_queen_emailname__db'].get(client_user),
+#                 client_user=client_user,
+#                 key=key,)            
 
-    return True
+#     return True
 
 
 def queen_order_flow(QUEEN, active_order_state_list, order_buttons=False):
@@ -1474,7 +1443,6 @@ def test_api_keys(user_secrets, prod=False):
             api.get_snapshot("SPY")
             api_true = True
         except Exception as e:
-            # print(e)
             api_true = False
     else:
         try:
@@ -1492,7 +1460,6 @@ def test_api_keys(user_secrets, prod=False):
             api.get_snapshot("SPY")
             api_true = True
         except Exception as e:
-            # print(e)
             api_true = False
 
     return api_true
@@ -1678,7 +1645,7 @@ def create_main_macd_chart(df, width=850, height=450):
         # fig.update_layout(sliders=False)
         return fig
     except Exception as e:
-        print(e)
+        print_line_of_error(e)
 
 
 def create_guage_chart(title, value=.01):

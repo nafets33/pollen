@@ -27,6 +27,11 @@ toastr.options = {
 class App extends Component {
   constructor(props) {
     super(props)
+
+    this.state = {
+      viewId: 0
+    }
+
     this.updateChart = this.updateChart.bind(this)
     this.toggleDataSeries = this.toggleDataSeries.bind(this)
   }
@@ -36,6 +41,11 @@ class App extends Component {
     Streamlit.setFrameHeight()
     this.updateChart()
     if (refresh_sec) setInterval(this.updateChart, refresh_sec * 1000)
+  }
+  componentDidUpdate(prevState) {
+    if (prevState.viewId !== this.state.viewId) {
+      this.updateChart()
+    }
   }
   toggleDataSeries(e) {
     if (typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible) {
@@ -47,8 +57,14 @@ class App extends Component {
   }
   async fetchGraphData() {
     const { kwargs } = this.props.args
-    const { y_axis, api, y_max, refresh_sec } = kwargs
-    const res = await axios.post(api, { ...kwargs })
+    const { y_axis, api, y_max, refresh_sec, toggles } = kwargs;
+    const { viewId } = this.state;
+    const res = await axios.post(api, { ...kwargs, toggles_selection: toggles ? toggles[viewId] : "none", })
+    console.log(
+      "toggles[viewId],viewId :>> ",
+      toggles[viewId],
+      viewId
+    )
     return JSON.parse(res.data)
   }
   async updateChart() {
@@ -95,8 +111,11 @@ class App extends Component {
   }
   render() {
     const colorSet = []
-    const { kwargs } = this.props.args
-    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button } =
+    const { kwargs } = this.props.args;
+    console.log(this.props);
+    const {viewId} = this.state;
+    console.log(kwargs)
+    const { y_axis, api, y_max, refresh_sec, theme_options, refresh_button, toggles } =
       kwargs
     const dataY = y_axis.map((item, index) => {
       colorSet.push(item["color"])
@@ -177,6 +196,20 @@ class App extends Component {
           </div>
         )}
         <CanvasJSChart options={options} onRef={(ref) => (this.chart = ref)} />
+        <div className="d-flex flex-row gap-6">
+            {toggles?.map((view, index) => (
+              <span className="">
+                <button
+                  className={`btn ${
+                    viewId == index ? "btn-danger" : "btn-secondary"
+                  }`}
+                  onClick={() => this.setState({ viewId: index })}
+                >
+                  {view}
+                </button>
+              </span>
+            ))}
+          </div>
       </div>
     )
   }

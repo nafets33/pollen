@@ -25,11 +25,11 @@ from pages.conscience import queens_conscience
 from pages.chessboard import chessboard
 
 # main chess piece
-from chess_piece.workerbees import queen_workerbees
-from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import account_header_grid, sneak_peak_form, custom_fastapi_text, sac_menu_buttons, cust_graph, setup_page, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, read_QUEEN, pollenq_button_source, trigger_airflow_dag, send_email, flying_bee_gif, display_for_unAuth_client_user, queen__account_keys, local_gif, mark_down_text, update_queencontrol_theme, progress_bar, page_line_seperator, return_runningbee_gif__save
+# from chess_piece.workerbees import queen_workerbees
+# from chess_piece.workerbees_manager import workerbees_multiprocess_pool
+from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, generate_chessboards_trading_models, stars, return_queen_controls, generate_chess_board, kings_order_rules, return_timestamp_string, return_alpaca_user_apiKeys, refresh_account_info, init_KING, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, pollen_themes, hive_dates, return_market_hours
+from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours
 
 # componenets
 # import streamlit_antd_components as sac
@@ -283,7 +283,8 @@ def pollenq(admin_pq):
             if 'chess_board__revrec' not in QUEEN_KING.keys():
                 switch_page('chessboard')
 
-            update_queen_orders(QUEEN)
+            if st.sidebar.button("update Queen Orders"):
+                update_queen_orders(QUEEN)
             
             admin_check(admin_pq)
 
@@ -324,7 +325,7 @@ def pollenq(admin_pq):
 
             stop_queenbee(QUEEN_KING, sidebar=True)
 
-            if QUEEN.get('revrec') == 'init':
+            if QUEEN_KING.get('revrec') == 'init':
                 st.warning("missing revrec, add revrec to QUEEN")
 
             ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
@@ -333,7 +334,7 @@ def pollenq(admin_pq):
             APP_req = add_key_to_app(QUEEN_KING)
             QUEEN_KING = APP_req['QUEEN_KING']
             if APP_req['update']:
-                print("Updating KING QUEEN db")
+                print("Updating QK db")
 
             if st.sidebar.button('show_keys'):
                 queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
@@ -406,7 +407,8 @@ def pollenq(admin_pq):
                 cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
 
         
-        if authorized_user and 'pollen' in menu_id: 
+        if authorized_user and 'pollen' in menu_id:
+            print("QC Page Func")
             queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
         st.session_state['refresh_times'] += 1
