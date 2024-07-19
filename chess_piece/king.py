@@ -304,6 +304,7 @@ def kingdom__grace_to_find_a_Queen(prod=True):
     users_allowed_queen_email.append("stefanstapinski@yahoo.com")
     users_allowed_queen_email.append("sven0227@gmail.com")
     users_allowed_queen_email.append("nitinrohan17@gmail.com")
+    users_allowed_queen_email.append("m.kobzar19@gmail.com")
 
     users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
     KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
