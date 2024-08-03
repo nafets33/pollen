@@ -27,7 +27,7 @@ from pages.chessboard import chessboard
 # main chess piece
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, queen_messages_grid__apphive, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
+from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, queen_messages_logfile_grid, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
 from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours
 
@@ -84,10 +84,7 @@ def pollenq(admin_pq):
                                 new_rules_confirmation[ticker] = []
                                 for new_rule in missing_rules:
                                     QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker]['stars_kings_order_rules'][ticker_star]['trigbees'][trigbee][blocktime].update({new_rule: latest_kors.get(new_rule)})
-                                    msg = f'New Rule Added: , {ticker}{ticker_star}{trigbee}{blocktime}{new_rule}'
                                     new_rules_confirmation[ticker].append(new_rule)
-                                    # (f'New Rule Added: , {ticker}{new_rule}')
-                                    # st.write(f'New Rule Added: , {ticker}{new_rule}')
 
             if save:
                 st.write(new_rules_confirmation)
@@ -387,13 +384,8 @@ def pollenq(admin_pq):
 
             if menu_id == 'Engine':
                 from pages.pollen_engine import pollen_engine
+
                 pollen_engine(acct_info=acct_info_raw, log_dir=log_dir)
-                logs = os.listdir(log_dir)
-                logs = [i for i in logs if i.endswith(".log")]
-                log_file = 'log_queen.log' if 'log_queen.log' in logs else logs[0]
-                log_file = st.sidebar.selectbox("Log Files", list(logs), index=list(logs).index(log_file))
-                log_file = os.path.join(log_dir, log_file) # single until allow for multiple
-                queen_messages_grid__apphive(KING, log_file=log_file, grid_key='queen_logfile', f_api=f'{ip_address}/api/data/queen_messages_logfile', varss={'seconds_to_market_close': seconds_to_market_close, 'refresh_sec': False})
 
                 st.stop()
 

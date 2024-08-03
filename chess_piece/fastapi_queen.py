@@ -28,7 +28,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     star_names,
                                     refresh_chess_board__revrec)
 
-from chess_piece.queen_bee import execute_order, execute_buy_order
+from chess_piece.queen_bee import execute_buy_order
 from dotenv import load_dotenv
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
@@ -78,19 +78,23 @@ def return_trading_model_kors_v2(QUEEN_KING, symbol='SPY', trigbee='buy_cross-0'
 
 # the_type = get_type_by_name('float')
 def add_priorday_tic_value(df, story_indexes=1):
-  split_day = split_today_vs_prior(df)
-  df_p = split_day.get('df_prior')
-  df = split_day.get('df_today')
-  
-  df_pz = df_p.tail(story_indexes)
-  # for idx in len(df_pz):
-  prior_tic = df.iloc[0].get('timestamp_est').replace(minute=29)
-  
-  df_pz.at[df_pz.index[0], 'timestamp_est'] = prior_tic
+  try:
+    split_day = split_today_vs_prior(df)
+    df_p = split_day.get('df_prior')
+    df = split_day.get('df_today')
+    
+    df_pz = df_p.tail(story_indexes)
+    # for idx in len(df_pz):
+    prior_tic = df.iloc[0].get('timestamp_est').replace(minute=29)
+    
+    df_pz.at[df_pz.index[0], 'timestamp_est'] = prior_tic
 
-  df = pd.concat([df_pz, df])
+    df = pd.concat([df_pz, df])
 
-  return df
+    return df
+  except Exception as e:
+     print_line_of_error(e)
+     return df
 
 def validate_kors_valueType(newvalue, current_value):
 
@@ -101,6 +105,7 @@ def validate_kors_valueType(newvalue, current_value):
     elif newvalue:
       # print("try to update type", newvalue)
       if type(current_value) == datetime:
+        print(newvalue, current_value)
         newvalue = parse_date(newvalue)
         if newvalue:
             return newvalue
@@ -157,8 +162,6 @@ def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=
       return shaded_color
     except Exception as e:
       print_line_of_error(e)
-
-
 
 def generate_shade_story(number_variable, base_color=False, wave=False, shade_num_var=300):
     try:
@@ -277,6 +280,8 @@ def load_revrec_pkl(username, prod):
 
 def parse_date(date_str):
     date_formats = [
+       "%Y-%m-%dT%H:%M:%S",
+       "%Y-%m-%dT%H:%M",
         "%Y-%m-%d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
         "%m-%d-%Y %H:%M:%S",
@@ -412,23 +417,6 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
                                                 borrow_qty=borrow_qty,
                                                 )
     blessing = order_vars
-
-    # exx = execute_order(
-    #                 api=api, 
-    #                 QUEEN=QUEEN, 
-    #                 blessing=blessing,
-    #                 side=blessing.get('order_side'),
-    #                 wave_amo=blessing.get('wave_amo'),
-    #                 order_type=blessing.get('order_type'),
-    #                 limit_price=blessing.get('limit_price'),
-    #                 trading_model=blessing.get('trading_model'),
-    #                 king_resp=True, 
-    #                 king_eval_order=False, 
-    #                 ticker=blessing.get('symbol'), 
-    #                 ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
-    #                 trig=blessing.get('trigbee'), 
-    #                 crypto=crypto
-    #                 )
 
     exx = execute_buy_order(
                     api=api, 
@@ -617,7 +605,7 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
       QUEEN_KING = load_queen_App_pkl(username, prod)
       order_update_package = create_AppRequest_package(request_name='update_order_rules', client_order_id=client_order_id)
       order_update_package['update_order_rules'] = {}
-      
+
       update_dict = {}
       kors = queen_order.get('order_rules')
       for kor, newvalue in default_value.items():
@@ -706,7 +694,16 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
       df['sell_reason'] = df['sell_reason'].astype(str)
       df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
-  
+
+      def update_order_rules(d):
+        try:
+          d['sell_date'] = d['sell_date'].strftime('%m/%d/%YT%H:%M')
+          return d
+        except Exception as e:
+           return d
+
+      df['order_rules'] = df['order_rules'].apply(lambda cell: update_order_rules(cell) if isinstance(cell, dict) else cell)
+
       df = filter_gridby_timeFrame_view(df, toggle_view_selection)
       
       if toggle_view_selection == 'today':
@@ -737,8 +734,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       json_data = df.to_json(orient='records')
       return json_data
   except Exception as e:
-    print('hey now')
-    print_line_of_error()
+    print_line_of_error(f"{e} Orders Failed")
 
 
 def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type='waves', revrec=None):
@@ -1203,6 +1199,7 @@ def get_queen_messages_logfile_json(username, log_file):
   df = df.sort_index(ascending=False)
   df = df.rename(columns={'index': 'idx', 0: 'message'})
   df = df.head(500)
+  # print(df)
 
   df['color_row'] = k_colors.get('default_background_color')
   df['color_row_text'] = k_colors.get('default_text_color')

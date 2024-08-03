@@ -132,32 +132,18 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
                 with cols[1]:
                     st.subheader(name)
                 
-                cols = st.columns(3)
+                cols = st.columns((5,1))
                 col_n = 0
                 for qcp in all_workers:
                     try:
-                        # if qcp == 'castle_coin':
-                        #     with cols[col_n]:
-                        #         st.image(MISC.get('castle_png'), width=74)
-                        # elif qcp == 'castle':
-                        #     with cols[col_n]:
-                        #         st.image(MISC.get('castle_png'), width=74)
-                        # elif qcp == 'bishop':
-                        #     with cols[col_n]:
-                        #         st.image(MISC.get('bishop_png'), width=74)
-                        # elif qcp == 'knight':
-                        #     with cols[col_n]:
-                        #         st.image(MISC.get('knight_png'), width=74)
-                        # else:
-                        #     with cols[col_n]:
-                        #         st.image(MISC.get('knight_png'), width=74)
+
                         
                         ticker_list = QUEENBEE[qcp_bees_key][qcp]['tickers']
                         all_tickers = ticker_allowed # + crypto_symbols__tickers_avail
                         refresh_star = QUEENBEE[qcp_bees_key][qcp]['refresh_star']
                         QUEENBEE[qcp_bees_key][qcp]['tickers'] = [i for i in ticker_list if i in all_tickers]
 
-                        with cols[col_n]:
+                        with cols[0]:
                             QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp}', options=ticker_allowed, default=QUEENBEE[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
                         # with cols[col_n]:
                         #     st.selectbox(label='Model', options=['MACD'], key=f'{qcp}model{admin}')
@@ -167,7 +153,7 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
                         #     QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow']), key=f'{qcp}slow{admin}')
                         # with cols[col_n]:
                         #     QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'] = st.number_input(f'slow', min_value=1, max_value=88, value=int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth']), key=f'{qcp}smooth{admin}')
-                        with cols[col_n]:
+                        with cols[1]:
                             QUEENBEE[qcp_bees_key][qcp]['refresh_star'] = st.selectbox("refresh_star", options=star_options, index=star_options.index(refresh_star), key=f'{qcp}refresh_star{admin}') 
                         col_n+=1
                         if col_n>2:
@@ -303,3 +289,6 @@ QB_workerbees(KING, QUEENBEE, admin=True)
 
 with st.sidebar:
     st.write(pd.DataFrame([i for i in qq if i not in tt]))
+
+with st.sidebar:
+    st.write(pd.DataFrame([i for i in tt if i not in qq]))

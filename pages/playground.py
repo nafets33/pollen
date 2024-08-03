@@ -5,8 +5,8 @@ import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
 from chess_piece.queen_hive import print_line_of_error, return_Ticker_Universe, init_swarm_dbs
-from chess_piece.app_hive import set_streamlit_page_config_once, show_waves, create_AppRequest_package, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
-from chess_piece.king import master_swarm_KING, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
+from chess_piece.app_hive import set_streamlit_page_config_once, show_waves, queen_messages_logfile_grid, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
+from chess_piece.king import kingdom__grace_to_find_a_Queen, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
 from datetime import datetime, timedelta
@@ -87,13 +87,8 @@ def PlayGround():
     db=init_swarm_dbs(prod)
     BISHOP = ReadPickleData(db.get('BISHOP'))
     try:
-        # st.write("Me")
+        ip_address = st.session_state['ip_address']
 
-        # pickle_file = os.path.join(hive_master_root(), 'delme2.pkl')
-        # if st.button("test write new file"):
-        #     PickleData(pickle_file, {})
-        # if st.button("test set file permissions"):
-        #     os.chmod(pickle_file, 0o400)
 
         # images
         MISC = local__filepaths_misc()
@@ -126,10 +121,9 @@ def PlayGround():
         POLLENSTORY = ticker_db['pollenstory']
         STORY_bee = ticker_db['STORY_bee']
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
-        PB_KING_Pickle = master_swarm_KING(prod=st.session_state['production'])
-        KING = ReadPickleData(pickle_file=PB_KING_Pickle)
+        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
-        # st_custom_grid("stefanstapinski", "http://127.0.0.1:8000/api/data/queen", 2, 20, False)
+
         ticker_universe = return_Ticker_Universe()
         alpaca_symbols_dict = ticker_universe.get('alpaca_symbols_dict')
         alpaca_symbols = {k: i['_raw'] for k,i in alpaca_symbols_dict.items()}

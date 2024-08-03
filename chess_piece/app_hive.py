@@ -532,14 +532,21 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
     return True
 
 
-def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api="http://127.0.0.1:8000/api/data/queen_messages_logfile", varss={'seconds_to_market_close': None, 'refresh_sec': None}):
+def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api="http://127.0.0.1:8000/api/data/queen_messages_logfile", varss={'seconds_to_market_close': None, 'refresh_sec': None}, toggle_views=[]):
     gb = GOB.create()
-    gb.configure_default_column(column_width=100, resizable=True,textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, enableFilters=True)            
-    
+    gb.configure_grid_options(pagination=False, enableRangeSelection=True, copyHeadersToClipboard=False, sideBar=False)
+    gb.configure_default_column(column_width=100, resizable=True, wrapText=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)             
+    # gb.configure_theme('ag-theme-material')
+
     #Configure index field
     gb.configure_index('idx')
-    gb.configure_column('idx')
-    gb.configure_column('message', {'initialWidth':800, "wrapText": True, "autoHeight": True})
+    gb.configure_column('idx', {"sortable":True, 'initialWidth':89, 'sort':'desc'})
+    gb.configure_column('message', {'width':1250, "wrapText": True, "autoHeight": True, "sortable":True,
+                                    'editable':True, 
+                                    'cellEditorPopup': True,
+                                    'cellStyle': {'fontSize': '15px'}
+                                    }
+                                    )
     go = gb.build()
 
     st_custom_grid(
@@ -552,15 +559,32 @@ def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=
         grid_options=go,
         key=f'{grid_key}',
         button_name='insight',
+        buttons=[],
         api_url=None,
         # kwargs from here
         api_key=os.environ.get("fastAPI_key"),
         prompt_message ="message",
         prompt_field = "idx", # "current_macd_tier",
-        log_file=log_file
+        log_file=log_file,
+        toggle_views=toggle_views,
+        grid_height='350px',
 
     ) 
 
+    return True
+
+
+def log_grid(KING):
+    ip_address = st.session_state['ip_address']
+    log_files = os.path.join(st.session_state['db_root'], 'logs')
+    log_file_options = os.listdir(log_files)
+    log_file_options = [i for i in log_file_options if i.endswith(".log")]
+    log_file = st.sidebar.selectbox("log Files", options=log_file_options, index=log_file_options.index('log_queen.log'))
+    log_file = os.path.join(log_files, log_file)
+    api=f'{ip_address}/api/data/queen_messages_logfile'
+    with st.expander("Logs"):
+        queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=api, varss={'seconds_to_market_close': None, 'refresh_sec': None}, toggle_views=[])
+    
     return True
 
 def sneak_peak_form():

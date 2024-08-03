@@ -732,7 +732,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         return df_main
 
-
     def return_trading_model(QUEEN_KING, qcp, ticker):
         trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
         # Handle missing TM
@@ -1000,16 +999,19 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
                 else:
                     storygauge.at[symbol, 'short_at_play'] = 0
-         
-            for symbol in symbols_qty_avail.index:
-                if symbol in storygauge.index:
-                    storygauge.at[symbol, 'qty_available'] = symbols_qty_avail.at[symbol, 'qty_available']
-            for symbol in df_broker_portfolio['symbol'].tolist():
-                if symbol in storygauge.index:
-                    storygauge.at[symbol, 'broker_qty_available'] = df_broker_portfolio.at[symbol, 'qty_available']
-                    storygauge.at[symbol, 'broker_qty_delta'] = float(storygauge.at[symbol, 'qty_available']) - float(df_broker_portfolio.at[symbol, 'qty_available'])
+
+                ### Broker DELTA ###
+                if symbol in symbols_qty_avail.index:
+                    storygauge.at[symbol, 'qty_available'] = float(symbols_qty_avail.at[symbol, 'qty_available'])
+                else:
+                    storygauge.at[symbol, 'qty_available'] = 0
+                if symbol in df_broker_portfolio.index:
+                    storygauge.at[symbol, 'broker_qty_available'] = float(df_broker_portfolio.at[symbol, 'qty_available'])
+                else:
+                    storygauge.at[symbol, 'broker_qty_available'] = 0
+
+            storygauge['broker_qty_delta'] = storygauge['qty_available'] - storygauge['broker_qty_available']           
         
-        storygauge['broker_qty_delta'] = storygauge['broker_qty_delta'].fillna(0)
         QUEEN['heartbeat']['broker_qty_delta'] = sum(storygauge['broker_qty_delta'])
 
         current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
@@ -1223,7 +1225,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                                        )
                 waveview['allocation_borrow_long'] = np.where((waveview['bs_position']=='buy'), 
                                                        waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'], 
-                                                       (waveview['star_borrow_budget'] - waveview['total_allocation_budget'])
+                                                       (waveview['star_borrow_budget'] - waveview['total_allocation_borrow_budget'])
                                                        )
                 # Minimum Allocation // consider when sell, long shold be allocation_long
                 waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long'])
@@ -2281,12 +2283,13 @@ def pollen_story(pollen_nectar):
                         theme_df = split_today_vs_prior(df=theme_df)  # remove prior day
                         theme_today_df = theme_df["df_today"]
                         theme_prior_df = theme_df['df_prior']
-
-                        # we want...last vs currnet close prices, && Height+length of wave
-                        yesterday_price = theme_prior_df.iloc[-1]['close']
+                        if len(theme_prior_df) > 0:
+                            yesterday_price = theme_prior_df.iloc[-1]['close']
+                        else:
+                            yesterday_price = theme_today_df.iloc[-1]['close']
                         current_price = theme_today_df.iloc[-1]["close"]
                         open_price = theme_today_df.iloc[0]["close"]  # change to timestamp lookup
-
+            
                         STORY_bee[ticker_time_frame]["story"]["current_from_open"] = (
                             current_price - open_price
                         ) / open_price
@@ -2933,8 +2936,8 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
                     ).df
                     
                     if len(symbol_data) == 0:
-                        error_dict[ticker_list] = {"msg": "no data returned", "time": time}
-                        return False
+                        error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
+                        return {}
                     # set index to EST time
                     symbol_data["timestamp_est"] = symbol_data.index
                     symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
@@ -2949,8 +2952,9 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
                 except Exception as e:
                     print("QH_getbars", print_line_of_error(), e)
                     print(ticker_list)
+                    return {}
+        
         e = datetime.now(est)
-
         return {"resp": True, "return": return_dict, 'error_dict': error_dict}
 
     except Exception as e:
@@ -3891,7 +3895,8 @@ def buy_button_dict_items(queen_handles_trade=True,
                           sell_trigbee_trigger_timeduration=5,
                           close_order_today=False, 
                           reverse_buy=False, 
-                          sell_at_vwap=False, 
+                          sell_at_vwap=False,
+                          sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M'), 
                           ):
     column = {
                 'queen_handles_trade': queen_handles_trade,
@@ -3907,6 +3912,7 @@ def buy_button_dict_items(queen_handles_trade=True,
                 'reverse_buy': reverse_buy,
                 'sell_at_vwap': sell_at_vwap,
                 'star_list': star_list,
+                'sell_trigbee_date': sell_trigbee_date,
                 }
     return {key: value for key, value in column.items() if value is not None}
 
@@ -3918,7 +3924,7 @@ def sell_button_dict_items(symbol="SPY", sell_qty=89):
     return var_s
 
 def kings_order_rules( # rules created for 1Minute
-    KOR_version=2,
+    KOR_version=3,
     queen_handles_trade=True,
     order_side='buy', # 'sell'
     order_type='market',
@@ -3938,16 +3944,17 @@ def kings_order_rules( # rules created for 1Minute
 
     # SELLS
     take_profit=.01,
-    take_profit_scale={.05: {'take_pct': .25, 'take_mark': False}},
+    take_profit_scale={.05: {'take_pct': .25, 'take_mark': False}}, # deprecate
     sell_out=-.0089,
-    sell_out_scale={.05: {'take_pct': .25, 'take_mark': False}},
-    max_profit_Deviation=.5, # how far from max profit
-    max_profit_waveDeviation=1, ## Need to figure out expected waveDeivation from a top profit in wave to allow trade to exit (faster from seeking profit?)
-    max_profit_waveDeviation_timeduration=5, # Minutes
-    timeduration=120, # Minutes ### DEPRECATE WORKERBEE
+    sell_out_scale={.05: {'take_pct': .25, 'take_mark': False}}, # deprecate
+    max_profit_Deviation=.5, # deprecate # how far from max profit
+    max_profit_waveDeviation=1, ## # deprecate Need to figure out expected waveDeivation from a top profit in wave to allow trade to exit (faster from seeking profit?)
+    max_profit_waveDeviation_timeduration=5, # deprecate # Minutes # deprecate
+    timeduration=120, # deprecate # Minutes ### DEPRECATE WORKERBEE
     sell_date=datetime.now().replace(hour=0, minute=00, second=0) + timedelta(days=366), 
     sell_trigbee_trigger=True,
-    sell_trigbee_trigger_timeduration=60, # Minutes
+    sell_trigbee_trigger_timeduration=60, # deprecate # Minutes
+    sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M'),
     sell_at_vwap = 1, # Sell pct at vwap
     use_wave_guage=False,
     doubledowns_allowed=2,
@@ -4011,6 +4018,7 @@ def kings_order_rules( # rules created for 1Minute
         'order_side': order_side,
         'wave_amo': wave_amo,
         'limit_price': limit_price,
+        'sell_trigbee_date': sell_trigbee_date,
 
     }
 
@@ -4701,7 +4709,7 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False):
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False):
     db_root = init_clientUser_dbroot(client_username=client_user)
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init)
@@ -4712,6 +4720,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
     QUEEN_KING = ReadPickleData(init_pollen.get('PB_App_Pickle')) if queen_king else {}
     ORDERS = ReadPickleData(init_pollen.get('PB_Orders_Pickle')) if orders else {}
+    ORDERS_FINAL = ReadPickleData(init_pollen.get('PB_Orders_FINAL_Pickle')) if orders_final else {}
     BROKER = ReadPickleData(init_pollen.get('PB_broker_PICKLE')) if broker else {}
     broker_info = ReadPickleData(init_pollen.get('PB_account_info_PICKLE')) if broker_info else {}
     revrec = ReadPickleData(init_pollen.get('PB_RevRec_PICKLE')).get('revrec') if revrec else {}
@@ -4739,7 +4748,9 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             'BROKER': BROKER, 
             'QUEENsHeart': QUEENsHeart,
             'broker_info': broker_info,
-            "revrec": revrec,}
+            "revrec": revrec,
+            "ORDERS_FINAL": ORDERS_FINAL,
+            }
 
 
 def process_order_submission(trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):

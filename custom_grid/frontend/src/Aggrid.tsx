@@ -274,18 +274,20 @@ const AgGrid = (props: Props) => {
   const fetchAndSetData = async () => {
     const array = await fetchData()
     if (array === false) return false
-    const api = gridRef.current!.api
-    const id_array = array.map((item: any) => item[index])
-    const old_id_array = g_rowdata.map((item: any) => item[index])
-    const toUpdate = array.filter((row: any) => id_array.includes(row[index]))
-    const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
-    const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
-    api.applyTransactionAsync({
-      update: toUpdate,
-      remove: toRemove,
-      add: toAdd,
-    })
+    setRowData(array)
     g_rowdata = array
+    // const api = gridRef.current!.api
+    // const id_array = array.map((item: any) => item[index])
+    // const old_id_array = g_rowdata.map((item: any) => item[index])
+    // const toUpdate = array.filter((row: any) => id_array.includes(row[index]))
+    // const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
+    // const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
+    // api.applyTransactionAsync({
+    //   update: toUpdate,
+    //   remove: toRemove,
+    //   add: toAdd,
+    // })
+    // g_rowdata = array
     return true
   }
 

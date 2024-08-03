@@ -48,7 +48,7 @@ def return_timestamp_string(format="%Y-%m-%d %H-%M-%S %p {}".format(est), tz=est
 def kingdom__global_vars():
     # ###### GLOBAL # ######
     return {
-    'ARCHIVE_queenorder': "archived",
+    'ARCHIVE_queenorder': ["final", "archived"],
     'active_order_state_list': [
         "running",
         "running_close",
@@ -102,57 +102,7 @@ def kingdom__global_vars():
     ],  # 'U'
 
     }
-# ###### GLOBAL # ######
-ARCHIVE_queenorder = "archived"
-active_order_state_list = [
-    "running",
-    "running_close",
-    "submitted",
-    "error",
-    "pending",
-    "completed",
-    "completed_alpaca",
-    "running_open",
-    "archived_bee",
-    "long_term",
-]
-active_queen_order_states = [
-    "submitted",
-    "accetped",
-    "pending",
-    "running",
-    "running_close",
-    "running_open",
-]
-CLOSED_queenorders = ["running_close", "completed", "completed_alpaca"]
-RUNNING_Orders = ["running", "running_open"]
-RUNNING_CLOSE_Orders = ["running_close"]
-# crypto
-crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
-coin_exchange = "CBSE"
 
-# misc
-exclude_conditions = [
-    "B",
-    "W",
-    "4",
-    "7",
-    "9",
-    "C",
-    "G",
-    "H",
-    "I",
-    "M",
-    "N",
-    "P",
-    "Q",
-    "R",
-    "T",
-    "V",
-    "Z",
-]  # 'U'
-# script_path = os.path.abspath(__file__)
-# print(script_path)
 
 
 def hive_master_root(info='\pollen\pollen'):
@@ -460,6 +410,7 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
 
 
 def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
+    active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
     def return_active_orders(QUEEN):
         df = QUEEN["queen_orders"]
         df["index"] = df.index

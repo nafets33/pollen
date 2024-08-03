@@ -11,8 +11,8 @@ import os
 import copy
 import hydralit_components as hc
 
-from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, custom_graph_ttf_qcp, create_ag_grid_column, download_df_as_CSV, show_waves, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
-from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData
+from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
+from chess_piece.king import kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, PickleData
 from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, refresh_chess_board__revrec, generate_TradingModel, init_logging
 # from pages.orders import order_grid
 
@@ -50,11 +50,13 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
             continue
         for app_req in QUEEN_KING[req_bucket]:
             if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
+                print(app_req)
                 archive_bucket = f'{req_bucket}{"_requests"}'
                 QUEEN_KING[req_bucket].remove(app_req)
                 QUEEN_KING[archive_bucket].append(app_req)
                 save = True
     if save:
+        print("Clear App Request")
         PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
     
     return True
@@ -234,16 +236,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 read_storybee = True,
                 symbols=symbols,
                 buttons=[
-                        # {'button_name': None,
-                        # 'button_api': f'{ip_address}/api/data/queen_buy_wave_orders',
-                        # 'prompt_message': 'Buy Wave',
-                        # 'prompt_field': 'macd_state',
-                        # 'col_headername': 'macd_state',
-                        # "col_header": "macd_state",
-                        # "col_width": 133,
-                        # "border_color": "green",
-                        # # 'pinned': 'left',
-                        # },
 
                         {'button_name': None, # this used to name the button
                         'button_api': f'{ip_address}/api/data/queen_buy_orders',
@@ -257,7 +249,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         },
                         ],
                 grid_height='350px',
-                toggle_views = ["Queen", 'Buys', 'Sells', ] + star_names().keys() + ['King'],
+                toggle_views = ["Queen", 'Buys', 'Sells', ] + list(star_names().keys()) + ['King'],
             ) 
 
       
@@ -320,21 +312,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                                 'col_width':135,
                                 # 'pinned': 'right',
                                 'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
-# 'cellStyle': f"""
-#     function(params) {{
-#         if (params.data['{column_header}'] && params.data['{column_header}'].includes('sell')) {{
-#             return {{
-#                 'backgroundColor': 'red',
-#                 'color': 'white'
-#             }};
-#         }} else {{
-#             return {{
-#                 'backgroundColor': 'green',
-#                 'color': 'black'
-#             }};
-#         }}
-#     }}
-# """
+
                                 }
                         buttons.append(temp)
                     
@@ -363,8 +341,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     'trinity_w_54': create_ag_grid_column(headerName='Future Force',sortable=True, initialWidth=89, ),
                     'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                     'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
-                    # 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
-                    # 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': 'grey', 'color': 'white', 'font': '18px'}),
+                    'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
+                    'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': 'grey', 'color': 'white', 'font': '18px'}),
                     # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
                     }
 
@@ -491,6 +469,7 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
         seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
 
         symbols = return_queenking_board_symbols(QUEEN_KING)
+        symbols = ['SPY'] if len(symbols) == 0 else symbols
 
         # ip_address = get_ip_address()
         ip_address = st.session_state['ip_address']
@@ -514,18 +493,14 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
                 # print("STORY GRID")
                 story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
-               
-                # with trading_tab:
-                symbols = QUEEN['heartbeat'].get('active_tickers')
-                symbols = ['SPY'] if len(symbols) == 0 else symbols
-                if 'orders' in st.session_state and st.session_state['orders']:
+                               
+                if st.toggle("Show Wave Grid"):
                     if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
                         st.error("PENDING QUEEN")
                     else:
-                        # with st.expander("Star Grid :sparkles:", True):
-                        refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-                        refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                        if st.toggle("show wave grid"):
+                        with st.expander("Star Grid :sparkles:", True):
+                            # refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+                            # refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                             wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
                 # with order_tab:
@@ -568,9 +543,6 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         toggles=list(star_names().keys()),
                         # y_max=420
                         )
-
-
-
 
                 with cols[1]:
                     with st.sidebar:
@@ -624,6 +596,9 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                         toggles=list(star_names().keys()),
                         # y_max=420
                         )
+        
+                if st.toggle("Show Logs"):
+                    log_grid(KING)
         # print("END CONSCIENCE")
         ##### END ####
     except Exception as e:
@@ -649,21 +624,3 @@ if __name__ == '__main__':
     # queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
     queens_conscience(None, None, None, None, None)
-
-
-                # hh = JSCode("""
-                #         function(params) {
-                #             // Add your logic here to determine the style based on cell value
-                #             if (params.value > 0) {
-                #                 return {
-                #                     'background-color': 'green',
-                #                     'color': 'white'
-                #                 };
-                #             } else {
-                #                 return {
-                #                     'background-color': 'red',
-                #                     'color': 'white'
-                #                 };
-                #             }
-                #         }
-                #     """)
