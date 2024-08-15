@@ -42,7 +42,6 @@ try:
         vector_pickle='ozz/Learning walks embeddings.pickle'
     ):
         openai.api_key = os.environ.get('ozz_api_key')
-        # openai.api_key_path = "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" #os.environ.get('stefan_openai_api_key')
         
         MAX_SECTION_LEN = 1024
         SEPARATOR = "\n* "

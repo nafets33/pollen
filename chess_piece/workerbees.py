@@ -8,7 +8,7 @@ import time
 from collections import deque
 from datetime import datetime
 from itertools import islice
-
+import streamlit as st
 import aiohttp
 import pandas as pd
 import pytz
@@ -22,25 +22,26 @@ from chess_piece.king import (
     workerbee_dbs_root,
     workerbee_dbs_root__STORY_bee,
     return_QUEENs__symbols_data,
+    master_swarm_KING,
 )
 from chess_piece.queen_hive import (
     init_logging,
-    init_qcp,
+    init_qcp_workerbees,
     pollen_story,
     print_line_of_error,
     return_alpaca_api_keys,
     return_bars,
     return_bars_list,
-    return_index_tickers,
     return_macd,
     return_RSI,
     return_sma_slope,
-    return_Ticker_Universe,
     return_VWAP,
     return_market_hours,
+    init_swarm_dbs,
+    ReadPickleData,
+    
 )
 
-import ipdb
 
 os.environ["no_proxy"] = "*"
 
@@ -153,10 +154,19 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
 
     return True
 
-
+def update_speed_gauges(pollens_honey, speed_gauges):
+    # for each star append last macd state
+    for ticker_time_frame, i in pollens_honey["conscience"].get("STORY_bee").items():
+        speed_gauges[ticker_time_frame]["macd_gauge"].append(i["story"]["macd_state"])
+        speed_gauges[ticker_time_frame]["price_gauge"].append(i["story"]["last_close_price"])
+        pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"]["macd_gauge"] = speed_gauges[ticker_time_frame]["macd_gauge"]
+        pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"]["price_gauge"] = speed_gauges[ticker_time_frame]["price_gauge"]
+    
+    return pollens_honey
 
 def queen_workerbees(
     qcp_s,  # =["castle", "bishop", "knight"],
+    QUEENBEE=None,
     prod=True,
     check_with_queen_frequency=360,
     queens_chess_piece="bees_manager",
@@ -165,6 +175,7 @@ def queen_workerbees(
     reset_only=False,
     run_all_pawns=False,
     backtesting_star=False,
+    streamit=False,
 ):
 
     if backtesting:
@@ -304,9 +315,7 @@ def queen_workerbees(
             print("log this error", print_line_of_error())
             return [False, e, print_line_of_error()]
 
-    def Return_Init_ChartData(
-        ticker_list, chart_times
-    ):  # Iniaite Ticker Charts with Indicator Data
+    def Return_Init_ChartData(ticker_list, chart_times):  # Iniaite Ticker Charts with Indicator Data
         # ticker_list = ['SPY', 'QQQ']
         # chart_times = {
         #     "1Minute_1Day": 0, "5Minute_5Day": 5, "30Minute_1Month": 18,
@@ -324,6 +333,7 @@ def queen_workerbees(
                 trading_days_df=trading_days_df,
             )
             if len(bars) == 0:
+                # print(f"{ticker_list} NO Bars") # error called out in func
                 return {}
             # if bars['return']: # rebuild and split back to ticker_time with market hours only
             #     # bars_dfs = bars['return']
@@ -345,13 +355,13 @@ def queen_workerbees(
                         dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
 
             e = datetime.now(est)
-            msg = {
-                "ticker_list": ticker_list,
-                "function": "Return Init ChartData",
-                "func_timeit": str((e - s)),
-                "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
-            }
-            print(msg)
+            # msg = {
+            #     "ticker_list": ticker_list,
+            #     "function": "Return Init ChartData",
+            #     "func_timeit": str((e - s)),
+            #     "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
+            # }
+            # print(msg)
             # dfs_index_tickers['SPY_5Minute']
             return {"init_charts": dfs_index_tickers, "errors": error_dict}
         except Exception as e:
@@ -816,19 +826,14 @@ def queen_workerbees(
 
     """ Initiate your Charts with Indicators """
 
-    def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings, MACD_WAVES, reset_only=reset_only):
+    def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings, MACD_WAVES, speed_gauges, reset_only=reset_only):
         try:
             s_mainbeetime = datetime.now(est)
             df_all = {}
             for ticker in master_tickers:
                 res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
                 if len(res) == 0:
-                    print("Resp for Inital Chart Data Failed")
-                # if errors:
-                #     msg = ("Return_Init_ChartData Failed", "--", errors)
-                #     print(msg)
-                #     logging.critical(msg)
-                #     sys.exit()
+                    print(f"{ticker} Resp for Inital Chart Data Failed")
                     return {}
                 df_tickers_data = res["init_charts"]
                 df_all.update(df_tickers_data)
@@ -851,6 +856,7 @@ def queen_workerbees(
 
             if reset_only: # run pollen story and save then quit
                 pollens_honey = pollen_story(pollen_nectar=pollen.get("pollencharts_nectar"))
+                pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
                 write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star)
 
             return QUEEN
@@ -885,12 +891,7 @@ def queen_workerbees(
 
         betty_bee = pollens_honey["betty_bee"]
 
-        # for each star append last macd state
-        for ticker_time_frame, i in pollens_honey["conscience"].get("STORY_bee").items():
-            speed_gauges[ticker_time_frame]["macd_gauge"].append(i["story"]["macd_state"])
-            speed_gauges[ticker_time_frame]["price_gauge"].append(i["story"]["last_close_price"])
-            pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"]["macd_gauge"] = speed_gauges[ticker_time_frame]["macd_gauge"]
-            pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"]["price_gauge"] = speed_gauges[ticker_time_frame]["price_gauge"]
+        pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
 
         write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star)
 
@@ -919,13 +920,24 @@ def queen_workerbees(
                 MACD_settings = macd
             else:
                 MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
+            
             master_tickers = QUEENBEE["workerbees"][qcp_worker]["tickers"]
             star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
             if backtesting_star:
-                QUEENBEE["workerbees"][qcp_worker]["stars"] = {
-                    backtesting_star: 1
-                }  # "1Minute_1Day"
+                QUEENBEE["workerbees"][qcp_worker]["stars"] = {backtesting_star: 1}  # "1Minute_1Day"
                 star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
+            
+            speed_gauges.update(
+                {
+                    f'{tic}{"_"}{star_}': {
+                        # "speen_gauge": deque([], 89), # maybe to track each qcp
+                        "macd_gauge": deque([], 89),
+                        "price_gauge": deque([], 89),
+                    }
+                    for tic in master_tickers
+                    for star_ in star_times.keys()
+                }
+            )
 
             init_data = initiate_ttframe_charts(
                 QUEEN=WORKERBEE_queens[qcp_worker],
@@ -934,59 +946,55 @@ def queen_workerbees(
                 star_times=star_times,
                 MACD_settings=MACD_settings,
                 MACD_WAVES=MACD_WAVES,
+                speed_gauges=speed_gauges,
                 reset_only=reset_only,
             )
             if init_data:
                 WORKERBEE_queens[qcp_worker] = init_data
             
-                speed_gauges.update(
-                    {
-                        f'{tic}{"_"}{star_}': {
-                            # "speen_gauge": deque([], 89), # maybe to track each qcp
-                            "macd_gauge": deque([], 89),
-                            "price_gauge": deque([], 89),
-                        }
-                        for tic in master_tickers
-                        for star_ in star_times.keys()
-                    }
-                )
 
         return {"WORKERBEE_queens": WORKERBEE_queens, "speed_gauges": speed_gauges}
 
-    def queens_court__WorkerBees(prod, qcp_s, run_all_pawns=False):
+    def queens_court__WorkerBees(QUEENBEE, prod, qcp_s, run_all_pawns=False, streamit=False):
+        
+        def confirm_tickers_available(alpaca_symbols_dict, symbols):
+            queens_master_tickers = []
+            for i in symbols:
+                if i in alpaca_symbols_dict:
+                    queens_master_tickers.append(i)
+                else:
+                    print("Ticker NOT in Alpaca Ticker DB")
+            
+            return queens_master_tickers
+
+        # ticker_universe = return_Ticker_Universe()
+        db=init_swarm_dbs(prod)
+        KING = ReadPickleData(db.get('KING'))
+        alpaca_symbols_dict = KING['ticker_universe'].get("alpaca_symbols_dict")
 
         if type(qcp_s) == str:
             qcp_s = [qcp_s]
 
-        MACD_WAVES = pd.read_csv(
-            os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt")
-        )
+        MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))
         MACD_WAVES = MACD_WAVES.set_index("ttf")
-
-        queen_db = (
-            os.path.join(db_root, "queen.pkl")
-            if prod
-            else os.path.join(db_root, "queen_sandbox.pkl")
-        )
+        queens_chess_pieces = qcp_s # pq.get("queens_chess_pieces")
+        
+        if QUEENBEE is not None:
+            list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items() if qcp in queens_chess_pieces]
+            symbols = [item for sublist in list_of_lists for item in sublist]
+            queens_master_tickers = confirm_tickers_available(alpaca_symbols_dict, symbols)
+        else:
+            queen_db = db.get('QUEEN')
+            pq = read_QUEEN(queen_db=queen_db, qcp_s=qcp_s)  # castle, bishop
+            QUEENBEE = pq.get("QUEENBEE")
+            symbols = pq.get("queens_master_tickers")
+            queens_master_tickers = confirm_tickers_available(alpaca_symbols_dict, symbols)
 
         if run_all_pawns:
-            ticker_universe = return_Ticker_Universe()
-            alpaca_symbols_dict = ticker_universe.get("alpaca_symbols_dict")
-            all_pawns = init_qcp(
-                init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
-                ticker_list=list(alpaca_symbols_dict.keys()),
-                theme=None,
-                model=None,
-                piece_name="all_pawns",
-                buying_power=None,
-                borrow_power=None,
-                picture="knight_png",
-            )
-            all_pawns = []
             p_num = 0
             for pawn in list(alpaca_symbols_dict.keys()):
-                all_pawns.append(
-                    init_qcp(
+                pawn_qcp = (
+                    init_qcp_workerbees(
                         init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
                         ticker_list=[pawn],
                         theme=None,
@@ -997,26 +1005,20 @@ def queen_workerbees(
                         picture=f"knight_png",
                     )
                 )
+                QUEENBEE["workerbees"].update({pawn: pawn_qcp})
+                queens_chess_pieces.append(pawn)
+                queens_master_tickers = queens_master_tickers + pawn_qcp.get("tickers")
                 p_num += 1
-
+        
         try:
-            pq = read_QUEEN(queen_db=queen_db, qcp_s=qcp_s)  # castle, bishop
-            QUEENBEE = pq.get("QUEENBEE")
-            queens_chess_pieces = qcp_s # pq.get("queens_chess_pieces")
-            queens_master_tickers = pq.get("queens_master_tickers")
-            if run_all_pawns:
-                for pawn in all_pawns:
-                    QUEENBEE["workerbees"].update({pawn.get("piece_name"): pawn})
-                    queens_chess_pieces.append(pawn.get("piece_name"))
-                    queens_master_tickers = queens_master_tickers + pawn.get("tickers")
-
             # check for tickers in portfolfio
             # return_QUEENs__symbols_data() # WORKERBEE
 
             msg=f"{len(queens_master_tickers)} Tickers {queens_master_tickers}"
             print(msg)
+            if streamit:
+                st.write(msg)
 
-            
             queen_workers = init_QueenWorkersBees(
                 QUEENBEE=QUEENBEE,
                 queens_chess_pieces=queens_chess_pieces,
@@ -1024,7 +1026,10 @@ def queen_workerbees(
                 reset_only=reset_only
             )
             if reset_only:
-                print("EXITING RESET ONLY")
+                msg=("EXITING RESET ONLY")
+                print(msg)
+                if streamit:
+                    st.write(msg)
                 return True
             
             WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
@@ -1032,9 +1037,6 @@ def queen_workerbees(
             now_time = datetime.now(est)
             time.sleep(1)
             last_queen_call = {"last_call": datetime.now(est)}
-            all_qcp_s = WORKERBEE_queens.keys()
-            # last_qcp_call = {k: {"last_call": datetime.now(est)} for k in all_qcp_s}
-            # last_modified
 
             chart_times_refresh = {
                 "1Minute_1Day": 1,
@@ -1044,7 +1046,6 @@ def queen_workerbees(
                 "2Hour_6Month": 120*60,
                 "1Day_1Year": 360*60,
             }
-
 
             print("Here We go Mario")
             while True:
@@ -1090,9 +1091,7 @@ def queen_workerbees(
                                 MACD_WAVES=MACD_WAVES,
                             )
                             e = datetime.now(est)
-                            print(
-                                f"Worker Refreshed {qcp} --- {(e - s)} seconds --- {queens_master_tickers}"
-                            )
+                            print(f"Worker Refreshed {qcp} --- {(e - s)} seconds --- {queens_master_tickers}")
                         else:
                             print("star Frequency not Met")
                     # return True
@@ -1113,9 +1112,10 @@ def queen_workerbees(
 
     # if queens_chess_piece == 'castle':
     print(f"Queens Court, {queens_chess_piece} I beseech you")
-    queens_court__WorkerBees(prod, qcp_s, run_all_pawns)
-    # elif queens_chess_piece == 'indexes':
-    #     print("pending")
+    queens_court = queens_court__WorkerBees(QUEENBEE, prod, qcp_s, run_all_pawns, streamit)
+
+    return queens_court
+
 
 
 if __name__ == "__main__":

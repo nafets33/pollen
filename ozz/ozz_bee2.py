@@ -22,9 +22,7 @@ load_dotenv(os.path.join(hive_master_root(), '.env'))
 
 #PlAY.HT WEBSITE APU LINK
 url = "https://play.ht/api/v2/tts"
-#Alpaca API keys  
-# api_key_id_of_alpaca = "AKY1SU4Z08UI76AYIED3"
-# api_secret_key_alpaca = "T5kSnVlCaOhG1O7Mq2N2u9tNS2983LkxCSMlOvdv"
+
 api_secret_key_alpaca = os.environ.get("APCA_API_KEY_ID_PAPER")
 api_key_id_of_alpaca = os.environ.get("APCA_API_SECRET_KEY_PAPER")
 #alpaca API_URL

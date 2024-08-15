@@ -383,7 +383,6 @@ def init_queen(queens_chess_piece):
 
     return QUEEN
 
-# WORKERBEE combine init_qcp with any QUEEN even Swarm
 def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
              ticker_list=['SPY'], 
              theme='nuetral', 
@@ -433,12 +432,12 @@ def init_qcp_workerbees(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
         'refresh_star': refresh_star,
     }
 
-def setup_chess_board(QUEEN, qcp_bees_key='workerbees'):
+def setup_chess_board(QUEEN, qcp_bees_key='workerbees', screen='screen_1'):
     if qcp_bees_key not in QUEEN.keys():
         QUEEN[qcp_bees_key] = {}
     db = init_swarm_dbs(prod)
     BISHOP = ReadPickleData(db.get('BISHOP'))
-    df = BISHOP.get('screen_1')
+    df = BISHOP.get(screen)
     for sector in set(df['sector']):
         token = df[df['sector']==sector]
         tickers=token['symbol'].tolist()
@@ -668,18 +667,24 @@ def return_queenking_board_symbols(QUEEN_KING, active=True):
     return return_qcp_tickers
 
 
-
-def reallocate_revrec(revrec, ticker_time_frame, ):
-    # return number of shares to sell
-    return 0
-
 # check last loss order, if the loss order is > X amount, then set ticker on a 31 day Buying Hold, set this in QUEEN_KING['symbols_buying_hold'] = []
 
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, 
                                 chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, chess_board__revrec_borrow={}, 
-                                marginPower={}, save_queenking=False, fresh_board=False):
+                                marginPower={}, save_queenking=False, fresh_board=False, wave_blocktime=None):
     # Create/Refresh RevRec from Chess Board
     # WORKERBEE: Add validation only 1 symbol per qcp --- QUEEN not needed only need ORDERS and QUEEN_KING
+    if not acct_info:
+        acct_info = {'accrued_fees': 0.0,
+                    'buying_power': 100000,
+                    'cash': 0,
+                    'daytrade_count': 0,
+                    'last_equity': 100000,
+                    'portfolio_value': 100000,}
+    if not wave_blocktime:
+        current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave')
+        wave_blocktime = current_wave.get('wave_blocktime')
+
     rr_starttime = datetime.now()
     def shape_revrec_chesspieces(dic_items, acct_info, chess_board__revrec_borrow, marginPower):
         df_borrow = pd.DataFrame(chess_board__revrec_borrow.items())
@@ -738,7 +743,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         if trading_model is None: 
             print(ticker, ' tradingmodel missing handling in revrec to default')
             QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
-            # save_queenking = True
             trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
 
         return trading_model
@@ -831,8 +835,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             
             piece = QUEEN_KING['chess_board'].get(qcp)
             tickers = list(set(piece.get('tickers')))
-            # WORKERBEE query return orders is being called twice, once for ticker and once for star ...
-            # ticker_active_orders = {}
             
             for ticker in tickers:
                 # TICKER
@@ -965,7 +967,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview = waveview[~(waveview['macd_state']=='WHO')]
 
         # for every star ad the stars column to storygauge i.e. trading grid, ... put the kors
-
         # CURRENLT UNABLE TO HANDLE TICKER IF NOT IN DB : ) WORKERBEE: handle tickers not returned from wave analysis
 
         star_longs = dict(zip(df_stars.index, df_stars['star_buys_at_play']))
@@ -976,46 +977,41 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview['star_sells_at_play'] = waveview.index.map(star_short)
         waveview['star_money'] = waveview.index.map(star_money)
         
-        main_indexes = QUEEN['heartbeat']['main_indexes']
         df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
         df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
 
-        
-        if len(storygauge) > 0: # should be able to remove this now WORKERBEE
-            for symbol in storygauge.index:
-                # STORYBEE
-                storygauge.at[symbol, 'current_from_open'] = STORY_bee[f'{symbol}_1Minute_1Day']['story'].get('current_from_open')
-                
-                if symbol in df_ticker.index:
-                    storygauge.at[symbol, 'ticker_buying_power'] = df_ticker.at[symbol, 'ticker_buying_power']
-                else:
-                    storygauge.at[symbol, 'ticker_buying_power'] = 0
-                
-                if symbol in ticker_buys_at_play_dict.index:
-                    storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
-                else:
-                    storygauge.at[symbol, 'long_at_play'] = 0
-                if symbol in ticker_sells_at_play_dict.index:
-                    storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
-                else:
-                    storygauge.at[symbol, 'short_at_play'] = 0
+        # if len(storygauge) > 0: # should be able to remove this now WORKERBEE
+        for symbol in storygauge.index:
+            # STORYBEE
+            storygauge.at[symbol, 'current_from_open'] = STORY_bee[f'{symbol}_1Minute_1Day']['story'].get('current_from_open')
+            
+            if symbol in df_ticker.index:
+                storygauge.at[symbol, 'ticker_buying_power'] = df_ticker.at[symbol, 'ticker_buying_power']
+            else:
+                storygauge.at[symbol, 'ticker_buying_power'] = 0
+            
+            if symbol in ticker_buys_at_play_dict.index:
+                storygauge.at[symbol, 'long_at_play'] = ticker_buys_at_play_dict.at[symbol, 'star_buys_at_play']
+            else:
+                storygauge.at[symbol, 'long_at_play'] = 0
+            if symbol in ticker_sells_at_play_dict.index:
+                storygauge.at[symbol, 'short_at_play'] = ticker_sells_at_play_dict.at[symbol, 'star_sells_at_play']
+            else:
+                storygauge.at[symbol, 'short_at_play'] = 0
 
-                ### Broker DELTA ###
-                if symbol in symbols_qty_avail.index:
-                    storygauge.at[symbol, 'qty_available'] = float(symbols_qty_avail.at[symbol, 'qty_available'])
-                else:
-                    storygauge.at[symbol, 'qty_available'] = 0
-                if symbol in df_broker_portfolio.index:
-                    storygauge.at[symbol, 'broker_qty_available'] = float(df_broker_portfolio.at[symbol, 'qty_available'])
-                else:
-                    storygauge.at[symbol, 'broker_qty_available'] = 0
+            ### Broker DELTA ###
+            if symbol in symbols_qty_avail.index:
+                storygauge.at[symbol, 'qty_available'] = float(symbols_qty_avail.at[symbol, 'qty_available'])
+            else:
+                storygauge.at[symbol, 'qty_available'] = 0
+            if symbol in df_broker_portfolio.index:
+                storygauge.at[symbol, 'broker_qty_available'] = float(df_broker_portfolio.at[symbol, 'qty_available'])
+            else:
+                storygauge.at[symbol, 'broker_qty_available'] = 0
 
-            storygauge['broker_qty_delta'] = storygauge['qty_available'] - storygauge['broker_qty_available']           
+        storygauge['broker_qty_delta'] = storygauge['qty_available'] - storygauge['broker_qty_available']           
         
         QUEEN['heartbeat']['broker_qty_delta'] = sum(storygauge['broker_qty_delta'])
-
-        current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave') # df slice or can be dict
-        wave_blocktime = current_wave.get('wave_blocktime')
         
         def revrec_allocation(waveview, df_storyview, wave_analysis_down, wave_blocktime):
             """ WORK ON
@@ -1054,20 +1050,21 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 wave_tiers_allocation = 1
                 wave_tier_start = 1
             
-                # tier divergence, how many tiers have been gain'd / lost MACD/RSI/VWAP // current profit deviation
-                waveview['macd_tier_divergence'] =  waveview['end_tier_macd'] - waveview['start_tier_macd']
-                waveview['vwap_tier_divergence'] =  waveview['end_tier_vwap'] - waveview['start_tier_vwap']
-                waveview['rsi_tier_divergence'] =  waveview['end_tier_rsi_ema'] - waveview['start_tier_rsi_ema']
-                waveview['macd_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['macd_tier_divergence'] > 0), waveview['macd_tier_divergence'], 0)
-                waveview['vwap_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['vwap_tier_divergence'] > 0), waveview['vwap_tier_divergence'], 0)
-                waveview['rsi_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['rsi_tier_divergence'] > 0), waveview['rsi_tier_divergence'], 0)
+                # # tier divergence, how many tiers have been gain'd / lost MACD/RSI/VWAP // current profit deviation
+                # waveview['current_macd_tier_gain'] = np.where((waveview['end_tier_macd'] - waveview['start_tier_macd'] > 0), waveview['end_tier_macd'] - waveview['start_tier_macd'], 0)
+                # waveview['current_vwap_tier_gain'] = np.where((waveview['end_tier_vwap'] - waveview['start_tier_vwap'] > 0), waveview['end_tier_vwap'] - waveview['start_tier_vwap'], 0)
+                # waveview['current_rsi_tier_gain'] = np.where((waveview['end_tier_rsi_ema'] - waveview['start_tier_rsi_ema'] > 0), waveview['end_tier_rsi_ema'] - waveview['start_tier_rsi_ema'], 0)
+                
+                # waveview['macd_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['macd_tier_divergence'] > 0), waveview['macd_tier_divergence'], 0)
+                # waveview['vwap_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['vwap_tier_divergence'] > 0), waveview['vwap_tier_divergence'], 0)
+                # waveview['rsi_tier_gain'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['rsi_tier_divergence'] > 0), waveview['rsi_tier_divergence'], 0)
 
-                waveview['macd_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['macd_tier_divergence'] < 0), abs(waveview['macd_tier_divergence']), waveview['macd_tier_gain'])
-                waveview['vwap_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['vwap_tier_divergence'] < 0), abs(waveview['vwap_tier_divergence']), waveview['vwap_tier_gain'])
-                waveview['rsi_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['rsi_tier_divergence'] < 0), abs(waveview['rsi_tier_divergence']), waveview['rsi_tier_gain'])
-                waveview['trinity_tier_gain'] =  waveview['macd_tier_gain'] + waveview['vwap_tier_gain'] + waveview['rsi_tier_gain']
+                # waveview['macd_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['macd_tier_divergence'] < 0), abs(waveview['macd_tier_divergence']), waveview['macd_tier_gain'])
+                # waveview['vwap_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['vwap_tier_divergence'] < 0), abs(waveview['vwap_tier_divergence']), waveview['vwap_tier_gain'])
+                # waveview['rsi_tier_gain'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['rsi_tier_divergence'] < 0), abs(waveview['rsi_tier_divergence']), waveview['rsi_tier_gain'])
+                # waveview['trinity_tier_gain'] =  waveview['macd_tier_gain'] + waveview['vwap_tier_gain'] + waveview['rsi_tier_gain']
 
-                waveview['wave_blocktime'] = wave_blocktime # current_wave.get('wave_blocktime')
+                waveview['wave_blocktime'] = wave_blocktime
                 waveview['wave_state'] = waveview['macd_state'].str.split("-").str[-1]
 
                 # waveview['star'] = waveview.index
@@ -1076,20 +1073,17 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
                 waveview_buy = waveview[waveview['macd_state'].str.contains('buy')]
                 waveview_sell = waveview[waveview['macd_state'].str.contains('sell')]
-
+                
+                """ STORY VIEW Star STATS """
+                # Story Buy Waves
                 df_storyview['star'] = df_storyview.index
-                wave_analysis_ = df_storyview[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True)
-                wave_analysis_ = wave_analysis_.set_index('star')
-                wave_analysis_length = df_storyview[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True)
-                wave_analysis_length = wave_analysis_length.set_index('star')
+                wave_up_star_stats = df_storyview[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True).set_index('star')
+                wave_analysis_length = df_storyview[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True).set_index('star')
 
-
+                # Story Sell Waves
                 wave_analysis_down['star'] = wave_analysis_down.index
-                wave_analysis_sell = wave_analysis_down[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True)
-                wave_analysis_sell = wave_analysis_sell.set_index('star')
-                wave_analysis_length_sell = wave_analysis_down[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True)
-                wave_analysis_length_sell = wave_analysis_length_sell.set_index('star')
-
+                wave_analysis_sell = wave_analysis_down[['star', 'star_avg_time_to_max_profit']].drop_duplicates().reset_index(drop=True).set_index('star')
+                wave_analysis_length_sell = wave_analysis_down[['star', 'star_avg_length']].drop_duplicates().reset_index(drop=True).set_index('star')
 
                 for ttf in waveview.index.to_list():
 
@@ -1105,15 +1099,39 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     waveview.at[ttf, 'short_at_play'] = df_stars.at[ttf, 'star_sells_at_play']
                     waveview.at[ttf, 'star_buys_at_play_allocation'] = df_stars.at[ttf, 'star_buys_at_play_allocation']
                     waveview.at[ttf, 'margin_power'] = df_stars.at[ttf, 'margin_power']
-                    
+                
+                wave_stars_default_time_max_profit  = {
+                                                "1Minute_1Day": 1,
+                                                "5Minute_5Day": 5,
+                                                "30Minute_1Month": 18,
+                                                "1Hour_3Month": 48,
+                                                "2Hour_6Month": 72,
+                                                "1Day_1Year": 250,
+                                            }
+                wave_stars_default_length  = {
+                                                "1Minute_1Day": 1,
+                                                "5Minute_5Day": 5,
+                                                "30Minute_1Month": 18,
+                                                "1Hour_3Month": 48,
+                                                "2Hour_6Month": 72,
+                                                "1Day_1Year": 250,
+                                            }
 
                 for ttf in waveview_buy.index:
-                    waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_.loc[ttf].get('star_avg_time_to_max_profit')
-                    waveview.at[ttf, 'star_avg_length'] = wave_analysis_length.loc[ttf].get('star_avg_length')
+                    tic, stime, sframe = ttf.split("_")
+                    star_avg_mx_profit = wave_up_star_stats.loc[ttf].get('star_avg_time_to_max_profit') if ttf in wave_up_star_stats else wave_stars_default_time_max_profit.get(f'{stime}_{sframe}')
+                    star_avg_length = wave_analysis_length.loc[ttf].get('star_avg_length') if ttf in wave_analysis_length else wave_stars_default_length.get(f'{stime}_{sframe}')
+
+                    waveview.at[ttf, 'star_avg_time_to_max_profit'] = star_avg_mx_profit
+                    waveview.at[ttf, 'star_avg_length'] = star_avg_length
 
                 for ttf in waveview_sell.index:
-                    waveview.at[ttf, 'star_avg_time_to_max_profit'] = wave_analysis_sell.loc[ttf].get('star_avg_time_to_max_profit')
-                    waveview.at[ttf, 'star_avg_length'] = wave_analysis_length_sell.loc[ttf].get('star_avg_length')
+                    tic, stime, sframe = ttf.split("_")
+                    star_avg_mx_profit = wave_analysis_sell.loc[ttf].get('star_avg_time_to_max_profit') if ttf in wave_analysis_sell else wave_stars_default_time_max_profit.get(f'{stime}_{sframe}')
+                    star_avg_length = wave_analysis_length_sell.loc[ttf].get('star_avg_length') if ttf in wave_analysis_length_sell else wave_stars_default_length.get(f'{stime}_{sframe}')
+
+                    waveview.at[ttf, 'star_avg_time_to_max_profit'] = star_avg_mx_profit
+                    waveview.at[ttf, 'star_avg_length'] = star_avg_length
 
                 waveview_map = return_trading_model_mapping(QUEEN_KING, waveview)
                 waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
@@ -1377,24 +1395,6 @@ def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=Fal
     return orders
 
 
-def return_queen_orders__query(QUEEN, queen_order_states, ticker=False, star=False, ticker_time_frame=False, trigbee=False, info='1var able queried at a time'):
-    q_orders = QUEEN['queen_orders']
-    if len(q_orders) == 1 and q_orders.index[0] == None: # init only
-        return ''
-    if ticker_time_frame:
-        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['ticker_time_frame'].isin([ticker_time_frame]))]
-    elif ticker:
-        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['ticker'].isin([ticker]))]
-    elif star:
-        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['star'].isin([star]))] ## needs to be added to orders
-    elif trigbee:
-        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states) & (q_orders['trigbee'].isin([trigbee]))] ## needs to be added to orders
-    else:
-        orders = q_orders[q_orders['queen_order_state'].isin(queen_order_states)] ## needs to be added to orders
-
-    return orders
-
-
 def check_length(val):
     if pd.isna(val):
         return False
@@ -1432,6 +1432,17 @@ def return_queen_orders__profit_loss(QUEEN, queen_orders, queen_order_states, ti
 
 def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen_order_states, ticker_time_frame, cost_basis_ref='cost_basis_current'):
     try:
+        if not QUEEN:
+            print("NO QUEEN")
+            active_orders = {}
+            remaining_budget = 0
+            remaining_budget_borrow = 0
+            budget_cost_basis = 0
+            borrowed_cost_basis = 0
+            buys_at_play = 0
+            sells_at_play = 0
+            return active_orders, remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
+        
         # Total In Running, Remaining
         active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
         if len(active_orders) == 0:
@@ -2113,6 +2124,7 @@ def pollen_story(pollen_nectar):
                 df['vwap_ranger'] = power_ranger_mapping_vectorized(df['vwap_tier'])
                 df['rsi_ranger'] = power_ranger_mapping_vectorized(df['rsi_ema_tier'])
                 df['trinity_tier'] = round(round(((df['macd_tier'] + df['vwap_tier'] + df['rsi_ema_tier']) / 3), 2) / 8 * 100)
+                # STORY_bee[ticker_time_frame]["story"]["avg_trinity_tier"] = df['trinity_tier'] / len(df)
 
                 e_timetoken = datetime.now(est)
                 betty_bee[ticker_time_frame]["assign_Tier"] = e_timetoken - s_timetoken
@@ -2936,6 +2948,7 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
                     ).df
                     
                     if len(symbol_data) == 0:
+                        print(f"{ticker_list} {charttime} NO Bars")
                         error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
                         return {}
                     # set index to EST time
@@ -3734,6 +3747,37 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
         }
         return chart_times
 
+def star_trigbee_delay_times(name=None):
+    # minutes to increase delay
+    star_time = {
+        "1Minute_1Day": 1,
+        "5Minute_5Day": 5,
+        "30Minute_1Month": 30,
+        "1Hour_3Month": 60,
+        "2Hour_6Month": 120,
+        "1Day_1Year": 2800,
+    }
+
+    if name:
+        return star_time[name]
+    else:
+        return star_time
+
+
+# Function to update sell_date based on chart_time
+def update_sell_date(star_time, sell_date = datetime.now(est)):
+
+    chart_times_refresh = star_trigbee_delay_times()
+
+    minutes_to_add = chart_times_refresh.get(star_time, 0)
+    
+    # Update the sell_date by adding the minutes
+    updated_sell_date = sell_date + timedelta(minutes=minutes_to_add)
+
+    updated_sell_date = updated_sell_date.strftime("%m/%d/%YT%H:%M")
+    
+    return updated_sell_date
+
 
 def trigger_bees():
     return {
@@ -3836,7 +3880,8 @@ def init_KING():
     king["waveBlocktimes"] = waveBlocktimes
     king["trigbees"] = trigbees
     king = update_king_users(KING=king, init=True)
-    king['ticker_universe'] = ticker_universe
+    king['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
+    king['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
     king['active_order_state_list'] = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 
     return king
@@ -3936,11 +3981,7 @@ def kings_order_rules( # rules created for 1Minute
     limit_price=False,
     # BUYS
     doubledown_timeduration=60,
-
     ignore_trigbee_at_power=0.01,
-    macd_tier_multiplier = {}, # deprecate
-    vwap_tier_multiplier = {},# deprecate
-    rsi_tier_multiplier = {},# deprecate
 
     # SELLS
     take_profit=.01,
@@ -4009,10 +4050,6 @@ def kings_order_rules( # rules created for 1Minute
         "use_margin": use_margin, # Deprecate
         "revisit_trade_frequency": revisit_trade_frequency, # Deprecate ???
         'close_order_today_allowed_timeduration': close_order_today_allowed_timeduration,
-
-        'macd_tier_multiplier': {}, # Deprecate ?
-        'vwap_tier_multiplier': {}, # Deprecate ?
-        'rsi_tier_multiplier': {}, # Deprecate ?
         'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
         'borrow_qty': borrow_qty, # Deprecate
         'order_side': order_side,
@@ -5204,7 +5241,7 @@ def return_Ticker_Universe():  # Return Ticker and Acct Info
     all_alpaca_tickers = api.list_assets()
     alpaca_symbols_dict = {}
     for n, v in enumerate(all_alpaca_tickers):
-        if all_alpaca_tickers[n].status == "active" and all_alpaca_tickers[n].tradable == True and all_alpaca_tickers[n].exchange != 'CRYPTO':
+        if all_alpaca_tickers[n].status == "active" and all_alpaca_tickers[n].tradable == True and all_alpaca_tickers[n].exchange != 'CRYPTO' and all_alpaca_tickers[n].exchange != 'OTC':
             alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(
                 all_alpaca_tickers[n]
             )
@@ -5659,7 +5696,10 @@ def model_wave_results(STORY_bee):
 
 
 # weight the MACD tier // slice by selected tiers?
-def wave_gauge(symbol, df_waves, weight_team, trading_model=False, model_eight_tier=8, wave_guage_list=['current_macd_tier', 'current_hist_tier', 'end_tier_vwap', 'end_tier_rsi_ema'], long_weight=.8, margin_weight=.8):
+def wave_gauge(symbol, df_waves, weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54'], 
+               trading_model=False, model_eight_tier=8, 
+               wave_guage_list=['current_macd_tier', 'current_hist_tier', 'end_tier_vwap', 'end_tier_rsi_ema'], 
+               long_weight=.8, margin_weight=.8):
     try:
         # weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
         weight__short = ['1Minute_1Day', '5Minute_5Day']
@@ -5698,7 +5738,6 @@ def wave_gauge(symbol, df_waves, weight_team, trading_model=False, model_eight_t
             df_waves[f'{weight_}_vwap_weight_sum'] = df_waves[weight_] * df_waves['end_tier_vwap'] ## skip out on OLD tickers that haven't been refreshed
             df_waves[f'{weight_}_rsi_weight_sum'] = df_waves[weight_] * df_waves['end_tier_rsi_ema']
 
-            
             # Macd Tier Position 
             guage_return[f'{weight_}_macd_tier_position'] = sum(df_waves[f'{weight_}_macd_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
             guage_return[f'{weight_}_hist_tier_position'] = sum(df_waves[f'{weight_}_hist_weight_sum']) / sum(df_waves[f'{weight_}_weight_base'])
@@ -5734,7 +5773,7 @@ def story_view(STORY_bee, ticker):
     s_ = datetime.now()
     storyview = [
         "ticker_time_frame", "macd_state", "current_macd_tier", "current_hist_tier", "macd", "hist", "mac_ranger", "hist_ranger",
-    ]
+    ] #  "avg_trinity_tier",
     ticker_items = {k: v for k, v in STORY_bee.items() if k.split("_")[0] == ticker}
     return_view = []
     return_agg_view = []
@@ -5835,45 +5874,42 @@ def wave_analysis__storybee_model(QUEEN_KING, STORY_bee, symbols):
     s = datetime.now()
 
     for story_views in symbols:
-        # try:
-        # story_views = story_view(STORY_bee=STORY_bee, ticker=story_views)
-        if story_views:
-            symbol = story_views.get('symbol')
-            # story views wave analysis
-            
-            wave_analysis = story_views.get("wave_analysis_up").reset_index()
-            waves = wave_analysis.set_index("ticker_time_frame")
-            df_storyview = pd.concat([df_storyview, waves])
+        if not story_views:
+            continue
+        
+        symbol = story_views.get('symbol')
+        # story views wave analysis
+        wave_analysis = story_views.get("wave_analysis_up").reset_index()
+        waves = wave_analysis.set_index("ticker_time_frame")
+        df_storyview = pd.concat([df_storyview, waves])
 
-            wave_analysis = story_views.get("wave_analysis_down").reset_index()
-            waves = wave_analysis.set_index("ticker_time_frame")
-            df_storyview_down = pd.concat([df_storyview_down, waves])
+        wave_analysis = story_views.get("wave_analysis_down").reset_index()
+        waves = wave_analysis.set_index("ticker_time_frame")
+        df_storyview_down = pd.concat([df_storyview_down, waves])
 
-            # wave_guage__story()
-            df = story_views.get('df')
-            df = df.set_index('star')
-            df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
-            df.at[f'{symbol}_{"5Minute_5Day"}', 'sort'] = 2
-            df.at[f'{symbol}_{"30Minute_1Month"}', 'sort'] = 3
-            df.at[f'{symbol}_{"1Hour_3Month"}', 'sort'] = 4
-            df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
-            df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
-            df = df.sort_values('sort')
-            df_waveview = pd.concat([df_waveview, df])
-            
-            
-            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
-            if trading_model == None:
-                # print(f"{symbol} no tm using default")
-                trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
-            story_guages, delme = wave_gauge(symbol=symbol, df_waves=df, trading_model=trading_model, weight_team=weight_team)
-            if story_guages:
-                story_guages_view.append(story_guages)
-                df_storyguage = pd.DataFrame(story_guages_view)
+        df = story_views.get('df')
+        df = df.set_index('star')
+        df.at[f'{symbol}_{"1Minute_1Day"}', 'sort'] = 1
+        df.at[f'{symbol}_{"5Minute_5Day"}', 'sort'] = 2
+        df.at[f'{symbol}_{"30Minute_1Month"}', 'sort'] = 3
+        df.at[f'{symbol}_{"1Hour_3Month"}', 'sort'] = 4
+        df.at[f'{symbol}_{"2Hour_6Month"}', 'sort'] = 5
+        df.at[f'{symbol}_{"1Day_1Year"}', 'sort'] = 6
+        df = df.sort_values('sort')
+        df_waveview = pd.concat([df_waveview, df])
 
-                # Trinity 
-                for w_t in weight_team:
-                    df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+        if trading_model == None:
+            print(f"{symbol} no tm using default")
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+        story_guages, delme = wave_gauge(symbol=symbol, df_waves=df, trading_model=trading_model, weight_team=weight_team)
+        if story_guages:
+            story_guages_view.append(story_guages)
+            df_storyguage = pd.DataFrame(story_guages_view)
+
+            # Trinity 
+            for w_t in weight_team:
+                df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
 
 
     # print("waves analysis: ", (datetime.now()-s).total_seconds())

@@ -8,7 +8,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 # from streamlit_extras.switch_page_button import switch_page
-from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc
+from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc, return_app_ip
 from chess_piece.queen_hive import setup_instance, print_line_of_error
 import ipdb
 
@@ -247,6 +247,7 @@ def read_user_db(cur):
 
 def signin_main(page=None):
     """Return True or False if the user is signed in"""
+    return_app_ip()
     MISC = local__filepaths_misc()
     floating_queen_gif = MISC["floating_queen_gif"]
 

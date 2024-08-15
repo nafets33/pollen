@@ -4,14 +4,13 @@ import os
 import json
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import ipdb
 import copy
 from chess_piece.king import (return_QUEENs__symbols_data, kingdom__global_vars, main_index_tickers, streamlit_config_colors, hive_master_root, load_local_json, save_json, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
-                                    trigger_bees, 
-                                    stars, 
+                                    update_sell_date, 
                                     init_logging, 
                                     split_today_vs_prior, 
                                     kings_order_rules, 
@@ -261,22 +260,6 @@ def load_queen_pkl(username, prod):
     QUEEN = ReadPickleData(username + '/queen_sandbox.pkl')
   
   return QUEEN
-
-def load_queen_order_pkl(username, prod):
-  if prod:
-    ORDERS = ReadPickleData(username + '/queen_Orders_.pkl')
-  else:
-    ORDERS = ReadPickleData(username + '/queen_Orders__sandbox.pkl')
-  
-  return ORDERS
-
-def load_revrec_pkl(username, prod):
-  if prod == False:
-    queen_pkl_path = username+'/queen_revrec_sandbox.pkl'
-  else:
-    queen_pkl_path = username+'/queen_revrec.pkl'
-  queen_pkl = ReadPickleData(queen_pkl_path)
-  return queen_pkl
 
 def parse_date(date_str):
     date_formats = [
@@ -590,12 +573,6 @@ def app_archive_queen_order(username, prod, selected_row, default_value):
     return True
 
 
-def get_type_by_name(type_name):
-    return getattr(__builtins__, type_name)
-
-
-
-
 def app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value):
     try:
       current_kors = kings_order_rules()
@@ -783,7 +760,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
     waveview['buysell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] < 0), round(abs(waveview['allocation_deploy'])), 0) 
     waveview['buy_alloc_deploy'] = waveview['buy_alloc_deploy'] + waveview['buysell_alloc_deploy']
 
-    
+
     def return_waveview_fillers(waveview):
       df = waveview
 
@@ -821,7 +798,10 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         
         reverse_buy = False
         # if 'sell' in df.at[ttf, 'macd_state'] and df.at[ttf, 'symbol']
-        kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
+        ticker, time, frame = ttf.split("_")
+        chart_time = f'{time}_{frame}'
+        sell_trigbee_date = update_sell_date(chart_time)
+        kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy, sell_trigbee_date=sell_trigbee_date)
 
         df.at[ttf, 'kors'] = kors
         df.at[ttf, 'ticker_time_frame__budget'] = f"""{margin} {"${:,}".format(remaining_budget)}"""
@@ -971,6 +951,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x/100))
       df['color_row_text'] = default_text_color
 
+
       # # Totals Index
       df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
       colss = df.columns.tolist()
@@ -1067,7 +1048,9 @@ def get_ticker_data(symbols, toggles_selection):
     if ttf == '1Minute_1Day':
       df = add_priorday_tic_value(df)
     
-    start_index = 0 if len(df) == 1 else 1
+    df['timestamp_est'] = pd.to_datetime(df['timestamp_est']).dt.floor('min')
+    df['timestamp_est'] = df['timestamp_est'].dt.strftime('%Y-%m-%d %H:%M:%S%z')
+
     c_start = df.iloc[0]['close']
 
     df[f'{symbol}'] = round((df['close'] - c_start) / c_start * 100,2)
@@ -1133,28 +1116,30 @@ def get_ticker_data_candle_stick(selectedOption):
 def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
   try:
     df_main=False
-    ttf = star_names(toggles_selection)
+    star_time = star_names(toggles_selection)
     ticker_db = read_QUEENs__pollenstory(
         symbols=symbols,
         read_storybee=False, 
         read_pollenstory=True,
     )
     for symbol in symbols:
-      df = ticker_db.get('pollenstory')[f'{symbol}_{ttf}']
-      if ttf == '1Minute_1Day':
+         
+      df = ticker_db.get('pollenstory')[f'{symbol}_{star_time}']
+      if star_time == '1Minute_1Day':
         df = add_priorday_tic_value(df)
       df = df[['timestamp_est', 'trinity_tier']] #'ticker_time_frame',
+      df['timestamp_est'] = pd.to_datetime(df['timestamp_est']).dt.floor('min')
+      df['timestamp_est'] = df['timestamp_est'].dt.strftime('%Y-%m-%d %H:%M:%S%z')
       df = df.rename(columns={'trinity_tier': symbol})
 
       if type(df_main) == bool:
-         df_main = df
+        df_main = df
       else:
         df_main = df_main.merge(df, how='inner', on='timestamp_est')
-
+    
     json_data = df_main.to_json(orient='records')
 
     return json_data
-
   except Exception as e:
      print_line_of_error("trinity revrec fastapi")
      return pd.DataFrame([{'error': 'list'}]).to_json()

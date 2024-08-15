@@ -4,8 +4,8 @@ from PIL import Image
 import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
-from chess_piece.queen_hive import print_line_of_error, return_Ticker_Universe, init_swarm_dbs
-from chess_piece.app_hive import set_streamlit_page_config_once, show_waves, queen_messages_logfile_grid, queens_orders__aggrid_v2, click_button_grid, nested_grid, page_line_seperator, standard_AGgrid, queen_orders_view
+from chess_piece.queen_hive import print_line_of_error, init_swarm_dbs
+from chess_piece.app_hive import set_streamlit_page_config_once, show_waves,  standard_AGgrid
 from chess_piece.king import kingdom__grace_to_find_a_Queen, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
@@ -30,8 +30,8 @@ def refresh_yfinance_ticker_info(KING):
     s = datetime.now()
     all_info = {}
     sectors = {}
-    ticker_universe = KING['ticker_universe']
-    main_symbols_full_list = ticker_universe['main_symbols_full_list']
+    ticker_universe = KING['alpaca_symbols_df']
+    main_symbols_full_list = ticker_universe['symbol'].tolist()
     progress_text = "Operation in progress. Please wait."
     my_bar = st.progress(0, text=progress_text)
     max = len(main_symbols_full_list)
@@ -78,17 +78,31 @@ def refresh_yfinance_ticker_info(KING):
     print((datetime.now() - s).total_seconds())
     return df
 
+def delete_dict_keys(object_dict):
+    bishop_screens = st.selectbox("Bishop Screens", options=list(object_dict.keys()))
+    if st.button("Delete Screen"):
+        object_dict.pop(bishop_screens)
+        PickleData(object_dict.get('source'), object_dict)
+        st.success(f"{bishop_screens} Deleted")
+
+
 def PlayGround():
-    with st.spinner("Verifying Your Scent, Hang Tight"):
-        authenticator = signin_main(page="playground")
-        if st.session_state["authorized_user"] != True:
-            switch_page('pollen')
-        prod = st.session_state['production']
+
+    if 'authentication_status' not in st.session_state:
+        authenticator = signin_main(page="pollenq")
+
+    if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
+        switch_page('pollen')
+    
+    prod = st.session_state['production']
+    
+    print("PLAYGROUND", st.session_state['client_user'])
     db=init_swarm_dbs(prod)
     BISHOP = ReadPickleData(db.get('BISHOP'))
-    try:
-        ip_address = st.session_state['ip_address']
 
+    delete_dict_keys(BISHOP)
+
+    try:
 
         # images
         MISC = local__filepaths_misc()
@@ -124,22 +138,23 @@ def PlayGround():
         KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
 
-        ticker_universe = return_Ticker_Universe()
-        alpaca_symbols_dict = ticker_universe.get('alpaca_symbols_dict')
-        alpaca_symbols = {k: i['_raw'] for k,i in alpaca_symbols_dict.items()}
-        df = pd.DataFrame(alpaca_symbols).T
+        # ticker_universe = return_Ticker_Universe()
+        # alpaca_symbols_dict = ticker_universe.get('alpaca_symbols_dict')
+        # alpaca_symbols = {k: i['_raw'] for k,i in alpaca_symbols_dict.items()}
+        # df = pd.DataFrame(alpaca_symbols).T
+        df = KING.get('alpaca_symbols_df')
         st.write("all symbols")
         with st.expander("all symbols"):
-            st.dataframe(df)
+            standard_AGgrid(df)
 
 
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         cols = st.columns(2)
-        with cols[0]:
-            with st.expander('nested columns'):
-                cols_2 = st.columns(2)
-                with cols_2[1]:
-                    st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
+        # with cols[0]:
+        #     with st.expander('nested columns'):
+        #         cols_2 = st.columns(2)
+        #         with cols_2[1]:
+        #             st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         
         # with st.expander("button on grid"):
         #     click_button_grid()
@@ -165,30 +180,6 @@ def PlayGround():
             show_waves(STORY_bee=STORY_bee, ticker_option=ticker_option, frame_option=frame_option)
 
 
-        def get_screen_processes():
-            # Run the "screen -ls" command to get a list of screen processes
-            output = subprocess.run(["screen", "-ls"], stdout=subprocess.PIPE).stdout.decode(
-                "utf-8"
-            )
-
-            # Split the output into lines
-            lines = output.strip().split("\n")
-
-            # The first line is a header, so skip it
-            lines = lines[1:]
-
-            # Initialize an empty dictionary
-            screen_processes = {}
-
-            # Iterate over the lines and extract the process name and PID
-            for line in lines:
-                parts = line.split()
-                name = parts[0]
-                pid = parts[1]
-                screen_processes[name] = pid
-
-            return screen_processes
-    
         if st.toggle("yahoo", True):
             db_qb_root = os.path.join(hive_master_root(), "db")
             yahoo_stats_bee = os.path.join(db_qb_root, "yahoo_stats_bee.pkl")
@@ -196,14 +187,22 @@ def PlayGround():
             # st.write(db['AAPL'])
             
 
-            
             if st.button("Refresh ALL yahoo ticker info into BISHOP"):
                 df_info = refresh_yfinance_ticker_info(KING)
                 if type(df_info) == pd.core.frame.DataFrame:
                     BISHOP['ticker_info'] = df_info
                     PickleData(BISHOP.get('source'), BISHOP, console=True)
         
+
         if 'ticker_info' in BISHOP.keys():
+            cols = st.columns(3)
+            with cols[0]:
+                market_cap = st.number_input("marker cap >=", value=50000000)
+                volume = st.number_input("volume >=", value=1000000)
+            with cols[1]:
+                shortRatio = st.number_input("shortRatio <=", value=2)
+                ebitdaMargins = st.number_input("ebitdaMargins >=", min_value=-1.0, max_value=1.0, value=.25)
+            
             show_all = st.toggle("show all tickers")
             df = BISHOP.get('ticker_info')
             hide_cols = df.columns.tolist()
@@ -221,25 +220,30 @@ def PlayGround():
                 return df
             
             df=clean_ticker_info_df(df)
-            
-            
+
+            avail_symbols = KING['alpaca_symbols_df']['symbol'].tolist()
+            df = df[df['symbol'].isin(avail_symbols)]
             # screener
-            def stock_screen(df, show_all=False):
+            def stock_screen(df, market_cap=50000000, volume=1000000, shortRatio=2, ebitdaMargins=.25, show_all=False):
                 if show_all:
                     return df
-                df = df[df['marketCap'] > 50000000]
-                df = df[df['volume'] > 1000000]
-                df = df[df['shortRatio'] < 2]
-                df = df[df['ebitdaMargins'] > .25]
+                df = df[df['marketCap'] >= market_cap]
+                df = df[df['volume'] >= volume]
+                df = df[df['shortRatio'] < shortRatio]
+                df = df[df['ebitdaMargins'] > ebitdaMargins]
                 return df
 
-            df = stock_screen(df, show_all)
-            screen_name = st.text_input('Screen Name')
+            df = stock_screen(df, market_cap, volume, shortRatio, ebitdaMargins, show_all)
+            default_name = f'MarketCap{market_cap}__Volume{volume}__ShortRatio{shortRatio}__ebitdaMargins{ebitdaMargins}'
+            screen_name = st.text_input('Screen Name', value=default_name)
             if st.button("Save Screen to Bishop"):
                 BISHOP[screen_name] = df
                 PickleData(BISHOP.get('source'), BISHOP)
 
+            st.header(screen_name)
             standard_AGgrid(df, hide_cols=hide_cols)
+
+            st.write("Bishop Keys", BISHOP.keys())
 
 
     except Exception as e:

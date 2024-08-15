@@ -15,7 +15,7 @@ Python == 3.9.9
 -APCA_API_SECRET_KEY = ""
 -APCA_API_KEY_ID_PAPER = ""
 -APCA_API_SECRET_KEY_PAPER = ""
-
+-admin_user = "your email"
 # Preset Variables
 fastAPI_key = "fastapi_pollenq_key"
 fast_api_local_url = "http://127.0.0.1:8000"

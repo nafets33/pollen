@@ -53,8 +53,6 @@ main_root = hive_master_root()  # os.getcwd()
 load_dotenv(os.path.join(main_root, ".env"))
 
 
-import ipdb
-
 
 pd.options.mode.chained_assignment = None
 
@@ -78,13 +76,13 @@ for op in all_portfolios:
     optoins.append({'id': op, 'icon': "fas fa-chess-pawn", 'label':op})
 hc_source_option = hc.option_bar(option_definition=optoins,title='Source', key='waves_revrec_source', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-KING = ReadPickleData(master_swarm_KING(st.session_state['prod']))
+client_user=st.session_state['client_user']
+prod=st.session_state['prod']
+KING = ReadPickleData(master_swarm_KING(prod))
 king_G = kingdom__global_vars()
 active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
 active_queen_order_states = king_G.get('active_queen_order_states')
 
-client_user=st.session_state['client_user']
-prod=st.session_state['prod']
 
 qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True)
 QUEEN = qb.get('QUEEN')
@@ -99,7 +97,6 @@ if st.toggle("broker portoflio"):
 
 coin_exchange = "CBSE"
 
-
 all_portfolios_selection = st.selectbox("Portfolio", options=all_portfolios)
 
 acct_info = QUEEN.get('account_info')
@@ -109,11 +106,13 @@ if hc_source_option == 'Queen':
 elif hc_source_option == 'King':
     revrec = QUEEN_KING.get('revrec')
 elif hc_source_option == 'Bishop':
-    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+    # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+    QUEENBEE = {'workerbees': {}}
     QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
     QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
-    STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+    symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+    STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
+    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, wave_blocktime='morning_9-11') ## Setup Board
 else:
     STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=False) ## Setup Board
@@ -174,30 +173,6 @@ if st.toggle("wave stories", False):
             st.dataframe(wave_series)
     except Exception as e:
         print_line_of_error(e)
-
-def king_knights_of_the_round_table(revrec):
-    waveview = revrec.get('waveview')
-    def func(x):
-        try:
-            return x.split("_")[0]
-        except Exception as e:
-            print(e)
-            return x
-    waveview['star'] = waveview.index
-    waveview['symbol'] = waveview['star'].apply(lambda x: func(x))
-
-    waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('buy')), True, False)
-    waveview_buys = waveview[waveview['symbol_filter'] == True]
-    buys = waveview_buys.groupby(['symbol']).agg({'allocation_deploy': 'sum'}).reset_index()
-    st.dataframe(buys)
-
-    waveview['symbol_filter'] = np.where((waveview['macd_state'].str.contains('sell')), True, False)
-    waveview_sells = waveview[waveview['symbol_filter'] == True]
-    sells = waveview_sells.groupby(['symbol']).agg({'allocation': 'sum'}).reset_index()
-    
-    return True
-
-king_knights_of_the_round_table(revrec)
 
 
 st.write(QUEEN['price_info_symbols'])

@@ -13,9 +13,9 @@ import streamlit as st
 import os
 
 
-from chess_piece.app_hive import set_streamlit_page_config_once, create_ag_grid_column
+from chess_piece.app_hive import set_streamlit_page_config_once, create_ag_grid_column, standard_AGgrid
 from chess_piece.king import kingdom__grace_to_find_a_Queen, kingdom__global_vars
-from chess_piece.queen_hive import create_QueenOrderBee, star_names
+from chess_piece.queen_hive import create_QueenOrderBee, star_names, init_queenbee
 from pq_auth import signin_main
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -123,7 +123,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
                 'col_headername': 'Order Rules',
                 'col_width':133,
                 'pinned': 'left',
-                'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today', 'close_order_today_allowed_timeduration', 'stagger_profits_tiers', 'trade_using_limits', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration', 'sell_date', 'use_wave_guage'],
+                'prompt_order_rules': ['take_profit', 'sell_out', 'close_order_today', 'close_order_today_allowed_timeduration', 'stagger_profits_tiers', 'trade_using_limits', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration', 'sell_date', 'sell_trigbee_date', 'use_wave_guage'],
                 "col_header": "time_frame",
                 "border_color": "green",
                 },
@@ -138,10 +138,13 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
                 },
                 ],
         grid_height='650px',
-        toggle_views = ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()) + ['QUEEN'],
+        toggle_views = ['QUEEN'] + ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()),
     )
 
- 
+    if st.toggle("Broker Orders"):
+        ORDERS = init_queenbee(client_user, prod, broker=True).get('BROKER')
+        df = ORDERS['broker_orders']
+        standard_AGgrid(df)
 
 if __name__ == '__main__':
 
@@ -152,6 +155,7 @@ if __name__ == '__main__':
         authenticator = signin_main(page="pollenq")
 
     if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
+        print("SWITCHING PAGES")
         switch_page('pollen')
 
     seconds_to_market_close = st.session_state['seconds_to_market_close']

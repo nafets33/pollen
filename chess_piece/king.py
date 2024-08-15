@@ -76,6 +76,7 @@ def kingdom__global_vars():
     'CLOSED_queenorders': ["running_close", "completed", "completed_alpaca"],
     'RUNNING_Orders': ["running", "running_open"],
     'RUNNING_CLOSE_Orders': ["running_close"],
+    'RUNNING_OPEN': ['running_open'],
     # crypto
     'crypto_currency_symbols': ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"],
     'coin_exchange': "CBSE",
@@ -472,6 +473,7 @@ def PickleData(pickle_file, data_to_store, write_temp=False, console=True):
                 print("saved: ", pickle_file)
     else:
         print("saving a file without a file not a good idea")
+        return False
 
     return True
 

@@ -87,7 +87,7 @@ chess_piece_queen = (
 )
 runaway_bee_gif = os.path.join(jpg_root, "runaway_bee_gif.gif")
 
-page_icon = Image.open(queenbee)
+page_icon = Image.open(os.path.join(jpg_root, "power.png"))
 
 ##### STREAMLIT ###
 k_colors = streamlit_config_colors()
@@ -1249,7 +1249,7 @@ def standard_AGgrid(
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
     gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
     gb.configure_default_column(column_width=85, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)
-    gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=True)
+    gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=False)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
     if configure_side_bar:

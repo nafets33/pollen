@@ -15,7 +15,7 @@ from collections import defaultdict, deque
 import ipdb
 import argparse
 from chess_piece.king import hive_master_root, workerbee_dbs_root, workerbee_dbs_root__STORY_bee, PickleData, ReadPickleData
-from chess_piece.queen_hive import return_alpaca_api_keys, return_Ticker_Universe, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
+from chess_piece.queen_hive import return_alpaca_api_keys, init_logging, return_macd, return_VWAP, return_RSI, return_sma_slope, init_pollen_dbs, pollen_story, return_bars_list, return_bars, init_index_ticker, print_line_of_error, return_index_tickers
 
 
 
