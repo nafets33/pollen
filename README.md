@@ -1,6 +1,12 @@
 # Pollen
 Python == 3.9.9
 
+Portfolio
+<img width="1629" alt="Screenshot 2024-08-07 at 8 14 31 PM" src="https://github.com/user-attachments/assets/b40df8f6-52e0-40bf-a08a-569c9a1f0e4a">
+
+Manage your Portfolio
+<img width="1301" alt="Screenshot 2024-08-26 at 10 09 37 PM" src="https://github.com/user-attachments/assets/1df64f97-dcf2-4cdb-ba2e-69990d9022f4">
+
 ## Create a Virtual ENV and pre-commit hooks
 - pip install -r requirements.txt
 - pre-commit install
