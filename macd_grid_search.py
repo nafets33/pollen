@@ -26,7 +26,7 @@ else:
 # workerbee_dbs_backtesting_root()
 backtest_folder = workerbee_dbs_backtesting_root__STORY_bee()
 
-def read_backtest_folder_assert_insight(backtest_folder, return_len=89):
+def read_backtest_folder_assert_insight(backtest_folder, return_len=15):
     s = datetime.now()
     # pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
     # folder = "symbols_STORY_bee_dbs_backtesting"

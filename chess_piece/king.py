@@ -310,6 +310,19 @@ def return_QUEEN_masterSymbols(
         "queens_master_tickers": queens_master_tickers,
     }
 
+def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
+    if chart_times:
+        return chart_times
+    else:
+        chart_times = {
+            "1Minute_1Day": 1,
+            "5Minute_5Day": 5,
+            "30Minute_1Month": 18,
+            "1Hour_3Month": 48,
+            "2Hour_6Month": 72,
+            "1Day_1Year": 250,
+        }
+        return chart_times
 
 def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, read_storybee=True, read_pollenstory=True, info="function uses async"):  # return combined dataframes
     ### updates return ticker db and path to db ###
@@ -317,11 +330,15 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, read_storybee=True,
         async def get_changelog(session, ttf_file_name):
             async with session:
                 try:
+                    # print("read", ttf_file_name)
                     db = ReadPickleData(ttf_file_name)
-                    ttf = os.path.basename(ttf_file_name).split(".pkl")[0]
-                    return {"ttf_file_name": ttf_file_name, "ttf": ttf, "db": db}
+                    if db:
+                        ttf = os.path.basename(ttf_file_name).split(".pkl")[0]
+                        return {"ttf_file_name": ttf_file_name, "ttf": ttf, "db": db}
+                    else:
+                        return {"ttf_file_name": ttf_file_name, "error": "Data Missing"}
                 except Exception as e:
-                    return {"ttf_file_name": ttf_file_name, "ttf": ttf, "error": e}
+                    return {"ttf_file_name": ttf_file_name, "error": e}
 
         async def main(ttf_file_paths):
             async with aiohttp.ClientSession() as session:
@@ -366,18 +383,22 @@ def read_QUEENs__pollenstory(symbols, read_swarmQueen=False, read_storybee=True,
         sb_all_files_names = []
         for symbol in set(symbols):
             if read_pollenstory:
-                ps_all_files_names = ps_all_files_names + [
-                    os.path.join(main_dir, i)
-                    for i in os.listdir(main_dir)
-                    if symbol in i and "temp" not in i
-                ]  # SPY SPY_1Minute_1Day
+                for star in stars().keys():
+                    file = os.path.join(main_dir, f'{symbol}_{star}.pkl')
+                    if os.path.exists(file) == False:
+                        # print("DB does not exist", file)
+                        pass
+                    else:
+                        ps_all_files_names.append(file)
             
             if read_storybee:
-                sb_all_files_names = sb_all_files_names + [
-                    os.path.join(main_story_dir, i)
-                    for i in os.listdir(main_story_dir)
-                    if symbol in i and "temp" not in i
-                ]  # SPY SPY_1Minute_1Day
+                for star in stars().keys():
+                    file = os.path.join(main_story_dir, f'{symbol}_{star}.pkl')
+                    if os.path.exists(file) == False:
+                        # print("DB does not exist", file)
+                        pass
+                    else:
+                        sb_all_files_names.append(file)
 
         # async read data
         if read_pollenstory:
@@ -432,7 +453,7 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
                 symbols = symbols + active_order_symbols + chessboard_symbols
             else:
                 symbols = active_order_symbols + chessboard_symbols
-        
+
         ticker_db = read_QUEENs__pollenstory(
             symbols=symbols,
             read_storybee=read_storybee, 

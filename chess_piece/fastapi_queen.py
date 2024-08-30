@@ -732,7 +732,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       QUEEN = qb.get('QUEEN')
       QUEEN_KING = qb.get('QUEEN_KING')
       STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-      revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+      revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
     else:
       qb = init_queenbee(client_user, prod, revrec=True, queen_king=True)
       revrec = qb.get('revrec')
@@ -801,7 +801,16 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         ticker, time, frame = ttf.split("_")
         chart_time = f'{time}_{frame}'
         sell_trigbee_date = update_sell_date(chart_time)
-        kors = buy_button_dict_items(star=ttf, wave_amo=remaining_budget, take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy, sell_trigbee_date=sell_trigbee_date)
+        kors = buy_button_dict_items(star=ttf, 
+                                     wave_amo=remaining_budget, 
+                                     take_profit=take_profit, 
+                                     sell_out=sell_out, 
+                                     sell_trigbee_date=sell_trigbee_date,
+                                     close_order_today=close_order_today, 
+                                     sell_trigbee_trigger_timeduration=None,
+                                     star_list=None,
+                                     reverse_buy=None, 
+        )
 
         df.at[ttf, 'kors'] = kors
         df.at[ttf, 'ticker_time_frame__budget'] = f"""{margin} {"${:,}".format(remaining_budget)}"""
@@ -949,8 +958,6 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       ]
       df['current_from_yesterday'] = round(df['current_from_yesterday'] * 100,2)
       df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x/100))
-      df['color_row_text'] = default_text_color
-
 
       # # Totals Index
       df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
@@ -982,7 +989,10 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
           df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
         except Exception as e:
           print(e)
-          
+    
+      # handle colors
+      df['color_row'] = np.where(df['symbol']=='Total', default_yellow_color, df['color_row'])
+      df['color_row_text'] = default_text_color
       
       json_data = df.to_json(orient='records')
       return json_data
@@ -1015,16 +1025,15 @@ def header_account(client_user, prod):
       df_accountinfo = pd.DataFrame()
 
   honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+  # money_text = round((acct_info['portfolio_value'] - acct_info['last_equity']),0)
   money_text = '${:,.0f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-  mmoney = f'{honey_text} {money_text}'
-  mmoney = "\u0332".join(mmoney)
   
   buying_power = '${:,}'.format(round(acct_info.get('buying_power')))
   cash = '${:,}'.format(round(acct_info.get('cash')))
   daytrade_count = round(acct_info.get('daytrade_count'))
   portfolio_value = '${:,}'.format(round(acct_info.get('portfolio_value')))
 
-  df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count, 'Broker Delta': broker_qty_delta }])
+  df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count}])
 
 
   df = pd.concat([df_heart, df_accountinfo], axis=1)
@@ -1183,7 +1192,7 @@ def get_queen_messages_logfile_json(username, log_file):
   df = pd.DataFrame(content).reset_index()
   df = df.sort_index(ascending=False)
   df = df.rename(columns={'index': 'idx', 0: 'message'})
-  df = df.head(500)
+  # df = df.head(500)
   # print(df)
 
   df['color_row'] = k_colors.get('default_background_color')

@@ -8,7 +8,7 @@ import pytz
 import subprocess
 import sys
 
-from PIL import Image
+from collections import deque
 from dotenv import load_dotenv
 import os
 import requests
@@ -26,9 +26,9 @@ from pages.chessboard import chessboard
 # main chess piece
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, queen_messages_logfile_grid, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
-from chess_piece.king import get_ip_address, master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe
+from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
+from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
+from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 
 # componenets
 # import streamlit_antd_components as sac
@@ -192,6 +192,7 @@ def pollenq(admin_pq):
                 st.stop()
 
     ip_address = st.session_state['ip_address'] # return_app_ip()
+    db_root = st.session_state['db_root']
 
     st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
     print(st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
@@ -208,10 +209,12 @@ def pollenq(admin_pq):
             KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
             PickleData(KING.get('source'), KING)
             st.success("KING Saved")
-            # root, name = os.path.split(KING.get('source'))
-            # test_file = os.path.join(root, "delmeKING.pkl")
-            # PickleData(test_file, KING)
-            # ReadPickleData(test_file)
+
+        # if st.button("Refresh Adhoc Charlie Bee Heart"): # Workerbee set this up in ini_charliebee
+        #     queens_charlie_bee, charlie_bee = init_charlie_bee(db_root) # monitors queen order cycles, also seen in heart
+        #     charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 691200)
+        #     charlie_bee['queen_cyle_times']['beat_times'] = deque([], 365)
+        #     PickleData(queens_charlie_bee, charlie_bee, console=True)
 
     menu_id = sac_menu_buttons("Queen")
 

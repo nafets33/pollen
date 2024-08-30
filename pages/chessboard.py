@@ -16,7 +16,7 @@ from streamlit_extras.switch_page_button import switch_page
 
 
 from chess_piece.king import master_swarm_QUEENBEE,  local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, story_view, init_qcp
+from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, init_qcp
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -24,8 +24,7 @@ from custom_graph_v1 import st_custom_graph
 
 import ipdb
 
-if st.button("Return home"):
-    switch_page("pollen")
+
 
 def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key='chess_board'):
     models = ['MACD', 'story__AI']
@@ -208,7 +207,7 @@ def refresh_chess_board__button(QUEEN_KING):
         PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
         st.success("Generated Default Chess Board")
         time.sleep(1)
-        st.experimental_rerun()
+        st.rerun()
             
     return True
 
@@ -220,7 +219,7 @@ def refresh_queen_controls_button(QUEEN_KING):
         
         PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
         st.success("All Queen Controls Reset")
-        st.experimental_rerun()
+        st.rerun()
             
     return True
 
@@ -284,7 +283,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
             QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
             STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
             QUEEN_KING['revrec'] = revrec
 
         # current_setup = copy.deepcopy(QUEEN_KING['chess_board'])
@@ -352,6 +351,10 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
 
 if __name__ == '__main__':
+
+    if st.button("Return home"):
+        switch_page("pollen")
+
     client_user = st.session_state['client_user']
     authorized_user = st.session_state['authorized_user']
     if authorized_user != True:

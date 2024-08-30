@@ -23,6 +23,8 @@ from streamlit_extras.switch_page_button import switch_page
 import yfinance as yf
 import time
 
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 set_streamlit_page_config_once()
 
@@ -142,6 +144,9 @@ def PlayGround():
         # alpaca_symbols_dict = ticker_universe.get('alpaca_symbols_dict')
         # alpaca_symbols = {k: i['_raw'] for k,i in alpaca_symbols_dict.items()}
         # df = pd.DataFrame(alpaca_symbols).T
+        alpaca_symbols_dict = KING.get('alpaca_symbols_dict')
+        # print(alpaca_symbols_dict['SPY']['_raw'].get('exchange'))
+        # st.write(alpaca_symbols_dict)
         df = KING.get('alpaca_symbols_df')
         st.write("all symbols")
         with st.expander("all symbols"):
@@ -166,12 +171,24 @@ def PlayGround():
         with st.expander("pollenstory"):
             ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
             data=POLLENSTORY[ttf]
-            default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number']
+            data['trinity_avg_tier'] = sum(data['trinity_tier']) / len(data)
+            default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number', 'trinity_tier', 'trinity_avg_tier']
             cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
-            data=data[cols].copy()
-            data = data.reset_index()
-            grid = standard_AGgrid(data=data, configure_side_bar=True)
+            view=data[cols].copy()
+            view = data.reset_index()
+            grid = standard_AGgrid(data=view, configure_side_bar=True)
 
+            def create_wave_chart(df):
+                title = f'i know'
+                fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+                df = df.copy()
+                # df['timestamp_est'] = df['timestamp_est'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+
+                fig.add_bar(x=df['timestamp_est'], y=df['trinity_tier'],  row=1, col=1, name='trinity')
+                fig.add_bar(x=df['timestamp_est'], y=df['trinity_avg_tier'],  row=1, col=1, name='sellcross wave')
+                fig.update_layout(height=600, width=900, title_text=title)
+                return fig
+            create_wave_chart(data)
 
         # if st.toggle("wave stories"):
         with st.expander("wave stories"):
@@ -193,7 +210,6 @@ def PlayGround():
                     BISHOP['ticker_info'] = df_info
                     PickleData(BISHOP.get('source'), BISHOP, console=True)
         
-
         if 'ticker_info' in BISHOP.keys():
             cols = st.columns(3)
             with cols[0]:
@@ -234,16 +250,20 @@ def PlayGround():
                 return df
 
             df = stock_screen(df, market_cap, volume, shortRatio, ebitdaMargins, show_all)
+            df['exchange'] = df['symbol'].apply(lambda x: alpaca_symbols_dict[x]['_raw'].get('exchange'))
+            # fitler out exchanges
+            df_filter = df[df['exchange']!= 'OTC'].copy()
+            if len(df) != len(df_filter):
+                st.warning("Check for tickers lost in exchange filter")
             default_name = f'MarketCap{market_cap}__Volume{volume}__ShortRatio{shortRatio}__ebitdaMargins{ebitdaMargins}'
-            screen_name = st.text_input('Screen Name', value=default_name)
-            if st.button("Save Screen to Bishop"):
-                BISHOP[screen_name] = df
-                PickleData(BISHOP.get('source'), BISHOP)
+            with st.form("Save Screen"):
+                screen_name = st.text_input('Screen Name', value=default_name)
+                if st.form_submit_button("Save Screen to Bishop"):
+                    BISHOP[screen_name] = df_filter
+                    PickleData(BISHOP.get('source'), BISHOP)
 
             st.header(screen_name)
-            standard_AGgrid(df, hide_cols=hide_cols)
-
-            st.write("Bishop Keys", BISHOP.keys())
+            standard_AGgrid(df_filter, hide_cols=hide_cols)
 
 
     except Exception as e:

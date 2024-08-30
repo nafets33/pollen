@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
-from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, master_swarm_KING, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
+from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
 from chess_piece.queen_hive import (
                                     init_charlie_bee, 
                                     init_queenbee, 
@@ -84,46 +84,52 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
         sys.exit()
     
 
-def close_day__queen(QUEEN, ORDERS_FINAL): # clean all FINAL orders bucket 
+def close_day__queen(QUEEN, ORDERS_FINAL=None): # clean all FINAL orders bucket 
     def archive_queen(QUEEN):
         # archive_queen_copy
         root, name = os.path.split(QUEEN.get('source'))
         # today = datetime.now(est).strftime("%m_%d_%Y")
         archive_ = os.path.join(root, f'{"previousDAY"}__{name}')
         PickleData(archive_, QUEEN, console=True)
+    
+    # Save Copy of Current day Queen
     archive_queen(QUEEN)
+
     
-    queen_orders = QUEEN['queen_orders'].copy()
     
-    ARCHIVE_queenorder = kingdom__global_vars().get('ARCHIVE_queenorder') # ['final', 'archived']
-    final_orders = queen_orders[queen_orders['queen_order_state'].isin(ARCHIVE_queenorder)].copy()
-    dump_final_orders = []
-    if len(final_orders) > 0:
-        qo_final = ORDERS_FINAL['queen_orders'].copy()
-        
-        for final_origin_order in final_orders.index:
-            dump_final_orders.append(final_origin_order)
+    return True
+    ## Clean ORders WORKERBE
+    if ORDERS_FINAL is None:
+        queen_orders = QUEEN['queen_orders'].copy()
+        ARCHIVE_queenorder = kingdom__global_vars().get('ARCHIVE_queenorder') # ['final', 'archived']
+        final_orders = queen_orders[queen_orders['queen_order_state'].isin(ARCHIVE_queenorder)].copy()
+        dump_final_orders = []
+        if len(final_orders) > 0:
+            qo_final = ORDERS_FINAL['queen_orders'].copy()
+            
+            for final_origin_order in final_orders.index:
+                dump_final_orders.append(final_origin_order)
 
-        if dump_final_orders:  
-            linked_orders = return_closing_orders_df(QUEEN, dump_final_orders, queen_order_states=CLOSED_queenorders)
-            if len(linked_orders) > 0:
-                for order_idx in linked_orders.index:
-                    dump_final_orders.append(order_idx)
+            if dump_final_orders:  
+                linked_orders = return_closing_orders_df(QUEEN, dump_final_orders, queen_order_states=CLOSED_queenorders)
+                if len(linked_orders) > 0:
+                    for order_idx in linked_orders.index:
+                        dump_final_orders.append(order_idx)
 
-            msg=(f"Removing Final/Completed Orders from QUEEN {dump_final_orders}")
-            print(msg)
-            logging.info(msg)
+                msg=(f"Removing Final/Completed Orders from QUEEN {dump_final_orders}")
+                print(msg)
+                logging.info(msg)
 
-            dump_orders = queen_orders[queen_orders.index.isin(dump_final_orders)].copy()
+                dump_orders = queen_orders[queen_orders.index.isin(dump_final_orders)].copy()
 
-            qo_new = queen_orders[~queen_orders.index.isin(dump_final_orders)].copy()
-            QUEEN['queen_orders'] = qo_new
+                qo_new = queen_orders[~queen_orders.index.isin(dump_final_orders)].copy()
+                QUEEN['queen_orders'] = qo_new
 
-            # Save
-            qo_final = pd.concat([qo_final, dump_orders])
-            ORDERS_FINAL['queen_orders'] = qo_final
+                # Save
+                qo_final = pd.concat([qo_final, dump_orders])
+                ORDERS_FINAL['queen_orders'] = qo_final
 
-            return True
+                return True
             
 
     return False
@@ -777,7 +783,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             trading_model_star = trading_model['stars_kings_order_rules'].get(f'{tframe}_{tperiod}')
 
             """Stars Forever Be in Heaven"""
-            macd_tier = waveview.loc[ticker_time_frame].get('current_macd_tier')
+            macd_tier = waveview.loc[ticker_time_frame].get('end_tier_macd')
 
             s_ = datetime.now(est)
             current_macd_cross__wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_wave']
@@ -963,7 +969,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if req.get('app_flag'):
                 acct_info = QUEEN['account_info']
                 """Rev Rec"""
-                revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=False) ## Setup Board
+                revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states) ## Setup Board
                 waveview = revrec.get('waveview')
                 QUEEN['revrec'] = revrec
                 god_save_the_queen(QUEEN, save_rr=True, save_q=True, save_qo=True)
@@ -1027,7 +1033,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # trigbee
                     trig = bees_fly.at[ticker_time_frame, 'macd_state']
                     tm_trig = trig
-                    trig_wave_length = waveview.at[ticker_time_frame, 'wave_state']
+                    trig_wave_length = waveview.at[ticker_time_frame, 'length']
                     on_wave_buy = True if trig_wave_length != '0' else False
                     if on_wave_buy:
                         tm_trig = 'buy_cross-0' if 'buy' in trig else 'sell_cross-0'
@@ -1138,7 +1144,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                         acct_info = QUEEN['account_info']
                         """Rev Rec"""
-                        revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=False) ## Setup Board
+                        revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states) ## Setup Board
                         QUEEN['revrec'] = revrec
                         god_save_the_queen(QUEEN, save_q=True, save_rr=True, save_qo=True, console=False)
 
@@ -1146,11 +1152,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     active_trigs = add_app_wave_trigger(active_trigs=active_trigs, ticker=ticker, app_wave_trig_req=app_wave_trig_req)
                 
                 charlie_bee['queen_cyle_times']['cc_thehunt__cc'] = (datetime.now(est) - s_time).total_seconds()
-                # Return Scenario based trades
-                # return all allocation deploys and add wave trigger if one not already there
-                
-                # revrec_alloc__find_missing_waves(active_trigs=active_trigs, waveview=waveview, ticker=ticker)
-                
 
             return True
         except Exception as e:
@@ -1231,7 +1232,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             return {'closing_filled': closing_filled, 'profit_loss': profit_loss}
         else:
-            return {'closing_filled': 0, 'profit_loss': 0 }
+            return {'closing_filled': 0, 'profit_loss': 0, 'symbol': queen_order.get('symbol')}
 
 
     def return_origin_order(df_queenorders, exit_order_link):
@@ -1975,13 +1976,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 # confirm profits
                                 profit_loss_value = update_runCLOSE__queen_order_honey(queen_order=queen_order, origin_order=origin_order, queen_order_idx=queen_order_idx)['profit_loss_value']
                                 QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'completed'
+                                msg=(f'{queen_order_idx} {origin_order.get("symbol")} closing filled: {profit_loss_value}')
+                                logging.info(msg)
 
                             #### CHECK to see if Origin ORDER has Completed LifeCycle ###
                                 res = update_origin_orders_profits(queen_order=queen_order, origin_order=origin_order, origin_order_idx=origin_order_idx)
                                 closing_filled = res['closing_filled']
                                 profit_loss = res['profit_loss']
-                                msg=(f'{queen_order_idx} closing filled: {profit_loss_value}')
-                                logging.info(msg)
                                 # Qty Available
                                 update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
                                 # Check to complete Queen Order
@@ -2179,7 +2180,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                                 update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders)
 
-                                QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}, fresh_board=False) ## Setup Board
+                                QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states) ## Setup Board
 
                                 god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
                                                 save_q=True,
@@ -2436,9 +2437,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             mkhrs = return_market_hours(trading_days=trading_days)
             if mkhrs != 'open':
                 print("Queen to ZzzzZZzzzZzzz see you tomorrow")
+                
                 # ORDERS_FINAL = init_queenbee(client_user=client_user, prod=prod, orders_final=True).get('ORDERS_FINAL')
                 # if close_day__queen(QUEEN, ORDERS_FINAL):
                 #     PickleData(ORDERS_FINAL.get('source'), ORDERS_FINAL)
+            
+                close_day__queen(QUEEN, ORDERS_FINAL=None) # cleaning orders to confirm WORKERBEE
                 
                 god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
                                 save_q=True,
@@ -2483,9 +2487,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             charlie_bee['queen_cyle_times']['app'] = (datetime.now(est) - s_time).total_seconds()
 
             # Refresh Board
-            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, chess_board__revrec={}, revrec__ticker={}, revrec__stars={}) ## Setup Board
-            if revrec.get('save_queenking'):
-                PickleData(QUEEN_KING['dbs'].get('PB_Wave_Analysis_Pickle'), revrec.get('WAVE_ANALYSIS'))
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states) ## Setup Board
+
             charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
             QUEEN['revrec'] = revrec
             
@@ -2505,8 +2508,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 command_conscience(QUEEN=QUEEN, STORY_bee=STORY_bee, QUEEN_KING=QUEEN_KING, api=api) ##### >   
                 charlie_bee['queen_cyle_times']['command conscience'] = (datetime.now(est) - s_time).total_seconds()
                 e = datetime.now(est)
-                if 'QUEEN_avg_cycle' not in charlie_bee['queen_cyle_times'].keys():
-                    charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 89)
+                charlie_bee['queen_cyle_times']['beat_times'].append({'datetime': datetime.now(est).strftime("%Y-%m-%d"), 'beat': (datetime.now(est) - s).total_seconds()})
                 charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'].append((datetime.now(est) - s).total_seconds())
                 charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'] = sum(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])/len(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])
                 PickleData(queens_charlie_bee, charlie_bee, console=False)

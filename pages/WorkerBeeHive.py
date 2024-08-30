@@ -22,6 +22,7 @@ import argparse
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.king import return_QUEENs__symbols_data, master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, PickleData
 from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs
+from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
@@ -63,13 +64,17 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
         qcp_bees_key = 'workerbees'
         QUEENBEE = {qcp_bees_key: {}}
         df = BISHOP.get(bishop_screens)
+        sector_tickers = {}
         for sector in set(df['sector']):
             token = df[df['sector']==sector]
             tickers=token['symbol'].tolist()
             QUEENBEE[qcp_bees_key][sector] = init_qcp_workerbees(ticker_list=tickers)
+            sector_tickers[sector] = len(tickers)
+        st.write(sector_tickers)
 
     qcp_options = list(QUEENBEE['workerbees'].keys())
     default_qcp = [i for i in QUEENBEE['workerbees'] if len(QUEENBEE['workerbees'][i].get('tickers')) > 0]
+    prod = QUEEN_KING.get('prod')
 
     with st.form("workerbees refresh"):
         try:
@@ -83,12 +88,13 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
                         if backtesting:
                             msg=("executing backtesting")
                             st.info(msg)
-                            subprocess.run([f"{sys.executable}", os.path.join(hive_master_root(), 'macd_grid_search.py')])
+                            script_path = os.path.join(hive_master_root(), 'macd_grid_search.py')
+                            trigger_py_script(script_path)
                         else:
                             queen_workerbees(
                                             qcp_s=pieces,
                                             QUEENBEE=QUEENBEE,
-                                            prod=QUEEN_KING.get('prod'), 
+                                            prod=prod, 
                                             reset_only=reset_only, 
                                             backtesting=False, 
                                             run_all_pawns=run_all_pawns, 
@@ -111,16 +117,6 @@ if st.session_state['admin']:
     # with st.expander("WorkerBees Tools"):
     refresh_workerbees(QUEENBEE, QUEEN_KING)
 
-# workerbees = QUEENBEE['workerbees']
-# symbols = []
-# for qcp, va in workerbees.items():
-#     tickers = va.get('tickers')
-#     if tickers:
-#         for tic in tickers:
-#             symbols.append(tic)
-
-# ticker_db = return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=symbols, swarmQueen=True, read_pollenstory=False, read_storybee=True)
-# STORY_bee = ticker_db['STORY_bee']
-# tickers_avail = set([i.split("_")[0] for i in STORY_bee.keys()])
-
-# ticker_option = st.selectbox("story keys", options=tickers_avail)
+MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))
+# MACD_WAVES = MACD_WAVES.set_index("ttf")
+standard_AGgrid(MACD_WAVES)

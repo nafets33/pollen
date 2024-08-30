@@ -27,6 +27,8 @@ from custom_grid import st_custom_grid
 from custom_grid import GridOptionsBuilder as GOB
 from custom_graph_v1 import st_custom_graph
 import random
+import sys
+import subprocess
 
 
 # componenets
@@ -205,6 +207,18 @@ def sac_menu_buttons(main='Queen'):
     return sac_menu_buttons
 
 ################ AUTH ###################
+
+def trigger_py_script(script_path):
+
+    # script_path = os.path.join(hive_master_root(), 'pq_fastapi_server.py')
+    try:
+        # Use sys.executable to get the path to the Python interpreter
+        python_executable = sys.executable
+        subprocess.run([python_executable, script_path, '-i'])
+    except FileNotFoundError:
+        print(f"Error: Python interpreter not found. Make sure Python is installed.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 def trigger_airflow_dag(dag, client_username, prod, airflow_password=False, airflow_username=False, airflow_host=False):
     # http://34.162.91.146:8080/api/v1/dags ## dict visual of dags
@@ -448,19 +462,21 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
         'Cash',
         'daytrade count']  
 
+        animate_numbers = {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,}
+
         def config_cols(cols):
             backgroundColor = k_colors.get('default_background_color')
             default_text_color = k_colors.get('default_text_color')
             return  {
-        'Long': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},                  
+        'Long': {**{'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},                  
         'Short': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Heart Beat': {'width': 100, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Heart Beat': {**{'width': 100, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
         'Avg Beat': {'width': 80, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
-        'Money': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Money': {**{'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, "type": ["customNumberFormat", "numericColumn", "customCurrencyFormat"], 'custom_currency_symbol':"$"}, **animate_numbers},
         'Todays Honey': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
         'Portfolio Value': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Buying Power': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Cash': {'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Cash': {**{'width': 120,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
         'daytrade count': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
         'Broker Delta': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
             }
@@ -2367,12 +2383,15 @@ def custom_graph_ttf_qcp(symbols, prod, KING, client_user, QUEEN_KING, refresh_s
         print_line_of_error("ERROR cust graph trinity")
 
 
-def move_columns_to_front(dataframe, column_list):
+def move_columns_to_front(dataframe, column_list, raise_error=False):
 
     # Ensure that all columns in column_list exist in the DataFrame
     invalid_columns = [col for col in column_list if col not in dataframe.columns]
     if invalid_columns:
-        raise ValueError(f"Columns not found in DataFrame: {', '.join(invalid_columns)}")
+        if raise_error:
+            raise ValueError(f"Columns not found in DataFrame: {', '.join(invalid_columns)}")
+        else:
+            st.write(f" cols not found in dataframe {', '.join(invalid_columns)}")
 
     # Reorder columns
     new_columns_order = column_list + [col for col in dataframe.columns if col not in column_list]
