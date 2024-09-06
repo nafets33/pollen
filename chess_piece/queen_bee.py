@@ -20,14 +20,14 @@ from chess_piece.queen_hive import (
                                     init_queenbee, 
                                     power_amo, 
                                     find_symbol, star_ticker_WaveAnalysis, return_queen_orders__query, 
-                                    initialize_orders, refresh_account_info, refresh_chess_board__revrec, 
+                                    initialize_orders, refresh_account_info, 
                                     init_clientUser_dbroot, process_order_submission, get_best_limit_price, hive_dates, 
                                     send_email, return_STORYbee_trigbees, init_logging, convert_to_float, 
                                     order_vars__queen_order_items, logging_log_message, 
                                     return_alpc_portolio, return_market_hours, check_order_status,  timestamp_string, 
-                                    submit_order, return_timestamp_string, add_key_to_QUEEN, update_sell_date
+                                    submit_order, return_timestamp_string, add_key_to_QUEEN, update_sell_date,return_Ticker_Universe
                                     )
-
+from chess_piece.queen_mind import refresh_chess_board__revrec
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -45,6 +45,8 @@ CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['completed', 'complet
 RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
 RUNNING_OPEN = king_G.get('RUNNING_OPEN') # ['running_open']
 RUNNING_CLOSE_Orders = king_G.get('RUNNING_CLOSE_Orders') # = ['running_close']
+
+ACTIVE_SYMBOLS = return_Ticker_Universe().get('alpaca_symbols_dict')
 
 # crypto
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
@@ -258,8 +260,12 @@ def append_queen_order(QUEEN, new_queen_order_df):
     return True
 
 
-def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False):
+def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
     try:
+        if ticker not in ACTIVE_SYMBOLS:
+            logging.error(f"{ticker} No Longer Active symbol")
+            return {'executed': False}
+        
         tic, tframe, tperiod = ticker_time_frame.split("_")
         star = f'{tframe}_{tperiod}'
 
@@ -339,8 +345,12 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
         return {'executed': False}
 
 
-def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, trig, run_order_idx, crypto=False, limit_price=False, portfolio=None, order_type='market', side='sell'):
+def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, trig, run_order_idx, crypto=False, limit_price=False, portfolio=None, order_type='market', side='sell', ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
     try:
+        if ticker not in ACTIVE_SYMBOLS:
+            logging.error(f"{ticker} No Longer Active symbol")
+            return {'executed': False}
+
         tic, tframe, tperiod = ticker_time_frame.split("_")
         star = f'{tframe}_{tperiod}'
         
@@ -461,6 +471,7 @@ def update_queen_order(QUEEN, update_package):
         print_line_of_error()
         logging.critical({'error': e, 'msg': 'update queen order', 'update_package': update_package})
     return True
+
 
 def update_queen_order_order_rules(QUEEN, update_package):
     try:
@@ -2376,6 +2387,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         api = qb.get('api')
         QUEENsHeart = qb.get('QUEENsHeart')
         BROKER = qb.get('BROKER')
+
 
         ## """Rev Rec"""
         if 'chess_board__revrec' not in QUEEN_KING.keys():

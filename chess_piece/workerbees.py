@@ -39,6 +39,8 @@ from chess_piece.queen_hive import (
     return_market_hours,
     init_swarm_dbs,
     ReadPickleData,
+    return_Ticker_Universe,
+    send_email,
     
 )
 
@@ -910,7 +912,7 @@ def queen_workerbees(
 
         return True
 
-    def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces, MACD_WAVES, reset_only=reset_only):
+    def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces, MACD_WAVES, queens_master_tickers, reset_only=reset_only):
 
         speed_gauges = {}
 
@@ -922,6 +924,7 @@ def queen_workerbees(
                 MACD_settings = QUEENBEE["workerbees"][qcp_worker]["MACD_fast_slow_smooth"]
             
             master_tickers = QUEENBEE["workerbees"][qcp_worker]["tickers"]
+            master_tickers = [i for i in master_tickers if i in queens_master_tickers]
             star_times = QUEENBEE["workerbees"][qcp_worker]["stars"]
             if backtesting_star:
                 QUEENBEE["workerbees"][qcp_worker]["stars"] = {backtesting_star: 1}  # "1Minute_1Day"
@@ -959,18 +962,24 @@ def queen_workerbees(
         
         def confirm_tickers_available(alpaca_symbols_dict, symbols):
             queens_master_tickers = []
+            errors = []
             for i in symbols:
                 if i in alpaca_symbols_dict:
                     queens_master_tickers.append(i)
                 else:
-                    print("Ticker NOT in Alpaca Ticker DB")
+                    msg=(i, "Ticker NOT in Alpaca Ticker DB")
+                    errors.append(msg)
+            if errors:
+                msg = str(errors)
+                send_email(subject="Tickers Not Longer Active", body=msg)
             
             return queens_master_tickers
 
         # ticker_universe = return_Ticker_Universe()
         db=init_swarm_dbs(prod)
         KING = ReadPickleData(db.get('KING'))
-        alpaca_symbols_dict = KING['ticker_universe'].get("alpaca_symbols_dict")
+        # alpaca_symbols_dict = KING['ticker_universe'].get("alpaca_symbols_dict")
+        alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')
 
         if type(qcp_s) == str:
             qcp_s = [qcp_s]
@@ -1023,7 +1032,8 @@ def queen_workerbees(
                 QUEENBEE=QUEENBEE,
                 queens_chess_pieces=queens_chess_pieces,
                 MACD_WAVES=MACD_WAVES,
-                reset_only=reset_only
+                queens_master_tickers=queens_master_tickers,
+                reset_only=reset_only,
             )
             if reset_only:
                 msg=("EXITING RESET ONLY")
@@ -1064,6 +1074,7 @@ def queen_workerbees(
                             queen_workers = init_QueenWorkersBees(
                                 QUEENBEE=QUEENBEE,
                                 queens_chess_pieces=latest__queens_chess_pieces,
+                                queens_master_tickers=queens_master_tickers,
                                 MACD_WAVES=MACD_WAVES,
                             )
                             WORKERBEE_queens = queen_workers["WORKERBEE_queens"]

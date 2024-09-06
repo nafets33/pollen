@@ -13,8 +13,8 @@ import hydralit_components as hc
 
 from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, PickleData
-from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, refresh_chess_board__revrec, generate_TradingModel, init_logging
-# from pages.orders import order_grid
+from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, generate_TradingModel, init_logging
+from chess_piece.queen_mind import refresh_chess_board__revrec, shape_chessboard
 
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from st_aggrid import AgGrid, GridUpdateMode, JsCode
@@ -62,21 +62,21 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
     return True
 
 
-def clear_subconscious_Thought(QUEEN, QUEEN_KING):
-    with st.sidebar.expander("clear subconscious thought"):
-        with st.form('clear subconscious'):
-            thoughts = QUEEN['subconscious'].keys()
-            clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
+# def clear_subconscious_Thought(QUEEN, QUEEN_KING):
+#     with st.sidebar.expander("clear subconscious thought"):
+#         with st.form('clear subconscious'):
+#             thoughts = QUEEN['subconscious'].keys()
+#             clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
             
-            if st.form_submit_button("Save"):
-                app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
-                app_req['subconscious_thought_to_clear'] = clear_thought
-                app_req['subconscious_thought_new_value'] = []
-                QUEEN_KING['subconscious'].append(app_req)
-                return_image_upon_save(title="subconscious thought cleared")
-                PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING)
+#             if st.form_submit_button("Save"):
+#                 app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
+#                 app_req['subconscious_thought_to_clear'] = clear_thought
+#                 app_req['subconscious_thought_new_value'] = []
+#                 QUEEN_KING['subconscious'].append(app_req)
+#                 return_image_upon_save(title="subconscious thought cleared")
+#                 PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING)
 
-                return True
+#                 return True
 
 
 def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
@@ -127,26 +127,50 @@ def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', ti
     return True 
 
 
-def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
+def queens_conscience(revrec, KING, QUEEN_KING, api):
 
     with st.sidebar:
         refresh_grids = st.toggle("Refresh Grids", True)
 
-    # ###### GLOBAL # ######
-    king_G = kingdom__global_vars()
-    active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-    active_queen_order_states = king_G.get('active_queen_order_states') # = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
-    # CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['running_close', 'completed', 'completed_alpaca']
-    RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
-    # RUNNING_CLOSE_Orders = king_G.get('RUNNING_CLOSE_Orders') # = ['running_close']
+
+    symbols = return_queenking_board_symbols(QUEEN_KING)
+    symbols = ['SPY'] if len(symbols) == 0 else symbols
+
+    STORY_bee = return_QUEENs__symbols_data(symbols=symbols, read_pollenstory=False).get('STORY_bee')
+
+    ip_address = st.session_state['ip_address']
+    client_user = st.session_state["username"]
+    db_root = st.session_state['db_root']
+    prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
+    # authorized_user = st.session_state['authorized_user']
+
+    # return page last visited 
+    sneak_peak = False
+    if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
+        st.info("Welcome You must be Family -- This QueenBot is LIVE")
+
+    elif st.session_state['authentication_status'] != True:
+        st.write(st.session_state['authentication_status'])
+        st.error("You Need to Log In")
+        sneak_peak = False
+        st.session_state['sneak_peak'] == False
+        st.stop()
     
-    # crypto
-    crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-    crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
+    elif st.session_state['authentication_status']:
+        sneak_peak = False
+        pass
+    else:
+        st.error("Stopping page")
+        st.stop()
 
+    # revrec = QUEEN.get('revrec')
+    # if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
+    #     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
+    #     QUEEN_KING['revrec'] = revrec
 
-    # images
-    MISC = local__filepaths_misc()
+    # if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
+    #     clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
+
 
     ##### STREAMLIT ###
     k_colors = streamlit_config_colors()
@@ -168,8 +192,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                     'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                                 "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
                     
-                    'long_at_play': {'headerName':'Long At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],'initialWidth':123,},
-                    'short_at_play': {'headerName':'Short At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                    'star_buys_at_play': {'headerName':'Long At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],'initialWidth':123,},
+                    'star_sells_at_play': {'headerName':'Short At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
                                                     #    'custom_currency_symbol':"$",
                                                     'initialWidth':123,
                                                     },
@@ -329,8 +353,8 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
                 # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, wrapText=True),
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'long_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
-                'short_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
+                'star_buys_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
+                'star_sells_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 # 'allocation_long_deploy': {'headerName':'Queen Allocation Deploy', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                 #                            'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                 #                            },                    
@@ -397,59 +421,9 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
 
     try:
 
-
-        pq_buttons = pollenq_button_source()
-
-        db_root = st.session_state['db_root']
-        prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
-
-        authorized_user = st.session_state['authorized_user']
-        client_user = st.session_state["username"]
-
-        # return page last visited 
-        sneak_peak = False
-        if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
-            st.info("Welcome You must be Family -- This QueenBot is LIVE")
-
-        elif st.session_state['authentication_status'] != True:
-            st.write(st.session_state['authentication_status'])
-            st.error("You Need to Log In")
-            sneak_peak = False
-            st.session_state['sneak_peak'] == False
-            st.stop()
-        
-        elif st.session_state['authentication_status']:
-            sneak_peak = False
-            pass
-        else:
-            st.error("Stopping page")
-            st.stop()
-
-
-        acct_info = api_vars.get('acct_info')
-        if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
-            clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
-
         # # if authorized_user: log type auth and none
         log_dir = os.path.join(db_root, 'logs')
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['production'])
-
-        # db global
-        # Ticker DataBase
-        call_all_ticker_data = st.sidebar.checkbox("swarmQueen Symbols", False)
-
-        coin_exchange = "CBSE"
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=call_all_ticker_data)
-        POLLENSTORY = ticker_db['pollenstory']
-        STORY_bee = ticker_db['STORY_bee']
-        ticker_allowed = list(KING['ticker_universe'].get('alpaca_symbols_dict').keys()) + crypto_symbols__tickers_avail
-
-        swarm_queen_symbols = []
-        for qcp, va in QUEENBEE['workerbees'].items():
-            tickers = va.get('tickers')
-            if tickers:
-                for tic in tickers:
-                    swarm_queen_symbols.append(tic)
 
         tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
         # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
@@ -460,151 +434,124 @@ def queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars):
                 tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme="long_star")['MACD'][ticker]
                 QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
         
-        ticker_db_errors = ticker_db.get('errors')
-        if len(ticker_db_errors) > 0:
-            st.error("symbol errors")
-            st.write(ticker_db_errors)
         trading_days = hive_dates(api=api)['trading_days']
         mkhrs = return_market_hours(trading_days=trading_days)
         seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
         seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
 
-        symbols = return_queenking_board_symbols(QUEEN_KING)
-        symbols = ['SPY'] if len(symbols) == 0 else symbols
 
-        # ip_address = get_ip_address()
-        ip_address = st.session_state['ip_address']
-        # func_list = [i for i in func_list if st.session_state[i]]
-        with st.spinner("Refreshing"): # ozzbot
+        # with story_tab:
+        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+        refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
+        # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
+        # print("STORY GRID")
+        story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
+                        
+        if st.toggle("Show Wave Grid"):
+            if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
+                st.error("PENDING QUEEN")
+            else:
+                with st.expander("Star Grid :sparkles:", True):
+                    # refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+                    # refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+                    wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
-            if authorized_user:
-                revrec = QUEEN.get('revrec')
-                if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
-                    revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
-                    QUEEN_KING['revrec'] = revrec
+
+        cols = st.columns(2)
+        with cols[0]:
+            refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+            refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+            refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
+            # print("GRAPHS")
+            st_custom_graph(
+                api=f'{ip_address}/api/data/symbol_graph',
+                x_axis={
+                    'field': "timestamp_est"
+                },
+
+                y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
+                theme_options={
+                            'backgroundColor': k_colors.get('default_background_color'),
+                            'main_title': '',   # '' for none
+                            'x_axis_title': '',
+                            'grid_color': default_text_color,
+                            "showInLegend": True,
+                            "showInLegendPerLine": True,
+                        },
+                refresh_button=True,
                 
-                if st.sidebar.button("Clear Thoughts"):
-                    clear_subconscious_Thought(QUEEN, QUEEN_KING)
+                #kwrags
+                username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                prod=prod,
+                symbols=['SPY', 'QQQ'],
+                refresh_sec=refresh_sec,
+                api_key=os.environ.get("fastAPI_key"),
+                return_type=None,
+                graph_height=300,
+                key="Index_Graph",
+                toggles=list(star_names().keys()),
+                # y_max=420
+                )
 
-                # story_tab, trading_tab, order_tab, charts_tab = st.tabs(['Story', 'Waves', 'Orders', 'Wave Charts',]) # 'waves', 'workerbees', 'charts'
+        with cols[1]:
+            with st.sidebar:
+                graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=['bishop', 'castle', 'knight'])
+            refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+            refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+            refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
+            symbols = []
+            for qcp in graph_qcps:
+                symbols+= QUEEN_KING['chess_board'][qcp].get('tickers')
+            
+            if len(symbols) > 10:
+                print('symbols > 10 lines')
+                c=1
+                symbols_copy = symbols.copy()
+                symbols =  []
+                for s in symbols_copy:
+                    if c > 9:
+                        continue
+                    symbols.append(s)
+                    c+=1
 
-                # with story_tab:
-                refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
-                # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
-                # print("STORY GRID")
-                story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
-                               
-                if st.toggle("Show Wave Grid"):
-                    if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
-                        st.error("PENDING QUEEN")
-                    else:
-                        with st.expander("Star Grid :sparkles:", True):
-                            # refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-                            # refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                            wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
+            refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+            refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+            refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
 
-                # with order_tab:
-                # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-                # refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                # if st.toggle("show Orders"):
-                #     order_grid(KING, queen_orders, ip_address)
+            st_custom_graph(
+                api=f'{ip_address}/api/data/ticker_time_frame',
+                x_axis={
+                    'field': 'timestamp_est'
+                },
 
-                cols = st.columns(2)
-                with cols[0]:
-                    refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-                    refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
-                    # print("GRAPHS")
-                    st_custom_graph(
-                        api=f'{ip_address}/api/data/symbol_graph',
-                        x_axis={
-                            'field': "timestamp_est"
-                        },
+                y_axis=symbols_unique_color(symbols),
+                theme_options={
+                        'backgroundColor': k_colors.get('default_background_color'),
+                        'main_title': '',   # '' for none
+                        'x_axis_title': '',
+                        'grid_color': default_text_color,
+                        "showInLegend": True,
+                        "showInLegendPerLine": True,
+                    },
+                refresh_button=True,
+                
+                #kwrags
+                username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                prod=prod,
+                symbols=symbols,
+                refresh_sec=refresh_sec,
+                api_key=os.environ.get("fastAPI_key"),
+                return_type=None,
+                graph_height=300,
+                key='graph2',
+                ttf='1Minute_1Day',
+                toggles=list(star_names().keys()),
+                # y_max=420
+                )
 
-                        y_axis=symbols_unique_color(['SPY', 'SPY vwap', 'QQQ', 'QQQ vwap']),
-                        theme_options={
-                                    'backgroundColor': k_colors.get('default_background_color'),
-                                    'main_title': '',   # '' for none
-                                    'x_axis_title': '',
-                                    'grid_color': default_text_color,
-                                    "showInLegend": True,
-                                    "showInLegendPerLine": True,
-                                },
-                        refresh_button=True,
-                        
-                        #kwrags
-                        username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                        prod=prod,
-                        symbols=['SPY', 'QQQ'],
-                        refresh_sec=refresh_sec,
-                        api_key=os.environ.get("fastAPI_key"),
-                        return_type=None,
-                        graph_height=300,
-                        key="Index_Graph",
-                        toggles=list(star_names().keys()),
-                        # y_max=420
-                        )
-
-                with cols[1]:
-                    with st.sidebar:
-                        graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=['bishop', 'castle', 'knight'])
-                    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-                    refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
-                    symbols = []
-                    for qcp in graph_qcps:
-                        symbols+= QUEEN_KING['chess_board'][qcp].get('tickers')
-                    
-                    if len(symbols) > 10:
-                        print('symbols > 10 lines')
-                        c=1
-                        symbols_copy = symbols.copy()
-                        symbols =  []
-                        for s in symbols_copy:
-                            if c > 9:
-                                continue
-                            symbols.append(s)
-                            c+=1
-
-                    refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-                    refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
-
-                    st_custom_graph(
-                        api=f'{ip_address}/api/data/ticker_time_frame',
-                        x_axis={
-                            'field': 'timestamp_est'
-                        },
-
-                        y_axis=symbols_unique_color(symbols),
-                        theme_options={
-                                'backgroundColor': k_colors.get('default_background_color'),
-                                'main_title': '',   # '' for none
-                                'x_axis_title': '',
-                                'grid_color': default_text_color,
-                                "showInLegend": True,
-                                "showInLegendPerLine": True,
-                            },
-                        refresh_button=True,
-                        
-                        #kwrags
-                        username=KING['users_allowed_queen_emailname__db'].get(client_user),
-                        prod=prod,
-                        symbols=symbols,
-                        refresh_sec=refresh_sec,
-                        api_key=os.environ.get("fastAPI_key"),
-                        return_type=None,
-                        graph_height=300,
-                        key='graph2',
-                        ttf='1Minute_1Day',
-                        toggles=list(star_names().keys()),
-                        # y_max=420
-                        )
-        
-                if st.toggle("Show Logs"):
-                    log_grid(KING)
+        if st.toggle("Show Logs"):
+            log_grid(KING)
         # print("END CONSCIENCE")
         ##### END ####
     except Exception as e:
@@ -629,4 +576,4 @@ if __name__ == '__main__':
 
     # queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
 
-    queens_conscience(None, None, None, None, None)
+    queens_conscience(None, None, None, None)

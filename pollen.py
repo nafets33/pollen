@@ -290,17 +290,16 @@ def pollenq(admin_pq):
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
         sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
         
-        PB_QUEENBEE_Pickle = master_swarm_QUEENBEE(prod=prod)
-        QUEENBEE = ReadPickleData(PB_QUEENBEE_Pickle)
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
-        QUEEN = qb.get('QUEEN')
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True, init=True, revrec=True)
+        # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
-        api = qb.get('api')            
+        api = qb.get('api')
+        revrec = qb.get('revrec')      
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             switch_page('chessboard')
 
-        if st.sidebar.button("update Queen Orders"):
-            update_queen_orders(QUEEN)
+        # if st.sidebar.button("update Queen Orders"):
+        #     update_queen_orders(QUEEN)
         
 
         if st.session_state['admin'] == True:
@@ -330,8 +329,8 @@ def pollenq(admin_pq):
             if live_sb_button:
                 st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
                 prod = st.session_state['production']
-                qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True)
-                QUEEN = qb.get('QUEEN')
+                qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True)
+                # QUEEN = qb.get('QUEEN')
                 QUEEN_KING = qb.get('QUEEN_KING')
                 api = qb.get('api')
 
@@ -417,7 +416,7 @@ def pollenq(admin_pq):
     
     if authorized_user and 'pollen' in menu_id:
         print("QC Page Func")
-        queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
+        queens_conscience(revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')

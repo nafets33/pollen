@@ -109,7 +109,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
         buttons=[{'button_name': 'sell',
                 'button_api': f'{ip_address}/api/data/queen_sell_orders',
                 'prompt_message': 'Select Qty to Sell',
-                'prompt_field': "qty_available",
+                'prompt_field': "sell_option",
                 'col_headername': 'Take Money',
                 'col_width':135,
                 'pinned': 'right',
@@ -138,7 +138,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
                 },
                 ],
         grid_height='650px',
-        toggle_views = ['QUEEN'] + ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()),
+        toggle_views = ['ORDERS', 'QUEEN'] + ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()),
     )
 
     if st.toggle("Broker Orders"):

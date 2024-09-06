@@ -28,64 +28,62 @@ import plotly.graph_objects as go
 
 set_streamlit_page_config_once()
 
-def refresh_yfinance_ticker_info(KING):
-    s = datetime.now()
-    all_info = {}
-    sectors = {}
-    ticker_universe = KING['alpaca_symbols_df']
-    main_symbols_full_list = ticker_universe['symbol'].tolist()
-    progress_text = "Operation in progress. Please wait."
-    my_bar = st.progress(0, text=progress_text)
-    max = len(main_symbols_full_list)
-    for idx, tic in enumerate(main_symbols_full_list):
-        num = round(idx/max)
-        try:
-            ticker = yf.Ticker(tic)
-            all_info[tic] = ticker.info
-            sectors[tic] = ticker.info.get('sector')
-            my_bar.progress(num, text=progress_text)
-        except Exception as e:
-            print_line_of_error(tic)
-
-    my_bar.empty()
-    # df = pd.DataFrame(sectors.items())
-    # st.write(df)
-
-    # if all_info:
-    df = pd.DataFrame()
-    # Initialize progress bar
-    progress_text = "Processing tickers..."
-    my_bar = st.progress(0, text=progress_text)
-
-    # Calculate total number of tickers
-    total_tickers = len(all_info)
-
-    # Iterate through ticker information
-    for idx, (tic, data) in enumerate(all_info.items(), start=1):
-        # Calculate progress percentage
-        progress_percent = round(idx / total_tickers * 100)
-        
-        # Update progress bar
-        my_bar.progress(progress_percent, text=progress_text)
-        
-        # Process ticker data
-        token = pd.DataFrame(data.items()).T
-        headers=token.iloc[0]
-        token.columns=headers
-        token = token.drop(0)
-        token['ticker'] = tic
-        df = pd.concat([df, token], ignore_index=True)
-        my_bar = st.empty()
-
-    print((datetime.now() - s).total_seconds())
-    return df
-
 def delete_dict_keys(object_dict):
     bishop_screens = st.selectbox("Bishop Screens", options=list(object_dict.keys()))
     if st.button("Delete Screen"):
         object_dict.pop(bishop_screens)
         PickleData(object_dict.get('source'), object_dict)
         st.success(f"{bishop_screens} Deleted")
+
+
+def refresh_yfinance_ticker_info(main_symbols_full_list):
+    s = datetime.now()
+    all_info = {}
+    sectors = {}
+
+    # Initialize the progress bar outside the loop
+    progress_text = "Operation in progress. Please wait. ({percent}%)"
+    my_bar = st.progress(0)
+
+    max_tickers = len(main_symbols_full_list)
+
+    for idx, tic in enumerate(main_symbols_full_list):
+        try:
+            ticker = yf.Ticker(tic)
+            all_info[tic] = ticker.info
+            sectors[tic] = ticker.info.get('sector')
+
+            # Update the progress bar with the correct progress and percentage
+            progress_percent = (idx + 1) / max_tickers * 100
+            my_bar.progress((idx + 1) / max_tickers, text=progress_text.format(percent=int(progress_percent)))
+        except Exception as e:
+            print_line_of_error(tic)
+
+    my_bar.empty()
+
+    df = pd.DataFrame()
+
+    # Reset progress bar for the second loop
+    progress_text = "Processing tickers... ({percent}%)"
+    my_bar = st.progress(0)
+
+    total_tickers = len(all_info)
+
+    for idx, (tic, data) in enumerate(all_info.items(), start=1):
+        progress_percent = idx / total_tickers * 100
+        my_bar.progress(idx / total_tickers, text=progress_text.format(percent=int(progress_percent)))
+
+        token = pd.DataFrame(data.items()).T
+        headers = token.iloc[0]
+        token.columns = headers
+        token = token.drop(0)
+        token['ticker'] = tic
+        df = pd.concat([df, token], ignore_index=True)
+
+    my_bar.empty()  # Clear the progress bar after the loop completes
+
+    print((datetime.now() - s).total_seconds())
+    return df
 
 
 def PlayGround():
@@ -204,11 +202,24 @@ def PlayGround():
             # st.write(db['AAPL'])
             
 
-            if st.button("Refresh ALL yahoo ticker info into BISHOP"):
-                df_info = refresh_yfinance_ticker_info(KING)
+            if st.button("Refresh ALL yahoo ticker info from BISHOP"):
+                ticker_universe = KING['alpaca_symbols_df']
+                main_symbols_full_list = ticker_universe['symbol'].tolist()
+
+                df_info = refresh_yfinance_ticker_info(main_symbols_full_list)
                 if type(df_info) == pd.core.frame.DataFrame:
                     BISHOP['ticker_info'] = df_info
                     PickleData(BISHOP.get('source'), BISHOP, console=True)
+        
+        if st.button("Sync Queen King Symbol Yahoo Stats"):
+            symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+            df_info = refresh_yfinance_ticker_info(symbols)
+            if type(df_info) == pd.core.frame.DataFrame:
+                BISHOP['queen_story_symbol_stats'] = df_info
+                PickleData(BISHOP.get('source'), BISHOP, console=True)
+        if 'queen_story_symbol_stats' in BISHOP.keys():
+            st.header("QK Yahoo Stats")
+            standard_AGgrid(BISHOP['queen_story_symbol_stats'])
         
         if 'ticker_info' in BISHOP.keys():
             cols = st.columns(3)

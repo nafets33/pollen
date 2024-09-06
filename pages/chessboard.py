@@ -16,8 +16,8 @@ from streamlit_extras.switch_page_button import switch_page
 
 
 from chess_piece.king import master_swarm_QUEENBEE,  local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, refresh_chess_board__revrec, add_trading_model, set_chess_pieces_symbols, init_qcp
-
+from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp
+from chess_piece.queen_mind import refresh_chess_board__revrec
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph

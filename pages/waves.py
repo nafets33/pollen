@@ -7,7 +7,6 @@ from chess_piece.queen_hive import init_swarm_dbs, init_qcp_workerbees
 from dotenv import load_dotenv
 from pq_auth import signin_main
 import ipdb 
-
 set_streamlit_page_config_once()
 
 # ipdb.set_trace()
@@ -35,12 +34,13 @@ import os
 import time
 
 from chess_piece.king import master_swarm_KING, ReadPickleData, kingdom__global_vars, return_QUEENs__symbols_data, print_line_of_error
-from chess_piece.queen_hive import refresh_chess_board__revrec, init_queenbee, hive_master_root, refresh_chess_board__revrec, refresh_account_info
+from chess_piece.queen_hive import init_queenbee, hive_master_root
 from chess_piece.app_hive import show_waves, pollenq_button_source, move_columns_to_front
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph
 import hydralit_components as hc
+from chess_piece.queen_mind import refresh_chess_board__revrec
 
 
 
@@ -182,7 +182,9 @@ for revrec_key in revrec.keys():
                 for k, data in obj.items():
                     st.write(k)
                     st.dataframe(data) if isinstance(data, pd.DataFrame) else st.write(data)
-
+        # elif revrec_key == 'rr_run_cycle':
+        #     df = pd.DataFrame(revrec.get(revrec_key)).T
+        #     st.write(df)
         elif isinstance(df, pd.DataFrame):
             st.dataframe(df)
         else:

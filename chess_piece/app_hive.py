@@ -38,7 +38,7 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
 import hydralit_components as hc
 from custom_button import cust_Button
-from custom_text import custom_text, TextOptionsBuilder
+# from custom_text import custom_text, TextOptionsBuilder
 
 from chess_piece.king import (
     PickleData,

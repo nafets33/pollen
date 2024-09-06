@@ -98,7 +98,7 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
                                             reset_only=reset_only, 
                                             backtesting=False, 
                                             run_all_pawns=run_all_pawns, 
-                                            macd=None,
+                                            macd=macd,
                                             streamit=True,
                                                 )
                         st.success("WorkerBees Completed")

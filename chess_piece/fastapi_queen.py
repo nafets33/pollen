@@ -24,10 +24,11 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     ttf_grid_names,
                                     sell_button_dict_items,
                                     wave_buy__var_items,
-                                    star_names,
-                                    refresh_chess_board__revrec)
+                                    star_names
+                                    )
 
 from chess_piece.queen_bee import execute_buy_order
+from chess_piece.queen_mind import refresh_chess_board__revrec
 from dotenv import load_dotenv
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
@@ -350,7 +351,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
       star_time = return_startime_from_ttf(ticker_time_frame)
       wave_blocktime = revrec.get('waveview').loc[ticker_time_frame].get('wave_blocktime')
     else:
-      star_time = selected_row.get('star_time')
+      star_time = selected_row.get('star')
       ticker_time_frame = selected_row.get('ticker_time_frame')
       trigbee = selected_row.get('macd_state')
       wave_blocktime = selected_row.get('wave_blocktime')
@@ -849,7 +850,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       storygauge_columns = df.columns.tolist()
       waveview['buy_alloc_deploy'] = waveview['allocation_long_deploy']
       # symbol group by to join on story
-      num_cols = ['allocation_long_deploy', 'buy_alloc_deploy', 'long_at_play', 'sell_alloc_deploy', 'short_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
+      num_cols = ['allocation_long_deploy', 'buy_alloc_deploy', 'star_buys_at_play', 'sell_alloc_deploy', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
       for col in num_cols:
           waveview[col] = round(waveview[col])
           if col in storygauge_columns:
@@ -939,8 +940,8 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         except Exception as e:
           print("mmm error", ttf, print_line_of_error(e))
 
-      story_grid_num_cols = ['long_at_play',
-      'short_at_play',
+      story_grid_num_cols = ['star_buys_at_play',
+      'star_sells_at_play',
       'remaining_budget',
       'remaining_budget_borrow',
       'trinity_w_L',
