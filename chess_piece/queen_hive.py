@@ -29,7 +29,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
+from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars, hash_string
 
 queens_chess_piece = os.path.basename(__file__)
 king_G = kingdom__global_vars()
@@ -5619,13 +5619,21 @@ def live_sandbox__setup_switch(pq_env, switch_env=False):
 
 
 def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
+    ## SSBEE 
+    # db_root will be the starting key to match for init_pollen_dbs func keys. So this func will just return the starting_key, i.e. db__stefanstapinski_72704614 
+    
+    # client_user_pqid = hash_string(client_username)
+    # client_user = client_username.split("@")[0]
+    # db_root = f'db__{client_user}_{client_user_pqid}' # THIS returns the KEY just need to remove the local path in func
 
+    ## code block below will be removed
+    
     if force_db_root:
         db_root = os.path.join(hive_master_root(), "db")
     # elif client_username in ['stefanstapinski@gmail.com']:  ## admin
     #     db_root = os.path.join(hive_master_root(), "db")
     else:
-        db_root = return_db_root(client_username=client_username)
+        db_root = return_db_root(client_username=client_username) ## THIS returns the KEY just need to remove the local path in func
         if os.path.exists(db_root) == False:
             os.mkdir(db_root)
             os.mkdir(os.path.join(db_root, "logs"))
@@ -5638,6 +5646,9 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
 
 
 def init_swarm_dbs(prod, init=False):
+    ## SSBEE 
+    # if db table does not exist, create table
+    
     db_swarm_root=os.path.join(hive_master_root(), 'db')
     envs = '_Sandbox' if prod == False else ''
     dbs = ['KING', 'QUEEN', 'BISHOP', 'KNIGHT']
@@ -5654,6 +5665,8 @@ def init_swarm_dbs(prod, init=False):
                 else:
                     data = {}
                 PickleData(pathname, data, console=True)
+                ## SSBEE 
+                # upsert into table
         
         db_local_path[db_name] = pathname
     
@@ -5668,7 +5681,11 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PickleData(pickle_file=pickle_file, data_to_store=db)
 
         return True
-
+    
+    ## SSBEE 
+    # db_root is not a starting key i.e. db__stefanstapinski_72704614
+    # each file represents the full key, remove .pkl and change pickle to upsert to client_users_db table
+    # change all if path exists to if Key exists
 
     # WORKERBEE don't check if file exists, only check on init
     if prod:
@@ -5785,7 +5802,10 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
 
 
 def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=None, init=False):
-    # init_clientUser_dbroot(client_user, client_useremail, admin_permission_list, force_db_root=False)
+    # ## SSBEE 
+    # need to fix ENV variable to know if prod or Sandbox
+    # still will return prod 
+    
     try:
         db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
         if prod is not None:
