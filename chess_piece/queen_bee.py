@@ -28,6 +28,7 @@ from chess_piece.queen_hive import (
                                     submit_order, return_timestamp_string, add_key_to_QUEEN, update_sell_date,return_Ticker_Universe
                                     )
 from chess_piece.queen_mind import refresh_chess_board__revrec
+import copy
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -98,22 +99,20 @@ def close_day__queen(QUEEN, ORDERS_FINAL=None): # clean all FINAL orders bucket
     archive_queen(QUEEN)
 
     
-    
-    return True
     ## Clean ORders WORKERBE
-    if ORDERS_FINAL is None:
-        queen_orders = QUEEN['queen_orders'].copy()
+    def archive_order(QUEEN):
+        queen_orders = copy.deepcopy(QUEEN['queen_orders'])
         ARCHIVE_queenorder = kingdom__global_vars().get('ARCHIVE_queenorder') # ['final', 'archived']
         final_orders = queen_orders[queen_orders['queen_order_state'].isin(ARCHIVE_queenorder)].copy()
         dump_final_orders = []
         if len(final_orders) > 0:
-            qo_final = ORDERS_FINAL['queen_orders'].copy()
+            qo_final = copy.deepcopy(ORDERS_FINAL['queen_orders'])
             
             for final_origin_order in final_orders.index:
                 dump_final_orders.append(final_origin_order)
 
             if dump_final_orders:  
-                linked_orders = return_closing_orders_df(QUEEN, dump_final_orders, queen_order_states=CLOSED_queenorders)
+                linked_orders = return_closing_orders_df(QUEEN, dump_final_orders)
                 if len(linked_orders) > 0:
                     for order_idx in linked_orders.index:
                         dump_final_orders.append(order_idx)
@@ -204,12 +203,9 @@ def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False):
         sys.exit()
 
 
-def return_closing_orders_df(QUEEN, exit_order_link, queen_order_states=CLOSED_queenorders): # returns linking order
+def return_closing_orders_df(QUEEN, exit_order_link): # returns linking order
     df = QUEEN['queen_orders']
-    origin_closing_orders = df[
-        (df['exit_order_link'] == exit_order_link) 
-                               & 
-        (df['queen_order_state'].isin(queen_order_states))].copy()
+    origin_closing_orders = df[(df['exit_order_link'] == exit_order_link)].copy()
     
     if len(origin_closing_orders) > 0:
         return origin_closing_orders
@@ -221,7 +217,7 @@ def update_origin_order_qty_available(QUEEN, run_order_idx, RUNNING_CLOSE_Orders
         # Return QueenOrder
         queen_order = QUEEN['queen_orders'].loc[run_order_idx].to_dict()
         if queen_order['queen_order_state'] in RUNNING_Orders:
-            closing_dfs = return_closing_orders_df(QUEEN=QUEEN, exit_order_link=queen_order['client_order_id'])
+            closing_dfs = return_closing_orders_df(QUEEN, queen_order['client_order_id'])
             if len(closing_dfs) > 0: # WORKERBEE num convert NOT necesary REMOVE
                 closing_dfs['qty'] = closing_dfs['qty'].apply(lambda x: convert_to_float(x))
                 closing_dfs['filled_qty'] = closing_dfs['filled_qty'].apply(lambda x: convert_to_float(x))
@@ -2450,11 +2446,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if mkhrs != 'open':
                 print("Queen to ZzzzZZzzzZzzz see you tomorrow")
                 
-                # ORDERS_FINAL = init_queenbee(client_user=client_user, prod=prod, orders_final=True).get('ORDERS_FINAL')
+                ORDERS_FINAL = init_queenbee(client_user=client_user, prod=prod, orders_final=True).get('ORDERS_FINAL')
                 # if close_day__queen(QUEEN, ORDERS_FINAL):
                 #     PickleData(ORDERS_FINAL.get('source'), ORDERS_FINAL)
             
-                close_day__queen(QUEEN, ORDERS_FINAL=None) # cleaning orders to confirm WORKERBEE
+                # close_day__queen(QUEEN, ORDERS_FINAL) # cleaning orders to confirm WORKERBEE
                 
                 god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
                                 save_q=True,

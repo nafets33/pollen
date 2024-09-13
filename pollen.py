@@ -131,7 +131,7 @@ def pollenq(admin_pq):
 
     def run_pq_fastapi_server():
 
-        script_path = os.path.join(hive_master_root(), 'pq_fastapi_server.py')
+        script_path = os.path.join(hive_master_root(), 'pollen_api.py')
 
         try:
             # Use sys.executable to get the path to the Python interpreter
@@ -178,7 +178,6 @@ def pollenq(admin_pq):
             
             display_for_unAuth_client_user()
             st.stop()
-
         prod = st.session_state['production']
         authorized_user = st.session_state['authorized_user']
         client_user = st.session_state["username"]
@@ -216,7 +215,14 @@ def pollenq(admin_pq):
         #     charlie_bee['queen_cyle_times']['beat_times'] = deque([], 365)
         #     PickleData(queens_charlie_bee, charlie_bee, console=True)
 
-    menu_id = sac_menu_buttons("Queen")
+    cols = st.columns((8,2))
+    with cols[1]:
+        height=50
+        cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+    with cols[0]:
+        menu_id = sac_menu_buttons("Queen")
+    with st.sidebar:
+        st.write(f'menu {menu_id}')
 
 
     if menu_id == 'Waves':
@@ -244,7 +250,7 @@ def pollenq(admin_pq):
 
         st.stop()
 
-    if menu_id == 'TradingModels':
+    if menu_id == 'Trading Models':
         switch_page('trading_models')
 
     if menu_id == 'Board':
@@ -281,26 +287,18 @@ def pollenq(admin_pq):
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
         ####### Welcome to Pollen ##########
-        # with cols[1]:
-        # cols = st.columns((3,4))
-
-
+ 
         # use API keys from user            
         prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
         sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
         
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True, init=True, revrec=True)
+        qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
         api = qb.get('api')
         revrec = qb.get('revrec')      
-        if 'chess_board__revrec' not in QUEEN_KING.keys():
-            switch_page('chessboard')
 
-        # if st.sidebar.button("update Queen Orders"):
-        #     update_queen_orders(QUEEN)
-        
 
         if st.session_state['admin'] == True:
             st.sidebar.write('admin:', st.session_state["admin"])
@@ -369,12 +367,12 @@ def pollenq(admin_pq):
             # st.write(float(ap_info['info'].get('daytrading_buying_power')) - 4 * (float(ap_info['info'].get('last_equity')) - float(ap_info['info'].get('last_maintenance_margin'))))
             acct_info = alpaca_acct_info.get('info_converted')
             acct_info_raw = alpaca_acct_info.get('info')
-            init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
-            init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-            api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
-            queen_orders_open = api_orders.get('open')
-            queen_orders_closed = api_orders.get('closed')
-            api_vars = {'acct_info': acct_info, 'api_orders': api_orders}
+            # init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
+            # init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+            # api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
+            # queen_orders_open = api_orders.get('open')
+            # queen_orders_closed = api_orders.get('closed')
+            # api_vars = {'acct_info': acct_info, 'api_orders': api_orders}
         except Exception as e:
             st.error(e)
             acct_info = False
@@ -389,8 +387,12 @@ def pollenq(admin_pq):
                 if st.button('API'):
                     run_pq_fastapi_server()
 
+        if 'chess_board__revrec' not in QUEEN_KING.keys():
+            switch_page('chessboard')
+        
         trading_days = hive_dates(api=api)['trading_days']
         mkhrs = return_market_hours(trading_days=trading_days)
+        # st.write(trading_days) # STORE IN KING and only call once
         
         seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
         if mkhrs != 'open':
@@ -402,19 +404,15 @@ def pollenq(admin_pq):
         if menu_id == 'Engine':
             from pages.pollen_engine import pollen_engine
 
-            pollen_engine(acct_info=acct_info_raw, log_dir=log_dir)
+            pollen_engine(acct_info_raw)
 
             st.stop()
 
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
 
-        with st.sidebar:
-            height=50
-            cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-
-    
-    if authorized_user and 'pollen' in menu_id:
+ 
+    if 'pollen' in menu_id:
         print("QC Page Func")
         queens_conscience(revrec, KING, QUEEN_KING, api)
 

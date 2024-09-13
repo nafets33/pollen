@@ -254,13 +254,6 @@ def load_queen_App_pkl(username, prod):
   queen_pkl = ReadPickleData(queen_pkl_path)
   return queen_pkl
 
-def load_queen_pkl(username, prod):  
-  if prod:
-    QUEEN = ReadPickleData(username + '/queen.pkl')
-  else:
-    QUEEN = ReadPickleData(username + '/queen_sandbox.pkl')
-  
-  return QUEEN
 
 def parse_date(date_str):
     date_formats = [
@@ -328,8 +321,7 @@ def return_startime_from_ttf(ticker_time_frame):
 def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False): # index & wave_amount
   try:
 
-    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, revrec=True, queen_heart=True)
-    # QUEEN = qb.get('QUEEN')
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     revrec = qb.get('revrec') # qb.get('queen_revrec')
@@ -1080,47 +1072,25 @@ def get_ticker_data(symbols, toggles_selection):
   return json_data
 
 ### GRAPH
-def get_ticker_data_v2(symbol, prod):
-
-  ticker_db = read_QUEENs__pollenstory(
-      symbols=[symbol],
-      read_storybee=False, 
-      read_pollenstory=True,
-  )
-  df_main = False
-  ttf = "5Minute_5Day"
-  df = ticker_db.get('pollenstory')[f'{symbol}_{"5Minute_5Day"}']
-  df = df[['timestamp_est', 'close', 'vwap']]
-  if ttf == '1Minute_1Day':
-    df = add_priorday_tic_value(df)
-  df[f'{symbol}'] = df['close'] #round((df['close'] - c_start) / c_start * 100,2)
-  df[f'{symbol} vwap'] = df['vwap'] #round((df['vwap'] - df.iloc[0]['vwap']) / df.iloc[0]['vwap'] * 100,2)
-
-  del df['close']
-  del df['vwap']
-  
-  json_data = df_main.to_json(orient='records')
-
-  return json_data
 
 
-def get_ticker_data_candle_stick(selectedOption):
-  print("ssss", selectedOption)
-  symbol = selectedOption[0]
-  ticker_db = read_QUEENs__pollenstory(
-      symbols=[symbol],
-      read_storybee=False, 
-      read_pollenstory=True,
-  )
-  df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
-  df = df[['timestamp_est', 'close', 'high', 'low', 'open']]
-  # df = split_today_vs_prior(df).get('df_today')
-  df = add_priorday_tic_value(df)
+# def get_ticker_data_candle_stick(selectedOption):
+#   print("ssss", selectedOption)
+#   symbol = selectedOption[0]
+#   ticker_db = read_QUEENs__pollenstory(
+#       symbols=[symbol],
+#       read_storybee=False, 
+#       read_pollenstory=True,
+#   )
+#   df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
+#   df = df[['timestamp_est', 'close', 'high', 'low', 'open']]
+#   # df = split_today_vs_prior(df).get('df_today')
+#   df = add_priorday_tic_value(df)
 
   
-  json_data = df.to_json(orient='records')
+#   json_data = df.to_json(orient='records')
 
-  return json_data
+#   return json_data
 
 
 def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
@@ -1155,36 +1125,11 @@ def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
      return pd.DataFrame([{'error': 'list'}]).to_json()
 
 
-def get_charlie_bee():
-  main_db_root = os.path.join(hive_master_root(), 'db')
-  queens_charlie_bee, charlie_bee = init_charlie_bee(main_db_root)
 
-  return f'{charlie_bee}'
-
-
-## MESSAGES LOGS
-def get_queen_messages_json(username, prod,):
-
-  QUEEN = load_queen_pkl(username, prod)
-  qo = QUEEN['queens_messages']
-
-  df = pd.DataFrame(qo.items())
-  df.reset_index(inplace=True)
-  df = df.rename(columns={0: 'idx', 1: 'message'})
-  df['message'] = df['message'].astype(str)
-  # df = df.set_index('idx', drop=False)
-
-
-  json_data = df.to_json(orient='records')
-  return json_data
 
 
 def get_queen_messages_logfile_json(username, log_file):
 
-  # QUEEN = load_queen_pkl(username, prod)
-  # log_dir = os.path.join(username, 'logs')
-  # logs = os.listdir(log_dir)
-  # logs = [i for i in logs if i.endswith(".log")]
 
   k_colors = streamlit_config_colors()
   with open(log_file, 'r') as f:
@@ -1201,11 +1146,3 @@ def get_queen_messages_logfile_json(username, log_file):
 
   json_data = df.to_json(orient='records')
   return json_data
-
-
-def get_queens_mind(username, prod):
-
-  QUEEN = load_queen_pkl(username, prod)
-  # QUEEN['messages']
-
-  return QUEEN['queens_messages']

@@ -5,12 +5,10 @@ import random
 import json
 import ipdb
 import os
-from chess_piece.fastapi_queen import (get_queen_messages_logfile_json, get_queen_messages_json, app_buy_order_request, get_queens_mind, get_queen_orders_json, app_Sellorder_request,  get_ticker_data, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
+from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy_order_request,  get_queen_orders_json, app_Sellorder_request,  get_ticker_data, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
                                        app_archive_queen_order,
                                        app_queen_order_update_order_rules,
                                        get_ticker_time_frame,
-                                       get_ticker_data_candle_stick,
-                                       get_ticker_data_v2,
                                        grid_row_button_resp,
                                        update_queenking_chessboard,
                                        header_account,)
@@ -99,13 +97,6 @@ def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Bod
 #     return JSONResponse(content=json_data)
 
 
-@router.post("/queen_messages", status_code=status.HTTP_200_OK)
-def load_queen_messages_json(username: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    json_data = get_queen_messages_json(username, prod)
-    return JSONResponse(content=json_data)
 
 @router.post("/queen_messages_logfile", status_code=status.HTTP_200_OK)
 def load_queen_messages_logfile_json(username: str=Body(...), api_key = Body(...), log_file=Body(...)):
@@ -236,16 +227,6 @@ def get_text(api_key = Body(...)):
     n = random.randrange(100)
     return JSONResponse(content=str(n))
 
-
-@router.get("/queens_conscience", status_code=status.HTTP_200_OK)
-def load_queens_mind(username: str= Body(...), prod: bool=Body(...), api_key=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-    
-    # print("/data/queen", username, prod, kwargs)
-    json_data = get_queens_mind(username, prod)
-    return JSONResponse(content=json_data)
 
 @router.get("/", status_code=status.HTTP_200_OK)
 def check_api():

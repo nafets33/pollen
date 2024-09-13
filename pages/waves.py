@@ -138,12 +138,16 @@ elif hc_source_option == 'Bishop':
     
     QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
     symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+    s = datetime.now()
 
     STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, wave_blocktime='morning_9-11') ## Setup Board
+    st.header((datetime.now()-s).total_seconds())
 else:
     STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+    s = datetime.now()
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
+    st.header((datetime.now()-s).total_seconds())
 
 cols = st.columns(3)
 tabs = st.tabs([key for key in revrec.keys()])
@@ -183,6 +187,7 @@ for revrec_key in revrec.keys():
                     st.write(k)
                     st.dataframe(data) if isinstance(data, pd.DataFrame) else st.write(data)
         # elif revrec_key == 'rr_run_cycle':
+            # st.code(revrec[revrec_key], line_numbers=True)
         #     df = pd.DataFrame(revrec.get(revrec_key)).T
         #     st.write(df)
         elif isinstance(df, pd.DataFrame):

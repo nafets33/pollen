@@ -1,10 +1,11 @@
 from chess_piece.king import ReadPickleData, hive_master_root
+from chess_piece.queen_hive import init_queenbee, refresh_account_info
 import sqlite3
 import os
 import streamlit as st
 import pandas as pd
 
-def pollen_engine(acct_info, log_dir):
+def pollen_engine(acct_info):
     
     with st.expander("alpaca account info"):
         st.write(acct_info)
@@ -24,11 +25,23 @@ def pollen_engine(acct_info, log_dir):
 
     with st.expander('charlie_bee'):
 
-        queens_charlie_bee = ReadPickleData(os.path.join(st.session_state['db_root'], 'charlie_bee.pkl'))
-        df_charlie = pd.DataFrame(queens_charlie_bee)
+        charlie_bee = ReadPickleData(os.path.join(st.session_state['db_root'], 'charlie_bee.pkl'))
+        df_charlie = pd.DataFrame(charlie_bee)
         df_charlie = df_charlie.astype(str)
         st.write(df_charlie)
     
+    df = pd.DataFrame(charlie_bee['queen_cyle_times']['beat_times'])
+    st.line_chart(df)
 
     
     return True
+
+if __name__ == '__main__':
+    qb = init_queenbee(client_user='stefanstapinski@gmail.com', prod=True, api=True)
+    # QUEEN = qb.get('QUEEN')
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
+    alpaca_acct_info = refresh_account_info(api=api)
+    acct_info = alpaca_acct_info.get('info_converted')
+    acct_info_raw = alpaca_acct_info.get('info')
+    pollen_engine(acct_info_raw)
