@@ -293,10 +293,12 @@ def pollenq(admin_pq):
         qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True, init=True, revrec=True)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
+        st.write(QUEEN_KING["users_secrets"])
         api = qb.get('api')
         revrec = qb.get('revrec')      
         if 'chess_board__revrec' not in QUEEN_KING.keys():
-            switch_page('chessboard')
+            # switch_page('chessboard')
+            pass
 
         # if st.sidebar.button("update Queen Orders"):
         #     update_queen_orders(QUEEN)

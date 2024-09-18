@@ -379,6 +379,7 @@ if __name__ == '__main__':
     api = qb.get('api')    
     revrec = QUEEN_KING.get('revrec')
 
+    st.write(QUEEN_KING["users_secrets"])
     alpaca_acct_info = refresh_account_info(api=api)
     with st.sidebar:
         if st.button('acct info'):

@@ -51,8 +51,8 @@ prod = st.session_state['production']
 
 db=init_swarm_dbs(prod)
 
+st.session_state['admin'] = True
 def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
-    
     reset_only = st.checkbox("reset_only", reset_only)
     backtesting = st.checkbox("backtesting", backtesting)
     run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
@@ -113,9 +113,9 @@ qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=T
 QUEEN_KING = qb.get('QUEEN_KING')
 QUEEN = qb.get('QUEEN')
 
-if st.session_state['admin']:
+# if st.session_state['admin']:
     # with st.expander("WorkerBees Tools"):
-    refresh_workerbees(QUEENBEE, QUEEN_KING)
+refresh_workerbees(QUEENBEE, QUEEN_KING)
 
 MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))
 # MACD_WAVES = MACD_WAVES.set_index("ttf")

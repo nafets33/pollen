@@ -27,9 +27,11 @@ from stocksymbol import StockSymbol
 from tqdm import tqdm
 import logging
 from logging.handlers import RotatingFileHandler
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from chess_piece.db import PollenDatabase, PollenJsonDecoder, PollenJsonEncoder
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars, hash_string
+from pathlib import Path
 
 queens_chess_piece = os.path.basename(__file__)
 king_G = kingdom__global_vars()
@@ -433,8 +435,10 @@ def init_qcp_workerbees(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
 def setup_chess_board(QUEEN, qcp_bees_key='workerbees', screen='screen_1'):
     if qcp_bees_key not in QUEEN.keys():
         QUEEN[qcp_bees_key] = {}
+    table_name = 'db'
     db = init_swarm_dbs(prod)
-    BISHOP = ReadPickleData(db.get('BISHOP'))
+    # BISHOP = ReadPickleData(db.get('BISHOP'))
+    BISHOP = PollenDatabase.retrieve_data(table_name, 'BISHOP')
     df = BISHOP.get(screen)
     for sector in set(df['sector']):
         token = df[df['sector']==sector]
@@ -5647,14 +5651,16 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
 
 def init_swarm_dbs(prod, init=False):
     ## SSBEE 
-    # if db table does not exist, create table
-    
+    # ✅ if db table does not exist, create table 
+    table_name = 'db'
+    PollenDatabase.create_table_if_not_exists(table_name)
     db_swarm_root=os.path.join(hive_master_root(), 'db')
     envs = '_Sandbox' if prod == False else ''
     dbs = ['KING', 'QUEEN', 'BISHOP', 'KNIGHT']
     db_local_path = {}
     for db_name in dbs:
         pathname = os.path.join(db_swarm_root, f'{db_name}{envs}.pkl')
+        key = Path(pathname).stem
         if init:
             if os.path.exists(pathname) == False:
                 print(db_name)
@@ -5664,9 +5670,10 @@ def init_swarm_dbs(prod, init=False):
                     data = init_queen('queen')
                 else:
                     data = {}
-                PickleData(pathname, data, console=True)
+                # PickleData(pathname, data, console=True)
                 ## SSBEE 
                 # upsert into table
+                PollenDatabase.upsert_data(table_name, key, data)
         
         db_local_path[db_name] = pathname
     
@@ -5678,15 +5685,17 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
     def init_queen_orders(pickle_file):
         db = {}
         db["queen_orders"] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
+        # What should we do for this
         PickleData(pickle_file=pickle_file, data_to_store=db)
 
         return True
     
     ## SSBEE 
-    # db_root is not a starting key i.e. db__stefanstapinski_72704614
+    # ✅ db_root is not a starting key i.e. db__stefanstapinski_72704614
     # each file represents the full key, remove .pkl and change pickle to upsert to client_users_db table
     # change all if path exists to if Key exists
-
+    table_name = "client_users_db"
+    PollenDatabase.create_table_if_not_exists(table_name)
     # WORKERBEE don't check if file exists, only check on init
     if prod:
         # print("My Queen Production")
@@ -5717,42 +5726,43 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{"_sandbox"}{".pkl"}')
 
     if init:
-        if os.path.exists(PB_Wave_Analysis_Pickle) == False:
+        if not PollenDatabase.key_exists(Path(PB_Wave_Analysis_Pickle).stem):
             print("Init PB_Wave_Analysis_Pickle")
-            PickleData(PB_Wave_Analysis_Pickle, {})
+            PollenDatabase.upsert_data(table_name ,Path(PB_Wave_Analysis_Pickle).stem, {})
 
-        if os.path.exists(PB_broker_PICKLE) == False:
+        if not PollenDatabase.key_exists(Path(PB_broker_PICKLE).stem):
             print("Init PB_broker_PICKLE")
-            PickleData(PB_broker_PICKLE, {'broker_orders': pd.DataFrame()})
+            PollenDatabase.upsert_data(table_name ,Path(PB_broker_PICKLE).stem, {'broker_orders': pd.DataFrame()})
 
-        if os.path.exists(PB_account_info_PICKLE) == False:
+        if not PollenDatabase.key_exists(Path(PB_account_info_PICKLE).stem):
             print("Init PB_account_info_PICKLE")
-            PickleData(PB_account_info_PICKLE, {'account_info': {}})
+            PollenDatabase.upsert_data(table_name ,Path(PB_account_info_PICKLE).stem, {'account_info': {}})
 
-        if os.path.exists(PB_RevRec_PICKLE) == False:
+        if not PollenDatabase.key_exists(Path(PB_RevRec_PICKLE).stem):
             print("Init PB_RevRec_PICKLE")
-            PickleData(PB_RevRec_PICKLE, {'revrec': {}})
+            PollenDatabase.upsert_data(table_name ,Path(PB_RevRec_PICKLE).stem, {'revrec': {}})
 
-        if os.path.exists(PB_QUEENsHeart_PICKLE) == False:
+        if not PollenDatabase.key_exists(Path(PB_QUEENsHeart_PICKLE).stem):
             print("Init PB_QUEENsHeart_PICKLE")
             heart = {"heartbeat_time": datetime.now(est)}
-            PickleData(pickle_file=PB_QUEENsHeart_PICKLE, data_to_store=queens_heart(heart))
+            PollenDatabase.upsert_data(table_name ,Path(PB_QUEENsHeart_PICKLE).stem, data_to_store=queens_heart(heart))
 
-        if os.path.exists(PB_queen_Archives_Pickle) == False:
+        if not PollenDatabase.key_exists(Path(PB_queen_Archives_Pickle).stem):
             print("Init queen archives")
             queens_archived = {"queens": [{"queen_id": 0}]}
-            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+            PollenDatabase.upsert_data(table_name, Path(PB_queen_Archives_Pickle).stem, data_to_store=queens_archived)
 
-        if os.path.exists(PB_QUEEN_Pickle) == False:
+        if not PollenDatabase.key_exists(Path(PB_queen_Archives_Pickle).stem):
             print("You Need a Queen")
-            queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
+            # queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
+            queens_archived = PollenDatabase.retrieve_data(table_name, Path(PB_queen_Archives_Pickle).stem)
             l = len(queens_archived["queens"])
             QUEEN = init_queen(queens_chess_piece=queens_chess_piece)
             QUEEN["id"] = f'{"V1"}{"__"}{l}'
             queens_archived["queens"].append({"queen_id": QUEEN["id"]})
-            PickleData(pickle_file=PB_queen_Archives_Pickle, data_to_store=queens_archived)
+            PollenDatabase.upsert_data(table_name, Path(PB_queen_Archives_Pickle).stem, data_to_store=queens_archived)
 
-            PickleData(pickle_file=PB_QUEEN_Pickle, data_to_store=QUEEN)
+            PollenDatabase.upsert_data(table_name, Path(PB_QUEEN_Pickle).stem, data_to_store=QUEEN)
             logging.info(("queen created", timestamp_string()))
 
         if os.path.exists(PB_App_Pickle) == False:
@@ -5767,10 +5777,10 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
             print("You Need an QueenOrders FINAL")
             init_queen_orders(pickle_file=PB_Orders_FINAL_Pickle)
 
-        if os.path.exists(PB_KING_Pickle) == False:
+        if not PollenDatabase.key_exists(Path(PB_KING_Pickle).stem):
             print("You Need a King")
             KING = init_KING()
-            PickleData(pickle_file=PB_KING_Pickle, data_to_store=KING)
+            PollenDatabase.upsert_data(table_name, Path(PB_KING_Pickle).stem, data_to_store=KING)
 
 
     if queenKING:

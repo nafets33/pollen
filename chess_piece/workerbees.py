@@ -12,9 +12,11 @@ import streamlit as st
 import aiohttp
 import pandas as pd
 import pytz
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from chess_piece.db import PollenDatabase, TestPollenDatabase
 
 from chess_piece.king import (
-    PickleData,
+    # PickleData,
     hive_master_root,
     read_QUEEN,
     workerbee_dbs_backtesting_root,
@@ -38,7 +40,7 @@ from chess_piece.queen_hive import (
     return_VWAP,
     return_market_hours,
     init_swarm_dbs,
-    ReadPickleData,
+    # ReadPickleData,
     return_Ticker_Universe,
     send_email,
     
@@ -53,17 +55,22 @@ est = pytz.timezone("US/Eastern")
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
 
 
-def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None):
+def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star):
+    # ✅
     s = datetime.now(est)
-
-    async def main_func(session, ticker_time_frame, pickle_file, data):
+    table_name = "pollen_store"
+    PollenDatabase.create_table_if_not_exists(table_name)
+    async def main_func(session, ticker_time_frame, pickle_file, key, data):
         async with session:
             try:
-                PickleData(pickle_file, data, console=False)
+                # PickleData(pickle_file, data)
+                PollenDatabase.upsert_data(table_name ,key , data)
+                # TestPollenDatabase.test_upsert_retrieve()
                 return {
                     "status": "success",
                     "ticker_time_frame": ticker_time_frame,
                 }
+
             except Exception as e:
                 print("ps_error", e, ticker_time_frame)
                 return {"status": "error", "error": e}
@@ -76,7 +83,6 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         backtesting_star,
         macd_part_fname,
     ):
-
         async with aiohttp.ClientSession() as session:
             return_list = []
             tasks = []
@@ -97,7 +103,11 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
                     tasks.append(
                         asyncio.ensure_future(
                             main_func(
-                                session, ticker_time_frame, pickle_file, data
+                                session,
+                                ticker_time_frame,
+                                pickle_file,
+                                f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}",
+                                data,
                             )
                         )
                     )
@@ -119,7 +129,11 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
                     tasks.append(
                         asyncio.ensure_future(
                             main_func(
-                                session, ticker_time_frame, pickle_file, data
+                                session,
+                                ticker_time_frame,
+                                pickle_file,
+                                f"STORY_BEE_{ticker_time_frame}{macd_part_fname}",
+                                data,
                             )
                         )
                     )
@@ -130,13 +144,23 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
             return return_list
 
     # for every ticker ticker write pickle file to db
-    symbols_pollenstory_dbs = (workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root())
+    symbols_pollenstory_dbs = (
+        workerbee_dbs_backtesting_root()
+        if backtesting
+        else workerbee_dbs_root()
+    )
 
-    symbols_STORY_bee_root = (workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee())
+    symbols_STORY_bee_root = (
+        workerbee_dbs_backtesting_root__STORY_bee()
+        if backtesting
+        else workerbee_dbs_root__STORY_bee()
+    )
 
     if backtesting:
         macd_part_fname = "__{}-{}-{}".format(
-            MACD_settings["fast"], MACD_settings["slow"], MACD_settings["smooth"]
+            MACD_settings["fast"],
+            MACD_settings["slow"],
+            MACD_settings["smooth"],
         )
     else:
         macd_part_fname = ""
@@ -977,7 +1001,9 @@ def queen_workerbees(
 
         # ticker_universe = return_Ticker_Universe()
         db=init_swarm_dbs(prod)
-        KING = ReadPickleData(db.get('KING'))
+        table_name = "db"
+        # KING = ReadPickleData(db.get('KING'))
+        KING = PollenDatabase.retrieve_data(table_name ,'KING')
         # alpaca_symbols_dict = KING['ticker_universe'].get("alpaca_symbols_dict")
         alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')
 
@@ -1156,6 +1182,6 @@ if __name__ == "__main__":
         else:
             break
 
-    queen_workerbees(qcp_s=qcp_s, prod=prod)
+    queen_workerbees(qcp_s=qcp_s, prod=prod, reset_only=True)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###
