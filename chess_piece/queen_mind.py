@@ -1386,23 +1386,23 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                                         waveview['total_allocation_budget'] - waveview['star_sells_at_play']
                                                         )
             waveview['allocation_deploy'] = np.where(waveview['star_total_budget']<=0,0,waveview['allocation_deploy'])
-
+            
+            waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), 
+                                                    waveview['total_allocation_budget'], 
+                                                    (waveview['star_total_budget'] - waveview['total_allocation_budget'])
+                                                    )
             waveview['allocation_borrow_deploy'] = np.where((waveview['bs_position']=='buy'), # WORKERBEE, consider allocation_deploy for full consideration
                                                             (waveview['total_allocation_borrow_budget'] - waveview['star_buys_at_play_allocation']) , 
                                                             (waveview['total_allocation_borrow_budget'] - waveview['star_sells_at_play']) 
                                                             )
             waveview['allocation_borrow_deploy'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_deploy'])
 
-
-            waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), 
-                                                    waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'], 
-                                                    (waveview['star_total_budget'] - waveview['total_allocation_budget'])
-                                                    )
             waveview['allocation_borrow_long'] = np.where((waveview['bs_position']=='buy'), 
-                                                    waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'], 
+                                                    waveview['total_allocation_borrow_budget'], 
                                                     (waveview['star_borrow_budget'] - waveview['total_allocation_borrow_budget'])
                                                     )
-            # Minimum Allocation // consider when sell, long shold be allocation_long
+            waveview['allocation_borrow_long'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_long'])
+            
             waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long'])
 
         except Exception as e:

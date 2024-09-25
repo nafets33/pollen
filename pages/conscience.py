@@ -41,42 +41,6 @@ def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
 
-def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
-    save = False
-    for req_bucket in request_buckets:
-        if req_bucket not in QUEEN_KING.keys():
-            st.write("Verison Missing DB: ", req_bucket)
-            continue
-        for app_req in QUEEN_KING[req_bucket]:
-            if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
-                print(app_req)
-                archive_bucket = f'{req_bucket}{"_requests"}'
-                QUEEN_KING[req_bucket].remove(app_req)
-                QUEEN_KING[archive_bucket].append(app_req)
-                save = True
-    if save:
-        print("Clear App Request")
-        PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
-    
-    return True
-
-
-# def clear_subconscious_Thought(QUEEN, QUEEN_KING):
-#     with st.sidebar.expander("clear subconscious thought"):
-#         with st.form('clear subconscious'):
-#             thoughts = QUEEN['subconscious'].keys()
-#             clear_thought = st.selectbox('clear subconscious thought', list(thoughts))
-            
-#             if st.form_submit_button("Save"):
-#                 app_req = create_AppRequest_package(request_name='subconscious', archive_bucket='subconscious_requests')
-#                 app_req['subconscious_thought_to_clear'] = clear_thought
-#                 app_req['subconscious_thought_new_value'] = []
-#                 QUEEN_KING['subconscious'].append(app_req)
-#                 return_image_upon_save(title="subconscious thought cleared")
-#                 PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING)
-
-#                 return True
-
 
 def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
     return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
@@ -166,9 +130,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     # if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
     #     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
     #     QUEEN_KING['revrec'] = revrec
-
-    # if st.session_state['authorized_user']: ## MOVE THIS INTO pollenq?
-    #     clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
 
 
     ##### STREAMLIT ###

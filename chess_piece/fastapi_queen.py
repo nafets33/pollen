@@ -31,6 +31,7 @@ from chess_piece.queen_bee import execute_buy_order
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from dotenv import load_dotenv
 
+
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
 
 est = pytz.timezone("US/Eastern")
@@ -39,7 +40,7 @@ main_root = hive_master_root() # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 db_root = os.path.join(main_root, "db")
 
-init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
+# init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
  ###### Helpers UTILS
 
@@ -425,7 +426,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     
   except Exception as e:
      y=print_line_of_error(f"fastapi buy button failed {e}")
-     logging.error(("fastapi", e))
+    #  logging.error(("fastapi", e))
      return {'status': False, 'msg': str(y)}
 
 
@@ -450,7 +451,7 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
     return True
   except Exception as e:
      print(e)
-     logging.error(("fastapi", e))
+    #  logging.error(("fastapi", e))
 
 
 def process_clean_on_QK_requests(QUEEN, QUEEN_KING, request_name='sell_orders'): #WORKERBEE add in somewhere?
@@ -623,6 +624,8 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   try:
       if toggle_view_selection.lower() == 'queen':
           ORDERS = init_queenbee(client_user, prod, queen=True).get('QUEEN')
+      elif toggle_view_selection.lower() == 'final':
+          ORDERS = init_queenbee(client_user, prod, orders_final=True).get('ORDERS_FINAL')
       else:
           ORDERS = init_queenbee(client_user, prod, orders=True).get('ORDERS')
 

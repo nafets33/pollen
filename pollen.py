@@ -27,8 +27,8 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
-from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
-from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.king import kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, PickleData
+from chess_piece.queen_hive import create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 
 # componenets
 # import streamlit_antd_components as sac
@@ -154,13 +154,31 @@ def pollenq(admin_pq):
             for col in missing:
                 print("adding new column to queens orders: ", col)
                 QUEEN['queen_orders'][col] = latest_order.iloc[0].get(col)
-            
+
+
+    def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
+        save = False
+        for req_bucket in request_buckets:
+            if req_bucket not in QUEEN_KING.keys():
+                st.write("Verison Missing DB: ", req_bucket)
+                continue
+            for app_req in QUEEN_KING[req_bucket]:
+                if app_req['app_requests_id'] in QUEEN['app_requests__bucket']:
+                    print(app_req)
+                    archive_bucket = f'{req_bucket}{"_requests"}'
+                    QUEEN_KING[req_bucket].remove(app_req)
+                    QUEEN_KING[archive_bucket].append(app_req)
+                    save = True
+        if save:
+            PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
+            st.success(f"Cleared App Request from {request_buckets}")
+        
+        return True
 
     ##### QuantQueen #####
-    print(f'pollenq END >>>> {return_timestamp_string()}' )  
+    print(f'pollenq START >>>> {return_timestamp_string()}' )  
 
     set_streamlit_page_config_once()
-
 
     pq_buttons = pollenq_button_source()
     s = datetime.now(est)
@@ -222,7 +240,7 @@ def pollenq(admin_pq):
     with cols[0]:
         menu_id = sac_menu_buttons("Queen")
     with st.sidebar:
-        st.write(f'menu {menu_id}')
+        st.write(f'menu selection {menu_id}')
 
 
     if menu_id == 'Waves':
@@ -283,7 +301,7 @@ def pollenq(admin_pq):
         # chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=swarm_queen_symbols, themes=themes, admin=False)
         # st.stop()
     
-    
+
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
         ####### Welcome to Pollen ##########
@@ -298,6 +316,9 @@ def pollenq(admin_pq):
         QUEEN_KING = qb.get('QUEEN_KING')
         api = qb.get('api')
         revrec = qb.get('revrec')      
+        if st.sidebar.button("Clear App Requests"):
+            QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
+            clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
 
 
         if st.session_state['admin'] == True:
