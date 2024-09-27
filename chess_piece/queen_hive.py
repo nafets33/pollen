@@ -5851,9 +5851,9 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         "PB_Wave_Analysis_Pickle": PB_Wave_Analysis_Pickle,
     }
 
-db_root = init_clientUser_dbroot('businesswithsatyam9555')
-print(db_root)
-print(init_pollen_dbs(db_root, True,  queenKING=False, init=True))
+# db_root = init_clientUser_dbroot('businesswithsatyam9555')
+# print(db_root)
+# print(init_pollen_dbs(db_root, True,  queenKING=False, init=True))
 
 def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=None, init=False):
     # ## SSBEE 
