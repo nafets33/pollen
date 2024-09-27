@@ -729,12 +729,15 @@ def find_symbol(main_indexes, ticker, trading_model, trigbee, etf_long_tier=Fals
 
 
 def init_charlie_bee(db_root):
+    table_name = "client_user_dbs"
     queens_charlie_bee = os.path.join(db_root, 'charlie_bee.pkl')
     if os.path.exists(os.path.join(db_root, 'charlie_bee.pkl')) == False:
         charlie_bee = {'queen_cyle_times': {}}
-        PickleData(queens_charlie_bee, charlie_bee)
+        # PickleData(queens_charlie_bee, charlie_bee)
+        PollenDatabase.upsert_data(table_name, queens_charlie_bee, charlie_bee)
     else:
-        charlie_bee = ReadPickleData(queens_charlie_bee)
+        # charlie_bee = ReadPickleData(queens_charlie_bee)
+        charlie_bee = PollenDatabase.retrieve_data(table_name, queens_charlie_bee)
     
     if 'QUEEN_avg_cycle' not in charlie_bee['queen_cyle_times']:
         charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 691200)
@@ -3108,15 +3111,18 @@ def slice_by_time(df, between_a, between_b):
 
 
 def init_app(pickle_file):
+    table_name = 'client_user_dbs'
     if os.path.exists(pickle_file) == False:
         if "_App_" in pickle_file:
             print("init app")
             data = init_QUEEN_KING()
-            PickleData(pickle_file=pickle_file, data_to_store=data)
+            # PickleData(pickle_file=pickle_file, data_to_store=data)
+            PollenDatabase.upsert_data(table_name, key=pickle_file, value=data)
         if "_Orders_" in pickle_file:
             print("init Orders")
             data = {"orders_completed": [], "archived": []}
-            PickleData(pickle_file=pickle_file, data_to_store=data)
+            # PickleData(pickle_file=pickle_file, data_to_store=data)
+            PollenDatabase.upsert_data(table_name, key=pickle_file, value=data)
 
 
 def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
@@ -3237,14 +3243,14 @@ def update_king_users(KING, init=False, users_allowed_queen_email=["stefanstapin
 
     if init:
         KING['users'] = {
-            'client_users_db': df,
+            'client_user_dbs': df,
             'client_user__allowed_queen_list': users_allowed_queen_email
         }
     else:
-        new_users = [i for i in df[0].tolist() if i not in KING['users'].get('client_users_db')[0].tolist()]
+        new_users = [i for i in df[0].tolist() if i not in KING['users'].get('client_user_dbs')[0].tolist()]
         if len(new_users) > 0:
             print("New Users to KING: ", new_users)
-            KING['users']['client_users_db'] = df
+            KING['users']['client_user_dbs'] = df
     
     return KING
 
@@ -4119,20 +4125,29 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
 def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False):
+    table_name = 'client_user_dbs'
     db_root = init_clientUser_dbroot(client_username=client_user)
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init)
     if init_pollen_ONLY:
         return {'init_pollen': init_pollen}
 
-    QUEEN = ReadPickleData(init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
-    QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
-    QUEEN_KING = ReadPickleData(init_pollen.get('PB_App_Pickle')) if queen_king else {}
-    ORDERS = ReadPickleData(init_pollen.get('PB_Orders_Pickle')) if orders else {}
-    ORDERS_FINAL = ReadPickleData(init_pollen.get('PB_Orders_FINAL_Pickle')) if orders_final else {}
-    BROKER = ReadPickleData(init_pollen.get('PB_broker_PICKLE')) if broker else {}
-    broker_info = ReadPickleData(init_pollen.get('PB_account_info_PICKLE')) if broker_info else {}
-    revrec = ReadPickleData(init_pollen.get('PB_RevRec_PICKLE')).get('revrec') if revrec else {}
+    # QUEEN = ReadPickleData(init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
+    QUEEN = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
+    # QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
+    QUEENsHeart = PollenDatabase.retrieve_data(table_name, init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
+    # QUEEN_KING = ReadPickleData(init_pollen.get('PB_App_Pickle')) if queen_king else {}
+    QUEEN_KING = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_App_Pickle')) if queen_king else {}
+    # ORDERS = ReadPickleData(init_pollen.get('PB_Orders_Pickle')) if orders else {}
+    ORDERS = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_Orders_Pickle')) if orders else {}
+    # ORDERS_FINAL = ReadPickleData(init_pollen.get('PB_Orders_FINAL_Pickle')) if orders_final else {}
+    ORDERS_FINAL = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_Orders_FINAL_Pickle')) if orders_final else {}
+    # BROKER = ReadPickleData(init_pollen.get('PB_broker_PICKLE')) if broker else {}
+    BROKER = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_broker_PICKLE')) if broker else {}
+    # broker_info = ReadPickleData(init_pollen.get('PB_account_info_PICKLE')) if broker_info else {}
+    broker_info = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_account_info_PICKLE')) if broker_info else {}
+    # revrec = ReadPickleData(init_pollen.get('PB_RevRec_PICKLE')).get('revrec') if revrec else {}
+    revrec = PollenDatabase.retrieve_data(table_name, init_pollen.get('PB_RevRec_PICKLE')).get('revrec') if revrec else {}
 
     if QUEEN_KING:
         QUEEN_KING['dbs'] = init_pollen
@@ -4148,7 +4163,8 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         if QUEEN_KING:
             print("API Keys Failed, Queen goes back to Sleep")
             QUEEN_KING['api'] = False
-            PickleData(pickle_file=init_pollen.get('PB_App_Pickle'), data_to_store=QUEEN_KING)
+            # PickleData(pickle_file=init_pollen.get('PB_App_Pickle'), data_to_store=QUEEN_KING)
+            PollenDatabase.upsert_data(table_name, key=init_pollen.get('PB_App_Pickle'), value=QUEEN_KING)
     
     return {"QUEEN": QUEEN, 
             "QUEEN_KING": QUEEN_KING, 
@@ -4643,6 +4659,7 @@ def get_ticker_statatistics(symbol):
 
 
 def init_ticker_stats__from_yahoo():
+    table_name = "client_user_dbs"
     ticker_universe = return_Ticker_Universe()
     # index_ticker_db = ticker_universe["index_ticker_db"]
     # main_index_dict = ticker_universe["main_index_dict"]
@@ -4662,7 +4679,8 @@ def init_ticker_stats__from_yahoo():
 
     yahoo_stats_bee = os.path.join(db_root, "yahoo_stats_bee.pkl")
 
-    PickleData(yahoo_stats_bee, db_return)
+    # PickleData(yahoo_stats_bee, db_return)
+    PollenDatabase.upsert_data(table_name, yahoo_stats_bee, db_return)
 
     return db_return
 
@@ -5589,7 +5607,7 @@ def queens_heart(heart):
 
 
 def live_sandbox__setup_switch(pq_env, switch_env=False):
-
+    table_name = "client_user_dbs"
     try:
         prod = pq_env.get('env')
 
@@ -5615,7 +5633,8 @@ def live_sandbox__setup_switch(pq_env, switch_env=False):
                 st.session_state["prod_name"] = prod_name
             # save
             pq_env.update({'env': prod})
-            PickleData(pq_env.get('source'), pq_env)
+            # PickleData(pq_env.get('source'), pq_env)
+            PollenDatabase.upsert_data(table_name, pq_env.get('source'), pq_env)
 
         return prod
     except Exception as e:
@@ -5642,6 +5661,8 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
             os.mkdir(db_root)
             os.mkdir(os.path.join(db_root, "logs"))
     
+    db_root = os.path.basename(db_root)  # made a fix so that it will only return db_root key not complete path
+
     if queenKING:
         st.session_state['db_root'] = db_root
         st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
@@ -5671,8 +5692,6 @@ def init_swarm_dbs(prod, init=False):
                 else:
                     data = {}
                 # PickleData(pathname, data, console=True)
-                ## SSBEE 
-                # upsert into table
                 PollenDatabase.upsert_data(table_name, key, data)
         
         db_local_path[db_name] = pathname
@@ -5682,87 +5701,109 @@ def init_swarm_dbs(prod, init=False):
 
 def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False):
     
+    table_name = "client_user_dbs"
+    PollenDatabase.create_table_if_not_exists(table_name)
+
     def init_queen_orders(pickle_file):
         db = {}
         db["queen_orders"] = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
-        # What should we do for this
-        PickleData(pickle_file=pickle_file, data_to_store=db)
+        # PickleData(pickle_file=pickle_file, data_to_store=db)
+        PollenDatabase.upsert_data(table_name, key=pickle_file, value=db)
 
         return True
     
     ## SSBEE 
     # ✅ db_root is not a starting key i.e. db__stefanstapinski_72704614
-    # each file represents the full key, remove .pkl and change pickle to upsert to client_users_db table
+    # each file represents the full key, remove .pkl and change pickle to upsert to client_user_dbs table
     # change all if path exists to if Key exists
-    table_name = "client_users_db"
-    PollenDatabase.create_table_if_not_exists(table_name)
     # WORKERBEE don't check if file exists, only check on init
     if prod:
         # print("My Queen Production")
         # main_orders_file = os.path.join(db_root, 'main_orders.csv')
-        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
-        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
-        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
-        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
-        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
-        PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{".pkl"}')
-        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{".pkl"}')
-        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{".pkl"}')
-        PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{".pkl"}')
-        PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{".pkl"}')
-        PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{".pkl"}')
+        # PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{".pkl"}')
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}')
+        # PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{".pkl"}')
+        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}')
+        # PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{".pkl"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App"}')
+        # PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders"}')
+        # PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{".pkl"}')
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives"}')
+        # PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{".pkl"}')
+        PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart"}')
+        # PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{".pkl"}')
+        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}')
+        # PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{".pkl"}')
+        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}')
+        # PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{".pkl"}')
+        PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}')
+        # PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{".pkl"}')
+        PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}')
+        # PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{".pkl"}')
+        PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}')
     else:
         # print("My Queen Sandbox")
-        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
-        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{"_sandbox"}{".pkl"}')
-        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
-        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
-        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
-        PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}{".pkl"}')
-        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}{".pkl"}')
-        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
-        PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{"_sandbox"}{".pkl"}')
-        PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{"_sandbox"}{".pkl"}')
-        PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{"_sandbox"}{".pkl"}')
-
+        # PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}{".pkl"}')
+        PB_QUEEN_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_sandbox"}')
+        # PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{"_sandbox"}{".pkl"}')
+        PB_KING_Pickle = os.path.join(db_root, f'{"KING"}{"_sandbox"}')
+        # PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}{".pkl"}')
+        PB_App_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_App_"}{"_sandbox"}')
+        # PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}{".pkl"}')
+        PB_Orders_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_"}{"_sandbox"}')
+        # PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}{".pkl"}')
+        PB_queen_Archives_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Archives_"}{"_sandbox"}')
+        # PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}{".pkl"}')
+        PB_QUEENsHeart_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_QUEENsHeart_"}{"_sandbox"}')
+        # PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}{".pkl"}')
+        PB_RevRec_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_revrec"}{"_sandbox"}')
+        # PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}{".pkl"}')
+        PB_account_info_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_account_info"}{"_sandbox"}')
+        # PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{"_sandbox"}{".pkl"}')
+        PB_broker_PICKLE = os.path.join(db_root, f'{queens_chess_piece}{"_broker"}{"_sandbox"}')
+        # PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{"_sandbox"}{".pkl"}')
+        PB_Orders_FINAL_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Orders_FINAL"}{"_sandbox"}')
+        # PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{"_sandbox"}{".pkl"}')
+        PB_Wave_Analysis_Pickle = os.path.join(db_root, f'{queens_chess_piece}{"_Wave_Analysis"}{"_sandbox"}')
     if init:
-        if not PollenDatabase.key_exists(Path(PB_Wave_Analysis_Pickle).stem):
+        if not PollenDatabase.key_exists(table_name, PB_Wave_Analysis_Pickle):
             print("Init PB_Wave_Analysis_Pickle")
-            PollenDatabase.upsert_data(table_name ,Path(PB_Wave_Analysis_Pickle).stem, {})
+            PollenDatabase.upsert_data(table_name ,PB_Wave_Analysis_Pickle, {})
 
-        if not PollenDatabase.key_exists(Path(PB_broker_PICKLE).stem):
+        if not PollenDatabase.key_exists(table_name, PB_broker_PICKLE):
             print("Init PB_broker_PICKLE")
-            PollenDatabase.upsert_data(table_name ,Path(PB_broker_PICKLE).stem, {'broker_orders': pd.DataFrame()})
+            PollenDatabase.upsert_data(table_name ,PB_broker_PICKLE, {'broker_orders': pd.DataFrame()})
 
-        if not PollenDatabase.key_exists(Path(PB_account_info_PICKLE).stem):
+        if not PollenDatabase.key_exists(table_name, PB_account_info_PICKLE):
             print("Init PB_account_info_PICKLE")
-            PollenDatabase.upsert_data(table_name ,Path(PB_account_info_PICKLE).stem, {'account_info': {}})
+            PollenDatabase.upsert_data(table_name ,PB_account_info_PICKLE, {'account_info': {}})
 
-        if not PollenDatabase.key_exists(Path(PB_RevRec_PICKLE).stem):
+        if not PollenDatabase.key_exists(table_name, PB_RevRec_PICKLE):
             print("Init PB_RevRec_PICKLE")
-            PollenDatabase.upsert_data(table_name ,Path(PB_RevRec_PICKLE).stem, {'revrec': {}})
+            PollenDatabase.upsert_data(table_name ,PB_RevRec_PICKLE, {'revrec': {}})
 
-        if not PollenDatabase.key_exists(Path(PB_QUEENsHeart_PICKLE).stem):
+        if not PollenDatabase.key_exists(table_name, PB_QUEENsHeart_PICKLE):
             print("Init PB_QUEENsHeart_PICKLE")
             heart = {"heartbeat_time": datetime.now(est)}
-            PollenDatabase.upsert_data(table_name ,Path(PB_QUEENsHeart_PICKLE).stem, data_to_store=queens_heart(heart))
+            PollenDatabase.upsert_data(table_name ,PB_QUEENsHeart_PICKLE, value=queens_heart(heart))
 
-        if not PollenDatabase.key_exists(Path(PB_queen_Archives_Pickle).stem):
+        if not PollenDatabase.key_exists(table_name, PB_queen_Archives_Pickle):
             print("Init queen archives")
             queens_archived = {"queens": [{"queen_id": 0}]}
-            PollenDatabase.upsert_data(table_name, Path(PB_queen_Archives_Pickle).stem, data_to_store=queens_archived)
+            PollenDatabase.upsert_data(table_name, PB_queen_Archives_Pickle, value=queens_archived)
 
-        if not PollenDatabase.key_exists(Path(PB_queen_Archives_Pickle).stem):
+        if not PollenDatabase.key_exists(table_name, PB_queen_Archives_Pickle):
             print("You Need a Queen")
             # queens_archived = ReadPickleData(pickle_file=PB_queen_Archives_Pickle)
-            queens_archived = PollenDatabase.retrieve_data(table_name, Path(PB_queen_Archives_Pickle).stem)
+            queens_archived = PollenDatabase.retrieve_data(table_name, PB_queen_Archives_Pickle)
             l = len(queens_archived["queens"])
             QUEEN = init_queen(queens_chess_piece=queens_chess_piece)
             QUEEN["id"] = f'{"V1"}{"__"}{l}'
             queens_archived["queens"].append({"queen_id": QUEEN["id"]})
-            PollenDatabase.upsert_data(table_name, Path(PB_queen_Archives_Pickle).stem, data_to_store=queens_archived)
+            PollenDatabase.upsert_data(table_name, PB_queen_Archives_Pickle, value=queens_archived)
 
-            PollenDatabase.upsert_data(table_name, Path(PB_QUEEN_Pickle).stem, data_to_store=QUEEN)
+            PollenDatabase.upsert_data(table_name, PB_QUEEN_Pickle, value=QUEEN)
             logging.info(("queen created", timestamp_string()))
 
         if os.path.exists(PB_App_Pickle) == False:
@@ -5777,10 +5818,10 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
             print("You Need an QueenOrders FINAL")
             init_queen_orders(pickle_file=PB_Orders_FINAL_Pickle)
 
-        if not PollenDatabase.key_exists(Path(PB_KING_Pickle).stem):
+        if not PollenDatabase.key_exists(table_name, PB_KING_Pickle):
             print("You Need a King")
             KING = init_KING()
-            PollenDatabase.upsert_data(table_name, Path(PB_KING_Pickle).stem, data_to_store=KING)
+            PollenDatabase.upsert_data(table_name, PB_KING_Pickle, value=KING)
 
 
     if queenKING:
@@ -5810,12 +5851,15 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         "PB_Wave_Analysis_Pickle": PB_Wave_Analysis_Pickle,
     }
 
+db_root = init_clientUser_dbroot('businesswithsatyam9555')
+print(db_root)
+print(init_pollen_dbs(db_root, True,  queenKING=False, init=True))
 
 def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=None, init=False):
     # ## SSBEE 
     # need to fix ENV variable to know if prod or Sandbox
     # still will return prod 
-    
+    table_name = "client_user_dbs"
     try:
         db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
         if prod is not None:
@@ -5825,9 +5869,11 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
             # Ensure Environment
             PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
             if os.path.exists(PB_env_PICKLE) == False:
-                PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
+                # PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
+                PollenDatabase.upsert_data(table_name, PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
             
-            pq_env = ReadPickleData(PB_env_PICKLE)
+            # pq_env = ReadPickleData(PB_env_PICKLE)
+            pq_env = PollenDatabase.retrieve_data(table_name, PB_env_PICKLE)
             prod = live_sandbox__setup_switch(pq_env, switch_env)
             
             init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init)

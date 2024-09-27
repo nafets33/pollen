@@ -53,9 +53,9 @@ class PollenDatabase:
         # Reading connection details from environment variables
         DATABASE_HOST = os.getenv("POLLEN_DATABASE_HOST", "localhost")
         DATABASE_PORT = os.getenv("POLLEN_DATABASE_PORT", "5432")
-        DATABASE_NAME = os.getenv("POLLEN_DATABASE_NAME", "postgres")
+        DATABASE_NAME = os.getenv("POLLEN_DATABASE_NAME", "pollen")
         DATABASE_USER = os.getenv("POLLEN_DATABASE_USER", "postgres")
-        DATABASE_PASS = os.getenv("POLLEN_DATABASE_PASS", "test1234")
+        DATABASE_PASS = os.getenv("POLLEN_DATABASE_PASS", "12345")
 
         return psycopg2.connect(
             host=DATABASE_HOST,
@@ -118,6 +118,10 @@ class PollenDatabase:
     @staticmethod
     def get_table_name():
         # Get table name from environment variable
+        ### Tables created
+        # client_user_dbs
+        # db
+        # pollen_store
         return os.getenv(
             "POLLEN_TABLE_NAME", "pollen_store"
         )  # default to "pollen_store" if not set
@@ -144,7 +148,6 @@ class PollenDatabase:
             """
             cur.execute(upsert_query, (key, value_json))
             conn.commit()
-            conn.close()
 
     @staticmethod
     def retrieve_data(table_name, key):
