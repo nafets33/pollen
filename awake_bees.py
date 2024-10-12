@@ -18,7 +18,7 @@ def call_job_workerbees():
     print("Bees Awake!: ", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
 
     """ Keys """
-    api = return_alpaca_api_keys(prod=True)["api"]
+    api = return_alpaca_api_keys(prod=False)["api"]
 
     """# Dates """
     current_date = datetime.now(est).strftime("%Y-%m-%d")

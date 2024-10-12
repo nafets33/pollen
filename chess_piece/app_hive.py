@@ -1640,14 +1640,16 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                     )
                 
                 st.warning("NEVER EVER Share your API KEYS WITH ANYONE!")
-
+                from chess_piece.db import PollenDatabase
+                table_name = "client_user_dbs"
                 if st.form_submit_button("Save API Keys"):
                     # test keys
                     if test_api_keys(user_secrets=user_secrets, prod=prod):
                         st.success(f"{user_env_instance} Keys Added Refreshing Page")
                         user_secrets[f"{user_env_instance}_keys_confirmed"] = True
                         QUEEN_KING["users_secrets"] = user_secrets
-                        PickleData(PB_App_Pickle, QUEEN_KING)
+                        # PickleData(PB_App_Pickle, QUEEN_KING)
+                        PollenDatabase.upsert_data(table_name, PB_App_Pickle, QUEEN_KING)
                         time.sleep(2)
                         st.experimental_rerun()
                     else:

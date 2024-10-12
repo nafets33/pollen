@@ -3110,9 +3110,9 @@ def slice_by_time(df, between_a, between_b):
     return df
 
 
-def init_app(pickle_file):
+def init_app(pickle_file, init=False):
     table_name = 'client_user_dbs'
-    if os.path.exists(pickle_file) == False:
+    if init:
         if "_App_" in pickle_file:
             print("init app")
             data = init_QUEEN_KING()
@@ -4151,7 +4151,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
 
     if QUEEN_KING:
         QUEEN_KING['dbs'] = init_pollen
-        QUEEN_KING['last_modified'] = os.stat(init_pollen.get('PB_App_Pickle')).st_mtime
+        # QUEEN_KING['last_modified'] = os.stat(init_pollen.get('PB_App_Pickle')).st_mtime
     if QUEEN:
         QUEEN['dbs'] = init_pollen
         QUEEN['heartbeat']['beat'] = QUEENsHeart
@@ -5670,7 +5670,7 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
     return db_root
 
 
-def init_swarm_dbs(prod, init=False):
+def init_swarm_dbs(prod, init=True):
     ## SSBEE 
     # ✅ if db table does not exist, create table 
     table_name = 'db'
@@ -5806,15 +5806,15 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
             PollenDatabase.upsert_data(table_name, PB_QUEEN_Pickle, value=QUEEN)
             logging.info(("queen created", timestamp_string()))
 
-        if os.path.exists(PB_App_Pickle) == False:
+        if not PollenDatabase.key_exists(table_name, PB_App_Pickle):
             print("You Need an QueenApp")
-            init_app(pickle_file=PB_App_Pickle)
+            init_app(pickle_file=PB_App_Pickle, init=True)
 
-        if os.path.exists(PB_Orders_Pickle) == False:
+        if not PollenDatabase.key_exists(table_name, PB_Orders_Pickle):
             print("You Need an QueenOrders")
             init_queen_orders(pickle_file=PB_Orders_Pickle)
 
-        if os.path.exists(PB_Orders_FINAL_Pickle) == False:
+        if not PollenDatabase.key_exists(table_name, PB_Orders_FINAL_Pickle):
             print("You Need an QueenOrders FINAL")
             init_queen_orders(pickle_file=PB_Orders_FINAL_Pickle)
 
@@ -5859,6 +5859,7 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
     # ## SSBEE 
     # need to fix ENV variable to know if prod or Sandbox
     # still will return prod 
+    db = init_swarm_dbs(prod)
     table_name = "client_user_dbs"
     try:
         db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
@@ -5876,7 +5877,7 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
             pq_env = PollenDatabase.retrieve_data(table_name, PB_env_PICKLE)
             prod = live_sandbox__setup_switch(pq_env, switch_env)
             
-            init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init)
+            init_pollen_dbs(db_root=db_root, prod=False, queens_chess_piece='queen', queenKING=queenKING, init=init)
             
             st.session_state['prod'] = prod
             st.session_state['client_user'] = client_username

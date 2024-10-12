@@ -14,6 +14,7 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
 from chess_piece.queen_hive import (
                                     init_charlie_bee, 
@@ -2390,7 +2391,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         Always Bee Better
         """, timestamp_string()
         )
-        init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel='info')
+        # init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel='info')
 
         # init files needed
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, broker=True, init=True)
@@ -2562,13 +2563,14 @@ if __name__ == '__main__':
     # read
     def createParser():
         parser = argparse.ArgumentParser()
-        parser.add_argument ('-prod', default='true')
+        parser.add_argument ('-prod', default='false')
         parser.add_argument ('-client_user', default=os.environ.get('admin_user'))
         return parser
     
     parser = createParser()
     namespace = parser.parse_args()
-    client_user = namespace.client_user
+    # client_user = namespace.client_user
+    client_user = 'businesswithsatyam9555@gmail.com'
     prod = namespace.prod
     prod = True if str(prod).lower() == 'true' else False
 

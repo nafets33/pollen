@@ -29,7 +29,7 @@ from pages.chessboard import chessboard
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
 from chess_piece.king import master_swarm_QUEENBEE, kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, streamlit_config_colors, local__filepaths_misc, ReadPickleData, PickleData
 from chess_piece.queen_hive import initialize_orders, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
-
+from chess_piece.queen_hive import *
 # componenets
 # import streamlit_antd_components as sac
 from streamlit_extras.switch_page_button import switch_page
@@ -289,7 +289,8 @@ def pollenq(admin_pq):
         prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
         sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
-        
+        init_swarm_dbs(True)
+        init_pollen_dbs(db_root=db_root, init=True, prod=False)
         qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True, init=True, revrec=True)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
