@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytz
 
-from chess_piece.king import hive_master_root, read_QUEEN, master_swarm_QUEENBEE
+from chess_piece.king import hive_master_root, master_swarm_QUEENBEE
 from chess_piece.queen_hive import ReadPickleData, send_email
 from chess_piece.workerbees import queen_workerbees
 

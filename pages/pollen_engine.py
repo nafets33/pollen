@@ -31,15 +31,14 @@ def pollen_engine(acct_info):
         st.write(df_charlie)
     
     df = pd.DataFrame(charlie_bee['queen_cyle_times']['beat_times'])
-    st.line_chart(df)
+    st.write(df)
+    # st.line_chart(df)
 
     
     return True
 
 if __name__ == '__main__':
     qb = init_queenbee(client_user='stefanstapinski@gmail.com', prod=True, api=True)
-    # QUEEN = qb.get('QUEEN')
-    QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     alpaca_acct_info = refresh_account_info(api=api)
     acct_info = alpaca_acct_info.get('info_converted')

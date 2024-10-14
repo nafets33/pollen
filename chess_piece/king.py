@@ -15,7 +15,6 @@ import pytz
 import socket
 import json
 
-
 # HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)
 # <class 'requests.exceptions.ReadTimeout'> 2409
 # {'type': 'ProgramCrash', 'errbuz': ReadTimeout(ReadTimeoutError("HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)")), 'er': <class 'requests.exceptions.ReadTimeout'>, 'lineerror': 2409}
@@ -121,22 +120,6 @@ def master_swarm_QUEENBEE(prod=True):
     
     return PB_QUEENBEE_Pickle
 
-def stefan_home_queen_king(prod=False):
-    if prod:
-        PB_QUEEN_Pickle = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen.pkl") # pollen/db
-    else:
-        PB_QUEEN_Pickle = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_sandbox.pkl")
-    QUEEN = ReadPickleData(PB_QUEEN_Pickle)
-    QUEEN['source'] = PB_QUEEN_Pickle
-
-    if prod:
-        pkl_file = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_App_.pkl") # pollen/db
-    else:
-        pkl_file = os.path.join(os.path.join(hive_master_root(), "client_user_dbs/db__stefanstapinski_11854791"), "queen_App__sandbox.pkl")
-    QUEEN_KING = ReadPickleData(pkl_file)
-    QUEEN_KING['source'] = pkl_file
-
-    return QUEEN, QUEEN_KING
 
 def master_swarm_KING(prod):
     if prod:
@@ -431,21 +414,25 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
     return {"queens_master_tickers": queens_master_tickers}
 
 
+
+def return_active_orders(QUEEN):
+    active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
+    df = QUEEN["queen_orders"]
+    df["index"] = df.index
+    df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
+
+    return df_active
+
+
 def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
     active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
-    def return_active_orders(QUEEN):
-        df = QUEEN["queen_orders"]
-        df["index"] = df.index
-        df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
-
-        return df_active
 
     try:
         if symbols:
             symbols = symbols
         else:
             # symbol ticker data # 1 all current pieces on chess board && all current running orders
-            current_active_orders = return_active_orders(QUEEN=QUEEN)
+            current_active_orders = return_active_orders(QUEEN)
             active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
             chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 

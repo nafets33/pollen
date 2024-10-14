@@ -192,21 +192,21 @@ def pollenq(admin_pq):
 
     with st.spinner("Verifying Your Scent, Hang Tight"):
         authenticator = signin_main(page="pollenq")
-        if st.session_state['authentication_status'] != True: ## None or False
-            
-            display_for_unAuth_client_user()
+    if st.session_state['authentication_status'] != True: ## None or False
+        st.warning("Sign In")
+        display_for_unAuth_client_user()
+        st.stop()
+    prod = st.session_state['production']
+    authorized_user = st.session_state['authorized_user']
+    client_user = st.session_state["username"]
+    
+    if authorized_user != True:
+        st.error("Your Account is Not Yet Authorized by a pollenq admin")
+        authenticator.logout("Logout", location='sidebar')
+        if sneak_peak_form():
+            pass
+        else:
             st.stop()
-        prod = st.session_state['production']
-        authorized_user = st.session_state['authorized_user']
-        client_user = st.session_state["username"]
-        
-        if authorized_user != True:
-            st.error("Your Account is Not Yet Authorized by a pollenq admin")
-            authenticator.logout("Logout", location='sidebar')
-            if sneak_peak_form():
-                pass
-            else:
-                st.stop()
 
     ip_address = st.session_state['ip_address'] # return_app_ip()
     db_root = st.session_state['db_root']
@@ -301,7 +301,7 @@ def pollenq(admin_pq):
         # chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=swarm_queen_symbols, themes=themes, admin=False)
         # st.stop()
     
-
+    print("WORKING")
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
         ####### Welcome to Pollen ##########
@@ -314,6 +314,9 @@ def pollenq(admin_pq):
         qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
+        # ipdb.set_trace()
+        # st.write((QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']['SPY']))
+        # # st.write(list(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].keys())[0])
         api = qb.get('api')
         revrec = qb.get('revrec')      
         if st.sidebar.button("Clear App Requests"):
@@ -427,14 +430,13 @@ def pollenq(admin_pq):
 
             pollen_engine(acct_info_raw)
 
-            st.stop()
 
-        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
-        account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
+
 
  
     if 'pollen' in menu_id:
-        print("QC Page Func")
+        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
+        account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
         queens_conscience(revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1

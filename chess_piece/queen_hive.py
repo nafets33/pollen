@@ -254,7 +254,6 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
             api = keys_paper["api"]
 
         return {"rest": rest, "api": api}
-
     prod_keys_confirmed = QUEEN_KING["users_secrets"]["prod_keys_confirmed"]
     sandbox_keys_confirmed = QUEEN_KING["users_secrets"]["sandbox_keys_confirmed"]
     try:
@@ -3123,8 +3122,8 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
             "1Minute_1Day": 1,
             "5Minute_5Day": 5,
             "30Minute_1Month": 18,
-            "1Hour_3Month": 48,
-            "2Hour_6Month": 72,
+            "1Hour_3Month": 58,
+            "2Hour_6Month": 115,
             "1Day_1Year": 250,
         }
         return chart_times

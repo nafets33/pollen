@@ -88,8 +88,11 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
                         if backtesting:
                             msg=("executing backtesting")
                             st.info(msg)
-                            script_path = os.path.join(hive_master_root(), 'macd_grid_search.py')
-                            trigger_py_script(script_path)
+                            # script_path = os.path.join(hive_master_root(), 'macd_grid_search.py')
+                            # trigger_py_script(script_path)
+                            with st.spinner("Running Backtesting"):
+                                from macd_grid_search import run_backtesting_pollenstory
+                                run_backtesting_pollenstory(QUEENBEE, True, pieces)
                         else:
                             queen_workerbees(
                                             qcp_s=pieces,
@@ -118,5 +121,7 @@ if st.session_state['admin']:
     refresh_workerbees(QUEENBEE, QUEEN_KING)
 
 MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))
-# MACD_WAVES = MACD_WAVES.set_index("ttf")
+standard_AGgrid(MACD_WAVES)
+
+MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_grid_search_blocktime.txt"))
 standard_AGgrid(MACD_WAVES)

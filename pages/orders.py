@@ -68,7 +68,7 @@ def config_orders_cols(active_order_state_list):
                                                         'initialWidth': 115,
                                                         },
             'datetime': {'type': ["dateColumnFilter", "customDateTimeFormat"], "custom_format_string": "MM/dd/yy HH:mm", 'initialWidth': 133,},
-
+            'exit_order_link': {},
                     }
 
 
@@ -138,8 +138,12 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
                 },
                 ],
         grid_height='650px',
-        toggle_views = ['ORDERS', 'QUEEN'] + ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()),
+        toggle_views = ['ORDERS', 'QUEEN'] + ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()) + ['FINAL'],
     )
+    st.write("prod", st.session_state['prod'])
+    # ORDERS = init_queenbee(client_user, prod, orders_final=True).get('ORDERS_FINAL')
+    # standard_AGgrid(ORDERS['queen_orders'])
+
 
     if st.toggle("Broker Orders"):
         ORDERS = init_queenbee(client_user, prod, broker=True).get('BROKER')

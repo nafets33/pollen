@@ -867,13 +867,25 @@ def return_star_from_ttf(x):
         print(e)
         return x  
 
+def weight_team_keys():
+    return {
+        'w_L': 'w_L',
+        'w_S': 'w_S',
+        '1Minute_1Day': 'w_15',# : ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month', '1Hour_3Month', '2Hour_6Month', '1Day_1Year'],
+        '5Minute_5Day': 'w_15',
+        '30Minute_1Month': 'w_30',
+        '1Hour_3Month': 'w_30',
+        '2Hour_6Month': 'w_54',
+        '1Day_1Year': 'w_54',
+    }
+
 def wave_gauge_revrec_2(symbol, df_waves, weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54'], 
                model_eight_tier=8, 
                wave_guage_list=['end_tier_macd', 'end_tier_vwap', 'end_tier_rsi_ema'], 
                star_weights = {'1Minute_1Day': .1, '5Minute_5Day': .4, '30Minute_1Month': .6, '1Hour_3Month': .6, '2Hour_6Month': .8, '1Day_1Year': .89},
                long_weight=.89, margin_weight=.33):
     try:
-        # weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
+        # WORKERBEE update these objs to be based on weight_team_keys func dict return
         weight__short = ['1Minute_1Day', '5Minute_5Day']
         weight__mid = ['30Minute_1Month', '1Hour_3Month']
         weight__long = ['2Hour_6Month', '1Day_1Year']
@@ -1010,6 +1022,7 @@ def shape_chessboard(chess_board):
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, wave_blocktime=None):
     rr_starttime = datetime.now()
     s = datetime.now()
+
     rr_run_cycle = {}
     # base line power allocation per qcp
     revrec__stars_borrow = {}
@@ -1111,7 +1124,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
         # Handle missing TM
         if trading_model is None: 
-            print(ticker, ' tradingmodel missing handling in revrec to default')
+            # print(ticker, ' tradingmodel missing handling in revrec to default')
             QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
             trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
 
@@ -1403,7 +1416,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                                     )
             waveview['allocation_borrow_long'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_long'])
             
-            waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long'])
+            waveview['allocation_long_deploy'] = (waveview['allocation_deploy'] + waveview['allocation_borrow_deploy'])
 
         except Exception as e:
             print_line_of_error(e)
@@ -1510,8 +1523,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         s = datetime.now()
 
         for qcp in all_workers:
-            if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
-                continue
+            # if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
+            #     continue
             
             # Refresh ChessBoard and RevRec
             qcp_power = float(QUEEN_KING['chess_board'][qcp]['total_buyng_power_allocation'])
@@ -1585,6 +1598,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # Broker Data        
         df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
         df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
+        # print([i for i in df_broker_portfolio.index if i not in df_ticker.index])
 
         # Story Bee
         # current_from_open = {ttf: STORY_bee[ttf]['story'].get('current_from_open') for ttf in df_ticker.index}
@@ -1623,7 +1637,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         # Wave Gauge # WORKERBEE
         story_guages_view = []
-        weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
+        weight_team = list(weight_team_keys().values()) # ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
         for symbol in set(waveview['symbol']):
             df_waves = waveview[waveview['symbol'] == symbol]
             story_guages = wave_gauge_revrec_2(symbol=symbol, df_waves=df_waves, weight_team=weight_team)
@@ -1652,19 +1666,14 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             storygauge[col] = storygauge[col].fillna(0)
         token = waveview.groupby('symbol').agg(df_star_agg).reset_index().set_index('symbol')
         storygauge = pd.concat([storygauge, token], axis=1, join='inner')
+        storygauge = storygauge.fillna(0)
+        waveview = waveview.fillna(0)
     
         rr_run_cycle.update({'story gauge': (datetime.now() - s).total_seconds()})
         total = sum(rr_run_cycle.values())
         # for k,v in rr_run_cycle.items():
         #     rr_run_cycle[k].update({'pct': v/total})
 
-
-        # # Bishop
-        # db=init_swarm_dbs(prod)
-        # BISHOP = ReadPickleData(db.get('BISHOP'))
-        # ticker_info = BISHOP.get('ticker_info').set_index('ticker')
-        # ticker_info = ticker_info[[i for i in ticker_info.columns if i not in storygauge.columns]]
-        # storygauge = pd.concat([storygauge, ticker_info], axis=1, join='inner')
 
         cycle_time = (datetime.now()-rr_starttime).total_seconds()
         rr_run_cycle.update({'final time': cycle_time})

@@ -5,11 +5,10 @@ import pickle
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-# sys.path.append("./chess_piece")
-
+import streamlit as st
 from chess_piece.workerbees import queen_workerbees
-from chess_piece.queen_hive import analyze_waves, send_email, stars
-from chess_piece.king import hive_master_root, workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee
+from chess_piece.queen_hive import analyze_waves, send_email
+from chess_piece.king import hive_master_root, workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, stars, master_swarm_QUEENBEE, ReadPickleData
 
 send_email(subject=f"Running BackTesting")
 fast_vals = range(7,15)
@@ -109,8 +108,15 @@ def read_backtest_folder_assert_insight(backtest_folder, return_len=15):
     send_email(subject=f"BackTesting Wave Analysis {run_time}")
 
 
-def run_backtesting_pollenstory(run_wave_analysis=True, qcp_s=['castle', 'knight', 'bishop']):
+def run_backtesting_pollenstory(QUEENBEE=None, run_wave_analysis=True, qcp_s=['castle', 'knight', 'bishop'], skip_patter_if_exists=False):
 
+        # Total number of iterations
+    total_iterations = len(fast_vals) * len(slow_vals) * len(smooth_vals)
+
+    # Initialize the progress bar
+    ittt = st.empty()
+    progress_bar = st.progress(0)
+    iteration = 0
     s = datetime.now()
     for fast_val in tqdm(fast_vals):
         for slow_val in slow_vals:
@@ -124,19 +130,27 @@ def run_backtesting_pollenstory(run_wave_analysis=True, qcp_s=['castle', 'knight
                 }
                 # print("macd = {}".format(macd))
 
-                # Check that macd was already processed.            
-                pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
-                # folder = "symbols_STORY_bee_dbs_backtesting"
-                # to_continue = False
-                # for filepath in os.listdir(backtest_folder):
-                #     if pattern.match(filepath):
-                #         print("\tcontinued")
-                #         to_continue = True 
-                #         break
-                # if to_continue:
-                #     continue
+                if skip_patter_if_exists:
+                    # Check that macd was already processed.            
+                    pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
+                    folder = "symbols_STORY_bee_dbs_backtesting"
+                    to_continue = False
+                    for filepath in os.listdir(backtest_folder):
+                        if pattern.match(filepath):
+                            print("\tcontinued")
+                            to_continue = True 
+                            break
+                    if to_continue:
+                        continue
+                iteration += 1
+                progress_bar.progress(iteration / total_iterations)
+                with ittt.container():
+                    st.write(f"loop count, {iteration} out of {total_iterations}")
+
                 try:
-                    queen_workerbees(qcp_s=qcp_s,
+                    queen_workerbees(
+                                    QUEENBEE=QUEENBEE,
+                                    qcp_s=qcp_s,
                                      prod = False, 
                                      backtesting = True, 
                                      macd = macd,
@@ -147,10 +161,11 @@ def run_backtesting_pollenstory(run_wave_analysis=True, qcp_s=['castle', 'knight
         read_backtest_folder_assert_insight(backtest_folder)
 
 
-
     e = datetime.now()
     run_time = (e-s)
     send_email(subject=f"BackTesting Run {run_time}")
 
 if __name__ == '__main__':
-    run_backtesting_pollenstory()
+    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=True))
+
+    run_backtesting_pollenstory(QUEENBEE=QUEENBEE, run_wave_analysis=True, qcp_s=['castle', ]) # 'knight', 'bishop', 'pawn_6', 'Basic Materials', 'Communication Services', 'Technology', 'Consumer Cyclical', 'Financial Services', 'Industrials'

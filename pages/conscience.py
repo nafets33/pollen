@@ -12,8 +12,8 @@ import copy
 import hydralit_components as hc
 
 from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
-from chess_piece.king import kingdom__global_vars, return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, local__filepaths_misc, print_line_of_error, PickleData
-from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, generate_TradingModel, init_logging
+from chess_piece.king import return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, kingdom__grace_to_find_a_Queen, print_line_of_error
+from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, generate_TradingModel, init_logging, init_swarm_dbs, init_queenbee
 
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from st_aggrid import AgGrid, GridUpdateMode, JsCode
@@ -91,7 +91,8 @@ def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', ti
 
 
 def queens_conscience(revrec, KING, QUEEN_KING, api):
-
+    run_times = {}
+    s = datetime.now()
     with st.sidebar:
         refresh_grids = st.toggle("Refresh Grids", True)
 
@@ -99,7 +100,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     symbols = return_queenking_board_symbols(QUEEN_KING)
     symbols = ['SPY'] if len(symbols) == 0 else symbols
 
-    STORY_bee = return_QUEENs__symbols_data(symbols=symbols, read_pollenstory=False).get('STORY_bee')
+    # STORY_bee = return_QUEENs__symbols_data(symbols=symbols, read_pollenstory=False).get('STORY_bee')
 
     ip_address = st.session_state['ip_address']
     client_user = st.session_state["username"]
@@ -305,7 +306,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
 
                 return  {
                 # for col in cols:
-                'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left'},
+                'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
                 'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
@@ -318,7 +319,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 # 'allocation_long_deploy': {'headerName':'Queen Allocation Deploy', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                 #                            'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                 #                            },                    
-                'trinity_w_L': create_ag_grid_column(headerName='Trinity Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                'trinity_w_L': {'headerName': 'Trinity Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'pinned': 'right'},
                 'trinity_w_15': create_ag_grid_column(headerName='Flash Force',sortable=True, initialWidth=89, ),
                 'trinity_w_30': create_ag_grid_column(headerName='Middle Force',sortable=True, initialWidth=89, ),
                 'trinity_w_54': create_ag_grid_column(headerName='Future Force',sortable=True, initialWidth=89, ),
@@ -364,7 +365,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 symbols=symbols,
                 buttons=g_buttons,
                 grid_height='450px',
-                toggle_views = ["Queen", "King"] + chess_pieces,
+                toggle_views = ["Queen", "King", '400_10M'] + chess_pieces,
                 allow_unsafe_jscode=True,
 
             ) 
@@ -385,14 +386,14 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         log_dir = os.path.join(db_root, 'logs')
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['production'])
 
-        tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
+        # tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
         # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
-        tic_need_TM = [i for i in tickers_avail if i not in QUEEN_KING['king_controls_queen'].get('symbols_stars_TradingModel')]
-        if len(tic_need_TM) > 0:
-            print("Adding Trading Model for: ", tic_need_TM)
-            for ticker in tic_need_TM:
-                tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme="long_star")['MACD'][ticker]
-                QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
+        # tic_need_TM = [i for i in tickers_avail if i not in QUEEN_KING['king_controls_queen'].get('symbols_stars_TradingModel')]
+        # if len(tic_need_TM) > 0:
+        #     print("Adding Trading Model for: ", tic_need_TM)
+        #     for ticker in tic_need_TM:
+        #         tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme="long_star")['MACD'][ticker]
+        #         QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
         
         trading_days = hive_dates(api=api)['trading_days']
         mkhrs = return_market_hours(trading_days=trading_days)
@@ -406,6 +407,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
         # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
         # print("STORY GRID")
+        # db=init_swarm_dbs(prod)
+        # BISHOP = ReadPickleData(db.get('BISHOP'))
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                         
         if st.toggle("Show Wave Grid"):
@@ -518,22 +521,14 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         print('queensconscience', print_line_of_error(e))
 
 if __name__ == '__main__':
-    # client_user =
-    # prod =
-    # KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    client_user = os.environ.get('admin_user')
+    prod = True
+    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
-    # QUEENBEE=None
-
-    # qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, broker=True, init=True)
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
     # QUEEN = qb.get('QUEEN')
-    # QUEEN_KING = qb.get('QUEEN_KING')
-    # api = qb.get('api')
-
-    # # QUEEN=
-    # # QUEEN_KING=
-    # # api=
-    # # api_var=
-
-    # queens_conscience(QUEENBEE, KING, QUEEN, QUEEN_KING, api, api_vars)
-
-    queens_conscience(None, None, None, None)
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
+    revrec = qb.get('revrec') 
+    queens_conscience(revrec, KING, QUEEN_KING, api)
+    # queens_conscience(None, None, None, None)

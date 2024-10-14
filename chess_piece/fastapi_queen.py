@@ -24,12 +24,15 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     ttf_grid_names,
                                     sell_button_dict_items,
                                     wave_buy__var_items,
-                                    star_names
+                                    star_names,
+                                    init_swarm_dbs,
+                                    init_qcp_workerbees
                                     )
 
 from chess_piece.queen_bee import execute_buy_order
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from dotenv import load_dotenv
+
 
 
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
@@ -319,7 +322,7 @@ def return_startime_from_ttf(ticker_time_frame):
    t,tt,f = ticker_time_frame.split("_")
    return f'{tt}_{f}'
 
-def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False): # index & wave_amount
+def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0'): # index & wave_amount
   try:
 
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True)
@@ -327,7 +330,6 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     api = qb.get('api')
     revrec = qb.get('revrec') # qb.get('queen_revrec')
     QUEENsHeart = qb.get('QUEENsHeart')
-    
     portfolio = QUEENsHeart['heartbeat'].get('portfolio')
 
     buy_package = create_AppRequest_package(request_name='buy_orders')
@@ -339,10 +341,13 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     if story:
       # star_time=star_names(kors.get('star_list')[0])
       # ticker_time_frame = f'{symbol}_{star_time}'
-      trigbee = 'buy_cross-0'
+      
       ticker_time_frame = kors.get('star')
       star_time = return_startime_from_ttf(ticker_time_frame)
-      wave_blocktime = revrec.get('waveview').loc[ticker_time_frame].get('wave_blocktime')
+      if not revrec:
+         wave_blocktime = 'afternoon_2-4'
+      else:
+        wave_blocktime = revrec.get('waveview').loc[ticker_time_frame].get('wave_blocktime')
     else:
       star_time = selected_row.get('star')
       ticker_time_frame = selected_row.get('ticker_time_frame')
@@ -350,6 +355,8 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
       wave_blocktime = selected_row.get('wave_blocktime')
 
     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol) # main symbol for Model (SPY)
+    if not trading_model:
+       trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
     
     # Ensure Symbol for Inverse Indexes
     main_indexes = main_index_tickers()
@@ -721,277 +728,304 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
                 df[col] = round(df[col],2)
       return df
     
-    # try:
-    if toggle_view_selection.lower() == 'king':
-      king_G = kingdom__global_vars()
-      qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True)
-      QUEEN = qb.get('QUEEN')
-      QUEEN_KING = qb.get('QUEEN_KING')
-      STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-      revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
-    else:
-      qb = init_queenbee(client_user, prod, revrec=True, queen_king=True)
-      revrec = qb.get('revrec')
-      QUEEN_KING = qb.get('QUEEN_KING')
+    try:
+      if toggle_view_selection.lower() == 'king':
+        king_G = kingdom__global_vars()
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True)
+        QUEEN = qb.get('QUEEN')
+        QUEEN_KING = qb.get('QUEEN_KING')
+        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
+      elif toggle_view_selection == '400_10M':
+        king_G = kingdom__global_vars()
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True)
+        QUEEN = qb.get('QUEEN')
+        QUEEN_KING = qb.get('QUEEN_KING')
 
-    if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
-      print(f'rr not df null, {revrec}')
-      return pd.DataFrame().to_json()
+        QUEENBEE = {'workerbees': {}}
+        db=init_swarm_dbs(prod)
+        BISHOP = ReadPickleData(db.get('BISHOP'))
+        df = BISHOP.get(toggle_view_selection)
+        for sector in set(df['sector']):
+            token = df[df['sector']==sector]
+            tickers=token['symbol'].tolist()
+            QUEENBEE['workerbees'][sector] = init_qcp_workerbees(ticker_list=tickers)
+        QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
+        symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+        STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
+        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11') ## Setup Board
+      else:
+        qb = init_queenbee(client_user, prod, revrec=True, queen_king=True)
+        revrec = qb.get('revrec')
+        QUEEN_KING = qb.get('QUEEN_KING')
+
+      if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
+        print(f'rr not df null, {revrec}')
+        return pd.DataFrame().to_json()
 
 
-    if len(symbols) == 0:
-      symbols=['SPY']
+      if len(symbols) == 0:
+        symbols=['SPY']
 
-    k_colors = streamlit_config_colors()
-    default_text_color = k_colors['default_text_color'] # = '#59490A'
-    default_font = k_colors['default_font'] # = "sans serif"
-    default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+      k_colors = streamlit_config_colors()
+      default_text_color = k_colors['default_text_color'] # = '#59490A'
+      default_font = k_colors['default_font'] # = "sans serif"
+      default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
-    waveview = revrec.get('waveview')
-    waveview['sell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['allocation_deploy'] < 0), round(waveview['allocation_deploy']), 0)
-    waveview['sellbuy_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] > 0), round(waveview['allocation_deploy']), 0)
-    waveview['sell_alloc_deploy'] = waveview['sell_alloc_deploy'] + waveview['sellbuy_alloc_deploy']
-    
-    waveview['buy_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['allocation_deploy'] > 0), round((waveview['allocation_deploy'])), 0)
-    waveview['buysell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] < 0), round(abs(waveview['allocation_deploy'])), 0) 
-    waveview['buy_alloc_deploy'] = waveview['buy_alloc_deploy'] + waveview['buysell_alloc_deploy']
-
-
-    def return_waveview_fillers(waveview):
-      df = waveview
-
-      # sell_options = sell_button_dict_items()
-      # df['sell_option'] = [sell_options for _ in range(df.shape[0])]
-      kors_dict = buy_button_dict_items()
-      df['kors'] = [kors_dict for _ in range(df.shape[0])]
-      df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
-      df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
-      for ttf in df.index.tolist():
-        # try:
-        remaining_budget = df.at[ttf, 'remaining_budget'].astype(float)
-        remaining_budget_borrow = df.at[ttf, 'remaining_budget_borrow'].astype(float)
-        # print(type(remaining_budget))
-        if type(remaining_budget) is np.float64:
-            pass
-        else:
-            print(ttf, "OBBBBJ", remaining_budget)
-            continue
-        remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
-        
-        # get kor variables
-        take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
-        sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
-        close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
-        sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
-        
-        margin = ''
-        if remaining_budget <0 and (remaining_budget_borrow + remaining_budget) > 0:
-          margin = "Margin"
-          remaining_budget = round((remaining_budget_borrow + remaining_budget))
-          
-          if remaining_budget <0:
-              remaining_budget == 0
-        
-        reverse_buy = False
-        # if 'sell' in df.at[ttf, 'macd_state'] and df.at[ttf, 'symbol']
-        ticker, time, frame = ttf.split("_")
-        chart_time = f'{time}_{frame}'
-        sell_trigbee_date = update_sell_date(chart_time)
-        kors = buy_button_dict_items(star=ttf, 
-                                     wave_amo=remaining_budget, 
-                                     take_profit=take_profit, 
-                                     sell_out=sell_out, 
-                                     sell_trigbee_date=sell_trigbee_date,
-                                     close_order_today=close_order_today, 
-                                     sell_trigbee_trigger_timeduration=None,
-                                     star_list=None,
-                                     reverse_buy=None, 
-        )
-
-        df.at[ttf, 'kors'] = kors
-        df.at[ttf, 'ticker_time_frame__budget'] = f"""{margin} {"${:,}".format(remaining_budget)}"""
-        # except Exception as e:
-        #     print_line_of_error(f"{ttf} grid buttons {remaining_budget}")
-        
-      return df
-
-        
-    df_waveview = return_waveview_fillers(waveview)
-
-    if return_type == 'waves':
+      waveview = revrec.get('waveview')
+      waveview['sell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("buy")) & (waveview['allocation_deploy'] < 0), round(waveview['allocation_deploy']), 0)
+      waveview['sellbuy_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] > 0), round(waveview['allocation_deploy']), 0)
+      waveview['sell_alloc_deploy'] = waveview['sell_alloc_deploy'] + waveview['sellbuy_alloc_deploy']
       
-      df = df_waveview
-        
-      df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
-      df['color_row_text'] = default_text_color
-
-      df = update_col_number_format(df)
-      df = filter_gridby_timeFrame_view(df, toggle_view_selection, grid='wave')
-
-      json_data = df.to_json(orient='records')
-      return json_data
-
-    elif return_type == 'story':
-      df = revrec.get('storygauge')
-      qcp_name = {data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() }
-      qcp_name['Queen'] = 'Queen'
-      qcp_name['King'] = 'King'
-      toggle_view_selection = qcp_name[toggle_view_selection]
-
-      qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
-      ticker_filter = [ticker for (ticker, qcp) in qcp_ticker.items() if qcp == toggle_view_selection]                
-      if ticker_filter:
-          df = df[df.index.isin(ticker_filter)]
-      storygauge_columns = df.columns.tolist()
-      waveview['buy_alloc_deploy'] = waveview['allocation_long_deploy']
-      # symbol group by to join on story
-      num_cols = ['allocation_long_deploy', 'buy_alloc_deploy', 'star_buys_at_play', 'sell_alloc_deploy', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
-      for col in num_cols:
-          waveview[col] = round(waveview[col])
-          if col in storygauge_columns:
-            df[col] = round(df[col])
-
-      df_wave_symbol = waveview.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
-      df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['sell_alloc_deploy']), axis=1)
-      df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['buy_alloc_deploy']), axis=1)
-
-      remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
-      remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
-      sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
-      buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
-      buy_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_alloc_deploy']))
-      sell_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_alloc_deploy']))
-      # queens_note = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['queens_note']))
+      waveview['buysell_alloc_deploy'] =  np.where((waveview['macd_state'].str.contains("sell")) & (waveview['allocation_deploy'] < 0), round(abs(waveview['allocation_deploy'])), 0) 
 
 
-      kors_dict = buy_button_dict_items()
+      def return_waveview_fillers(waveview):
+        df = waveview
 
-      # display whole number
-      for col in df.columns:
-        if 'trinity' in col:
-            df[col] = round(pd.to_numeric(df[col]),2) * 100
-
-      df['queens_suggested_sell'] = df['symbol'].map(sell_msg)
-      df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
-      df['queens_suggested_sell'] = round(df['money'])
-
-      kors_dict = buy_button_dict_items()
-      df['kors'] = [kors_dict for _ in range(df.shape[0])]
-
-      sell_options = sell_button_dict_items()
-      df['sell_option'] = [sell_options for _ in range(df.shape[0])]
-
-      x_dict = {'allocation': .3}
-      df['edit_allocation_option'] = [x_dict for _ in range(df.shape[0])]
-
-      df['current_from_open'] = round(df['current_from_open'] * 100,2)
-
-      for star in star_names().keys():
-        # kors per star
-        df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
-
-
-      for symbol in df.index.tolist():
-        if 'ticker_buying_power' not in df.columns:
-            alloc = .3
-        else:
-          alloc = df.at[symbol, 'ticker_buying_power']
-        alloc_option = {'allocation': alloc}
-        df.at[symbol, 'edit_allocation_option'] = alloc_option
-
-        sell_qty = df.at[symbol, 'qty_available']
-        sell_option = sell_button_dict_items(symbol, sell_qty)
-        df.at[symbol, 'sell_option'] = sell_option
-        remaining_budget__ = remaining_budget.get(symbol)
-        df.at[symbol, 'remaining_budget'] = remaining_budget__
-        df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
-        df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
-        df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
-        df.at[symbol, 'total_budget'] = round(revrec['df_ticker'].at[symbol, 'ticker_total_budget'])
-
-        df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
-        take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
-        sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
-        close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
-        sell_trigbee_trigger_timeduration = df.at[symbol, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
-        reverse_buy = False
-        kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
-        df.at[symbol, 'kors'] = kors
-      
-        try:
-          # star kors
-          for star in star_names().keys():
-            ttf = f'{symbol}_{star_names(star)}'
-            # kors per star
-            star_kors = df_waveview.at[ttf, 'kors']
-            star_kors['wave_amo'] = df_waveview.at[ttf, "allocation_long_deploy"]
-            df.at[symbol, f'{star}_kors'] = star_kors
-            # message
-            wavestate = f'{df_waveview.at[ttf, "bs_position"]} {df_waveview.at[ttf, "length"]}'
-            alloc_deploy_msg = '${:,.0f}'.format(round(df_waveview.at[ttf, "allocation_long_deploy"]))
-            df.at[symbol, f'{star}_state'] = f'{wavestate} {alloc_deploy_msg}'
-            df.at[symbol, f'{star}_value'] = df_waveview.at[ttf, "allocation_long_deploy"]
-            df.at[symbol, f'{star}_kors']
-        except Exception as e:
-          print("mmm error", ttf, print_line_of_error(e))
-
-      story_grid_num_cols = ['star_buys_at_play',
-      'star_sells_at_play',
-      'remaining_budget',
-      'remaining_budget_borrow',
-      'trinity_w_L',
-      'trinity_w_15',
-      'trinity_w_30',
-      'trinity_w_54',
-      'trinity_w_S',
-      'queens_suggested_buy',
-      'queens_suggested_sell',
-      'total_budget',
-      'allocation_long_deploy',
-      'broker_qty_delta',
-      'Month_value',
-      # "Month_kors"
-      ]
-      df['current_from_yesterday'] = round(df['current_from_yesterday'] * 100,2)
-      df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x/100))
-
-      # # Totals Index
-      df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
-      colss = df.columns.tolist()
-      for totalcols in story_grid_num_cols:
-        if totalcols in colss:
-          if 'trinity' in totalcols:
-            df_total.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
-          # elif 'current_from_yesterday' == totalcols:
-          #   df.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
-          elif totalcols == 'queens_suggested_buy':
-            df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["buy_alloc_deploy"].sum()))
-          elif totalcols == 'queens_suggested_sell':
-            df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["money"].sum()))
-          elif totalcols == 'total_budget':
-            df_total.loc['Total', totalcols] = df["total_budget"].sum()
-          elif totalcols == 'Month':
-            print("month")
-            df_total.loc['Total', 'Month_value'] = df["Month_value"].sum()
-            # df.loc['Total', 'Month_kors'] = df["Month_value"].sum()
+        # sell_options = sell_button_dict_items()
+        # df['sell_option'] = [sell_options for _ in range(df.shape[0])]
+        kors_dict = buy_button_dict_items()
+        df['kors'] = [kors_dict for _ in range(df.shape[0])]
+        df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
+        df['trading_model_kors'] = df['kors_key'].apply(lambda x: return_trading_model_kors(QUEEN_KING, star__wave=x))
+        for ttf in df.index.tolist():
+          # try:
+          remaining_budget = df.at[ttf, 'remaining_budget'].astype(float)
+          remaining_budget_borrow = df.at[ttf, 'remaining_budget_borrow'].astype(float)
+          # print(type(remaining_budget))
+          if type(remaining_budget) is np.float64:
+              pass
           else:
-            df_total.loc['Total', totalcols] = df[totalcols].sum()
+              print(ttf, "OBBBBJ", remaining_budget)
+              continue
+          remaining_budget = round(df.at[ttf, 'remaining_budget'], 2)
+          
+          # get kor variables
+          take_profit = df.at[ttf, "trading_model_kors"].get('take_profit')
+          sell_out = df.at[ttf, "trading_model_kors"].get('sell_out')
+          close_order_today = df.at[ttf, "trading_model_kors"].get('close_order_today')
+          sell_trigbee_trigger_timeduration = df.at[ttf, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+          
+          margin = ''
+          if remaining_budget <0 and (remaining_budget_borrow + remaining_budget) > 0:
+            margin = "Margin"
+            remaining_budget = round((remaining_budget_borrow + remaining_budget))
+            
+            if remaining_budget <0:
+                remaining_budget == 0
+          
+          reverse_buy = False
+          # if 'sell' in df.at[ttf, 'macd_state'] and df.at[ttf, 'symbol']
+          ticker, time, frame = ttf.split("_")
+          chart_time = f'{time}_{frame}'
+          sell_trigbee_date = update_sell_date(chart_time)
+          kors = buy_button_dict_items(star=ttf, 
+                                      wave_amo=remaining_budget, 
+                                      take_profit=take_profit, 
+                                      sell_out=sell_out, 
+                                      sell_trigbee_date=sell_trigbee_date,
+                                      close_order_today=close_order_today, 
+                                      sell_trigbee_trigger_timeduration=None,
+                                      star_list=None,
+                                      reverse_buy=None, 
+          )
+
+          df.at[ttf, 'kors'] = kors
+          df.at[ttf, 'ticker_time_frame__budget'] = f"""{margin} {"${:,}".format(remaining_budget)}"""
+          # except Exception as e:
+          #     print_line_of_error(f"{ttf} grid buttons {remaining_budget}")
+          
+        return df
+
+          
+      df_waveview = return_waveview_fillers(waveview)
+
+      if return_type == 'waves':
+        
+        df = df_waveview
+          
+        df['color_row'] = df['macd_state'].apply(lambda x: generate_shade(x, wave=True))
+        df['color_row_text'] = default_text_color
+
+        df = update_col_number_format(df)
+        df = filter_gridby_timeFrame_view(df, toggle_view_selection, grid='wave')
+
+        json_data = df.to_json(orient='records')
+        return json_data
+
+      elif return_type == 'story':
+        df = revrec.get('storygauge')
+        qcp_name = {data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() }
+        qcp_name['Queen'] = 'Queen'
+        qcp_name['King'] = 'King'
+        if toggle_view_selection in qcp_name.keys():
+          toggle_view_selection = qcp_name[toggle_view_selection]
+
+        qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
+        ticker_filter = [ticker for (ticker, qcp) in qcp_ticker.items() if qcp == toggle_view_selection]                
+        if ticker_filter:
+            df = df[df.index.isin(ticker_filter)]
+        storygauge_columns = df.columns.tolist()
+        waveview['buy_alloc_deploy'] = waveview['allocation_long_deploy']
+        # symbol group by to join on story
+        num_cols = ['allocation_long_deploy', 'buy_alloc_deploy', 'star_buys_at_play', 'sell_alloc_deploy', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
+        for col in num_cols:
+            waveview[col] = round(waveview[col])
+            if col in storygauge_columns:
+              df[col] = round(df[col])
+
+        df_wave_symbol = waveview.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
+        df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['sell_alloc_deploy']), axis=1)
+        df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['buy_alloc_deploy']), axis=1)
+
+        remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
+        remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
+        sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
+        buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
+        buy_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_alloc_deploy']))
+        sell_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_alloc_deploy']))
+        # queens_note = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['queens_note']))
+
+
+        kors_dict = buy_button_dict_items()
+
+        # display whole number
+        for col in df.columns:
+          if 'trinity' in col:
+              df[col] = round(pd.to_numeric(df[col]),2) * 100
+
+        df['queens_suggested_sell'] = df['symbol'].map(sell_msg)
+        df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
+        df['queens_suggested_sell'] = round(df['money'])
+
+        kors_dict = buy_button_dict_items()
+        df['kors'] = [kors_dict for _ in range(df.shape[0])]
+
+        sell_options = sell_button_dict_items()
+        df['sell_option'] = [sell_options for _ in range(df.shape[0])]
+
+        x_dict = {'allocation': .3}
+        df['edit_allocation_option'] = [x_dict for _ in range(df.shape[0])]
+
+        df['current_from_open'] = round(df['current_from_open'] * 100,2)
+
+        for star in star_names().keys():
+          # kors per star
+          df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
+
+
+        for symbol in df.index.tolist():
+          if 'ticker_buying_power' not in df.columns:
+              alloc = .3
+          else:
+            alloc = df.at[symbol, 'ticker_buying_power']
+          alloc_option = {'allocation': alloc}
+          df.at[symbol, 'edit_allocation_option'] = alloc_option
+
+          sell_qty = df.at[symbol, 'qty_available']
+          sell_option = sell_button_dict_items(symbol, sell_qty)
+          df.at[symbol, 'sell_option'] = sell_option
+          remaining_budget__ = remaining_budget.get(symbol)
+          df.at[symbol, 'remaining_budget'] = remaining_budget__
+          df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
+          df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
+          df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
+          df.at[symbol, 'total_budget'] = round(revrec['df_ticker'].at[symbol, 'ticker_total_budget'])
+
+          df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
+          take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
+          sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
+          close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
+          sell_trigbee_trigger_timeduration = df.at[symbol, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+          reverse_buy = False
+          kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
+          df.at[symbol, 'kors'] = kors
+        
+          try:
+            # star kors
+            for star in star_names().keys():
+              ttf = f'{symbol}_{star_names(star)}'
+              # kors per star
+              star_kors = df_waveview.at[ttf, 'kors']
+              star_kors['wave_amo'] = df_waveview.at[ttf, "allocation_long_deploy"]
+              df.at[symbol, f'{star}_kors'] = star_kors
+              # message
+              wavestate = f'{df_waveview.at[ttf, "bs_position"]} {df_waveview.at[ttf, "length"]}'
+              alloc_deploy_msg = '${:,.0f}'.format(round(df_waveview.at[ttf, "allocation_long_deploy"]))
+              df.at[symbol, f'{star}_state'] = f'{wavestate} {alloc_deploy_msg}'
+              df.at[symbol, f'{star}_value'] = df_waveview.at[ttf, "allocation_long_deploy"]
+              df.at[symbol, f'{star}_kors']
+          except Exception as e:
+            print("mmm error", ttf, print_line_of_error(e))
+
+        story_grid_num_cols = ['star_buys_at_play',
+        'star_sells_at_play',
+        'remaining_budget',
+        'remaining_budget_borrow',
+        'trinity_w_L',
+        'trinity_w_15',
+        'trinity_w_30',
+        'trinity_w_54',
+        'trinity_w_S',
+        'queens_suggested_buy',
+        'queens_suggested_sell',
+        'total_budget',
+        'allocation_long_deploy',
+        'broker_qty_delta',
+        'Month_value',
+        # "Month_kors"
+        ]
+        df['current_from_yesterday'] = round(df['current_from_yesterday'] * 100,2)
+        df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x/100, shade_num_var=89))
+
+        # # Totals Index
+        df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
+        colss = df.columns.tolist()
+        for totalcols in story_grid_num_cols:
+          if totalcols in colss:
+            if 'trinity' in totalcols:
+              df_total.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
+            # elif 'current_from_yesterday' == totalcols:
+            #   df.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
+            elif totalcols == 'queens_suggested_buy':
+              df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["buy_alloc_deploy"].sum()))
+            elif totalcols == 'queens_suggested_sell':
+              df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["money"].sum()))
+            elif totalcols == 'total_budget':
+              df_total.loc['Total', totalcols] = df["total_budget"].sum()
+            elif totalcols == 'Month':
+              print("month")
+              df_total.loc['Total', 'Month_value'] = df["Month_value"].sum()
+              # df.loc['Total', 'Month_kors'] = df["Month_value"].sum()
+            else:
+              df_total.loc['Total', totalcols] = df[totalcols].sum()
+        
+        df = pd.concat([df_total, df])
+        df.at['Total', 'symbol'] = 'Total'
+        for star in star_names().keys():
+          try:
+            df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
+            df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
+          except Exception as e:
+            print(e)
       
-      df = pd.concat([df_total, df])
-      df.at['Total', 'symbol'] = 'Total'
-      for star in star_names().keys():
-        try:
-          df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
-          df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
-        except Exception as e:
-          print(e)
-    
-      # handle colors
-      df['color_row'] = np.where(df['symbol']=='Total', default_yellow_color, df['color_row'])
-      df['color_row_text'] = default_text_color
-      
-      json_data = df.to_json(orient='records')
-      return json_data
+        # handle colors
+        df['color_row'] = np.where(df['symbol']=='Total', default_yellow_color, df['color_row'])
+        df['color_row_text'] = default_text_color
+
+        # # add bishop
+        # # Bishop
+        # db=init_swarm_dbs(prod)
+        # BISHOP = ReadPickleData(db.get('BISHOP'))
+        # ticker_info = BISHOP.get('ticker_info').set_index('ticker')
+        # ticker_info = ticker_info[[i for i in ticker_info.columns if i not in df.columns]]
+        # df = pd.concat([df, ticker_info], axis=1, join='inner')
+        
+        json_data = df.to_json(orient='records')
+        return json_data
+    except Exception as e:
+      print_line_of_error(e)
 
     
 

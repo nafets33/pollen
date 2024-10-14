@@ -27,7 +27,7 @@ from chess_piece.queen_hive import (
                                     return_alpc_portolio, return_market_hours, check_order_status,  timestamp_string, 
                                     submit_order, return_timestamp_string, add_key_to_QUEEN, update_sell_date,return_Ticker_Universe
                                     )
-from chess_piece.queen_mind import refresh_chess_board__revrec
+from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys
 import copy
 
 pd.options.mode.chained_assignment = None
@@ -46,6 +46,8 @@ CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['completed', 'complet
 RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
 RUNNING_OPEN = king_G.get('RUNNING_OPEN') # ['running_open']
 RUNNING_CLOSE_Orders = king_G.get('RUNNING_CLOSE_Orders') # = ['running_close']
+WT = weight_team_keys()
+TRINITY_ = "trinity_"
 
 ACTIVE_SYMBOLS = return_Ticker_Universe().get('alpaca_symbols_dict')
 
@@ -236,8 +238,10 @@ def update_origin_order_qty_available(QUEEN, run_order_idx, RUNNING_CLOSE_Orders
                 closing_dfs['filled_avg_price'] = closing_dfs['filled_avg_price'].apply(lambda x: convert_to_float(x))
 
                 # validate qty
-                if sum(closing_dfs['filled_qty']) > float(queen_order['qty']):
-                    msg=(f"wtf closing > origin order", queen_order['client_order_id'], " ", queen_order['symbol'])
+                closing_filled = sum(closing_dfs['filled_qty'])
+                order_qty = float(queen_order['qty'])
+                if closing_filled > order_qty:
+                    msg=(f"wtf closing > origin order Linked Orders filled {closing_filled} Order has {order_qty}", queen_order['client_order_id'], queen_order['symbol'])
                     print(msg)
                     # logging.error(msg)
                     pass
@@ -696,7 +700,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             else:
                 return active_trigs
 
-    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False):
+    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False, WT=WT):
         s_ = datetime.now(est)
         def knights_kor_scenario(kors): # return KOR adjustments
             # qcp global settings
@@ -750,16 +754,40 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     return True
             else:
                 return False
- 
+
+        def calculate_margin_buy(trinity, waveguage_meter, order_type, smooth=2):
+            if isinstance(trinity, float) and isinstance(waveguage_meter, float):
+                if order_type == 'buy':
+                    trinity = 1 - trinity
+                    waveguage_meter = 1 - waveguage_meter
+                else: # sell
+                    trinity = trinity * -1
+                    trinity = 1 - trinity
+
+                    waveguage_meter = waveguage_meter * -1
+                    waveguage_meter = 1 - waveguage_meter
+                
+                trinity = (waveguage_meter + trinity) / smooth
+                return trinity
+            else:
+                return None
+                
+
+        # vars
+        main_indexes = QUEEN['heartbeat']['main_indexes']
+        ticker, tframe, tperiod = ticker_time_frame.split("_")
+        symbol = find_symbol(main_indexes, ticker, trading_model, trigbee).get('ticker') # for SPY & QQQ to get inverse X of trading model
+        star_time = f'{tframe}{"_"}{tperiod}'
+
+        order_type = 'buy' if 'buy' in tm_trig else 'sell'
         waveview = revrec.get('waveview')
+        storygauge = revrec.get('storygauge')
+        # storygauge = storygauge.set_index('symbol') # not necessary?
+
+        trinity = storygauge.loc[ticker].get(f'{TRINITY_}w_L')
+        waveguage_meter = storygauge.loc[ticker].get(f'{TRINITY_}{WT[star_time]}')
+
         try:
-
-            # vars
-            main_indexes = QUEEN['heartbeat']['main_indexes']
-            ticker, tframe, tperiod = ticker_time_frame.split("_")
-            symbol = find_symbol(main_indexes, ticker, trading_model, trigbee).get('ticker') # for SPY & QQQ to get inverse X of trading model
-            star_time = f'{tframe}{"_"}{tperiod}'
-
             alloc_deploy = waveview.at[ticker_time_frame, 'allocation_deploy']
             wave_amo=alloc_deploy
             if symbol not in QUEEN['price_info_symbols'].index:
@@ -840,8 +868,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             blessings = {'kings_blessing': kings_blessing, 'blessings': []}
 
-            storygauge = revrec.get('storygauge')
-            storygauge = storygauge.set_index('symbol')
+
 
             # if star_total_budget_remaining > 0: # STAR
             borrowed_funds = False
@@ -879,8 +906,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     order_vars = None
             
             # gamble(monring,noon,afternoon) order based on trinity, if existing ttf no thank you?, prior(n) wave high,
+            if not isinstance(wave_amo, float) or wave_amo <=0:
+                msg=(f"KNIGHT: Deploy for {ticker_time_frame} LESS then 0, reduce by wave amo {wave_amo}")
+                logging.error(msg)
+                return {'kings_blessing': False}
             
             if wave_amo and kings_blessing:
+                blessings.update({'kings_blessing': kings_blessing})
                 order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
                                                             king_order_rules=king_order_rules, 
                                                             order_side='buy', 
@@ -898,17 +930,39 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                                             ready_buy=ready_buy,
                                                             assigned_wave=current_macd_cross__wave,
                                                             borrow_qty=0,
-                                                            )
+                                                            )                
                 blessings['blessings'].append(order_vars)
-                ## Handle App Buys
 
-                if not isinstance(order_vars.get('wave_amo'), float) or order_vars.get('wave_amo') <=0:
-                    msg=(f"KNIGHT: Deploy for {ticker_time_frame} LESS then 0, reduce by wave amo {wave_amo}")
-                    logging.error(msg)
-                    return {'kings_blessing': False}
-                else:
-                    blessings.update({'kings_blessing': kings_blessing})
-
+                ## MARGIN BUY consider another buy based on trinity
+                wave_len = str(revrec['waveview'].at[ticker_time_frame, 'length'])
+                if borrowed_funds == False and star_total_borrow_remaining > 0 and wave_len == '0': # order did not have to dip into margin
+                    print("Lets Buy on MARGIN")
+                    # # handle trinity
+                    trinity = calculate_margin_buy(trinity, waveguage_meter, order_type, smooth=4)
+                    if trinity:            
+                        wave_amo = star_total_borrow_remaining * trinity
+                        print("Margin Buy", wave_amo)
+                        ## update KORS on based on trinity, ticker_time_frame
+                        # king_order_rules.update('take_profit': ) 
+                        order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
+                                                                    king_order_rules=king_order_rules, 
+                                                                    order_side='buy', 
+                                                                    wave_amo=wave_amo, 
+                                                                    maker_middle=maker_middle, 
+                                                                    origin_wave=current_wave, 
+                                                                    power_up_rangers=power_up_amo, 
+                                                                    ticker_time_frame_origin=ticker_time_frame, 
+                                                                    double_down_trade=double_down_trade, 
+                                                                    wave_at_creation=current_macd_cross__wave,
+                                                                    symbol=symbol,
+                                                                    trigbee=trigbee,
+                                                                    tm_trig=tm_trig,
+                                                                    borrowed_funds=True,
+                                                                    ready_buy=ready_buy,
+                                                                    assigned_wave=current_macd_cross__wave,
+                                                                    borrow_qty=0,
+                                                                    )
+                        blessings['blessings'].append(order_vars)
                 
                 charlie_bee['queen_cyle_times']['cc_knight'] = (datetime.now(est) - s_).total_seconds()
 
@@ -1523,7 +1577,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         def check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame, makers_middle_price, close_order_today=False):
             try:
                 # at symbol level, the sell amount cannot exceed the min allocation
-
                 # wave
                 macd_state_ = trigname.split("_")[0]
                 # current_macd_ = current_macd.split("_")[0]
@@ -1533,25 +1586,25 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 
                 symbol = ticker_time_frame.split("_")[0]
                 if symbol in revrec['storygauge'].index and 'buy' == macd_state_:
-                    min_allocation = revrec['storygauge'].loc[symbol].get('allocation_long_deploy')
+                    min_allocation = revrec['storygauge'].loc[symbol].get('allocation_long')
                     if min_allocation is None:
-                        logging.warning(f"{ticker_time_frame} does NOT have Min Allocation, Selling ALL")
+                        print(f'{ticker_time_frame} no Min Allocation Sell ALL')
                         return sell_qty
-                    if min_allocation <= 0:
-                        logging.warning(f"{ticker_time_frame} Min Allocation <= 0, Selling ALL")
-                        return sell_qty
-                    # if min_allocation > 0:
-                    sellable_allocation = min_allocation - mm_cost
-                    if sellable_allocation > 0:
-                        # print("Sell ALL")
-                        return sell_qty
+                    
+                    current_long = revrec['storygauge'].loc[symbol].get('star_buys_at_play')
+                    current_long = 0 if current_long is None else current_long
+
+                    sellable = current_long - min_allocation
+                    if sellable <= 0:
+                        # print(f"{ticker_time_frame} Not Allowed to Sell Below Min Allocation, sellable is {sellable} and asking to sell is {mm_cost}")
+                        return 0
                     else:
-                        adjust_qty = min(round(abs(sellable_allocation / makers_middle_price)), sell_qty)
-                        msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, " sell qty: ", sell_qty, " adjusted sell qty: ", adjust_qty)
-                        logging.info(msg)
-
+                        adjust_qty = min(round(sellable / makers_middle_price), sell_qty)
+                        adjust_qty = 0 if adjust_qty < 1 else adjust_qty
+                        if adjust_qty != sell_qty:
+                            msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, " sell qty: ", sell_qty, " adjusted sell qty: ", adjust_qty)
+                            logging.info(msg)
                         return adjust_qty
-
                 else:
                     if macd_state_ == 'sell':
                         logging.info(f"{ticker_time_frame} No Min Alloc for SHORTS, Inverse Index")
@@ -2519,13 +2572,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             
             beat = (datetime.now(est) - s).total_seconds()
 
-            charlie_bee['queen_cyle_times']['beat_times'].append({'datetime': datetime.now(est).strftime("%Y-%m-%d"), 'beat': beat})
+            charlie_bee['queen_cyle_times']['beat_times'].append({'datetime': datetime.now(est).strftime("%Y-%m-%d %H:%M:%S"), 'beat': beat})
             charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'].append(beat)
             charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'] = sum(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])/len(charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'])
             PickleData(queens_charlie_bee, charlie_bee, console=False)
             
             charlie_bee['queen_cycle_count'] += 1
-            print(beat, charlie_bee['queen_cycle_count'])
+            print("Beat", beat, charlie_bee['queen_cycle_count'])
             
             if beat > 23:
                 logging.warning((queens_chess_piece, ": SLOW cycle Heart Beat: ", beat, "use price gauge"))

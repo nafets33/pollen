@@ -67,7 +67,7 @@ pq_buttons = pollenq_button_source()
 # q_or_qk_toggle = st.toggle("QUEEN RevRec", False)
 # hc_source_option = hc.option_bar(option_definition=pq_buttons.get('waves_queen_qk_source_toggle'),title='Source', key='waves_revrec_source', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
 
-all_portfolios = ['Queen', 'King', 'Bishop', "RevRec Refresh"]
+all_portfolios = ["RevRec Refresh", 'Queen', 'King', 'Bishop']
 
 optoins = []
 for op in all_portfolios:
@@ -129,7 +129,7 @@ elif hc_source_option == 'Bishop':
     db = init_swarm_dbs(prod)
     BISHOP = ReadPickleData(db.get('BISHOP'))
     screens = [ i for i in BISHOP.keys() if i != 'source']
-    screen = st.selectbox("Bishop Screens", options=screens)
+    screen = st.selectbox("Bishop Screens", options=screens, index=screens.index('400_10M'))
     df = BISHOP.get(screen)
     for sector in set(df['sector']):
         token = df[df['sector']==sector]
@@ -139,15 +139,18 @@ elif hc_source_option == 'Bishop':
     QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
     symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
     s = datetime.now()
-
     STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
+    st.header(f'call stymbols {(datetime.now()-s).total_seconds()}')
+    s = datetime.now()
+    st.header(f'revrec {(datetime.now()-s).total_seconds()}')
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, wave_blocktime='morning_9-11') ## Setup Board
-    st.header((datetime.now()-s).total_seconds())
 else:
+    s = datetime.now()
     STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+    st.header(f'call stymbols {(datetime.now()-s).total_seconds()}')
     s = datetime.now()
     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
-    st.header((datetime.now()-s).total_seconds())
+    st.header(f'revrec {(datetime.now()-s).total_seconds()}')
 
 cols = st.columns(3)
 tabs = st.tabs([key for key in revrec.keys()])
@@ -159,7 +162,6 @@ for revrec_key in revrec.keys():
         df = revrec.get(revrec_key)
         if revrec_key == 'waveview':
             all_ = df.copy()
-            st.write(all_)
             buys = df[df['bs_position']=='buy']
             sells = df[df['bs_position']!='buy']
             market = df[df['symbol'].isin(['SPY', 'QQQ'])]
@@ -191,13 +193,14 @@ for revrec_key in revrec.keys():
         #     df = pd.DataFrame(revrec.get(revrec_key)).T
         #     st.write(df)
         elif isinstance(df, pd.DataFrame):
-            st.dataframe(df)
+            st.write("Table")
+            standard_AGgrid(df)
         else:
             st.write(df)
     
     tab+=1
 
-st.write("RevRec Check")
+st.write("# RevRec Check")
 df = revrec['waveview']
 wave_revrec_key_cols = ['ticker_time_frame', 'allocation_long', 'macd_state', 'pct_budget_allocation', 'total_allocation_budget', 'alloc_maxprofit_shot', 'alloc_currentprofit', 'alloc_time', 'alloc_ttmp_length', 'maxprofit_shot_weight_score', 'current_profit_deviation_pct', 'current_profit_deviation', 'alloc_powerlen']
 df = df[wave_revrec_key_cols]

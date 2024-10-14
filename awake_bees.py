@@ -8,17 +8,25 @@ from chess_piece.queen_hive import return_alpaca_api_keys, return_market_hours
 import pytz
 import pandas as pd
 
-run = sys.argv[1]
+if len(sys.argv[1]) > 1:
+    run = sys.argv[1]
+else:
+    run = None
+
+try:
+    prod = sys.argv[2]
+except IndexError:
+    prod = True
 
 est = pytz.timezone("US/Eastern")
 
 
-def call_job_workerbees():
+def call_job_workerbees(prod=prod):
 
     print("Bees Awake!: ", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
 
     """ Keys """
-    api = return_alpaca_api_keys(prod=True)["api"]
+    api = return_alpaca_api_keys(prod=prod)["api"]
 
     """# Dates """
     current_date = datetime.now(est).strftime("%Y-%m-%d")
