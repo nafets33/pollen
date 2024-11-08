@@ -27,9 +27,9 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
-from chess_piece.king import kingdom__global_vars, hive_master_root, print_line_of_error, return_app_ip, kingdom__grace_to_find_a_Queen, PickleData
+from chess_piece.king import kingdom__global_vars, hive_master_root, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData
 from chess_piece.queen_hive import create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
-
+from chess_piece.queen_mind import refresh_chess_board__revrec
 # componenets
 # import streamlit_antd_components as sac
 from streamlit_extras.switch_page_button import switch_page
@@ -361,8 +361,6 @@ def pollenq(admin_pq):
 
         stop_queenbee(QUEEN_KING, sidebar=True)
 
-        if QUEEN_KING.get('revrec') == 'init':
-            st.warning("missing revrec, add revrec to QUEEN")
 
         ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
         if st.sidebar.button("Check for new KORs"):
@@ -413,7 +411,21 @@ def pollenq(admin_pq):
 
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             switch_page('chessboard')
-        
+
+        if QUEEN_KING.get('revrec') == 'init':
+            st.warning("missing revrec, add revrec to QUEEN")
+            if st.button("Add a RevRec"):
+                from chess_piece.queen_bee import god_save_the_queen, refresh_broker_account_portolfio
+                QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
+                STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
+                refresh_broker_account_portolfio(api, QUEEN, account=True, portfolio=True)
+                QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee) ## Setup Board
+                god_save_the_queen(QUEENsHeart={'heartbeat': 'init'}, 
+                                   QUEEN=QUEEN, 
+                                save_q=True,
+                                save_rr=True,
+                                console=True)
+
         trading_days = hive_dates(api=api)['trading_days']
         mkhrs = return_market_hours(trading_days=trading_days)
         # st.write(trading_days) # STORE IN KING and only call once

@@ -10,6 +10,7 @@ from email.message import EmailMessage
 # from streamlit_extras.switch_page_button import switch_page
 from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc, return_app_ip
 from chess_piece.queen_hive import setup_instance, print_line_of_error
+from chess_piece.app_hive import set_streamlit_page_config_once
 import ipdb
 
 # from QueenHive import init_pollen_dbs
@@ -249,7 +250,7 @@ def signin_main(page=None):
     """Return True or False if the user is signed in"""
     return_app_ip()
     MISC = local__filepaths_misc()
-    floating_queen_gif = MISC["floating_queen_gif"]
+    set_streamlit_page_config_once()
 
     def setup_user_pollenqdbs():
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':

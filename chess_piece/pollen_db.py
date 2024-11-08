@@ -5,8 +5,8 @@ import os
 import pandas as pd
 import numpy as np
 import psycopg2
-
-
+from chess_piece.king import print_line_of_error
+import ipdb
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.int64):
@@ -219,6 +219,92 @@ class PollenDatabase:
                 conn.close()
 
         return None
+
+
+    @staticmethod
+    def retrieve_all_pollenstory_data(symbols):
+        conn = None
+        merged_data = {"pollenstory": {}}
+
+        try:
+            conn = PollenDatabase.get_connection()
+            cur = conn.cursor()
+
+            # Base query
+            query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%';"
+            
+            # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
+            if symbols:
+                symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
+                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%' AND ({symbol_conditions});"
+            
+            cur.execute(query)
+            results = cur.fetchall()
+
+            for result in results:
+                key_name = result[0]
+                data_dict = result[1]  # Now data column is the second column
+                nested_key = key_name.replace('POLLEN_STORY_', '')
+
+                # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
+                merged_data["pollenstory"][nested_key] = json.loads(data_dict) #data_dict["pollenstory"]
+
+            merged_data = json.dumps(merged_data)
+            # Always deserialize using custom decoder
+            return json.loads(merged_data, cls=PollenJsonDecoder)
+
+        except Exception as e:
+            print_line_of_error(e)
+        finally:
+            if conn:
+                conn.close()
+
+        return None
+
+
+    @staticmethod
+    def get_all_tables():
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                # Execute query to fetch all table names in the public schema
+                cur.execute("""
+                    SELECT table_name
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_type = 'BASE TABLE';
+                """)
+                
+                # Fetch all table names
+                tables = cur.fetchall()
+                
+                # Return the list of table names
+                return [table[0] for table in tables]
+    
+            except Exception as e:
+                print("Error:", e)
+
+
+    @staticmethod
+    def get_all_keys(table_name='pollen_store'):
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                # Execute query to fetch all unique keys in the specified table
+                query = f"SELECT DISTINCT key FROM {table_name} ORDER BY key;"
+                cur.execute(query)
+                
+                # Fetch all unique keys
+                keys = cur.fetchall()
+                
+                # Return the list of keys
+                return [key[0] for key in keys]
+
+            except Exception as e:
+                print("Error:", e)
+                return []
+
+
+
+
 
 class TestPollenDatabase:
     @staticmethod

@@ -152,7 +152,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
 
 if __name__ == '__main__':
 
-    set_streamlit_page_config_once()
+    
 
     if 'authentication_status' not in st.session_state:
         print("SIGN IN")

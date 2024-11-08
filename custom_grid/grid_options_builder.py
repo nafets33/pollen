@@ -97,6 +97,31 @@ class GridOptionsBuilder:
         """
         self.__grid_options.update(props)
 
+    def configure_pagination(self, enabled=True, paginationAutoPageSize=True, paginationPageSize=89):
+        """Configure grid's pagination features
+
+        Args:
+            enabled (bool, optional):
+                Self explanatory. Defaults to True.
+
+            paginationAutoPageSize (bool, optional):
+                Calculates optimal pagination size based on grid Height. Defaults to True.
+
+            paginationPageSize (int, optional):
+                Forces page to have this number of rows per page. Defaults to 10.
+        """
+        if not enabled:
+            self.__grid_options.pop("pagination", None)
+            self.__grid_options.pop("paginationAutoPageSize", None)
+            self.__grid_options.pop("paginationPageSize", None)
+            return
+
+        self.__grid_options["pagination"] = True
+        if paginationAutoPageSize:
+            self.__grid_options["paginationAutoPageSize"] = paginationAutoPageSize
+        else:
+            self.__grid_options["paginationPageSize"] = paginationPageSize
+
     def build(self):
         self.__grid_options["columnDefs"] = list(
             self.__grid_options["columnDefs"].values())

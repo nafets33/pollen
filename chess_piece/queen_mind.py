@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 import logging
 import copy
 
-from chess_piece.king import print_line_of_error, stars
+from chess_piece.king import print_line_of_error, stars, kingdom__global_vars
+from chess_piece.queen_hive import init_qcp_workerbees
 
 prod = True
 
@@ -1019,9 +1020,10 @@ def shape_chessboard(chess_board):
     df = pd.DataFrame(rows).set_index('ticker_star')
     return df
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, wave_blocktime=None):
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, ):
     rr_starttime = datetime.now()
     s = datetime.now()
+    chess_board = 'chess_board'
 
     rr_run_cycle = {}
     # base line power allocation per qcp
@@ -1036,9 +1038,17 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
     marginPower={}
     df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum'}
 
+    if not QUEEN.get('portfolio'):
+        df_broker_portfolio = pd.DataFrame([{'symbol': ''}])
+    else:
+        df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
+    df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
 
     # Check for First
-    if 'revrec' not in QUEEN.keys():
+    if not active_queen_order_states:
+        active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
+
+    if not QUEEN.get('revrec'):
         st.info("Fresh Queen on the Block")
         ticker_trinity = None
         pass
@@ -1056,6 +1066,12 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         symbols_budget_alloc = waveview.groupby(['symbol']).agg({alloc_weight: 'sum', 'star_total_budget': 'sum'}).reset_index()
         symbols_budget_alloc['symbol_allocation_pct'] = symbols_budget_alloc[alloc_weight] / symbols_budget_alloc['star_total_budget']
         ticker_trinity = dict(zip(symbols_budget_alloc['symbol'], symbols_budget_alloc['symbol_allocation_pct']))
+        
+
+        missing_tickers = [i for i in df_broker_portfolio.index if i not in q_revrec['df_ticker'].index]
+        if missing_tickers:
+            print("tickers missing", missing_tickers)
+            # QUEEN_KING[chess_board]['non_active_stories'] = init_qcp_workerbees(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=.23)
 
     # WORKERBEE: Add validation only 1 symbol per qcp --- QUEEN not needed only need ORDERS and QUEEN_KING
     if not acct_info:
@@ -1125,7 +1141,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # Handle missing TM
         if trading_model is None: 
             # print(ticker, ' tradingmodel missing handling in revrec to default')
-            QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING['chess_board'][qcp].get('theme'))["MACD"])
+            QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].update(generate_TradingModel(ticker=ticker, theme=QUEEN_KING[chess_board][qcp].get('theme'))["MACD"])
             trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
 
         return trading_model
@@ -1428,7 +1444,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         # calculate budgets dollar values and join in current buys / sells as play
         for qcp in all_workers:            
-            piece = QUEEN_KING['chess_board'].get(qcp)
+            piece = QUEEN_KING[chess_board].get(qcp)
             tickers = list(set(piece.get('tickers')))
             
             for ticker in tickers:
@@ -1513,33 +1529,30 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
 
     try:
-        # df = shape_chessboard(chess_board=QUEEN_KING['chess_board']) ## need to handle Stars as well
         rr_run_cycle.update({'load': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
-        all_workers = list(QUEEN_KING['chess_board'].keys())
+        all_workers = list(QUEEN_KING[chess_board].keys())
     
         # Handle Weight change
         s = datetime.now()
 
         for qcp in all_workers:
-            # if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
-            #     continue
             
             # Refresh ChessBoard and RevRec
-            qcp_power = float(QUEEN_KING['chess_board'][qcp]['total_buyng_power_allocation'])
-            qcp_borrow = float(QUEEN_KING['chess_board'][qcp]['total_borrow_power_allocation'])
-            qcp_marginpower = float(QUEEN_KING['chess_board'][qcp]['margin_power'])
+            qcp_power = float(QUEEN_KING[chess_board][qcp]['total_buyng_power_allocation'])
+            qcp_borrow = float(QUEEN_KING[chess_board][qcp]['total_borrow_power_allocation'])
+            qcp_marginpower = float(QUEEN_KING[chess_board][qcp]['margin_power'])
             chess_board__revrec[qcp] = qcp_power
             chess_board__revrec_borrow[qcp] = qcp_borrow
             marginPower[qcp] = qcp_marginpower
 
-            qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
+            qcp_tickers = QUEEN_KING[chess_board][qcp].get('tickers')
             board_tickers = board_tickers + qcp_tickers
 
             num_tickers = len(qcp_tickers)
             if num_tickers == 0:
-                print("No Tickers in Chess Piece")
+                print("No Tickers in Chess Piece", qcp)
                 continue
 
             # Group Trinity and Re-Calculate qcp buying power
@@ -1585,7 +1598,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         rr_run_cycle.update({'shape': (datetime.now() - s).total_seconds()})
         s = datetime.now()
-
         df_ticker, df_stars, df_active_orders = calculate_budgets__query_queen_orders(df_ticker, df_stars, STORY_bee)
         
         ## print("ORDERS")
@@ -1595,14 +1607,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         else:
             symbols_qty_avail = pd.DataFrame()
 
-        # Broker Data        
-        df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
-        df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
-        # print([i for i in df_broker_portfolio.index if i not in df_ticker.index])
-
         # Story Bee
-        # current_from_open = {ttf: STORY_bee[ttf]['story'].get('current_from_open') for ttf in df_ticker.index}
-        # df_ticker['current_from_open'] = df_ticker.index.map(current_from_open)
         for symbol in df_ticker.index:
             ttf = f'{symbol}_1Minute_1Day'
             if ttf not in STORY_bee.keys():
@@ -1610,9 +1615,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 df_ticker.at[symbol, 'current_from_open'] = None
             else:
                 df_ticker.at[symbol, 'current_from_open'] = STORY_bee[ttf]['story'].get('current_from_open')
+            
             ### Broker DELTA ###
             if symbol in symbols_qty_avail.index:
                 df_ticker.at[symbol, 'qty_available'] = float(symbols_qty_avail.at[symbol, 'qty_available'])
+            else:
+                df_ticker.at[symbol, 'qty_available'] = 0
+            
             if symbol in df_broker_portfolio.index:
                 df_ticker.at[symbol, 'broker_qty_available'] = float(df_broker_portfolio.at[symbol, 'qty_available'])
             else:
@@ -1628,42 +1637,91 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 # print(f'{ttf} missing in story excluding from revrec')
                 ttf_errors.append(ttf)
                 continue
-
         waveview = waveview[~waveview.index.isin(ttf_errors)]
         s = datetime.now()
         waveview = revrec_allocation(waveview, wave_blocktime)
         rr_run_cycle.update({'revrec allocation': (datetime.now() - s).total_seconds()})
         s = datetime.now()
+        
+        def revrec_lastmod(QUEEN):
+            return datetime.fromtimestamp(os.stat(QUEEN['dbs'].get('PB_RevRec_PICKLE')).st_mtime).astimezone(est)
+        
+        def calculate_wave_gauge(symbols, waveview, weight_team_keys=weight_team_keys):
+            
+            # Wave Gauge # WORKERBEE
+            waveview_symbols = waveview['symbol'].tolist()
+            story_guages_view = []
+            weight_team = list(weight_team_keys().values()) # ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
+            for symbol in set(symbols):
+                if symbol not in waveview_symbols:
+                    if symbol not in crypto_currency_symbols:
+                        logging.error(f'{symbol} MISSING IN waveview')
+                    continue
+                df_waves = waveview[waveview['symbol'] == symbol]
+                story_guages = wave_gauge_revrec_2(symbol=symbol, df_waves=df_waves, weight_team=weight_team)
+                if story_guages:
+                    story_guages_view.append(story_guages)
+            
+            if story_guages_view:
+                df_storyguage = pd.DataFrame(story_guages_view)
+                df_storyguage = df_storyguage.set_index('symbol')
+                
+                # Trinity 
+                for w_t in weight_team:
+                    df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
+                
+                return df_storyguage
+            else:
+                return pd.DataFrame()
 
-        # Wave Gauge # WORKERBEE
-        story_guages_view = []
-        weight_team = list(weight_team_keys().values()) # ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
-        for symbol in set(waveview['symbol']):
-            df_waves = waveview[waveview['symbol'] == symbol]
-            story_guages = wave_gauge_revrec_2(symbol=symbol, df_waves=df_waves, weight_team=weight_team)
-            if story_guages:
-                story_guages_view.append(story_guages)
-    
-        df_storyguage = pd.DataFrame(story_guages_view)
+        ### Return Story Gauge
+        wave_symbols = waveview['symbol'].tolist()
+        cols =['w_L_macd_tier_position', 'w_L_vwap_tier_position',
+       'w_L_rsi_tier_position', 'w_S_macd_tier_position',
+       'w_S_vwap_tier_position', 'w_S_rsi_tier_position',
+       'w_15_macd_tier_position', 'w_15_vwap_tier_position',
+       'w_15_rsi_tier_position', 'w_30_macd_tier_position',
+       'w_30_vwap_tier_position', 'w_30_rsi_tier_position',
+       'w_54_macd_tier_position', 'w_54_vwap_tier_position',
+       'w_54_rsi_tier_position', 'trinity_w_L', 'trinity_w_S', 'trinity_w_15',
+       'trinity_w_30', 'trinity_w_54',]
+        revrec = QUEEN.get('revrec')
+        story_g = True if revrec else None
+        if story_g:
+            story_g = revrec.get('storygauge')
+            last_mod_revrec = revrec_lastmod(QUEEN)
+            if (datetime.now(est) - last_mod_revrec).total_seconds() > 500:
+                print("Refresh Story Gauge")
+                df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+            else:
+                df_storygauge = story_g
+        else:
+            df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+
+        df_storygauge = df_storygauge[cols]
+        symbols_failed = [i for i in df_ticker.index if i not in df_storygauge.index]
+        if symbols_failed:
+            print("symbols missing story attempting to add back", symbols_failed)
+            story_token = calculate_wave_gauge(symbols_failed, waveview)
+            if len(story_token) > 0:
+                story_token = story_token[cols]
+                df_storygauge = pd.concat([df_storygauge, story_token])
+        
+        # Join Story to Tickers
+        storygauge = pd.concat([df_ticker, df_storygauge], axis=1, join='inner')
+
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
-        # Trinity 
-        for w_t in weight_team:
-            df_storyguage[f'trinity_{w_t}'] = (df_storyguage[f'{w_t}_macd_tier_position'] + df_storyguage[f'{w_t}_vwap_tier_position'] + df_storyguage[f'{w_t}_rsi_tier_position']) / 3
-
-        df_storyguage = df_storyguage.set_index('symbol')
-        df_storyguage = df_storyguage[[i for i in df_storyguage.columns if i not in df_ticker.columns]]
-        storygauge = pd.concat([df_ticker, df_storyguage], axis=1, join='inner')
-
-        symbols_failed = [i for i in df_ticker.index if i not in storygauge.index]
 
         # Price Info data
-        price_info_symbols = QUEEN['price_info_symbols']
-        df_new = pd.json_normalize(price_info_symbols['priceinfo']).set_index('ticker')
-        storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
-        for col in df_new.columns:
-            storygauge[col] = storygauge[col].fillna(0)
+        if 'price_info_symbols' in QUEEN.keys():
+            price_info_symbols = QUEEN['price_info_symbols']
+            df_new = pd.json_normalize(price_info_symbols['priceinfo']).set_index('ticker')
+            storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
+            for col in df_new.columns:
+                storygauge[col] = storygauge[col].fillna(0)
+        
         token = waveview.groupby('symbol').agg(df_star_agg).reset_index().set_index('symbol')
         storygauge = pd.concat([storygauge, token], axis=1, join='inner')
         storygauge = storygauge.fillna(0)
@@ -1682,7 +1740,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             print(msg)
             logging.warning(msg)
         
-        return {'cycle_time': cycle_time, 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 'waveview': waveview, 'storygauge': storygauge, 'symbols_failed': symbols_failed, 'ttf_failed': ttf_errors, 'rr_run_cycle': rr_run_cycle}
+        return {'cycle_time': cycle_time, 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
+                'waveview': waveview, 'storygauge': storygauge, 
+                'symbols_failed': symbols_failed, 'ttf_failed': ttf_errors, 
+                'rr_run_cycle': rr_run_cycle}
     
     except Exception as e:
         print_line_of_error(f'revrec failed {e}')

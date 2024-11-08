@@ -1649,7 +1649,7 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
                         QUEEN_KING["users_secrets"] = user_secrets
                         PickleData(PB_App_Pickle, QUEEN_KING)
                         time.sleep(2)
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error(f"{user_env_instance} Keys Failed")
                         user_secrets[f"{user_env_instance}_keys_confirmed"] = False

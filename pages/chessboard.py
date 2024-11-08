@@ -40,13 +40,13 @@ def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key=
         with cols[0]:
             picture = cust_Button(local__filepaths_misc().get('queen_png'), key=f'{qcp_name}_image')
         with cols[1]:
-            qcp_vars['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=qcp_vars['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp_name}tickers{admin}')
+            qcp_vars['tickers'] = st.multiselect(label=f'symbols', options=ticker_allowed + crypto_symbols__tickers_avail, default=qcp_vars['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp_name}tickers{admin}', label_visibility='hidden')
         with cols[2]:
             qcp_vars['model'] = st.selectbox(label='model', options=models, index=models.index(qcp_vars.get('model')), key=f'{qcp_name}model{admin}')
         with cols[3]:
             qcp_vars['theme'] = st.selectbox(label=f'theme', options=themes, index=themes.index(qcp_vars.get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp_name}theme{admin}')
         with cols[4]:
-            qcp_vars['total_buyng_power_allocation'] = st.slider(label=f'Budget Allocation', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_buyng_power_allocation']), key=f'{qcp_name}_buying_power_allocation{admin}', label_visibility='hidden')
+            qcp_vars['total_buyng_power_allocation'] = st.slider(label=f'Budget Allocation', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_buyng_power_allocation']), key=f'{qcp_name}_buying_power_allocation{admin}')
         with cols[5]:
             qcp_vars['total_borrow_power_allocation'] = st.slider(label=f'Margin Allocation', min_value=float(0.0), max_value=float(1.0), value=float(qcp_vars['total_borrow_power_allocation']), key=f'{qcp_name}_borrow_power_allocation{admin}', label_visibility='hidden')
         with cols[6]:
@@ -102,7 +102,7 @@ def reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_m
         print_line_of_error("rev allocation error")
 
 
-def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, new_piece=False, headers=0):
+def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, new_piece=False, headers=0):
     def return_active_image(qcp):
         if 'qcp_k' not in st.session_state:
             b_key = 89
@@ -142,6 +142,7 @@ def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, them
     models = ['MACD', 'story__AI']
                 
     try:
+        cols = st.columns((1,1,4,1,1,2,2,2))
         if headers == 0:
             # Headers
             c=0
@@ -150,28 +151,31 @@ def setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, them
             for qcpvar in chess_board_names:
                 try:
                     with cols[c]:
-                        st.write(qcpvar)
+                        st.write(f'{qcpvar}')
                         c+=1
                 except Exception as e:
                     print(qcpvar, e)
 
-        return_active_image(qcp)
-        
-        # chess board vars
-        with cols[1]:
-            QUEEN_KING[qcp_bees_key][qcp]['piece_name'] = st.text_input("Name", value=QUEEN_KING[qcp_bees_key][qcp]['piece_name'], key=f'{qcp}piece_name{admin}')
-        with cols[2]:
-            QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}')
-        with cols[3]:
-            QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
-        with cols[4]:
-            QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'-', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
-        with cols[5]:
-            QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'Budget Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
-        with cols[6]:
-            QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = st.slider(label=f'Margin Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
-        with cols[7]:
-            QUEEN_KING[qcp_bees_key][qcp]['margin_power'] = st.slider(label=f'Margin Power', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['margin_power']), key=f'{qcp}margin_power{admin}', label_visibility='hidden')
+        # return_active_image(qcp)
+        with st.container():
+            cols = st.columns((1,1,4,1,1,2,2,2))
+            with cols[0]:
+                cust_Button(local__filepaths_misc().get('castle_png'), key=f'{qcp}')
+            # chess board vars
+            with cols[1]:
+                QUEEN_KING[qcp_bees_key][qcp]['piece_name'] = st.text_input("Name", value=QUEEN_KING[qcp_bees_key][qcp]['piece_name'], key=f'{qcp}piece_name{admin}', label_visibility='hidden')
+            with cols[2]:
+                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}',  label_visibility='hidden')
+            with cols[3]:
+                QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
+            with cols[4]:
+                QUEEN_KING[qcp_bees_key][qcp]['theme'] = st.selectbox(label=f'-', options=themes, index=themes.index(QUEEN_KING[qcp_bees_key][qcp].get('theme')), help='Trading Star Strategy, You May Customize Trading Models', key=f'{qcp}theme{admin}')
+            with cols[5]:
+                QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation'] = st.slider(label=f'Budget Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_buyng_power_allocation']), key=f'{qcp}_buying_power_allocation{admin}', label_visibility='hidden')
+            with cols[6]:
+                QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation'] = st.slider(label=f'Margin Allocation', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['total_borrow_power_allocation']), key=f'{qcp}_borrow_power_allocation{admin}', label_visibility='hidden')
+            with cols[7]:
+                QUEEN_KING[qcp_bees_key][qcp]['margin_power'] = st.slider(label=f'Margin Power', min_value=float(0.0), max_value=float(1.0), value=float(QUEEN_KING[qcp_bees_key][qcp]['margin_power']), key=f'{qcp}margin_power{admin}', label_visibility='hidden')
 
         return QUEEN_KING
     
@@ -302,10 +306,9 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             with st.form(f'ChessBoard_form{admin}'):
                 try:
 
-                    cols = st.columns((1,1,4,1,2,2,2,2))
                     headers = 0
                     for qcp in all_workers:
-                        QUEEN_KING=setup_qcp_on_board(cols, QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
+                        QUEEN_KING=setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
                         headers+=1
                     
                     # RevRec

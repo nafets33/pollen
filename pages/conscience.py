@@ -13,7 +13,9 @@ import hydralit_components as hc
 
 from chess_piece.app_hive import return_image_upon_save, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import return_QUEENs__symbols_data, hive_master_root, streamlit_config_colors, kingdom__grace_to_find_a_Queen, print_line_of_error
-from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, generate_TradingModel, init_logging, init_swarm_dbs, init_queenbee
+from chess_piece.queen_hive import star_names, return_queenking_board_symbols, sell_button_dict_items, buy_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee
+from pq_auth import signin_main
+from streamlit_extras.switch_page_button import switch_page
 
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from st_aggrid import AgGrid, GridUpdateMode, JsCode
@@ -137,11 +139,12 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
 
-    def wave_grid(revrec, symbols, ip_address, refresh_sec=8, key='default'):
+    def wave_grid(revrec, symbols, ip_address, refresh_sec=8, paginationOn=True, key='default'):
         gb = GridOptionsBuilder.create()
         gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
         gb.configure_index('ticker_time_frame')
         gb.configure_theme('ag-theme-material')
+
 
         def config_cols():
 
@@ -237,12 +240,15 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         ) 
 
     
-    def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, key='default'):
+    def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default'):
         try:
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,)            
             gb.configure_index('symbol')
             gb.configure_theme('ag-theme-material')
+            if paginationOn:
+                gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+
             def story_grid_buttons():
                 buttons=[
                             {'button_name': None,
@@ -310,7 +316,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-
+                'ask': {'sortable':'true',},
+                'bid': {'sortable':'true',},
 
                 # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, wrapText=True),
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
@@ -330,13 +337,20 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
                 }
 
-            # chess_pieces = list(revrec['df_qcp'].index)
+            ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
+            for col in ticker_info_cols:
+                if col != 'symbol': 
+                    config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True}
+                    gb.configure_column(col, config)
+            
             chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
             story_col = revrec.get('storygauge').columns.tolist()
             config_cols_ = config_cols(story_col)
             for col, config_values in config_cols_.items():
                 config = config_values
                 gb.configure_column(col, config)
+            for col in bishop_ticker_info().get('ticker_info_cols'):
+                gb.configure_column(col, {'hide': 'true', 'sortable': 'true'})
             mmissing = [i for i in story_col if i not in config_cols_.keys()]
             if len(mmissing) > 0:
                 for col in mmissing:
@@ -521,7 +535,15 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         print('queensconscience', print_line_of_error(e))
 
 if __name__ == '__main__':
-    client_user = os.environ.get('admin_user')
+
+
+    signin_main(page="pollenq")
+
+    if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
+        print("SWITCHING PAGES")
+        switch_page('pollen')
+
+    client_user = os.environ.get('admin_user') ###??? 
     prod = True
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 

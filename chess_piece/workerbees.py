@@ -48,6 +48,8 @@ from chess_piece.queen_hive import (
     
 )
 
+from chess_piece.pollen_db import PollenDatabase
+
 
 os.environ["no_proxy"] = "*"
 
@@ -60,9 +62,13 @@ est = pytz.timezone("US/Eastern")
 def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None):
     s = datetime.now(est)
 
-    async def main_func(session, ticker_time_frame, pickle_file, data):
+    table_name = "pollen_store"
+    PollenDatabase.create_table_if_not_exists(table_name)
+
+    async def main_func(session, ticker_time_frame, pickle_file, key, data):
         async with session:
             try:
+                # PollenDatabase.upsert_data(table_name ,key , data)
                 PickleData(pickle_file, data, console=False)
                 return {
                     "status": "success",
@@ -85,6 +91,7 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
             return_list = []
             tasks = []
             for ticker_time_frame in pollens_honey["pollen_story"]:
+                key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
                 ticker, ttime, tframe = ticker_time_frame.split("_")
                 pickle_file = os.path.join(
                     symbols_pollenstory_dbs,
@@ -95,18 +102,17 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
                         ticker_time_frame
                     ]
                 }
-                # if backtesting and backtesting_star != f"{ttime}_{tframe}":
-                #     continue
-                # else:
+
                 tasks.append(
                     asyncio.ensure_future(
                         main_func(
-                            session, ticker_time_frame, pickle_file, data
+                            session, ticker_time_frame, pickle_file, key, data
                         )
                     )
                 )
 
             for ticker_time_frame in pollens_honey["conscience"]["STORY_bee"]:
+                key = f"STORY_BEE_{ticker_time_frame}{macd_part_fname}"
                 ticker, ttime, tframe = ticker_time_frame.split("_")
                 pickle_file = os.path.join(
                     symbols_STORY_bee_root,
@@ -117,13 +123,11 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
                         ticker_time_frame
                     ]
                 }
-                # if backtesting and backtesting_star != f"{ttime}_{tframe}":
-                #     continue
-                # else:
+
                 tasks.append(
                     asyncio.ensure_future(
                         main_func(
-                            session, ticker_time_frame, pickle_file, data
+                            session, ticker_time_frame, pickle_file, key, data
                         )
                     )
                 )
@@ -984,7 +988,8 @@ def queen_workerbees(
                     errors.append(msg)
             if errors:
                 msg = str(errors)
-                send_email(subject="Tickers Not Longer Active", body=msg)
+                # send_email(subject="Tickers Not Longer Active", body=msg)
+                print(msg)
             
             return queens_master_tickers
 
@@ -1190,6 +1195,8 @@ if __name__ == "__main__":
     qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
     reset_only = namespace.reset_only  # 'castle', 'knight' 'queen'
     prod = True if str(namespace.prod).lower() == "true" else False
+
+
     if not reset_only:
         while True:
             seconds_to_market_open = (

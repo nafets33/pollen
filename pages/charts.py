@@ -13,8 +13,9 @@ import os
 import time
 
 from chess_piece.app_hive import create_slope_chart, pollenq_button_source, create_main_macd_chart, create_wave_chart, create_wave_chart_all, create_wave_chart_single
-from chess_piece.king import return_QUEENs__symbols_data, print_line_of_error
+from chess_piece.king import print_line_of_error, return_QUEENs_workerbees_chessboard, return_QUEENs__symbols_data
 from chess_piece.queen_hive import init_queenbee
+from chess_utils.postgres_utils import read_pollenstore
 
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -36,7 +37,11 @@ api = qb.get('api')
 
 call_all_ticker_data = st.sidebar.checkbox("swarmQueen Symbols", False)
 
+symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING).get("queens_master_tickers")
+s = datetime.now()
+# ticker_db = read_pollenstore(symbols)
 ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=call_all_ticker_data)
+print(f"time to read {len(symbols)}: {(datetime.now() - s).total_seconds()}")
 POLLENSTORY = ticker_db['pollenstory']
 STORY_bee = ticker_db['STORY_bee']
 

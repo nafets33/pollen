@@ -443,6 +443,159 @@ def setup_chess_board(QUEEN, qcp_bees_key='workerbees', screen='screen_1'):
     return QUEEN
 
 
+def bishop_ticker_info():
+    ticker_info_cols = [
+    # 'address1',
+    # 'city',
+    # 'state',
+    # 'zip',
+    'country',
+    # 'phone',
+    'website',
+    'industry',
+    'industryKey',
+    'industryDisp',
+    'sector',
+    'sectorKey',
+    'sectorDisp',
+    'longBusinessSummary',
+    'fullTimeEmployees',
+    # 'companyOfficers',
+    'auditRisk',
+    'boardRisk',
+    'compensationRisk',
+    'shareHolderRightsRisk',
+    'overallRisk',
+    # 'governanceEpochDate',
+    # 'compensationAsOfEpochDate',
+    'maxAge',
+    'priceHint',
+    'previousClose',
+    # 'open',
+    # 'dayLow',
+    # 'dayHigh',
+    'regularMarketPreviousClose',
+    'regularMarketOpen',
+    'regularMarketDayLow',
+    'regularMarketDayHigh',
+    'dividendRate',
+    'dividendYield',
+    'exDividendDate',
+    'payoutRatio',
+    'fiveYearAvgDividendYield',
+    'beta',
+    'trailingPE',
+    'forwardPE',
+    'volume',
+    'regularMarketVolume',
+    'averageVolume',
+    'averageVolume10days',
+    'averageDailyVolume10Day',
+    # 'bid',
+    # 'ask',
+    # 'bidSize',
+    # 'askSize',
+    'marketCap',
+    'fiftyTwoWeekLow',
+    'fiftyTwoWeekHigh',
+    'priceToSalesTrailing12Months',
+    'fiftyDayAverage',
+    # 'twoHundredDayAverage',
+    'trailingAnnualDividendRate',
+    'trailingAnnualDividendYield',
+    'currency',
+    'enterpriseValue',
+    'profitMargins',
+    'floatShares',
+    'sharesOutstanding',
+    'sharesShort',
+    'sharesShortPriorMonth',
+    'sharesShortPreviousMonthDate',
+    'dateShortInterest',
+    'sharesPercentSharesOut',
+    'heldPercentInsiders',
+    'heldPercentInstitutions',
+    'shortRatio',
+    'shortPercentOfFloat',
+    'impliedSharesOutstanding',
+    'bookValue',
+    'priceToBook',
+    # 'lastFiscalYearEnd',
+    # 'nextFiscalYearEnd',
+    # 'mostRecentQuarter',
+    'earningsQuarterlyGrowth',
+    'netIncomeToCommon',
+    'trailingEps',
+    'forwardEps',
+    'pegRatio',
+    # 'lastSplitFactor',
+    # 'lastSplitDate',
+    'enterpriseToRevenue',
+    'enterpriseToEbitda',
+    '52WeekChange',
+    # 'SandP52WeekChange',
+    'lastDividendValue',
+    'lastDividendDate',
+    'exchange',
+    'quoteType',
+    # 'symbol',
+    # 'underlyingSymbol',
+    # 'shortName',
+    'longName',
+    'firstTradeDateEpochUtc',
+    # 'timeZoneFullName',
+    # 'timeZoneShortName',
+    # 'uuid',
+    # 'messageBoardId',
+    # 'gmtOffSetMilliseconds',
+    # 'currentPrice',
+    'targetHighPrice',
+    'targetLowPrice',
+    'targetMeanPrice',
+    'targetMedianPrice',
+    'recommendationMean',
+    'recommendationKey',
+    'numberOfAnalystOpinions',
+    'totalCash',
+    'totalCashPerShare',
+    'ebitda',
+    'totalDebt',
+    'quickRatio',
+    'currentRatio',
+    'totalRevenue',
+    'debtToEquity',
+    'revenuePerShare',
+    'returnOnAssets',
+    'returnOnEquity',
+    'freeCashflow',
+    'operatingCashflow',
+    'earningsGrowth',
+    'grossMargins',
+    'ebitdaMargins',
+    'operatingMargins',
+    'financialCurrency',
+    'trailingPegRatio',
+    # 'address2',
+    # 'fax',
+    # 'irWebsite',
+    'revenueGrowth',
+    # 'totalAssets',
+    # 'navPrice',
+    # 'category',
+    # 'ytdReturn',
+    # 'beta3Year',
+    # 'fundFamily',
+    # 'fundInceptionDate',
+    # 'legalType',
+    # 'threeYearAverageReturn',
+    # 'fiveYearAverageReturn',
+    # 'grossProfits',
+    # 'yield',
+    # 'industrySymbol'
+    ]
+
+    return {'ticker_info_cols': ticker_info_cols}
+
 def init_QUEEN_KING():
 
     app = {
@@ -658,7 +811,7 @@ def return_queenking_board_symbols(QUEEN_KING, active=True):
     all_workers = list(QUEEN_KING['chess_board'].keys())
     return_qcp_tickers = []
     for qcp in all_workers:
-        if QUEEN_KING['chess_board'][qcp].get('buying_power') == 0:
+        if QUEEN_KING['chess_board'][qcp].get('total_buyng_power_allocation') == 0:
             continue
         # Refresh ChessBoard and RevRec
         qcp_tickers = QUEEN_KING['chess_board'][qcp].get('tickers')
@@ -4366,16 +4519,19 @@ def create_QueenOrderBee(
         ready_buy=None,
         date_mark = datetime.now(est),
         long_short=long_short,
+        profit_loss=0,
 
     ):
         # date_mark = datetime.now(est)
         if queen_init:
             qo = gen_queen_order()
-            return {
+            data = {
                 name: qo.get(name)
                 for name in gen_queen_order.__code__.co_varnames
                 if name not in ["order", "order_vars", "priceinfo"]
             }
+            data['queen_order_state'] = 'init'
+            return data
         else:
 
             return {
