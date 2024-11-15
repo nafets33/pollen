@@ -1766,7 +1766,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if close_order_today:
                     logging.info(f"{ticker_time_frame} CLOSE Order TODAY")
                     return sell_qty
-                
                 symbol = ticker_time_frame.split("_")[0]
                 if symbol in revrec['storygauge'].index and 'buy' == macd_state_:
                     min_allocation = revrec['storygauge'].loc[symbol].get('allocation_long')
@@ -1778,8 +1777,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     current_long = 0 if current_long is None else current_long
 
                     sellable = current_long - min_allocation
+                    not_allowed_to_sell_msg = (f"{ticker_time_frame} NOT Allowed to SELL Min Allocation SELLABLE:{sellable}")
                     if sellable <= 0:
-                        # print(f"{ticker_time_frame} Not Allowed to Sell Below Min Allocation, sellable is {sellable} and asking to sell is {mm_cost}")
+                        print(not_allowed_to_sell_msg)
                         return 0
                     else:
                         adjust_qty = min(round(sellable / makers_middle_price), sell_qty)
@@ -1787,6 +1787,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         if adjust_qty != sell_qty:
                             msg = ("SELL QTY ADJUSTMENT", ticker_time_frame, " sell qty: ", sell_qty, " adjusted sell qty: ", adjust_qty)
                             logging.info(msg)
+                        if adjust_qty == 0:
+                            msg = ("NOT Allowed to SELL Min Allocation")
                         return adjust_qty
                 else:
                     if macd_state_ == 'sell':
@@ -2035,8 +2037,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     
                     if sell_reasons:
                         save_order = True
-                        if type(QUEEN['queen_orders'].at[client_order_id, 'sell_reason']) == list:
-                            QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reasons
+                        QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reason
                     
                     if sell_order:
                         makers_middle_price = priceinfo.get('maker_middle')

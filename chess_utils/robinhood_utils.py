@@ -7,8 +7,8 @@ load_dotenv()
 
 def login_robinhood():
     # Login to Robinhood
-    username = os.environ.get('username_robinhood')
-    password = os.environ.get('password_robinhood')
+    username = 'stefanstapinski@yahoo.com' #os.environ.get('username_robinhood')
+    password = 'pollenhood' #os.environ.get('password_robinhood')
     login = rs.robinhood.login(username=username,password=password, mfa_code="otp")
 
     return login

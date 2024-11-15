@@ -17,6 +17,7 @@ from chess_piece.king import stars, print_line_of_error
 from chess_piece.queen_hive import init_KING, init_queen
 
 
+
 def init_swarm_dbs(prod, init=True):
     ## SSBEE 
     # ✅ if db table does not exist, create table 
@@ -41,7 +42,6 @@ def init_swarm_dbs(prod, init=True):
                 PollenDatabase.upsert_data(table_name, key, data)
         
     return keys
-
 
 
 def read_pollenstore(symbols, read_storybee=True, read_pollenstory=True, info="function uses async"):  # return combined dataframes
@@ -134,3 +134,9 @@ def read_pollenstore(symbols, read_storybee=True, read_pollenstory=True, info="f
     except Exception as e:
         print_line_of_error("king return symbols failed")
 
+
+def create_pg_table():
+    table_name = st.text_input('Table Name', 'db_store')
+    if st.button("Create Pollen Store"):
+        PollenDatabase.create_table_if_not_exists(table_name)
+        st.success(f"{table_name} created")

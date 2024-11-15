@@ -4,9 +4,12 @@ import json
 import os
 import pandas as pd
 import numpy as np
-import psycopg2
 from chess_piece.king import print_line_of_error
-import ipdb
+import logging
+import json
+import psycopg2
+from psycopg2 import sql
+
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.int64):
@@ -303,7 +306,27 @@ class PollenDatabase:
                 return []
 
 
+class PostgresHandler(logging.Handler):
+    def __init__(self, log_name):
+        super().__init__()
+        self.log_name = log_name
+        self.conn = None
 
+    def emit(self, record):
+        # Get a new connection for each emit to ensure thread safety
+        try:
+            self.conn = PollenDatabase.get_connection()
+            log_message = self.format(record)
+            log_level = record.levelname
+            value = f'{log_message, log_level}'
+
+            PollenDatabase.upsert_data("logging_store", self.log_name, value)
+
+        except Exception as e:
+            print(f"Failed to insert log into PostgreSQL: {e}")
+        finally:
+            if self.conn:
+                self.conn.close()
 
 
 class TestPollenDatabase:

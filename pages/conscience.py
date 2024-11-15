@@ -316,8 +316,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'ask': {'sortable':'true',},
-                'bid': {'sortable':'true',},
+                'current_ask': {'headerName': 'ask', 'sortable':'true',},
+                'current_bid': {'headerName': 'bid', 'sortable':'true',},
 
                 # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, wrapText=True),
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
@@ -340,7 +340,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
             ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
             for col in ticker_info_cols:
                 if col != 'symbol': 
-                    config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True}
+                    config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true'}
                     gb.configure_column(col, config)
             
             chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
@@ -349,8 +349,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
             for col, config_values in config_cols_.items():
                 config = config_values
                 gb.configure_column(col, config)
-            for col in bishop_ticker_info().get('ticker_info_cols'):
-                gb.configure_column(col, {'hide': 'true', 'sortable': 'true'})
+
             mmissing = [i for i in story_col if i not in config_cols_.keys()]
             if len(mmissing) > 0:
                 for col in mmissing:

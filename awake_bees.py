@@ -77,7 +77,7 @@ def call_job_workerbees(prod=prod):
     return True
 
 
-run_time = "09:32"
+run_time = "09:30"
 a = schedule.every().day.at(run_time).do(call_job_workerbees)
 
 run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]

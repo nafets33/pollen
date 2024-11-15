@@ -23,6 +23,10 @@ est = pytz.timezone("America/New_York")
 crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
 macd_tiers = 8
 
+def search_for_gamble_trade(revrec):
+    # WORKERBEE
+    ## find me a good gamble 
+    return True
 
 def kings_order_rules( # rules created for 1Minute
     KOR_version=3,
@@ -889,7 +893,7 @@ def wave_gauge_revrec_2(symbol, df_waves, weight_team = ['w_L', 'w_S', 'w_15', '
         # WORKERBEE update these objs to be based on weight_team_keys func dict return
         weight__short = ['1Minute_1Day', '5Minute_5Day']
         weight__mid = ['30Minute_1Month', '1Hour_3Month']
-        weight__long = ['2Hour_6Month', '1Day_1Year']
+        weight__long = ['2Hour_6Month', '1Day_1Year'] # future force
         # weight__3 = ['1Minute_1Day', '5Minute_5Day', '30Minute_1Month']
         # print(df_waves.columns)
         for ticker_time_frame in df_waves.index:
@@ -1071,7 +1075,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         missing_tickers = [i for i in df_broker_portfolio.index if i not in q_revrec['df_ticker'].index]
         if missing_tickers:
             print("tickers missing", missing_tickers)
-            # QUEEN_KING[chess_board]['non_active_stories'] = init_qcp_workerbees(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=.23)
+            QUEEN_KING[chess_board]['non_active_stories'] = init_qcp_workerbees(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=0)
 
     # WORKERBEE: Add validation only 1 symbol per qcp --- QUEEN not needed only need ORDERS and QUEEN_KING
     if not acct_info:
@@ -1198,7 +1202,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 deltaa = sum(tickers_['ticker_buying_power']) - qcp_bp
                 if abs(deltaa) > 1:
                     msg=(f'{qcp} out of balance by {deltaa} ${round(deltaa * qcp_tb)} Allocation At Risk')
-                    st.write(msg)
+                    # st.write(msg)
                     print(msg) 
         
     def revrec_allocation(waveview, wave_blocktime):
@@ -1227,7 +1231,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # Weight Tiers of Start Tier
         macd_start_weight = 3
         vwap_start_weight = 2
-        rsi_start_weight = 3
+        rsi_start_weight = 1
         wavestat_start_weight_sum = macd_start_weight + vwap_start_weight + rsi_start_weight
 
         alloc_trinity_of__len_and_profit = 1
@@ -1328,6 +1332,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
 
             """ CALCULATOR """
+            # min__zerocross__allocation = .1
             ## base calc variables ##
             # power on current deviation
             waveview['tmp_deivation'] = waveview['time_to_max_profit'] - waveview['star_avg_time_to_max_profit']
@@ -1525,6 +1530,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 df_ticker.at[ticker, 'ticker_remaining_budget'] = ticker_remaining_budget
                 df_ticker.at[ticker, 'ticker_remaining_borrow'] = ticker_remaining_borrow
             
+        df_ticker = df_ticker.fillna(0)
+        df_stars = df_stars.fillna(0)
         return df_ticker, df_stars, df_active_orders
 
 
@@ -1593,13 +1600,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         df_stars = df_stars.fillna(0) # tickers without budget move this to upstream in code and fillna only total budget column
         df_ticker['symbol'] = df_ticker.index
         df_stars['symbol'] = df_stars['ticker']
-        
         validate_qcp_balance(df_qcp)
-
         rr_run_cycle.update({'shape': (datetime.now() - s).total_seconds()})
         s = datetime.now()
         df_ticker, df_stars, df_active_orders = calculate_budgets__query_queen_orders(df_ticker, df_stars, STORY_bee)
-        
         ## print("ORDERS")
         if len(df_active_orders) > 0:
             df_active_orders['qty_available'] = pd.to_numeric(df_active_orders['qty_available'], errors='coerce')
@@ -1655,7 +1659,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             for symbol in set(symbols):
                 if symbol not in waveview_symbols:
                     if symbol not in crypto_currency_symbols:
-                        logging.error(f'{symbol} MISSING IN waveview')
+                        print(f'queen_mind: {symbol} MISSING IN waveview')
                     continue
                 df_waves = waveview[waveview['symbol'] == symbol]
                 story_guages = wave_gauge_revrec_2(symbol=symbol, df_waves=df_waves, weight_team=weight_team)

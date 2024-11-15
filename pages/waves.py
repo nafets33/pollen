@@ -33,7 +33,7 @@ from custom_graph_v1 import st_custom_graph
 import hydralit_components as hc
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from chess_piece.fastapi_queen import buy_button_dict_items, sell_button_dict_items
-from chess_utils.fastapi_utils import story_return
+from chess_utils.conscience_utils import story_return
 
 @st.cache_data
 def queen_data(client_user, prod):

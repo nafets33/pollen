@@ -1,4 +1,5 @@
 
+import streamlit as st
 import pandas as pd
 import numpy as np
 from chess_piece.king import ReadPickleData, print_line_of_error, streamlit_config_colors
@@ -23,7 +24,6 @@ def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=
         number_variable = int(m_num.split("-")[-1])
         # number_variable = 33
       else:
-        # print(number_variable)
 
         base_color = green if (number_variable) > 0 else red
         number_variable = round(abs(number_variable * 100))
@@ -125,7 +125,6 @@ def return_waveview_fillers(QUEEN_KING, waveview):
     for ttf in df.index.tolist():
         remaining_budget = df.at[ttf, 'remaining_budget'].astype(float)
         remaining_budget_borrow = df.at[ttf, 'remaining_budget_borrow'].astype(float)
-        # print(type(remaining_budget))
         if type(remaining_budget) is np.float64:
             pass
         else:
@@ -230,35 +229,41 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         # kors per star
         df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
 
-    
-    for symbol in df.index.tolist():
-        if 'ticker_buying_power' not in df.columns:
-            alloc = .3
-        else:
-            alloc = df.at[symbol, 'ticker_buying_power']
-            alloc_option = {'allocation': alloc}
-            df.at[symbol, 'edit_allocation_option'] = alloc_option
+    df_ticker = revrec.get('df_ticker')
+    try:
+        for symbol in df.index.tolist():
+            if 'ticker_buying_power' not in df.columns:
+                alloc = .3
+            else:
+                alloc = df.at[symbol, 'ticker_buying_power']
+                alloc_option = {'allocation': alloc}
+                df.at[symbol, 'edit_allocation_option'] = alloc_option
 
-            sell_qty = df.at[symbol, 'qty_available']
-            sell_option = sell_button_dict_items(symbol, sell_qty)
-            df.at[symbol, 'sell_option'] = sell_option
-            remaining_budget__ = remaining_budget.get(symbol)
-            df.at[symbol, 'remaining_budget'] = remaining_budget__
-            df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
-            df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
-            df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
-            df.at[symbol, 'total_budget'] = round(revrec['df_ticker'].at[symbol, 'ticker_total_budget'])
+                sell_qty = df.at[symbol, 'qty_available']
+                sell_option = sell_button_dict_items(symbol, sell_qty)
+                df.at[symbol, 'sell_option'] = sell_option
+                remaining_budget__ = remaining_budget.get(symbol)
+                df.at[symbol, 'remaining_budget'] = remaining_budget__
+                df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow[symbol]
+                df.at[symbol, 'buy_alloc_deploy'] = buy_alloc_deploy[symbol]
+                df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy[symbol]
 
-            df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
-            take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
-            sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
-            close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
-            sell_trigbee_trigger_timeduration = df.at[symbol, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
-            reverse_buy = False
-            kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
-            df.at[symbol, 'kors'] = kors
-    
-        try:
+                # if symbol in df_ticker.index:
+                budget = df_ticker.at[symbol, 'ticker_total_budget']
+                df.at[symbol, 'total_budget'] = round(budget)
+                    # if isinstance(budget, float):
+                    # else:
+                    #     df.at[symbol, 'total_budget'] = 0
+
+                df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
+                take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
+                sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
+                close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
+                sell_trigbee_trigger_timeduration = df.at[symbol, "trading_model_kors"].get('sell_trigbee_trigger_timeduration')
+                reverse_buy = False
+                kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), wave_amo=buy_alloc_deploy[symbol], take_profit=take_profit, sell_out=sell_out, sell_trigbee_trigger_timeduration=sell_trigbee_trigger_timeduration, close_order_today=close_order_today, reverse_buy=reverse_buy)
+                df.at[symbol, 'kors'] = kors
+        
             # star kors
             for star in star_names().keys():
                 ttf = f'{symbol}_{star_names(star)}'
@@ -271,8 +276,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
                 alloc_deploy_msg = '${:,.0f}'.format(round(df_waveview.at[ttf, "allocation_long_deploy"]))
                 df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
                 df.at[symbol, f'{star}_value'] = df_waveview.at[ttf, "allocation_long_deploy"]
-        except Exception as e:
-            print("mmm error", ttf, print_line_of_error(e))
+    except Exception as e:
+        print("mmm error", ttf, print_line_of_error(e))
 
     story_grid_num_cols = ['star_buys_at_play',
     'star_sells_at_play',
@@ -316,12 +321,13 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
     
     df = pd.concat([df_total, df])
     df.at['Total', 'symbol'] = 'Total'
+
     for star in star_names().keys():
         try:
             df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
             df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
         except Exception as e:
-            print(e)
+            print_line_of_error(e)
     
           # Colors
     k_colors = streamlit_config_colors()
@@ -333,6 +339,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
     df['color_row_text'] = default_text_color
 
     # Bishop yahoo data
+    # WORKERBEE, only read bishop once a day then cache it
     db=init_swarm_dbs(prod)
     BISHOP = ReadPickleData(db.get('BISHOP'))
     ticker_info = BISHOP.get('ticker_info').set_index('ticker')

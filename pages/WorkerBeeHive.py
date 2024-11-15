@@ -21,7 +21,7 @@ import argparse
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.king import return_QUEENs_workerbees_chessboard, master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
-from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs
+from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs, init_logging
 from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
 from streamlit_extras.switch_page_button import switch_page
@@ -31,6 +31,7 @@ from custom_button import cust_Button
 from custom_text import custom_text, TextOptionsBuilder
 
 from chess_piece.pollen_db import PollenDatabase
+from chess_utils.postgres_utils import create_pg_table
 
 
 import ipdb
@@ -49,11 +50,6 @@ if st.session_state["authorized_user"] != True:
 client_user = st.session_state['username']
 prod = st.session_state['production']
 
-data = PollenDatabase.get_all_tables()
-st.write(data) 
-
-data = PollenDatabase.get_all_keys('db')
-st.write(data) 
 
 db=init_swarm_dbs(prod)
 
@@ -119,15 +115,30 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
 
 
 if __name__ == '__main__':
+    # init_logging('workerbees', prod)
+    # logging.info("bees")
+    # log_keys = PollenDatabase.get_all_keys('logging_store')
+    # print(log_keys)
+    # data = PollenDatabase.retrieve_data('logging_store', log_keys[0])
+    # st.write(data)
     QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
 
     qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True)
     QUEEN_KING = qb.get('QUEEN_KING')
     QUEEN = qb.get('QUEEN')
-
+    tabs = st.tabs(['Workerbees', 'PostGres'])
     if st.session_state['admin']:
-        refresh_workerbees(QUEENBEE, QUEEN_KING)
-    
+        with tabs[0]:
+            refresh_workerbees(QUEENBEE, QUEEN_KING)
+        with tabs[1]:
+            create_pg_table()
+        
+        data = PollenDatabase.get_all_tables()
+        st.write(data) 
+
+        data = PollenDatabase.get_all_keys('db')
+        st.write(data) 
+
     # s = datetime.now()
     # symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING).get("queens_master_tickers")
     # st.write(f"len symbols to read {len(symbols)}")

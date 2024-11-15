@@ -27,7 +27,7 @@ from stocksymbol import StockSymbol
 from tqdm import tqdm
 import logging
 from logging.handlers import RotatingFileHandler
-
+from chess_piece.pollen_db import PostgresHandler, PollenDatabase
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 
@@ -51,21 +51,55 @@ current_day = datetime.now(est).day
 current_month = datetime.now(est).month
 current_year = datetime.now(est).year
 
-def init_logging(queens_chess_piece, db_root, prod, loglevel='info', max_log_size=10 * 1024 * 1024, backup_count=5):
-    log_dir = os.path.join(db_root, "logs")
-    log_dir_logs = os.path.join(log_dir, "logs")
+# def init_logging(queens_chess_piece, db_root, prod, loglevel='info', max_log_size=10 * 1024 * 1024, backup_count=5):
+#     log_dir = os.path.join(db_root, "logs")
+#     log_dir_logs = os.path.join(log_dir, "logs")
 
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
-    if not os.path.exists(log_dir_logs):
-        os.mkdir(log_dir_logs)
+#     if not os.path.exists(log_dir):
+#         os.mkdir(log_dir)
+#     if not os.path.exists(log_dir_logs):
+#         os.mkdir(log_dir_logs)
 
-    if prod:
-        log_name = f'log_{queens_chess_piece}.log'
-    else:
-        log_name = f'log_{queens_chess_piece}_sandbox.log'
+#     if prod:
+#         log_name = f'log_{queens_chess_piece}.log'
+#     else:
+#         log_name = f'log_{queens_chess_piece}_sandbox.log'
 
-    log_file = os.path.join(log_dir, log_name)
+#     log_file = os.path.join(log_dir, log_name)
+
+#     # Determine the logging level
+#     level = logging.INFO if loglevel.lower() == 'info' else logging.WARNING
+
+#     # Clear any existing handlers to prevent duplicate logs
+#     root_logger = logging.getLogger()
+#     if root_logger.hasHandlers():
+#         root_logger.handlers.clear()
+
+#     # Set the logging level for the root logger
+#     root_logger.setLevel(level)
+
+#     # Create a formatter
+#     formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
+
+#     # Create a rotating file handler
+#     file_handler = RotatingFileHandler(log_file, mode="a", maxBytes=max_log_size, backupCount=backup_count)
+#     file_handler.setFormatter(formatter)
+#     root_logger.addHandler(file_handler)
+
+#     # Create a stream handler (console)
+#     stream_handler = logging.StreamHandler()
+#     stream_handler.setFormatter(formatter)
+#     root_logger.addHandler(stream_handler)
+
+#     return True
+
+
+def init_logging(queens_chess_piece, prod, loglevel='info', db_root=None):
+    """
+    Initializes logging to write to PostgreSQL instead of files.
+    """
+    # Set up the log name based on the environment
+    log_name = f'log_{queens_chess_piece}' if prod else f'log_{queens_chess_piece}_sandbox'
 
     # Determine the logging level
     level = logging.INFO if loglevel.lower() == 'info' else logging.WARNING
@@ -81,20 +115,15 @@ def init_logging(queens_chess_piece, db_root, prod, loglevel='info', max_log_siz
     # Create a formatter
     formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
 
-    # Create a rotating file handler
-    file_handler = RotatingFileHandler(log_file, mode="a", maxBytes=max_log_size, backupCount=backup_count)
-    file_handler.setFormatter(formatter)
-    root_logger.addHandler(file_handler)
-
-    # Create a stream handler (console)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-    root_logger.addHandler(stream_handler)
+    # Add the PostgreSQL logging handler
+    pg_handler = PostgresHandler(log_name=log_name)
+    pg_handler.setFormatter(formatter)
+    root_logger.addHandler(pg_handler)
 
     return True
 
 
-init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod)
+init_logging(queens_chess_piece, prod)
 
 exclude_conditions = [
     "B",
@@ -3221,7 +3250,7 @@ def return_market_hours(trading_days, crypto=False):
     s = datetime.now(est)
     s_iso = s.isoformat()[:10]
     mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = s.replace(hour=9, minute=30, second=1)
+    mk_open = s.replace(hour=9, minute=30, second=0)
     mk_close = s.replace(hour=16, minute=0, second=0)
 
     if crypto:
@@ -4586,7 +4615,7 @@ def create_QueenOrderBee(
                 'cost_basis_current': 0,
                 'market_value': market_value,
                 "honey_time_in_profit": {},
-                "profit_loss": 0,
+                "profit_loss": profit_loss,
                 "revisit_trade_datetime": revisit_trade_datetime,
                 "long_short": long_short,
             }
@@ -4658,30 +4687,27 @@ def return_queen_controls(stars=stars):
         "theme": "nuetral",
         "last_read_app": datetime.now(est),
         "stars": stars(),
-        "ticker_settings": generate_queen_ticker_settings(),
-        "buying_powers": generate_queen_buying_powers_settings(),
+        "ticker_settings": generate_queen_ticker_settings(), # NOT USED
+        "buying_powers": generate_queen_buying_powers_settings(), # NOT USED
         "symbols_stars_TradingModel": tradingmodels, # buy chessboard #
-        # "symbols_stars_tradingmodel": tradingmodels,
         "power_rangers": init_PowerRangers(),
         "trigbees": {
             "buy_cross-0": "active",
             "sell_cross-0": "active",
-            "ready_buy_cross": "not_active",
+            "ready_buy_cross": "not_active", # NOT USED
         },        
         # revrec
         'ticker_revrec_allocation_mapping' : {},
 
-        # working
-        'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},
+        # working GAMBLE
+        'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
+        # GAMBLE_v2
+        # 'gamble': [], # based on every ticker or ttf - df of last time gambled, result of gamble, risk level allowed, ?
 
-                                'budget_type': 'star'},
         'throttle': .5,
-        # 'x_power': x_power, # deprecate
-        # 'star_power': star_powers, # deprecate
 
     }
     return queen_controls_dict
-
 
 def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme):
     print("update generate trading model")
@@ -5989,6 +6015,42 @@ def send_email(
         smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
     return True
+
+
+def fetch_dividends(API_KEY, SECRET_KEY):
+    # BASE_URL = 'https://paper-api.alpaca.markets'
+    ENDPOINT = f"{BASE_URL}/v2/account/activities/DIV"
+    BASE_URL = 'https://api.alpaca.markets'
+    HEADERS = {
+        'APCA-API-KEY-ID': API_KEY,
+        'APCA-API-SECRET-KEY': SECRET_KEY
+    }
+    try:
+        # Send GET request to fetch dividend activities
+        response = requests.get(ENDPOINT, headers=HEADERS)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            dividends = response.json()
+            
+            # Convert to DataFrame for easier handling
+            df_dividends = pd.DataFrame(dividends)
+            
+            if df_dividends.empty:
+                print("No dividends found.")
+            else:
+                print("Fetched Dividends:")
+                print(df_dividends)
+                
+            return df_dividends
+        else:
+            print(f"Failed to fetch dividends. Status Code: {response.status_code}")
+            print("Reason:", response.text)
+            return None
+    except Exception as e:
+        print("An error occurred:", str(e))
+        return None
+
 
 
 ##################################################

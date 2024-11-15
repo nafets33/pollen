@@ -31,7 +31,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
 
 from chess_piece.queen_bee import execute_buy_order
 from chess_piece.queen_mind import refresh_chess_board__revrec
-from chess_utils.fastapi_utils import story_return, return_waveview_fillers, generate_shade
+from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade
 from dotenv import load_dotenv
 
 
