@@ -150,6 +150,7 @@ const AgGrid = (props: Props) => {
         onClick={btnClickedHandler}
         style={{
           background: "transparent",
+          color: "black",
           width: "100%",
           borderColor: props.borderColor ? props.borderColor : "black",
         }}
@@ -535,6 +536,7 @@ const AgGrid = (props: Props) => {
     }
   };
 
+  const button_color = "#3498db"; // Set your custom button color here
 
   return (
     <>
@@ -547,31 +549,56 @@ const AgGrid = (props: Props) => {
         toastr={toastr}
       />
       <div
-        style={{ flexDirection: "row", height: "100%", width: "100" }}
+        style={{ flexDirection: "row", height: "100%", width: "100%" }}
         id="myGrid"
       >
         <div className="d-flex justify-content-between align-items-center">
           {(refresh_sec == undefined || refresh_sec == 0) && (
             <div style={{ display: "flex" }}>
-              <div style={{ margin: "10px 10px 10px 2px" }}>
-                <button className="btn btn-warning" onClick={onRefresh}>
+              <div style={{ margin: "5px 5px 5px 2px" }}>
+                <button
+                  className="btn"
+                  style={{
+                    backgroundColor: button_color,
+                    color: "white",
+                    padding: "5px 8px", // Smaller padding
+                    fontSize: "12px", // Smaller font size
+                    borderRadius: "4px",
+                  }}
+                  onClick={onRefresh}
+                >
                   Refresh
                 </button>
               </div>
-              <div style={{ margin: "10px 10px 10px 2px" }}>
-                <button className="btn btn-success" onClick={onUpdate}>
+              <div style={{ margin: "5px 5px 5px 2px" }}>
+                <button
+                  className="btn"
+                  style={{
+                    backgroundColor: "green",
+                    color: "white",
+                    padding: "5px 8px", // Smaller padding
+                    fontSize: "12px", // Smaller font size
+                    borderRadius: "4px",
+                  }}
+                  onClick={onUpdate}
+                >
                   Update
                 </button>
               </div>
             </div>
           )}
-          <div className="d-flex flex-row gap-6">
+          <div className="d-flex flex-row gap-2">
             {toggle_views?.map((view: string, index: number) => (
-              <span className="">
+              <span key={index}>
                 <button
                   className={`btn ${
-                    viewId == index ? "btn-danger" : "btn-secondary"
+                    viewId === index ? "btn-danger" : "btn-secondary"
                   }`}
+                  style={{
+                    padding: "5px 8px", // Smaller padding
+                    fontSize: "12px", // Smaller font size
+                    borderRadius: "4px",
+                  }}
                   onClick={() => setViewId(index)}
                 >
                   {view}
@@ -580,6 +607,7 @@ const AgGrid = (props: Props) => {
             ))}
           </div>
         </div>
+  
         <div
           className={grid_options.theme || "ag-theme-alpine-dark"}
           style={{
@@ -590,14 +618,12 @@ const AgGrid = (props: Props) => {
           <AgGridReact
             ref={gridRef}
             rowData={rowData}
-            // defaultColDef={defaultColDef}
             getRowStyle={getRowStyle}
             rowStyle={{ fontSize: 12, padding: 0 }}
             headerHeight={30}
             rowHeight={30}
             onGridReady={onGridReady}
             autoGroupColumnDef={autoGroupColumnDef}
-            // sideBar={sideBar}
             animateRows={true}
             suppressAggFuncInHeader={true}
             getRowId={getRowId}
@@ -608,7 +634,7 @@ const AgGrid = (props: Props) => {
         </div>
       </div>
     </>
-  )
+  );
 }
 
 export default AgGrid

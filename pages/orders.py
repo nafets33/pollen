@@ -93,7 +93,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
     go = gb.build()
     
 
-    refresh_sec = None #5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
+    refresh_sec = 0 #5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
     st_custom_grid(
         client_user=client_user,
         username=KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -101,7 +101,7 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
         api_update=f'{ip_address}/api/data/update_orders',
         refresh_sec=refresh_sec, 
         refresh_cutoff_sec=seconds_to_market_close, 
-        prod=st.session_state['production'],
+        prod=st.session_state['prod'],
         key='maingrid',
         grid_options=go,
         # kwargs from here
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     mkhrs = st.session_state['mkhrs']
     client_user = st.session_state['client_user']
     ip_address = st.session_state['ip_address']
-    prod = st.session_state['production']
+    prod = st.session_state['prod']
 
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 

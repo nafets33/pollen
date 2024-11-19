@@ -14,7 +14,7 @@ import hydralit_components as hc
 
 from streamlit_extras.switch_page_button import switch_page
 
-
+from pq_auth import signin_main
 from chess_piece.king import master_swarm_QUEENBEE,  local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
 from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp
 from chess_piece.queen_mind import refresh_chess_board__revrec
@@ -355,6 +355,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
 if __name__ == '__main__':
 
+    signin_main()
+
     if st.button("Return home"):
         switch_page("pollen")
 
@@ -370,7 +372,7 @@ if __name__ == '__main__':
 
     crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
     admin = st.session_state['admin']
-    prod = st.session_state['production']
+    prod = st.session_state['prod']
 
 
     reset_theme = False

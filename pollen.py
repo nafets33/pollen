@@ -27,7 +27,7 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
-from chess_piece.king import kingdom__global_vars, hive_master_root, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData
+from chess_piece.king import kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData
 from chess_piece.queen_hive import create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import refresh_chess_board__revrec
 # componenets
@@ -36,8 +36,7 @@ from streamlit_extras.switch_page_button import switch_page
 # from streamlit_extras.stoggle import stoggle
 # import hydralit_components as hc
 from custom_button import cust_Button
-# from custom_text import custom_text, TextOptionsBuilder
-
+from chess_piece.pollen_db import PollenDatabase
 
 # ozz
 # from ozz.ozz_bee import send_ozz_call
@@ -113,8 +112,8 @@ def pollenq(admin_pq):
                     admin_client_user = st.selectbox('admin client_users', options=users_allowed_queen_email, index=users_allowed_queen_email.index(st.session_state['username']))
                     if st.button('admin change user', use_container_width=True):
                         st.session_state['admin__client_user'] = admin_client_user
-                        st.session_state["production"] = False
-                        st.session_state['production'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
+                        st.session_state["prod"] = False
+                        st.session_state['prod'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
                         st.rerun()
 
         return True
@@ -196,7 +195,7 @@ def pollenq(admin_pq):
         st.warning("Sign In")
         display_for_unAuth_client_user()
         st.stop()
-    prod = st.session_state['production']
+    prod = st.session_state['prod']
     authorized_user = st.session_state['authorized_user']
     client_user = st.session_state["username"]
     
@@ -274,7 +273,7 @@ def pollenq(admin_pq):
     if menu_id == 'Board':
         switch_page("chessboard")
         # wierd error on None Type QUEEN_KING WORKERBEE
-        # prod = st.session_state['production']
+        # prod = st.session_state['prod']
         # qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
         # QUEEN = qb.get('QUEEN')
         # QUEEN_KING = qb.get('QUEEN_KING')
@@ -305,12 +304,19 @@ def pollenq(admin_pq):
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
         ####### Welcome to Pollen ##########
+        
+        # PROD vs SANDBOX #
+        PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
+        if os.path.exists(PB_env_PICKLE) == False:
+            PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
+        pq_env = ReadPickleData(PB_env_PICKLE)
+        prod = pq_env.get('env')
  
         # use API keys from user            
         prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
         sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
-        
+
         qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
@@ -342,21 +348,21 @@ def pollenq(admin_pq):
         if st.session_state.get('admin_users'):
             admin_queens_active(KING.get('source'), KING)
         
-        # PROD vs SANDBOX #
-        
+
+
         if sneak_peak:
             pass
         else:
             live_sb_button = st.sidebar.button(f'Switch Enviroment', key='pollenq', use_container_width=True)
             if live_sb_button:
-                st.session_state['production'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                prod = st.session_state['production']
+                st.session_state['prod'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+                prod = st.session_state['prod']
                 qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True)
                 # QUEEN = qb.get('QUEEN')
                 QUEEN_KING = qb.get('QUEEN_KING')
                 api = qb.get('api')
 
-        if st.session_state['production'] == False:
+        if st.session_state['prod'] == False:
             st.warning("Sandbox Paper Money Account") 
 
         stop_queenbee(QUEEN_KING, sidebar=True)
@@ -369,13 +375,19 @@ def pollenq(admin_pq):
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
             print("Updating QK db")
+            if os.environ.get('pg_migration') == 'true':
+                table_name = 'client_user_store' if prod else "client_user_store_sandbox"
+                PollenDatabase.upsert_data(table_name, db_root, QUEEN_KING)
+            else:
+                st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
+                # PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
 
         if st.sidebar.button('show_keys'):
-            queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
+            queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
 
         try:
-            if api == False:
-                queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
+            if not api:
+                queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
                 api_failed = True
                 st.stop()
             else:
@@ -398,8 +410,8 @@ def pollenq(admin_pq):
         except Exception as e:
             st.error(e)
             acct_info = False
-            st.session_state['production'] = False
-            queen__account_keys(PB_App_Pickle=st.session_state['PB_App_Pickle'], QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
+            # st.session_state['prod'] = False
+            queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
             st.stop()
 
         ### TOP OF PAGE

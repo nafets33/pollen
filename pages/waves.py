@@ -32,6 +32,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph
 import hydralit_components as hc
 from chess_piece.queen_mind import refresh_chess_board__revrec
+from chess_piece.pollen_db import PollenDatabase
 from chess_piece.fastapi_queen import buy_button_dict_items, sell_button_dict_items
 from chess_utils.conscience_utils import story_return
 
@@ -124,7 +125,7 @@ def waves():
         for sector in set(df['sector']):
             token = df[df['sector']==sector]
             tickers=token['symbol'].tolist()
-            QUEENBEE[workerbees][sector] = init_qcp_workerbees(ticker_list=tickers)
+            QUEENBEE[workerbees][sector] = init_qcp_workerbees(ticker_list=tickers, buying_power=0)
         
         QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
@@ -137,6 +138,8 @@ def waves():
     else:
         s = datetime.now()
         STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+        symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+        # STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee') # 1 second vs .4 seconds
         st.header(f'call stymbols {(datetime.now()-s).total_seconds()}')
         s = datetime.now()
         # df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])

@@ -422,7 +422,6 @@ def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, t
 
         if 'error' in send_close_order.keys():
             print(f'{ticker_time_frame} Order Failed log in Hive, Log so you can make this only a warning')
-            # QUEEN['heartbeat']['critical'] = QUEEN['heartbeat']['critical'].update({ticker_time_frame: 'execute order failed'})
             return {'executed': False}
 
 
@@ -993,7 +992,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 wave_amo = acct_info.get('daytrading_buying_power') - wave_amo
                 if wave_amo <= 0:
                     print(f"{ticker_time_frame} budget buying power is depleted for daytrading_buying_power")
-                    conscience_update(QUEEN, thought_dict={'msg': 'buying power is depleted'})
                     return True
             # Ignore Tiering, this looks like dup WORKERBEE
             elif "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
@@ -1617,56 +1615,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             return profit_seeking_star
     
 
-    def conscience_update(QUEEN, root_name='app_info', thought_dict={}, conscience=True):
-        def conscience_thought(QUEEN, thought, conscience):
-            try:
-                tho_id = len(QUEEN[conscience])
-                thought['id'] = tho_id
-                thought['timestamp_est'] = datetime.now(est)
-                return thought
-            except Exception as e:
-                print_line_of_error(e)
-                return None
-        
-        conscience = 'conscience' if conscience else 'sub_conscience'
-        
-        if root_name not in QUEEN[conscience].keys():
-            logging.warning(f'new conscience {root_name}')
-            return False
-        
-        # store message
-        if thought_dict not in QUEEN[conscience][root_name]:
-            thought_dict = conscience_thought(QUEEN, thought_dict, conscience)
-            if thought_dict:
-                QUEEN[conscience][root_name].append(thought_dict)
-        
-                QUEEN['heartbeat'][conscience] = QUEEN[conscience]
-                print("save message to queen", thought_dict)
-                
-                # god_save_the_queen(QUEEN, QUEENsHeart=True)
-
-        return True
-
-    def subconscious_mind(root_name):
-        # store message
-        if root_name not in QUEEN['subconscious']:
-            QUEEN['subconscious'][root_name] = []
-        if len(QUEEN['subconscious'][root_name]) > 0:
-            if root_name == 'app_info':
-                try:
-                    thoughts_to_pop = []
-                    for idx, thought in enumerate(QUEEN['subconscious'][root_name]):
-                        if len(thought) > 0 and thought['ticker_time_frame'] in STORY_bee.keys():
-                            print('clear subconscious thought, db now streaming ticker')
-                            thoughts_to_pop.append(idx)
-                    if len(thoughts_to_pop) > 0:
-                        QUEEN['subconscious'][root_name] = [i for idx, i in enumerate(QUEEN['subconscious'][root_name]) if idx not in thoughts_to_pop]
-
-                except Exception as e:
-                    print(e, print_line_of_error())
-
-        return True
-
     def release_trig_sell_stop(QUEEN, ticker, client_order_id):
         # does as it says
         try:
@@ -1799,7 +1747,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     return sell_qty
                 
             except Exception as e:
-                print_line_of_error(e)
+                print_line_of_error(f'QUEEN: {ticker_time_frame} :: REVREC CHECK ERROR {e}')
                 return 0
         
         """if you made it here you are running somewhere, I hope you find your way, I'll always bee here to help"""
@@ -1859,8 +1807,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
             macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
             honey_gauge = honeyGauge_metric(run_order)
-            # conscience_update(root_name='macd_gauge', dict_to_add={macd_gauge}, list_len=1)
-            # conscience_update(root_name='honey_gauge', dict_to_add={honey_gauge}, list_len=1)
 
             charlie_bee['queen_cyle_times']['om_bishop_block1_queenorder__om'] = (datetime.now(est) - s_time).total_seconds()
             s_time = datetime.now(est)
@@ -2219,7 +2165,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         if run_order['ticker_time_frame'] not in STORY_bee.keys():
                             # Handle Order if Ticker Stream Turned off I.E. Not in STORY_bee
                             print(f"{ro_ttf} Missing from STORY_bee")
-                            conscience_update(QUEEN, root_name='app_info', thought_dict={'ticker_time_frame': ro_ttf, 'msg': f'{run_order["symbol"]} open order and ticker not active Handle Order Manually'})                    
 
                         king_eval_order = king_bishops_QueenOrder(STORY_bee=STORY_bee, run_order=run_order, priceinfo=priceinfo, revrec=QUEEN['revrec'])
 
@@ -2555,7 +2500,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             # refresh db
             s_time = datetime.now(est)
             # QUEEN Databases
-            if os.stat(QUEEN['dbs'].get('PB_App_Pickle')).st_mtime != QUEEN_KING['last_modified']:
+            if str(os.stat(QUEEN['dbs'].get('PB_App_Pickle')).st_mtime) != QUEEN_KING['last_modified']:
                 print("QUEENKING Updated Read New Data")
                 QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True).get('QUEEN_KING')
                 QUEEN['chess_board'] = QUEEN_KING['chess_board']

@@ -12,9 +12,10 @@ import copy
 
 from chess_piece.king import print_line_of_error, stars, kingdom__global_vars
 from chess_piece.queen_hive import init_qcp_workerbees
+from chess_piece.pollen_db import PollenDatabase
 
 prod = True
-
+pg_Migration = False
 est = pytz.timezone("America/New_York")
 
 # main_root = hive_master_root()  # os.getcwd()
@@ -1098,10 +1099,14 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         df = pd.DataFrame(dic_items.items())
         df = df.rename(columns={0: 'qcp', 1: 'buying_power'})
         bp = sum(df['buying_power'])
-        
-        df['total_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
-        df['equity_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
-        df['cash_budget'] = (df['buying_power'] * acct_info.get('cash')) / bp
+        if bp == 0 :
+            df['total_budget'] = 0
+            df['equity_budget'] = 0
+            df['cash_budget'] = 0
+        else:
+            df['total_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
+            df['equity_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
+            df['cash_budget'] = (df['buying_power'] * acct_info.get('cash')) / bp
         
         df = pd.merge(df, df_borrow, how='left', on='qcp')
 
@@ -1437,7 +1442,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                                     )
             waveview['allocation_borrow_long'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_long'])
             
-            waveview['allocation_long_deploy'] = (waveview['allocation_deploy'] + waveview['allocation_borrow_deploy'])
+            waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long']) - waveview['star_buys_at_play_allocation']
 
         except Exception as e:
             print_line_of_error(e)
@@ -1445,94 +1450,100 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         return waveview
 
     def calculate_budgets__query_queen_orders(df_ticker, df_stars, STORY_bee):
-        df_active_orders = pd.DataFrame()
+        try:
+            df_active_orders = pd.DataFrame()
 
-        # calculate budgets dollar values and join in current buys / sells as play
-        for qcp in all_workers:            
-            piece = QUEEN_KING[chess_board].get(qcp)
-            tickers = list(set(piece.get('tickers')))
-            
-            for ticker in tickers:
-                # TICKER
-                df_temp = df_ticker[df_ticker.index.isin(tickers)]
-                bp = sum(df_temp['ticker_buying_power'])
-                df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'total_budget']) / bp
-                df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'equity_budget']) / bp
-                df_temp['borrow_budget'] = ((df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'borrow_budget']) / bp) * df_qcp.at[qcp, 'margin_power']
-                # budget_remaining, borrowed_budget_remaining = return_ticker_remaining_budgets(cost_basis_current, ticker, df_temp)
-
-                # UPDTAE TICKER
-                df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.at[ticker, 'total_budget']
-                df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.at[ticker, 'equity_budget']
-                df_ticker.at[ticker, 'ticker_borrow_budget'] = df_temp.at[ticker, 'borrow_budget']
-                # df_ticker.at[ticker, 'ticker_remaining_borrow'] = borrowed_budget_remaining
-
-                # UPDATE star time 
-                df_temp = df_stars[(df_stars['ticker'].isin([ticker]))].copy()
-                bp = sum(df_temp['star_buying_power'])
-                bp_borrow = sum(df_temp['star_borrow_buying_power'])
-                df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
-                df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
-                df_temp['borrow_budget'] = (df_temp['star_borrow_buying_power'] * df_ticker.loc[ticker].get('ticker_borrow_budget')) / bp_borrow
+            # calculate budgets dollar values and join in current buys / sells as play
+            for qcp in all_workers:            
+                piece = QUEEN_KING[chess_board].get(qcp)
+                tickers = list(set(piece.get('tickers')))
                 
-                current_from_open = 0
-                current_from_yesterday = 0
-                ticker_remaining_budget = 0
-                ticker_remaining_borrow = 0
-                ttf_storybeekeys=STORY_bee.keys()
-                for star in df_temp['star'].to_list():
-                    ticker_time_frame = f'{ticker}_{star}'
-                    if '1Minute_1Day' in ticker_time_frame and ticker_time_frame in ttf_storybeekeys:
-                        current_from_open = STORY_bee[ticker_time_frame]["story"].get("current_from_open")
-                        current_from_yesterday = STORY_bee[ticker_time_frame]["story"].get("current_from_yesterday")
-                        df_ticker.at[ticker, 'current_from_open'] = current_from_open
-                        df_ticker.at[ticker, 'current_from_yesterday'] = current_from_yesterday
-                    
-                    df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
-                    df_stars.at[f'{ticker}_{star}', 'star_equity_budget'] = df_temp.loc[f'{ticker}_{star}'].get('equity_budget')
-                    df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
-                    star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
-                    star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
-                    active_orders, ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play = return_ttf_remaining_budget(QUEEN=QUEEN, 
-                                                                        total_budget=star_total_budget,
-                                                                        borrow_budget=star_borrow_budget,
-                                                                        ticker_time_frame=ticker_time_frame, 
-                                                                        active_queen_order_states=active_queen_order_states)
+                for ticker in tickers:
+                    if ticker in crypto_currency_symbols:
+                        print(ticker, "NOT HANLDING CRYPTO YET")
+                        continue
+                    # TICKER
+                    df_temp = df_ticker[df_ticker.index.isin(tickers)]
+                    bp = sum(df_temp['ticker_buying_power'])
+                    df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'total_budget']) / bp
+                    df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'equity_budget']) / bp
+                    df_temp['borrow_budget'] = ((df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'borrow_budget']) / bp) * df_qcp.at[qcp, 'margin_power']
+                    # budget_remaining, borrowed_budget_remaining = return_ticker_remaining_budgets(cost_basis_current, ticker, df_temp)
 
-                    df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
-                    df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
-                    df_stars.at[ticker_time_frame, 'star_at_play'] = budget_cost_basis
-                    df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
-                    df_stars.at[ticker_time_frame, 'star_buys_at_play'] = buys_at_play
-                    df_stars.at[ticker_time_frame, 'star_sells_at_play'] = sells_at_play
-                    # df_stars.at[ticker_time_frame, 'sell_reccomendation'] =
-                    if len(active_orders) > 0: 
-                        df_stars.at[ticker_time_frame, 'money'] = sum(active_orders['money'])
-                        df_stars.at[ticker_time_frame, 'honey'] = sum(active_orders['honey'])
-                        df_active_orders = pd.concat([df_active_orders, active_orders])
-                        active_orders_close_today = active_orders[active_orders['side'] == 'buy']
-                        if len(active_orders_close_today) > 0:
-                            active_orders_close_today = active_orders_close_today[(active_orders_close_today['order_rules'].apply(lambda x: x.get('close_order_today') == True))]
-                            active_orders_close_today['long_short'] = np.where(active_orders_close_today['trigname'].str.contains('buy'), 'long', 'short') 
-                            buy_orders = active_orders_close_today[active_orders_close_today['long_short'] == 'long']
-                            buys_at_play_close_today = sum(buy_orders["cost_basis_current"]) if len(buy_orders) > 0 else 0
-                            df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play - buys_at_play_close_today
+                    # UPDTAE TICKER
+                    df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.at[ticker, 'total_budget']
+                    df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.at[ticker, 'equity_budget']
+                    df_ticker.at[ticker, 'ticker_borrow_budget'] = df_temp.at[ticker, 'borrow_budget']
+                    # df_ticker.at[ticker, 'ticker_remaining_borrow'] = borrowed_budget_remaining
+
+                    # UPDATE star time 
+                    df_temp = df_stars[(df_stars['ticker'].isin([ticker]))].copy()
+                    bp = sum(df_temp['star_buying_power'])
+                    bp_borrow = sum(df_temp['star_borrow_buying_power'])
+                    df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
+                    df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
+                    df_temp['borrow_budget'] = (df_temp['star_borrow_buying_power'] * df_ticker.loc[ticker].get('ticker_borrow_budget')) / bp_borrow
+                    
+                    current_from_open = 0
+                    current_from_yesterday = 0
+                    ticker_remaining_budget = 0
+                    ticker_remaining_borrow = 0
+                    ttf_storybeekeys=STORY_bee.keys()
+                    for star in df_temp['star'].to_list():
+                        ticker_time_frame = f'{ticker}_{star}'
+                        if '1Minute_1Day' in ticker_time_frame and ticker_time_frame in ttf_storybeekeys:
+                            current_from_open = STORY_bee[ticker_time_frame]["story"].get("current_from_open")
+                            current_from_yesterday = STORY_bee[ticker_time_frame]["story"].get("current_from_yesterday")
+                            df_ticker.at[ticker, 'current_from_open'] = current_from_open
+                            df_ticker.at[ticker, 'current_from_yesterday'] = current_from_yesterday
+                        
+                        df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
+                        df_stars.at[f'{ticker}_{star}', 'star_equity_budget'] = df_temp.loc[f'{ticker}_{star}'].get('equity_budget')
+                        df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
+                        star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
+                        star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
+                        active_orders, ttf_remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play = return_ttf_remaining_budget(QUEEN=QUEEN, 
+                                                                            total_budget=star_total_budget,
+                                                                            borrow_budget=star_borrow_budget,
+                                                                            ticker_time_frame=ticker_time_frame, 
+                                                                            active_queen_order_states=active_queen_order_states)
+
+                        df_stars.at[ticker_time_frame, 'remaining_budget'] = ttf_remaining_budget
+                        df_stars.at[ticker_time_frame, 'remaining_budget_borrow'] = remaining_budget_borrow
+                        df_stars.at[ticker_time_frame, 'star_at_play'] = budget_cost_basis
+                        df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
+                        df_stars.at[ticker_time_frame, 'star_buys_at_play'] = buys_at_play
+                        df_stars.at[ticker_time_frame, 'star_sells_at_play'] = sells_at_play
+                        # df_stars.at[ticker_time_frame, 'sell_reccomendation'] =
+                        if len(active_orders) > 0: 
+                            df_stars.at[ticker_time_frame, 'money'] = sum(active_orders['money'])
+                            df_stars.at[ticker_time_frame, 'honey'] = sum(active_orders['honey'])
+                            df_active_orders = pd.concat([df_active_orders, active_orders])
+                            active_orders_close_today = active_orders[active_orders['side'] == 'buy']
+                            if len(active_orders_close_today) > 0:
+                                active_orders_close_today = active_orders_close_today[(active_orders_close_today['order_rules'].apply(lambda x: x.get('close_order_today') == True))]
+                                active_orders_close_today['long_short'] = np.where(active_orders_close_today['trigname'].str.contains('buy'), 'long', 'short') 
+                                buy_orders = active_orders_close_today[active_orders_close_today['long_short'] == 'long']
+                                buys_at_play_close_today = sum(buy_orders["cost_basis_current"]) if len(buy_orders) > 0 else 0
+                                df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play - buys_at_play_close_today
+                            else:
+                                df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play
                         else:
+                            df_stars.at[ticker_time_frame, 'money'] = 0
+                            df_stars.at[ticker_time_frame, 'honey'] = 0
                             df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play
-                    else:
-                        df_stars.at[ticker_time_frame, 'money'] = 0
-                        df_stars.at[ticker_time_frame, 'honey'] = 0
-                        df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play
+                        
+                        ticker_remaining_budget += ttf_remaining_budget
+                        ticker_remaining_borrow += remaining_budget_borrow
                     
-                    ticker_remaining_budget += ttf_remaining_budget
-                    ticker_remaining_borrow += remaining_budget_borrow
+                    df_ticker.at[ticker, 'ticker_remaining_budget'] = ticker_remaining_budget
+                    df_ticker.at[ticker, 'ticker_remaining_borrow'] = ticker_remaining_borrow
                 
-                df_ticker.at[ticker, 'ticker_remaining_budget'] = ticker_remaining_budget
-                df_ticker.at[ticker, 'ticker_remaining_borrow'] = ticker_remaining_borrow
-            
-        df_ticker = df_ticker.fillna(0)
-        df_stars = df_stars.fillna(0)
-        return df_ticker, df_stars, df_active_orders
+            df_ticker = df_ticker.fillna(0)
+            df_stars = df_stars.fillna(0)
+            return df_ticker, df_stars, df_active_orders
+        except Exception as e:
+            print_line_of_error(e)
 
 
     try:
@@ -1562,7 +1573,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 print("No Tickers in Chess Piece", qcp)
                 continue
 
-            # Group Trinity and Re-Calculate qcp buying power
+            # Group Trinity and Re-Calculate qcp buying power ??? # WORKERBEE
             
             # CONFIRM TRADING MODEL Ticker Budget Allocation
             ticker_mapping = QUEEN_KING['king_controls_queen'].get('ticker_revrec_allocation_mapping')
@@ -1573,6 +1584,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 ticker_mapping = calculate_weights(ticker__trinity)
 
             for ticker in qcp_tickers:
+                if ticker in crypto_currency_symbols:
+                    print(ticker, "NOT HANLDING CRYPTO YET")
+                    continue
                 symbol_qcp_dict[ticker] = qcp              
                 
                 trading_model= return_trading_model(QUEEN_KING, qcp, ticker)
@@ -1642,13 +1656,23 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 ttf_errors.append(ttf)
                 continue
         waveview = waveview[~waveview.index.isin(ttf_errors)]
+        for ttf in ttf_errors:
+            tic, tstar, tframe = ttf.split("_")
+            star_time = f'{tstar}_{tframe}'
+            linking_ttf = f'SPY_{star_time}'
+            waveview.loc[ttf] = waveview.loc[linking_ttf]
+            STORY_bee[ttf] = STORY_bee[linking_ttf]
+
         s = datetime.now()
         waveview = revrec_allocation(waveview, wave_blocktime)
         rr_run_cycle.update({'revrec allocation': (datetime.now() - s).total_seconds()})
         s = datetime.now()
         
         def revrec_lastmod(QUEEN):
-            return datetime.fromtimestamp(os.stat(QUEEN['dbs'].get('PB_RevRec_PICKLE')).st_mtime).astimezone(est)
+            if not pg_Migration:
+                return datetime.fromtimestamp(os.stat(QUEEN['dbs'].get('PB_RevRec_PICKLE')).st_mtime).astimezone(est)
+            keys = PollenDatabase.get_all_keys_with_timestamps(table_name=QUEEN['table_name'], db_root=QUEEN['db_root'])
+            return keys.get('REVREC')
         
         def calculate_wave_gauge(symbols, waveview, weight_team_keys=weight_team_keys):
             
@@ -1710,27 +1734,37 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             if len(story_token) > 0:
                 story_token = story_token[cols]
                 df_storygauge = pd.concat([df_storygauge, story_token])
+                
+                # df_storygauge = df_storygauge.merge(story_token, left_index=True, right_index=True, how='left')
         
         # Join Story to Tickers
-        storygauge = pd.concat([df_ticker, df_storygauge], axis=1, join='inner')
+        # storygauge = pd.concat([df_ticker, df_storygauge], axis=1, join='inner')
+        storygauge = df_ticker.merge(df_storygauge, left_index=True, right_index=True, how='left')
 
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
+        # Join in AutoPilot
+        ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
+        if ticker_autopilot:
+            storygauge = storygauge.merge(ticker_autopilot, left_index=True, right_index=True, how='left')
+
 
         # Price Info data
-        if 'price_info_symbols' in QUEEN.keys():
+        if 'price_info_symbols' in QUEEN.keys(): # WORKERBEE handle in new table of all
             price_info_symbols = QUEEN['price_info_symbols']
             df_new = pd.json_normalize(price_info_symbols['priceinfo']).set_index('ticker')
-            storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
+            # storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
+            storygauge = storygauge.merge(df_new, left_index=True, right_index=True, how='left')
             for col in df_new.columns:
                 storygauge[col] = storygauge[col].fillna(0)
         
-        token = waveview.groupby('symbol').agg(df_star_agg).reset_index().set_index('symbol')
-        storygauge = pd.concat([storygauge, token], axis=1, join='inner')
+        df_star_token = waveview.groupby('symbol').agg(df_star_agg).reset_index().set_index('symbol')
+        storygauge = storygauge.merge(df_star_token, left_index=True, right_index=True, how='left')
         storygauge = storygauge.fillna(0)
         waveview = waveview.fillna(0)
-    
+
+
         rr_run_cycle.update({'story gauge': (datetime.now() - s).total_seconds()})
         total = sum(rr_run_cycle.values())
         # for k,v in rr_run_cycle.items():

@@ -495,7 +495,7 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
             api_update= None, #f"{ip_address}/api/data/update_queenking_chessboard",
             refresh_sec=refresh_sec, 
             refresh_cutoff_sec=seconds_to_market_close, 
-            prod=st.session_state['production'],
+            prod=st.session_state['prod'],
             grid_options=go,
             key=f'account_header',
             # kwargs from here
@@ -529,7 +529,7 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
         api_update=None,
         refresh_sec=varss.get('refresh_sec'), 
         refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
-        prod=st.session_state['production'],
+        prod=st.session_state['prod'],
         grid_options=go,
         key=grid_key,
         toggle_views=[],
@@ -571,7 +571,7 @@ def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=
         api_update=None,
         refresh_sec=varss.get('refresh_sec'), 
         refresh_cutoff_sec=varss.get('seconds_to_market_close'), 
-        prod=st.session_state['production'],
+        prod=st.session_state['prod'],
         grid_options=go,
         key=f'{grid_key}',
         button_name='insight',
@@ -1565,7 +1565,7 @@ def pollenq_button_source():
 
     }
 
-def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=False):
+def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
     if authorized_user == False:
         return False
     # view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
@@ -1574,11 +1574,12 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
     # st.write(QUEEN_KING['users_secrets'])
     # prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
     # sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
-    prod = st.session_state["production"]
-    user_env_instance = "prod" if st.session_state["production"] else "sandbox"
+    prod = st.session_state["prod"]
+    st.write("PROD", prod)
+    user_env_instance = "prod" if st.session_state["prod"] else "sandbox"
     keys_confirmed = QUEEN_KING["users_secrets"][f"{user_env_instance}_keys_confirmed"]
     view_account_keys = False
-    st.write(user_env_instance)
+    st.write("ENV", user_env_instance)
 
     if keys_confirmed == False:
         with cols[0]:
@@ -1592,67 +1593,65 @@ def queen__account_keys(PB_App_Pickle, QUEEN_KING, authorized_user, show_form=Fa
             local_gif(gif_path=runaway_bee_gif, height=33, width=33)
 
     if view_account_keys or show_form:
-        with st.expander("Add API Account Keys", authorized_user):
+        with st.form("account keys"):
             local_gif(gif_path=runaway_bee_gif, height=33, width=33)
             st.session_state["account_keys"] = True
+            if prod:
+                st.write("# Production LIVE")
+                APCA_API_KEY_ID = st.text_input(
+                    label=f"APCA_API_KEY_ID",
+                    value=QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"],
+                    key=f"APCA_API_KEY_ID",
+                )
+                APCA_API_SECRET_KEY = st.text_input(
+                    label=f"APCA_API_SECRET_KEY",
+                    value=QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"],
+                    key=f"APCA_API_SECRET_KEY",
+                )
+                user_secrets = init_client_user_secrets(
+                    prod_keys_confirmed=False,
+                    sandbox_keys_confirmed=False,
+                    APCA_API_KEY_ID_PAPER=None,
+                    APCA_API_SECRET_KEY_PAPER=None,
+                    APCA_API_KEY_ID=APCA_API_KEY_ID,
+                    APCA_API_SECRET_KEY=APCA_API_SECRET_KEY,
+                )
 
-            with st.form("account keys"):
-                if prod:
-                    st.write("Production LIVE")
-                    APCA_API_KEY_ID = st.text_input(
-                        label=f"APCA_API_KEY_ID",
-                        value=QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"],
-                        key=f"APCA_API_KEY_ID",
-                    )
-                    APCA_API_SECRET_KEY = st.text_input(
-                        label=f"APCA_API_SECRET_KEY",
-                        value=QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"],
-                        key=f"APCA_API_SECRET_KEY",
-                    )
-                    user_secrets = init_client_user_secrets(
-                        prod_keys_confirmed=False,
-                        sandbox_keys_confirmed=False,
-                        APCA_API_KEY_ID_PAPER=None,
-                        APCA_API_SECRET_KEY_PAPER=None,
-                        APCA_API_KEY_ID=APCA_API_KEY_ID,
-                        APCA_API_SECRET_KEY=APCA_API_SECRET_KEY,
-                    )
+            else:
+                st.write("# SandBox Paper")
+                APCA_API_KEY_ID_PAPER = st.text_input(
+                    label=f"APCA_API_KEY_ID_PAPER",
+                    value=QUEEN_KING["users_secrets"]["APCA_API_KEY_ID_PAPER"],
+                    key=f"APCA_API_KEY_ID_PAPER",
+                )
+                APCA_API_SECRET_KEY_PAPER = st.text_input(
+                    label=f"APCA_API_SECRET_KEY_PAPER",
+                    value=QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY_PAPER"],
+                    key=f"APCA_API_SECRET_KEY_PAPER",
+                )
+                user_secrets = init_client_user_secrets(
+                    prod_keys_confirmed=False,
+                    sandbox_keys_confirmed=False,
+                    APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER,
+                    APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER,
+                    APCA_API_KEY_ID=None,
+                    APCA_API_SECRET_KEY=None,
+                )
+            
+            st.warning("NEVER EVER Share your API KEYS WITH ANYONE!")
 
+            if st.form_submit_button("Save API Keys"):
+                # test keys
+                if test_api_keys(user_secrets=user_secrets, prod=prod):
+                    st.success(f"{user_env_instance} Keys Added Refreshing Page")
+                    user_secrets[f"{user_env_instance}_keys_confirmed"] = True
+                    QUEEN_KING["users_secrets"] = user_secrets
+                    PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+                    time.sleep(2)
+                    st.rerun()
                 else:
-                    st.write("SandBox Paper")
-                    APCA_API_KEY_ID_PAPER = st.text_input(
-                        label=f"APCA_API_KEY_ID_PAPER",
-                        value=QUEEN_KING["users_secrets"]["APCA_API_KEY_ID_PAPER"],
-                        key=f"APCA_API_KEY_ID_PAPER",
-                    )
-                    APCA_API_SECRET_KEY_PAPER = st.text_input(
-                        label=f"APCA_API_SECRET_KEY_PAPER",
-                        value=QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY_PAPER"],
-                        key=f"APCA_API_SECRET_KEY_PAPER",
-                    )
-                    user_secrets = init_client_user_secrets(
-                        prod_keys_confirmed=False,
-                        sandbox_keys_confirmed=False,
-                        APCA_API_KEY_ID_PAPER=APCA_API_KEY_ID_PAPER,
-                        APCA_API_SECRET_KEY_PAPER=APCA_API_SECRET_KEY_PAPER,
-                        APCA_API_KEY_ID=None,
-                        APCA_API_SECRET_KEY=None,
-                    )
-                
-                st.warning("NEVER EVER Share your API KEYS WITH ANYONE!")
-
-                if st.form_submit_button("Save API Keys"):
-                    # test keys
-                    if test_api_keys(user_secrets=user_secrets, prod=prod):
-                        st.success(f"{user_env_instance} Keys Added Refreshing Page")
-                        user_secrets[f"{user_env_instance}_keys_confirmed"] = True
-                        QUEEN_KING["users_secrets"] = user_secrets
-                        PickleData(PB_App_Pickle, QUEEN_KING)
-                        time.sleep(2)
-                        st.rerun()
-                    else:
-                        st.error(f"{user_env_instance} Keys Failed")
-                        user_secrets[f"{user_env_instance}_keys_confirmed"] = False
+                    st.error(f"{user_env_instance} Keys Failed")
+                    user_secrets[f"{user_env_instance}_keys_confirmed"] = False
 
 
     return True

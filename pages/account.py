@@ -1,5 +1,6 @@
-from chess_piece.app_hive import sac_menu_buttons, set_streamlit_page_config_once
+from chess_piece.app_hive import sac_menu_buttons, set_streamlit_page_config_once, queen__account_keys
 from chess_piece.king import hive_master_root, return_app_ip
+from chess_piece.queen_hive import init_queenbee
 from pq_auth import signin_main, reset_password, forgot_password
 
 import streamlit as st
@@ -37,4 +38,7 @@ if 'logout' in st.session_state and st.session_state["logout"] != True:
     reset_password(authenticator, email, location='main')
 
 
+if st.button('show_keys'):
+    QUEEN_KING = init_queenbee(client_user=st.session_state['client_user'], prod=st.session_state['prod'], queen_king=True).get('QUEEN_KING')
+    queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=st.session_state['authorized_user'], show_form=True) #EDRXZ Maever65teo
 

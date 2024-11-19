@@ -81,8 +81,14 @@ run_time = "09:30"
 a = schedule.every().day.at(run_time).do(call_job_workerbees)
 
 run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
-for run_time in run_times:
-    schedule.every().day.at(run_time).do(call_bishop_bees)
+b = schedule.every().day.at("09:35").do(call_bishop_bees)
+c = schedule.every().day.at("10:15").do(call_bishop_bees)
+d = schedule.every().day.at("11:00").do(call_bishop_bees)
+e = schedule.every().day.at("12:00").do(call_bishop_bees)
+f = schedule.every().day.at("13:00").do(call_bishop_bees)
+g = schedule.every().day.at("14:00").do(call_bishop_bees)
+h = schedule.every().day.at("15:00").do(call_bishop_bees)
+i = schedule.every().day.at("16:00").do(call_bishop_bees)
 
 
 all_jobs = schedule.get_jobs()

@@ -94,7 +94,7 @@ def PlayGround():
     if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
         switch_page('pollen')
     
-    prod = st.session_state['production']
+    prod = st.session_state['prod']
     
     print("PLAYGROUND", st.session_state['client_user'])
     db=init_swarm_dbs(prod)
@@ -217,6 +217,7 @@ def PlayGround():
             if type(df_info) == pd.core.frame.DataFrame:
                 BISHOP['queen_story_symbol_stats'] = df_info
                 PickleData(BISHOP.get('source'), BISHOP, console=True)
+        
         if 'queen_story_symbol_stats' in BISHOP.keys():
             st.header("QK Yahoo Stats")
             standard_AGgrid(BISHOP['queen_story_symbol_stats'])

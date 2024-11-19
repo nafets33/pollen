@@ -9,6 +9,8 @@ import logging
 import json
 import psycopg2
 from psycopg2 import sql
+from psycopg2 import extras
+import pickle
 
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -49,6 +51,22 @@ class PollenJsonDecoder(json.JSONDecoder):
                 return collections.deque(item["value"])
         return item
 
+# @staticmethod
+def get_connection():
+    # Reading connection details from environment variables
+    DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
+    DATABASE_PORT = os.getenv("POLLEN_DATABASE_port", "5432")
+    DATABASE_NAME = os.getenv("POLLEN_DATABASE_name", "pollen")
+    DATABASE_USER = os.getenv("POLLEN_DATABASE_user", "postgres")
+    DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass", "12345")
+
+    return psycopg2.connect(
+        host=DATABASE_HOST,
+        port=DATABASE_PORT,
+        dbname=DATABASE_NAME,
+        user=DATABASE_USER,
+        password=DATABASE_PASS,
+    )
 
 class PollenDatabase:
     @staticmethod
@@ -67,7 +85,7 @@ class PollenDatabase:
             user=DATABASE_USER,
             password=DATABASE_PASS,
         )
-    
+        
     @staticmethod
     def create_table_if_not_exists(table_name):
         """
@@ -76,19 +94,31 @@ class PollenDatabase:
         - key: varchar(255), unique, not null
         - data: text, not null
         - created_at: timestamp, defaults to CURRENT_TIMESTAMP
+        - last_modified: timestamp, defaults to CURRENT_TIMESTAMP
+        Returns True if the table was created, False if it already existed.
         """
         with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
-            create_table_query = f"""
-            CREATE TABLE IF NOT EXISTS {table_name} (
-                id SERIAL PRIMARY KEY,
-                key VARCHAR(255) UNIQUE NOT NULL,
-                data TEXT NOT NULL,
-                created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-            cur.execute(create_table_query)
-            conn.commit()
-            # conn.close()
+            # Check if the table exists already
+            cur.execute("""
+            SELECT to_regclass(%s);
+            """, (table_name,))
+            result = cur.fetchone()[0]
+            
+            if result is None:  # Table does not exist
+                create_table_query = f"""
+                CREATE TABLE {table_name} (
+                    id SERIAL PRIMARY KEY,
+                    key VARCHAR(255) UNIQUE NOT NULL,
+                    data TEXT NOT NULL,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    last_modified TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                """
+                cur.execute(create_table_query)
+                conn.commit()
+                return True  # Table was created
+            else:
+                return False  # Table already exists
 
     @staticmethod
     def key_exists(table_name, key):
@@ -129,28 +159,100 @@ class PollenDatabase:
             "POLLEN_TABLE_NAME", "pollen_store"
         )  # default to "pollen_store" if not set
 
+    @staticmethod
+    def ensure_last_modified_column(table_name):
+        """
+        Adds 'last_modified' column to the table if it doesn't exist.
+        """
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            alter_query = f"""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns 
+                    WHERE table_name = '{table_name}' 
+                    AND column_name = 'last_modified'
+                ) THEN
+                    ALTER TABLE {table_name} 
+                    ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+                END IF;
+            END $$;
+            """
+            cur.execute(alter_query)
+            conn.commit()
 
     @staticmethod
-    def upsert_data(table_name, key, value):
+    def upsert_data(table_name, key, value, console=True):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
+        Dynamically handles 'last_modified' based on table schema.
         """
         # Ensure the table exists before attempting to upsert data
         PollenDatabase.create_table_if_not_exists(table_name)
+        try:
+            # Check if 'last_modified' column exists
+            with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+                cur.execute(f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = %s AND column_name = 'last_modified'
+                """, (table_name,))
+                has_last_modified = cur.fetchone() is not None
 
+            if not has_last_modified:
+                PollenDatabase.update_table_schema(table_name)
+
+            with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+                value_json = json.dumps(value, cls=PollenJsonEncoder)
+
+                upsert_query = f"""
+                    INSERT INTO {table_name} (key, data, last_modified)
+                    VALUES (%s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (key) 
+                    DO UPDATE SET data = EXCLUDED.data, last_modified = CURRENT_TIMESTAMP;
+                """
+
+                cur.execute(upsert_query, (key, value_json))
+                conn.commit()
+
+                if console:
+                    print(f'{key} Upserted')
+            
+            return True
+        except Exception as e:
+            print_line_of_error(e)
+            return False
+
+    @staticmethod
+    def upsert_multiple(table_name, data_dict):
+        """
+        Bulk upsert dictionary of data into the specified table.
+        Data values are serialized with a custom JSON encoder if needed.
+        """
         with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
-            # Serialize the value to JSON
-            value_json = json.dumps(value, cls=PollenJsonEncoder)
+            try:
+                # Prepare records for batch insert
+                records = [
+                    (key, json.dumps(value, cls=PollenJsonEncoder)) 
+                    for key, value in data_dict.items()
+                ]
 
-            # Upsert data into the table
-            upsert_query = f"""
-                INSERT INTO {table_name} (key, data) 
-                VALUES (%s, %s)
-                ON CONFLICT (key) 
-                DO UPDATE SET data = EXCLUDED.data;
-            """
-            cur.execute(upsert_query, (key, value_json))
-            conn.commit()
+                # Use PostgreSQL's INSERT ON CONFLICT for upsert
+                insert_query = f"""
+                    INSERT INTO {table_name} (key, data, last_modified)
+                    VALUES %s
+                    ON CONFLICT (key) 
+                    DO UPDATE SET data = EXCLUDED.data, last_modified = CURRENT_TIMESTAMP;
+                """
+                
+                # Use execute_values for efficient batch inserts
+                extras.execute_values(cur, insert_query, records)
+                conn.commit()
+
+            except Exception as e:
+                print("Error during bulk upsert:", e)
+                conn.rollback()
 
     @staticmethod
     def retrieve_data(table_name, key):
@@ -202,21 +304,26 @@ class PollenDatabase:
             
             cur.execute(query)
             results = cur.fetchall()
-
+            # import ipdb
+            # ipdb.set_trace()
             for result in results:
                 key_name = result[0]
                 data_dict = result[1]  # Now data column is the second column
                 nested_key = key_name.replace('STORY_BEE_', '')
 
                 # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
-                merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
+                if type(data_dict) == str:
+                    data_dict = json.loads(data_dict)
+                    merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
+                else:
+                    merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
 
             merged_data = json.dumps(merged_data)
             # Always deserialize using custom decoder
             return json.loads(merged_data, cls=PollenJsonDecoder)
 
         except Exception as e:
-            print(f"Error: {e}")
+            print_line_of_error(e)
         finally:
             if conn:
                 conn.close()
@@ -250,7 +357,13 @@ class PollenDatabase:
                 nested_key = key_name.replace('POLLEN_STORY_', '')
 
                 # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
-                merged_data["pollenstory"][nested_key] = json.loads(data_dict) #data_dict["pollenstory"]
+                
+                # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
+                if type(data_dict) == str:
+                    data_dict = json.loads(data_dict)
+                    merged_data["pollenstory"][nested_key] = data_dict["pollenstory"]
+                else:
+                    merged_data["pollenstory"][nested_key] = data_dict["pollenstory"]
 
             merged_data = json.dumps(merged_data)
             # Always deserialize using custom decoder
@@ -306,6 +419,119 @@ class PollenDatabase:
                 return []
 
 
+    @staticmethod
+    def update_table_schema(table_name='pollen_store'):
+        """
+        Add a 'last_modified' column to the table if it does not exist.
+        """
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                # Check if the 'last_modified' column exists
+                cur.execute(
+                    f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = %s AND column_name = 'last_modified';
+                    """,
+                    (table_name,)
+                )
+                
+                # If the column doesn't exist, add it
+                if not cur.fetchone():
+                    print(f"Adding 'last_modified' column to {table_name}")
+                    cur.execute(
+                        sql.SQL("""
+                            ALTER TABLE {table} 
+                            ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+                        """).format(table=sql.Identifier(table_name))
+                    )
+                    conn.commit()
+                    print(f"Column 'last_modified' added successfully.")
+                else:
+                    print(f"'last_modified' column already exists in {table_name}.")
+
+            except Exception as e:
+                print("Error updating table schema:", e)
+
+    @staticmethod
+    def get_all_keys_with_timestamps(table_name='db', db_root=None):
+        """
+        Fetch all keys along with their last modified timestamp from the specified table.
+        """
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                if db_root:
+                    query = f"""
+                        SELECT key, last_modified
+                        FROM {table_name}
+                        WHERE key LIKE %s
+                        ORDER BY last_modified DESC;
+                    """
+                    cur.execute(query, (f'%{db_root}%',))
+                else:
+                    query = f"""
+                        SELECT key, last_modified
+                        FROM {table_name}
+                        ORDER BY last_modified DESC;
+                    """
+                    cur.execute(query)
+                
+                # Fetch all keys and their last modified timestamps
+                results = cur.fetchall()
+                
+                # Return a list of tuples (key, last_modified)
+                return [(key, last_modified) for key, last_modified in results]
+
+            except Exception as e:
+                print_line_of_error(f"GET KEYS Error: {e}")
+                return []
+
+    @staticmethod
+    def delete_table(table_name):
+        """
+        Delete the specified table from the database.
+        """
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                # Drop the table if it exists
+                cur.execute(f"DROP TABLE IF EXISTS {table_name};")
+                conn.commit()
+                print(f"Table '{table_name}' has been deleted successfully.")
+                return True
+            except Exception as e:
+                print(f"Error deleting table '{table_name}':", e)
+                return False
+
+    @staticmethod
+    def delete_key(table_name, key_column, key_value):
+        """
+        Delete a specific row from the specified table based on the key.
+        
+        Parameters:
+        - table_name (str): The name of the table.
+        - key_column (str): The column name that holds the key.
+        - key_value: The value of the key to delete.
+        
+        Returns:
+        - bool: True if the deletion was successful, False otherwise.
+        """
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                # Create the DELETE query
+                delete_query = f"DELETE FROM {table_name} WHERE {key_column} = %s"
+
+                # Execute the query
+                cur.execute(delete_query, (key_value,))
+                conn.commit()
+
+                print(f"Row with {key_column} = '{key_value}' has been deleted successfully from table '{table_name}'.")
+                return True
+            except Exception as e:
+                print(f"Error deleting row with {key_column} = '{key_value}' from table '{table_name}':", e)
+                conn.rollback()
+                return False
+
+
 class PostgresHandler(logging.Handler):
     def __init__(self, log_name):
         super().__init__()
@@ -327,6 +553,7 @@ class PostgresHandler(logging.Handler):
         finally:
             if self.conn:
                 self.conn.close()
+
 
 
 class TestPollenDatabase:

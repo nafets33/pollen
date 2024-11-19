@@ -200,12 +200,13 @@ def hash_string(string):
     id = int(hashed_string, 16) % (10 ** 8)
     return id
 
-def return_db_root(client_username):
+def return_db_root(client_username, pg_migration=False):
     client_user_pqid = hash_string(client_username)
     client_user = client_username.split("@")[0]
     db_name = f'db__{client_user}_{client_user_pqid}'
+    if pg_migration:
+        return db_name
     db_root = os.path.join(client_dbs_root(), db_name)
-
     return db_root
 
 def return_all_client_users__db(query="SELECT * FROM users"):

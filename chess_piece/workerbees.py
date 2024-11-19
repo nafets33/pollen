@@ -50,6 +50,7 @@ from chess_piece.queen_hive import (
 
 from chess_piece.pollen_db import PollenDatabase
 
+import ipdb
 
 os.environ["no_proxy"] = "*"
 
@@ -57,9 +58,44 @@ est = pytz.timezone("US/Eastern")
 
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
+# 
+def ttf__save(table_name, pollens_honey, macd_part_fname='', save_pollenstory=False, save_storybee=False):
+    try:
+        batch_results = {}
+
+        if save_pollenstory:
+            db_key_name = 'POLLEN_STORY_' 
+            inner_key = 'pollen_story'
+            
+            # Prepare results for pollen story in batch
+            batch_results.update({
+                f"{db_key_name}{ticker_time_frame}{macd_part_fname}": pollens_honey[inner_key][ticker_time_frame]
+                for ticker_time_frame in pollens_honey[inner_key]
+            })
+        
+        if save_storybee:
+            db_key_name = 'STORY_BEE_'
+            inner_key = 'STORY_bee'
+            
+            # Prepare results for story bee in batch
+            batch_results.update({
+                f"{db_key_name}{ticker_time_frame}{macd_part_fname}": pollens_honey['conscience'][inner_key][ticker_time_frame]
+                for ticker_time_frame in pollens_honey['conscience'][inner_key]
+            })
+
+        # Upsert all data in a single batch
+        if batch_results:
+            PollenDatabase.upsert_multiple(table_name, batch_results)
+
+        return True
+
+    except Exception as e:
+        print_line_of_error(e)
+        ipdb.set_trace()
+        return False
 
 
-def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None):
+def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False):
     s = datetime.now(est)
 
     table_name = "pollen_store"
@@ -68,8 +104,10 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
     async def main_func(session, ticker_time_frame, pickle_file, key, data):
         async with session:
             try:
-                # PollenDatabase.upsert_data(table_name ,key , data)
-                PickleData(pickle_file, data, console=False)
+                if pg_migration:
+                    PollenDatabase.upsert_data(table_name ,key , data)
+                else:
+                    PickleData(pickle_file, data, console=False)
                 return {
                     "status": "success",
                     "ticker_time_frame": ticker_time_frame,
@@ -863,13 +901,25 @@ def queen_workerbees(
             e_mainbeetime = datetime.now(est)
             if reset_only: # run pollen story and save then quit
                 pollens_honey = pollen_story(pollen_nectar=pollen.get("pollencharts_nectar"))
+
+                for k,v in pollens_honey['pollen_story'].items():
+                    if '1Minute_1Day' in k:
+                        # WORKERBEE update 1 table of last column
+                        df = v.tail(1) # get last row
+                        # print(df)
+
                 pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
+                # s = datetime.now()
                 write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star)
+                # print((datetime.now() - s).total_seconds())
+                # s = datetime.now()
+                # # ttf__save(table_name='pollen_store', pollens_honey=pollens_honey, save_storybee=True, save_pollenstory=True)
+                # write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=True)
+                # print((datetime.now() - s).total_seconds())
 
             return QUEEN
         except Exception as e:
-            print("mainaa", e)
-            print_line_of_error()
+            print_line_of_error(f"BEES IINIT FAILED {e} ")
             sys.exit()
 
     def chunk(it, size):

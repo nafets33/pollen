@@ -20,8 +20,8 @@ import argparse
 
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
-from chess_piece.king import return_QUEENs_workerbees_chessboard, master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
-from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs, init_logging
+from chess_piece.king import return_db_root, return_all_client_users__db, master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
+from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs
 from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
 from streamlit_extras.switch_page_button import switch_page
@@ -48,10 +48,11 @@ if st.session_state["authorized_user"] != True:
     st.stop()
 
 client_user = st.session_state['username']
-prod = st.session_state['production']
+prod = st.session_state['prod']
 
 
 db=init_swarm_dbs(prod)
+
 
 def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
     
@@ -130,34 +131,6 @@ if __name__ == '__main__':
     if st.session_state['admin']:
         with tabs[0]:
             refresh_workerbees(QUEENBEE, QUEEN_KING)
-        with tabs[1]:
-            create_pg_table()
-        
-        data = PollenDatabase.get_all_tables()
-        st.write(data) 
-
-        data = PollenDatabase.get_all_keys('db')
-        st.write(data) 
-
-    # s = datetime.now()
-    # symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING).get("queens_master_tickers")
-    # st.write(f"len symbols to read {len(symbols)}")
-    # STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols)
-    # st.write(f" # PG time to read STORY_bee {((datetime.now()-s)).total_seconds()}")
-
-    # s = datetime.now()
-    # pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols)
-    # st.write(f" # PG time to read pollenstory {((datetime.now()-s)).total_seconds()}")
-
-
-    # s = datetime.now()
-    # ticker_db = read_QUEENs__pollenstory(
-    #     symbols=symbols,
-    #     read_storybee=True, 
-    #     read_pollenstory=True,
-    # )    
-    # st.write(f" # time to read pollenstory PICKLE {((datetime.now()-s)).total_seconds()}")
-
 
 
     MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))

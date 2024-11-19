@@ -697,7 +697,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         for sector in set(df['sector']):
             token = df[df['sector']==sector]
             tickers=token['symbol'].tolist()
-            QUEENBEE['workerbees'][sector] = init_qcp_workerbees(ticker_list=tickers)
+            QUEENBEE['workerbees'][sector] = init_qcp_workerbees(ticker_list=tickers, buying_power=0)
         QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
         STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')

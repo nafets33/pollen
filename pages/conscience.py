@@ -107,7 +107,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     ip_address = st.session_state['ip_address']
     client_user = st.session_state["username"]
     db_root = st.session_state['db_root']
-    prod, admin, prod_name = st.session_state['production'], st.session_state['admin'], st.session_state['prod_name']
+    prod, admin, prod_name = st.session_state['prod'], st.session_state['admin'], st.session_state['prod_name']
     # authorized_user = st.session_state['authorized_user']
 
     # return page last visited 
@@ -211,7 +211,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
             api_update= f'{ip_address}/api/data/update_orders',
             refresh_sec=refresh_sec, 
             refresh_cutoff_sec=seconds_to_market_close, 
-            prod=st.session_state['production'],
+            prod=st.session_state['prod'],
             grid_options=go,
             key=f'waves',
             return_type='waves',
@@ -250,18 +250,19 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
 
             def story_grid_buttons():
+                exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
                 buttons=[
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/queen_buy_orders',
                             'prompt_message': 'Edit Buy',
                             'prompt_field': 'kors',
-                            'col_headername': 'Re Allocate',
+                            'col_headername': 'Suggested Allocation',
                             "col_header": "queens_suggested_buy",
                             "border_color": "green",
                             'col_width':135,
                             'sortable': True,
                             'pinned': 'left',
-                            'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
+                            'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
                             },
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/queen_sell_orders',
@@ -286,8 +287,30 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             # 'pinned': 'left',
                             'prompt_order_rules': ['allocation'],
                             },
+                            {'button_name': None,
+                            'button_api': f'{ip_address}/api/data/update_buy_autopilot',
+                            'prompt_message': 'Edit AutoPilot',
+                            'prompt_field': 'edit_buy_autopilot_option',
+                            'col_headername': 'Buy Auto Pilot',
+                            "col_header": "buy_autopilot",
+                            "border_color": "green",
+                            'col_width':90,
+                            # 'pinned': 'left',
+                            'prompt_order_rules': ['autopilot'],
+                            },
+                            {'button_name': None,
+                            'button_api': f'{ip_address}/api/data/update_sell_autopilot',
+                            'prompt_message': 'Edit AutoPilot',
+                            'prompt_field': 'edit_sell_autopilot_option',
+                            'col_headername': 'Sell Auto Pilot',
+                            "col_header": "sell_autopilot",
+                            "border_color": "red",
+                            'col_width':90,
+                            # 'pinned': 'left',
+                            'prompt_order_rules': ['autopilot'],
+                            },
                         ]
-                
+                exclude_buy_kors = ['star_list', 'reverse_buy', 'sell_trigbee_trigger_timeduration']
                 for star in star_names().keys():
                     # if star != '1Minute_1Day':
                     #     continue
@@ -301,7 +324,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             "border_color": "#BEE3FE",
                             'col_width':135,
                             # 'pinned': 'right',
-                            'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
+                            'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
 
                             }
                     buttons.append(temp)
@@ -316,8 +339,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'current_ask': {'headerName': 'ask', 'sortable':'true',},
-                'current_bid': {'headerName': 'bid', 'sortable':'true',},
 
                 # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, wrapText=True),
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
@@ -325,7 +346,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 'star_sells_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 # 'allocation_long_deploy': {'headerName':'Queen Allocation Deploy', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                 #                            'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                #                            },                    
+                #                            },
+                'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},              
                 'trinity_w_L': {'headerName': 'Trinity Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'pinned': 'right'},
                 'trinity_w_15': create_ag_grid_column(headerName='Flash Force',sortable=True, initialWidth=89, ),
                 'trinity_w_30': create_ag_grid_column(headerName='Middle Force',sortable=True, initialWidth=89, ),
@@ -335,12 +357,14 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
                 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
                 # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                'current_ask': {'headerName': 'ask', 'sortable':'true',},
+                'current_bid': {'headerName': 'bid', 'sortable':'true',},
                 }
 
             ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
             for col in ticker_info_cols:
                 if col != 'symbol': 
-                    config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true'}
+                    config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
                     gb.configure_column(col, config)
             
             chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
@@ -367,7 +391,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 api_update=f"{ip_address}/api/data/update_queenking_chessboard",
                 refresh_sec=refresh_sec, 
                 refresh_cutoff_sec=seconds_to_market_close, 
-                prod=st.session_state['production'],
+                prod=st.session_state['prod'],
                 grid_options=go,
                 key=f'story_grid',
                 return_type='story',
@@ -397,7 +421,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
 
         # # if authorized_user: log type auth and none
         log_dir = os.path.join(db_root, 'logs')
-        init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['production'])
+        init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['prod'])
 
         # tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
         # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
@@ -417,7 +441,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         # with story_tab:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
         refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-        refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
+        refresh_sec = 0 if refresh_grids == False else refresh_sec
         # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
         # print("STORY GRID")
         # db=init_swarm_dbs(prod)

@@ -290,7 +290,7 @@ def signin_main(page=None):
 
         st.session_state["admin"] = (
             True
-            if st.session_state["username"] in ["stefanstapinski@gmail.com"]
+            if st.session_state["username"] in [os.environ.get('admin_user')]
             else False
         )
         
