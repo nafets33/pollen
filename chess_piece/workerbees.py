@@ -12,6 +12,12 @@ import streamlit as st
 import aiohttp
 import pandas as pd
 import pytz
+from datetime import datetime
+import threading
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 from chess_piece.king import (
     PickleData,
@@ -59,40 +65,65 @@ est = pytz.timezone("US/Eastern")
 # FEAT List
 # rebuild minute bar with high and lows, store current minute bar in QUEEN, reproduce every minute
 # 
-def ttf__save(table_name, pollens_honey, macd_part_fname='', save_pollenstory=False, save_storybee=False):
-    try:
-        batch_results = {}
+# def ttf__save(table_name, pollens_honey, macd_part_fname='', save_pollenstory=False, save_storybee=False):
+#     try:
+#         batch_results = {}
 
-        if save_pollenstory:
-            db_key_name = 'POLLEN_STORY_' 
-            inner_key = 'pollen_story'
+#         if save_pollenstory:
+#             db_key_name = 'POLLEN_STORY_' 
+#             inner_key = 'pollen_story'
             
-            # Prepare results for pollen story in batch
-            batch_results.update({
-                f"{db_key_name}{ticker_time_frame}{macd_part_fname}": pollens_honey[inner_key][ticker_time_frame]
-                for ticker_time_frame in pollens_honey[inner_key]
-            })
+#             # Prepare results for pollen story in batch
+#             batch_results.update({
+#                 f"{db_key_name}{ticker_time_frame}{macd_part_fname}": pollens_honey[inner_key][ticker_time_frame]
+#                 for ticker_time_frame in pollens_honey[inner_key]
+#             })
         
-        if save_storybee:
-            db_key_name = 'STORY_BEE_'
-            inner_key = 'STORY_bee'
+#         if save_storybee:
+#             db_key_name = 'STORY_BEE_'
+#             inner_key = 'STORY_bee'
             
-            # Prepare results for story bee in batch
-            batch_results.update({
-                f"{db_key_name}{ticker_time_frame}{macd_part_fname}": pollens_honey['conscience'][inner_key][ticker_time_frame]
-                for ticker_time_frame in pollens_honey['conscience'][inner_key]
-            })
+#             # Prepare results for story bee in batch
+#             batch_results.update({
+#                 f"{db_key_name}{ticker_time_frame}{macd_part_fname}": pollens_honey['conscience'][inner_key][ticker_time_frame]
+#                 for ticker_time_frame in pollens_honey['conscience'][inner_key]
+#             })
 
-        # Upsert all data in a single batch
-        if batch_results:
-            PollenDatabase.upsert_multiple(table_name, batch_results)
+#         # Upsert all data in a single batch
+#         if batch_results:
+            # PollenDatabase.upsert_multiple(table_name, batch_results)
 
-        return True
+#         return True
 
-    except Exception as e:
-        print_line_of_error(e)
-        ipdb.set_trace()
-        return False
+#     except Exception as e:
+#         print_line_of_error(e)
+#         ipdb.set_trace()
+#         return False
+
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+import os
+import threading
+
+def ttf__save(table_name, task_results):
+    """
+    Save data to the PostgreSQL database using ThreadPoolExecutor for concurrency.
+    
+    :param table_name: Name of the database table.
+    :param task_results: List of (key, data) tuples to be saved.
+    """
+    batch_size = 50  # Adjustable batch size for efficient inserts
+    batches = [task_results[i:i + batch_size] for i in range(0, len(task_results), batch_size)]
+
+    def process_batch(batch):
+        data_dict = {key: data for key, data in batch}
+        PollenDatabase.upsert_multiple(table_name, data_dict)
+
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        for batch in batches:
+            executor.submit(process_batch, batch)
+
 
 
 def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False):
@@ -105,7 +136,9 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         async with session:
             try:
                 if pg_migration:
-                    PollenDatabase.upsert_data(table_name ,key , data)
+                    # PollenDatabase.upsert_data(table_name ,key , data)
+                    task = (key, data)
+                    task_results.append(task) # Collect tasks for threadded saving
                 else:
                     PickleData(pickle_file, data, console=False)
                 return {
@@ -187,8 +220,9 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
     else:
         macd_part_fname = ""
 
-    # if backtesting run day only
+    task_results = []
 
+    # if backtesting run day only
     save_all_pollenstory = asyncio.run(
         main(
             symbols_pollenstory_dbs,
@@ -200,7 +234,12 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         )
     )
 
+    if pg_migration:
+        ttf__save(table_name, task_results)
+
     return True
+
+
 
 def update_speed_gauges(pollens_honey, speed_gauges):
     # for each star append last macd state
@@ -224,6 +263,7 @@ def queen_workerbees(
     run_all_pawns=False,
     backtesting_star=False,
     streamit=False,
+    pg_migration=False,
 ):
 
     if backtesting:
@@ -871,7 +911,7 @@ def queen_workerbees(
 
     """ Initiate your Charts with Indicators """
 
-    def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings, MACD_WAVES, speed_gauges, reset_only=reset_only):
+    def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings, MACD_WAVES, speed_gauges, reset_only=reset_only, pg_migration=pg_migration):
         try:
             s_mainbeetime = datetime.now(est)
             # WORKERBEE if backetesting no need to recall chart data
@@ -910,7 +950,7 @@ def queen_workerbees(
 
                 pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
                 # s = datetime.now()
-                write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star)
+                write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration)
                 # print((datetime.now() - s).total_seconds())
                 # s = datetime.now()
                 # # ttf__save(table_name='pollen_store', pollens_honey=pollens_honey, save_storybee=True, save_pollenstory=True)
@@ -936,23 +976,30 @@ def queen_workerbees(
             MACD_settings = QUEENBEE["workerbees"][queens_chess_piece]["MACD_fast_slow_smooth"]
 
         # main
+        s = datetime.now()
         pollen = pollen_hunt(
             df_tickers_data=WORKERBEE[queens_chess_piece]["pollencharts"],
             MACD=MACD_settings,
             MACD_WAVES=MACD_WAVES,
         )
+        hunt_time =  (datetime.now() - s).total_seconds()
         WORKERBEE[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
         WORKERBEE[queens_chess_piece]["pollencharts_nectar"] = pollen["pollencharts_nectar"]  # bars and techicnals
-
+        s = datetime.now()
         pollens_honey = pollen_story(pollen_nectar=pollen.get("pollencharts_nectar"))
+        story_time = (datetime.now() - s).total_seconds()
 
         betty_bee = pollens_honey["betty_bee"]
 
         pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
-
-        write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star)
-
+        s = datetime.now()
+        write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration)
+        write_time = (datetime.now() - s).total_seconds()
+        
+        print(f'{queens_chess_piece}: hunt {hunt_time} : story {story_time} : write {write_time}')
+        
         qcp_hunt = (datetime.now(est) - start_time).total_seconds()
+
         betty_bee[f"{queens_chess_piece}_cycle_time.pkl"] = qcp_hunt
         # WORKERBEE add deque([], 89)
         if f"{queens_chess_piece}_avg_cycle_time.pkl" not in betty_bee.keys():
@@ -1189,25 +1236,25 @@ def queen_workerbees(
                         else:
                             star_frequency = 1
                         
-                        if (now_time - last_modified).total_seconds() > star_frequency:
-                            WORKERBEE[qcp]['last_modified'] = now_time
-                            ticker_star_hunter_bee(
-                                WORKERBEE=WORKERBEE,
-                                QUEENBEE=QUEENBEE,
-                                queens_chess_piece=qcp,
-                                speed_gauges=speed_gauges,
-                                MACD_WAVES=MACD_WAVES,
-                            )
-                            e = datetime.now(est)
-                            print(f"Worker Refreshed {qcp} --- {(e - s)} seconds --- {queens_master_tickers}")
-                        else:
-                            print("star Frequency not Met")
-                    # return True
+                        # if (now_time - last_modified).total_seconds() > star_frequency:
+                        WORKERBEE[qcp]['last_modified'] = now_time
+                        ticker_star_hunter_bee(
+                            WORKERBEE=WORKERBEE,
+                            QUEENBEE=QUEENBEE,
+                            queens_chess_piece=qcp,
+                            speed_gauges=speed_gauges,
+                            MACD_WAVES=MACD_WAVES,
+                        )
+                        e = datetime.now(est)
+                        print(f"Worker Refreshed {qcp} --- {(e - s)} seconds --- {queens_master_tickers}")
+                        # else:
+                        #     print("star Frequency not Met")
+
                 except Exception as e:
                     print("qtf", e, print_line_of_error())
 
-                if backtesting or reset_only:
-                    break
+                # if backtesting or reset_only:
+                #     break
                 if close_worker(WORKERBEE_queens):
                     break
 
@@ -1230,9 +1277,10 @@ if __name__ == "__main__":
 
     def createParser_workerbees():
         parser = argparse.ArgumentParser()
-        parser.add_argument("-prod", default=False)
+        parser.add_argument("-prod", default=True)
         parser.add_argument("-qcp_s", default="castle")
         parser.add_argument("-reset_only", default=None)
+        parser.add_argument("-pg_migration", default=False)
         # parser.add_argument("-queens_chess_piece", default="bees_manager")
         # parser.add_argument("-backtesting", default=True)
         # parser.add_argument("-macd", default=None)
@@ -1244,6 +1292,7 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
     reset_only = namespace.reset_only  # 'castle', 'knight' 'queen'
+    pg_migration = namespace.pg_migration  # 'castle', 'knight' 'queen'
     prod = True if str(namespace.prod).lower() == "true" else False
 
 
@@ -1257,7 +1306,6 @@ if __name__ == "__main__":
                 time.sleep(3)
             else:
                 break
-
-    queen_workerbees(qcp_s=qcp_s, prod=prod, reset_only=reset_only)
+    queen_workerbees(qcp_s=qcp_s, prod=prod, reset_only=reset_only, pg_migration=False)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

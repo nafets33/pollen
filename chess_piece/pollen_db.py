@@ -14,18 +14,29 @@ import pickle
 
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, np.int64):
-            return {"_type": "np.int64", "value": int(obj)}
+        # Handle NumPy types
+        if isinstance(obj, (np.int32, np.int64)):  # Add np.int32 here
+            return {"_type": str(type(obj)), "value": int(obj)}
+        if isinstance(obj, (np.float32, np.float64)):  # Handle float types as well
+            return {"_type": str(type(obj)), "value": float(obj)}
+        
+        # Handle pandas types
         if isinstance(obj, pd.DataFrame):
             return {"_type": "pd.DataFrame", "value": obj.to_dict()}
         if isinstance(obj, pd.Timestamp):
             return {"_type": "pd.Timestamp", "value": obj.isoformat()}
-        if isinstance(obj, datetime.datetime):
-            return {"_type": "datetime.datetime", "value": obj.isoformat()}
         if isinstance(obj, pd.Series):
             return {"_type": "pd.Series", "value": obj.to_dict()}
+        
+        # Handle Python datetime
+        if isinstance(obj, datetime.datetime):
+            return {"_type": "datetime.datetime", "value": obj.isoformat()}
+        
+        # Handle collections.deque
         if isinstance(obj, collections.deque):
             return {"_type": "collections.deque", "value": list(obj)}
+        
+        # Default handling
         return super(PollenJsonEncoder, self).default(obj)
 
 
@@ -51,22 +62,6 @@ class PollenJsonDecoder(json.JSONDecoder):
                 return collections.deque(item["value"])
         return item
 
-# @staticmethod
-def get_connection():
-    # Reading connection details from environment variables
-    DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
-    DATABASE_PORT = os.getenv("POLLEN_DATABASE_port", "5432")
-    DATABASE_NAME = os.getenv("POLLEN_DATABASE_name", "pollen")
-    DATABASE_USER = os.getenv("POLLEN_DATABASE_user", "postgres")
-    DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass", "12345")
-
-    return psycopg2.connect(
-        host=DATABASE_HOST,
-        port=DATABASE_PORT,
-        dbname=DATABASE_NAME,
-        user=DATABASE_USER,
-        password=DATABASE_PASS,
-    )
 
 class PollenDatabase:
     @staticmethod
@@ -93,7 +88,7 @@ class PollenDatabase:
         - id: serial, primary key
         - key: varchar(255), unique, not null
         - data: text, not null
-        - created_at: timestamp, defaults to CURRENT_TIMESTAMP
+        - created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         - last_modified: timestamp, defaults to CURRENT_TIMESTAMP
         Returns True if the table was created, False if it already existed.
         """
@@ -183,7 +178,7 @@ class PollenDatabase:
             conn.commit()
 
     @staticmethod
-    def upsert_data(table_name, key, value, console=True):
+    def upsert_data(table_name, key, value, console=False):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
         Dynamically handles 'last_modified' based on table schema.
@@ -232,9 +227,9 @@ class PollenDatabase:
         """
         with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
             try:
-                # Prepare records for batch insert
+                # Prepare records for batch insert (key, data, last_modified)
                 records = [
-                    (key, json.dumps(value, cls=PollenJsonEncoder)) 
+                    (key, json.dumps(value, cls=PollenJsonEncoder), datetime.datetime.now()) 
                     for key, value in data_dict.items()
                 ]
 
@@ -243,8 +238,11 @@ class PollenDatabase:
                     INSERT INTO {table_name} (key, data, last_modified)
                     VALUES %s
                     ON CONFLICT (key) 
-                    DO UPDATE SET data = EXCLUDED.data, last_modified = CURRENT_TIMESTAMP;
+                    DO UPDATE SET 
+                        data = EXCLUDED.data, 
+                        last_modified = CURRENT_TIMESTAMP;
                 """
+                
                 
                 # Use execute_values for efficient batch inserts
                 extras.execute_values(cur, insert_query, records)
@@ -253,6 +251,8 @@ class PollenDatabase:
             except Exception as e:
                 print("Error during bulk upsert:", e)
                 conn.rollback()
+
+
 
     @staticmethod
     def retrieve_data(table_name, key):
@@ -275,7 +275,9 @@ class PollenDatabase:
                     serialized_data = json.dumps(result[0])
 
                 # Always deserialize using custom decoder
-                return json.loads(serialized_data, cls=PollenJsonDecoder)
+                data = json.loads(serialized_data, cls=PollenJsonDecoder)
+                # data['key'] = key
+                return data
 
         except Exception as e:
             print(f"Error: {e}")
@@ -506,30 +508,35 @@ class PollenDatabase:
     def delete_key(table_name, key_column, key_value):
         """
         Delete a specific row from the specified table based on the key.
-        
+
         Parameters:
         - table_name (str): The name of the table.
         - key_column (str): The column name that holds the key.
         - key_value: The value of the key to delete.
-        
+
         Returns:
         - bool: True if the deletion was successful, False otherwise.
         """
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
-            try:
-                # Create the DELETE query
-                delete_query = f"DELETE FROM {table_name} WHERE {key_column} = %s"
+        # Validate table and column names to prevent SQL injection
+        if not table_name.isidentifier() or not key_column.isidentifier():
+            print("Invalid table name or column name.")
+            return False
 
-                # Execute the query
-                cur.execute(delete_query, (key_value,))
-                conn.commit()
+        # Construct the query safely
+        delete_query = f"DELETE FROM {table_name} WHERE {key_column} = %s"
 
-                print(f"Row with {key_column} = '{key_value}' has been deleted successfully from table '{table_name}'.")
-                return True
-            except Exception as e:
-                print(f"Error deleting row with {key_column} = '{key_value}' from table '{table_name}':", e)
-                conn.rollback()
-                return False
+        try:
+            with PollenDatabase.get_connection() as conn:
+                with conn.cursor() as cur:
+                    # Execute the query
+                    cur.execute(delete_query, (key_value,))
+                    conn.commit()
+
+                    print(f"Row with {key_column} = '{key_value}' has been deleted successfully from table '{table_name}'.")
+                    return True
+        except Exception as e:
+            print(f"Error deleting row with {key_column} = '{key_value}' from table '{table_name}': {e}")
+            return False
 
 
 class PostgresHandler(logging.Handler):

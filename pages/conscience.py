@@ -134,7 +134,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     #     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
     #     QUEEN_KING['revrec'] = revrec
 
-
     ##### STREAMLIT ###
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
@@ -203,7 +202,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 gb.configure_column(col, {'hide': True})
 
         go = gb.build()
-
         st_custom_grid(
             client_user=client_user,
             username=KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -384,6 +382,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
             go = gb.build()
             # with st.expander("default build check"):
             #     st.write(go)
+            print(client_user)
             st_custom_grid(
                 client_user=client_user,
                 username=KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -422,15 +421,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         # # if authorized_user: log type auth and none
         log_dir = os.path.join(db_root, 'logs')
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['prod'])
-
-        # tickers_avail = [list(set(i.split("_")[0] for i in STORY_bee.keys()))][0]
-        # def cache_tradingModelsNotGenerated() IMPROVEMENT TO SPEED UP CACHE cache function
-        # tic_need_TM = [i for i in tickers_avail if i not in QUEEN_KING['king_controls_queen'].get('symbols_stars_TradingModel')]
-        # if len(tic_need_TM) > 0:
-        #     print("Adding Trading Model for: ", tic_need_TM)
-        #     for ticker in tic_need_TM:
-        #         tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme="long_star")['MACD'][ticker]
-        #         QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1
         
         trading_days = hive_dates(api=api)['trading_days']
         mkhrs = return_market_hours(trading_days=trading_days)
@@ -442,10 +432,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
         refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
         refresh_sec = 0 if refresh_grids == False else refresh_sec
-        # refresh_sec = None if st.sidebar.toggle("Edit Story Grid") else refresh_sec
-        # print("STORY GRID")
-        # db=init_swarm_dbs(prod)
-        # BISHOP = ReadPickleData(db.get('BISHOP'))
+
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                         
         if st.toggle("Show Wave Grid"):
@@ -457,6 +444,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                     # refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
+        print('prod', prod)
 
         cols = st.columns(2)
         with cols[0]:

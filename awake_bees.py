@@ -25,7 +25,7 @@ db=init_swarm_dbs(prod)
 
 
 def call_bishop_bees(prod=prod):
-    print("HELLO BISHOP")
+    print("HELLO BISHOP", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
     BISHOP = ReadPickleData(db.get('BISHOP'))
 
     qcp_bees_key = 'workerbees'
@@ -50,6 +50,7 @@ def call_bishop_bees(prod=prod):
                     # macd=None,
                     # streamit=False,
                         )
+    print("BISHOP COMPLETE", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
 
 def call_job_workerbees(prod=prod):
 

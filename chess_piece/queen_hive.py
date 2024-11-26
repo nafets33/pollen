@@ -350,6 +350,7 @@ def init_queen(queens_chess_piece):
             "available_tickers": [],
             "active_tickers": [],
             "available_triggerbees": [],
+            # "wants_to_sell": {},
         },
         "queens_messages": {},
         "kings_order_rules": {},
@@ -4286,7 +4287,7 @@ def generate_TradingModel(
 
 def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, pg_migration=False):
     db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
-    print(db_root, pg_migration)
+    print(db_root, "PGMIGRATION:", pg_migration)
     table_name = 'client_user_store'
     if not prod:
         table_name = "client_user_store_sandbox"
@@ -4296,14 +4297,14 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         return {'init_pollen': init_pollen}
     
     if pg_migration:
-        QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}_QUEEN') if queen else {}
-        QUEENsHeart = PollenDatabase.retrieve_data(table_name, f'{db_root}_QUEENS_HEART') if queen or queen_heart else {}
-        QUEEN_KING = PollenDatabase.retrieve_data(table_name, f'{db_root}_KING') if queen_king else {}
-        ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}_ORDERS') if orders else {}
-        ORDERS_FINAL = PollenDatabase.retrieve_data(table_name, f'{db_root}_ORDERS_FINAL') if orders_final else {}
-        BROKER = PollenDatabase.retrieve_data(table_name, f'{db_root}_BROKER') if broker else {}
-        broker_info = PollenDatabase.retrieve_data(table_name, f'{db_root}_ACCOUNT_INFO') if broker_info else {}
-        revrec = PollenDatabase.retrieve_data(table_name, f'{db_root}_REVREC') if revrec else {}
+        QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN') if queen else {}
+        QUEENsHeart = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEENsHeart') if queen or queen_heart else {}
+        QUEEN_KING = PollenDatabase.retrieve_data(table_name, f'{db_root}-KING') if queen_king else {}
+        ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS') if orders else {}
+        ORDERS_FINAL = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS_FINAL') if orders_final else {}
+        BROKER = PollenDatabase.retrieve_data(table_name, f'{db_root}-BROKER') if broker else {}
+        broker_info = PollenDatabase.retrieve_data(table_name, f'{db_root}-ACCOUNT_INFO') if broker_info else {}
+        revrec = PollenDatabase.retrieve_data(table_name, f'{db_root}-REVREC') if revrec else {}
     else:
         QUEEN = ReadPickleData(init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
         QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
@@ -4553,6 +4554,7 @@ def create_QueenOrderBee(
         date_mark = datetime.now(est),
         long_short=long_short,
         profit_loss=0,
+        queen_wants_to_sell_qty=0,
 
     ):
         # date_mark = datetime.now(est)
@@ -4622,6 +4624,7 @@ def create_QueenOrderBee(
                 "profit_loss": profit_loss,
                 "revisit_trade_datetime": revisit_trade_datetime,
                 "long_short": long_short,
+                "queen_wants_to_sell_qty": queen_wants_to_sell_qty,
             }
 
     if queen_init:
@@ -5850,7 +5853,7 @@ def init_swarm_dbs(prod, init=False):
     return db_local_path
             
 
-def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "KING", "ORDERS", "ORDERS_FINAL", "QUEENS_HEART", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV"], table_name='client_user_store'):
+def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "KING", "ORDERS", "ORDERS_FINAL", "QUEENsHEART", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV"], table_name='client_user_store'):
      # db_root nEEDS to be the db__client_user_name
 
     def init_queen_orders(pickle_file=None, pg_migration=False):
@@ -5864,7 +5867,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
 
     def setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables): 
         for key in client_user_tables:
-            pg_table = f'{db_root}___{key}'
+            pg_table = f'{db_root}-{key}'
             
             if key == 'QUEEN':
                 if not PollenDatabase.key_exists(table_name, pg_table):
@@ -5882,7 +5885,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                 if not PollenDatabase.key_exists(table_name, pg_table):
                     data = init_queen_orders(pg_migration=pg_migration)
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
-            elif key == 'QUEENS_HEART':            
+            elif key == 'QUEENsHEART':            
                 if not PollenDatabase.key_exists(table_name, pg_table):
                     data = {"heartbeat_time": datetime.now(est)}
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)

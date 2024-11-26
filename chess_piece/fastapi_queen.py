@@ -266,7 +266,6 @@ def return_startime_from_ttf(ticker_time_frame):
 
 def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0'): # index & wave_amount
   try:
-
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
@@ -560,15 +559,6 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
 
 ## MAIN GRIDS
 
-def update_queenking_chessboard(username, prod, selected_row):
-   QK = load_queen_App_pkl(username, prod)
-  #  df = pd.DataFrame(new_data).T
-   if 'ticker_revrec_allocation_mapping' in QK['king_controls_queen'].keys():
-      # update_dict = dict(zip(df['symbol'], df['']))
-      updated_dict = {selected_row.get('symbol'): selected_row.get('ticker_buying_power')}
-      print(updated_dict)
-   status = 'updated'
-   return grid_row_button_resp(description=status)
 
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
@@ -738,6 +728,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         return json_data
 
       elif return_type == 'story':
+        print('prod', prod)
         df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection)
         
         json_data = df.to_json(orient='records')
@@ -746,8 +737,31 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
     except Exception as e:
       print_line_of_error(e)
 
-    
 
+def queenking_update_auto_pilot(client_user, prod, selected_row, default_value):
+    print(client_user, default_value) 
+    autopilot = default_value.get('autopilot')
+    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True).get('QUEEN_KING')
+    symbol = selected_row.get('symbol')
+    QUEEN_KING['king_controls_queen']['symbol_autopilot'].at[symbol, 'buy_autopilot'] = autopilot
+    print(QUEEN_KING['king_controls_queen']['symbol_autopilot'].at[symbol, 'buy_autopilot'])
+
+    status = 'updated'
+    return grid_row_button_resp(description=status)
+
+
+def update_queenking_chessboard(client_user, prod, selected_row, default_value):
+   QUEEN_KING = init_queenbee(client_user, prod, queen_king=True).get('QUEEN_KING')
+   print("KOR", default_value)
+  #  df = pd.DataFrame(new_data).T
+   if 'ticker_revrec_allocation_mapping' in QUEEN_KING['king_controls_queen'].keys():
+      # update_dict = dict(zip(df['symbol'], df['']))
+      updated_dict = {selected_row.get('symbol'): selected_row.get('ticker_buying_power')}
+      print(updated_dict)
+   status = 'updated'
+   return grid_row_button_resp(description=status)
+
+# Account Header account_header
 def header_account(client_user, prod):
   QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
   broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file

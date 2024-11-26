@@ -11,6 +11,7 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy
                                        get_ticker_time_frame,
                                        grid_row_button_resp,
                                        update_queenking_chessboard,
+                                       queenking_update_auto_pilot,
                                        header_account,)
 
 router = APIRouter(
@@ -24,14 +25,6 @@ def check_authKey(api_key):
         return False
     else:
         return True
-
-def confirm_auth_keys(api_key):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return False
-    else:
-        return True
-
 
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
@@ -133,7 +126,7 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
 @router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK)
 def archive_queen_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     try:
-        if confirm_auth_keys(api_key) == False:
+        if check_authKey(api_key) == False:
             return "NOTAUTH"
 
         req = app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value)
@@ -234,15 +227,23 @@ def check_api():
     return JSONResponse(content="online")
 
 @router.post("/update_queenking_chessboard", status_code=status.HTTP_200_OK)
-def update_qk_chessboard(username: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...)): # new_data for update entire row
+def update_qk_chessboard(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
     
     # print("/data/queen", username, prod, kwargs)
-    json_data = update_queenking_chessboard(username, prod, selected_row)
+    json_data = update_queenking_chessboard(client_user, prod, selected_row, default_value)
     return JSONResponse(content=json_data)
 
+
+@router.post("/update_buy_autopilot", status_code=status.HTTP_200_OK)
+def update_buy_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+    if not check_authKey(api_key): # fastapi_pollenq_key
+        return "NOTAUTH"
+    
+    json_data = queenking_update_auto_pilot(client_user, prod, selected_row, default_value)
+    return JSONResponse(content=json_data)
 
 
 @router.post("/voiceGPT", status_code=status.HTTP_200_OK)

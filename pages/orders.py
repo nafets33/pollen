@@ -153,14 +153,14 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
 if __name__ == '__main__':
 
     
+    signin_main(page="pollenq")
+    # if 'authentication_status' not in st.session_state:
+    #     print("SIGN IN")
+    #     authenticator = 
 
-    if 'authentication_status' not in st.session_state:
-        print("SIGN IN")
-        authenticator = signin_main(page="pollenq")
-
-    if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
-        print("SWITCHING PAGES")
-        switch_page('pollen')
+    # if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
+    #     print("SWITCHING PAGES")
+    #     switch_page('pollen')
 
     seconds_to_market_close = st.session_state['seconds_to_market_close']
     mkhrs = st.session_state['mkhrs']

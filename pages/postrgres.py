@@ -49,6 +49,7 @@ if st.session_state["authorized_user"] != True:
 
 client_user = st.session_state['username']
 prod = st.session_state['prod']
+st.warning(f'Production{prod}')
 
 
 db=init_swarm_dbs(prod)
@@ -81,12 +82,26 @@ def find_all_circular_references(obj, seen=None, path="root", found_refs=None):
     return found_refs
 
 if __name__ == '__main__':
-
     tables = PollenDatabase.get_all_tables()
-    tab_list = ['Tables', 'Create', 'Migrate User'] + tables
+    tab_list = ['Tables', 'Create', 'Migrate User', 'Delete'] + tables
     tabs = st.tabs(tab_list)
     if st.session_state['admin']:
-        s_t = 3
+        with tabs[3]:
+            del_tables = st.selectbox("delete table", options=tables)
+            if st.button(f"Delete Table {del_tables}"):
+                PollenDatabase.delete_table(del_tables)
+            sub_tabs = st.tabs([i for i in tables])
+            s_t = 0
+            for table in tables:
+                with sub_tabs[s_t]:
+                    with st.form(f"Del Key Table {table}"):
+                        table_keys = PollenDatabase.get_all_keys(table_name=table)
+                        del_key = st.selectbox(f"delete key from {table}", options=table_keys, key=table)
+                        if st.form_submit_button(f"Delete Key {del_key}"):
+                            data = PollenDatabase.retrieve_data(table, key=del_key)
+                            PollenDatabase.delete_key(table, key_column=del_key, key_value=data)
+                s_t+=1
+        s_t = 4
         for table in tables:
             with tabs[s_t]:
                 st.write(table)
@@ -112,6 +127,15 @@ if __name__ == '__main__':
             
             all_users = return_all_client_users__db()
             st.write(all_users)
+            # qb = init_queenbee(client_user, prod, queen_heart=True).get('QUEENsHeart')
+            # db_root = return_db_root(client_user, pg_migration=True)
+            # key=f'{db_root}QUEENsHeart'
+            # value_json = PollenDatabase.retrieve_data(table_name='client_user_store', key=f'{db_root}_QUEENsHeart')
+            # st.write(value_json['key'])
+            # print("DD", len(value_json))
+            # 1073741824
+            # 622070226
+
             
             with tabs[2]:
                 c_user = st.selectbox('Client Users', options=all_users['email'].tolist())
@@ -121,14 +145,17 @@ if __name__ == '__main__':
                 if st.button(f"migrate user {c_user_root_name}"):
                     st.write("hell yea")
                     with st.spinner("Reading Client User DB"):
-                        qb = init_queenbee(c_user, prod, queen=True, queen_king=True, orders=True, broker=True, broker_info=True, revrec=True, queen_heart=True, orders_final=True)
+                        qb = init_queenbee(c_user, prod, queen=True, queen_king=True, orders=True, broker=True, broker_info=True, revrec=True, queen_heart=True) # orders_final=True handle in new table
                     for db_name in qb.keys():
                         data = qb.get(db_name)
-                        key_name = f'{c_user_root_name}_{db_name}'
+                        key_name = f'{c_user_root_name}-{db_name}'
+                        st.write(f'Uploading {key_name}')
                         if data:
-                            find_all_circular_references(data)
-                            # if PollenDatabase.upsert_data(table_name='client_user_store', key=key_name, value=data):
-                            #     st.success(f'{key_name} Saved')
+                            if not find_all_circular_references(data):
+                                if PollenDatabase.upsert_data(table_name='client_user_store', key=key_name, value=data):
+                                    st.success(f'{key_name} Saved')
+                            else:
+                                st.error(f"{key_name} C error")
 
         # qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, pg_migration=True)
         # st.write(qb['QUEEN'].keys())

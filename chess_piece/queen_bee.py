@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
-from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, ReadPickleData, PickleData
+from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData
 from chess_piece.queen_hive import (
                                     init_charlie_bee, 
                                     init_queenbee, 
@@ -30,6 +30,10 @@ from chess_piece.queen_hive import (
                                     )
 from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys
 import copy
+from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonDecoder
+
+
+pg_migration = os.environ.get('pg_migration')
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -63,7 +67,7 @@ exclude_conditions = [
 
 
 
-def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states, console=True):
+def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states, console=True, table_name='client_user_store'):
     
     try:
         # Save Heart to avoid saving Queen to improve speed
@@ -72,17 +76,38 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
         if QUEENsHeart:
             QUEENsHeart['heartbeat'] = QUEEN['heartbeat']
             QUEENsHeart.update({"heartbeat_time": datetime.now(est)})
-            PickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'), QUEENsHeart, console=console)
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, QUEENsHeart.get('key'), QUEENsHeart)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'), QUEENsHeart, console=console)
         if save_q:
-            PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN, console=console)
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, QUEEN.get('key'), QUEEN)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN, console=console)
         if save_qo:
             df = QUEEN.get('queen_orders')
             df = df[df['queen_order_state'].isin(active_queen_order_states)]
-            PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': df}, console=console)
+            ORDERS = {'queen_orders': df}
+            if pg_migration:
+                key = f'{QUEEN.get("key").split("-")[0]}-ORDERS'
+                PollenDatabase.upsert_data(table_name, key=key, value=ORDERS)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': df}, console=console)
         if save_acct:
-            PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')}, console=console)
+            if pg_migration:
+                key = f'{QUEEN.get("key").split("-")[0]}-ACCOUNT_INFO'
+                ACCOUNT_INFO = {'account_info': QUEEN.get('account_info')}
+                PollenDatabase.upsert_data(table_name, key=key, value=ACCOUNT_INFO)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')}, console=console)
         if save_rr:
-            PickleData(QUEEN['dbs'].get('PB_RevRec_PICKLE'), {'revrec': QUEEN.get('revrec')}, console=console)
+            if pg_migration:
+                key = f'{QUEEN.get("key").split("-")[0]}-REVREC'
+                revrec = {'revrec': QUEEN.get('revrec')}
+                PollenDatabase.upsert_data(table_name, key=key, value=revrec)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_RevRec_PICKLE'), {'revrec': QUEEN.get('revrec')}, console=console)
         
         return True
     except Exception as e:
@@ -763,6 +788,7 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx, order_status, pricein
 
 
 def queenbee(client_user, prod, queens_chess_piece='queen'):
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
 
     def process_sell_app_request(QUEEN, QUEEN_KING, run_order, request_name='sell_orders', app_requests__bucket='app_requests__bucket'):
         client_order_id = run_order.get('client_order_id')
@@ -788,7 +814,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         limit = app_request.get('limit')
 
                         QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
-                        # PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
                         god_save_the_queen(QUEEN, save_q=True, save_qo=True)
                         return {'app_flag': True, 'sell_order': True, 'sell_qty': sell_qty, 'type': o_type, 'side': side, 'limit': limit}
                 else:
@@ -851,7 +876,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])                
                 if queensleep:
                     print("WAIT for QUEEN to STOP")
-                    PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+                    if pg_migration:
+                        PollenDatabase.upsert_data(table_name, key=QUEEN.get('key'), value=QUEEN)
+                    else:
+                        PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
                     print("QUEEN STOPPED")
                     sys.exit()
 
@@ -903,8 +931,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             msg = (f'{path_key} Subconscious thought cleared:: {path_key}')
                             print(msg)
                             logging.info(msg)
-
-                            PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
+                            if pg_migration:
+                                PollenDatabase.upsert_data(table_name, key=QUEEN.get('key'), value=QUEEN)
+                            else:
+                                PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
                             return {'app_flag': True, 'app_request': app_request}
                 else:
                     return {'app_flag': False}
@@ -1986,10 +2016,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reason
                     
                     if sell_order:
+
                         makers_middle_price = priceinfo.get('maker_middle')
                         mm_cost = priceinfo.get('maker_middle') * sell_qty
                         order_side = 'sell'
                         sell_qty = check_revrec(sell_qty, revrec, trigname, current_macd, mm_cost, ticker_time_frame, makers_middle_price, close_order_today)
+                        
+                        if 'queen_wants_to_sell_qty' in run_order.keys():
+                            QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty'] = sell_qty
+                        
                         if sell_qty > 0:
                             msg = ("Bishop SELL:", ticker_time_frame, sell_reasons, current_macd, sell_qty, mm_cost)
                             print(msg)
@@ -2127,7 +2162,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             save_b = True
                             update_broker_order_status(BROKER, order_status)
                 if save_b:
-                    PickleData(BROKER.get('source'), BROKER, console=False)
+                    if pg_migration:
+                        PollenDatabase.upsert_data(table_name, key=BROKER.get('key'), value=BROKER)
+                    else:
+                        PickleData(BROKER.get('source'), BROKER, console=False)
                 
                 charlie_bee['queen_cyle_times']['om_order_status_api'] = (datetime.now(est) - s_time_qOrders).total_seconds()
 
@@ -2333,7 +2371,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             broker_orders = pd.concat([broker_orders, df_token])
             BROKER['broker_orders'] = broker_orders
             
-            # PickleData(BROKER.get('source'), BROKER, console=False)
             return True
         except Exception as e:
             print_line_of_error("broker update failed")
@@ -2367,7 +2404,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         else:
                             QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'pending'
         if save_b:
-            PickleData(BROKER.get('source'), BROKER, console=False)
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, key=BROKER.get('key'), value=BROKER)
+            else:
+                PickleData(BROKER.get('source'), BROKER, console=False)
 
         return True
         
@@ -2420,7 +2460,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         if api == False:
             print("API Keys Failed, Queen goes back to Sleep")
             QUEEN['queens_messages'].update({"api_status": 'failed'})
-            PickleData(pickle_file=QUEEN['dbs'].get('PB_QUEEN_Pickle'), data_to_store=QUEEN)
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, key=QUEEN.get('key'), value=QUEEN)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
             sys.exit()
 
         trading_days = hive_dates(api=api)['trading_days']
@@ -2436,8 +2479,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         QUEEN_req = add_key_to_QUEEN(QUEEN=QUEEN, queens_chess_piece=queens_chess_piece)
         if QUEEN_req['update']:
             QUEEN = QUEEN_req['QUEEN']
-            PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
-
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, key=QUEEN.get('key'), value=QUEEN)
+            else:
+                PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
         logging.info("My Queen")
 
         QUEEN['heartbeat']['main_indexes'] = main_index_tickers()

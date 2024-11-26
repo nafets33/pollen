@@ -28,7 +28,7 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
 from chess_piece.king import kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData
-from chess_piece.queen_hive import create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.queen_hive import return_queen_controls, stars, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import refresh_chess_board__revrec
 # componenets
 # import streamlit_antd_components as sac
@@ -47,7 +47,6 @@ import ipdb
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 
-
 def pollenq(admin_pq):
     # try:
 
@@ -55,7 +54,6 @@ def pollenq(admin_pq):
     king_G = kingdom__global_vars()
     main_root = hive_master_root()
     load_dotenv(os.path.join(main_root, ".env"))
-    seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
 
 
     def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
@@ -257,13 +255,13 @@ def pollenq(admin_pq):
         switch_page('account')
 
     if menu_id == 'Orders':
-        # switch_page('orders')
-        queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
+        switch_page('orders')
+        # queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 
-        active_order_state_list = king_G.get('active_order_state_list')
-        config_cols = config_orders_cols(active_order_state_list)
-        missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
-        order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close)
+        # active_order_state_list = king_G.get('active_order_state_list')
+        # config_cols = config_orders_cols(active_order_state_list)
+        # missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
+        # order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close)
 
         st.stop()
 
@@ -379,8 +377,10 @@ def pollenq(admin_pq):
                 table_name = 'client_user_store' if prod else "client_user_store_sandbox"
                 PollenDatabase.upsert_data(table_name, db_root, QUEEN_KING)
             else:
-                st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
+                st.write(QUEEN_KING['king_controls_queen']['symbol_autopilot'])
                 # PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+        if QUEEN_KING['king_controls_queen'].get('symbol_autopilot'):
+            print(QUEEN_KING['king_controls_queen'].get('symbol_autopilot'))
 
         if st.sidebar.button('show_keys'):
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
@@ -413,6 +413,8 @@ def pollenq(admin_pq):
             # st.session_state['prod'] = False
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
             st.stop()
+        
+
 
         ### TOP OF PAGE
         if st.session_state['admin']:
@@ -437,39 +439,45 @@ def pollenq(admin_pq):
                                 save_q=True,
                                 save_rr=True,
                                 console=True)
+                QUEEN_KING['revrec'] = True
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
 
         trading_days = hive_dates(api=api)['trading_days']
-        mkhrs = return_market_hours(trading_days=trading_days)
         # st.write(trading_days) # STORE IN KING and only call once
+        mkhrs = return_market_hours(trading_days=trading_days)
+        seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
+
         
         seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
         if mkhrs != 'open':
             seconds_to_market_close = 1
-        
         st.session_state['mkhrs'] = mkhrs
         st.session_state['seconds_to_market_close'] = seconds_to_market_close
 
         if menu_id == 'Engine':
             from pages.pollen_engine import pollen_engine
-
             pollen_engine(acct_info_raw)
 
-
+        if menu_id == 'orders':
+            switch_page('orders')
 
 
  
     if 'pollen' in menu_id:
+        print("prod", prod)
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
         queens_conscience(revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
-    
+    if st.button("Reset Queen Controls"):
+        king_controls_queen=return_queen_controls(stars)
+        QUEEN_KING['king_controls_queen'] = king_controls_queen
+        PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
+
     print(f'pollen END >>>> {(datetime.now() - main_page_start).total_seconds()}' )
 
-    # except Exception as e:
-    #     print_line_of_error(e)
 
 if __name__ == '__main__':
     def createParser():

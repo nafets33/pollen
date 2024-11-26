@@ -479,7 +479,7 @@ def PickleData(pickle_file, data_to_store, write_temp=False, console=True):
         with open(pickle_file, "wb+") as dbfile:
             pickle.dump(data_to_store, dbfile)
             if console:
-                print("saved: ", pickle_file)
+                print(f"SAVED: {console} : {pickle_file}")
     else:
         print("saving a file without a file not a good idea")
         return False

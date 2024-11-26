@@ -4,7 +4,7 @@ from PIL import Image
 import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
-from chess_piece.queen_hive import print_line_of_error, init_swarm_dbs
+from chess_piece.queen_hive import print_line_of_error, init_swarm_dbs, init_queenbee
 from chess_piece.app_hive import set_streamlit_page_config_once, show_waves,  standard_AGgrid
 from chess_piece.king import kingdom__grace_to_find_a_Queen, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
 from custom_button import cust_Button
@@ -21,7 +21,7 @@ import os
 # from st_on_hover_tabs import on_hover_tabs
 from streamlit_extras.switch_page_button import switch_page
 import yfinance as yf
-import time
+import requests
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -88,11 +88,7 @@ def refresh_yfinance_ticker_info(main_symbols_full_list):
 
 def PlayGround():
 
-    if 'authentication_status' not in st.session_state:
-        authenticator = signin_main(page="pollenq")
 
-    if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
-        switch_page('pollen')
     
     prod = st.session_state['prod']
     
@@ -102,6 +98,48 @@ def PlayGround():
 
     delete_dict_keys(BISHOP)
 
+    # Convert dates to ISO format if provided
+
+
+    qb = init_queenbee(client_user=st.session_state['client_user'], prod=prod, queen=False, queen_king=True, api=True)
+    # QUEEN = qb.get('QUEEN')
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
+    if prod:
+        BASE_URL = "https://api.alpaca.markets"  # Paper trading URL
+    else:
+        BASE_URL = "https://paper-api.alpaca.markets"  # Paper trading URL
+
+    def fetch_portfolio_history(api):
+        try:
+            # Fetch portfolio history
+            portfolio_history = api.get_portfolio_history(
+                period='3M',  # Options: '1D', '7D', '1M', '3M', '6M', '1A' -> for year
+                timeframe='1D',  # Options: '1Min', '5Min', '15Min', '1H', '1D'
+            )
+
+            # Convert response to dictionary for better readability
+            history = portfolio_history._raw
+            df = pd.DataFrame(history)
+            # df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+            st.write(df)
+            df['profit_loss'] = pd.to_numeric(df['profit_loss'])
+            print(sum(df['profit_loss']))
+            print(sum(df['profit_loss_pct']))
+            print((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'])
+
+            # # Print summary
+            # print("Portfolio Equity: ", history['equity'])
+            # print("Timestamps: ", history['timestamp'])
+            # print("Profit/Loss: ", history['profit_loss'])
+            # print("Keys", history.keys())
+        # Keys dict_keys(['timestamp', 'equity', 'profit_loss', 'profit_loss_pct', 'base_value', 'base_value_asof', 'timeframe'])
+            return history
+        except Exception as e:
+            print("Error fetching portfolio history:", e)
+
+    # Call the function
+    portfolio_history = fetch_portfolio_history(api)
     try:
 
         # images
@@ -281,4 +319,6 @@ def PlayGround():
     except Exception as e:
         print("playground error: ", e,  print_line_of_error())
 if __name__ == '__main__':
+    signin_main()
+
     PlayGround()
