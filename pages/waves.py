@@ -147,7 +147,7 @@ def waves():
         revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
         # st.write([i for i in df_broker_portfolio.index if i not in revrec['df_ticker'].index])
         st.header(f'revrec {(datetime.now()-s).total_seconds()}')
-
+    st.write(QUEEN_KING['king_controls_queen'].get('ticker_autopilot'))
     cols = st.columns(3)
     tabs = st.tabs([key for key in revrec.keys()])
     tab = 0

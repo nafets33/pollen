@@ -349,6 +349,7 @@ def pollenq(admin_pq):
 
 
         if sneak_peak:
+            st.info("Preview")
             pass
         else:
             live_sb_button = st.sidebar.button(f'Switch Enviroment', key='pollenq', use_container_width=True)
@@ -377,10 +378,9 @@ def pollenq(admin_pq):
                 table_name = 'client_user_store' if prod else "client_user_store_sandbox"
                 PollenDatabase.upsert_data(table_name, db_root, QUEEN_KING)
             else:
-                st.write(QUEEN_KING['king_controls_queen']['symbol_autopilot'])
+                st.write(QUEEN_KING['king_controls_queen'].get('ticker_autopilot'))
                 # PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
-        if QUEEN_KING['king_controls_queen'].get('symbol_autopilot'):
-            print(QUEEN_KING['king_controls_queen'].get('symbol_autopilot'))
+
 
         if st.sidebar.button('show_keys'):
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
@@ -464,17 +464,20 @@ def pollenq(admin_pq):
 
  
     if 'pollen' in menu_id:
-        print("prod", prod)
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
         queens_conscience(revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     if st.button("Reset Queen Controls"):
         king_controls_queen=return_queen_controls(stars)
         QUEEN_KING['king_controls_queen'] = king_controls_queen
-        PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
+        if st.session_state.get('pg_migration'):
+            PollenDatabase.upsert_data(table_name=table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+        else:
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
 
     print(f'pollen END >>>> {(datetime.now() - main_page_start).total_seconds()}' )
 

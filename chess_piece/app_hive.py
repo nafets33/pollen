@@ -1258,7 +1258,7 @@ def standard_AGgrid(
     height=500,
     update_mode_value="NO_UPDATE",
     paginationOn=True,
-    use_checkbox=True,
+    use_checkbox=False,
     hide_cols=[],
     grid_type=False
 ):

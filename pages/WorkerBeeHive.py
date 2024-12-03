@@ -107,6 +107,7 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
                                             run_all_pawns=run_all_pawns, 
                                             macd=macd,
                                             streamit=True,
+                                            pg_migration=False,
                                                 )
                         st.success("WorkerBees Completed")
                         e = datetime.now(est)
@@ -127,8 +128,9 @@ if __name__ == '__main__':
     qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True)
     QUEEN_KING = qb.get('QUEEN_KING')
     QUEEN = qb.get('QUEEN')
-    tabs = st.tabs(['Workerbees', 'PostGres'])
+    tabs = st.tabs(['Workerbees'])
     if st.session_state['admin']:
+        st.write("ADMIN")
         with tabs[0]:
             refresh_workerbees(QUEENBEE, QUEEN_KING)
 

@@ -137,6 +137,6 @@ def read_pollenstore(symbols, read_storybee=True, read_pollenstory=True, info="f
 
 def create_pg_table():
     table_name = st.text_input('Table Name', 'db_store')
-    if st.button("Create Pollen Store"):
+    if st.button(f"Create {table_name}"):
         PollenDatabase.create_table_if_not_exists(table_name)
         st.success(f"{table_name} created")

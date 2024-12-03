@@ -83,8 +83,15 @@ def find_all_circular_references(obj, seen=None, path="root", found_refs=None):
 
 if __name__ == '__main__':
     tables = PollenDatabase.get_all_tables()
+    main_tables = ['pollen_store', 'db', 'client_user_store', 'client_user_store_sandbox']
+    init_main_tables = [i for i in main_tables if i not in tables]
+    if init_main_tables:
+        for table_name in init_main_tables:
+            if PollenDatabase.create_table_if_not_exists(table_name):
+                st.success(f'PG {table_name} Created')
     tab_list = ['Tables', 'Create', 'Migrate User', 'Delete'] + tables
     tabs = st.tabs(tab_list)
+
     if st.session_state['admin']:
         with tabs[3]:
             del_tables = st.selectbox("delete table", options=tables)
@@ -94,19 +101,23 @@ if __name__ == '__main__':
             s_t = 0
             for table in tables:
                 with sub_tabs[s_t]:
-                    with st.form(f"Del Key Table {table}"):
-                        table_keys = PollenDatabase.get_all_keys(table_name=table)
-                        del_key = st.selectbox(f"delete key from {table}", options=table_keys, key=table)
-                        if st.form_submit_button(f"Delete Key {del_key}"):
-                            data = PollenDatabase.retrieve_data(table, key=del_key)
-                            PollenDatabase.delete_key(table, key_column=del_key, key_value=data)
+                    # with st.form(f"Del Key Table {table}"):
+                    table_keys = PollenDatabase.get_all_keys(table_name=table)
+                    del_key = st.selectbox(f"delete key from {table}", options=table_keys, key=table)
+                    if del_key:
+                        if st.button(f"Delete Key {del_key}"):
+                            # data = PollenDatabase.retrieve_data(table, key=del_key)
+                            PollenDatabase.delete_key(table, key_column=del_key)
                 s_t+=1
         s_t = 4
         for table in tables:
             with tabs[s_t]:
                 st.write(table)
-                # st.write(pd.DataFrame(PollenDatabase.get_all_keys(table)))
-                st.write(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table)))
+                data=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table)))
+                data = data.rename(columns={0:'a', 1:'b'})
+                # standard_AGgrid(data)
+                st.write(data)
+                
                 s_t+=1
 
         with tabs[1]:
@@ -114,9 +125,10 @@ if __name__ == '__main__':
         with tabs[0]: 
             st.write(tables)
 
-            table_name = st.selectbox('table_name', options=tables)
-            if st.button(f'add last mod to table: {table_name}'):
-                PollenDatabase.update_table_schema(table_name)
+            with st.sidebar:
+                table_name = st.selectbox('table_name', options=tables)
+                if st.button(f'add last mod to table: {table_name}'):
+                    PollenDatabase.update_table_schema(table_name)
             
             if st.button('migrate_db'):
                 swarm = init_swarm_dbs(prod)
@@ -127,17 +139,9 @@ if __name__ == '__main__':
             
             all_users = return_all_client_users__db()
             st.write(all_users)
-            # qb = init_queenbee(client_user, prod, queen_heart=True).get('QUEENsHeart')
-            # db_root = return_db_root(client_user, pg_migration=True)
-            # key=f'{db_root}QUEENsHeart'
-            # value_json = PollenDatabase.retrieve_data(table_name='client_user_store', key=f'{db_root}_QUEENsHeart')
-            # st.write(value_json['key'])
-            # print("DD", len(value_json))
-            # 1073741824
-            # 622070226
-
             
             with tabs[2]:
+                table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
                 c_user = st.selectbox('Client Users', options=all_users['email'].tolist())
                 c_user_root = return_db_root(c_user)
                 c_user_root_name = os.path.split(c_user_root)[-1]
@@ -152,7 +156,7 @@ if __name__ == '__main__':
                         st.write(f'Uploading {key_name}')
                         if data:
                             if not find_all_circular_references(data):
-                                if PollenDatabase.upsert_data(table_name='client_user_store', key=key_name, value=data):
+                                if PollenDatabase.upsert_data(table_name=table_name, key=key_name, value=data):
                                     st.success(f'{key_name} Saved')
                             else:
                                 st.error(f"{key_name} C error")

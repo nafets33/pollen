@@ -1041,7 +1041,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
     revrec__stars={}
     chess_board__revrec_borrow={}
     marginPower={}
-    df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum'}
+    df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum', 'queen_wants_to_sell_qty': 'sum' } # 
 
     if not QUEEN.get('portfolio'):
         df_broker_portfolio = pd.DataFrame([{'symbol': ''}])
@@ -1514,16 +1514,11 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                         df_stars.at[ticker_time_frame, 'star_at_play_borrow'] = borrowed_cost_basis
                         df_stars.at[ticker_time_frame, 'star_buys_at_play'] = buys_at_play
                         df_stars.at[ticker_time_frame, 'star_sells_at_play'] = sells_at_play
-                        # df_stars.at[ticker_time_frame, 'sell_reccomendation'] =
                         if len(active_orders) > 0: 
                             # Active Orders
-                            
                             # return Want to Sell
                             if 'queen_wants_to_sell_qty' in active_orders.columns:
-                                # print("QUEEN WANTS TO SELL")
-                                # active_orders['queen_wants_to_sell_qty'] = pd.to_numeric(active_orders['queen_wants_to_sell_qty'], errors='coerce')
-                                df_sell = active_orders[active_orders['queen_wants_to_sell_qty'] > 0].copy()
-                                df_stars.at[ticker_time_frame, 'queen_wants_to_sell_qty'] = sum(df_sell['queen_wants_to_sell_qty'])
+                                df_stars.at[ticker_time_frame, 'queen_wants_to_sell_qty'] = sum(active_orders['queen_wants_to_sell_qty'])
                             else:
                                 df_stars.at[ticker_time_frame, 'queen_wants_to_sell_qty'] = 0
 
@@ -1544,6 +1539,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                             df_stars.at[ticker_time_frame, 'money'] = 0
                             df_stars.at[ticker_time_frame, 'honey'] = 0
                             df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play
+                            df_stars.at[ticker_time_frame, 'queen_wants_to_sell_qty'] = 0
                         
                         ticker_remaining_budget += ttf_remaining_budget
                         ticker_remaining_borrow += remaining_budget_borrow
@@ -1662,6 +1658,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         QUEEN['heartbeat']['broker_qty_delta'] = sum(df_ticker['broker_qty_delta'])           
 
         waveview = df_stars.copy()
+
         ttf_errors = []
         for ttf in waveview.index:
             if ttf not in STORY_bee.keys():
@@ -1682,7 +1679,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         waveview = revrec_allocation(waveview, wave_blocktime)
         rr_run_cycle.update({'revrec allocation': (datetime.now() - s).total_seconds()})
         s = datetime.now()
-        
+
         def revrec_lastmod(QUEEN):
             if not pg_Migration:
                 return datetime.fromtimestamp(os.stat(QUEEN['dbs'].get('PB_RevRec_PICKLE')).st_mtime).astimezone(est)
@@ -1750,20 +1747,19 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 story_token = story_token[cols]
                 df_storygauge = pd.concat([df_storygauge, story_token])
 
-                # df_storygauge = df_storygauge.merge(story_token, left_index=True, right_index=True, how='left')
         
         # Join Story to Tickers
-        # storygauge = pd.concat([df_ticker, df_storygauge], axis=1, join='inner')
         storygauge = df_ticker.merge(df_storygauge, left_index=True, right_index=True, how='left')
 
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
         # Join in AutoPilot
-        # ticker_autopilot = QUEEN_KING['king_controls_queen'].get('symbol_autopilot')
-        # if ticker_autopilot:
-        #     df_autop = pd.DataFrame(ticker_autopilot).set_index('symbol')
-        #     storygauge = storygauge.merge(df_autop, left_index=True, right_index=True, how='left')
+        ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
+        if type(ticker_autopilot) == pd.DataFrame:
+            storygauge = storygauge.merge(ticker_autopilot, left_index=True, right_index=True, how='left')
+            storygauge['buy_autopilot'] = storygauge['buy_autopilot'].fillna(False)
+            storygauge['sell_autopilot'] = storygauge['sell_autopilot'].fillna(False)
 
 
         # Price Info data
@@ -1774,7 +1770,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             storygauge = storygauge.merge(df_new, left_index=True, right_index=True, how='left')
             for col in df_new.columns:
                 storygauge[col] = storygauge[col].fillna(0)
-        
+
         df_star_token = waveview.groupby('symbol').agg(df_star_agg).reset_index().set_index('symbol')
         storygauge = storygauge.merge(df_star_token, left_index=True, right_index=True, how='left')
         storygauge = storygauge.fillna(0)

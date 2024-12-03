@@ -294,7 +294,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             "border_color": "green",
                             'col_width':90,
                             # 'pinned': 'left',
-                            'prompt_order_rules': ['autopilot'],
+                            'prompt_order_rules': ['buy_autopilot'],
                             },
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_sell_autopilot',
@@ -305,7 +305,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             "border_color": "red",
                             'col_width':90,
                             # 'pinned': 'left',
-                            'prompt_order_rules': ['autopilot'],
+                            'prompt_order_rules': ['sell_autopilot'],
                             },
                         ]
                 exclude_buy_kors = ['star_list', 'reverse_buy', 'sell_trigbee_trigger_timeduration']
@@ -338,7 +338,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
 
-                # 'queens_note': create_ag_grid_column(headerName='Queens Note', initialWidth=89, wrapText=True),
+                'queen_wants_to_sell_qty': create_ag_grid_column(headerName='Suggested Sell Qty', initialWidth=89),
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'star_buys_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'star_sells_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),

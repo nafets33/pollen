@@ -31,6 +31,7 @@ def register_user(authenticator, con, cur):
             st.session_state["register_status"] = register_status
 
         if os.environ.get('env_verify') != "89":
+            st.info("Use Code 0")
             verification_code = 0
         else:
             # generate and store verification code
@@ -47,7 +48,7 @@ def register_user(authenticator, con, cur):
                     recipient=register_email,
                     subject="PollenQ. Verify Email",
                     body=f"""
-                Your PollenQ verification code is {verification_code}
+                Your QuantQueen verification code is {verification_code}
 
                 Please enter this code in the website to complete your registration
 
@@ -79,7 +80,7 @@ def register_user(authenticator, con, cur):
                 if os.environ.get('env_verify') == "89":
                     send_email(
                         recipient=register_email,
-                        subject="Welcome On Board PollenQ!",
+                        subject="Welcome On Board QuantQueen!",
                         body=f"""
                     You have successful created a PollenQ account. Ensure you keep your login detials safe.
 

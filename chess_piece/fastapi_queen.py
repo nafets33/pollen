@@ -743,8 +743,8 @@ def queenking_update_auto_pilot(client_user, prod, selected_row, default_value):
     autopilot = default_value.get('autopilot')
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True).get('QUEEN_KING')
     symbol = selected_row.get('symbol')
-    QUEEN_KING['king_controls_queen']['symbol_autopilot'].at[symbol, 'buy_autopilot'] = autopilot
-    print(QUEEN_KING['king_controls_queen']['symbol_autopilot'].at[symbol, 'buy_autopilot'])
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'] = autopilot
+    print(QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'])
 
     status = 'updated'
     return grid_row_button_resp(description=status)

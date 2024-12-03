@@ -11,33 +11,37 @@ import psycopg2
 from psycopg2 import sql
 from psycopg2 import extras
 import pickle
-
+import streamlit as st
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
-        # Handle NumPy types
-        if isinstance(obj, (np.int32, np.int64)):  # Add np.int32 here
-            return {"_type": str(type(obj)), "value": int(obj)}
-        if isinstance(obj, (np.float32, np.float64)):  # Handle float types as well
-            return {"_type": str(type(obj)), "value": float(obj)}
-        
-        # Handle pandas types
-        if isinstance(obj, pd.DataFrame):
-            return {"_type": "pd.DataFrame", "value": obj.to_dict()}
-        if isinstance(obj, pd.Timestamp):
-            return {"_type": "pd.Timestamp", "value": obj.isoformat()}
-        if isinstance(obj, pd.Series):
-            return {"_type": "pd.Series", "value": obj.to_dict()}
-        
-        # Handle Python datetime
-        if isinstance(obj, datetime.datetime):
-            return {"_type": "datetime.datetime", "value": obj.isoformat()}
-        
-        # Handle collections.deque
-        if isinstance(obj, collections.deque):
-            return {"_type": "collections.deque", "value": list(obj)}
-        
-        # Default handling
-        return super(PollenJsonEncoder, self).default(obj)
+        try:
+            # Handle NumPy types
+            if isinstance(obj, (np.int32, np.int64)):  # Add np.int32 here
+                return {"_type": str(type(obj)), "value": int(obj)}
+            if isinstance(obj, (np.float32, np.float64)):  # Handle float types as well
+                return {"_type": str(type(obj)), "value": float(obj)}
+            
+            # Handle pandas types
+            if isinstance(obj, pd.DataFrame):
+                return {"_type": "pd.DataFrame", "value": obj.to_dict()}
+            if isinstance(obj, pd.Timestamp):
+                return {"_type": "pd.Timestamp", "value": obj.isoformat()}
+            if isinstance(obj, pd.Series):
+                return {"_type": "pd.Series", "value": obj.to_dict()}
+            
+            # Handle Python datetime
+            if isinstance(obj, datetime.datetime):
+                return {"_type": "datetime.datetime", "value": obj.isoformat()}
+            
+            # Handle collections.deque
+            if isinstance(obj, collections.deque):
+                return {"_type": "collections.deque", "value": list(obj)}
+            
+            # Default handling
+            return super(PollenJsonEncoder, self).default(obj)
+        except Exception as e:
+            # Handle unexpected errors in the encoding process
+            return {"_type": "error", "message": str(e)}
 
 
 class PollenJsonDecoder(json.JSONDecoder):
@@ -178,7 +182,7 @@ class PollenDatabase:
             conn.commit()
 
     @staticmethod
-    def upsert_data(table_name, key, value, console=False):
+    def upsert_data(table_name, key, value, console=True):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
         Dynamically handles 'last_modified' based on table schema.
@@ -194,10 +198,8 @@ class PollenDatabase:
                     WHERE table_name = %s AND column_name = 'last_modified'
                 """, (table_name,))
                 has_last_modified = cur.fetchone() is not None
-
             if not has_last_modified:
                 PollenDatabase.update_table_schema(table_name)
-
             with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
                 value_json = json.dumps(value, cls=PollenJsonEncoder)
 
@@ -216,6 +218,7 @@ class PollenDatabase:
             
             return True
         except Exception as e:
+            print("issue arrived in upsert_data function")
             print_line_of_error(e)
             return False
 
@@ -276,7 +279,7 @@ class PollenDatabase:
 
                 # Always deserialize using custom decoder
                 data = json.loads(serialized_data, cls=PollenJsonDecoder)
-                # data['key'] = key
+                data['key'] = key
                 return data
 
         except Exception as e:
@@ -505,37 +508,39 @@ class PollenDatabase:
                 return False
 
     @staticmethod
-    def delete_key(table_name, key_column, key_value):
+    def delete_key(table_name, key_column, console='del'):
         """
         Delete a specific row from the specified table based on the key.
 
         Parameters:
         - table_name (str): The name of the table.
         - key_column (str): The column name that holds the key.
-        - key_value: The value of the key to delete.
+        # - key_value: The value of the key to delete.
 
         Returns:
         - bool: True if the deletion was successful, False otherwise.
         """
         # Validate table and column names to prevent SQL injection
-        if not table_name.isidentifier() or not key_column.isidentifier():
-            print("Invalid table name or column name.")
-            return False
+        # if not table_name.isidentifier() or not key_column.isidentifier():
+        #     print("Invalid table name or column name.")
+        #     print("The given table name and column name: ", table_name, key_column)
+        #     return False
 
         # Construct the query safely
-        delete_query = f"DELETE FROM {table_name} WHERE {key_column} = %s"
+        delete_query = f"DELETE FROM {table_name} WHERE key = %s"
 
         try:
             with PollenDatabase.get_connection() as conn:
                 with conn.cursor() as cur:
                     # Execute the query
-                    cur.execute(delete_query, (key_value,))
+                    cur.execute(delete_query, (key_column,))
                     conn.commit()
-
-                    print(f"Row with {key_column} = '{key_value}' has been deleted successfully from table '{table_name}'.")
+                    if console:
+                        msg=(f"Row with key = '{key_column}' has been deleted successfully from table '{table_name}'.")
+                        st.write(console+msg)
                     return True
         except Exception as e:
-            print(f"Error deleting row with {key_column} = '{key_value}' from table '{table_name}': {e}")
+            print(f"Error deleting row with key = '{key_column}' from table '{table_name}': {e}")
             return False
 
 
