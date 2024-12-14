@@ -38,6 +38,8 @@ import {
   SideBarDef,
   ValueParserParams,
 } from "ag-grid-community"
+import {deepMap} from "./utils"
+
 import { order_rules_default } from "./utils/order_rules"
 
 type Props = {
@@ -50,6 +52,7 @@ type Props = {
   prod?: boolean
   grid_options?: any
   index: string
+  enable_JsCode: boolean
   kwargs: any
 }
 
@@ -169,9 +172,16 @@ const AgGrid = (props: Props) => {
     refresh_cutoff_sec = 0,
     prod = true,
     index,
+    enable_JsCode,
     kwargs,
   } = props
   let { grid_options = {} } = props
+  if (enable_JsCode) {
+    grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
+  }
+
+  console.log("grid_options :", grid_options)
+
   const { buttons, toggle_views } = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
