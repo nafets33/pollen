@@ -1,7 +1,6 @@
 import streamlit as st
-from custom_grid import st_custom_grid, GridOptionsBuilder
+from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
 from chess_piece.king import get_ip_address
-from st_aggrid import JsCode
 
 
 def main():
@@ -111,7 +110,7 @@ def main():
 
     go = gb.build()
     st_custom_grid(
-        username="C:/_upwork/stefan/pollen/client_user_dbs/db__m.kobzar19_75065279",
+        username="/Users/pablofonseca/Documents/dev/pollen_repo/pollen/client_user_dbs/db__stefanstapinski_11854791",
         api=f"http://127.0.0.1:8000/api/data/queen",
         api_update="http://127.0.0.1:8000/api/data/update_orders",
         refresh_sec=False,

@@ -17,6 +17,7 @@ const Main = (props: ComponentProps) => {
     refresh_sec,
     refresh_cutoff_sec,
     gridoption_build,
+    enable_JsCode,
     prod,
   } = props.args
   const { grid_options, kwargs = {} } = props.args
@@ -34,8 +35,8 @@ const Main = (props: ComponentProps) => {
         prod={prod}
         grid_options={grid_options}
         index={index}
-        kwargs={kwargs}
-      />
+        kwargs={kwargs} 
+        enable_JsCode={enable_JsCode}      />
     </div>
   )
 }
