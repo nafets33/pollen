@@ -176,13 +176,15 @@ const AgGrid = (props: Props) => {
     kwargs,
   } = props
   let { grid_options = {} } = props
+
+  //parsing must be done here. For some unknow reason if its moved after the
+  //button mapping, deepMap gets lots of React objects (api, symbolRefs, etc.)
+  //this impacts performance and crashes the grid.
   if (enable_JsCode) {
     grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
   }
 
-  console.log("grid_options :", grid_options)
-
-  const { buttons, toggle_views } = kwargs
+  let { buttons, toggle_views } = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
@@ -192,19 +194,25 @@ const AgGrid = (props: Props) => {
   useEffect(() => {
     Streamlit.setFrameHeight()
     if (buttons.length) {
+
+      buttons = deepMap(buttons, parseJsCodeFromPython, ["rowData"]) //if JsCode comes through buttons props
+
       buttons.map((button: any) => {
-        const { prompt_field, prompt_message, button_api, prompt_order_rules } =
-          button
+        //extracts know parameters from button, all other unknow parameters sent are stored in otherKeys
+        const { prompt_field, prompt_message, button_api, prompt_order_rules, col_header, col_headername, col_width, 
+          pinned, button_name, border_color, ...otherKeys
+        } = button
         grid_options.columnDefs!.push({
-          field: button["col_header"] ? button["col_header"] : index,
-          headerName: button["col_headername"],
-          width: button["col_width"],
-          pinned: button["pinned"],
+          ...otherKeys, //merges all other parameters sent on buttons array on columnDefs
+          field: col_header ? col_header : index,
+          headerName: col_headername,
+          width: col_width,
+          pinned: pinned,
           cellRenderer: BtnCellRenderer,
           cellRendererParams: {
-            col_header: button["col_header"],
-            buttonName: button["button_name"],
-            borderColor: button["border_color"],
+            col_header: col_header,
+            buttonName: button_name,
+            borderColor: border_color,
             clicked: async function (row_index: any) {
               try {
                 const selectedRow = g_rowdata.find(
