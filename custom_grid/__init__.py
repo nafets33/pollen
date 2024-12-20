@@ -2,9 +2,10 @@ import os
 import streamlit.components.v1 as components
 from decouple import config
 from custom_grid.grid_options_builder import GridOptionsBuilder
+from custom_grid.JsCode import JsCode, walk_gridOptions
 
 _RELEASE = True
-# _RELEASE = False
+#_RELEASE = False  #When using this, you need to start the server for the frontend using npm start on a terminal session.
 
 if not _RELEASE:
     _component_func = components.declare_component(
@@ -26,8 +27,16 @@ def st_custom_grid(
     prod: bool,
     key: str,
     grid_options,
+    enable_JsCode=True,
     **kwargs
 ):
+    if enable_JsCode:
+        walk_gridOptions(
+            grid_options, lambda v: v.js_code if isinstance(v, JsCode) else v
+        )
+
+    print('enable_JsCode', enable_JsCode)
+
     component_value = _component_func(
         username=username,
         api=api,
@@ -37,6 +46,7 @@ def st_custom_grid(
         prod=prod,
         key=key,
         grid_options=grid_options,
+        enable_JsCode=enable_JsCode,
         kwargs=kwargs,
     )
     return component_value
