@@ -132,6 +132,7 @@ def main():
                 "col_header": "symbol",
                 "col_width": 100,
                 "border_color": "green",
+                'cellStyle':honey_colors,
             },
             {
                 "button_name": "button2",

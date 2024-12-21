@@ -35,7 +35,19 @@ def st_custom_grid(
             grid_options, lambda v: v.js_code if isinstance(v, JsCode) else v
         )
 
-    print('enable_JsCode', enable_JsCode)
+        # as buttons are sent in a separated kwargs parameter and later merged on the 
+        # grid options (AgGrid.tsx line # 198), we'll need to serialize any JsCode 
+        # object as as string, the same way we do for normal grid options.
+        # aftter we change the buttons dictionary, we add it back to kwargs
+        if 'buttons' in kwargs:
+            buttons = kwargs.pop('buttons')
+            for b in buttons:
+                walk_gridOptions(
+                    b, lambda v: v.js_code if isinstance(v, JsCode) else v
+                )
+            kwargs['buttons'] = buttons
+
+
 
     component_value = _component_func(
         username=username,
