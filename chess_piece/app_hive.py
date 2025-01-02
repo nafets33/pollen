@@ -47,19 +47,19 @@ from chess_piece.king import (
     local__filepaths_misc,
     streamlit_config_colors,
     return_timestamp_string,
-    return_all_client_users__db,
     print_line_of_error,
     
 )
+from chess_piece.pollen_db import PollenDatabase
 
-# from chess_piece.workerbees import queen_workerbees
+main_root = hive_master_root()  # os.getcwd()  # hive root
+load_dotenv(os.path.join(main_root, ".env"))
 
+pg_migration = os.environ.get('pg_migration')
 
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone("UTC")
 
-main_root = hive_master_root()  # os.getcwd()  # hive root
-load_dotenv(os.path.join(main_root, ".env"))
 
 # images
 jpg_root = os.path.join(main_root, "misc")
@@ -116,23 +116,6 @@ def set_streamlit_page_config_once():
             return
         raise e
 
-## IMPROVE GLOBAL VARIABLES
-
-@st.cache_data()
-def return_QUEEN():
-    st.info("Cache QUEEN")
-    return ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-# Linked
-def read_QUEEN(info='assumes session state, cache queen'):
-    if 'edit_orders' in st.session_state and st.session_state['edit_orders'] == True:
-        QUEEN = return_QUEEN()
-        st.session_state['order_buttons'] = True
-    else:
-        st.cache_data.clear()
-        QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-        st.session_state['order_buttons'] = False
-    
-    return QUEEN
 
 def create_AppRequest_package(request_name, archive_bucket=None, client_order_id=None):
     now = datetime.now(est)
@@ -350,42 +333,43 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
 
 
 def admin_queens_active(PB_KING_Pickle, KING):
-    if st.session_state['admin']:
-        with st.expander("admin QUEENS_ACTIVE"):
-            df = return_all_client_users__db()
-            # df = pd.DataFrame(KING['users'].get('client_users_db'))
-            allowed_list = KING['users']['client_user__allowed_queen_list']
-            df_map = pd.DataFrame(allowed_list)
-            df_map['queen_authorized'] = 'active'
-            df_map = df_map.rename(columns={0: 'email'})
+    pass # handle pg_migration
+    # if st.session_state['admin']:
+    #     with st.expander("admin QUEENS_ACTIVE"):
+    #         df = return_all_client_users__db()
+    #         # df = pd.DataFrame(KING['users'].get('client_users_db'))
+    #         allowed_list = KING['users']['client_user__allowed_queen_list']
+    #         df_map = pd.DataFrame(allowed_list)
+    #         df_map['queen_authorized'] = 'active'
+    #         df_map = df_map.rename(columns={0: 'email'})
             
-            df = pd.merge(df, df_map, how='outer', on='email').fillna('')
-            grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
-            grid_df = grid['data']
+    #         df = pd.merge(df, df_map, how='outer', on='email').fillna('')
+    #         grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
+    #         grid_df = grid['data']
 
-            allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
-            allowed_list_new = allowed_list_new['email'].tolist()
-            new_emails = [i for i in allowed_list_new if i not in allowed_list]
+    #         allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
+    #         allowed_list_new = allowed_list_new['email'].tolist()
+    #         new_emails = [i for i in allowed_list_new if i not in allowed_list]
 
-            if st.button("Save"):
-                KING['users']['client_user__allowed_queen_list'] = allowed_list_new
-                PickleData(PB_KING_Pickle, KING, write_temp=False)
-                st.success("Auth Queen Users Updated")
-                print(new_emails)
-                for email in new_emails:
-                    print(email)
-                    send_email(email, subject="Trading Bot is Now Active", 
-                    body=f""" Hey! Your Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
-                    Steps:
-                    1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
-                    2. Customize Trading Bot Setting to Trade Specific to your Needs
-                    3. Or Join an Existing Fund Trading Strategies
+    #         if st.button("Save"):
+    #             KING['users']['client_user__allowed_queen_list'] = allowed_list_new
+    #             PickleData(PB_KING_Pickle, KING, write_temp=False)
+    #             st.success("Auth Queen Users Updated")
+    #             print(new_emails)
+    #             for email in new_emails:
+    #                 print(email)
+    #                 send_email(email, subject="Trading Bot is Now Active", 
+    #                 body=f""" Hey! Your Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
+    #                 Steps:
+    #                 1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
+    #                 2. Customize Trading Bot Setting to Trade Specific to your Needs
+    #                 3. Or Join an Existing Fund Trading Strategies
 
-                    Happy Trading
-                    pollenq
-                    """
+    #                 Happy Trading
+    #                 pollenq
+    #                 """
                     
-                    )
+    #                 )
 
 
 def mark_down_text(
@@ -426,7 +410,7 @@ def progress_bar(value, sleeptime=0.000003, text=False, pct=False):
     return True
 
 
-def stop_queenbee(QUEEN_KING, sidebar=False):
+def stop_queenbee(QUEEN_KING, sidebar=False, pg_migration=False, table_name=None):
     if sidebar:
         checkbox_val = st.sidebar.button("Stop Queen", use_container_width=True)
     else:
@@ -436,7 +420,10 @@ def stop_queenbee(QUEEN_KING, sidebar=False):
         stop_queen = create_AppRequest_package(request_name='queen_sleep')
 
         QUEEN_KING['queen_sleep'].append(stop_queen)
-        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+        if pg_migration:
+            PollenDatabase.upsert_data(table_name=table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+        else:
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
         st.success("Queen Sleeps")
     
     return True
@@ -1302,12 +1289,6 @@ def standard_AGgrid(
     )
 
     return grid_response
-
-
-def save_the_QUEEN_KING(PB_App_Pickle, QUEEN_KING):
-    PickleData(pickle_file=PB_App_Pickle, data_to_store=QUEEN_KING)
-
-
 
 
 

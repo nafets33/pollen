@@ -43,6 +43,8 @@ from chess_piece.pollen_db import PollenDatabase
 
 import ipdb
 
+pg_migration = True
+
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -315,7 +317,7 @@ def pollenq(admin_pq):
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
         sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
 
-        qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
+        qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
         # ipdb.set_trace()
@@ -362,10 +364,12 @@ def pollenq(admin_pq):
                 api = qb.get('api')
 
         if st.session_state['prod'] == False:
-            st.warning("Sandbox Paper Money Account") 
+            st.warning("Sandbox Paper Money Account")
+        
 
-        stop_queenbee(QUEEN_KING, sidebar=True)
-
+        table_name = "client_user_store" if prod else 'client_user_store_sandbox'
+        
+        stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
 
         ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
         if st.sidebar.button("Check for new KORs"):
@@ -378,8 +382,8 @@ def pollenq(admin_pq):
                 table_name = 'client_user_store' if prod else "client_user_store_sandbox"
                 PollenDatabase.upsert_data(table_name, db_root, QUEEN_KING)
             else:
-                st.write(QUEEN_KING['king_controls_queen'].get('ticker_autopilot'))
-                # PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+                # st.write(QUEEN_KING['king_controls_queen'].get('ticker_autopilot'))
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
 
 
         if st.sidebar.button('show_keys'):

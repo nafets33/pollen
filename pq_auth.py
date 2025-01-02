@@ -1,21 +1,20 @@
 import os
 from random import randint
 from dotenv import load_dotenv
-import sqlite3
+import psycopg2
+from psycopg2 import sql
 import streamlit as st
 import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-# from streamlit_extras.switch_page_button import switch_page
 from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc, return_app_ip
 from chess_piece.queen_hive import setup_instance, print_line_of_error
 from chess_piece.app_hive import set_streamlit_page_config_once
-import ipdb
+from datetime import datetime
+from chess_piece.pollen_db import PollenDatabase
 
-# from QueenHive import init_pollen_dbs
-
-main_root = hive_master_root()  # os.getcwd()  # hive root
+main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
 
 
@@ -31,7 +30,6 @@ def register_user(authenticator, con, cur):
             st.session_state["register_status"] = register_status
 
         if os.environ.get('env_verify') != "89":
-            st.info("Use Code 0")
             verification_code = 0
         else:
             # generate and store verification code
@@ -40,15 +38,16 @@ def register_user(authenticator, con, cur):
             verification_code = st.session_state["verification_code"]
 
             if register_status:
-
+                
                 register_email = st.session_state["register_status"][0]
+                print("registering new user: ", register_email)
 
                 # send user verification code
                 send_email(
                     recipient=register_email,
                     subject="PollenQ. Verify Email",
                     body=f"""
-                Your QuantQueen verification code is {verification_code}
+                Your PollenQ verification code is {verification_code}
 
                 Please enter this code in the website to complete your registration
 
@@ -61,6 +60,8 @@ def register_user(authenticator, con, cur):
         entered_code = st.text_input("Verification Code", max_chars=6)
 
         if st.button("Submit"):
+            print("verification code: ", verification_code, type(verification_code))
+            print("submit button clicked and entered code is: ", entered_code)
             if os.environ.get('env_verify') != "89":
                 register_email = st.session_state["register_status"][0]
                 register_password = st.session_state["register_status"][1]
@@ -74,13 +75,14 @@ def register_user(authenticator, con, cur):
                 register_password = st.session_state["register_status"][1]
 
                 # verification successful
+                print("updating db for new user: ", register_email)
                 update_db(authenticator, con=con, cur=cur, email=register_email, append_db=True)
                 authenticator.direct_login(register_email, register_password)
 
                 if os.environ.get('env_verify') == "89":
                     send_email(
                         recipient=register_email,
-                        subject="Welcome On Board QuantQueen!",
+                        subject="Welcome On Board PollenQ!",
                         body=f"""
                     You have successful created a PollenQ account. Ensure you keep your login detials safe.
 
@@ -101,13 +103,8 @@ def register_user(authenticator, con, cur):
     except Exception as e:
         st.error(e)
 
-def return_db_conn():
-    con = sqlite3.connect("db/client_users.db")
-    cur = con.cursor()
-    return con, cur
-
 def forgot_password(authenticator):
-    con, cur = return_db_conn()
+    con, cur = PollenDatabase.return_db_conn()
 
     try:
         (email_forgot_pw, random_password,) = authenticator.forgot_password(
@@ -162,55 +159,64 @@ def send_email(recipient, subject, body):
 def update_db(authenticator, con, cur, email, append_db=False):
     """Update a user's record, or add a new user"""
 
-    # new user detials are stored in session state
+    # new user details are stored in session state
     if append_db:
-        detials = st.session_state["new_user_creds"]
+        details = st.session_state["new_user_creds"]
+        print("update_db Details: ", details)
     else:
-        detials = authenticator.credentials["usernames"][email]
+        details = authenticator.credentials["usernames"][email]
+        print("else update_db details: ", details)
 
-    password = detials["password"]
-    name = detials["name"]
-    phone_no = detials["phone_no"]
-    signup_date = detials["signup_date"]
-    last_login_date = detials["last_login_date"]
-    login_count = detials["login_count"]
+    password = details["password"]
+    name = details["name"]
+    phone_no = details["phone_no"]
+    signup_date = details["signup_date"]
+    last_login_date = details["last_login_date"]
+    if isinstance(signup_date, str):
+        try:
+            signup_date = datetime.strptime(signup_date, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            print(f"Error parsing signup date: {signup_date}, error: {e}")
+            signup_date = None
+    
+    if isinstance(last_login_date, str):
+        try:
+            last_login_date = datetime.strptime(last_login_date, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            print(f"Error parsing last login date: {last_login_date}, error: {e}")
+            last_login_date = None
+    login_count = details["login_count"]
 
     # add new user
     if append_db:
         cur.execute(
-            "INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?)",
-            (
-                email,
-                password,
-                name,
-                phone_no,
-                signup_date,
-                last_login_date,
-                login_count,
-            ),
+            """
+            INSERT INTO client_users (email, password, name, phone_no, signup_date, last_login_date, login_count)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (email, password, name, phone_no, signup_date, last_login_date, login_count)
         )
-
     # update value
     else:
         cur.execute(
-            f"""
-        UPDATE users
-        SET password = "{password}",
-            name = "{name}",
-            phone_no = "{phone_no}",
-            signup_date = "{signup_date}",
-            last_login_date = "{last_login_date}",
-            login_count = "{login_count}"
-        
-        WHERE email = "{email}"
-        """
+            """
+            UPDATE client_users
+            SET password = %s,
+                name = %s,
+                phone_no = %s,
+                signup_date = %s,
+                last_login_date = %s,
+                login_count = %s
+            WHERE email = %s
+            """,
+            (password, name, phone_no, signup_date, last_login_date, login_count, email)
         )
 
     con.commit()
     authenticator.credentials = read_user_db(cur=cur)
 
 def reset_password(authenticator, email, location="main"):
-    con, cur = return_db_conn()
+    con, cur = PollenDatabase.return_db_conn()
     try:
         if authenticator.reset_password(email, "", location=location):
             update_db(authenticator, con=con, cur=cur, email=email)
@@ -233,7 +239,8 @@ PollenQ
         st.error(e)
 
 def read_user_db(cur):
-    users = cur.execute("SELECT * FROM users").fetchall()
+    cur.execute("SELECT * FROM client_users")
+    users = cur.fetchall()
 
     creds = {}
     for user in users:
@@ -299,8 +306,7 @@ def signin_main(page=None):
 
     # def main_func__signIn():
     try:
-        con = sqlite3.connect("db/client_users.db")
-        cur = con.cursor()
+        con, cur = PollenDatabase.return_db_conn()
         credentials = read_user_db(cur)
 
         # Create authenticator object

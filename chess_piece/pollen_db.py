@@ -12,14 +12,19 @@ from psycopg2 import sql
 from psycopg2 import extras
 import pickle
 import streamlit as st
+import ipdb
+
+server = os.getenv("server", False)
+
+
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
             # Handle NumPy types
             if isinstance(obj, (np.int32, np.int64)):  # Add np.int32 here
-                return {"_type": str(type(obj)), "value": int(obj)}
+                return {"_type": "np.int64", "value": int(obj)}
             if isinstance(obj, (np.float32, np.float64)):  # Handle float types as well
-                return {"_type": str(type(obj)), "value": float(obj)}
+                return {"_type": "float", "value": float(obj)}
             
             # Handle pandas types
             if isinstance(obj, pd.DataFrame):
@@ -43,7 +48,6 @@ class PollenJsonEncoder(json.JSONEncoder):
             # Handle unexpected errors in the encoding process
             return {"_type": "error", "message": str(e)}
 
-
 class PollenJsonDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         super(PollenJsonDecoder, self).__init__(
@@ -52,8 +56,10 @@ class PollenJsonDecoder(json.JSONDecoder):
 
     def object_hook(self, item):
         if "_type" in item:
-            if item["_type"] == "np.int64":
+            if item["_type"] == "np.int64" or item["_type"] == "<class 'numpy.int64'>":
                 return np.int64(item["value"])
+            if item["_type"] == "float":
+                return float(item["value"])
             if item["_type"] == "pd.DataFrame":
                 return pd.DataFrame.from_dict(item["value"])
             if item["_type"] == "pd.Timestamp":
@@ -70,12 +76,20 @@ class PollenJsonDecoder(json.JSONDecoder):
 class PollenDatabase:
     @staticmethod
     def get_connection():
-        # Reading connection details from environment variables
-        DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
-        DATABASE_PORT = os.getenv("POLLEN_DATABASE_port", "5432")
-        DATABASE_NAME = os.getenv("POLLEN_DATABASE_name", "pollen")
-        DATABASE_USER = os.getenv("POLLEN_DATABASE_user", "postgres")
-        DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass", "12345")
+        if server:
+            # Reading connection details from environment variables
+            DATABASE_HOST = os.getenv("POLLEN_DATABASE_host_server")
+            DATABASE_PORT = os.getenv("POLLEN_DATABASE_port_server")
+            DATABASE_NAME = os.getenv("POLLEN_DATABASE_name_server")
+            DATABASE_USER = os.getenv("POLLEN_DATABASE_user_server")
+            DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass_server")
+        else:
+            # Reading connection details from environment variables
+            DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
+            DATABASE_PORT = os.getenv("POLLEN_DATABASE_port", "5432")
+            DATABASE_NAME = os.getenv("POLLEN_DATABASE_name", "pollen")
+            DATABASE_USER = os.getenv("POLLEN_DATABASE_user", "postgres")
+            DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass", "12345")
 
         return psycopg2.connect(
             host=DATABASE_HOST,
@@ -84,7 +98,30 @@ class PollenDatabase:
             user=DATABASE_USER,
             password=DATABASE_PASS,
         )
+
+    @staticmethod
+    def return_db_conn():
         
+        con = PollenDatabase.get_connection()
+        cur = con.cursor()
+        
+        # Create table if it doesn't exist
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS client_users (
+            email VARCHAR(255) PRIMARY KEY,
+            password TEXT NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            phone_no VARCHAR(50),
+            signup_date TIMESTAMP,
+            last_login_date TIMESTAMP,
+            login_count INTEGER
+        );
+        """
+        cur.execute(create_table_query)
+        con.commit()
+        
+        return con, cur
+
     @staticmethod
     def create_table_if_not_exists(table_name):
         """
@@ -182,7 +219,7 @@ class PollenDatabase:
             conn.commit()
 
     @staticmethod
-    def upsert_data(table_name, key, value, console=True):
+    def upsert_data(table_name, key, value, console=True, console_table_ignore=['logging_store']):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
         Dynamically handles 'last_modified' based on table schema.
@@ -213,8 +250,8 @@ class PollenDatabase:
                 cur.execute(upsert_query, (key, value_json))
                 conn.commit()
 
-                if console:
-                    print(f'{key} Upserted')
+                if console and table_name not in console_table_ignore:
+                    print(f'{key} Upserted to {table_name}')
             
             return True
         except Exception as e:
@@ -283,7 +320,7 @@ class PollenDatabase:
                 return data
 
         except Exception as e:
-            print(f"Error: {e}")
+            print_line_of_error(e)
         finally:
             if conn:
                 conn.close()
@@ -355,6 +392,7 @@ class PollenDatabase:
             
             cur.execute(query)
             results = cur.fetchall()
+            # ipdb.set_trace()
 
             for result in results:
                 key_name = result[0]
@@ -366,9 +404,9 @@ class PollenDatabase:
                 # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
                 if type(data_dict) == str:
                     data_dict = json.loads(data_dict)
-                    merged_data["pollenstory"][nested_key] = data_dict["pollenstory"]
+                    merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
                 else:
-                    merged_data["pollenstory"][nested_key] = data_dict["pollenstory"]
+                    merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
 
             merged_data = json.dumps(merged_data)
             # Always deserialize using custom decoder
@@ -565,6 +603,127 @@ class PostgresHandler(logging.Handler):
         finally:
             if self.conn:
                 self.conn.close()
+
+class MigratePostgres:
+    @staticmethod
+    def get_server_connection():
+        # Reading connection details from environment variables
+        DATABASE_HOST = os.getenv("POLLEN_DATABASE_host_server")
+        DATABASE_PORT = os.getenv("POLLEN_DATABASE_port_server")
+        DATABASE_NAME = os.getenv("POLLEN_DATABASE_name_server")
+        DATABASE_USER = os.getenv("POLLEN_DATABASE_user_server")
+        DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass_server")
+
+
+        return psycopg2.connect(
+            host=DATABASE_HOST,
+            port=DATABASE_PORT,
+            dbname=DATABASE_NAME,
+            user=DATABASE_USER,
+            password=DATABASE_PASS,
+        )
+
+
+    @staticmethod
+    def create_table_if_not_exists(table_name):
+        """
+        Create a table if it doesn't exist with the following structure:
+        - id: serial, primary key
+        - key: varchar(255), unique, not null
+        - data: text, not null
+        - created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        - last_modified: timestamp, defaults to CURRENT_TIMESTAMP
+        Returns True if the table was created, False if it already existed.
+        """
+        with MigratePostgres.get_server_connection() as conn, conn.cursor() as cur:
+            # Check if the table exists already
+            cur.execute("""
+            SELECT to_regclass(%s);
+            """, (table_name,))
+            result = cur.fetchone()[0]
+            
+            if result is None:  # Table does not exist
+                create_table_query = f"""
+                CREATE TABLE {table_name} (
+                    id SERIAL PRIMARY KEY,
+                    key VARCHAR(255) UNIQUE NOT NULL,
+                    data TEXT NOT NULL,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    last_modified TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                """
+                cur.execute(create_table_query)
+                conn.commit()
+                return True  # Table was created
+            else:
+                return False  # Table already exists
+
+
+    @staticmethod
+    def upsert_migrate_data(table_name, key, value, console=True, console_table_ignore=['logging_store']):
+        """
+        Upsert data into a specified table. If the table doesn't exist, it will be created.
+        Dynamically handles 'last_modified' based on table schema.
+        """
+        # Ensure the table exists before attempting to upsert data
+        MigratePostgres.create_table_if_not_exists(table_name)
+        try:
+
+            with MigratePostgres.get_server_connection() as conn, conn.cursor() as cur:
+                value_json = json.dumps(value, cls=PollenJsonEncoder)
+
+                upsert_query = f"""
+                    INSERT INTO {table_name} (key, data, last_modified)
+                    VALUES (%s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (key) 
+                    DO UPDATE SET data = EXCLUDED.data, last_modified = CURRENT_TIMESTAMP;
+                """
+
+                cur.execute(upsert_query, (key, value_json))
+                conn.commit()
+
+                if console and table_name not in console_table_ignore:
+                    print(f'{key} Upserted to {table_name}')
+            
+            return True
+        except Exception as e:
+            print("issue arrived in upsert_data function")
+            print_line_of_error(e)
+            return False
+
+
+    @staticmethod
+    def get_server_keys(table_name='db', db_root=None):
+        """
+        Fetch all keys along with their last modified timestamp from the specified table.
+        """
+        with MigratePostgres.get_server_connection() as conn, conn.cursor() as cur:
+            try:
+                if db_root:
+                    query = f"""
+                        SELECT key, last_modified
+                        FROM {table_name}
+                        WHERE key LIKE %s
+                        ORDER BY last_modified DESC;
+                    """
+                    cur.execute(query, (f'%{db_root}%',))
+                else:
+                    query = f"""
+                        SELECT key, last_modified
+                        FROM {table_name}
+                        ORDER BY last_modified DESC;
+                    """
+                    cur.execute(query)
+                
+                # Fetch all keys and their last modified timestamps
+                results = cur.fetchall()
+                
+                # Return a list of tuples (key, last_modified)
+                return [(key, last_modified) for key, last_modified in results]
+
+            except Exception as e:
+                print_line_of_error(f"GET KEYS Error: {e}")
+                return []
 
 
 

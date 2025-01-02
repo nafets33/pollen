@@ -11,7 +11,8 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy
                                        get_ticker_time_frame,
                                        grid_row_button_resp,
                                        update_queenking_chessboard,
-                                       queenking_update_auto_pilot,
+                                       update_sell_autopilot,
+                                       update_buy_autopilot,
                                        header_account,)
 
 router = APIRouter(
@@ -25,6 +26,7 @@ def check_authKey(api_key):
         return False
     else:
         return True
+
 
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
@@ -153,34 +155,12 @@ def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=B
         print("router err ", e)
 
 @router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
-def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+def buy_order(client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    if app_buy_wave_order_request(username, prod, selected_row, default_value=default_value, ready_buy=False):
-        return JSONResponse(content=grid_row_button_resp())
-    else:
-        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
-
-@router.post("/queen_buy_wave_orders__ready_buy", status_code=status.HTTP_200_OK)
-def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), api_key=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-
-    if app_buy_wave_order_request(username, prod, selected_row, ready_buy=True):
-        return JSONResponse(content=grid_row_button_resp())
-    else:
-        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
-
-@router.post("/queen_buy_wave_orders__x_buy", status_code=status.HTTP_200_OK)
-def buy_order(username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-
-    if app_buy_wave_order_request(username, prod, selected_row, default_value, x_buy=True):
+    if app_buy_wave_order_request(client_user, prod, selected_row, default_value=default_value, ready_buy=False):
         return JSONResponse(content=grid_row_button_resp())
     else:
         return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
@@ -238,13 +218,19 @@ def update_qk_chessboard(client_user: str= Body(...), prod: bool=Body(...), api_
 
 
 @router.post("/update_buy_autopilot", status_code=status.HTTP_200_OK)
-def update_buy_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+def buy_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
     
-    json_data = queenking_update_auto_pilot(client_user, prod, selected_row, default_value)
+    json_data = update_buy_autopilot(client_user, prod, selected_row, default_value)
     return JSONResponse(content=json_data)
 
+@router.post("/update_sell_autopilot", status_code=status.HTTP_200_OK)
+def sell_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+    if not check_authKey(api_key): # fastapi_pollenq_key
+        return "NOTAUTH"
+    json_data = update_sell_autopilot(client_user, prod, selected_row, default_value)
+    return JSONResponse(content=json_data)
 
 @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
 def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...)):

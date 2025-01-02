@@ -32,17 +32,20 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
 from chess_piece.queen_bee import execute_buy_order
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade
+from chess_piece.pollen_db import PollenDatabase
 from dotenv import load_dotenv
 
 
-
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
+
 
 est = pytz.timezone("US/Eastern")
 
 main_root = hive_master_root() # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 db_root = os.path.join(main_root, "db")
+
+pg_migration = os.environ.get('pg_migration')
 
 # init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
@@ -192,13 +195,6 @@ def create_AppRequest_package(request_name, archive_bucket=None, client_order_id
     'request_timestamp': now,
     }
 
-def load_queen_App_pkl(username, prod):
-  if prod == False:
-    queen_pkl_path = username+'/queen_App__sandbox.pkl'
-  else:
-    queen_pkl_path = username+'/queen_App_.pkl'
-  queen_pkl = ReadPickleData(queen_pkl_path)
-  return queen_pkl
 
 
 def parse_date(date_str):
@@ -266,7 +262,7 @@ def return_startime_from_ttf(ticker_time_frame):
 
 def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0'): # index & wave_amount
   try:
-    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True)
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     revrec = qb.get('revrec') # qb.get('queen_revrec')
@@ -367,7 +363,13 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
 
       # save
       QUEEN_KING['buy_orders'].append(buy_package)
-      PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+
+      if pg_migration:
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+      else:
+        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+
       print("SAVED ORDER TO QK")
       return {'status': True, 'msg': f'{symbol} purchased'}
     else:
@@ -382,7 +384,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
 
 def app_buy_wave_order_request(username, prod, selected_row, default_value=False, ready_buy=False, x_buy=False, order_rules=False): # index & wave_amount
   try:
-    QUEEN_KING = load_queen_App_pkl(username, prod)
+    QUEEN_KING = init_queenbee(client_user=username, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     # buy_package = create_AppRequest_package(request_name='buy_orders')
     ticker_time_frame = selected_row.get('ticker_time_frame')
     macd_state = selected_row.get('macd_state')
@@ -395,7 +397,12 @@ def app_buy_wave_order_request(username, prod, selected_row, default_value=False
     order_dict = wave_buy__var_items(ticker_time_frame, trigbee, macd_state, ready_buy, x_buy, order_rules)
 
     QUEEN_KING['wave_triggers'].append(order_dict)
-    PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+
+    if pg_migration:
+      table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+      PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+    else:
+      PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     
 
     return True
@@ -426,8 +433,8 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
     client_order_id = selected_row.get('client_order_id')
     symbol = selected_row.get('symbol')
 
-    QUEEN_KING = load_queen_App_pkl(username, prod)
-    ORDERS = init_queenbee(client_user=client_user, prod=prod, orders=True).get('ORDERS')
+    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+    ORDERS = init_queenbee(client_user=client_user, prod=prod, orders=True, pg_migration=pg_migration).get('ORDERS')
     if type(ORDERS) != dict:
       print("NO ORDERS")
       return pd.DataFrame().to_json()
@@ -479,8 +486,11 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
         else:
            status = f'{client_order_id} : Selling {number_shares}'
     if save:
-       PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-       print("QK Saved Sell Orders")
+      if pg_migration:
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+      else:
+        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
 
     # if len(df) > 0:
     #     current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
@@ -509,11 +519,15 @@ def app_archive_queen_order(username, prod, selected_row, default_value):
     # print(default_value)
     queen_order = selected_row
     client_order_id = queen_order.get('client_order_id')
-    QUEEN_KING = load_queen_App_pkl(username, prod)
+    QUEEN_KING = init_queenbee(client_user=username, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     order_update_package = create_AppRequest_package(request_name='update_queen_order', client_order_id=client_order_id)
     order_update_package['queen_order_updates'] = {client_order_id: {'queen_order_state': 'archived'}}
     QUEEN_KING['update_queen_order'].append(order_update_package)
-    PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    if pg_migration:
+      table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+      PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+    else:
+      PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     return True
 
 
@@ -523,7 +537,7 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
       queen_order = selected_row
       client_order_id = queen_order.get('client_order_id')
       # number_shares = default_value
-      QUEEN_KING = load_queen_App_pkl(username, prod)
+      QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
       order_update_package = create_AppRequest_package(request_name='update_order_rules', client_order_id=client_order_id)
       order_update_package['update_order_rules'] = {}
 
@@ -547,7 +561,11 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
         print(order_update_package['update_order_rules'])
       
         QUEEN_KING['update_order_rules'].append(order_update_package)
-        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+        if pg_migration:
+          table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+          PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+        else:
+          PickleData(QUEEN_KING.get('source'), QUEEN_KING)
         return {'status': True, 'description': 'kors updates'}
       else:
         msg = ("no updates to kors")
@@ -564,11 +582,11 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
   try:
       if toggle_view_selection.lower() == 'queen':
-          ORDERS = init_queenbee(client_user, prod, queen=True).get('QUEEN')
+          ORDERS = init_queenbee(client_user, prod, queen=True, pg_migration=pg_migration).get('QUEEN')
       elif toggle_view_selection.lower() == 'final':
-          ORDERS = init_queenbee(client_user, prod, orders_final=True).get('ORDERS_FINAL')
+          ORDERS = init_queenbee(client_user, prod, orders_final=True, pg_migration=pg_migration).get('ORDERS_FINAL')
       else:
-          ORDERS = init_queenbee(client_user, prod, orders=True).get('ORDERS')
+          ORDERS = init_queenbee(client_user, prod, orders=True, pg_migration=pg_migration).get('ORDERS')
 
       df = ORDERS['queen_orders']
 
@@ -667,16 +685,17 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       return df
     
     try:
+      s = datetime.now()
       if toggle_view_selection.lower() == 'king':
         king_G = kingdom__global_vars()
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True)
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
         STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
       elif toggle_view_selection == '400_10M':
         king_G = kingdom__global_vars()
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True)
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
 
@@ -693,7 +712,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11') ## Setup Board
       else:
-        qb = init_queenbee(client_user, prod, revrec=True, queen_king=True)
+        qb = init_queenbee(client_user, prod, revrec=True, queen_king=True, pg_migration=pg_migration)
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
 
@@ -725,6 +744,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         df = filter_gridby_timeFrame_view(df, toggle_view_selection, grid='wave')
 
         json_data = df.to_json(orient='records')
+        print((datetime.now() - s).total_seconds())
         return json_data
 
       elif return_type == 'story':
@@ -732,26 +752,54 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection)
         
         json_data = df.to_json(orient='records')
+        print("story runtime: ", (datetime.now() - s).total_seconds())
         return json_data
     
     except Exception as e:
       print_line_of_error(e)
 
 
-def queenking_update_auto_pilot(client_user, prod, selected_row, default_value):
+def update_buy_autopilot(client_user, prod, selected_row, default_value, status='-'):
     print(client_user, default_value) 
-    autopilot = default_value.get('autopilot')
-    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True).get('QUEEN_KING')
+    buy_autopilot = default_value.get('buy_autopilot')
+    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     symbol = selected_row.get('symbol')
-    QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'] = autopilot
-    print(QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'])
+    if symbol not in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
+        QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([None, None], index=['buy_autopilot', 'sell_autopilot'])
+    
+    status = f'{status} BUY AutoPilot Updated to {buy_autopilot}'
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'] = buy_autopilot
 
-    status = 'updated'
+    if pg_migration:
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+    else:
+       PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    print(status)
+    return grid_row_button_resp(description=status)
+
+def update_sell_autopilot(client_user, prod, selected_row, default_value, status='-'):
+    print(client_user, default_value) 
+    sell_autopilot = default_value.get('sell_autopilot')
+    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+    symbol = selected_row.get('symbol')
+    if symbol not in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
+        QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([False, False], index=['buy_autopilot', 'sell_autopilot'])
+  
+    status = f'{status} SELL AutoPilot Updated to {sell_autopilot}'
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'sell_autopilot'] = sell_autopilot
+    
+    if pg_migration:
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+    else:
+       PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    print(status)
     return grid_row_button_resp(description=status)
 
 
 def update_queenking_chessboard(client_user, prod, selected_row, default_value):
-   QUEEN_KING = init_queenbee(client_user, prod, queen_king=True).get('QUEEN_KING')
+   QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
    print("KOR", default_value)
   #  df = pd.DataFrame(new_data).T
    if 'ticker_revrec_allocation_mapping' in QUEEN_KING['king_controls_queen'].keys():
@@ -763,8 +811,8 @@ def update_queenking_chessboard(client_user, prod, selected_row, default_value):
 
 # Account Header account_header
 def header_account(client_user, prod):
-  QUEENsHeart = ReadPickleData(init_queenbee(client_user=client_user, prod=prod, init_pollen_ONLY=True).get('init_pollen').get('PB_QUEENsHeart_PICKLE'))
-  broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
+  QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration).get('QUEENsHeart')
+  broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
 
   if 'charlie_bee' not in QUEENsHeart.keys():
     df = pd.DataFrame()
@@ -774,8 +822,12 @@ def header_account(client_user, prod):
   beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
   if beat > 89:
       beat = "zZzzz"
-  charlie_bee = QUEENsHeart.get('charlie_bee')
-  avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+  try:
+    charlie_bee = QUEENsHeart.get('charlie_bee')
+    avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+  except Exception as e:
+    print(e)
+    avg_beat = 0
   long = QUEENsHeart['heartbeat'].get('long')
   short = QUEENsHeart['heartbeat'].get('short')
   long = '${:,}'.format(long)
@@ -783,7 +835,7 @@ def header_account(client_user, prod):
   df_heart = pd.DataFrame([{'Broker': 'Alpaca', 'Long': long, 'Short': short, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
 
   # Account Info
-  acct_info = broker_info['account_info']
+  acct_info = broker_info
   if len(acct_info) == 0:
       df_accountinfo = pd.DataFrame()
 
@@ -807,17 +859,17 @@ def header_account(client_user, prod):
 
 ### GRAPH
 def get_ticker_data(symbols, toggles_selection):
-  ttf = star_names(toggles_selection)
-  ticker_db = read_QUEENs__pollenstory(
-      symbols=symbols,
-      read_storybee=False, 
-      read_pollenstory=True,
-  )
+  time_frame = star_names(toggles_selection)
+  if pg_migration:
+     pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
+  else:
+    pollenstory = read_QUEENs__pollenstory(symbols=symbols,read_storybee=False, read_pollenstory=True,).get('pollenstory')
+
   df_main = False
   for symbol in symbols:
-    df = ticker_db.get('pollenstory')[f'{symbol}_{ttf}']
+    df = pollenstory[f'{symbol}_{time_frame}']
     df = df[['timestamp_est', 'close', 'vwap']]
-    if ttf == '1Minute_1Day':
+    if time_frame == '1Minute_1Day':
       df = add_priorday_tic_value(df)
     
     df['timestamp_est'] = pd.to_datetime(df['timestamp_est']).dt.floor('min')
@@ -842,39 +894,17 @@ def get_ticker_data(symbols, toggles_selection):
   return json_data
 
 ### GRAPH
-
-
-# def get_ticker_data_candle_stick(selectedOption):
-#   print("ssss", selectedOption)
-#   symbol = selectedOption[0]
-#   ticker_db = read_QUEENs__pollenstory(
-#       symbols=[symbol],
-#       read_storybee=False, 
-#       read_pollenstory=True,
-#   )
-#   df = ticker_db.get('pollenstory')[f'{symbol}_{"1Minute_1Day"}']
-#   df = df[['timestamp_est', 'close', 'high', 'low', 'open']]
-#   # df = split_today_vs_prior(df).get('df_today')
-#   df = add_priorday_tic_value(df)
-
-  
-#   json_data = df.to_json(orient='records')
-
-#   return json_data
-
-
 def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
   try:
     df_main=False
     star_time = star_names(toggles_selection)
-    ticker_db = read_QUEENs__pollenstory(
-        symbols=symbols,
-        read_storybee=False, 
-        read_pollenstory=True,
-    )
+    if pg_migration:
+      pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
+    else:
+      pollenstory = read_QUEENs__pollenstory(symbols=symbols,read_storybee=False, read_pollenstory=True,).get('pollenstory')
     for symbol in symbols:
          
-      df = ticker_db.get('pollenstory')[f'{symbol}_{star_time}']
+      df = pollenstory[f'{symbol}_{star_time}']
       if star_time == '1Minute_1Day':
         df = add_priorday_tic_value(df)
       df = df[['timestamp_est', 'trinity_tier']] #'ticker_time_frame',

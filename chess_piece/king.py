@@ -8,21 +8,26 @@ from datetime import datetime
 import streamlit as st
 import hashlib
 import shutil
-import hydralit_components as hc
 import pandas as pd
 import aiohttp
 import pytz
 import socket
 import json
-
-# HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)
-# <class 'requests.exceptions.ReadTimeout'> 2409
-# {'type': 'ProgramCrash', 'errbuz': ReadTimeout(ReadTimeoutError("HTTPSConnectionPool(host='api.alpaca.markets', port=443): Read timed out. (read timeout=None)")), 'er': <class 'requests.exceptions.ReadTimeout'>, 'lineerror': 2409}
+from dotenv import load_dotenv
 
 
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
 
+pg_migration = os.environ.get('pg_migration')
+
+
+def hive_master_root(info='\pollen\pollen'):
+    script_path = os.path.abspath(__file__)
+    return os.path.dirname(os.path.dirname(script_path)) # \pollen\pollen
+
+main_root = hive_master_root()  # os.getcwd()
+load_dotenv(os.path.join(main_root, ".env"))
 
 def get_ip_address():
     hostname = socket.gethostname()
@@ -102,15 +107,6 @@ def kingdom__global_vars():
     ],  # 'U'
 
     }
-
-
-
-def hive_master_root(info='\pollen\pollen'):
-    script_path = os.path.abspath(__file__)
-    return os.path.dirname(os.path.dirname(script_path)) # \pollen\pollen
-
-# def pollenmain_root():
-#     return os.path.dirname(hive_master_root()) # \pollen
 
 def master_swarm_QUEENBEE(prod=True):
     if prod:
@@ -209,26 +205,6 @@ def return_db_root(client_username, pg_migration=False):
     db_root = os.path.join(client_dbs_root(), db_name)
     return db_root
 
-def return_all_client_users__db(query="SELECT * FROM users"):
-    con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
-    cur = con.cursor()
-    users = cur.execute(query).fetchall()
-    df = pd.DataFrame(users)
-
-    df = df.rename(columns={
-                    0:'email',
-                    1:'password',
-                    2:'name',
-                    3:'phone_no',
-                    4:'signup_date',
-                    5:'last_login_date',
-                    6:'login_count',
-                    }
-                )
-
-    return df
-
-
 
 def kingdom__grace_to_find_a_Queen(prod=True):
     # create list for userdb
@@ -250,26 +226,6 @@ def kingdom__grace_to_find_a_Queen(prod=True):
         users_allowed_queen_email,
         users_allowed_queen_emailname__db,
     )
-
-
-def read_QUEEN(queen_db, qcp_s=["castle", "bishop", "knight"]):
-    # queen_db = os.path.join(db_root, "queen_sandbox.pkl")
-    QUEENBEE = ReadPickleData(queen_db)
-    queens_master_tickers = []
-    queens_chess_pieces = []
-    for qcp, qcp_vars in QUEENBEE["workerbees"].items():
-        if qcp in qcp_s:
-            for ticker in qcp_vars["tickers"]:
-                queens_master_tickers.append(ticker)
-                queens_chess_pieces.append(qcp)
-    queens_chess_pieces = list(set(queens_chess_pieces))
-    queens_master_tickers = list(set(queens_master_tickers))
-
-    return {
-        "QUEENBEE": QUEENBEE,
-        "queens_chess_pieces": queens_chess_pieces,
-        "queens_master_tickers": queens_master_tickers,
-    }
 
 
 def return_QUEEN_masterSymbols(
@@ -450,6 +406,16 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
         return ticker_db
     except Exception as e:
         print_line_of_error('king symbols data')
+
+
+def return_QUEEN_KING_symbols(QUEEN_KING, QUEEN, symbols=[]):
+    current_active_orders = return_active_orders(QUEEN)
+    active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
+    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
+
+    symbols = symbols + active_order_symbols + chessboard_symbols
+
+    return symbols
 
 def handle__ttf_notactive__datastream(
     info="if ticker stream offline pull latest price by MasterApi",
