@@ -15,16 +15,18 @@ import hydralit_components as hc
 from streamlit_extras.switch_page_button import switch_page
 
 from pq_auth import signin_main
-from chess_piece.king import master_swarm_QUEENBEE,  local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import pollen_themes, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp
+from chess_piece.king import return_QUEEN_KING_symbols, master_swarm_QUEENBEE, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, kingdom__grace_to_find_a_Queen, return_QUEENs__symbols_data, kingdom__global_vars
+from chess_piece.queen_hive import pollen_themes, init_qcp_workerbees, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp, read_swarm_db
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 from custom_graph_v1 import st_custom_graph
+from chess_piece.pollen_db import PollenDatabase
 
 import ipdb
 
-
+pg_migration = os.getenv('pg_migration')
+print("pg_migration", pg_migration)
 
 def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key='chess_board'):
     models = ['MACD', 'story__AI']
@@ -284,9 +286,22 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             pass
         elif chessboard_selection == 'Bishop':
             # WORKERBEE GET
-            QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
+            if pg_migration:
+                QUEENBEE = read_swarm_db(prod, 'QUEEN')
+                BISHOP = read_swarm_db(prod, 'BISHOP')
+                df = BISHOP.get('screen_1')
+                for sector in set(df['sector']):
+                    token = df[df['sector']==sector]
+                    tickers=token['symbol'].tolist()
+                    QUEENBEE[qcp_bees_key][sector] = init_qcp_workerbees(ticker_list=tickers)
+                
+                symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEENBEE)
+                STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols)
+            else:
+                QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
+                STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+            
             QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
-            STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
             QUEEN_KING['revrec'] = revrec
 
@@ -297,9 +312,56 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         all_workers = chess_pieces.get('all_workers')
         qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
         current_tickers = qcp_ticker_index.keys()
+
         
+        ### AUTO PILOT CONTRROLS
+
+        # def AutoPilot(revrec, QUEEN_KING):
+
+        def align_autopilot_with_revrec(revrec, QUEEN_KING):
+            current_index = QUEEN_KING['king_controls_queen']['ticker_autopilot'].index
+            for symbol in revrec.get('storygauge').index:
+                if symbol not in current_index:
+                    QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([False, False], index=['buy_autopilot', 'sell_autopilot'])
+
+            return QUEEN_KING
+        
+        if st.button("align auto_pilot"):
+            QUEEN_KING =  align_autopilot_with_revrec(revrec, QUEEN_KING)
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+            else:
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+        
+        def switch_autopilot_on_off(QUEEN_KING, x_autopilot='buy_autopilot', onoff=True):
+            for indx in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
+                QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[indx, x_autopilot] = onoff
+            return QUEEN_KING
+
+
+        buy_autopilot = st.checkbox("Switch buy auto pilot", False)
+        if st.button("Turn Auto Pilot ON for buys"):
+            QUEEN_KING = switch_autopilot_on_off(QUEEN_KING, x_autopilot='buy_autopilot', onoff=buy_autopilot)
+            st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+            else:
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+
+        sell_autopilot = st.checkbox("Switch sell auto pilot", False)
+        if st.button("Turn Auto Pilot OFF for buys"):
+            QUEEN_KING = switch_autopilot_on_off(QUEEN_KING, x_autopilot='sell_autopilot', onoff=sell_autopilot)
+            st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+            else:
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+
+        ### AUTO PILOT CONTRROLS
+
+        # if st.sidebar.toggle("autopilot funcs"):
+        #     AutoPilot(revrec, QUEEN_KING)
         # with st.expander(name, True): # ChessBoard
-        allow_queen_to_update_chessboard = st.checkbox("Allow QUEEN to update Board as best she see's fit", True)
         cb_tab_list = ['Board', 'Star Allocation']
         tabs = st.tabs(cb_tab_list)
         with tabs[0]:
@@ -353,6 +415,10 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         print('chessboard ', e, print_line_of_error())
 
 
+## WORKERBEE : func to select portfolio and have board allocate
+# return current board, if None Setup with SPY
+# update board
+
 if __name__ == '__main__':
 
     signin_main()
@@ -373,16 +439,18 @@ if __name__ == '__main__':
     crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
     admin = st.session_state['admin']
     prod = st.session_state['prod']
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+
 
 
     reset_theme = False
 
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
+    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')    
-    revrec = QUEEN_KING.get('revrec')
+    revrec = QUEEN.get('revrec')
 
     alpaca_acct_info = refresh_account_info(api=api)
     with st.sidebar:
@@ -391,7 +459,10 @@ if __name__ == '__main__':
 
     acct_info = alpaca_acct_info.get('info_converted')
 
-    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+    if pg_migration:
+        QUEENBEE = read_swarm_db(prod, 'QUEEN')
+    else:
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
 
     swarm_queen_symbols = []
     for qcp, va in QUEENBEE['workerbees'].items():

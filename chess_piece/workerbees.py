@@ -28,7 +28,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from chess_piece.king import (
     PickleData,
     hive_master_root,
-    read_QUEEN,
     workerbee_dbs_backtesting_root,
     workerbee_dbs_backtesting_root__STORY_bee,
     workerbee_dbs_root,
@@ -45,8 +44,6 @@ from chess_piece.queen_hive import (
     pollen_story,
     print_line_of_error,
     return_alpaca_api_keys,
-    return_bars,
-    return_bars_list,
     return_macd,
     return_RSI,
     return_sma_slope,
@@ -164,7 +161,6 @@ def ttf__save(table_name, task_results):
             executor.submit(process_batch, batch)
 
 
-
 def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False):
     s = datetime.now(est)
 
@@ -175,7 +171,7 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         async with session:
             try:
                 if pg_migration:
-                    # PollenDatabase.upsert_data(table_name ,key , data)
+                    PollenDatabase.upsert_data(table_name ,key , data, console=False)
                     task = (key, data)
                     task_results.append(task) # Collect tasks for threadded saving
                 else:
@@ -273,8 +269,8 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         )
     )
 
-    if pg_migration:
-        ttf__save(table_name, task_results)
+    # if pg_migration:
+    #     ttf__save(table_name, task_results)
 
     return True
 
@@ -290,10 +286,191 @@ def update_speed_gauges(pollens_honey, speed_gauges):
     
     return pollens_honey
 
+
+def read_QUEEN(prod, qcp_s=["castle", "bishop", "knight"], pg_migration=False):
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+    else:
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+
+    queens_master_tickers = []
+    queens_chess_pieces = []
+    for qcp, qcp_vars in QUEENBEE["workerbees"].items():
+        if qcp in qcp_s:
+            for ticker in qcp_vars["tickers"]:
+                queens_master_tickers.append(ticker)
+                queens_chess_pieces.append(qcp)
+    queens_chess_pieces = list(set(queens_chess_pieces))
+    queens_master_tickers = list(set(queens_master_tickers))
+
+    return {
+        "QUEENBEE": QUEENBEE,
+        "queens_chess_pieces": queens_chess_pieces,
+        "queens_master_tickers": queens_master_tickers,
+    }
+
+
+### BARS
+def return_bars(
+    api,
+    symbol,
+    timeframe,
+    ndays,
+    trading_days_df,
+    sdate_input=False,
+    edate_input=False,
+    crypto=False,
+    exchange=False,
+):
+    try:
+        s = datetime.now(est)
+        timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
+        error_dict = {}
+        # Fetch bars for prior ndays and then add on today
+        # s_fetch = datetime.now()
+        if edate_input != False:
+            end_date = edate_input
+        else:
+            end_date = datetime.now(est).strftime("%Y-%m-%d")
+
+        if sdate_input != False:
+            start_date = sdate_input
+        else:
+            if ndays == 0:
+                start_date = datetime.now(est).strftime("%Y-%m-%d")
+            else:
+                start_date = (trading_days_df.query("date < @current_day").tail(ndays).head(1).date)
+
+        if exchange:
+            symbol_data = api.get_crypto_bars(
+                symbol,
+                timeframe=timeframe,
+                start=start_date,
+                end=end_date,
+                exchanges=exchange,
+            ).df
+        else:
+            symbol_data = api.get_bars(
+                symbol,
+                timeframe=timeframe,
+                start=start_date,
+                end=end_date,
+                adjustment="all",
+            ).df
+        if len(symbol_data) == 0:
+            print("No Data Returned for ", timeframe)
+            error_dict[symbol] = {"msg": "no data returned", "time": time}
+            return [False, error_dict]
+
+        # set index to EST time
+        symbol_data["timestamp_est"] = symbol_data.index
+        symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(lambda x: x.astimezone(est))
+        symbol_data = symbol_data.set_index("timestamp_est", drop=False)
+
+        symbol_data["symbol"] = symbol
+        symbol_data["timeframe"] = timeframe
+        symbol_data["bars"] = "bars"
+
+        # Make two dataframes one with just market hour data the other with after hour data
+        if "day" in timeframe:
+            market_hours_data = symbol_data  # keeping as copy since main func will want to return markethours
+            after_hours_data = None
+        else:
+            market_hours_data = symbol_data.between_time("9:30", "16:00")
+            market_hours_data = market_hours_data.reset_index(drop=True)
+            after_hours_data = symbol_data.between_time("16:00", "9:30")
+            after_hours_data = after_hours_data.reset_index(drop=True)
+
+        symbol_data = symbol_data.reset_index(drop=True)
+
+        e = datetime.now(est)
+        # (str((e - s)) + ": " + datetime.now().strftime('%Y-%m-%d %H:%M'))
+
+        return {
+            "resp": True,
+            "df": symbol_data,
+            "market_hours_data": market_hours_data,
+            "after_hours_data": after_hours_data,
+        }
+    # handle error
+    except Exception as e:
+       print_line_of_error(e)
+
+
+def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=False, exchange=False, s_date=False, e_date=False):
+    try:
+        # ticker_list = ['SPY', 'QQQ']
+        # chart_times = {
+        #     "1Minute_1Day": 1, "5Minute_5Day": 5, "30Minute_1Month": 18,
+        #     "1Hour_3Month": 48, "2Hour_6Month": 72,
+        #     "1Day_1Year": 250
+        #     }
+        current_date = datetime.now(est).strftime("%Y-%m-%d")
+        trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
+        s = datetime.now(est)
+        return_dict = {}
+        error_dict = {}
+
+        for charttime, ndays in chart_times.items():
+            timeframe = charttime.split("_")[0]  # '1Minute_1Day'
+            timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
+            if s_date and e_date:
+                start_date = s_date
+                end_date = e_date
+            else:
+                start_date = trading_days_df_.tail(ndays).head(1).date
+                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+                end_date = datetime.now(est).strftime("%Y-%m-%d")
+
+            if exchange:
+                symbol_data = api.get_crypto_bars(
+                    ticker_list,
+                    timeframe=timeframe,
+                    start=start_date,
+                    end=end_date,
+                    exchanges=exchange,
+                ).df
+            else:
+                try:
+                    symbol_data = api.get_bars(
+                        ticker_list,
+                        timeframe=timeframe,
+                        start=start_date,
+                        end=end_date,
+                        adjustment="all",
+                    ).df
+                    
+                    if len(symbol_data) == 0:
+                        print(f"{ticker_list} {charttime} NO Bars")
+                        error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
+                        return {}
+                    # set index to EST time
+                    symbol_data["timestamp_est"] = symbol_data.index
+                    symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(lambda x: x.astimezone(est))
+                    symbol_data["timeframe"] = timeframe
+                    symbol_data["bars"] = "bars_list"
+
+                    symbol_data = symbol_data.reset_index(drop=True)
+
+                    return_dict[charttime] = symbol_data  
+                except Exception as e:
+                    print("QH_getbars", print_line_of_error(), e)
+                    print(ticker_list)
+                    return {}
+        
+        e = datetime.now(est)
+        return {"resp": True, "return": return_dict, 'error_dict': error_dict}
+
+    except Exception as e:
+        print_line_of_error("beeee worker error")
+
+
+
 def queen_workerbees(
     qcp_s,  # =["castle", "bishop", "knight"],
     QUEENBEE=None,
-    prod=False,
+    prod=True,
     check_with_queen_frequency=360,
     queens_chess_piece="bees_manager",
     backtesting=False,
@@ -302,7 +479,7 @@ def queen_workerbees(
     run_all_pawns=False,
     backtesting_star=False,
     streamit=False,
-    pg_migration=False,
+    pg_migration=True,
 ):
 
     if backtesting:
@@ -487,27 +664,16 @@ def queen_workerbees(
                     market_hours_data = market_hours_data.reset_index()
                     # market_hours_data = df
                     for ticker in ticker_list:
-                        df_return = market_hours_data[
-                            market_hours_data["symbol"] == ticker
-                        ].copy()
+                        df_return = market_hours_data[market_hours_data["symbol"] == ticker].copy()
                         dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return
 
             e = datetime.now(est)
-            # msg = {
-            #     "ticker_list": ticker_list,
-            #     "function": "Return Init ChartData",
-            #     "func_timeit": str((e - s)),
-            #     "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
-            # }
-            # print(msg)
-            # dfs_index_tickers['SPY_5Minute']
+
             return {"init_charts": dfs_index_tickers, "errors": error_dict}
         except Exception as e:
             print("eeeeeror", e, print_line_of_error())
 
-    def Return_Bars_LatestDayRebuild(
-        ticker_time,
-    ):  # Iniaite Ticker Charts with Indicator Data
+    def Return_Bars_LatestDayRebuild(ticker_time,):  # Iniaite Ticker Charts with Indicator Data
         # IMPROVEMENT: use Return_bars_list for Return Bars_LatestDayRebuild
         # ticker_time = "SPY_1Minute_1Day"
 
@@ -704,30 +870,18 @@ def queen_workerbees(
                     df_day_snapshot = symbol_snapshots[f'{symbol}{"_day"}']  # stapshot df
                     df_day_snapshot["symbol"] = symbol
                     df = df.head(-1)  # drop last row which has current day / added minute
-                    df_rebuild = pd.concat(
-                        [df, df_day_snapshot], join="outer", axis=0
-                    ).reset_index(
-                        drop=True
-                    )  # concat minute
+                    df_rebuild = pd.concat([df, df_day_snapshot], join="outer", axis=0).reset_index(drop=True)  # concat minute
                     main_return_dict[ticker_time] = df_rebuild
                 else:
                     df_snapshot = symbol_snapshots[f'{symbol}{"_minute"}']  # stapshot df
                     df_snapshot["symbol"] = symbol
                     # df_snapshot['timestamp_est'] = df_snapshot["timestamp_est"].apply(lambda x: x.astimezone(est))
                     if init:
-                        df_rebuild = pd.concat(
-                            [df, df_snapshot], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # concat minute
+                        df_rebuild = pd.concat([df, df_snapshot], join="outer", axis=0).reset_index(drop=True)  # concat minute
                         main_return_dict[ticker_time] = df_rebuild
                     else:
                         df = df.head(-1)  # drop last row which has current day
-                        df_rebuild = pd.concat(
-                            [df, df_snapshot], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # concat minute
+                        df_rebuild = pd.concat([df, df_snapshot], join="outer", axis=0).reset_index(drop=True)  # concat minute
                         main_return_dict[ticker_time] = df_rebuild
 
             s = datetime.now(est)
@@ -793,117 +947,44 @@ def queen_workerbees(
 
             dfn = Return_Bars_LatestDayRebuild(ticker_time_frame)
 
+            def apply_swap_out_row(df):
+                if len(dfn[1]) == 0:
+                    df_latest = dfn[0][ticker_time_frame]
+                    df["timetag"] = df["timestamp_est"].apply(lambda x: tag_current_day(x))
+                    df_replace = df[df["timetag"] != "tag"].copy()
+                    del df_replace["timetag"]
+                    df_return = pd.concat([df_replace, df_latest], join="outer", axis=0).reset_index(drop=True)
+                    df_return_me = pd.concat([df_return, df_return.tail(1)], join="outer", axis=0).reset_index(drop=True)  # add dup last row to act as snapshot
+                    return_dict[ticker_time_frame] = df_return_me
+                    rebuild_confirmation[ticker_time_frame] = "rebuild"
+                
+                return df
+    
             if "1minute" == timeframe.lower():
                 if timedelta_minutes > 2:
-                    if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time_frame]
-                        df["timetag"] = df["timestamp_est"].apply(
-                            lambda x: tag_current_day(x)
-                        )
-                        df_replace = df[df["timetag"] != "tag"].copy()
-                        del df_replace["timetag"]
-                        df_return = pd.concat(
-                            [df_replace, df_latest], join="outer", axis=0
-                        ).reset_index(drop=True)
-                        df_return_me = pd.concat(
-                            [df_return, df_return.tail(1)], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # add dup last row to act as snapshot
-                        return_dict[ticker_time_frame] = df_return_me
-                        rebuild_confirmation[ticker_time_frame] = "rebuild"
+                    apply_swap_out_row(df)
                 else:
                     return_dict[ticker_time_frame] = df
-
             elif "5minute" == timeframe.lower():
                 if timedelta_minutes > 6:
-                    if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time_frame]
-                        df["timetag"] = df["timestamp_est"].apply(
-                            lambda x: tag_current_day(x)
-                        )
-                        df_replace = df[df["timetag"] != "tag"].copy()
-                        del df_replace["timetag"]
-                        df_return = pd.concat(
-                            [df_replace, df_latest], join="outer", axis=0
-                        ).reset_index(drop=True)
-                        df_return_me = pd.concat(
-                            [df_return, df_return.tail(1)], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # add dup last row to act as snapshot
-                        return_dict[ticker_time_frame] = df_return_me
-                        rebuild_confirmation[ticker_time_frame] = "rebuild"
+                    apply_swap_out_row(df)
                 else:
                     return_dict[ticker_time_frame] = df
-
             elif "30minute" == timeframe.lower():
                 if timedelta_minutes > 31:
-                    if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time_frame]
-
-                        df["timetag"] = df["timestamp_est"].apply(
-                            lambda x: tag_current_day(x)
-                        )
-                        df_replace = df[df["timetag"] != "tag"].copy()
-                        del df_replace["timetag"]
-                        df_return = pd.concat(
-                            [df_replace, df_latest], join="outer", axis=0
-                        ).reset_index(drop=True)
-                        df_return_me = pd.concat(
-                            [df_return, df_return.tail(1)], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # add dup last row to act as snapshot
-                        return_dict[ticker_time_frame] = df_return_me
-                        rebuild_confirmation[ticker_time_frame] = "rebuild"
+                    apply_swap_out_row(df)
                 else:
                     return_dict[ticker_time_frame] = df
-
             elif "1hour" == timeframe.lower():
                 if timedelta_minutes > 61:
-                    if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time_frame]
-                        df["timetag"] = df["timestamp_est"].apply(
-                            lambda x: tag_current_day(x)
-                        )
-                        df_replace = df[df["timetag"] != "tag"].copy()
-                        del df_replace["timetag"]
-                        df_return = pd.concat(
-                            [df_replace, df_latest], join="outer", axis=0
-                        ).reset_index(drop=True)
-                        df_return_me = pd.concat(
-                            [df_return, df_return.tail(1)], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # add dup last row to act as snapshot
-                        return_dict[ticker_time_frame] = df_return_me
-                        rebuild_confirmation[ticker_time_frame] = "rebuild"
+                    apply_swap_out_row(df)
                 else:
                     return_dict[ticker_time_frame] = df
-
             elif "2hour" == timeframe.lower():
                 if timedelta_minutes > 121:
-                    if len(dfn[1]) == 0:
-                        df_latest = dfn[0][ticker_time_frame]
-                        df["timetag"] = df["timestamp_est"].apply(
-                            lambda x: tag_current_day(x)
-                        )
-                        df_replace = df[df["timetag"] != "tag"].copy()
-                        del df_replace["timetag"]
-                        df_return = pd.concat(
-                            [df_replace, df_latest], join="outer", axis=0
-                        ).reset_index(drop=True)
-                        df_return_me = pd.concat(
-                            [df_return, df_return.tail(1)], join="outer", axis=0
-                        ).reset_index(
-                            drop=True
-                        )  # add dup last row to act as snapshot
-                        return_dict[ticker_time_frame] = df_return_me
-                        rebuild_confirmation[ticker_time_frame] = "rebuild"
+                    apply_swap_out_row(df)
                 else:
                     return_dict[ticker_time_frame] = df
-
             else:
                 return_dict[ticker_time_frame] = df
 
@@ -1209,16 +1290,27 @@ def queen_workerbees(
         MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))
         MACD_WAVES = MACD_WAVES.set_index("ttf")
         
+        # swarm_db = init_swarm_dbs(prod)
+        
         if QUEENBEE is not None:
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items() if qcp in queens_chess_pieces]
             symbols = [item for sublist in list_of_lists for item in sublist]
             queens_master_tickers = confirm_tickers_available(alpaca_symbols_dict, symbols)
         else:
-            QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=True))
+            print("READING MASTER QUEEN")
+            if pg_migration:
+                table_name = 'db' if prod else 'db_sandbox'
+                QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+            else:
+                QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+            
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items() if qcp in queens_chess_pieces]
             symbols = [item for sublist in list_of_lists for item in sublist]
             queens_master_tickers = confirm_tickers_available(alpaca_symbols_dict, symbols)
         
+        if not queens_master_tickers:
+            print(queens_chess_pieces, " No Tickers to Find EXITING", queens_master_tickers)
+            sys.exit()
         
         def handle_qcp_pawns(QUEENBEE, tickers, queens_chess_pieces=queens_chess_pieces, queens_master_tickers=queens_master_tickers):
             for pawn in tickers:
@@ -1266,8 +1358,6 @@ def queen_workerbees(
             if len(new_symbols)> 0:
                 print("new symbols needed", new_symbols)
                 QUEENBEE, queens_chess_pieces, queens_master_tickers =  handle_qcp_pawns(QUEENBEE, new_symbols)
-
-
         
         if run_all_pawns:
             p_num = 0
@@ -1318,7 +1408,7 @@ def queen_workerbees(
                     now_time = datetime.now(est)
                     if (now_time - last_queen_call.get("last_call")).total_seconds() > check_with_queen_frequency:
                         print("Check Queen for New Tickers")
-                        pq = read_QUEEN(queen_db=master_swarm_QUEENBEE(prod=True), qcp_s=qcp_s)
+                        pq = read_QUEEN(prod, qcp_s=qcp_s, pg_migration=pg_migration)
                         QUEENBEE = pq["QUEENBEE"]
                         last_queen_call = {"last_call": now_time}
                         latest__queens_chess_pieces = pq["queens_chess_pieces"]
@@ -1359,7 +1449,7 @@ def queen_workerbees(
                             MACD_WAVES=MACD_WAVES,
                         )
                         e = datetime.now(est)
-                        print(f"Worker Refreshed {qcp} --- {(e - s)} seconds --- {queens_master_tickers}")
+                        print(f"Worker Refreshed {qcp} : {(e - s)} seconds : {QUEENBEE['workerbees'][qcp].get('tickers')}")
                         # else:
                         #     print("star Frequency not Met")
 
@@ -1390,10 +1480,10 @@ if __name__ == "__main__":
 
     def createParser_workerbees():
         parser = argparse.ArgumentParser()
-        parser.add_argument("-prod", default=False)
+        parser.add_argument("-prod", default=True)
         parser.add_argument("-qcp_s", default="castle")
-        parser.add_argument("-reset_only", default=True)
-        parser.add_argument("-pg_migration", default=False)
+        parser.add_argument("-reset_only", default=False)
+        parser.add_argument("-pg_migration", default=True)
         # parser.add_argument("-queens_chess_piece", default="bees_manager")
         # parser.add_argument("-backtesting", default=True)
         # parser.add_argument("-macd", default=None)
@@ -1405,7 +1495,7 @@ if __name__ == "__main__":
     namespace = parser.parse_args()
     qcp_s = namespace.qcp_s  # 'castle', 'knight' 'queen'
     reset_only = namespace.reset_only  # 'castle', 'knight' 'queen'
-    pg_migration = namespace.pg_migration  # 'castle', 'knight' 'queen'
+    pg_migration = True if str(namespace.pg_migration).lower() == "true" else False
     prod = True if str(namespace.prod).lower() == "true" else False
 
 

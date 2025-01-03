@@ -22,6 +22,9 @@ from chess_piece.queen_hive import setup_chess_board, init_qcp_workerbees, init_
 from chess_piece.app_hive import display_for_unAuth_client_user, admin_queens_active
 from custom_button import cust_Button
 
+from chess_piece.pollen_db import PollenDatabase
+
+
 import ipdb
 
 MISC = local__filepaths_misc()
@@ -54,21 +57,24 @@ def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
             st.error("Chess Piece Name must be Unique")
             st.stop()
         
-        cols = st.columns(2)
 
         QUEENBEE[qcp_bees_key][qcp] = init_qcp_workerbees()
            
-        with cols[0]:
-            QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of piecesm, only ~10 allowed', key='swarm_tickers_selected')
-        with cols[1]:
-            QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model')
-
-        dup_tickers = [i for i in st.session_state['swarm_tickers_selected'] if i in old_tickers]
-        if dup_tickers:
-            st.error(f"  duplicate tickers {dup_tickers}")
 
         star_options = list(stars().keys())
+        
         with st.form('add new qcp'):
+            cols = st.columns(2)
+            
+            with cols[0]:
+                QUEENBEE[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=f'{qcp} symbols', options=ticker_allowed, default=None, help='Try not to Max out number of pieces, only ~10 allowed', key='swarm_tickers_selected')
+            with cols[1]:
+                QUEENBEE[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEENBEE[qcp_bees_key][qcp].get('model')), key=f'{qcp}model')
+
+            dup_tickers = [i for i in st.session_state['swarm_tickers_selected'] if i in old_tickers]
+            if dup_tickers:
+                st.error(f"  duplicate tickers {dup_tickers}")
+            
             m_fast = int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'])
             m_slow = int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['slow'])
             m_smooth = int(QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['smooth'])
@@ -76,12 +82,6 @@ def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
             cols = st.columns((1,6,2,2,2,2,2))
             with cols[0]:
                 st.image(MISC.get('queen_crown_url'), width=64)
-            
-            # if QUEENBEE[qcp_bees_key][qcp]['model'] == 'story__AI':
-            #     # first_symbol = QUEENBEE[qcp_bees_key][qcp]['tickers'][0]
-            #     # ttf_macd_wave_ratios = ReadPickleData(os.path.join(hive_master_root(), 'backtesting/macd_backtest_analysis.csv'))
-            #     st.write("Lets Let AI Wave Analysis Handle Wave")
-            # else:
 
                 with cols[3]:
                     QUEENBEE[qcp_bees_key][qcp]['MACD_fast_slow_smooth']['fast'] = st.number_input("fast", min_value=1, max_value=33, value=m_fast, key=f'{qcp}fast')
@@ -93,7 +93,12 @@ def add_new_qcp__to_Queens_workerbees(QUEENBEE, qcp_bees_key, ticker_allowed):
                     QUEENBEE[qcp_bees_key][qcp]['refresh_star'] = st.selectbox("refresh_star", options=star_options, index=star_options.index(refresh_star), key=f'{qcp}refresh_star') 
 
             if st.form_submit_button('Save New qcp'):
-                PickleData(QUEENBEE.get('source'), QUEENBEE)
+                if pg_migration:
+                    table_name = 'db' if prod else 'db_sandbox'
+                    PollenDatabase.upsert_data(table_name, QUEENBEE.get('key'), QUEENBEE)
+                else:
+                    PickleData(QUEENBEE.get('source'), QUEENBEE)
+    
     except Exception as e:
         print_line_of_error()
 
@@ -121,7 +126,7 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
 
         QUEENBEE = ensure_swarm_queen_workerbees(QUEENBEE, qcp_bees_key)
 
-        with st.expander("New Workerbee"):
+        if st.toggle('add new workerbee'):
             add_new_qcp__to_Queens_workerbees(QUEENBEE=QUEENBEE, qcp_bees_key=qcp_bees_key, ticker_allowed=ticker_allowed)
         
         with st.expander(name, True):
@@ -164,7 +169,11 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
                         st.write(QUEENBEE[qcp_bees_key][qcp])
 
                 if st.form_submit_button('Save ChessBoard'):
-                    PickleData(pickle_file=QUEENBEE.get('source'), data_to_store=QUEENBEE)
+                    if pg_migration:
+                        table_name = 'db' if prod else 'db_sandbox'
+                        PollenDatabase.upsert_data(table_name, QUEENBEE.get('key'), QUEENBEE)
+                    else:
+                        PickleData(pickle_file=QUEENBEE.get('source'), data_to_store=QUEENBEE)
                     st.success("Swarm QueenBee Saved")
                     
                     return True
@@ -196,6 +205,8 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
     except Exception as e:
         print(e, print_line_of_error())
 
+pg_migration = os.environ.get('pg_migration')
+
 authenticator = signin_main(page="pollenq")
 prod = st.session_state['prod']
 authorized_user = st.session_state['authorized_user']
@@ -217,19 +228,34 @@ if st.session_state['admin'] != True:
 
 prod = st.session_state['prod']
 prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
-QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
+
+if pg_migration:
+    table_name = 'db' if prod else 'db_sandbox'
+    QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+else:
+    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+
 KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
+qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True, pg_migration=pg_migration)
 QUEEN = qb.get('QUEEN')
 QUEEN_KING = qb.get('QUEEN_KING')
 api = qb.get('api')
 
+    
 chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key='chess_board')
 tt = chess_pieces.get('ticker_qcp_index')
 
 chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key='workerbees')
 qq = chess_pieces.get('ticker_qcp_index')
 
+if st.button('set workerbees based on QUEEN_KING Chessboard'):
+    for qcp, data in QUEEN_KING['chess_board'].items():
+        QUEENBEE['workerbees'][qcp] = data
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        PollenDatabase.upsert_data(table_name, QUEENBEE.get('key'), QUEENBEE)
+    else:
+        PickleData(QUEENBEE.get('source'), QUEENBEE)
 
 # df = pd.DataFrame(QUEEN_KING['chess_board'].items())
 def flatten_data(data):
@@ -258,14 +284,14 @@ flattened_data = flatten_data(data=copy.deepcopy(QUEENBEE['workerbees']))
 df = pd.DataFrame(flattened_data)
 df.set_index('ticker', inplace=True)
 with cols[0]:
-    st.data_editor(df)
+    st.data_editor(df, key='111')
 
 
 flattened_data = flatten_data(data=copy.deepcopy(QUEEN_KING['chess_board']))
 df = pd.DataFrame(flattened_data)
 df.set_index('ticker', inplace=True)
 with cols[1]:
-    st.data_editor(df)
+    st.data_editor(df, key='222')
 
 st.sidebar.write('admin:', st.session_state["admin"])
 # add new keys

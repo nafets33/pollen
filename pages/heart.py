@@ -66,7 +66,7 @@ st.write(QUEEN['queen'].keys())
 st.write("HB", QUEENsHeart['heartbeat'].keys())
 # st.write("HB", QUEEN['heartbeat'])
 # st.write("cleaned", QUEEN['heartbeat']['beat'].keys())
-st.write("CB", QUEEN['heartbeat']['charlie_bee'].keys())
+# st.write("CB", QUEEN['heartbeat']['charlie_bee'].keys())
 
 if find_all_circular_references(QUEENsHeart):
     print("C Error")
@@ -75,10 +75,13 @@ try:
         st.write(QUEENsHeart)
 except Exception as e:
     print(e)
-with st.expander("QUEENsHeart"):
-    for k, v in QUEEN['heartbeat'].items():
-        st.write(k, v)
 
+try:
+    with st.expander("QUEENsHeart"):
+        for k, v in QUEEN['heartbeat'].items():
+            st.write(k, v)
+except Exception as e:
+    print(e)
 if st.button("Queen Heartbeat Surgery"):
     if 'heartbeat' in QUEENsHeart['heartbeat'].keys():
         print("CLEAN Heartbeat")

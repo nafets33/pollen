@@ -4,9 +4,9 @@ from PIL import Image
 import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
-from chess_piece.queen_hive import print_line_of_error, init_swarm_dbs, init_queenbee
+from chess_piece.queen_hive import print_line_of_error, init_swarm_dbs, init_queenbee, read_swarm_db
 from chess_piece.app_hive import set_streamlit_page_config_once, show_waves,  standard_AGgrid
-from chess_piece.king import kingdom__grace_to_find_a_Queen, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data
+from chess_piece.king import kingdom__global_vars, kingdom__grace_to_find_a_Queen, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
 from datetime import datetime, timedelta
@@ -25,6 +25,8 @@ import requests
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+
+from chess_piece.pollen_db import PollenDatabase
 
 set_streamlit_page_config_once()
 
@@ -91,19 +93,46 @@ def PlayGround():
 
     
     prod = st.session_state['prod']
+    client_user=st.session_state['client_user']
     
     print("PLAYGROUND", st.session_state['client_user'])
-    db=init_swarm_dbs(prod)
-    BISHOP = ReadPickleData(db.get('BISHOP'))
+    db = init_swarm_dbs(prod, pg_migration=True)
+    BISHOP = read_swarm_db()
 
-    delete_dict_keys(BISHOP)
+    # delete_dict_keys(BISHOP)
 
-    # Convert dates to ISO format if provided
+    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=True).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
+    st.write(broker_info)
 
+    # if True:
+    table_name = 'db' if prod else 'db_sandbox'
+    QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+    print(QUEENBEE.keys())
 
-    qb = init_queenbee(client_user=st.session_state['client_user'], prod=prod, queen=False, queen_king=True, api=True)
-    # QUEEN = qb.get('QUEEN')
+    # init files needed
+    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, broker=True, init=True, pg_migration=True, charlie_bee=True, revrec=True)
+    QUEEN = qb.get('QUEEN')
+    print(qb.get('QUEEN').get('revrec').keys())
     QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
+    QUEENsHeart = qb.get('QUEENsHeart')
+    BROKER = qb.get('BROKER')
+    print(qb.get('CHARLIE_BEE'))
+    revrec = qb.get('revrec')
+
+    king_G = kingdom__global_vars()
+    ARCHIVE_queenorder = king_G.get('ARCHIVE_queenorder') # ;'archived'
+    active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+    active_queen_order_states = king_G.get('active_queen_order_states') # = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+    CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['completed', 'completed_alpaca']
+
+
+    # qb = init_queenbee(client_user=st.session_state['client_user'], prod=prod, queen=True, queen_king=True, api=True, charlie_bee=True)
+    # print(qb.get('CHARLIE_BEE'))
+    # QUEEN_KING = qb.get('QUEEN_KING')
+    # QUEEN = qb.get('QUEEN')
+
+
     api = qb.get('api')
     if prod:
         BASE_URL = "https://api.alpaca.markets"  # Paper trading URL
@@ -164,17 +193,21 @@ def PlayGround():
         with cols[3]:
             st.image(MISC.get('mainpage_bee_png'))
     
+        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
         
         QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
         PB_App_Pickle = st.session_state['PB_App_Pickle']
         QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
-        ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
-        POLLENSTORY = ticker_db['pollenstory']
-        STORY_bee = ticker_db['STORY_bee']
-        tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
-        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+        # ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
+        # POLLENSTORY = ticker_db['pollenstory']
+        # STORY_bee = ticker_db['STORY_bee']
 
+        symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+        STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+        POLLENSTORY = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
+
+        tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
 
         # ticker_universe = return_Ticker_Universe()
         # alpaca_symbols_dict = ticker_universe.get('alpaca_symbols_dict')

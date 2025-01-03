@@ -15,7 +15,7 @@ from chess_piece.queen_hive import init_qcp_workerbees
 from chess_piece.pollen_db import PollenDatabase
 
 prod = True
-pg_Migration = False
+pg_migration = True
 est = pytz.timezone("America/New_York")
 
 # main_root = hive_master_root()  # os.getcwd()
@@ -1168,11 +1168,11 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             elif value < -.1 and value > -.3:
                 return .06
             elif value < -.3 and value > -.5:
-                return .08
+                return .3
             elif value < -.5 and value >-.6:
-                return .1
+                return .4
             elif value < -.6:
-                return .01
+                return .3
             else:
                 weight = abs(value) / total
                 # if 0.75 >= value <= 0.80:
@@ -1217,6 +1217,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         """
         # Global
         tier_max = 8
+        sell_smoother = .1
         tier_max_universe = tier_max * 2 # 16
         alloc_powerlen_base_weight = .23 #????
 
@@ -1282,7 +1283,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             df_current_waves = pd.DataFrame(current_wave_stats).set_index('ttf')
 
             waveview = pd.concat([waveview, df_current_waves], axis=1, join='inner')
-            
+            st.dataframe(waveview)
             # """ STORY VIEW Star STATS """
             # # Story Buy Waves
             # df_storyview['star'] = df_storyview.index
@@ -1326,7 +1327,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 tic, stime, sframe = ttf.split("_")
                 star_avg_mx_profit = wave_up_star_stats.loc[ttf].get('star_avg_time_to_max_profit') if ttf in wave_up_star_stats else wave_stars_default_time_max_profit.get(f'{stime}_{sframe}')
                 star_avg_length = wave_analysis_length.loc[ttf].get('star_avg_length') if ttf in wave_analysis_length else wave_stars_default_length.get(f'{stime}_{sframe}')
-
                 waveview.at[ttf, 'star_avg_time_to_max_profit'] = star_avg_mx_profit
                 waveview.at[ttf, 'star_avg_length'] = star_avg_length
             
@@ -1337,7 +1337,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
 
             """ CALCULATOR """
-            # min__zerocross__allocation = .1
             ## base calc variables ##
             # power on current deviation
             waveview['tmp_deivation'] = waveview['time_to_max_profit'] - waveview['star_avg_time_to_max_profit']
@@ -1681,10 +1680,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         s = datetime.now()
 
         def revrec_lastmod(QUEEN):
-            if not pg_Migration:
+            if not pg_migration:
                 return datetime.fromtimestamp(os.stat(QUEEN['dbs'].get('PB_RevRec_PICKLE')).st_mtime).astimezone(est)
             keys = PollenDatabase.get_all_keys_with_timestamps(table_name=QUEEN['table_name'], db_root=QUEEN['db_root'])
-            return keys.get('REVREC')
+            df = pd.DataFrame(keys)
+            df['key_name'] = df[0].apply(lambda x: x.split("-")[-1])
+            df = df.set_index('key_name', drop=False)
+            return df.at['revrec', 1].tz_localize('UTC').astimezone(est)
         
         def calculate_wave_gauge(symbols, waveview, weight_team_keys=weight_team_keys):
             
@@ -1725,18 +1727,20 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
        'w_54_macd_tier_position', 'w_54_vwap_tier_position',
        'w_54_rsi_tier_position', 'trinity_w_L', 'trinity_w_S', 'trinity_w_15',
        'trinity_w_30', 'trinity_w_54',]
-        revrec = QUEEN.get('revrec')
-        story_g = True if revrec else None
-        if story_g:
-            story_g = revrec.get('storygauge')
-            last_mod_revrec = revrec_lastmod(QUEEN)
-            if (datetime.now(est) - last_mod_revrec).total_seconds() > 500:
-                print("Refresh Story Gauge")
-                df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
-            else:
-                df_storygauge = story_g
-        else:
-            df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+        # revrec = QUEEN.get('revrec')
+        # story_g = True if revrec else None
+        # if story_g:
+        #     story_g = revrec.get('storygauge')
+        #     last_mod_revrec = revrec_lastmod(QUEEN)
+        #     print(last_mod_revrec)
+        #     if (datetime.now(est) - last_mod_revrec).total_seconds() > 500:
+        #         print("Refresh Story Gauge")
+        #         df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+        #     else:
+        #         df_storygauge = story_g
+        # else:
+        #     df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+        df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
 
         df_storygauge = df_storygauge[cols]
         symbols_failed = [i for i in df_ticker.index if i not in df_storygauge.index]

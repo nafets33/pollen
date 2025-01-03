@@ -2,7 +2,7 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from chess_piece.app_hive import set_streamlit_page_config_once, standard_AGgrid
-from chess_piece.king import master_swarm_QUEENBEE
+from chess_piece.king import return_QUEEN_KING_symbols
 from chess_piece.queen_hive import init_swarm_dbs, init_qcp_workerbees
 from dotenv import load_dotenv
 from pq_auth import signin_main
@@ -37,13 +37,16 @@ from chess_piece.fastapi_queen import buy_button_dict_items, sell_button_dict_it
 from chess_utils.conscience_utils import story_return
 
 @st.cache_data
-def queen_data(client_user, prod):
-    qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True)
+def queen_data(client_user, prod, pg_migration=False):
+    qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     return QUEEN, QUEEN_KING, api
 
+
+
+pg_migration = True
 
 def waves():
     main_root = hive_master_root()  # os.getcwd()
@@ -82,7 +85,7 @@ def waves():
     active_queen_order_states = king_G.get('active_queen_order_states')
 
 
-    QUEEN, QUEEN_KING, api = queen_data(client_user, prod)
+    QUEEN, QUEEN_KING, api = queen_data(client_user, prod, pg_migration)
 
 
     last_qk_mod = os.stat(QUEEN_KING.get('source')).st_mtime
@@ -137,9 +140,13 @@ def waves():
         st.header(f'revrec {(datetime.now()-s).total_seconds()}')
     else:
         s = datetime.now()
-        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
-        symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
-        # STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee') # 1 second vs .4 seconds
+        if pg_migration:
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+        else:
+            symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+            STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+
         st.header(f'call stymbols {(datetime.now()-s).total_seconds()}')
         s = datetime.now()
         # df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
@@ -147,7 +154,7 @@ def waves():
         revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
         # st.write([i for i in df_broker_portfolio.index if i not in revrec['df_ticker'].index])
         st.header(f'revrec {(datetime.now()-s).total_seconds()}')
-    st.write(QUEEN_KING['king_controls_queen'].get('ticker_autopilot'))
+
     cols = st.columns(3)
     tabs = st.tabs([key for key in revrec.keys()])
     tab = 0

@@ -20,7 +20,7 @@ import argparse
 
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
-from chess_piece.king import return_db_root, return_all_client_users__db, master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
+from chess_piece.king import master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
 from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs
 from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
@@ -31,11 +31,13 @@ from custom_button import cust_Button
 from custom_text import custom_text, TextOptionsBuilder
 
 from chess_piece.pollen_db import PollenDatabase
-from chess_utils.postgres_utils import create_pg_table
 
 
 import ipdb
 
+load_dotenv(".env")
+
+pg_migration = os.environ.get('pg_migration')
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -107,7 +109,7 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
                                             run_all_pawns=run_all_pawns, 
                                             macd=macd,
                                             streamit=True,
-                                            pg_migration=False,
+                                            pg_migration=pg_migration,
                                                 )
                         st.success("WorkerBees Completed")
                         e = datetime.now(est)
@@ -117,12 +119,7 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
 
 
 if __name__ == '__main__':
-    # init_logging('workerbees', prod)
-    # logging.info("bees")
-    # log_keys = PollenDatabase.get_all_keys('logging_store')
-    # print(log_keys)
-    # data = PollenDatabase.retrieve_data('logging_store', log_keys[0])
-    # st.write(data)
+
     QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
 
     qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True)

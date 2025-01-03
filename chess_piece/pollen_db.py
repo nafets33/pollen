@@ -100,10 +100,12 @@ class PollenDatabase:
         )
 
     @staticmethod
-    def return_db_conn():
+    def return_db_conn(return_curser=False):
         
         con = PollenDatabase.get_connection()
         cur = con.cursor()
+        if return_curser:
+            return con, cur
         
         # Create table if it doesn't exist
         create_table_query = """
@@ -251,7 +253,7 @@ class PollenDatabase:
                 conn.commit()
 
                 if console and table_name not in console_table_ignore:
-                    print(f'{key} Upserted to {table_name}')
+                    print(f'{key} Upserted to {table_name} server={server}')
             
             return True
         except Exception as e:
@@ -440,7 +442,7 @@ class PollenDatabase:
                 return [table[0] for table in tables]
     
             except Exception as e:
-                print("Error:", e)
+                print("Error Fetch in All Tables:", e)
 
 
     @staticmethod
@@ -458,7 +460,10 @@ class PollenDatabase:
                 return [key[0] for key in keys]
 
             except Exception as e:
-                print("Error:", e)
+                if table_name == 'client_users':
+                    pass
+                else:
+                    print(f"Error Fetch in all Keys table {table_name} {e}")
                 return []
 
 
@@ -526,7 +531,10 @@ class PollenDatabase:
                 return [(key, last_modified) for key, last_modified in results]
 
             except Exception as e:
-                print_line_of_error(f"GET KEYS Error: {e}")
+                if table_name == 'client_users':
+                    pass
+                else:
+                    print_line_of_error(f"GET KEYS Error: {e}")
                 return []
 
     @staticmethod

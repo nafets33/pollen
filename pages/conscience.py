@@ -17,8 +17,7 @@ from chess_piece.queen_hive import star_names, return_queenking_board_symbols, s
 from pq_auth import signin_main
 from streamlit_extras.switch_page_button import switch_page
 
-from custom_grid import st_custom_grid, GridOptionsBuilder
-# from st_aggrid import AgGrid, GridUpdateMode, JsCode
+from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
 
 from custom_graph_v1 import st_custom_graph
 
@@ -37,6 +36,201 @@ main_root = hive_master_root() # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
+
+
+#### MOVE STORY STYLE TO UTILS Generate COLORS
+def generate_cell_style(flash_state_variable='Flash_state'):
+    return JsCode(f"""
+        function(p) {{
+            // Ensure {flash_state_variable} exists and is a string
+            if (p.data.{flash_state_variable} && typeof p.data.{flash_state_variable} === 'string') {{
+                // Split {flash_state_variable} by '$'
+                var parts = p.data.{flash_state_variable}.split('$');
+                
+                if (parts.length === 2) {{
+                    var action_part = parts[0].toLowerCase(); // Convert to lowercase for consistent matching
+                    var value = parseInt(parts[1], 10); // Convert second part to an integer
+
+                    // Further split action by "-"
+                    var action_split = action_part.split('-');
+                    var action = action_split[0]; // Main action (buy/sell)
+                    var length = action_split.length > 1 ? parseInt(action_split[1], 10) : 0; // Extract length as integer
+                    
+                    // Determine background color based on length and action
+                    var color = '';
+                    if (!isNaN(length) && length >= 0) {{
+                        if (action.includes('buy')) {{
+                            if (length <= 2) {{
+                                color = '#80fd91'; // Softer dark green
+                            }} else if (length <= 8) {{
+                                color = '#90fe9f'; // Dark green
+                            }} else if (length <= 12) {{
+                                color = '#a1fead'; // Medium-dark green
+                            }} else if (length <= 16) {{
+                                color = '#b7fec0'; // Medium green
+                            }} else if (length <= 20) {{
+                                color = '#c1fac9'; // Light-medium green
+                            }} else if (length <= 24) {{
+                                color = '#d0f9d5'; // Light green
+                            }} else if (length <= 28) {{
+                                color = '#def7e1'; // Lighter green
+                            }} else if (length <= 40) {{
+                                color = '#e9f9eb'; // Lightest green
+                            }} else if (length > 40) {{
+                                color = '#f8fef9'; // Lightest green for > 40
+                            }}
+                        }} else if (action.includes('sell')) {{
+                            if (length <= 2) {{
+                                color = '#fe645b'; // Softer dark red
+                            }} else if (length <= 8) {{
+                                color = '#ff827b'; // Dark red
+                            }} else if (length <= 12) {{
+                                color = '#ff9892'; // Medium-dark red
+                            }} else if (length <= 16) {{
+                                color = '#febbb7'; // Medium red
+                            }} else if (length <= 20) {{
+                                color = '#fed2cf'; // Light-medium red
+                            }} else if (length <= 24) {{
+                                color = '#fddfdd'; // Light red
+                            }} else if (length <= 28) {{
+                                color = '#fde4e4'; // Lighter red
+                            }} else if (length <= 32) {{
+                                color = '#ffe9e7'; // Very light red
+                            }} else if (length <= 40) {{
+                                color = '#f9e9e8'; // Lightest red
+                            }} else if (length > 40) {{
+                                color = '#fffefe'; // Lightest red for > 40
+                            }}
+                        }}
+                    }}
+
+                    // Return style
+                    return {{
+                        backgroundColor: color,
+                        color: value < 0 ? '#f00' : '#000', // Red text if value < 0, otherwise black
+                        padding: '2px',
+                        boxSizing: 'border-box'
+                    }};
+                }}
+            }}
+
+            // Default: no style for unhandled cases
+            return null;
+        }}
+    """)
+
+
+def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
+    return JsCode(f"""
+        function(p) {{
+            var value = p.data.{flash_state_variable};
+            
+            // Ensure the value is a number
+            if (value !== null && !isNaN(value)) {{
+                var color = ''; // Default color
+                
+                if (value > 0) {{
+                    if (value <= 25) {{
+                        color = '#e6f9e9'; // Very light green
+                    }} else if (value <= 50) {{
+                        color = '#bff0c7'; // Light green
+                    }} else if (value <= 75) {{
+                        color = '#80df97'; // Medium green
+                    }} else if (value <= 90) {{
+                        color = '#4cb96d'; // Dark green
+                    }} else if (value <= 100) {{
+                        color = '#2e8948'; // Darker green
+                    }}
+                }} else if (value < 0) {{
+                    if (value >= -25) {{
+                        color = '#fdecec'; // Very light red
+                    }} else if (value >= -50) {{
+                        color = '#f8c6c6'; // Light red
+                    }} else if (value >= -75) {{
+                        color = '#f09494'; // Medium red
+                    }} else if (value >= -90) {{
+                        color = '#e06363'; // Dark red
+                    }} else if (value >= -100) {{
+                        color = '#c23d3d'; // Darker red
+                    }}
+                }}
+                
+                // Return the style
+                return {{
+                    backgroundColor: color,
+                    color: '#000', // Black text for better contrast
+                    padding: '2px',
+                    boxSizing: 'border-box'
+                }};
+            }}
+
+            // Default: no style for unhandled cases
+            return null;
+        }}
+    """)      
+
+button_suggestedallocation_style = JsCode("""
+function(p) {
+    if (p.data.allocation_long_deploy > 0) {
+        return {
+            backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white' // White border
+        };
+    } else if (p.data.allocation_long_deploy < 0) {
+        return {
+            backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white' // White border
+        };
+    } else {
+        return {
+            border: '2px solid white' // Default white border for other cases
+        };
+    }
+}
+""")
+
+honey_colors = JsCode(
+    """
+function(params) {
+    if (params.value > 0) {
+        return {
+            'color': '#168702',
+        }
+    }
+    else if (params.value < 0) {
+        return {
+            'color': '#F03811',
+        }
+    }
+};
+"""
+)
+
+button_style = JsCode("""
+function(p) {
+    if (p.data.money > 0) {
+        return {
+            backgroundColor: '#bff0c7', // Light green for positive money
+            padding: '0px',
+            boxSizing: 'border-box'
+        };
+    } else if (p.data.money < 0) {
+        return {
+            backgroundColor: '#f8c6c6', // Light red for negative money
+            padding: '0px',
+            boxSizing: 'border-box'
+        };
+    } else {
+        return null; // No style for other cases (e.g., money === 0)
+    }
+}
+""")        
+
+
 
 
 def chunk(it, size):
@@ -239,6 +433,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
 
     
     def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default'):
+
+        
         try:
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,)            
@@ -257,10 +453,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             'col_headername': 'Suggested Allocation',
                             "col_header": "queens_suggested_buy",
                             "border_color": "green",
-                            'col_width':135,
+                            'col_width':100,
                             'sortable': True,
                             'pinned': 'left',
                             'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
+                            'cellStyle': button_suggestedallocation_style,
                             },
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/queen_sell_orders',
@@ -268,11 +465,12 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             'prompt_field': 'sell_option',
                             'col_headername': 'Take Money',
                             "col_header": "queens_suggested_sell",
-                            "border_color": "red",
-                            'col_width':135,
+                            # "border_color": "red",
+                            'col_width':100,
                             'sortable': True,
                             'pinned': 'left',
                             'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
+                            'cellStyle': button_style, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
                             },
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_queenking_chessboard',
@@ -292,7 +490,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             'col_headername': 'Buy Auto Pilot',
                             "col_header": "buy_autopilot",
                             "border_color": "green",
-                            'col_width':90,
+                            'col_width':89,
                             # 'pinned': 'left',
                             'prompt_order_rules': ['buy_autopilot'],
                             },
@@ -303,27 +501,40 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                             'col_headername': 'Sell Auto Pilot',
                             "col_header": "sell_autopilot",
                             "border_color": "red",
-                            'col_width':90,
+                            'col_width':89,
                             # 'pinned': 'left',
                             'prompt_order_rules': ['sell_autopilot'],
                             },
                         ]
                 exclude_buy_kors = ['star_list', 'reverse_buy', 'sell_trigbee_trigger_timeduration']
                 for star in star_names().keys():
-                    # if star != '1Minute_1Day':
-                    #     continue
-                    column_header = f"{star}_state"
+                    starname = star
+                    if star == 'Flash':
+                        starname = 'Day'
+                        cellStyle = generate_cell_style('Flash_state')
+                    elif star == 'Week':
+                        cellStyle = generate_cell_style('Week_state')
+                    elif star == 'Month':
+                        cellStyle = generate_cell_style('Month_state')
+                    elif star == 'Quarter':
+                        cellStyle = generate_cell_style('Quarter_state')
+                    elif star == 'Quarters':
+                        cellStyle = generate_cell_style('Quarters_state')
+                    elif star == 'Year':
+                        cellStyle = generate_cell_style('Year_state')
+                    else:
+                        cellStyle = {}
                     temp = {'button_name': None,
                             'button_api': f'{ip_address}/api/data/queen_buy_orders',
                             'prompt_message': 'Edit Buy',
                             'prompt_field': f'{star}_kors',
-                            'col_headername': f'{star}',
-                            "col_header": column_header,
+                            'col_headername': f'{starname}',
+                            "col_header": f"{star}_state",
                             "border_color": "#BEE3FE",
                             'col_width':135,
                             # 'pinned': 'right',
                             'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
-
+                            'cellStyle': cellStyle,
                             }
                     buttons.append(temp)
                 
@@ -346,17 +557,21 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 #                            'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                 #                            },
                 'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},              
-                'trinity_w_L': {'headerName': 'Trinity Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'pinned': 'right'},
-                'trinity_w_15': create_ag_grid_column(headerName='Flash Force',sortable=True, initialWidth=89, ),
-                'trinity_w_30': create_ag_grid_column(headerName='Middle Force',sortable=True, initialWidth=89, ),
-                'trinity_w_54': create_ag_grid_column(headerName='Future Force',sortable=True, initialWidth=89, ),
+                'trinity_w_L': {'headerName': 'Trinity Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'pinned': 'left',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_L')},
+                'trinity_w_15': {'headerName': 'Day Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_15')},
+                'trinity_w_30': {'headerName': 'Mid Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_30')},
+                'trinity_w_54': {'headerName': 'Future Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_54')},
                 'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
                 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
                 # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
                 'current_ask': {'headerName': 'ask', 'sortable':'true',},
-                'current_bid': {'headerName': 'bid', 'sortable':'true',},
+                # 'current_bid': {'headerName': 'bid', 'sortable':'true',},
                 }
 
             ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
@@ -448,8 +663,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
 
         cols = st.columns(2)
         with cols[0]:
-            refresh_sec = 12 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-            refresh_sec = 60 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+            refresh_sec = 23 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+            refresh_sec = None if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
             refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
             # print("GRAPHS")
             st_custom_graph(
@@ -485,8 +700,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         with cols[1]:
             with st.sidebar:
                 graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=['bishop', 'castle', 'knight'])
-            refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-            refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+            refresh_sec = 23 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+            refresh_sec = None if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
             refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
             symbols = []
             for qcp in graph_qcps:
@@ -555,7 +770,7 @@ if __name__ == '__main__':
         switch_page('pollen')
 
     client_user = os.environ.get('admin_user') ###??? 
-    prod = True
+    prod = st.session_state['prod']
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)

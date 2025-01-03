@@ -162,8 +162,8 @@ if __name__ == '__main__':
     #     print("SWITCHING PAGES")
     #     switch_page('pollen')
 
-    seconds_to_market_close = st.session_state['seconds_to_market_close']
-    mkhrs = st.session_state['mkhrs']
+    seconds_to_market_close = st.session_state['seconds_to_market_close'] if 'seconds_to_market_close' in st.session_state else 0
+    # mkhrs = st.session_state['mkhrs']
     client_user = st.session_state['client_user']
     ip_address = st.session_state['ip_address']
     prod = st.session_state['prod']

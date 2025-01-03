@@ -178,6 +178,7 @@ def return_all_client_users__db(query="SELECT * FROM users"):
                 "login_count": user[6],
             })
         df = pd.DataFrame(creds)
+        return users, df
     else:
         con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
         cur = con.cursor()
@@ -196,7 +197,7 @@ def return_all_client_users__db(query="SELECT * FROM users"):
                         }
                     )
 
-    return df
+    return users, df
 
 
 def return_api_keys(base_url, api_key_id, api_secret, prod=True):
@@ -433,8 +434,15 @@ def init_queen(queens_chess_piece):
 def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
              ticker_list=['SPY'], 
              theme='nuetral', 
-             model='MACD', piece_name='king', buying_power=1, borrow_power=0, picture='knight_png', margin_power=0, 
-             trade_only_margin=False, refresh_star='1Minute_1Day'):
+             model='MACD', 
+             piece_name='king', 
+             buying_power=1, 
+             borrow_power=0, 
+             picture='knight_png', 
+             margin_power=0, 
+            #  trade_only_margin=False, 
+            #  refresh_star='1Minute_1Day',
+             ):
     return {
         "picture": picture,
         "piece_name": piece_name,
@@ -446,8 +454,8 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
         "total_buyng_power_allocation": buying_power,
         "total_borrow_power_allocation": borrow_power,
         "margin_power": margin_power,
-        "trade_only_margin": trade_only_margin,
-        'refresh_star': refresh_star, # anchor to use as reallocation
+        # "trade_only_margin": trade_only_margin,
+        # 'refresh_star': refresh_star, # anchor to use as reallocation # WORKERBEE..chess_board not Saving correclty or being overwritten?
     }
 
 def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, qcp_tickers={'castle': ["SPY"], 'bishop': ["GOOG"], 'knight': ["OXY"], 'castle_coin':["BTCUSD", "ETHUSD"] }, qcp_theme={'castle': "nuetral", 'bishop': "nuetral", 'knight': "nuetral", 'castle_coin':"nuetral" }):
@@ -3114,9 +3122,9 @@ def ttf_grid_names(ttf_name, symbol=True):
     elif '1Hour_3Month' in ttf_name:
       ttf_name = "Quarter"
     elif '2Hour_6Month' in ttf_name:
-      ttf_name = "2 Quarters"
+      ttf_name = "Quarters"
     elif '1Day_1Year' in ttf_name:
-      ttf_name = "1 Year"
+      ttf_name = "Year"
     
     if symbol:
         return f'{symbol_n} {ttf_name}'

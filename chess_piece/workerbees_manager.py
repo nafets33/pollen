@@ -10,9 +10,9 @@ import pytz
 from chess_piece.king import hive_master_root, master_swarm_QUEENBEE
 from chess_piece.queen_hive import ReadPickleData, send_email
 from chess_piece.workerbees import queen_workerbees
-
+from chess_piece.pollen_db import PollenDatabase
 est = pytz.timezone("US/Eastern")
-
+pg_migration = os.environ.get('pg_migration')
 
 def workerbees_multiprocess_pool(prod, qcp_s, num_workers=5, reset_only=False):  
     ## improvement send in reset_only into pool
@@ -52,14 +52,20 @@ if __name__ == "__main__":
     parser = createParser_workerbees()
     namespace = parser.parse_args()
     prod = True if str(namespace.prod).lower() == "true" else False
-    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+    
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        QUEENBEE = PollenDatabase.retrieve_data(table_name, 'QUEEN')
+    else:
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+    
     workerbees = QUEENBEE['workerbees']
     qcp_s = []
     for qcp, va in workerbees.items():
         tickers = va.get('tickers')
         if tickers:
             qcp_s.append(qcp)
-    
+    print(qcp_s)
     while True:
         seconds_to_market_open = (datetime.now(est).replace(hour=9, minute=32, second=0) - datetime.now(est)).total_seconds()
 
