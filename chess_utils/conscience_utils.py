@@ -4,13 +4,17 @@ import pandas as pd
 import numpy as np
 from chess_piece.king import ReadPickleData, print_line_of_error, streamlit_config_colors
 from chess_piece.queen_hive import init_swarm_dbs, star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date
-
+from chess_piece.pollen_db import PollenDatabase
 import pytz
 from datetime import datetime, timedelta
+import os
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
+
 import ipdb
+
 est = pytz.timezone("US/Eastern")
 
+pg_migration = os.getenv('pg_migration')
 
 def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=300):
     try:
@@ -363,8 +367,12 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
 
         # Bishop yahoo data
         # WORKERBEE, only read bishop once a day then cache it
-        db=init_swarm_dbs(prod)
-        BISHOP = ReadPickleData(db.get('BISHOP'))
+        if pg_migration:
+            table_name = 'db' if prod else 'db_sandbox'
+            BISHOP = PollenDatabase.retrieve_data(table_name, 'BISHOP')
+        else:
+            db=init_swarm_dbs(prod)
+            BISHOP = ReadPickleData(db.get('BISHOP'))
         ticker_info = BISHOP.get('ticker_info').set_index('ticker')
         ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
         df = df.set_index('symbol', drop=False)

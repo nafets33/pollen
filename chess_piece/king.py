@@ -206,28 +206,6 @@ def return_db_root(client_username, pg_migration=False):
     return db_root
 
 
-def kingdom__grace_to_find_a_Queen(prod=True):
-    # create list for userdb
-    PB_KING_Pickle = master_swarm_KING(prod)
-    KING = ReadPickleData(master_swarm_KING(prod))
-    users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
-    users_allowed_queen_email.append("stefanstapinski@gmail.com")
-    users_allowed_queen_email.append("stefanstapinski@yahoo.com")
-    users_allowed_queen_email.append("sven0227@gmail.com")
-    users_allowed_queen_email.append("nitinrohan17@gmail.com")
-    users_allowed_queen_email.append("m.kobzar19@gmail.com")
-
-    users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
-    KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
-    KING['source'] = PB_KING_Pickle
-    
-    return (
-        KING,
-        users_allowed_queen_email,
-        users_allowed_queen_emailname__db,
-    )
-
-
 def return_QUEEN_masterSymbols(
     prod=False,
     master_swarm_QUEENBEE=master_swarm_QUEENBEE,

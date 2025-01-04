@@ -8,8 +8,8 @@ import streamlit_authenticator as stauth
 import smtplib
 import ssl
 from email.message import EmailMessage
-from chess_piece.king import kingdom__grace_to_find_a_Queen,  hive_master_root, local__filepaths_misc, return_app_ip
-from chess_piece.queen_hive import setup_instance, print_line_of_error
+from chess_piece.king import hive_master_root, local__filepaths_misc, return_app_ip
+from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, setup_instance, print_line_of_error
 from chess_piece.app_hive import set_streamlit_page_config_once
 from datetime import datetime
 from chess_piece.pollen_db import PollenDatabase

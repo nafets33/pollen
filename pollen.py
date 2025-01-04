@@ -27,8 +27,8 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
-from chess_piece.king import kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData
-from chess_piece.queen_hive import return_queen_controls, stars, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.king import kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData
+from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, return_queen_controls, stars, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import refresh_chess_board__revrec
 # componenets
 # import streamlit_antd_components as sac
@@ -43,7 +43,7 @@ from chess_piece.pollen_db import PollenDatabase
 
 import ipdb
 
-pg_migration = True
+pg_migration = os.getenv('pg_migration')
 
 
 pd.options.mode.chained_assignment = None
@@ -130,7 +130,7 @@ def pollenq(admin_pq):
 
     def run_pq_fastapi_server():
 
-        script_path = os.path.join(hive_master_root(), 'pollen_api.py')
+        script_path = os.path.join(hive_master_root(), 'api.py')
 
         try:
             # Use sys.executable to get the path to the Python interpreter
@@ -140,19 +140,6 @@ def pollenq(admin_pq):
             print(f"Error: Python interpreter not found. Make sure Python is installed.")
         except Exception as e:
             print(f"Error: {e}")
-
-    def update_queen_orders(QUEEN): # for revrec # WORKERBEE WORKING
-        
-        # update queen orders ## IMPROVE / REMOVE ## WORKERBEE
-        qo = QUEEN['queen_orders']
-        qo_cols = qo.columns.tolist()
-        latest_order = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
-        missing = [i for i in latest_order.columns.tolist() if i not in qo_cols]
-        if missing:
-            st.warning("YOU NEED TO REFRESH/SAVE YOUR QUEEN ORDERS BEFORE CONTINUING")
-            for col in missing:
-                print("adding new column to queens orders: ", col)
-                QUEEN['queen_orders'][col] = latest_order.iloc[0].get(col)
 
 
     def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets):
@@ -169,6 +156,9 @@ def pollenq(admin_pq):
                     QUEEN_KING[archive_bucket].append(app_req)
                     save = True
         if save:
+            if pg_migration:
+                table_name = 'client_user_store' if prod else "client_user_store_sandbox"
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
             PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
             st.success(f"Cleared App Request from {request_buckets}")
         
@@ -380,9 +370,8 @@ def pollenq(admin_pq):
             print("Updating QK db")
             if os.environ.get('pg_migration') == 'true':
                 table_name = 'client_user_store' if prod else "client_user_store_sandbox"
-                PollenDatabase.upsert_data(table_name, db_root, QUEEN_KING)
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
             else:
-                # st.write(QUEEN_KING['king_controls_queen'].get('ticker_autopilot'))
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
 
 
@@ -417,8 +406,6 @@ def pollenq(admin_pq):
             # st.session_state['prod'] = False
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
             st.stop()
-        
-
 
         ### TOP OF PAGE
         if st.session_state['admin']:

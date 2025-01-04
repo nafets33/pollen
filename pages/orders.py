@@ -14,8 +14,8 @@ import os
 
 
 from chess_piece.app_hive import set_streamlit_page_config_once, create_ag_grid_column, standard_AGgrid
-from chess_piece.king import kingdom__grace_to_find_a_Queen, kingdom__global_vars
-from chess_piece.queen_hive import create_QueenOrderBee, star_names, init_queenbee
+from chess_piece.king import kingdom__global_vars
+from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, create_QueenOrderBee, star_names, init_queenbee
 from pq_auth import signin_main
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder

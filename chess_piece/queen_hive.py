@@ -30,7 +30,7 @@ from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
 from chess_piece.pollen_db import PostgresHandler, PollenDatabase
 from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
+from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 
 queens_chess_piece = os.path.basename(__file__)
 king_G = kingdom__global_vars()
@@ -160,6 +160,33 @@ current_date = datetime.now(est).strftime("%Y-%m-%d")
 crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
 macd_tiers = 8
 
+
+
+
+def kingdom__grace_to_find_a_Queen(prod=True):
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        KING = PollenDatabase.retrieve_data(table_name, 'KING')
+    # create list for userdb
+    else:
+        PB_KING_Pickle = master_swarm_KING(prod)
+        KING = ReadPickleData(master_swarm_KING(prod))
+    
+    users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
+    users_allowed_queen_email.append("stefanstapinski@gmail.com")
+    users_allowed_queen_email.append("stefanstapinski@yahoo.com")
+    users_allowed_queen_email.append("sven0227@gmail.com")
+    users_allowed_queen_email.append("nitinrohan17@gmail.com")
+
+    users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
+    KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
+    KING['source'] = PB_KING_Pickle
+    
+    return (
+        KING,
+        users_allowed_queen_email,
+        users_allowed_queen_emailname__db,
+    )
 
 def return_all_client_users__db(query="SELECT * FROM users"):
     if pg_migration:

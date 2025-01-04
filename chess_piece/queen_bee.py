@@ -14,8 +14,8 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
-from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, kingdom__grace_to_find_a_Queen, PickleData, return_QUEEN_KING_symbols
-from chess_piece.queen_hive import (
+from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, PickleData, return_QUEEN_KING_symbols
+from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     init_charlie_bee, 
                                     init_queenbee, 
                                     power_amo, 
