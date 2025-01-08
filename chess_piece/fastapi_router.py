@@ -13,7 +13,9 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy
                                        update_queenking_chessboard,
                                        update_sell_autopilot,
                                        update_buy_autopilot,
-                                       header_account,)
+                                       header_account,
+                                       chessboard_view,
+                                       )
 
 router = APIRouter(
     prefix="/api/data",
@@ -54,6 +56,16 @@ def load_story_json(client_user: str=Body(...), toggle_view_selection: str=Body(
     except Exception as e:
         print(e)
 
+@router.post("/chessboard", status_code=status.HTTP_200_OK)
+def load_chessboard_view_json(client_user: str=Body(...), toggle_view_selection: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...)):
+    try:
+        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+            print("Auth Failed", api_key)
+            return "NOTAUTH"
+        json_data = chessboard_view(client_user, prod, symbols, toggle_view_selection,)
+        return JSONResponse(content=json_data)
+    except Exception as e:
+        print(e)
 
 @router.post("/account_header", status_code=status.HTTP_200_OK)
 def load_account_header(client_user: str=Body(...),prod: bool=Body(...), api_key = Body(...)):

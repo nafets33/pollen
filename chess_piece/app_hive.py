@@ -55,7 +55,7 @@ from chess_piece.pollen_db import PollenDatabase
 main_root = hive_master_root()  # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
 
-pg_migration = os.environ.get('pg_migration')
+pg_migration = os.getenv('pg_migration')
 
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone("UTC")
@@ -511,7 +511,7 @@ def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile'
     go = gb.build()
 
     st_custom_grid(
-        username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+        username=st.session_state["username"], 
         api=f_api,
         api_update=None,
         refresh_sec=varss.get('refresh_sec'), 
@@ -553,7 +553,7 @@ def queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=
     go = gb.build()
 
     st_custom_grid(
-        username=KING['users_allowed_queen_emailname__db'].get(st.session_state["username"]), 
+        username=st.session_state["username"], 
         api=f_api,
         api_update=None,
         refresh_sec=varss.get('refresh_sec'), 
@@ -592,20 +592,22 @@ def log_grid(KING):
 
 def sneak_peak_form():
     # if st.session_state['SneakQueen']:
-    if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-        with st.form("Sneak Peak Access"):
-            st.session_state["sneak_peak"] = True
-            sneak_name = st.text_input("Your Name", key='sneak_name')
-            sneak_pw = st.text_input("Sneak Key", key='sneak_key')
-            if st.form_submit_button("Lets Go"):
-                if len(sneak_name) == 0:
-                    st.error("Enter Your Name To Get In")
-                    st.stop()
-                if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
-                    st.error("Incorrect Password")
-                    st.stop()
-                
-                return True
+    # if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+    with st.form("Sneak Peak Access"):
+        st.session_state["sneak_peak"] = True
+        sneak_name = st.text_input("Your Name", key='sneak_name')
+        sneak_pw = st.text_input("Sneak Key", key='sneak_key')
+        if st.form_submit_button("Watch a Live Bot"):
+            # if len(sneak_name) == 0:
+            #     st.error("Enter Your Name To Get In")
+            #     st.stop()
+            # if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
+            #     st.error("Incorrect Password")
+            #     st.stop()
+            st.session_state['sneak_pw'] = os.environ.get("quantqueen_pw")
+            switch_page("LiveBot")
+            
+            return True
     
     return False
 
@@ -616,21 +618,21 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
 
     
     cols = st.columns((6, 7, 2))
-    with cols[0]:
-        st.subheader("Create an Account To Get a QueenTraderBot")
-    with cols[1]:
-        progress_bar(
-            value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
-        )
+    # with cols[0]:
+    #     st.subheader("Create an Account To Get a QueenTraderBot")
+    # with cols[1]:
+    #     progress_bar(
+    #         value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
+    #     )
     # with cols[2]:
     sneak_peak_form()
 
                     
 
     page_line_seperator("25")
-    sneak_peak = st.button("Watch a QueenBot Trade Live")
-    if sneak_peak:
-        switch_page("LiveBot")
+    # sneak_peak = st.button("Watch a QueenBot Trade Live")
+    # if sneak_peak:
+        # switch_page("LiveBot")
     # st.error(
     #     "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
     # )
@@ -1551,16 +1553,12 @@ def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
         return False
     # view_account_button = st.sidebar.button("Update API Keys", key='sidebar_key')
     cols = st.columns((4, 1, 4))
-    # check if keys exist
-    # st.write(QUEEN_KING['users_secrets'])
-    # prod_keys_confirmed = QUEEN_KING['users_secrets']['prod_keys_confirmed']
-    # sandbox_keys_confirmed = QUEEN_KING['users_secrets']['sandbox_keys_confirmed']
+
     prod = st.session_state["prod"]
-    st.write("PROD", prod)
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     user_env_instance = "prod" if st.session_state["prod"] else "sandbox"
     keys_confirmed = QUEEN_KING["users_secrets"][f"{user_env_instance}_keys_confirmed"]
     view_account_keys = False
-    st.write("ENV", user_env_instance)
 
     if keys_confirmed == False:
         with cols[0]:
@@ -1575,7 +1573,7 @@ def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
 
     if view_account_keys or show_form:
         with st.form("account keys"):
-            local_gif(gif_path=runaway_bee_gif, height=33, width=33)
+            # local_gif(gif_path=runaway_bee_gif, height=33, width=33)
             st.session_state["account_keys"] = True
             if prod:
                 st.write("# Production LIVE")
@@ -1622,14 +1620,19 @@ def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
             st.warning("NEVER EVER Share your API KEYS WITH ANYONE!")
 
             if st.form_submit_button("Save API Keys"):
+                print("SAVE KEYS")
                 # test keys
                 if test_api_keys(user_secrets=user_secrets, prod=prod):
+                    print("SAVE KEYS")
                     st.success(f"{user_env_instance} Keys Added Refreshing Page")
                     user_secrets[f"{user_env_instance}_keys_confirmed"] = True
                     QUEEN_KING["users_secrets"] = user_secrets
-                    PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
-                    time.sleep(2)
-                    st.rerun()
+                    if pg_migration:
+                        
+                        PollenDatabase.upsert_data(table_name=QUEEN_KING.get('table_name'), key=QUEEN_KING.get('key'), value=QUEEN_KING)
+                    else:
+                        PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+                    # switch_page('pollen')
                 else:
                     st.error(f"{user_env_instance} Keys Failed")
                     user_secrets[f"{user_env_instance}_keys_confirmed"] = False
@@ -2219,7 +2222,6 @@ def setup_page(QUEEN_KING, theme_list):
                 with cols[0]:
                     # with st.form("Set How You Wish your Queen to Trade"):
                     st.subheader("Set Your Risk Level")
-                # st.write(QUEEN_KING.keys())
                     st.text("How Old are you?")
                     if 'QueenTraders_Bithday' in QUEEN_KING.keys():
                         birthday = st.date_input("Enter your birthday: YYYY/MM/DD")
@@ -2326,7 +2328,6 @@ def return_user_symbol_colors(QUEEN_KING, symbols=['SPY']):
 def custom_graph_ttf_qcp(symbols, prod, KING, client_user, QUEEN_KING, refresh_sec, ip_address, graph_height=300, ttf='1Minute_1Day', key='ttf_macd_graph'):
 # with cols[1]:
     # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-    # st.write("today", round(STORY_bee['SPY_1Minute_1Day']['story'].get('current_from_open') * 100,4))
     k_colors = streamlit_config_colors()
     try:
         # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
@@ -2349,7 +2350,7 @@ def custom_graph_ttf_qcp(symbols, prod, KING, client_user, QUEEN_KING, refresh_s
             refresh_button=True,
             
             #kwrags
-            username=KING['users_allowed_queen_emailname__db'].get(client_user),
+            username=client_user,
             prod=prod,
             symbols=symbols,
             refresh_sec=refresh_sec,

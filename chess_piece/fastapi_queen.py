@@ -26,13 +26,15 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     wave_buy__var_items,
                                     star_names,
                                     init_swarm_dbs,
-                                    init_qcp_workerbees
+                                    init_qcp_workerbees,
+                                    chessboard_button_dict_items,
                                     )
 
 from chess_piece.queen_bee import execute_buy_order
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade
 from chess_piece.pollen_db import PollenDatabase
+from pages.chessboard import shape_chess_board
 from dotenv import load_dotenv
 
 
@@ -227,31 +229,34 @@ def get_waveview_state_for_ttf(revrec, wave_view_name, ttf):
    return df_wave.loc[ttf].get('macd_state')
 
 def validate_return_kors(king_order_rules, kors):
+  kor_keys = king_order_rules.keys()
   for rule, value in kors.items():
-    if rule in ['wave_amo', 'close_order_today', 'take_profit', 'sell_out', 'sell_trigbee_trigger', 'sell_trigbee_trigger_timeduration']: # validated items to add orules
+    if rule not in kor_keys:#['wave_amo', 'close_order_today', 'take_profit', 'sell_out', 'sell_trigbee_trigger', 'sell_trigbee_date']: # validated items to add orules
+      print("WTF RULE", rule)
+      continue
 
-      if rule == 'wave_amo':
+    if rule == 'wave_amo':
+      if type(value) != float:
+        value = float(value)
+    elif rule == 'close_order_today':
+        if type(value) != bool:
+          print("ERRROR BOOL CLOSE ORDER")
+          continue
+    elif rule == 'take_profit':
         if type(value) != float:
           value = float(value)
-      elif rule == 'close_order_today':
-          if type(value) != bool:
-            print("ERRROR BOOL CLOSE ORDER")
-            continue
-      elif rule == 'take_profit':
-          if type(value) != float:
-            value = float(value)
-      elif rule == 'sell_out':
-          if type(value) != float:
-            value = float(value)
-      elif rule == 'sell_trigbee_trigger':
-          if type(value) != bool: ## BOOLS are already handled by frontend
-            print("ERRROR BOOL CLOSE ORDER")
-            continue
-      elif rule == 'sell_trigbee_trigger_timeduration':
-          if type(value) != int:
-            value = int(value)
-      
-      king_order_rules.update({rule: value})
+    elif rule == 'sell_out':
+        if type(value) != float:
+          value = float(value)
+    elif rule == 'sell_trigbee_trigger':
+        if type(value) != bool: ## BOOLS are already handled by frontend
+          print("ERRROR BOOL CLOSE ORDER")
+          continue
+    elif rule == 'sell_trigbee_date':
+        if type(value) != datetime:
+          value = datetime(value)
+        
+    king_order_rules.update({rule: value})
 
   return king_order_rules
     
@@ -759,6 +764,16 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       print_line_of_error(e)
 
 
+def chessboard_view(client_user, prod, symbols, toggle_view_selection):
+  QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+  df = shape_chess_board(QUEEN_KING['chess_board'])
+  df['refresh_star'] = 'Day'
+  kors_dict = chessboard_button_dict_items()
+  # df['kors'] = [kors_dict for _ in range(df.shape[0])]
+  # for idx in df.index:
+  #    df.at[idx, 'kors'] = kors_dict
+  return df.to_json(orient='records')
+
 def update_buy_autopilot(client_user, prod, selected_row, default_value, status='-'):
     print(client_user, default_value) 
     buy_autopilot = default_value.get('buy_autopilot')
@@ -818,29 +833,44 @@ def header_account(client_user, prod):
     df = pd.DataFrame()
   
   # heart
-  broker_qty_delta = QUEENsHeart['heartbeat'].get('broker_qty_delta')
-  beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
-  if beat > 89:
-      beat = "zZzzz"
-  try:
-    charlie_bee = QUEENsHeart.get('charlie_bee')
-    avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
-  except Exception as e:
-    print(e)
-    avg_beat = 0
-  long = QUEENsHeart['heartbeat'].get('long')
-  short = QUEENsHeart['heartbeat'].get('short')
-  long = '${:,}'.format(long)
-  short = '${:,}'.format(short)
+  if 'heartbeat' in QUEENsHeart.keys():
+      broker_qty_delta = QUEENsHeart['heartbeat'].get('broker_qty_delta')
+      beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
+      if beat > 89:
+          beat = "zZzzz"
+      try:
+        charlie_bee = QUEENsHeart.get('charlie_bee')
+        avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
+      except Exception as e:
+        print(e)
+        avg_beat = 0
+      long = QUEENsHeart['heartbeat'].get('long')
+      short = QUEENsHeart['heartbeat'].get('short')
+      long = '${:,}'.format(long)
+      short = '${:,}'.format(short)
+  else:
+     beat = 0
+     avg_beat = 0
+     long = 0
+     short = 0
+
+  
+  
   df_heart = pd.DataFrame([{'Broker': 'Alpaca', 'Long': long, 'Short': short, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
 
   # Account Info
   acct_info = broker_info
-  if len(acct_info) == 0:
+  if 'buying_power' not in acct_info.keys():
+  # if len(acct_info) == 0:
       df_accountinfo = pd.DataFrame()
+      acct_info = {'accrued_fees': 0.0,
+                'buying_power': 100000,
+                'cash': 0,
+                'daytrade_count': 0,
+                'last_equity': 100000,
+                'portfolio_value': 100000,}
 
   honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-  # money_text = round((acct_info['portfolio_value'] - acct_info['last_equity']),0)
   money_text = '${:,.0f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
   
   buying_power = '${:,}'.format(round(acct_info.get('buying_power')))

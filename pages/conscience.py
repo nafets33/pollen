@@ -292,7 +292,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     with st.sidebar:
         refresh_grids = st.toggle("Refresh Grids", True)
 
-
     symbols = return_queenking_board_symbols(QUEEN_KING)
     symbols = ['SPY'] if len(symbols) == 0 else symbols
 
@@ -398,7 +397,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
         go = gb.build()
         st_custom_grid(
             client_user=client_user,
-            username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+            username=client_user, 
             api=f'{ip_address}/api/data/wave_stories',
             api_update= f'{ip_address}/api/data/update_orders',
             refresh_sec=refresh_sec, 
@@ -600,7 +599,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
             print(client_user)
             st_custom_grid(
                 client_user=client_user,
-                username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+                username=client_user, 
                 api=f"{ip_address}/api/data/story",
                 api_update=f"{ip_address}/api/data/update_queenking_chessboard",
                 refresh_sec=refresh_sec, 
@@ -659,8 +658,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                     # refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
-        print('prod', prod)
-
         cols = st.columns(2)
         with cols[0]:
             refresh_sec = 23 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
@@ -685,7 +682,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 refresh_button=True,
                 
                 #kwrags
-                username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                username=client_user,
                 prod=prod,
                 symbols=['SPY', 'QQQ'],
                 refresh_sec=refresh_sec,
@@ -708,7 +705,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 symbols+= QUEEN_KING['chess_board'][qcp].get('tickers')
             
             if len(symbols) > 10:
-                print('symbols > 10 lines')
+                # print('symbols > 10 lines')
                 c=1
                 symbols_copy = symbols.copy()
                 symbols =  []
@@ -740,7 +737,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 refresh_button=True,
                 
                 #kwrags
-                username=KING['users_allowed_queen_emailname__db'].get(client_user),
+                username=client_user,
                 prod=prod,
                 symbols=symbols,
                 refresh_sec=refresh_sec,
@@ -774,9 +771,7 @@ if __name__ == '__main__':
     KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
 
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
-    # QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     revrec = qb.get('revrec') 
     queens_conscience(revrec, KING, QUEEN_KING, api)
-    # queens_conscience(None, None, None, None)

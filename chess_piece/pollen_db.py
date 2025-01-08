@@ -318,7 +318,12 @@ class PollenDatabase:
 
                 # Always deserialize using custom decoder
                 data = json.loads(serialized_data, cls=PollenJsonDecoder)
+                if len(data) == 0:
+                    print('NO DATA AVAIL for ', key)
+                    return None
+                
                 data['key'] = key
+                data['table_name'] = table_name
                 return data
 
         except Exception as e:
@@ -589,7 +594,22 @@ class PollenDatabase:
             print(f"Error deleting row with key = '{key_column}' from table '{table_name}': {e}")
             return False
 
+    @staticmethod
+    def read_client_users(source_table='client_users'):
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
 
+                    # Fetch data from the source table
+                    cur.execute(f"SELECT * FROM {source_table};")
+                    users = cur.fetchall()
+                    # users = cur.execute("SELECT * FROM client_users").fetchall()
+                    df = pd.DataFrame(users)
+
+                return users, df
+
+            except Exception as e:
+                print("Error client users", e)
 class PostgresHandler(logging.Handler):
     def __init__(self, log_name):
         super().__init__()

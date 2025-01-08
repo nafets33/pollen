@@ -373,13 +373,18 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         else:
             db=init_swarm_dbs(prod)
             BISHOP = ReadPickleData(db.get('BISHOP'))
-        ticker_info = BISHOP.get('ticker_info').set_index('ticker')
-        ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
-        df = df.set_index('symbol', drop=False)
-        ticker_info = ticker_info[[i for i in ticker_info_cols if i not in df.columns]]
-        df = df.merge(ticker_info, left_index=True, right_index=True, how='left')
+        
+        try:
+            ticker_info = BISHOP.get('ticker_info').set_index('ticker')
+            ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
+            df = df.set_index('symbol', drop=False)
+            ticker_info = ticker_info[[i for i in ticker_info_cols if i not in df.columns]]
+            df = df.merge(ticker_info, left_index=True, right_index=True, how='left')
+        except Exception as e:
+            print("BISHOP", e)
+
 
         return df
     except Exception as e:
-        print_line_of_error(e)
+        print_line_of_error(f"CONSCIENCE UTILS {e}")
 

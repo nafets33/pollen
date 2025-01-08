@@ -28,7 +28,7 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import account_header_grid, sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
 from chess_piece.king import kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData
-from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, return_queen_controls, stars, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.queen_hive import read_swarm_db, return_queen_controls, stars, create_QueenOrderBee, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import refresh_chess_board__revrec
 # componenets
 # import streamlit_antd_components as sac
@@ -201,11 +201,14 @@ def pollenq(admin_pq):
     db_root = st.session_state['db_root']
 
     st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
-    print(st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
+    # print("SNEAKPEAK", st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
     
     log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
-    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    # KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    table_name = 'db' if prod else 'db_sandbox'
+    KING = read_swarm_db(table_name, 'KING')
+    users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
     admin_check(admin_pq, users_allowed_queen_email)
 
     if st.session_state['admin']:
@@ -213,8 +216,11 @@ def pollenq(admin_pq):
             ticker_universe = return_Ticker_Universe()
             KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
             KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
-            PickleData(KING.get('source'), KING)
-            st.success("KING Saved")
+            if pg_migration:
+                PollenDatabase.upsert_data(table_name, KING.get('key'), KING)
+            else:
+                PickleData(KING.get('source'), KING)
+                st.success("KING Saved")
 
         # if st.button("Refresh Adhoc Charlie Bee Heart"): # Workerbee set this up in ini_charliebee
         #     queens_charlie_bee, charlie_bee = init_charlie_bee(db_root) # monitors queen order cycles, also seen in heart
@@ -225,7 +231,7 @@ def pollenq(admin_pq):
     cols = st.columns((8,2))
     with cols[1]:
         height=50
-        cust_Button("misc/power.png", hoverText='WorkerBees', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+        cust_Button("misc/power.png", hoverText='Trading Bots', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
     with cols[0]:
         menu_id = sac_menu_buttons("Queen")
     with st.sidebar:
@@ -262,46 +268,12 @@ def pollenq(admin_pq):
 
     if menu_id == 'Board':
         switch_page("chessboard")
-        # wierd error on None Type QUEEN_KING WORKERBEE
-        # prod = st.session_state['prod']
-        # qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True)
-        # QUEEN = qb.get('QUEEN')
-        # QUEEN_KING = qb.get('QUEEN_KING')
-        # api = qb.get('api')    
-        # revrec = QUEEN_KING.get('revrec')
 
-        # alpaca_acct_info = refresh_account_info(api=api)
-        # with st.sidebar:
-        #     if st.button('acct info'):
-        #         st.write(alpaca_acct_info)
-
-        # acct_info = alpaca_acct_info.get('info_converted')
-
-        # QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
-
-        # swarm_queen_symbols = []
-        # for qcp, va in QUEENBEE['workerbees'].items():
-        #     tickers = va.get('tickers')
-        #     if tickers:
-        #         for tic in tickers:
-        #             swarm_queen_symbols.append(tic)
-
-        # themes = list(pollen_themes(KING).keys())
-        # chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=swarm_queen_symbols, themes=themes, admin=False)
-        # st.stop()
-    
     print("WORKING")
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
         ####### Welcome to Pollen ##########
-        
-        # PROD vs SANDBOX #
-        PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
-        if os.path.exists(PB_env_PICKLE) == False:
-            PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
-        pq_env = ReadPickleData(PB_env_PICKLE)
-        prod = pq_env.get('env')
- 
+
         # use API keys from user            
         prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
@@ -310,11 +282,12 @@ def pollenq(admin_pq):
         qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
-        # ipdb.set_trace()
+        # st.write(QUEEN_KING['chess_board'])
         # st.write((QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']['SPY']))
         # # st.write(list(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].keys())[0])
         api = qb.get('api')
-        revrec = qb.get('revrec')      
+        revrec = qb.get('revrec')
+
         if st.sidebar.button("Clear App Requests"):
             QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
             clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'])
@@ -352,28 +325,27 @@ def pollenq(admin_pq):
                 # QUEEN = qb.get('QUEEN')
                 QUEEN_KING = qb.get('QUEEN_KING')
                 api = qb.get('api')
-
-        if st.session_state['prod'] == False:
-            st.warning("Sandbox Paper Money Account")
         
 
         table_name = "client_user_store" if prod else 'client_user_store_sandbox'
         
         stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
+        # chess_board = QUEEN_KING['chess_board']
+        # st.data_editor(chess_board)
 
         ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
         if st.sidebar.button("Check for new KORs"):
             QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
+        
+        
         APP_req = add_key_to_app(QUEEN_KING)
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
             print("Updating QK db")
             if os.environ.get('pg_migration') == 'true':
-                table_name = 'client_user_store' if prod else "client_user_store_sandbox"
-                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+                PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
             else:
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
-
 
         if st.sidebar.button('show_keys'):
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
@@ -391,19 +363,12 @@ def pollenq(admin_pq):
                 if st.button('acct info'):
                     st.write(alpaca_acct_info)
             # ap_info=alpaca_acct_info
-            # st.write(float(ap_info['info'].get('daytrading_buying_power')) - 4 * (float(ap_info['info'].get('last_equity')) - float(ap_info['info'].get('last_maintenance_margin'))))
             acct_info = alpaca_acct_info.get('info_converted')
             acct_info_raw = alpaca_acct_info.get('info')
-            # init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
-            # init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-            # api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date)
-            # queen_orders_open = api_orders.get('open')
-            # queen_orders_closed = api_orders.get('closed')
-            # api_vars = {'acct_info': acct_info, 'api_orders': api_orders}
+
         except Exception as e:
             st.error(e)
             acct_info = False
-            # st.session_state['prod'] = False
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
             st.stop()
 
@@ -415,6 +380,7 @@ def pollenq(admin_pq):
                     run_pq_fastapi_server()
 
         if 'chess_board__revrec' not in QUEEN_KING.keys():
+            print("SETUP QUEEN KING")
             switch_page('chessboard')
 
         if QUEEN_KING.get('revrec') == 'init':
@@ -431,7 +397,15 @@ def pollenq(admin_pq):
                                 save_rr=True,
                                 console=True)
                 QUEEN_KING['revrec'] = True
-                PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+                if pg_migration:
+                    PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+                else:
+                    PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+
+        if not revrec: # NOT NEEDED?
+            QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
+            STORY_bee = return_QUEENs__symbols_data(QUEEN, QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee)
 
         trading_days = hive_dates(api=api)['trading_days']
         # st.write(trading_days) # STORE IN KING and only call once
@@ -453,7 +427,6 @@ def pollenq(admin_pq):
             switch_page('orders')
 
 
- 
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)

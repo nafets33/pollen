@@ -13,10 +13,10 @@ from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, setup_instanc
 from chess_piece.app_hive import set_streamlit_page_config_once
 from datetime import datetime
 from chess_piece.pollen_db import PollenDatabase
-
+from custom_button import cust_Button
 main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
-
+pg_migration = os.getenv('pg_migration')
 
 def register_user(authenticator, con, cur):
     try:
@@ -165,7 +165,7 @@ def update_db(authenticator, con, cur, email, append_db=False):
         print("update_db Details: ", details)
     else:
         details = authenticator.credentials["usernames"][email]
-        print("else update_db details: ", details)
+        # print("else update_db details: ", details)
 
     password = details["password"]
     name = details["name"]
@@ -222,7 +222,7 @@ def reset_password(authenticator, email, location="main"):
             update_db(authenticator, con=con, cur=cur, email=email)
             send_email(
                 recipient=email,
-                subject="PollenQ. Password Changed",
+                subject="Pollen. Password Changed",
                 body=f"""
 Dear {authenticator.credentials["usernames"][email]["name"]},
 
@@ -230,7 +230,7 @@ You are recieving this email because your password for pollenq.com has been chan
 If you did not authorize this change please contact us immediately.
 
 Thank you,
-PollenQ
+Pollen
 """,
             )
             st.success("Password changed successfully")
@@ -260,7 +260,9 @@ def signin_main(page=None):
     MISC = local__filepaths_misc()
     set_streamlit_page_config_once()
 
+
     def setup_user_pollenqdbs():
+        print("AUTH SETUP")
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':
             prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=False, queenKING=True, prod=False, init=True)
             st.session_state['instance_setup'] = True
@@ -283,12 +285,16 @@ def signin_main(page=None):
 
 
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True, init=True)
-
         st.session_state['instance_setup'] = True
+        print("AUTH SETUP env", prod)
+
 
         return prod
 
     def define_authorized_user():
+
+
+
         KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
         # print(st.session_state["username"])
         if st.session_state["username"] in users_allowed_queen_email:
@@ -304,8 +310,9 @@ def signin_main(page=None):
         
         return setup_user_pollenqdbs()
 
-    # def main_func__signIn():
+    # print("AUTH FIRST LOOK")
     try:
+        already_setup = True if 'instance_setup' in st.session_state and st.session_state['instance_setup'] else False
         con, cur = PollenDatabase.return_db_conn()
         credentials = read_user_db(cur)
 
@@ -317,7 +324,6 @@ def signin_main(page=None):
             cookie_expiry_days=int(os.environ.get("cookie_expiry_days")),
             preauthorized={"emails": "na"},
         )
-
 
         # Check login. Automatically gets stored in session state
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'].lower() == 'family':
@@ -343,14 +349,15 @@ def signin_main(page=None):
                 
                 # Returning Customer
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
-                    if 'instance_setup' in st.session_state and st.session_state['instance_setup']:
-                        return authenticator # no need to setup again right?
-                    define_authorized_user()
-                    return authenticator
+                    if already_setup:
+                        setup_user_pollenqdbs()
+                        return authenticator
+                    else:
+                        define_authorized_user()
+                        return authenticator
                 else:    
                     update_db(authenticator, con=con, cur=cur, email=email)
                     define_authorized_user()
-                    return authenticator
 
         # login unsucessful; forgot password or create account
         elif authentication_status == False:
@@ -360,17 +367,19 @@ def signin_main(page=None):
                 forgot_password(authenticator)
             with st.expander("New User"):
                 register_user(authenticator, con, cur)
-            
-            return authenticator
+
 
         # no login trial; create account
         elif authentication_status == None:
             with st.expander("New User Create Account"):
                 register_user(authenticator, con, cur)
+            
+            cust_Button(file_path_url='misc/pollen_preview.gif', height='150px', hoverText='')
+    
 
-            # display_for_unAuth_client_user()
-
-            return authenticator
+        
+        return authenticator
+    
     
     except Exception as e:
         print('ERROR auth', e)

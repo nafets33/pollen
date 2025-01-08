@@ -1025,7 +1025,7 @@ def shape_chessboard(chess_board):
     df = pd.DataFrame(rows).set_index('ticker_star')
     return df
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, ):
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, ): # WORKERBEE remove queen order states
     rr_starttime = datetime.now()
     s = datetime.now()
     chess_board = 'chess_board'
@@ -1050,8 +1050,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
     df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
 
     # Check for First
-    if not active_queen_order_states:
-        active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
+    # if not active_queen_order_states:
+    active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
 
     if not QUEEN.get('revrec'):
         st.info("Fresh Queen on the Block")

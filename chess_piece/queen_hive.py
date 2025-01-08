@@ -31,6 +31,7 @@ from logging.handlers import RotatingFileHandler
 from chess_piece.pollen_db import PostgresHandler, PollenDatabase
 from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
+from streamlit_extras.switch_page_button import switch_page
 
 queens_chess_piece = os.path.basename(__file__)
 king_G = kingdom__global_vars()
@@ -47,7 +48,7 @@ main_root = hive_master_root()  # os.getcwd()
 load_dotenv(os.path.join(main_root, ".env"))
 db_root = os.path.join(main_root, "db")
 
-pg_migration = os.environ.get('pg_migration')
+pg_migration = os.getenv('pg_migration')
 
 """# Dates """
 current_day = datetime.now(est).day
@@ -175,12 +176,9 @@ def kingdom__grace_to_find_a_Queen(prod=True):
     users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
     users_allowed_queen_email.append("stefanstapinski@gmail.com")
     users_allowed_queen_email.append("stefanstapinski@yahoo.com")
-    users_allowed_queen_email.append("sven0227@gmail.com")
-    users_allowed_queen_email.append("nitinrohan17@gmail.com")
 
     users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
     KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
-    KING['source'] = PB_KING_Pickle
     
     return (
         KING,
@@ -467,8 +465,9 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
              borrow_power=0, 
              picture='knight_png', 
              margin_power=0, 
-            #  trade_only_margin=False, 
-            #  refresh_star='1Minute_1Day',
+             trade_only_margin=False, 
+             refresh_star='1Minute_1Day',
+             max_budget_allowed=None, # if int use in logic
              ):
     return {
         "picture": picture,
@@ -481,8 +480,11 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
         "total_buyng_power_allocation": buying_power,
         "total_borrow_power_allocation": borrow_power,
         "margin_power": margin_power,
-        # "trade_only_margin": trade_only_margin,
-        # 'refresh_star': refresh_star, # anchor to use as reallocation # WORKERBEE..chess_board not Saving correclty or being overwritten?
+        "trade_only_margin": trade_only_margin,
+        'refresh_star': refresh_star, # anchor to use as reallocation # WORKERBEE..chess_board not Saving correclty or being overwritten?
+        'trade_only_margin': trade_only_margin,
+        'refresh_star': refresh_star,
+        'max_budget_allowed': max_budget_allowed,
     }
 
 def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, qcp_tickers={'castle': ["SPY"], 'bishop': ["GOOG"], 'knight': ["OXY"], 'castle_coin':["BTCUSD", "ETHUSD"] }, qcp_theme={'castle': "nuetral", 'bishop': "nuetral", 'knight': "nuetral", 'castle_coin':"nuetral" }):
@@ -530,46 +532,6 @@ def setup_chess_board(QUEEN, qcp_bees_key='workerbees', screen='screen_1'):
         QUEEN[qcp_bees_key][sector] = init_qcp_workerbees(ticker_list=tickers)
     
     return QUEEN
-
-def shape_chess_board(chess_board):
-    data = chess_board
-    # Convert dictionary to DataFrame
-    reshaped_data = []
-    for key, value in data.items():
-        flat_data = {
-            "key": key,  # Preserve the key as a separate column
-            **value,  # Flatten the nested fields
-            "tickers": ",".join(value["tickers"]),  # Convert tickers list into a string
-            "MACD_fast_slow_smooth": str(value["MACD_fast_slow_smooth"]),  # Serialize dict to string
-            "stars": str(value["stars"])  # Serialize dict to string
-        }
-        reshaped_data.append(flat_data)
-
-    # Create DataFrame
-    df = pd.DataFrame(reshaped_data)
-
-    return df
-
-def unshape_chess_board(df):
-    # Unshape back to the original dictionary structure
-    restored_data = {
-        row["key"]: {
-            'picture': row["picture"],
-            'piece_name': row["piece_name"],
-            'model': row["model"],
-            'MACD_fast_slow_smooth': eval(row["MACD_fast_slow_smooth"]),  # Convert string back to dict
-            'tickers': row["tickers"].split(","),  # Convert string back to list
-            'stars': eval(row["stars"]),  # Convert string back to dict
-            'theme': row["theme"],
-            'total_buyng_power_allocation': row["total_buyng_power_allocation"],
-            'total_borrow_power_allocation': row["total_borrow_power_allocation"],
-            'margin_power': row["margin_power"]
-        }
-        for _, row in df.iterrows()
-    }
-
-    return restored_data
-
 
 def bishop_ticker_info():
     ticker_info_cols = [
@@ -2976,11 +2938,11 @@ def stars(chart_times=False, desc="frame_period: period count -- 1Minute_1Day"):
         }
         return chart_times
 
-def star_trigbee_delay_times(name=None):
+def star_trigbee_delay_times(name=None): # WORKERBEE put into queen controls
     # minutes to increase delay
     star_time = {
-        "1Minute_1Day": 1,
-        "5Minute_5Day": 5,
+        "1Minute_1Day": 15,
+        "5Minute_5Day": 15,
         "30Minute_1Month": 30,
         "1Hour_3Month": 60,
         "2Hour_6Month": 120,
@@ -3059,11 +3021,14 @@ def pollen_themes(
 
 
 def update_king_users(KING, init=False, users_allowed_queen_email=["stefanstapinski@gmail.com"]):
-    con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
-    with con:
-        cur = con.cursor()
-        users = cur.execute("SELECT * FROM users").fetchall()
-        df = pd.DataFrame(users)
+    if pg_migration:
+        users, df = PollenDatabase.read_client_users()
+    else:
+        con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
+        with con:
+            cur = con.cursor()
+            users = cur.execute("SELECT * FROM users").fetchall()
+            df = pd.DataFrame(users)
 
     users_allowed_queen_email = [
         "stefanstapinski@gmail.com",
@@ -3084,7 +3049,7 @@ def update_king_users(KING, init=False, users_allowed_queen_email=["stefanstapin
             'client_user__allowed_queen_list': users_allowed_queen_email
         }
     else:
-        new_users = [i for i in df[0].tolist() if i not in KING['users'].get('client_users_db')[0].tolist()]
+        new_users = [i for i in df[0].tolist() if i not in KING['users'].get('client_users_db')['0'].tolist()]
         if len(new_users) > 0:
             print("New Users to KING: ", new_users)
             KING['users']['client_users_db'] = df
@@ -3195,6 +3160,12 @@ def sell_button_dict_items(symbol="SPY", sell_qty=89):
     var_s = {
                 'symbol': symbol,
                 'sell_qty':sell_qty,
+                }
+    return var_s
+
+def chessboard_button_dict_items(Save="Save"):
+    var_s = {
+                'Save': True,
                 }
     return var_s
 
@@ -4016,7 +3987,7 @@ def init_swarm_dbs(prod, init=False, pg_migration=False, dbs=['KING', 'QUEEN', '
     return db_local_path
 
 
-def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "QUEEN_KING", "ORDERS", "ORDERS_FINAL", "QUEENsHeart", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV", "CHARLIE_BEE"], table_name='client_user_store'):
+def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "QUEEN_KING", "ORDERS", "ORDERS_FINAL", "QUEENsHeart", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV", "CHARLIE_BEE"], table_name=True):
      # db_root nEEDS to be the db__client_user_name
 
     def init_queen_orders(pickle_file=None, pg_migration=False):
@@ -4028,7 +3999,15 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
             PickleData(pickle_file=pickle_file, data_to_store=db)
         return True
 
-    def setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables): 
+    def setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables):
+        print("CHECKING TO INIT MAIN DB")
+
+        env_table = 'client_user_env'
+        if not PollenDatabase.key_exists(env_table, f'{db_root}-ENV'):
+            print("INIT ENV for user", db_root)
+            data = {'env': False}
+            PollenDatabase.upsert_data(table_name=env_table, key=f'{db_root}-ENV', value=data)
+        
         for key in client_user_tables:
             pg_table = f'{db_root}-{key}'
             
@@ -4038,6 +4017,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data) 
             elif key == 'QUEEN_KING':
                 if not PollenDatabase.key_exists(table_name, pg_table):
+                    print("INIT QUEEN KING")
                     data = init_QUEEN_KING()
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
             elif key == 'ORDERS':            
@@ -4063,10 +4043,6 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
             elif key == 'REVREC':            
                 if not PollenDatabase.key_exists(table_name, pg_table):
                     data = {}
-                    PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
-            elif key == 'ENV':            
-                if not PollenDatabase.key_exists(table_name, pg_table):
-                    data = {'env': False}
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
             elif key == 'CHARLIE_BEE':            
                 if not PollenDatabase.key_exists(table_name, pg_table):
@@ -4197,39 +4173,56 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
     }
 
 
-def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=None, init=False, pg_migration=False):
-    table_name = 'client_user_store' if prod else "client_user_store_sandbox"
+def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=None, init=False):
 
     try:
-        db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING, pg_migration=pg_migration)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
-
-        # Ensure Environment
+        db_root = init_clientUser_dbroot(client_username=client_username, force_db_root=force_db_root, queenKING=queenKING)  # main_root = os.getcwd() // # db_root = os.path.join(main_root, 'db')
+        
+        # PROD vs SANDBOX # # Ensure Environment
+        table_name = 'client_user_env'
         if pg_migration:
-            pq_env = PollenDatabase.retrieve_data(table_name, key=f"{db_root}-ENV")
+            pq_env = PollenDatabase.retrieve_data(table_name, f'{db_root}-ENV')
+            if not pq_env:
+                PollenDatabase.upsert_data(table_name, f'{db_root}-ENV', {'env': False})
+                prod = PollenDatabase.retrieve_data(table_name, f'{db_root}-ENV').get('env')
+            else:
+                prod = pq_env.get('env') # bad code .. :( 
         else:
             PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
             if os.path.exists(PB_env_PICKLE) == False:
                 PickleData(PB_env_PICKLE, {'source': PB_env_PICKLE,'env': False})
             pq_env = ReadPickleData(PB_env_PICKLE)
-        
-        prod = live_sandbox__setup_switch(pq_env, switch_env, pg_migration=pg_migration, table_name=table_name)
-        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init, pg_migration=pg_migration)
+            prod = pq_env.get('env')
+
+        prod = live_sandbox__setup_switch(pq_env, switch_env, pg_migration=pg_migration, db_root=db_root)
+        print("QH env", prod)
+        if prod is None:
+            print("PROD ERROR")
+            prod = False
+
+        table_name = "client_user_store" if prod else 'client_user_store_sandbox'
+        init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init, pg_migration=pg_migration, table_name=table_name)
             
         st.session_state['prod'] = prod
         st.session_state['client_user'] = client_username
+        
+        if prod == False:
+            st.warning("SANDBOX")
+
         return prod
     except Exception as e:
         print_line_of_error("setup instance")
 
 
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=False):
-    db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
-    print(db_root, "PGMIGRATION:", pg_migration)
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration):
+    db_root = init_clientUser_dbroot(client_username=client_user)
+    # print(db_root, "PGMIGRATION:", pg_migration)
     
     table_name = "client_user_store" if prod else 'client_user_store_sandbox'
+    # print("QHive", prod, table_name)
 
-    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init, pg_migration=pg_migration)
+    init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init, pg_migration=pg_migration, table_name=table_name)
     if init_pollen_ONLY:
         return {'init_pollen': init_pollen}
     
@@ -4648,7 +4641,7 @@ def return_queen_controls(stars=stars):
         # revrec
         'ticker_revrec_allocation_mapping' : {},
         'ticker_autopilot' : pd.DataFrame([{'symbol': 'SPY', 'buy_autopilot': True, 'sell_autopilot': True}]).set_index('symbol'),
-        'trade_only_margin': False,
+        # 'trade_only_margin': False, # control not adding WORKERBEE
 
         # working GAMBLE
         'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
@@ -5716,7 +5709,7 @@ def queens_heart(heart):
     return heart
 
 
-def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, table_name=None):
+def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_root=None):
 
     try:
         prod = pq_env.get('env')
@@ -5740,37 +5733,43 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, tab
             # save
             if pg_migration:
                 pq_env.update({'env': prod})
-                PollenDatabase.upsert_data(table_name, key="ENV")
+                save_key = f"{db_root}-ENV"
+                print("QH", "switch env", pq_env)
+                PollenDatabase.upsert_data('client_user_env', key=save_key, value=pq_env)
+
             else:    
                 pq_env.update({'env': prod})
                 print(pq_env)
                 PickleData(pq_env.get('source'), pq_env, console=True)
+            
+            switch_page('pollen')
 
         return prod
     except Exception as e:
         print_line_of_error("live sb switch")
 
 
-def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False, pg_migration=False):
-
-    if force_db_root:
-        if not pg_migration:
-            db_root = os.path.join(hive_master_root(), "db")
+def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
+    try:
+        if force_db_root:
+            if not pg_migration:
+                db_root = os.path.join(hive_master_root(), "db")
+            else:
+                db_root = 'db'
         else:
-            db_root = 'db'
-    else:
-        db_root = return_db_root(client_username=client_username, pg_migration=pg_migration)
-        if not pg_migration:
-            if os.path.exists(db_root) == False:
-                os.mkdir(db_root)
-                # os.mkdir(os.path.join(db_root, "logs"))
-    
-    if queenKING:
-        st.session_state['db_root'] = db_root
-        st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
+            db_root = return_db_root(client_username=client_username, pg_migration=pg_migration)
+            if not pg_migration:
+                if os.path.exists(db_root) == False:
+                    os.mkdir(db_root)
+                    # os.mkdir(os.path.join(db_root, "logs"))
+        
+        if queenKING:
+            st.session_state['db_root'] = db_root
+            st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
 
-    return db_root
-
+        return db_root
+    except Exception as e:
+        print_line_of_error(e)
 
 def send_email(
     recipient="stapinski89@gmail.com",

@@ -154,8 +154,9 @@ if __name__ == '__main__':
 
     tab_list = ['Tables', 'Create', 'Migrate User', 'Delete'] + tables
     tabs = st.tabs(tab_list)
+    admin = st.session_state['admin']
 
-    if st.session_state['admin']:
+    if admin:
         with tabs[3]:
             del_tables = st.selectbox("delete table", options=tables)
             if st.button(f"Delete Table {del_tables}"):

@@ -19,7 +19,7 @@ set_streamlit_page_config_once()
 ip_address = return_app_ip()
 
 st.title("Your Account")
-
+st.write(st.session_state['username'])
 menu = sac_menu_buttons("Account")    
 if menu.lower() == 'queen':
     switch_page('pollen')
@@ -38,7 +38,7 @@ if 'logout' in st.session_state and st.session_state["logout"] != True:
     reset_password(authenticator, email, location='main')
 
 
-if st.button('show_keys'):
-    QUEEN_KING = init_queenbee(client_user=st.session_state['client_user'], prod=st.session_state['prod'], queen_king=True).get('QUEEN_KING')
-    queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=st.session_state['authorized_user'], show_form=True) #EDRXZ Maever65teo
+# if st.button('show_keys'):
+QUEEN_KING = init_queenbee(client_user=st.session_state['client_user'], prod=st.session_state['prod'], queen_king=True).get('QUEEN_KING')
+queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=st.session_state['authorized_user'], show_form=True) #EDRXZ Maever65teo
 

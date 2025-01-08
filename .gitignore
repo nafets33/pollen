@@ -8,7 +8,6 @@ symbols_STORY_bee_dbs/*
 client_user_dbs/*
 dbs/*
 legal/*
-db/*
 logs/*
 # **/*.db
 **/*.legal
