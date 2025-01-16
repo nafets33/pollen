@@ -153,7 +153,7 @@ const AgGrid = (props: Props) => {
         onClick={btnClickedHandler}
         style={{
           background: "transparent",
-          color: "black",
+          color: props.color ? props.color : "black",
           width: "100%",
           borderColor: props.borderColor ? props.borderColor : "black",
         }}

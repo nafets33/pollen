@@ -16,22 +16,170 @@ from streamlit_extras.switch_page_button import switch_page
 
 from pq_auth import signin_main
 from chess_piece.king import return_QUEEN_KING_symbols, master_swarm_QUEENBEE, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, create_QueenOrderBee, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp, read_swarm_db
+from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp, read_swarm_db
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from custom_graph_v1 import st_custom_graph
 from chess_piece.pollen_db import PollenDatabase
-
+import copy
 import ipdb
 crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
 pg_migration = os.getenv('pg_migration')
 print("pg_migration", pg_migration)
 
+hedge_funds = {
+    "Bridgewater Associates": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "SPY": 0.15,
+            "TLT": 0.10,
+            "GLD": 0.08,
+            "LQD": 0.12,
+            "IEF": 0.10,
+            "AGG": 0.05,
+            "DBC": 0.05,
+            "VTI": 0.15,
+            "VEA": 0.10,
+            "VNQ": 0.10,
+        }
+    },
+    "Renaissance Technologies": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "AAPL": 0.10,
+            "MSFT": 0.12,
+            "NVDA": 0.08,
+            "AMZN": 0.12,
+            "GOOG": 0.10,
+            "META": 0.10,
+            "TSLA": 0.08,
+            "AMD": 0.10,
+            "ADBE": 0.10,
+            "NFLX": 0.10,
+        }
+    },
+    "Two Sigma": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "SPY": 0.20,
+            "QQQ": 0.15,
+            "EFA": 0.10,
+            "TLT": 0.15,
+            "XLE": 0.10,
+            "XLF": 0.10,
+            "XLK": 0.10,
+            "XLV": 0.10,
+        }
+    },
+    "Citadel": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "AAPL": 0.10,
+            "GOOG": 0.10,
+            "TSLA": 0.15,
+            "AMZN": 0.10,
+            "NVDA": 0.15,
+            "META": 0.10,
+            "MSFT": 0.10,
+            "BRK.B": 0.10,
+            "JPM": 0.10,
+        }
+    },
+    "DE Shaw": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "SPY": 0.12,
+            "EFA": 0.10,
+            "GLD": 0.08,
+            "TLT": 0.12,
+            "LQD": 0.10,
+            "AGG": 0.10,
+            "DBC": 0.08,
+            "IEF": 0.10,
+            "VEA": 0.10,
+            "VTI": 0.10,
+        }
+    },
+    "Millennium Management": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "XLK": 0.20,
+            "XLE": 0.15,
+            "XLV": 0.10,
+            "XLF": 0.10,
+            "SPY": 0.10,
+            "TLT": 0.10,
+            "GLD": 0.05,
+            "EFA": 0.10,
+            "VTI": 0.10,
+        }
+    },
+    "Point72 Asset Management": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "AAPL": 0.10,
+            "MSFT": 0.10,
+            "TSLA": 0.10,
+            "META": 0.10,
+            "AMZN": 0.10,
+            "GOOG": 0.10,
+            "NFLX": 0.10,
+            "NVDA": 0.10,
+            "BRK.B": 0.10,
+            "JPM": 0.10,
+        }
+    },
+    "Elliott Management": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "XLE": 0.20,
+            "XLF": 0.20,
+            "XLV": 0.10,
+            "XLK": 0.10,
+            "SPY": 0.10,
+            "TLT": 0.10,
+            "IEF": 0.10,
+            "AGG": 0.10,
+        }
+    },
+    "AQR Capital Management": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "SPY": 0.15,
+            "TLT": 0.10,
+            "AGG": 0.10,
+            "DBC": 0.05,
+            "LQD": 0.10,
+            "IEF": 0.10,
+            "GLD": 0.10,
+            "EFA": 0.10,
+            "VEA": 0.10,
+            "VTI": 0.10,
+        }
+    },
+    "Man Group": {
+        "theme": "weight_time_waves",
+        "portfolio": {
+            "SPY": 0.12,
+            "QQQ": 0.10,
+            "TLT": 0.12,
+            "XLE": 0.08,
+            "XLK": 0.10,
+            "GLD": 0.10,
+            "IEF": 0.10,
+            "AGG": 0.08,
+            "DBC": 0.10,
+            "VEA": 0.10,
+        }
+    }
+}
+
+
 def save_queen_king(QUEEN_KING):
     PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
 
-def chessboard_grid(QUEEN_KING, client_user, ip_address, symbols=[], refresh_sec=0, paginationOn=False, key='chessboard', seconds_to_market_close=0):
+def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_sec=0, paginationOn=False, key='chessboard', seconds_to_market_close=0):
 
     
     try:
@@ -39,7 +187,7 @@ def chessboard_grid(QUEEN_KING, client_user, ip_address, symbols=[], refresh_sec
         gb.configure_default_column(column_width=100, 
                                     resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, 
                                     suppress_menu=False, filterable=True,)            
-        # gb.configure_index('symbol')
+        gb.configure_index('ticker')
         gb.configure_theme('ag-theme-material')
         if paginationOn:
             gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
@@ -68,24 +216,28 @@ def chessboard_grid(QUEEN_KING, client_user, ip_address, symbols=[], refresh_sec
             model_list = ['Pollen AI', 'MACD', 'Williams', 'Simple Weighted']
             return  {
             # for col in cols:
-            # 'ticker': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
-            # 'picture': {}, # image selection,
-            # 'piece_name': {"cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor",}, #editable,
-            # 'model': {'headerName':'Model', "cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor", "values": model_list},},
-            # },
-            # # 'theme': {'headerName':'Theme', },
-            # 'total_buyng_power_allocation': {'headerName':'Buying Power Allocation', 'sortable':'true', },
-            # 'total_borrow_power_allocation': {'headerName': 'Margin Power Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
-            # 'margin_power': {'headerName': 'Margin Power % Use', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
-            # 'refresh_star': {'headerName': 'Re Allocate Every', 
-            #                  "cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor", "values": values_list},},
+            'ticker': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
+            'picture': {}, # image selection,
+            'piece_name': {"cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor",}, #editable,
+            'model': {'headerName':'Model', "cellEditorParams": {"values": model_list},
+                                                                "editable":True,
+                                                                "cellEditor":"agSelectCellEditor",
+                                                                },
+            },
+            # 'theme': {'headerName':'Theme', },
+            'total_buyng_power_allocation': {'headerName':'Buying Power Allocation', 'sortable':'true', },
+            'total_borrow_power_allocation': {'headerName': 'Margin Power Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
+            'margin_power': {'headerName': 'Margin Power % Use', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
+            'refresh_star': {'headerName': 'Re Allocate Every', 
+                             "cellEditorParams": {"values": values_list},
+                                                                "editable":True,
+                                                                "cellEditor":"agSelectCellEditor",
+                                                                },
 
             }
 
-        df = shape_chess_board(QUEEN_KING['chess_board'])
-        st.write(df)
-        st.info(df.columns)
-        chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
+        df = shape_chess_board(chess_board)
+        chess_pieces = [v.get('piece_name') for i, v in chess_board.items()]
         story_col = df.columns.tolist()
         config_cols_ = config_cols(story_col)
         for col, config_values in config_cols_.items():
@@ -291,7 +443,7 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
         if headers == 0:
             # Headers
             c=0
-            chess_board_names = list(QUEEN_KING[qcp_bees_key]['castle'].keys())
+            chess_board_names = list(QUEEN_KING[qcp_bees_key][list(QUEEN_KING[qcp_bees_key].keys())[0]].keys())
             chess_board_names = ["pq", "Name", 'symbols', 'Model', 'Theme', 'Budget Allocation', 'Margin Allocation', 'Margin Power']
             for qcpvar in chess_board_names:
                 try:
@@ -432,16 +584,32 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     refresh_trading_models_button(QUEEN_KING)
                     # refresh_queen_orders(QUEEN)
                     # stash_queen(QUEEN)
-        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"]
+        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"] + list(hedge_funds.keys())
+        save_as_main_chessboard = st.checkbox("Save as Main Chessboard", True)
 
         optoins = []
         for op in all_portfolios:
             icon = "fas fa-chess-pawn"
             optoins.append({'id': op, 'icon': "fas fa-chess-pawn", 'label':op})
-        with st.sidebar:
-            chessboard_selection = hc.option_bar(option_definition=optoins,title='Source', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+        # with st.sidebar:
+        chessboard_selection = hc.option_bar(option_definition=optoins,title='Source', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
         if chessboard_selection == 'Queen':
             pass
+        if chessboard_selection in hedge_funds.keys():
+            if save_as_main_chessboard == False:
+                qcp_bees_key = chessboard_selection
+            if qcp_bees_key not in QUEEN_KING.keys():
+                QUEEN_KING[qcp_bees_key] = {}
+            data = hedge_funds.get(chessboard_selection)
+            for ticker, buying_power in data.get('portfolio').items():
+                QUEEN_KING[qcp_bees_key][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
+            if 'SPY' not in symbols:
+                print("SPY not in symbols")
+                symbols.append('SPY')
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols).get('STORY_bee')
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, check_portfolio=False) ## Setup Board
+            QUEEN_KING['revrec'] = revrec
         elif chessboard_selection == 'Bishop':
             # WORKERBEE GET
             if pg_migration:
@@ -454,7 +622,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     QUEENBEE[qcp_bees_key][sector] = init_qcp_workerbees(ticker_list=tickers)
                 
                 symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEENBEE)
-                STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols)
+                STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols).get('STORY_bee')
             else:
                 QUEENBEE = setup_chess_board(QUEEN=QUEENBEE)
                 STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
@@ -462,8 +630,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
             QUEEN_KING['revrec'] = revrec
-
-        # current_setup = copy.deepcopy(QUEEN_KING['chess_board'])
+        
+        chess_board = copy.deepcopy(QUEEN_KING[qcp_bees_key])
         
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
@@ -522,8 +690,10 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         # if st.sidebar.toggle("autopilot funcs"):
         #     AutoPilot(revrec, QUEEN_KING)
         # with st.expander(name, True): # ChessBoard
-        cb_tab_list = ['Board', 'Star Allocation', 'Board Group', 'Board By Symbol']
+        cb_tab_list = ['Board', 'Star Allocation', 'Board Group', 'Board By Symbol', 'RevRec']
         tabs = st.tabs(cb_tab_list)
+        with tabs[4]:
+            st.write(revrec.get('storygauge'))
         with tabs[0]:
             with st.form(f'ChessBoard_form{admin}'):
                 try:
@@ -537,7 +707,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     # print('RevRec')
                     QUEEN_KING['revrec'] = revrec
                     QUEEN_KING['chess_board__revrec'] = revrec
-                        
+                    if save_as_main_chessboard:
+                        st.warning("This Will Save as your Main Portfolio")
                     cols = st.columns(2)
                     with cols[0]:
                         if st.form_submit_button('Save Board', use_container_width=True):
@@ -578,8 +749,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
         with tabs[3]:
             # WORKERBEE View a Board, compare Boards, Edit Current Board
-            # chessboard_grid(QUEEN_KING, client_user, ip_address)
             chess_board = QUEEN_KING['chess_board']
+            chessboard_grid(chess_board, client_user, ip_address) #chess_board_id=qcp_bees_key)
             st.data_editor(chess_board)    
             df = shape_chess_board(chess_board)
         with tabs[2]:

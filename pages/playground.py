@@ -4,9 +4,9 @@ from PIL import Image
 import subprocess
 from custom_grid import st_custom_grid
 from pq_auth import signin_main
-from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, print_line_of_error, init_swarm_dbs, init_queenbee, read_swarm_db
-from chess_piece.app_hive import set_streamlit_page_config_once, show_waves,  standard_AGgrid
-from chess_piece.king import kingdom__global_vars, hive_master_root, local__filepaths_misc, ReadPickleData, PickleData, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
+from chess_piece.queen_hive import *
+from chess_piece.app_hive import *
+from chess_piece.king import *
 from custom_button import cust_Button
 from streamlit_option_menu import option_menu
 from datetime import datetime, timedelta
@@ -22,13 +22,17 @@ import os
 from streamlit_extras.switch_page_button import switch_page
 import yfinance as yf
 import requests
+import copy
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from chess_piece.pollen_db import PollenDatabase
+from chess_piece.queen_bee import init_BROKER, append_queen_order, god_save_the_queen
 
-set_streamlit_page_config_once()
+from tqdm import tqdm
+
+pg_migration = os.getenv('pg_migration')
 
 def delete_dict_keys(object_dict):
     bishop_screens = st.selectbox("Bishop Screens", options=list(object_dict.keys()))
@@ -59,7 +63,7 @@ def refresh_yfinance_ticker_info(main_symbols_full_list):
             progress_percent = (idx + 1) / max_tickers * 100
             my_bar.progress((idx + 1) / max_tickers, text=progress_text.format(percent=int(progress_percent)))
         except Exception as e:
-            print_line_of_error(tic)
+            print_line_of_error("ERROR PLAY", tic)
 
     my_bar.empty()
 
@@ -83,19 +87,180 @@ def refresh_yfinance_ticker_info(main_symbols_full_list):
         df = pd.concat([df, token], ignore_index=True)
 
     my_bar.empty()  # Clear the progress bar after the loop completes
+    st.write("Saved Yahoo Ticker Info")
 
     print((datetime.now() - s).total_seconds())
     return df
 
 
+
+def sync_current_broker_account(client_user, prod, symbols=[]):
+    # Find combinations of orders where the total `filled_qty` matches the target
+    def find_orders_to_meet_delta(broker_orders, broker_qty_delta):
+        """
+        Find a set of orders from broker_orders where the total 'filled_qty' 
+        is greater than or equal to broker_qty_delta. If no exact match is found,
+        return the closest combination.
+
+        Parameters:
+            broker_orders (pd.DataFrame): DataFrame containing order details, including 'filled_qty'.
+            broker_qty_delta (float): Target quantity to meet or exceed.
+
+        Returns:
+            pd.DataFrame: Rows representing the best matching orders.
+            float: The total filled quantity of the selected orders.
+        """
+        # broker_orders = broker_orders.sort_values(by='filled_qty', ascending=False).copy()
+        selected_orders = []
+        total_qty = 0
+
+        for idx in broker_orders.index:
+            order_qty = broker_orders.loc[idx, 'filled_qty']
+            if total_qty + order_qty >= broker_qty_delta:
+                selected_orders.append(idx)
+                total_qty += order_qty
+                break
+            selected_orders.append(idx)
+            total_qty += order_qty
+
+        if selected_orders:
+            return broker_orders.loc[selected_orders], total_qty
+
+        return pd.DataFrame(), 0
+
+
+    # WORKERBEE HANDLE WHEN NOT ENOUGH ORDERS AVAILABLE 
+    ## Sync current broker account
+    qb = init_queenbee(client_user=client_user, prod=prod, broker=True, queen=True, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
+    api = qb.get('api')
+    QUEEN_KING = qb.get('QUEEN_KING')
+    QUEEN = qb.get('QUEEN')
+    BROKER = qb.get('BROKER')
+    BROKER = init_BROKER(api, BROKER)
+    revrec = qb.get('revrec') # qb.get('queen_revrec')
+    # QUEENsHeart = qb.get('QUEENsHeart')
+    # portfolio = QUEENsHeart['heartbeat'].get('portfolio') # check exists !!!
+    
+    # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
+    # for every broker order, if Order is not in QUEEN then create QUEEN order, seperate by BUY and SELL, run__ vs close__
+    
+    queen_orders = QUEEN['queen_orders']
+    queen_order_ids = queen_orders.index.tolist()
+    broker_orders = BROKER['broker_orders']
+    storygauge = revrec['storygauge'].copy()
+    df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
+    if len(df) == 0:
+        print("There is NO Delta returning out")
+        # return False
+
+    for symbol in df.index.tolist():
+        if symbols:
+            if symbol not in symbols:
+                continue
+        selected_row = df.loc[symbol]
+        broker_qty_delta = abs(selected_row.get('broker_qty_delta'))
+        avail_orders = broker_orders[(broker_orders['symbol']==symbol) & 
+                                        (broker_orders['side']=='buy') &
+                                        (broker_orders['status']=='filled') &
+                                        ~(broker_orders.index.isin(queen_order_ids)) # not in QUEEN
+                                        ].copy()
+        if len(avail_orders) == 0:
+            print(symbol, "No Orders Available go GET MORE ORDERS")
+            continue
+
+        # for all Available Orders return orders to match Qty
+                # Find matches
+        avail_orders['filled_qty'] = avail_orders['filled_qty'].astype(float)
+        # find order to match to Qty
+        found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta)
+        print(symbol, total_qty)
+        reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
+        # If Enough, create QUEEN order and attempt to use by remaining balance, if Not Skewed weight to 1 year ONLY if BUY... or BUY onlys skew evenly
+        ## create QUEEN orders
+        for client_order_id in found_orders.index.tolist():
+            order_data = found_orders.loc[client_order_id].to_dict()
+            filled_qty = float(order_data['filled_qty'])
+            filled_avg_price = float(order_data['filled_avg_price'])
+            star_time= '1Day_1Year' #star_names(kors.get('star_list')[0])
+            ticker_time_frame = f'{symbol}_{star_time}'
+            symbol, tframe, tperiod = ticker_time_frame.split("_")
+            star = f'{tframe}_{tperiod}'
+            wave_blocktime = 'afternoon_2-4'
+            trigbee = 'buy_cross-0'
+            tm_trig = 'buy_cross-0'
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+            king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
+            wave_amo = filled_qty * filled_avg_price
+            
+            # Other Misc
+            order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
+                                                        king_order_rules=king_order_rules, 
+                                                        order_side='buy', 
+                                                        wave_amo=wave_amo, 
+                                                        ticker_time_frame_origin=ticker_time_frame, 
+                                                        symbol=symbol,
+                                                        trigbee=trigbee,
+                                                        tm_trig=tm_trig,
+                                                        )
+
+
+            # get latest pricing
+            # coin_exchange = "CBSE"
+            # snap = api.get_snapshot(symbol) if crypto == False else api.get_crypto_snapshot(symbol, exchange=coin_exchange)
+            # priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 'ask': snap.latest_quote.ask_price, 'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price}
+            priceinfo_order = {'price': filled_avg_price, 
+                               'bid': filled_avg_price, 'ask': filled_avg_price, 
+                               'bid_ask_var': filled_avg_price}
+
+            # Client Order Id
+            order = found_orders.loc[client_order_id].to_dict() # vars(order_submit.get('order'))['_raw']
+            
+            order_vars['qty_order'] = order.get('filled_qty')
+            
+            new_queen_order_df = process_order_submission(
+                trading_model=trading_model, 
+                order=order, 
+                order_vars=order_vars,
+                trig=trigbee,
+                symbol=symbol,
+                ticker_time_frame=ticker_time_frame,
+                star=star,
+                priceinfo=priceinfo_order
+            )
+
+            # logging.info(f"SUCCESS on BUY for {ticker}")
+            # msg = (f'Ex BUY Order {trigbee} {ticker_time_frame} {round(wave_amo,2):,}')
+            append_queen_order(QUEEN, new_queen_order_df)
+
+    
+    god_save_the_queen(QUEEN, save_q=True, save_qo=True)
+
+
+    return True
+
+def init_account_info(client_user, prod):
+    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
+    if not broker_info.get('account_info'):
+        print("No Account Info")
+        return False
+
+
 def PlayGround():
 
-
-    
     prod = st.session_state['prod']
     client_user=st.session_state['client_user']
+
+    if st.button("Sync Current Broker Account"):
+        sync_current_broker_account(client_user, prod)
     
     print("PLAYGROUND", st.session_state['client_user'])
+    king_G = kingdom__global_vars()
+    ARCHIVE_queenorder = king_G.get('ARCHIVE_queenorder') # ;'archived'
+    active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
+    active_queen_order_states = king_G.get('active_queen_order_states') # = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
+    CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['completed', 'completed_alpaca']
+    
+    
     db = init_swarm_dbs(prod, pg_migration=True)
     BISHOP = read_swarm_db()
 
@@ -120,17 +285,9 @@ def PlayGround():
     print(qb.get('CHARLIE_BEE'))
     revrec = qb.get('revrec')
 
-    king_G = kingdom__global_vars()
-    ARCHIVE_queenorder = king_G.get('ARCHIVE_queenorder') # ;'archived'
-    active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
-    active_queen_order_states = king_G.get('active_queen_order_states') # = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
-    CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['completed', 'completed_alpaca']
+    st.write(pd.DataFrame(QUEENsHeart['heartbeat'].get('portfolio')).T)
 
 
-    # qb = init_queenbee(client_user=st.session_state['client_user'], prod=prod, queen=True, queen_king=True, api=True, charlie_bee=True)
-    # print(qb.get('CHARLIE_BEE'))
-    # QUEEN_KING = qb.get('QUEEN_KING')
-    # QUEEN = qb.get('QUEEN')
 
 
     api = qb.get('api')
@@ -195,10 +352,10 @@ def PlayGround():
     
         KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
         
-        QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
+        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
-        PB_App_Pickle = st.session_state['PB_App_Pickle']
-        QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
+        # PB_App_Pickle = st.session_state['PB_App_Pickle']
+        # QUEEN_KING = ReadPickleData(pickle_file=PB_App_Pickle)
         # ticker_db = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING)
         # POLLENSTORY = ticker_db['pollenstory']
         # STORY_bee = ticker_db['STORY_bee']
@@ -280,15 +437,20 @@ def PlayGround():
                 df_info = refresh_yfinance_ticker_info(main_symbols_full_list)
                 if type(df_info) == pd.core.frame.DataFrame:
                     BISHOP['ticker_info'] = df_info
-                    PickleData(BISHOP.get('source'), BISHOP, console=True)
+                    if pg_migration:
+                        PollenDatabase.upsert_data(BISHOP.get('table_name'), key=BISHOP.get('key'), data=BISHOP)
+                    else:
+                        PickleData(BISHOP.get('source'), BISHOP, console=True)
         
         if st.button("Sync Queen King Symbol Yahoo Stats"):
             symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
             df_info = refresh_yfinance_ticker_info(symbols)
             if type(df_info) == pd.core.frame.DataFrame:
                 BISHOP['queen_story_symbol_stats'] = df_info
-                PickleData(BISHOP.get('source'), BISHOP, console=True)
-        
+                if pg_migration:
+                    PollenDatabase.upsert_data(BISHOP.get('table_name'), key=BISHOP.get('key'), data=BISHOP)
+                else:
+                    PickleData(BISHOP.get('source'), BISHOP, console=True)        
         if 'queen_story_symbol_stats' in BISHOP.keys():
             st.header("QK Yahoo Stats")
             standard_AGgrid(BISHOP['queen_story_symbol_stats'])
@@ -343,7 +505,10 @@ def PlayGround():
                 screen_name = st.text_input('Screen Name', value=default_name)
                 if st.form_submit_button("Save Screen to Bishop"):
                     BISHOP[screen_name] = df_filter
-                    PickleData(BISHOP.get('source'), BISHOP)
+                    if pg_migration:
+                        PollenDatabase.upsert_data(BISHOP.get('table_name'), key=BISHOP.get('key'), data=BISHOP)
+                    else:
+                        PickleData(BISHOP.get('source'), BISHOP, console=True)
 
             st.header(screen_name)
             standard_AGgrid(df_filter, hide_cols=hide_cols)
@@ -351,7 +516,8 @@ def PlayGround():
 
     except Exception as e:
         print("playground error: ", e,  print_line_of_error())
+
+
 if __name__ == '__main__':
     signin_main()
-
     PlayGround()

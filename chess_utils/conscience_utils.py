@@ -191,6 +191,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         qcp_name['King'] = 'King'
         if toggle_view_selection in qcp_name.keys():
             toggle_view_selection = qcp_name[toggle_view_selection]
+        if toggle_view_selection == "Not On Board":
+            toggle_view_selection = "non_active_stories"
 
         qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
         ticker_filter = [ticker for (ticker, qcp) in qcp_ticker.items() if qcp == toggle_view_selection]                

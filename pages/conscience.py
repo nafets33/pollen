@@ -109,7 +109,8 @@ def generate_cell_style(flash_state_variable='Flash_state'):
                         backgroundColor: color,
                         color: value < 0 ? '#f00' : '#000', // Red text if value < 0, otherwise black
                         padding: '2px',
-                        boxSizing: 'border-box'
+                        boxSizing: 'border-box',
+                        border: '2px solid white' // White border
                     }};
                 }}
             }}
@@ -546,7 +547,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
                 'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'current_from_open': {'headerName':"% From Open", 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
+                'current_from_open': {'headerName':"% From Open", 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
 
                 'queen_wants_to_sell_qty': create_ag_grid_column(headerName='Suggested Sell Qty', initialWidth=89),
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
@@ -596,7 +597,14 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
             go = gb.build()
             # with st.expander("default build check"):
             #     st.write(go)
-            print(client_user)
+            # QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=True)
+            # df_broker_portfolio=pd.DataFrame(QUEENsHeart['heartbeat'].get('portfolio')).T
+            # missing_tickers = [i for i in df_broker_portfolio.index if i not in revrec['df_ticker'].index]
+            # if missing_tickers:
+            #     print("tickers missing", missing_tickers)
+            #     QUEEN_KING[chess_board]['non_active_stories'] = init_qcp_workerbees(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=0)
+
+
             st_custom_grid(
                 client_user=client_user,
                 username=client_user, 
@@ -615,7 +623,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
                 symbols=symbols,
                 buttons=g_buttons,
                 grid_height='450px',
-                toggle_views = ["Queen", "King", '400_10M'] + chess_pieces,
+                toggle_views = ["Queen", "King", '400_10M'] + chess_pieces + ["Not On Board"],
                 allow_unsafe_jscode=True,
 
             ) 

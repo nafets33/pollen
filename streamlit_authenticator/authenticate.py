@@ -468,11 +468,11 @@ class Authenticate:
         new_username = register_user_form.text_input("Email").lower()
         new_name = register_user_form.text_input("Name")
         phone_no_cols = register_user_form.columns([1, 4])
-        new_country_code = phone_no_cols[0].selectbox(
-            "Phone Number", ["US (+1)", "UK (+44)"]
-        )
+        # new_country_code = phone_no_cols[0].selectbox(
+        #     "Phone Number", ["US (+1)", "UK (+44)"]
+        # )
         new_phone_no = phone_no_cols[1].text_input(" ", max_chars=10)
-        new_phone_no = new_country_code + new_phone_no
+        new_phone_no = new_phone_no # new_country_code + new_phone_no
         new_password = register_user_form.text_input("Password", type="password")
         new_password_repeat = register_user_form.text_input(
             "Repeat password", type="password"

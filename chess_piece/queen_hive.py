@@ -33,6 +33,8 @@ from chess_piece.app_hive import init_client_user_secrets
 from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 from streamlit_extras.switch_page_button import switch_page
 
+# WORKERBEE MOVE STREAMLIT OUT OF HIVE
+
 queens_chess_piece = os.path.basename(__file__)
 king_G = kingdom__global_vars()
 MISC = local__filepaths_misc()
@@ -165,12 +167,12 @@ macd_tiers = 8
 
 
 def kingdom__grace_to_find_a_Queen(prod=True):
+
     if pg_migration:
         table_name = 'db' if prod else 'db_sandbox'
         KING = PollenDatabase.retrieve_data(table_name, 'KING')
     # create list for userdb
     else:
-        PB_KING_Pickle = master_swarm_KING(prod)
         KING = ReadPickleData(master_swarm_KING(prod))
     
     users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
@@ -524,7 +526,12 @@ def setup_chess_board(QUEEN, qcp_bees_key='workerbees', screen='screen_1'):
     if qcp_bees_key not in QUEEN.keys():
         QUEEN[qcp_bees_key] = {}
     db = init_swarm_dbs(prod=True)
-    BISHOP = ReadPickleData(db.get('BISHOP'))
+    
+    if pg_migration:
+        BISHOP = read_swarm_db(True, 'BISHOP')
+    else:
+        BISHOP = ReadPickleData(db.get('BISHOP'))
+    
     df = BISHOP.get(screen)
     for sector in set(df['sector']):
         token = df[df['sector']==sector]
@@ -1262,22 +1269,30 @@ def pollen_story(pollen_nectar):
                 # we want to know the how long it took to get to low?
 
                 # Assign each waves timeblock
-                if "Day" in tframe:
-                    wave_blocktime = "Day"
+                def assign_wave_block_time(df_waveslice, tframe):
+                    
                     wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
                     wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
-                else:
-                    wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
-                    wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
-                    wave_starttime_token = wave_starttime.replace(tzinfo=None)
-                    if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
-                        wave_blocktime = "morning_9-11"
-                    elif wave_starttime_token >= wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
-                        wave_blocktime = "lunch_11-2"
-                    elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
-                        wave_blocktime = "afternoon_2-4"
+                    
+                    if "Day" in tframe:
+                        wave_blocktime = "Day"
                     else:
-                        wave_blocktime = "afterhours"
+                        # wave_starttime = df_waveslice.iloc[0]["timestamp_est"]
+                        # wave_endtime = df_waveslice.iloc[-1]["timestamp_est"]
+                        wave_starttime_token = wave_starttime.replace(tzinfo=None)
+                        if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+                            wave_blocktime = "morning_9-11"
+                        elif wave_starttime_token >= wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+                            wave_blocktime = "lunch_11-2"
+                        elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+                            wave_blocktime = "afternoon_2-4"
+                        else:
+                            wave_blocktime = "afterhours"
+                    
+                    return wave_blocktime, wave_starttime, wave_endtime
+                
+                wave_blocktime, wave_starttime, wave_endtime = assign_wave_block_time(df_waveslice, tframe)
+
 
                 macd_start_tier = df_waveslice.iloc[0].get('macd_tier')
                 macd_end_tier = df_waveslice.iloc[-1].get('macd_tier')
@@ -2404,9 +2419,29 @@ def get_best_limit_price(ask, bid):
 
 ### Orders ###
 def return_alpc_portolio(api):
-    all_positions = api.list_positions()
-    portfolio = {i.symbol: vars(i)["_raw"] for i in all_positions}
+    def portfolio_call(api=api):
+        all_positions = api.list_positions()
+        return {i.symbol: vars(i)["_raw"] for i in all_positions}
+
+    try:
+        portfolio = portfolio_call()
+    except Exception as e:
+        print("api call error", e)
+        time.sleep(3)
+        portfolio = portfolio_call()  
+
+    
     return {"portfolio": portfolio}
+
+def refresh_broker_account_portolfio(api, QUEEN, account=False, portfolio=False):
+    if portfolio:
+        portfolio = return_alpc_portolio(api)['portfolio']
+        QUEEN['portfolio'] = portfolio
+        QUEEN['heartbeat']['portfolio'] = portfolio
+    if account:
+        acct_info = refresh_account_info(api=api)['info_converted']
+        QUEEN['account_info'] = acct_info
+        QUEEN['heartbeat']['account_info'] = acct_info
 
 
 def check_order_status(api, client_order_id):  # return raw dict form
@@ -3396,7 +3431,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
-                                    take_profit=.05,
+                                    take_profit=.1,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*30,#mins
@@ -3422,7 +3457,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
-                                    take_profit=.05,
+                                    take_profit=.15,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*60,#mins
@@ -3448,7 +3483,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
-                                    take_profit=.07,
+                                    take_profit=.2,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*120,#mins
@@ -3474,7 +3509,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
-                                    take_profit=.08,
+                                    take_profit=.23,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*300,#mins
@@ -3932,6 +3967,14 @@ def generate_TradingModel(
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 #### QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ######## QUEENBEE ####
 
+def ensure_postgres_tables(tables):
+    main_tables = ['pollen_store', 'db', 'db_sandbox', 'client_user_store', 'client_user_store_sandbox', 'final_orders'] ## 'client_users' handled in first pq_auth
+    init_main_tables = [i for i in main_tables if i not in tables]
+    if init_main_tables:
+        for table_name in init_main_tables:
+            if PollenDatabase.create_table_if_not_exists(table_name):
+                st.success(f'PG {table_name} Created')
+
 def read_swarm_db(prod=False, key='BISHOP'):
     table_name = 'db' if prod else 'db_sandbox'
     return PollenDatabase.retrieve_data(table_name, key)
@@ -3962,6 +4005,7 @@ def init_swarm_dbs(prod, init=False, pg_migration=False, dbs=['KING', 'QUEEN', '
 
     if pg_migration:
         if init:
+            ensure_postgres_tables(tables=PollenDatabase.get_all_tables())
             setup_swarm_dbs(db_root, table_name=table_name, dbs=dbs)
         dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
         return dbs
@@ -4000,7 +4044,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         return True
 
     def setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables):
-        print("CHECKING TO INIT MAIN DB")
+        print("Check to init pollen DB")
 
         env_table = 'client_user_env'
         if not PollenDatabase.key_exists(env_table, f'{db_root}-ENV'):
@@ -4030,7 +4074,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
             elif key == 'QUEENsHeart':            
                 if not PollenDatabase.key_exists(table_name, pg_table):
-                    data = {"heartbeat_time": datetime.now(est)}
+                    data = {"heartbeat_time": datetime.now(est), }
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
             elif key == 'BROKER':            
                 if not PollenDatabase.key_exists(table_name, pg_table):
@@ -4052,10 +4096,11 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
 
     if pg_migration:
-        if init:
-            setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables)
-        dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
-        return dbs
+        if "/" not in db_root:
+            if init:
+                setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables)
+            dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
+            return dbs
 
     else:
         # WORKERBEE don't check if file exists, only check on init
@@ -4195,7 +4240,6 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
             prod = pq_env.get('env')
 
         prod = live_sandbox__setup_switch(pq_env, switch_env, pg_migration=pg_migration, db_root=db_root)
-        print("QH env", prod)
         if prod is None:
             print("PROD ERROR")
             prod = False
@@ -4216,7 +4260,7 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
 
 def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration):
-    db_root = init_clientUser_dbroot(client_username=client_user)
+    db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
     # print(db_root, "PGMIGRATION:", pg_migration)
     
     table_name = "client_user_store" if prod else 'client_user_store_sandbox'
@@ -4293,7 +4337,7 @@ def process_order_submission(trading_model, order, order_vars, trig, symbol, tic
         status_q=status_q, 
         trig=trig, 
         exit_order_link=exit_order_link, 
-        priceinfo=priceinfo
+        priceinfo=priceinfo,
         )
         # Append Order
         new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id")
@@ -4313,8 +4357,8 @@ def order_vars__queen_order_items(
     king_order_rules=False,
     wave_amo=False,
     maker_middle=False,
-    origin_wave=False,
-    power_up_rangers=False,
+    origin_wave={},
+    power_up_rangers={},
     symbol=False,
     ticker_time_frame_origin=False,
     double_down_trade=False,
@@ -4331,6 +4375,7 @@ def order_vars__queen_order_items(
     borrowed_funds=False,
     ready_buy=False,
     borrow_qty=0,
+    long_short='long',
 ):
     if order_side:
         order_vars = {}
@@ -4361,6 +4406,7 @@ def order_vars__queen_order_items(
             order_vars["time_intrade"] = time_intrade
             order_vars["updated_at"] = updated_at
             order_vars["symbol"] = symbol
+            order_vars["long_short"] = long_short
             
             
             return order_vars
@@ -4399,20 +4445,15 @@ def order_vars__queen_order_items(
             order_vars["borrowed_funds"] = borrowed_funds
             order_vars["ready_buy"] = ready_buy
             order_vars["borrow_qty"] = borrow_qty
+            order_vars["long_short"] = long_short
 
             return order_vars
 
         else:
             print("break in program")
-            logging_log_message(
-                log_type="error", msg="break in program order vars queen order items"
-            )
             return False
     else:
         print("break in program")
-        logging_log_message(
-            log_type="error", msg="break in program order vars queen order items"
-        )
         return False
 
 
@@ -4430,7 +4471,7 @@ def create_QueenOrderBee(
     order={},
     priceinfo={},
     queen_init=False,
-    long_short="init",
+    # long_short="init",
 ):  # Create Running Order
     def gen_queen_order(
         queen_order_version=queen_order_version,
@@ -4486,7 +4527,7 @@ def create_QueenOrderBee(
         borrowed_funds=False,
         ready_buy=None,
         date_mark = datetime.now(est),
-        long_short=long_short,
+        long_short="init",
         profit_loss=0,
         queen_wants_to_sell_qty=0,
 
@@ -4557,7 +4598,7 @@ def create_QueenOrderBee(
                 "honey_time_in_profit": {},
                 "profit_loss": profit_loss,
                 "revisit_trade_datetime": revisit_trade_datetime,
-                "long_short": long_short,
+                "long_short": order_vars.get("long_short"),
                 "queen_wants_to_sell_qty": queen_wants_to_sell_qty,
             }
 
@@ -4570,6 +4611,14 @@ def create_QueenOrderBee(
     
 
     return running_order
+
+
+def sync_current_broker_account(symbol, BROKER, QUEEN, ORDERS):
+    # WORKERBEE
+    ## Sync current broker account
+    # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
+
+    return True
 
 
 def generate_queen_buying_powers_settings(
@@ -5749,7 +5798,7 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_
         print_line_of_error("live sb switch")
 
 
-def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False):
+def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False, pg_migration=pg_migration):
     try:
         if force_db_root:
             if not pg_migration:

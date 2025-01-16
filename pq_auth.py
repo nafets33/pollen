@@ -14,6 +14,8 @@ from chess_piece.app_hive import set_streamlit_page_config_once
 from datetime import datetime
 from chess_piece.pollen_db import PollenDatabase
 from custom_button import cust_Button
+import ipdb
+
 main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
 pg_migration = os.getenv('pg_migration')
@@ -45,14 +47,14 @@ def register_user(authenticator, con, cur):
                 # send user verification code
                 send_email(
                     recipient=register_email,
-                    subject="PollenQ. Verify Email",
+                    subject="Pollen. Verify Email",
                     body=f"""
                 Your PollenQ verification code is {verification_code}
 
                 Please enter this code in the website to complete your registration
 
                 Thank you,
-                PollenQ
+                Pollen
                 """,
                 )
                 st.success("A verification code has been sent to your email")
@@ -82,12 +84,12 @@ def register_user(authenticator, con, cur):
                 if os.environ.get('env_verify') == "89":
                     send_email(
                         recipient=register_email,
-                        subject="Welcome On Board PollenQ!",
+                        subject="Welcome To Pollen!",
                         body=f"""
-                    You have successful created a PollenQ account. Ensure you keep your login detials safe.
+                    You have successful created a Pollen account. Ensure you keep your login detials safe.
 
                     Thank you,
-                    PollenQ
+                    Pollen
                     """,
                     )
 
@@ -115,7 +117,7 @@ def forgot_password(authenticator):
             # notify user and update password
             send_email(
                 recipient=email_forgot_pw,
-                subject="PollenQ. Forgot Password",
+                subject="Pollen. Forgot Password",
                 body=f"""
 Dear {authenticator.credentials["usernames"][email_forgot_pw]["name"]},
 
@@ -124,7 +126,7 @@ Your new password for pollenq.com is {random_password}
 Please keep this password safe.
 
 Thank you,
-PollenQ
+Pollen
 """,
             )
             update_db(authenticator, con=con, cur=cur, email=email_forgot_pw)
@@ -172,6 +174,7 @@ def update_db(authenticator, con, cur, email, append_db=False):
     phone_no = details["phone_no"]
     signup_date = details["signup_date"]
     last_login_date = details["last_login_date"]
+
     if isinstance(signup_date, str):
         try:
             signup_date = datetime.strptime(signup_date, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
@@ -239,20 +242,23 @@ Pollen
         st.error(e)
 
 def read_user_db(cur):
-    cur.execute("SELECT * FROM client_users")
-    users = cur.fetchall()
+    try:
+        cur.execute("SELECT * FROM client_users")
+        users = cur.fetchall()
 
-    creds = {}
-    for user in users:
-        creds[user[0]] = {
-            "password": user[1],
-            "name": user[2],
-            "phone_no": user[3],
-            "signup_date": user[4],
-            "last_login_date": user[5],
-            "login_count": user[6],
-        }
-    return {"usernames": creds}
+        creds = {}
+        for user in users:
+            creds[user[0]] = {
+                "password": user[1],
+                "name": user[2],
+                "phone_no": user[3],
+                "signup_date": user[4],
+                "last_login_date": user[5],
+                "login_count": user[6],
+            }
+        return {"usernames": creds}
+    except Exception as e:
+        raise f'AUTH ERROR READ USERS{e}'
 
 def signin_main(page=None):
     """Return True or False if the user is signed in"""
@@ -286,7 +292,7 @@ def signin_main(page=None):
 
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True, init=True)
         st.session_state['instance_setup'] = True
-        print("AUTH SETUP env", prod)
+        # print("AUTH SETUP env", prod)
 
 
         return prod

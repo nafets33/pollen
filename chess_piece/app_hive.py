@@ -172,10 +172,10 @@ def sac_menu_buttons(main='Queen'):
             sac.ButtonsItem(label='pollen', icon='robot'),
             sac.ButtonsItem(label='Board', icon='box'),
             sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
-            sac.ButtonsItem(label='PlayGround', icon='fire'),
-            sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
+            # sac.ButtonsItem(label='PlayGround', icon='fire'),
+            # sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
             sac.ButtonsItem(label='Trading Models', disabled=False),
-            sac.ButtonsItem(label='Waves', icon='share-fill'),
+            # sac.ButtonsItem(label='Waves', icon='share-fill'),
             sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
         ], format_func='title', align='end', type='text')
@@ -1246,7 +1246,7 @@ def standard_AGgrid(
     fit_columns_on_grid_load=False,
     height=500,
     update_mode_value="NO_UPDATE",
-    paginationOn=True,
+    paginationOn=False,
     use_checkbox=False,
     hide_cols=[],
     grid_type=False
@@ -2397,7 +2397,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_m
         menu_data = [
             {'id':'queen','icon':"fa fa-fire",'label':"Queen"},
             {'id':'TradingModels','icon':"fa fa-fire",'label':"Trading Models"},
-            {'id':'PlayGround', 'icon': "fa fa-bug", 'label':"PlayGround"},
+            # {'id':'PlayGround', 'icon': "fa fa-bug", 'label':"PlayGround"},
             {'id':'Account', 'icon': "fa fa-bug", 'label':"Account"},
             {'id':'waves', 'icon': "fas fa-chess-board", 'label':"RevRec"},
             {'icon': "fa fa-fighter-jet",'label':"HiveEngine", 

@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
 
-pg_migration = os.environ.get('pg_migration')
+pg_migration = os.getenv('pg_migration')
 
 
 def hive_master_root(info='\pollen\pollen'):
@@ -387,7 +387,11 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
 
 
 def return_QUEEN_KING_symbols(QUEEN_KING, QUEEN, symbols=[]):
-    current_active_orders = return_active_orders(QUEEN)
+    if QUEEN:
+        current_active_orders = return_active_orders(QUEEN)
+    else:
+        current_active_orders = []
+        
     active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
     chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 

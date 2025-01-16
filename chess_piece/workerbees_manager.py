@@ -1,13 +1,16 @@
 # QueenBee Workers
 import argparse
 import multiprocessing as mp
-import os
+import os, sys
 import time
 from datetime import datetime
 
 import pytz
 
-from chess_piece.king import hive_master_root, master_swarm_QUEENBEE
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+from chess_piece.king import master_swarm_QUEENBEE
 from chess_piece.queen_hive import ReadPickleData, send_email
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.pollen_db import PollenDatabase

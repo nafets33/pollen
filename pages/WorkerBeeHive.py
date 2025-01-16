@@ -21,7 +21,7 @@ import argparse
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.king import master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
-from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs
+from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs, read_swarm_db
 from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
 from streamlit_extras.switch_page_button import switch_page
@@ -42,27 +42,16 @@ pg_migration = os.environ.get('pg_migration')
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
 
-if 'authorized_user' not in st.session_state:
-    signin_main("workerbees")
-
-if st.session_state["authorized_user"] != True:
-    st.error("you do not have permissions young fellow")
-    st.stop()
-
-client_user = st.session_state['username']
-prod = st.session_state['prod']
 
 
-db=init_swarm_dbs(prod)
-
-
-def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
+def refresh_workerbees(QUEENBEE, BISHOP, backtesting=False, macd=None, reset_only=True, run_all_pawns=False):
+    
     
     reset_only = st.checkbox("reset_only", reset_only)
     backtesting = st.checkbox("backtesting", backtesting)
     run_all_pawns = st.checkbox("run_all_pawns", run_all_pawns)
     run_bishop = st.checkbox("run_bishop", False)
-    BISHOP = ReadPickleData(db.get('BISHOP'))
+    
     bishop_screens = st.selectbox("Bishop Screens", options=list(BISHOP.keys()))
 
     if run_bishop:
@@ -80,7 +69,7 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
 
     qcp_options = list(QUEENBEE['workerbees'].keys())
     default_qcp = [i for i in QUEENBEE['workerbees'] if len(QUEENBEE['workerbees'][i].get('tickers')) > 0]
-    prod = QUEEN_KING.get('prod')
+    prod = st.session_state['prod']
 
     with st.form("workerbees refresh"):
         try:
@@ -115,21 +104,38 @@ def refresh_workerbees(QUEENBEE, QUEEN_KING, backtesting=False, macd=None, reset
                         e = datetime.now(est)
                         st.write("refresh time ", (e - s).total_seconds())
         except Exception as e:
-            print(e, print_line_of_error())
+            print_line_of_error(f'WBHIVE {e}')
 
 
 if __name__ == '__main__':
 
-    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+    if 'authorized_user' not in st.session_state:
+        signin_main("workerbees")
 
-    qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True)
-    QUEEN_KING = qb.get('QUEEN_KING')
-    QUEEN = qb.get('QUEEN')
+    if st.session_state["authorized_user"] != True:
+        st.error("you do not have permissions young fellow")
+        st.stop()
+
+    client_user = st.session_state['username']
+    prod = st.session_state['prod']
+
+
+    db=init_swarm_dbs(prod)
+
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        QUEENBEE = PollenDatabase.retrieve_data(table_name=table_name, key='QUEEN')
+        BISHOP = read_swarm_db(prod, 'BISHOP')
+    else:
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+        BISHOP = ReadPickleData(db.get('BISHOP'))
+
+    # qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True)
     tabs = st.tabs(['Workerbees'])
     if st.session_state['admin']:
         st.write("ADMIN")
         with tabs[0]:
-            refresh_workerbees(QUEENBEE, QUEEN_KING)
+            refresh_workerbees(QUEENBEE, BISHOP)
 
 
     MACD_WAVES = pd.read_csv(os.path.join(hive_master_root(), "backtesting/macd_backtest_analysis.txt"))

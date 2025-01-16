@@ -141,14 +141,8 @@ def copy_data_between_tables(source_table, target_table):
 
 if __name__ == '__main__':
     print("POSTGRES", pg_migration)
-    tables = PollenDatabase.get_all_tables()
-    main_tables = ['pollen_store', 'db', 'db_sandbox', 'client_user_store', 'client_user_store_sandbox', 'final_orders'] ## 'client_users' handled in first pq_auth
-    init_main_tables = [i for i in main_tables if i not in tables]
-    if init_main_tables:
-        for table_name in init_main_tables:
-            if PollenDatabase.create_table_if_not_exists(table_name):
-                st.success(f'PG {table_name} Created')
     
+    tables = PollenDatabase.get_all_tables()
     db=init_swarm_dbs(prod, init=True, pg_migration=pg_migration)
 
 
@@ -181,8 +175,10 @@ if __name__ == '__main__':
                 df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table))).rename(columns={0:'key', 1:'timestamp'})
                 # st.write('key' in df.columns)
                 if table == 'client_user_store':
-                    # df = df.set_index('key')
-                    df['key_name'] = df['key'].apply(lambda x: x.split("-")[-1])
+                    try:
+                        df['key_name'] = df['key'].apply(lambda x: x.split("-")[-1])
+                    except Exception as e:
+                        print("PG", e)
                 if len(df) > 0:
                     dat = df.iloc[0].get('timestamp')
 

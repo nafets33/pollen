@@ -2,14 +2,13 @@ import time
 from datetime import datetime
 import schedule
 import os, sys, importlib
-from chess_piece.king import hive_master_root, return_db_root
+from chess_piece.king import hive_master_root
 from chess_piece.queen_hive import init_logging
 import argparse
 import subprocess
 import logging
 run = sys.argv[1]
 
-# db_root = return_db_root()
 
 # init_logging('awake_queen', db_root=db_root, prod=True)
 

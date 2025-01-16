@@ -327,7 +327,7 @@ class PollenDatabase:
                 return data
 
         except Exception as e:
-            print_line_of_error(e)
+            print_line_of_error("DB", e)
         finally:
             if conn:
                 conn.close()

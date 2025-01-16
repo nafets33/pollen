@@ -25,7 +25,7 @@ import os
 import time
 
 from chess_piece.king import master_swarm_KING, ReadPickleData, kingdom__global_vars, return_QUEENs__symbols_data, print_line_of_error, streamlit_config_colors
-from chess_piece.queen_hive import init_queenbee, hive_master_root, star_names, bishop_ticker_info
+from chess_piece.queen_hive import init_queenbee, hive_master_root, read_swarm_db, bishop_ticker_info
 from chess_piece.app_hive import show_waves, pollenq_button_source, move_columns_to_front
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -37,7 +37,7 @@ from chess_piece.fastapi_queen import buy_button_dict_items, sell_button_dict_it
 from chess_utils.conscience_utils import story_return
 
 @st.cache_data
-def queen_data(client_user, prod, pg_migration=False):
+def queen_data(client_user, prod):
     qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
@@ -46,7 +46,7 @@ def queen_data(client_user, prod, pg_migration=False):
 
 
 
-pg_migration = True
+pg_migration = os.getenv("pg_migration")
 
 def waves():
     main_root = hive_master_root()  # os.getcwd()
@@ -85,14 +85,21 @@ def waves():
     active_queen_order_states = king_G.get('active_queen_order_states')
 
 
-    QUEEN, QUEEN_KING, api = queen_data(client_user, prod, pg_migration)
-
-
-    last_qk_mod = os.stat(QUEEN_KING.get('source')).st_mtime
+    QUEEN, QUEEN_KING, api = queen_data(client_user, prod)
+    if pg_migration:
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name))).rename(columns={0:'key', 1:'timestamp'})
+        db_keys_df['key_name'] = db_keys_df['key'].apply(lambda x: x.split("-")[-1])
+        db_keys_df = db_keys_df.set_index('key_name')
+        last_qk_mod = str(db_keys_df.at['QUEEN_KING', 'timestamp'])
+    else:
+        last_qk_mod = str(os.stat(QUEEN_KING.get('source')).st_mtime)
+    
     if 'last_qk_mod' in st.session_state and st.session_state['last_qk_mod'] != last_qk_mod:
         st.write("QK updated Refresh Clear Cache")
         st.cache_data.clear()
         st.success("Cache Cleared")
+    
     st.session_state['last_qk_mod'] = last_qk_mod
 
     if st.sidebar.button("Clear Cache"):
@@ -121,7 +128,12 @@ def waves():
         workerbees = 'workerbees'
         QUEENBEE = {workerbees: {}}
         db = init_swarm_dbs(prod)
-        BISHOP = ReadPickleData(db.get('BISHOP'))
+                
+        if pg_migration:
+            BISHOP = read_swarm_db(prod, 'BISHOP')
+        else:
+            BISHOP = ReadPickleData(db.get('BISHOP'))
+        
         screens = [ i for i in BISHOP.keys() if i != 'source']
         screen = st.selectbox("Bishop Screens", options=screens, index=screens.index('400_10M'))
         df = BISHOP.get(screen)
@@ -133,7 +145,12 @@ def waves():
         QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
         s = datetime.now()
-        STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
+        if pg_migration:
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+        else:
+            symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+            STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
         st.header(f'call stymbols {(datetime.now()-s).total_seconds()}')
         s = datetime.now()
         revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, wave_blocktime='morning_9-11') ## Setup Board

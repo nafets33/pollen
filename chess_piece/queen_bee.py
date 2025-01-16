@@ -14,6 +14,10 @@ import asyncio
 import aiohttp
 from collections import defaultdict, deque
 import argparse
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
 from chess_piece.king import main_index_tickers, hash_string, kingdom__global_vars, print_line_of_error, return_QUEENs__symbols_data, PickleData, return_QUEEN_KING_symbols
 from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     init_charlie_bee, 
@@ -43,7 +47,8 @@ from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     return_timestamp_string, 
                                     add_key_to_QUEEN, 
                                     update_sell_date,
-                                    return_Ticker_Universe
+                                    return_Ticker_Universe,
+                                    refresh_broker_account_portolfio,
                                     )
 from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys
 from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonDecoder
@@ -83,6 +88,130 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U'
 
+# # BROKER
+# def init_broker_orders(api, BROKER):
+
+#     init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
+#     init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+#     api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date, symbols=False, limit=500)
+#     queen_orders_closed = api_orders.get('closed')
+#     queen_orders_open = api_orders.get('open')
+#     c_order_ids_dict_closed = [vars(queen_orders_closed[n])['_raw'] for n in range(len(queen_orders_closed))]
+#     c_order_ids_dict_open = [vars(queen_orders_open[n])['_raw'] for n in range(len(queen_orders_open))]
+#     broker_orders = c_order_ids_dict_closed + c_order_ids_dict_open
+#     if broker_orders:
+#         broker_orders = pd.DataFrame(broker_orders).set_index('client_order_id', drop=False)
+#     else:
+#         broker_orders = pd.DataFrame()
+
+#     BROKER['broker_orders'] = broker_orders
+
+#     return BROKER
+
+
+def init_broker_orders(api, BROKER):
+    # Start and end dates for the last 100 days
+    end_date = datetime.now() + timedelta(days=1)
+    start_date = datetime.now() - timedelta(days=100)
+
+    # Initialize an empty DataFrame for broker orders
+    broker_orders = pd.DataFrame()
+
+    # Iterate over 5-day intervals
+    current_date = start_date
+    while current_date < end_date:
+        next_date = min(current_date + timedelta(days=5), end_date)
+        
+        # Format dates for the API call
+        start_date_str = current_date.strftime("%Y-%m-%d")
+        end_date_str = next_date.strftime("%Y-%m-%d")
+        
+        # Fetch API orders for the 5-day interval
+        api_orders = initialize_orders(api, start_date_str, end_date_str, symbols=False, limit=500)
+        
+        # Process closed and open orders
+        queen_orders_closed = api_orders.get('closed', [])
+        queen_orders_open = api_orders.get('open', [])
+        
+        c_order_ids_dict_closed = [vars(order)['_raw'] for order in queen_orders_closed]
+        c_order_ids_dict_open = [vars(order)['_raw'] for order in queen_orders_open]
+        
+        # Combine orders into a single list
+        interval_orders = c_order_ids_dict_closed + c_order_ids_dict_open
+
+        # If orders exist, append them to the broker_orders DataFrame
+        if interval_orders:
+            interval_df = pd.DataFrame(interval_orders)
+            if not interval_df.empty:
+                interval_df.set_index('client_order_id', drop=False, inplace=True)
+                broker_orders = pd.concat([broker_orders, interval_df])
+        
+        # Move to the next 5-day interval
+        current_date = next_date
+
+    # Save the broker orders to the BROKER dictionary
+    BROKER['broker_orders'] = broker_orders
+
+    return BROKER
+
+
+def update_broker_order_status(BROKER, order_status):
+    try:
+        broker_orders = BROKER['broker_orders']
+        df_token = pd.DataFrame([order_status]).set_index('client_order_id', drop=False)
+        if df_token.index[0] in broker_orders.index:
+            broker_orders = broker_orders[broker_orders['client_order_id'] != df_token.index[0]]
+        
+        broker_orders = pd.concat([broker_orders, df_token])
+        BROKER['broker_orders'] = broker_orders
+        
+        return True
+    except Exception as e:
+        print_line_of_error("broker update failed")
+
+def init_BROKER(api, BROKER):
+    if len(BROKER['broker_orders']) == 0:
+        print("INIT Broker ORDERS")
+        BROKER = init_broker_orders(api, BROKER)
+        if pg_migration:
+            PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER)
+        else:
+            PickleData(BROKER.get('source'), BROKER, console=False)
+    return BROKER
+
+def reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states, b_order_init=False):
+    
+    # if len(BROKER['broker_orders']) == 0:
+    #     print("INIT Broker ORDERS")
+    #     b_order_init = True
+    #     BROKER = init_broker_orders(api, BROKER)
+
+    BROKER = init_BROKER(api, BROKER)
+
+    # check for any missing orders
+    save_b = False
+    df = QUEEN.get('queen_orders')
+    df['status_q'] = df['status_q'].fillna('')
+    df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
+    if len(df_active) > 0 and len(BROKER['broker_orders']) > 0:
+        # ("Update QUEEN with Broker Orders")
+        df_active['client_order_id'] = df_active['client_order_id'].fillna('init')
+        qo_active_index = df_active['index'].to_list()
+        broker_corder_ids = BROKER['broker_orders']['client_order_id'].tolist()
+        for client_order_id in qo_active_index:
+            if client_order_id not in broker_corder_ids and client_order_id != 'init':
+                print(f"ALERT NEW CLIENT ORDER ID {client_order_id}")
+                order_status = check_order_status(api=api, client_order_id=client_order_id)
+                if order_status:
+                    save_b = True
+                    update_broker_order_status(BROKER, order_status)
+                if b_order_init:
+                    if df_active.at[client_order_id, 'status'] == 'filled':
+                        QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'filled'
+                    else:
+                        QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'pending'
+
+    return save_b, BROKER, QUEEN
 
 
 def generate_client_order_id(ticker, trig, sellside_client_order_id=False): # generate using main_order table and trig count
@@ -248,6 +377,7 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
         limit_price, qty_order = update__validate__qty(crypto=crypto, current_price=priceinfo_order['price'], limit_price=limit_price, wave_amo=wave_amo)
         if limit_price:
             order_type = 'limit'
+        
         # Client Order Id
         client_order_id__gen = generate_client_order_id(ticker=ticker, trig=trig)
         
@@ -396,15 +526,7 @@ def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, t
         print("Error Ex Order..Full Failure" , ticker_time_frame, e, print_line_of_error())
 
 
-def refresh_broker_account_portolfio(api, QUEEN, account=False, portfolio=False):
-    if portfolio:
-        portfolio = return_alpc_portolio(api)['portfolio']
-        QUEEN['portfolio'] = portfolio
-        QUEEN['heartbeat']['portfolio'] = portfolio
-    if account:
-        acct_info = refresh_account_info(api=api)['info_converted']
-        QUEEN['account_info'] = acct_info
-        QUEEN['heartbeat']['account_info'] = acct_info
+
 
 
 
@@ -1332,22 +1454,22 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         
                 for ticker_time_frame in bees_fly.index.tolist():
                     s_time = datetime.now(est)
+                    # path to Knight
+                    ticker, tframe, frame = ticker_time_frame.split("_")
+                    frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
                     
                     if repeat_purchase_delay(ticker_time_frame, QUEEN):
                         continue
-
-                    # path to Knight
-                    ticker, tframe, frame = ticker_time_frame.split("_")
-                    
                     if autopilot_check(QUEEN_KING, symbol=ticker):
                         continue
 
-                    frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
                     # trading model
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
                     
                     # trigbee
                     trig = bees_fly.at[ticker_time_frame, 'macd_state']
+                    # buying threshold if in SELL wave
+                    
                     tm_trig = trig
                     trig_wave_length = waveview.at[ticker_time_frame, 'length']
                     on_wave_buy = True if trig_wave_length != '0' else False
@@ -1377,8 +1499,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         QUEEN['queens_messages'].update({'model_not_active': f'{ticker_time_frame}'})
                         print("model status not active")
                         continue
+                    
+                    if revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget") <= 0 and revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget_borrow") <= 0:
+                        msg=(f'{ticker_time_frame} remaining budget used up')
+                        if msg in notification_list:
+                            continue
+                        logging.warning(msg)
+                        notification_list.append(msg)
+                        continue
 
-                    # Stop Symbols from shorting unless you are main_index ("Wants to Short Stock Scenario")
+                    # Stop Symbols from shorting unless you are main_index ("Wants to Short Stock Scenario") OR wants to buy during sell : 0
                     if 'sell' in trig and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
                         # print("ticker not avail to short > short gauge >")
                         continue
@@ -1395,23 +1525,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         msg=("Only 1 Trigger Allowed in ticker Shorting")
                         logging.warning(msg)
                         continue
-                    timestamp_str = return_timestamp_string()
-                    if revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget") <= 0 and revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget_borrow") <= 0:
-                        msg=(f'{ticker_time_frame} remaining budget used up')
-                        if msg in notification_list:
-                            continue
-                        logging.warning(msg)
-                        notification_list.append(msg)
-                        # print(f'{ticker_time_frame} all budget used up') # WORKER BEE only LOG message if timestamp has elasped say X seconds 
-                        # if ticker_time_frame not in QUEEN['queens_messages'].keys():
-                        #     QUEEN['queens_messages'][ticker_time_frame] = {'remaining_budget': f'{ticker_time_frame} all budget used up {timestamp_str}'}
-                        # else:
-                        #     QUEEN['queens_messages'][ticker_time_frame].update({'remaining_budget': f'{ticker_time_frame} all budget used up {timestamp_str}'})
-                        continue
-
-                    # if crypto: # Not currently supported
-                    #     # check if ticker_time_frame is in temp, if yes then check last time it was put there, if it has been over X time per timeframe rules then send email to buy
-                    #     QUEEN['crypto_temp']['trigbees'].update({ticker_time_frame: {'king_resp': king_resp, 'datetime': datetime.now(est)}})
 
                     """ HAIL TRIGGER, WHAT SAY YOU? ~forgive me but I bring a gift for the king and queen"""
                     s_time = datetime.now(est)
@@ -2083,6 +2196,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         def queen_orders_main(BROKER, QUEEN, STORY_bee, QUEEN_KING, charlie_bee):
             # WORKERBEE move info just api?
             def long_short_queenorders(df_active, QUEEN, col_metric='cost_basis_current'):
+                # WORKERBEE Need to Exclude Long Shorts (SH, PSQ...) so use new column ? long_short
                 long = sum(df_active[df_active['trigname'].str.contains('buy')].get(col_metric))
                 short = sum(df_active[~df_active['trigname'].str.contains('buy')].get(col_metric))
                 QUEEN['heartbeat']['long'] = round(long)
@@ -2115,7 +2229,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 
                 s_time = datetime.now(est)
                 
-                # Price Info Symbols
+                # Price Info Symbols # WORKERBEE priceinfo symbols should come fome main db not QUEEN
                 snapshot_price_symbols = async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN)
                 df_priceinfo_symbols = pd.DataFrame(snapshot_price_symbols)
                 df_priceinfo_symbols = df_priceinfo_symbols.set_index('ticker', drop=False)
@@ -2138,7 +2252,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                             update_broker_order_status(BROKER, order_status)
                 if save_b:
                     if pg_migration:
-                        PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER)
+                        PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER)
                     else:
                         PickleData(BROKER.get('source'), BROKER, console=False)
                 broker_time = (datetime.now(est) - s_time_qOrders).total_seconds()
@@ -2160,6 +2274,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         priceinfo = QUEEN['price_info_symbols'].at[symbol, 'priceinfo']
                         
                         order_status = BROKER['broker_orders'].loc[idx].to_dict()
+
+                        # WORKERBEE update order STATUS only when order date has changed
+                        # queen_order_lastmod = str(run_order['updated_at'])
+                        # broker_order_lastmod = str(order_status['updated_at'])
+                        # if queen_order_lastmod != broker_order_lastmod:
+                        #         run_order = update_latest_queen_order_status(QUEEN=QUEEN, order_status=order_status, queen_order_idx=queen_order_idx)
+
 
                         # Process Queen Order States
                         run_order = route_queen_order(QUEEN=QUEEN, 
@@ -2315,76 +2436,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         return True
 
 
-    # BROKER
-    def init_broker_orders(api, BROKER):
-
-        init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
-        init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-        api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date, symbols=False, limit=500)
-        queen_orders_closed = api_orders.get('closed')
-        queen_orders_open = api_orders.get('open')
-        c_order_ids_dict_closed = [vars(queen_orders_closed[n])['_raw'] for n in range(len(queen_orders_closed))]
-        c_order_ids_dict_open = [vars(queen_orders_open[n])['_raw'] for n in range(len(queen_orders_open))]
-        broker_orders = c_order_ids_dict_closed + c_order_ids_dict_open
-        if broker_orders:
-            broker_orders = pd.DataFrame(broker_orders).set_index('client_order_id', drop=False)
-        else:
-            broker_orders = pd.DataFrame()
-
-        BROKER['broker_orders'] = broker_orders
-
-        return BROKER
-
-    def update_broker_order_status(BROKER, order_status):
-        try:
-            broker_orders = BROKER['broker_orders']
-            df_token = pd.DataFrame([order_status]).set_index('client_order_id', drop=False)
-            if df_token.index[0] in broker_orders.index:
-                broker_orders = broker_orders[broker_orders['client_order_id'] != df_token.index[0]]
-            
-            broker_orders = pd.concat([broker_orders, df_token])
-            BROKER['broker_orders'] = broker_orders
-            
-            return True
-        except Exception as e:
-            print_line_of_error("broker update failed")
-
-    def reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states, b_order_init=False):
-        
-        if len(BROKER['broker_orders']) == 0:
-            print("INIT Broker ORDERS")
-            b_order_init = True
-            BROKER = init_broker_orders(api, BROKER)
-
-        # check for any missing orders
-        save_b = False
-        df = QUEEN.get('queen_orders')
-        df['status_q'] = df['status_q'].fillna('')
-        df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
-        if len(df_active) > 0 and len(BROKER['broker_orders']) > 0:
-            df_active['client_order_id'] = df_active['client_order_id'].fillna('init')
-            qo_active_index = df_active['index'].to_list()
-            broker_corder_ids = BROKER['broker_orders']['client_order_id'].tolist()
-            for client_order_id in qo_active_index:
-                if client_order_id not in broker_corder_ids and client_order_id != 'init':
-                    print(f"ALERT NEW CLIENT ORDER ID {client_order_id}")
-                    order_status = check_order_status(api=api, client_order_id=client_order_id)
-                    if order_status:
-                        save_b = True
-                        update_broker_order_status(BROKER, order_status)
-                    if b_order_init:
-                        if df_active.at[client_order_id, 'status'] == 'filled':
-                            QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'filled'
-                        else:
-                            QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'pending'
-        if save_b:
-            if pg_migration:
-                PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER)
-            else:
-                PickleData(BROKER.get('source'), BROKER, console=False)
-
-        return True
-        
         
     ### Close the Day ###
 
@@ -2487,7 +2538,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel='info')
 
         # init files needed
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, broker=True, init=True, pg_migration=pg_migration)
+        qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, broker=True, init=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
         api = qb.get('api')
@@ -2513,7 +2564,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
         trading_days = hive_dates(api=api)['trading_days']
         
-        reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states)
+        save_b, BROKER, QUEEN = reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states)
+        if save_b:
+            if pg_migration:
+                PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER)
+            else:
+                PickleData(BROKER.get('source'), BROKER, console=False)
 
         if pg_migration:
             symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
@@ -2597,7 +2653,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 save_qo=True,
                                 save_acct=True,
                                 console=True)
-                hanlde_missing_broker_orders_with_queen_orders(BROKER, QUEEN)
+                # hanlde_missing_broker_orders_with_queen_orders(BROKER, QUEEN)
                 print("Queen to ZzzzZZzzzZzzz see you tomorrow")
                 break
             

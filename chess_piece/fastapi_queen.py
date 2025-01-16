@@ -8,7 +8,10 @@ from datetime import datetime, timedelta
 import pytz
 import ipdb
 import copy
-from chess_piece.king import (return_QUEENs__symbols_data, kingdom__global_vars, main_index_tickers, streamlit_config_colors, hive_master_root, load_local_json, save_json, ReadPickleData, PickleData, read_QUEENs__pollenstory, print_line_of_error, master_swarm_KING)
+from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_data, 
+                              kingdom__global_vars, main_index_tickers, streamlit_config_colors, 
+                              hive_master_root, ReadPickleData, PickleData, 
+                              read_QUEENs__pollenstory, print_line_of_error)
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
                                     update_sell_date, 
                                     init_logging, 
@@ -265,8 +268,9 @@ def return_startime_from_ttf(ticker_time_frame):
    t,tt,f = ticker_time_frame.split("_")
    return f'{tt}_{f}'
 
-def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0'): # index & wave_amount
+def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long'): # index & wave_amount
   try:
+    # WORKERBEE handle long short
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
@@ -343,6 +347,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
                                                 ready_buy=ready_buy,
                                                 assigned_wave=current_macd_cross__wave,
                                                 borrow_qty=borrow_qty,
+                                                long_short=long_short,
                                                 )
     blessing = order_vars
 
@@ -696,8 +701,14 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
-        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+        if pg_migration:
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+        else:
+            STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
+                
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
+      # elif toggle_view_selection == "Not On Board"
       elif toggle_view_selection == '400_10M':
         king_G = kingdom__global_vars()
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)

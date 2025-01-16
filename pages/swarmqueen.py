@@ -117,7 +117,7 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
             QUEENBEE = setup_chess_board(QUEEN=QUEENBEE, qcp_bees_key='bishop')
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key=qcp_bees_key)
-        st.write(chess_pieces.get('dups'))
+        st.write("duplicates", chess_pieces.get('dups'))
         view = chess_pieces.get('view')
         all_workers = chess_pieces.get('all_workers')
         qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
@@ -126,8 +126,7 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
 
         QUEENBEE = ensure_swarm_queen_workerbees(QUEENBEE, qcp_bees_key)
 
-        if st.toggle('add new workerbee'):
-            add_new_qcp__to_Queens_workerbees(QUEENBEE=QUEENBEE, qcp_bees_key=qcp_bees_key, ticker_allowed=ticker_allowed)
+        add_new_qcp__to_Queens_workerbees(QUEENBEE=QUEENBEE, qcp_bees_key=qcp_bees_key, ticker_allowed=ticker_allowed)
         
         with st.expander(name, True):
             with st.form(f'Update WorkerBees{admin}'):
@@ -197,8 +196,10 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
                         my_tic_list = my_tic_list + q.get('tickers')
                 duplicates = find_duplicates(my_list)
                 duplicates_tickers = find_duplicates(my_tic_list)
-                st.write(duplicates)
-                st.write(duplicates_tickers)
+                if duplicates:
+                    st.write("dup qcp", duplicates)
+                if duplicates_tickers:
+                    st.write("dup tickers", duplicates_tickers)
 
 
         return True
@@ -284,6 +285,7 @@ flattened_data = flatten_data(data=copy.deepcopy(QUEENBEE['workerbees']))
 df = pd.DataFrame(flattened_data)
 df.set_index('ticker', inplace=True)
 with cols[0]:
+    st.write("QBEE")
     st.data_editor(df, key='111')
 
 
@@ -291,14 +293,15 @@ flattened_data = flatten_data(data=copy.deepcopy(QUEEN_KING['chess_board']))
 df = pd.DataFrame(flattened_data)
 df.set_index('ticker', inplace=True)
 with cols[1]:
+    st.write("QK Board")
     st.data_editor(df, key='222')
 
 st.sidebar.write('admin:', st.session_state["admin"])
-# add new keys
-KING_req = add_key_to_KING(KING=KING)
-if KING_req.get('update'):
-    KING = KING_req['KING']
-    PickleData(KING.get('source'), KING)
+# # add new keys
+# KING_req = add_key_to_KING(KING=KING)
+# if KING_req.get('update'):
+#     KING = KING_req['KING']
+#     PickleData(KING.get('source'), KING)
 
 with st.sidebar:
     with st.expander("admin"):
@@ -313,8 +316,10 @@ if st.session_state.get('admin_users'):
 
 QB_workerbees(KING, QUEENBEE, admin=True)
 
-with st.sidebar:
-    st.write(pd.DataFrame([i for i in qq if i not in tt]))
+# with st.sidebar:
+st.write("In QBee not in Chessboard")
+st.write(pd.DataFrame([i for i in qq if i not in tt]))
 
-with st.sidebar:
-    st.write(pd.DataFrame([i for i in tt if i not in qq]))
+# with st.sidebar:
+st.write("In Chessboard not in QBee")
+st.write(pd.DataFrame([i for i in tt if i not in qq]))
