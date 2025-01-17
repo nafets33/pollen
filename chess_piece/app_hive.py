@@ -595,9 +595,9 @@ def sneak_peak_form():
     # if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
     with st.form("Sneak Peak Access"):
         st.session_state["sneak_peak"] = True
-        sneak_name = st.text_input("Your Name", key='sneak_name')
-        sneak_pw = st.text_input("Sneak Key", key='sneak_key')
-        if st.form_submit_button("Watch a Live Bot"):
+        # sneak_name = st.text_input("Your Name", key='sneak_name')
+        # sneak_pw = st.text_input("Sneak Key", key='sneak_key')
+        if st.form_submit_button("Watch a Live Bot", use_container_width=True):
             # if len(sneak_name) == 0:
             #     st.error("Enter Your Name To Get In")
             #     st.stop()

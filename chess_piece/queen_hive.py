@@ -4044,7 +4044,7 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
         return True
 
     def setup_chesspiece_dbs(db_root, table_name=table_name, client_user_tables=client_user_tables):
-        print("Check to init pollen DB")
+        # print("Check to init pollen DB")
 
         env_table = 'client_user_env'
         if not PollenDatabase.key_exists(env_table, f'{db_root}-ENV'):

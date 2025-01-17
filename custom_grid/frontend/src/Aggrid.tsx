@@ -154,7 +154,7 @@ const AgGrid = (props: Props) => {
         style={{
           background: "transparent",
           color: props.color ? props.color : "black",
-          width: "100%",
+          width: props.width ? props.width : "100%",
           borderColor: props.borderColor ? props.borderColor : "black",
         }}
       >

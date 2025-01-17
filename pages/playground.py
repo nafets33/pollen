@@ -94,41 +94,31 @@ def refresh_yfinance_ticker_info(main_symbols_full_list):
 
 
 
-def sync_current_broker_account(client_user, prod, symbols=[]):
-    # Find combinations of orders where the total `filled_qty` matches the target
-    def find_orders_to_meet_delta(broker_orders, broker_qty_delta):
-        """
-        Find a set of orders from broker_orders where the total 'filled_qty' 
-        is greater than or equal to broker_qty_delta. If no exact match is found,
-        return the closest combination.
+def find_orders_to_meet_delta(orders, broker_qty_delta, qty_field='filled_qty'):
+    """
+    Find the orders that meet the target delta quantity
+    """
+    selected_orders = []
+    total_qty = 0
 
-        Parameters:
-            broker_orders (pd.DataFrame): DataFrame containing order details, including 'filled_qty'.
-            broker_qty_delta (float): Target quantity to meet or exceed.
-
-        Returns:
-            pd.DataFrame: Rows representing the best matching orders.
-            float: The total filled quantity of the selected orders.
-        """
-        # broker_orders = broker_orders.sort_values(by='filled_qty', ascending=False).copy()
-        selected_orders = []
-        total_qty = 0
-
-        for idx in broker_orders.index:
-            order_qty = broker_orders.loc[idx, 'filled_qty']
-            if total_qty + order_qty >= broker_qty_delta:
-                selected_orders.append(idx)
-                total_qty += order_qty
-                break
+    for idx in orders.index:
+        order_qty = orders.loc[idx, qty_field]
+        if total_qty + order_qty >= broker_qty_delta:
             selected_orders.append(idx)
             total_qty += order_qty
+            break
+        selected_orders.append(idx)
+        total_qty += order_qty
 
-        if selected_orders:
-            return broker_orders.loc[selected_orders], total_qty
+    if selected_orders:
+        return orders.loc[selected_orders], total_qty
 
-        return pd.DataFrame(), 0
+    return pd.DataFrame(), 0
 
 
+def sync_current_broker_account(client_user, prod, symbols=[]):
+    # Find combinations of orders where the total `filled_qty` matches the target
+ 
     # WORKERBEE HANDLE WHEN NOT ENOUGH ORDERS AVAILABLE 
     ## Sync current broker account
     qb = init_queenbee(client_user=client_user, prod=prod, broker=True, queen=True, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
@@ -138,21 +128,17 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
     BROKER = qb.get('BROKER')
     BROKER = init_BROKER(api, BROKER)
     revrec = qb.get('revrec') # qb.get('queen_revrec')
-    # QUEENsHeart = qb.get('QUEENsHeart')
-    # portfolio = QUEENsHeart['heartbeat'].get('portfolio') # check exists !!!
-    
-    # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
-    # for every broker order, if Order is not in QUEEN then create QUEEN order, seperate by BUY and SELL, run__ vs close__
-    
+
     queen_orders = QUEEN['queen_orders']
     queen_order_ids = queen_orders.index.tolist()
     broker_orders = BROKER['broker_orders']
     storygauge = revrec['storygauge'].copy()
     df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
     if len(df) == 0:
-        print("There is NO Delta returning out")
+        st.write("There is NO Delta returning out")
         # return False
 
+    god_save = False
     for symbol in df.index.tolist():
         if symbols:
             if symbol not in symbols:
@@ -165,7 +151,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
                                         ~(broker_orders.index.isin(queen_order_ids)) # not in QUEEN
                                         ].copy()
         if len(avail_orders) == 0:
-            print(symbol, "No Orders Available go GET MORE ORDERS")
+            st.write(symbol, "No Orders Available go GET MORE ORDERS")
             continue
 
         # for all Available Orders return orders to match Qty
@@ -173,7 +159,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
         avail_orders['filled_qty'] = avail_orders['filled_qty'].astype(float)
         # find order to match to Qty
         found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta)
-        print(symbol, total_qty)
+        st.write(symbol, total_qty)
         reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
         # If Enough, create QUEEN order and attempt to use by remaining balance, if Not Skewed weight to 1 year ONLY if BUY... or BUY onlys skew evenly
         ## create QUEEN orders
@@ -181,7 +167,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
             order_data = found_orders.loc[client_order_id].to_dict()
             filled_qty = float(order_data['filled_qty'])
             filled_avg_price = float(order_data['filled_avg_price'])
-            star_time= '1Day_1Year' #star_names(kors.get('star_list')[0])
+            star_time = '1Day_1Year' #star_names(kors.get('star_list')[0])
             ticker_time_frame = f'{symbol}_{star_time}'
             symbol, tframe, tperiod = ticker_time_frame.split("_")
             star = f'{tframe}_{tperiod}'
@@ -191,6 +177,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
             trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
             king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
             wave_amo = filled_qty * filled_avg_price
+            king_order_rules['sell_trigbee_trigger'] = False
             
             # Other Misc
             order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
@@ -231,12 +218,63 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
             # logging.info(f"SUCCESS on BUY for {ticker}")
             # msg = (f'Ex BUY Order {trigbee} {ticker_time_frame} {round(wave_amo,2):,}')
             append_queen_order(QUEEN, new_queen_order_df)
+            god_save = True
 
-    
-    god_save_the_queen(QUEEN, save_q=True, save_qo=True)
-
+    if god_save:
+        god_save_the_queen(QUEEN, save_q=True, save_qo=True)
 
     return True
+
+
+def sync_current_broker_delta(client_user, prod, symbols=[], god_save=False):
+    # Find combinations of orders where the total `filled_qty` matches the target
+
+
+    # WORKERBEE HANDLE WHEN NOT ENOUGH ORDERS AVAILABLE 
+    ## Sync current broker account
+    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, revrec=True, pg_migration=pg_migration)
+    QUEEN = qb.get('QUEEN')
+    revrec = qb.get('revrec') # qb.get('queen_revrec')
+
+    # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
+    # for every broker order, if Order is not in QUEEN then create QUEEN order, seperate by BUY and SELL, run__ vs close__
+    
+    queen_orders = QUEEN['queen_orders']
+
+    storygauge = revrec['storygauge'].copy()
+    df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
+    if len(df) == 0:
+        st.write("There is NO Delta returning out")
+        # return False
+
+    # reduce orders
+    df = storygauge[storygauge['broker_qty_delta'] > 0].copy()
+    # find orders to reduce
+    for symbol in df.index.tolist():
+        if symbols:
+            if symbol not in symbols:
+                continue
+        selected_row = df.loc[symbol]
+        broker_qty_delta = selected_row.get('broker_qty_delta')
+        avail_orders = return_active_orders(QUEEN)
+        if len(avail_orders) == 0:
+            st.write(symbol, "No Orders Available go GET MORE ORDERS")
+            continue
+        avail_orders['qty_available'] = avail_orders['qty_available'].astype(float)
+        # find order to match to Qty
+        found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta, qty_field='qty_available')
+        st.write(symbol, len(found_orders), total_qty)
+
+        # Route QUEEN Orders to Close
+        for client_order_id in found_orders.index.tolist():
+            QUEEN['queen_orders'].at[client_order_id, 'queen_order_state'] = 'completed_pollen'
+        
+        if god_save:
+            god_save_the_queen(QUEEN, save_q=True, save_qo=True)
+        
+
+    return True
+
 
 def init_account_info(client_user, prod):
     broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
@@ -250,8 +288,10 @@ def PlayGround():
     prod = st.session_state['prod']
     client_user=st.session_state['client_user']
 
-    if st.button("Sync Current Broker Account"):
+    if st.button("Sync Current Broker Account -"):
         sync_current_broker_account(client_user, prod)
+    if st.button("Sync With Broker Delta +"):
+        sync_current_broker_delta(client_user, prod)
     
     print("PLAYGROUND", st.session_state['client_user'])
     king_G = kingdom__global_vars()

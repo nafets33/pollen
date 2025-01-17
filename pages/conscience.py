@@ -61,45 +61,47 @@ def generate_cell_style(flash_state_variable='Flash_state'):
                     if (!isNaN(length) && length >= 0) {{
                         if (action.includes('buy')) {{
                             if (length <= 2) {{
-                                color = '#80fd91'; // Softer dark green
+                                color = '#e0f8e4'; // Light green for > 40
                             }} else if (length <= 8) {{
-                                color = '#90fe9f'; // Dark green
+                                color = '#c8f3d1'; // Light green
                             }} else if (length <= 12) {{
-                                color = '#a1fead'; // Medium-dark green
+                                color = '#aef0bc'; // Light-medium green
                             }} else if (length <= 16) {{
-                                color = '#b7fec0'; // Medium green
+                                color = '#94ecaa'; // Medium green
                             }} else if (length <= 20) {{
-                                color = '#c1fac9'; // Light-medium green
+                                color = '#7ae897'; // Medium-dark green
                             }} else if (length <= 24) {{
-                                color = '#d0f9d5'; // Light green
+                                color = '#60e484'; // Dark green
                             }} else if (length <= 28) {{
-                                color = '#def7e1'; // Lighter green
+                                color = '#46e071'; // Darker green
+                            }} else if (length <= 32) {{
+                                color = '#2cdc5e'; // Darkest green
                             }} else if (length <= 40) {{
-                                color = '#e9f9eb'; // Lightest green
+                                color = '#12d84b'; // Softer darkest green
                             }} else if (length > 40) {{
-                                color = '#f8fef9'; // Lightest green for > 40
+                                color = '#00d438'; // Darkest green
                             }}
                         }} else if (action.includes('sell')) {{
                             if (length <= 2) {{
-                                color = '#fe645b'; // Softer dark red
+                                color = '#f8e0e0'; // Light red for > 40
                             }} else if (length <= 8) {{
-                                color = '#ff827b'; // Dark red
+                                color = '#f3c8c8'; // Light red
                             }} else if (length <= 12) {{
-                                color = '#ff9892'; // Medium-dark red
+                                color = '#f0aeae'; // Light-medium red
                             }} else if (length <= 16) {{
-                                color = '#febbb7'; // Medium red
+                                color = '#ec9494'; // Medium red
                             }} else if (length <= 20) {{
-                                color = '#fed2cf'; // Light-medium red
+                                color = '#e87a7a'; // Medium-dark red
                             }} else if (length <= 24) {{
-                                color = '#fddfdd'; // Light red
+                                color = '#e46060'; // Dark red
                             }} else if (length <= 28) {{
-                                color = '#fde4e4'; // Lighter red
+                                color = '#e04646'; // Darker red
                             }} else if (length <= 32) {{
-                                color = '#ffe9e7'; // Very light red
+                                color = '#dc2c2c'; // Darkest red
                             }} else if (length <= 40) {{
-                                color = '#f9e9e8'; // Lightest red
+                                color = '#d81212'; // Softer darkest red
                             }} else if (length > 40) {{
-                                color = '#fffefe'; // Lightest red for > 40
+                                color = '#d40000'; // Darkest red
                             }}
                         }}
                     }}
@@ -161,7 +163,8 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
                     backgroundColor: color,
                     color: '#000', // Black text for better contrast
                     padding: '2px',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    textAlign: 'center',
                 }};
             }}
 
@@ -194,36 +197,46 @@ function(p) {
 }
 """)
 
-honey_colors = JsCode(
-    """
-function(params) {
-    if (params.value > 0) {
+honey_colors = JsCode("""
+function(p) {
+    if (p.value > 0) {
         return {
-            'color': '#168702',
-        }
-    }
-    else if (params.value < 0) {
+            color: '#0a9d25', // Medium green for positive money
+            padding: '0px',
+            boxSizing: 'border-box',
+            textAlign: 'center' // Center the values
+        };
+    } else if (p.value < 0) {
         return {
-            'color': '#F03811',
-        }
+            color: '#ed370f', // Medium red for negative money
+            padding: '0px',
+            boxSizing: 'border-box',
+            textAlign: 'center' // Center the values
+        };
+    } else {
+        return {
+            textAlign: 'center' // Center the values for zero
+        };
     }
-};
-"""
-)
+}
+""")
+
 
 button_style = JsCode("""
 function(p) {
     if (p.data.money > 0) {
         return {
-            backgroundColor: '#bff0c7', // Light green for positive money
-            padding: '0px',
-            boxSizing: 'border-box'
+            backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white' // White border
         };
     } else if (p.data.money < 0) {
         return {
-            backgroundColor: '#f8c6c6', // Light red for negative money
-            padding: '0px',
-            boxSizing: 'border-box'
+            backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white' // White border
         };
     } else {
         return null; // No style for other cases (e.g., money === 0)
@@ -231,7 +244,54 @@ function(p) {
 }
 """)        
 
+button_style_BUY_autopilot = JsCode("""
+function(p) {
+    if (p.data.buy_autopilot === "ON") {
+        return {
+            backgroundColor: '#bff0c7',
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white',
+            // width: '100%',
+        };
+    } else {
+        return {
+            backgroundColor: '#f8c6c6', // Light red text
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white',
+            // width: '100%',
+        };
+    }
+}
+""")
 
+button_style_SELL_autopilot = JsCode("""
+function(p) {
+    //console.log('sell_autopilot value:', p.data.sell_autopilot);
+    //console.log('Type of sell_autopilot:', typeof p.data.sell_autopilot);
+
+    let autopilot = String(p.data.sell_autopilot).trim().toUpperCase();
+    let symbol = p.data.Symbol;
+    if (autopilot === "OFF") {
+        //console.log("WE ARE ON", symbol, autopilot);
+        return {
+            backgroundColor: '#f8c6c6', // Light red text
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white' // White border
+        };
+    } else {
+        console.log(symbol, autopilot);
+        return {
+            backgroundColor: '#bff0c7', // Light green text
+            padding: '2px',
+            boxSizing: 'border-box',
+            border: '2px solid white' // White border
+        };
+    }
+}
+""")
 
 
 def chunk(it, size):
@@ -290,8 +350,11 @@ def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', ti
 def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
     run_times = {}
     s = datetime.now()
-    with st.sidebar:
-        refresh_grids = st.toggle("Refresh Grids", True)
+    if not sneak_peak:
+        with st.sidebar:
+            refresh_grids = st.toggle("Refresh Grids", True)
+    else:
+        refresh_grids = False
 
     symbols = return_queenking_board_symbols(QUEEN_KING)
     symbols = ['SPY'] if len(symbols) == 0 else symbols
@@ -476,10 +539,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                             'prompt_field': 'edit_buy_autopilot_option',
                             'col_headername': 'Buy Auto Pilot',
                             "col_header": "buy_autopilot",
-                            "border_color": "green",
+                            # "border_color": "green",
                             'col_width':89,
                             # 'pinned': 'left',
                             'prompt_order_rules': ['buy_autopilot'],
+                            'cellStyle': button_style_BUY_autopilot,
                             },
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_sell_autopilot',
@@ -487,10 +551,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                             'prompt_field': 'edit_sell_autopilot_option',
                             'col_headername': 'Sell Auto Pilot',
                             "col_header": "sell_autopilot",
-                            "border_color": "red",
+                            # "border_color": "red",
                             'col_width':89,
                             # 'pinned': 'left',
                             'prompt_order_rules': ['sell_autopilot'],
+                            'cellStyle': button_style_SELL_autopilot,
                             },
                         ]
                 exclude_buy_kors = ['star_list', 'reverse_buy', 'sell_trigbee_trigger_timeduration']
@@ -532,7 +597,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 return  {
                 # for col in cols:
                 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
-                'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
+                'current_from_yesterday': {'headerName':'% Change', 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
 

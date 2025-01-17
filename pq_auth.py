@@ -268,7 +268,7 @@ def signin_main(page=None):
 
 
     def setup_user_pollenqdbs():
-        print("AUTH SETUP")
+        # print("AUTH SETUP")
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':
             prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=False, queenKING=True, prod=False, init=True)
             st.session_state['instance_setup'] = True
@@ -292,8 +292,6 @@ def signin_main(page=None):
 
         prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True, init=True)
         st.session_state['instance_setup'] = True
-        # print("AUTH SETUP env", prod)
-
 
         return prod
 

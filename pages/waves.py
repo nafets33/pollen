@@ -36,7 +36,7 @@ from chess_piece.pollen_db import PollenDatabase
 from chess_piece.fastapi_queen import buy_button_dict_items, sell_button_dict_items
 from chess_utils.conscience_utils import story_return
 
-@st.cache_data
+# @st.cache_data
 def queen_data(client_user, prod):
     qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')

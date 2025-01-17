@@ -64,6 +64,7 @@ def kingdom__global_vars():
         "running_open",
         "archived_bee",
         "final",
+        "completed_pollen",
     ],
     'active_queen_order_states': [
         "submitted",
@@ -77,7 +78,7 @@ def kingdom__global_vars():
         'pending',
         'filled',
     ],
-    'CLOSED_queenorders': ["running_close", "completed", "completed_alpaca"],
+    'CLOSED_queenorders': ["running_close", "completed", "completed_alpaca", "completed_pollen"],
     'RUNNING_Orders': ["running", "running_open"],
     'RUNNING_CLOSE_Orders': ["running_close"],
     'RUNNING_OPEN': ['running_open'],

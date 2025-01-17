@@ -312,6 +312,20 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         ]
         df['current_from_yesterday'] = round(df['current_from_yesterday'] * 100,2)
         df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x/100, shade_num_var=89))
+        
+        # AUTO PILOT 
+        # auto_pilot_df = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
+        # auto_pilot_df = storygauge['buy_autopilot']
+        kors_dict = {'buy_autopilot': False}
+        df['edit_buy_autopilot_option'] = [kors_dict for _ in range(df.shape[0])]
+        kors_dict = {'sell_autopilot': False}
+        df['edit_sell_autopilot_option'] = [kors_dict for _ in range(df.shape[0])]
+        # Create the 'edit_buy_autopilot_option' column with the desired dictionary structure
+        df["edit_buy_autopilot_option"] = df["buy_autopilot"].apply(lambda x: {"buy_autopilot": x})
+        df["edit_sell_autopilot_option"] = df["sell_autopilot"].apply(lambda x: {"sell_autopilot": x})
+        # Handle DISPLAY of AUTO Pilot
+        df['buy_autopilot'] = df['edit_buy_autopilot_option'].apply(lambda x: "ON" if x.get('buy_autopilot') else "OFF")
+        df['sell_autopilot'] = df['edit_sell_autopilot_option'].apply(lambda x: "ON" if x.get('sell_autopilot') else "OFF")
 
         # # Totals Index
         df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
@@ -336,20 +350,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         df = pd.concat([df_total, df])
         df.at['Total', 'symbol'] = 'Total'
 
-        # AUTO PILOT 
-        # auto_pilot_df = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
-        # auto_pilot_df = storygauge['buy_autopilot']
-        kors_dict = {'buy_autopilot': False}
-        df['edit_buy_autopilot_option'] = [kors_dict for _ in range(df.shape[0])]
-        kors_dict = {'sell_autopilot': False}
-        df['edit_sell_autopilot_option'] = [kors_dict for _ in range(df.shape[0])]
-        # Create the 'edit_buy_autopilot_option' column with the desired dictionary structure
-        df["edit_buy_autopilot_option"] = df["buy_autopilot"].apply(lambda x: {"buy_autopilot": x})
-        df["edit_sell_autopilot_option"] = df["sell_autopilot"].apply(lambda x: {"sell_autopilot": x})
-        # Handle DISPLAY of AUTO Pilot
-        df['buy_autopilot'] = df['edit_buy_autopilot_option'].apply(lambda x: "ON" if x.get('buy_autopilot') else "OFF")
-        df['sell_autopilot'] = df['edit_sell_autopilot_option'].apply(lambda x: "ON" if x.get('sell_autopilot') else "OFF")
-
+        # df.at['Total', 'edit_buy_autopilot_option'] = ""
+        # df.at['Total', 'edit_sell_autopilot_option'] = ""
 
         for star in star_names().keys():
             try:
