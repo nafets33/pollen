@@ -4226,12 +4226,13 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
         # PROD vs SANDBOX # # Ensure Environment
         table_name = 'client_user_env'
         if pg_migration:
-            pq_env = PollenDatabase.retrieve_data(table_name, f'{db_root}-ENV')
-            if not pq_env:
-                PollenDatabase.upsert_data(table_name, f'{db_root}-ENV', {'env': False})
-                prod = PollenDatabase.retrieve_data(table_name, f'{db_root}-ENV').get('env')
-            else:
-                prod = pq_env.get('env') # bad code .. :( 
+            key = f'{db_root}-ENV'
+            if not PollenDatabase.key_exists(table_name, key):
+                data = {'env': False}
+                PollenDatabase.upsert_data(table_name, key, data) 
+
+            pq_env = PollenDatabase.retrieve_data(table_name, key)
+            prod = pq_env.get('env') # bad code .. :( 
         else:
             PB_env_PICKLE = os.path.join(db_root, f'{"queen_king"}{"_env"}{".pkl"}')
             if os.path.exists(PB_env_PICKLE) == False:
@@ -4259,12 +4260,13 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
 
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration):
-    db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
-    # print(db_root, "PGMIGRATION:", pg_migration)
-    
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False):
+    db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)    
     table_name = "client_user_store" if prod else 'client_user_store_sandbox'
-    # print("QHive", prod, table_name)
+
+    if demo:
+        db_root = 'db__stefanstapinski_11854791'
+        prod = False
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init, pg_migration=pg_migration, table_name=table_name)
     if init_pollen_ONLY:

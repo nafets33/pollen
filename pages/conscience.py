@@ -287,7 +287,7 @@ def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', ti
     return True 
 
 
-def queens_conscience(revrec, KING, QUEEN_KING, api):
+def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
     run_times = {}
     s = datetime.now()
     with st.sidebar:
@@ -301,28 +301,15 @@ def queens_conscience(revrec, KING, QUEEN_KING, api):
     ip_address = st.session_state['ip_address']
     client_user = st.session_state["username"]
     db_root = st.session_state['db_root']
-    prod, admin, prod_name = st.session_state['prod'], st.session_state['admin'], st.session_state['prod_name']
+    prod, admin, prod_name = st.session_state['prod'], st.session_state.get('admin'), st.session_state.get('prod_name')
     # authorized_user = st.session_state['authorized_user']
 
-    # return page last visited 
-    sneak_peak = False
-    if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] == True:
-        st.info("Welcome You must be Family -- This QueenBot is LIVE")
-
-    elif st.session_state['authentication_status'] != True:
-        st.write(st.session_state['authentication_status'])
-        st.error("You Need to Log In")
-        sneak_peak = False
-        st.session_state['sneak_peak'] == False
-        st.stop()
-    
-    elif st.session_state['authentication_status']:
-        sneak_peak = False
-        pass
+    # return page last visited
+    if sneak_peak:
+        st.session_state['sneak_peak'] = True
+        st.info("Welcome You must be Family -- This QueenBot is LIVE Trading on its own using AI Algorithms")
     else:
-        st.error("Stopping page")
-        st.stop()
-
+        st.session_state['sneak_peak'] = False
     # revrec = QUEEN.get('revrec')
     # if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
     #     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board

@@ -262,7 +262,7 @@ def read_user_db(cur):
 
 def signin_main(page=None):
     """Return True or False if the user is signed in"""
-    return_app_ip()
+    ip_address = return_app_ip()
     MISC = local__filepaths_misc()
     set_streamlit_page_config_once()
 
@@ -380,7 +380,7 @@ def signin_main(page=None):
             with st.expander("New User Create Account"):
                 register_user(authenticator, con, cur)
             
-            cust_Button(file_path_url='misc/pollen_preview.gif', height='150px', hoverText='')
+            # cust_Button(file_path_url='misc/pollen_preview.gif', height='150px', hoverText='')
     
 
         

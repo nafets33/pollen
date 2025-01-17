@@ -1004,27 +1004,6 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     return {'current_wave': current_wave, 'current_active_waves': d_return}
 
 
-def shape_chessboard(chess_board):
-    # Create a deep copy to avoid modifying the original chess_board
-    chess_board_copy = copy.deepcopy(chess_board)
-    rows = []
-
-    # Iterate through the dictionary and flatten data for each ticker
-    for key, value in chess_board_copy.items():
-        tickers = value.pop('tickers')  # Extract the tickers for this key
-        stars = value.pop('stars')  # Extract stars for each ticker
-
-        for ticker in tickers:
-            for star_key, star_value in stars.items():
-                row = value.copy()  # Copy the dictionary so we don't modify the original
-                row['ticker_star'] = f"{ticker}_{star_key}"  # Create the combined index value
-                row['star_value'] = star_value  # Add the star value to the row
-                rows.append(row)
-
-    # Create the DataFrame with the combined 'ticker_star' as the index
-    df = pd.DataFrame(rows).set_index('ticker_star')
-    return df
-
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, check_portfolio=True): # WORKERBEE remove queen order states
     # WORKERBEE move out QUEEN_KING and only bring in chess_board *
     rr_starttime = datetime.now()
@@ -1055,8 +1034,14 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         missing_tickers = [i for i in df_broker_portfolio.index if i not in symbols]
         if missing_tickers:
             print("RR SYMBOLS NOT IN CHESSBOARD", missing_tickers)
-            QUEEN_KING[chess_board]['non_active_stories'] = init_qcp(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=0)
-    
+            if 'non_active_stories' not in QUEEN_KING[chess_board].keys():
+                QUEEN_KING[chess_board]['non_active_stories'] = init_qcp(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=0)
+            else:
+                non_tics = QUEEN_KING[chess_board]['non_active_stories'].get('tickers')
+                for tic in missing_tickers:
+                    if tic not in non_tics:
+                        non_tics.append(tic)
+                QUEEN_KING[chess_board]['non_active_stories']['tickers'] = non_tics
     # Check for First
     # if not active_queen_order_states:
     active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')

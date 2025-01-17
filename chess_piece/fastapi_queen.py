@@ -255,9 +255,9 @@ def validate_return_kors(king_order_rules, kors):
         if type(value) != bool: ## BOOLS are already handled by frontend
           print("ERRROR BOOL CLOSE ORDER")
           continue
-    elif rule == 'sell_trigbee_date':
-        if type(value) != datetime:
-          value = datetime(value)
+    # elif rule == 'sell_trigbee_date': # KEEP as STRING
+    #     if type(value) != datetime:
+    #       value = pd.datetime(value)
         
     king_order_rules.update({rule: value})
 
@@ -326,7 +326,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     power_up_amo = power_amo()
     borrowed_funds = True # USER INITIATE
     borrow_qty = False ## DEPRECIATE
-
+    # WORKERBEE fix sell_date format, keep as string
     kors = validate_return_kors(king_order_rules, kors)
     wave_amo = kors.get('wave_amo')
 
