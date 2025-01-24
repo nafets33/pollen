@@ -1,10 +1,15 @@
 from fastapi import APIRouter, status, Header, Body
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import pandas as pd
-import random
-import json
-import ipdb
 import os
+
+# import ipdb
+# import openai
+# import json
+
+from master_ozz.ozz_query import ozz_query
+from master_ozz.utils import ozz_master_root, init_constants
+import random
 from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy_order_request,  get_queen_orders_json, app_Sellorder_request,  get_ticker_data, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
                                        app_archive_queen_order,
                                        app_queen_order_update_order_rules,
@@ -16,6 +21,8 @@ from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy
                                        header_account,
                                        chessboard_view,
                                        )
+
+# from dotenv import load_dotenv
 
 router = APIRouter(
     prefix="/api/data",
@@ -29,7 +36,44 @@ def check_authKey(api_key):
     else:
         return True
 
+@router.get("/{file_name}")
+def get_file(file_name: str):
+    constants = init_constants()
+    OZZ_db_audio = constants.get('OZZ_db_audio')
+    OZZ_db_images = constants.get('OZZ_db_images')
+    file_path = os.path.join(OZZ_db_audio, file_name)
+    
+    # Determine the media type based on the file extension
+    media_type = "application/octet-stream"
+    if file_name.lower().endswith(".mp3"):
+        media_type = "audio/mp3"
+        file_path = os.path.join(OZZ_db_audio, file_name)
+    elif file_name.lower().endswith(".png"):
+        media_type = "image/png"
+        file_path = os.path.join(OZZ_db_images, file_name)
+    elif file_name.lower().endswith(".gif"):
+        media_type = "image/gif"
+        file_path = os.path.join(OZZ_db_images, file_name)
 
+    return FileResponse(file_path, media_type=media_type)
+
+@router.get("/test", status_code=status.HTTP_200_OK)
+def load_ozz_voice():
+    json_data = {'msg': 'test'}
+    return JSONResponse(content=json_data)
+
+@router.post("/voiceGPT", status_code=status.HTTP_200_OK)
+def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
+    # print(f'face data {face_data}')
+    print(f'trig TYPE: {tigger_type}')
+    
+    if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        # Log the trader WORKERBEE
+        return "NOTAUTH"
+
+    json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars)
+    return JSONResponse(content=json_data)
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
 def load_wavestories_json(client_user: str=Body(...), symbols: list=Body(...), toggle_view_selection: str=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):

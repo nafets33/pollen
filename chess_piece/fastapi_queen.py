@@ -853,7 +853,7 @@ def header_account(client_user, prod):
         charlie_bee = QUEENsHeart.get('charlie_bee')
         avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
       except Exception as e:
-        print(e)
+        print("charlie", e)
         avg_beat = 0
       long = QUEENsHeart['heartbeat'].get('long')
       short = QUEENsHeart['heartbeat'].get('short')

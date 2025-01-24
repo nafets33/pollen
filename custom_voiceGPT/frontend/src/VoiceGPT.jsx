@@ -1,92 +1,225 @@
-import React, { useState, useEffect, FC, memo, useMemo, useRef } from "react"
-import axios from "axios"
-import {
-  ComponentProps,
-  Streamlit,
-  withStreamlitConnection,
-} from "streamlit-component-lib"
-import SpeechRecognition, {
-  useSpeechRecognition,
-} from "react-speech-recognition"
-import Dictaphone from "./Dictaphone"
-import * as faceapi from "@vladmandic/face-api"
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { Streamlit } from "streamlit-component-lib";
+import SpeechRecognition from "react-speech-recognition";
+import Dictaphone from "./Dictaphone";
+import MediaDisplay from "./MediaDisplay";
 
-const imageUrls = {
-  hoots: "/hoots.png",
-  hootsAndHootie: "/hootsAndhootie.png",
-}
+// import Dictaphone_ss from "./Dictaphone_ss";
+import * as faceapi from "@vladmandic/face-api";
+import DOMPurify from 'dompurify';
 
-let timer = null
-let faceTimer = null
-let g_anwers = []
-let firstFace = false
+let timer = null;
+let faceTimer = null;
+let g_anwers = [];
+let firstFace = false;
 
 const CustomVoiceGPT = (props) => {
-  const { api, kwargs = {} } = props
+  const { api, kwargs = {} } = props;
   const {
     commands,
     height,
     width,
-    show_conversation,
     show_video,
     input_text,
     no_response_time,
     face_recon,
-  } = kwargs
-  const [imageSrc, setImageSrc] = useState(kwargs.self_image)
-  const [message, setMessage] = useState("")
-  const [answers, setAnswers] = useState([])
-  const [listenAfterRelpy, setListenAfterReply] = useState(false)
-  const [modelsLoaded, setModelsLoaded] = useState(false)
-  const [captureVideo, setCaptureVideo] = useState(false)
-  const [textString, setTextString] = useState("")
+    api_key,
+    refresh_ask,
+    self_image,
+    api_audio,
+    client_user,
+    force_db_root,
+    before_trigger,
+  } = kwargs;
+  const [imageSrc, setImageSrc] = useState(kwargs.self_image);
+  const [imageSrc_name, setImageSrc_name] = useState(kwargs.self_image);
 
-  const faceData = useRef([])
-  const faceTriggered = useRef(false)
-  const videoRef = useRef()
-  const videoHeight = 480
-  const videoWidth = 640
-  const canvasRef = useRef()
+  const [message, setMessage] = useState("");
+  const [answers, setAnswers] = useState([]);
+  const [listenAfterReply, setListenAfterReply] = useState(false);
 
-  const handleInputText = (e) => {
-    const { value } = e.target
-    setTextString(value)
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [captureVideo, setCaptureVideo] = useState(false);
+  const [textString, setTextString] = useState("");
+  const [apiInProgress, setApiInProgress] = useState(false); // Added state for API in progress
+  const [speaking, setSpeakingInProgress] = useState(false); // Added state for API in progresslistening
+  const [listening, setlistening] = useState(false); // Added state for API in progress
+
+  const [show_conversation, setshow_conversation] = useState(true); // Added state for API in progress
+  
+
+  const [listenButton, setlistenButton] = useState(false); // Added state for API in progress
+  const [session_listen, setsession_listen] = useState(false);
+  const [convo_button, setconvo_button] = useState(false); // Added state for API in progress
+
+  const [before_trigger_vars, before_trigger_] = useState(kwargs.before_trigger); 
+  const faceData = useRef([]);
+  const faceTriggered = useRef(false);
+  const videoRef = useRef();
+  const videoHeight = 480;
+  const videoWidth = 640;
+  const canvasRef = useRef();
+  const audioRef = useRef(null);
+  
+
+  const [UserUsedChatWindow, setUserUsedChatWindow] = useState(false);
+  const [buttonName, setButtonName] = useState("Click and Ask");
+  const [buttonName_listen, setButtonName_listen] = useState("Listening");
+
+  const [showImage, setShowImage] = useState(false); // Step 1: Define showImage state
+
+  
+
+  const toggleShowImage = () => { // Step 2: Create toggle function
+    setShowImage((prevShowImage) => !prevShowImage);
+  };
+
+  const [windowWidth, setWindowWidth] = useState(0); // Initial value
+
+    // Create a reusable function for getting the window width
+    const updateWindowWidth = () => {
+      if (typeof window !== 'undefined') {
+          setWindowWidth(window.innerWidth);
+      }
+  };
+
+  // Call the function on component mount to set the initial window width
+  useEffect(() => {
+      updateWindowWidth();
+  }, []);
+
+  useEffect(() => {
+    if (self_image) {
+      // Fetch the image data from the API endpoint
+      fetchImageData(self_image);
+    }
+  }, [self_image]);
+
+  const fetchImageData = async (imageUrl) => {
+    try {
+      const response = await axios.get(`${api_audio}${imageUrl}`, {
+        responseType: 'blob', // Set responseType to 'blob' to handle file response
+      });
+      const objectUrl = URL.createObjectURL(response.data); // Use a different variable name here
+      setImageSrc(objectUrl);
+      setImageSrc_name(imageUrl)
+    } catch (error) {
+      console.error('Error fetching image data:', error);
+    }
+  };
+
+
+
+  const stopListening = () => {
+    setlistening(false);
+    SpeechRecognition.stopListening();
+    console.log("Stopping Listening, isListening=", listening)
   }
+
+  const listenContinuously = () =>{
+    setlistening(true)
+    SpeechRecognition.startListening({
+      continuous: true,
+      language: "en-GB",
+    })
+
+}
+
+
+const convo_mode = () => {
+  console.log("listening?", listening);
+  if (!listening) {
+    console.log("Starting to listen...");
+    setconvo_button(true)
+    listenContinuously();
+  } else {
+    console.log("Stopping listening...");
+    setconvo_button(false)
+    stopListening();
+  }
+};
+
+useEffect(() => {
+  if (listening) {
+    console.log("Listening has started");
+  } else {
+    console.log("Listening has stopped");
+  }
+}, [listening]);
+
+
+  const listenSession = () =>{
+    if (session_listen) {
+    setsession_listen(false)
+  }
+  else{
+    setsession_listen(true)
+  }
+    }
+
+  useEffect(() => {
+    const loadModels = async () => {
+      const MODEL_URL = process.env.PUBLIC_URL + "/models";
+
+      Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
+      ]).then(() => setModelsLoaded(true));
+    };
+    loadModels();
+    const interval = setInterval(() => {
+      // console.log("faceData.current :>> ", faceData.current);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+
+  const handleInputText = (event) => {
+    // Update the state with the input text
+    setTextString(event.target.value);
+  
+    // Set a variable to indicate that the user used the chat window
+    setUserUsedChatWindow(true);
+  };
 
   const handleOnKeyDown = (e) => {
     if (e.key === "Enter") {
-      console.log("textString :>> ", textString)
-      myFunc(textString, { api_body: { keyword: "" } }, 4)
-      setTextString("")
+      console.log("textString :>> ", textString);
+      myFunc(textString, { api_body: { keyword: "" } }, 4);
+      setTextString("");
     }
-  }
+  };
 
   const startVideo = () => {
-    setCaptureVideo(true)
+    setCaptureVideo(true);
     navigator.mediaDevices
       .getUserMedia({ video: { width: 300 } })
       .then((stream) => {
-        let video = videoRef.current
-        video.srcObject = stream
-        video.play()
+        let video = videoRef.current;
+        video.srcObject = stream;
+        video.play();
       })
       .catch((err) => {
-        console.error("error:", err)
-      })
-  }
+        console.error("error:", err);
+      });
+  };
 
   const handleVideoOnPlay = () => {
     setInterval(async () => {
       if (canvasRef && canvasRef.current) {
         canvasRef.current.innerHTML = faceapi.createCanvasFromMedia(
           videoRef.current
-        )
+        );
         const displaySize = {
           width: videoWidth,
           height: videoHeight,
-        }
+        };
 
-        faceapi.matchDimensions(canvasRef.current, displaySize)
+        faceapi.matchDimensions(canvasRef.current, displaySize);
 
         const detections = await faceapi
           .detectAllFaces(
@@ -94,28 +227,28 @@ const CustomVoiceGPT = (props) => {
             new faceapi.TinyFaceDetectorOptions()
           )
           .withFaceLandmarks()
-          .withFaceExpressions()
+          .withFaceExpressions();
 
-        const resizedDetections = faceapi.resizeResults(detections, displaySize)
+        const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
         if (resizedDetections.length > 0) {
-          faceData.current = resizedDetections
+          faceData.current = resizedDetections;
           if (!faceTriggered.current && face_recon) {
-            myFunc("", { api_body: { keyword: "" } }, 2)
-            faceTriggered.current = true
+            myFunc("", { api_body: { keyword: "" } }, 2);
+            faceTriggered.current = true;
           }
         } else {
-          faceTimer && clearTimeout(faceTimer)
+          faceTimer && clearTimeout(faceTimer);
           setTimeout(() => {
-            faceData.current = []
-          }, 1000)
+            faceData.current = [];
+          }, 1000);
         }
 
         if (resizedDetections.length > 0 && !firstFace) {
-          firstFace = true
+          firstFace = true;
           if (kwargs.hello_audio) {
-            const audio = new Audio(kwargs.hello_audio)
-            audio.play()
+            const audio = new Audio(kwargs.hello_audio);
+            audio.play();
           }
         }
 
@@ -123,269 +256,397 @@ const CustomVoiceGPT = (props) => {
           canvasRef.current &&
           canvasRef.current
             .getContext("2d")
-            .clearRect(0, 0, videoWidth, videoHeight)
+            .clearRect(0, 0, videoWidth, videoHeight);
         canvasRef &&
           canvasRef.current &&
-          faceapi.draw.drawDetections(canvasRef.current, resizedDetections)
+          faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
         canvasRef &&
           canvasRef.current &&
-          faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections)
+          faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections);
         canvasRef &&
           canvasRef.current &&
-          faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections)
+          faceapi.draw.drawFaceExpressions(
+            canvasRef.current,
+            resizedDetections
+          );
       }
-    }, 300)
-  }
+    }, 300);
+  };
 
   const closeWebcam = () => {
-    videoRef.current.pause()
-    videoRef.current.srcObject.getTracks()[0].stop()
-    setCaptureVideo(false)
-  }
-  const testFunc = async () => {
-    const audio = new Audio("./test_audio.mp3s")
-    console.log(audio.play())
-    const response = await axios.post(
-      "http://192.168.143.97:8000/api/data/voiceGPT",
-      {
-        api_key: "sdf",
-        text: "text",
-        self_image: "something",
-      }
-    )
-    console.log("response :>> ", response)
+    videoRef.current.pause();
+    videoRef.current.srcObject.getTracks()[0].stop();
+    setCaptureVideo(false);
+  };
+
+  const click_listenButton = () => {
+    setlistenButton(true)
+    if (!listening) {
+      listenContinuously()
+    }
+    setButtonName("Please Speak")
+    console.log("listening button listen click");
+    console.log(listenButton);
+  };
+
+  function isHTML(str) {
+    return /^</.test(str);
   }
 
   const myFunc = async (ret, command, type) => {
-    setMessage(` (${command["api_body"]["keyword"]}) ${ret},`)
-    const text = [...g_anwers, { user: ret }]
-    setAnswers([...text])
+    setMessage(` (${command["api_body"]["keyword"]}) ${ret},`);
+    const text = [...g_anwers, { user: ret }];
+    setAnswers([...text]);
     try {
-      console.log("api call on listen...", command)
+      console.log("api call on listen...", command);
+      setApiInProgress(true); // Set API in progress to true
+      stopListening()
+
       const body = {
         tigger_type: type,
-        api_key: "api_key",
+        api_key: api_key,
         text: text,
-        self_image: imageSrc,
+        self_image: imageSrc_name,
         face_data: faceData.current,
+        refresh_ask: refresh_ask,
+        client_user: client_user,
+        force_db_root:force_db_root,
+        session_listen:session_listen,
+        before_trigger_vars:before_trigger_vars,
+      };
+      console.log("api");
+      const { data } = await axios.post(api, body);
+      console.log("data :>> ", data, body);
+      if (data["self_image"] && data["self_image"] !== imageSrc_name) {
+        fetchImageData(data["self_image"]); // Fetch image data if it's different
       }
-      const { data } = await axios.post(api, body)
-      console.log("data :>> ", data, body)
-      data["self_image"] && setImageSrc(data["self_image"])
-      data["listen_after_reply"] &&
-        setListenAfterReply(data["listen_after_reply"])
-      setAnswers(data["text"])
-      g_anwers = [...data["text"]]
+      setAnswers(data["text"]);
+      g_anwers = [...data["text"]];
+      
+      if (audioRef.current) {
+        audioRef.current.pause(); // Pause existing playback if any
+      }
+
       if (data["audio_path"]) {
-        const audio = new Audio(data["audio_path"])
-        audio.play()
+        const apiUrlWithFileName = `${api_audio}${data["audio_path"]}`;
+        audioRef.current = new Audio(apiUrlWithFileName);
+    
+        try {
+            await audioRef.current.play();
+            
+            // Set state to indicate speaking in progress
+            setSpeakingInProgress(true);
+            setButtonName_listen("Speaking");
+    
+            // Await playback completion
+            await new Promise((resolve) => {
+                audioRef.current.onended = () => {
+                    console.log("Audio playback finished.");
+                    resolve();
+                };
+            });
+    
+        } catch (error) {
+            console.error("Audio playback error:", error);
+        } finally {
+            // Cleanup or reset after playback
+            audioRef.current = null;
+            setSpeakingInProgress(false);
+            setButtonName_listen("Listen");
+        }
+    }
+
+      setButtonName("Click and Ask")
+      setButtonName_listen("Listening")
+      setSpeakingInProgress(false)
+      setApiInProgress(false)
+
+      console.log("Audio ENDED MOVE TO SET VARS .");
+      
+      setListenAfterReply(data["listen_after_reply"]);
+      console.log("listen after reply", data["listen_after_reply"], listenAfterReply);
+
+
+
+      if (data["page_direct"] !== false && data["page_direct"] !== null) {
+        console.log("api has page direct", data["page_direct"]);
+        // window.location.reload();
+        window.location.href = data["page_direct"];
       }
+
+      if (UserUsedChatWindow) {
+        setUserUsedChatWindow(false)
+      }
+      else if (listenAfterReply==true) {
+        console.log("API END HIT listenAfterReply==TRUE")
+        setButtonName_listen("Awaiting your Answer please speak")
+      }
+      else if (listenButton) {
+      setlistenButton(false)
+      }
+      else if (convo_button){
+        console.log("convo mode")
+        listenContinuously()
+      }
+
+      
     } catch (error) {
-      // console.log("api call on listen failded!")
+      console.log("api call on listen failed!", error);
+      setApiInProgress(false); // Set API in progress to false on error
+      setlistenButton(false)
     }
-  }
 
-  // const commands = useMemo(() => {
-  //   return kwargs["commands"].map((command) => ({
-  //     command: command["keywords"],
-  //     callback: (ret) => {
-  //       timer && clearTimeout(timer)
-  //       timer = setTimeout(() => myFunc(ret, command, 1), 1000)
-  //     },
-  //     matchInterim: true,
-  //   }))
-  // }, [kwargs.commands])
-  // const commands = [
-  //   {
-  //     command: "I would like to order *",
-  //     callback: (food) => setMessage(`Your order is for: ${food}`),
-  //     matchInterim: true,
-  //   },
-  //   {
-  //     command: "The weather is :condition today",
-  //     callback: (condition) => setMessage(`Today, the weather is ${condition}`),
-  //   },
-  //   {
-  //     command: ["Hey foots", "Hey foods"],
-  //     callback: ({ command }) => setMessage(`Hi there! You said: "${command}"`),
-  //     matchInterim: true,
-  //   },
-  //   {
-  //     command: "Beijing",
-  //     callback: (command, spokenPhrase, similarityRatio) =>
-  //       setMessage(
-  //         `${command} and ${spokenPhrase} are ${similarityRatio * 100}% similar`
-  //       ),
-  //     // If the spokenPhrase is "Benji", the message would be "Beijing and Benji are 40% similar"
-  //     isFuzzyMatch: true,
-  //     fuzzyMatchingThreshold: 0.2,
-  //   },
-  //   {
-  //     command: ["eat", "sleep", "leave"],
-  //     callback: (command) => setMessage(`Best matching command: ${command}`),
-  //     isFuzzyMatch: true,
-  //     fuzzyMatchingThreshold: 0.2,
-  //     bestMatchOnly: true,
-  //   },
-  //   {
-  //     command: "clear",
-  //     callback: ({ resetTranscript }) => resetTranscript(),
-  //     matchInterim: true,
-  //   },
-  // ]
-
-  const listenContinuously = () =>
-    SpeechRecognition.startListening({
-      continuous: true,
-      language: "en-GB",
-    })
-  const listenContinuouslyInChinese = () =>
-    SpeechRecognition.startListening({
-      continuous: true,
-      language: "zh-CN",
-    })
-  const listenOnce = () =>
-    SpeechRecognition.startListening({ continuous: false })
-
-  useEffect(() => Streamlit.setFrameHeight())
-
-  useEffect(() => {}, [props])
-
-  useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = process.env.PUBLIC_URL + "/models"
-
-      Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-      ]).then(setModelsLoaded(true))
-    }
-    loadModels()
-    const interval = setInterval(() => {
-      console.log("faceData.current :>> ", faceData.current)
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
+    updateWindowWidth();
+    console.log("ReSize Window")
+  };
+  
+  const background_color_chat = refresh_ask.color_dict?.background_color_chat || 'transparent';
+  const splitImage = self_image.split('.')[0]; // Split by dot
+  const placeholder = `Chat with ${splitImage}`;
 
   return (
     <>
+
       <div className="p-2">
-        <div>
-          <img src={imageSrc} height={height || 100} width={width || 100} />
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          {/* Image or video section */}
+          <div>
+            {/* Media Display */}
+            <MediaDisplay
+              showImage={showImage}
+              imageSrc={imageSrc}
+              largeHeight={100}   // Customize as needed
+              largeWidth={100}    // Customize as needed
+              smallHeight={40}    // Customize as needed
+              smallWidth={40}     // Customize as needed
+            />
+          </div>
+  
+          {/* Chat window, taking full width if no image is shown */}
+          <div style={{ flex: showImage ? 1 : '100%', overflowY: 'auto', maxHeight: '350px' }}>
+            {show_conversation && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  maxHeight: '350px',
+                  height: '350px',
+                  overflowY: 'auto',
+                  border: '1px solid #ccc',
+                  padding: '10px',
+                }}
+              >
+                {answers.map((answer, idx) => (
+                  <div
+                    key={idx}
+                    className="chat-message-container"
+                    style={{
+                      marginBottom: '5px',
+                      padding: '5px',
+                      borderRadius: '4px',
+                      border: '1px solid #ccc',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    }}
+                  >
+                    <div
+                      className="chat-user"
+                      style={{
+                        backgroundColor: '#f2f2f2',
+                        textAlign: 'right',
+                        marginLeft: 'auto',
+                        padding: '5px',
+                      }}
+                    >
+                      {client_user}: <span>{answer.user}</span>
+                    </div>
+                    <div
+                      className="chat-response-container"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        backgroundColor: background_color_chat,
+                        padding: '10px',
+                      }}
+                    >
+                      {imageSrc && (
+                        <div className="chat-image" style={{ marginRight: '10px' }}>
+                          <img src={imageSrc} alt="response" style={{ width: '50px' }} />
+                        </div>
+                      )}
+                      <div
+                        className="chat-response-text"
+                        style={{ flex: 1, wordBreak: 'break-word' }}
+                        dangerouslySetInnerHTML={{ __html: answer.resp || "thinking..." }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="p-2">
+
+        {/* Input text section */}
+        {input_text && (
+          <>
+          <hr style={{ margin: '3px 0' }} />
+            <div className="form-group">
+              <input
+                className="form-control"
+                type="text"
+                placeholder={placeholder}
+                value={textString}
+                onChange={handleInputText}
+                onKeyDown={handleOnKeyDown}
+              />
+            </div>
+            <hr style={{ margin: '3px 0' }} />
+          </>
+        )}
+
+      {/* Buttons with indicators under each */}
+      <div style={{ display: 'flex', marginTop: '3px' }}>
+        {/* Button 1 with Listen Indicator */}
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <button
+            style={{
+              fontSize: '12px',
+              padding: '5px',
+              margin: '5px 0',
+              backgroundColor: '#3498db',
+              color: 'white',
+              border: '1px solid #2980b9',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              width: '89%',
+            }}
+            onClick={click_listenButton}
+          >
+            {buttonName}
+          </button>
+          {listening && (
+            <div
+              style={{
+                width: '89%',
+                height: '10px',
+                backgroundImage: 'linear-gradient(90deg, green, transparent 50%, green)',
+                animation: 'flashLine 1s infinite',
+                marginTop: '5px',
+              }}
+            >
+              <div style={{ fontSize: '12px', color: 'black' }}>{buttonName_listen}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Button 2 with Conversational Mode Indicator */}
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <button
+            style={{
+              fontSize: '12px',
+              padding: '5px',
+              margin: '5px 0',
+              backgroundColor: '#2980b9',
+              color: 'white',
+              border: '1px solid #2980b9',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              width: '89%',
+            }}
+            onClick={convo_mode}
+          >
+            {convo_button ? "End Conversation" : "Start Conversation"}
+          </button>
+          {speaking && (
+            <div
+              style={{
+                // width: '89%',
+                height: '10px',
+                background: 'linear-gradient(to right, blue, transparent, purple)',
+                animation: 'waveAnimation 1s infinite',
+                marginTop: '5px',
+                borderRadius: '10px',
+              }}
+            >
+              <div style={{ fontSize: '12px', color: 'black' }}>Speaking</div>
+            </div>
+          )}
+        </div>
+
+        {/* Button 3 with Session Started Indicator */}
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <button
+            style={{
+              fontSize: '12px',
+              padding: '5px',
+              margin: '5px 0',
+              backgroundColor: '#2980b9',
+              color: 'white',
+              border: '1px solid #2980b9',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              width: '89%',
+            }}
+            onClick={listenSession}
+          >
+            {session_listen ? "Stop Session" : "Start Session"}
+          </button>
+          {session_listen && (
+            <div
+              style={{
+                width: '89%',
+                height: '10px',
+                backgroundImage: 'linear-gradient(90deg, orange, transparent 50%, orange)',
+                animation: 'flashLine 1s infinite',
+                marginTop: '5px',
+              }}
+            >
+              <div style={{ fontSize: '12px', color: 'black' }}>Session Started</div>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle Image Button */}
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <button
+            style={{
+              fontSize: '12px',
+              padding: '5px',
+              margin: '5px 0',
+              backgroundColor: '#7f8c8d',
+              color: 'white',
+              border: '1px solid #7f8c8d',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+            onClick={stopListening}
+          >
+            {listening ? "Stop Listening" : ""}
+          </button>
+        </div>
+      </div>
+
+        {/* Dictaphone component */}
+        <div className="p-2" style={{ marginBottom: '15px' }}>
           <Dictaphone
             commands={commands}
             myFunc={myFunc}
-            listenAfterRelpy={listenAfterRelpy}
-            noResponseTime={no_response_time}
-            show_conversation={show_conversation}
+            listenAfterReply={listenAfterReply}
+            no_response_time={no_response_time}
+            apiInProgress={apiInProgress}
+            listenButton={listenButton}
+            session_listen={session_listen}
+            listening={listening}
           />
         </div>
-        <div className="form-group">
-          <button className="btn btn-primary" onClick={listenContinuously}>
-            Listen continuously
-          </button>
-        </div>
-        {input_text && (
-          <div className="form-group">
-            <input
-              className="form-control"
-              type="text"
-              placeholder="Chat with chatGPT"
-              value={textString}
-              onChange={handleInputText}
-              onKeyDown={handleOnKeyDown}
-            />
-          </div>
-        )}
-        {show_conversation === true && (
-          <>
-            <div> You: {message}</div>
-            {answers.map((answer, idx) => (
-              <div key={idx}>
-                <div>-user: {answer.user}</div>
-                <div>-resp: {answer.resp ? answer.resp : "thinking..."}</div>
-              </div>
-            ))}
-          </>
-        )}
+  
+
       </div>
-      <div>
-        {/* <button onClick={listenOnce}>Listen Once</button> */}
-        {/* <button onClick={listenContinuouslyInChinese}></button> */}
-        {/* <button onClick={SpeechRecognition.stopListening}>Stop</button> */}
-        {/* <button onClick={testFunc}>test</button> */}
-      </div>
-      <div>
-        {face_recon && (
-          <div style={{ textAlign: "center", padding: "10px" }}>
-            {captureVideo && modelsLoaded ? (
-              <button
-                onClick={closeWebcam}
-                style={{
-                  cursor: "pointer",
-                  backgroundColor: "green",
-                  color: "white",
-                  padding: "15px",
-                  fontSize: "25px",
-                  border: "none",
-                  borderRadius: "10px",
-                }}
-              >
-                Close Webcam
-              </button>
-            ) : (
-              <button
-                onClick={startVideo}
-                style={{
-                  cursor: "pointer",
-                  backgroundColor: "green",
-                  color: "white",
-                  padding: "15px",
-                  fontSize: "25px",
-                  border: "none",
-                  borderRadius: "10px",
-                }}
-              >
-                Open Webcam
-              </button>
-            )}
-          </div>
-        )}
-        {captureVideo ? (
-          modelsLoaded ? (
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  padding: "10px",
-                  position: show_video ? "" : "absolute",
-                  opacity: show_video ? 1 : 0.3,
-                }}
-              >
-                <video
-                  ref={videoRef}
-                  height={videoHeight}
-                  width={videoWidth}
-                  onPlay={handleVideoOnPlay}
-                  style={{ borderRadius: "10px" }}
-                />
-                <canvas ref={canvasRef} style={{ position: "absolute" }} />
-              </div>
-            </div>
-          ) : (
-            <div>loading...</div>
-          )
-        ) : (
-          <></>
-        )}
-      </div>
+
+
+
     </>
-  )
+  );
 }
 
-export default CustomVoiceGPT
+export default CustomVoiceGPT;

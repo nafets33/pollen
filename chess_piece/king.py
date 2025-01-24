@@ -26,6 +26,10 @@ def hive_master_root(info='\pollen\pollen'):
     script_path = os.path.abspath(__file__)
     return os.path.dirname(os.path.dirname(script_path)) # \pollen\pollen
 
+def hive_master_root_db(info='\pollen\pollen\db'):
+    script_path = os.path.abspath(__file__)
+    return os.path.join(hive_master_root(), 'db') # \pollen\pollen\db
+
 main_root = hive_master_root()  # os.getcwd()
 load_dotenv(os.path.join(main_root, ".env"))
 
@@ -418,6 +422,8 @@ def save_json(db_name, data):
 
 
 def PickleData(pickle_file, data_to_store, write_temp=False, console=True):
+    if not pickle_file.endswith('.pkl'):
+        pickle_file = pickle_file + ".pkl"
     if pickle_file:
         if write_temp:
             root, name = os.path.split(pickle_file)
@@ -437,6 +443,9 @@ def PickleData(pickle_file, data_to_store, write_temp=False, console=True):
 
 
 def ReadPickleData(pickle_file):
+    if not pickle_file.endswith('.pkl'):
+        pickle_file = pickle_file + ".pkl"
+
     # Check the file's size and modification time
     prev_size = os.stat(pickle_file).st_size
     prev_mtime = os.stat(pickle_file).st_mtime

@@ -57,6 +57,7 @@ from tqdm import tqdm
 
 
 pg_migration = os.getenv('pg_migration')
+upsert_to_main_server = os.getenv('upsert_to_main_server')
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -787,7 +788,7 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx, order_status, pricein
     return QUEEN['queen_orders'].loc[queen_order_idx].to_dict()
 
 
-def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states, console=True):
+def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states, console=True, upsert_to_main_server=upsert_to_main_server):
     
     try:
         # Save Heart to avoid saving Queen to improve speed
@@ -797,12 +798,12 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
             QUEENsHeart['heartbeat'] = QUEEN['heartbeat']
             QUEENsHeart.update({"heartbeat_time": datetime.now(est)})
             if pg_migration:
-                PollenDatabase.upsert_data(QUEENsHeart.get('table_name'), QUEENsHeart.get('key'), QUEENsHeart)
+                PollenDatabase.upsert_data(QUEENsHeart.get('table_name'), QUEENsHeart.get('key'), QUEENsHeart, main_server=upsert_to_main_server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_QUEENsHeart_PICKLE'), QUEENsHeart, console=console)
         if save_q:
             if pg_migration:
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), QUEEN.get('key'), QUEEN)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), QUEEN.get('key'), QUEEN, main_server=upsert_to_main_server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN, console=console)
         if save_qo:
@@ -811,21 +812,21 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
             ORDERS = {'queen_orders': df}
             if pg_migration:
                 key = f'{QUEEN.get("key").split("-")[0]}-ORDERS'
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=key, value=ORDERS)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=key, value=ORDERS, main_server=upsert_to_main_server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_Orders_Pickle'), {'queen_orders': df}, console=console)
         if save_acct:
             if pg_migration:
                 key = f'{QUEEN.get("key").split("-")[0]}-ACCOUNT_INFO'
                 ACCOUNT_INFO = QUEEN.get('account_info')
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=key, value=ACCOUNT_INFO)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=key, value=ACCOUNT_INFO, main_server=upsert_to_main_server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_account_info_PICKLE'), {'account_info': QUEEN.get('account_info')}, console=console)
         if save_rr:
             if pg_migration:
                 key = f'{QUEEN.get("key").split("-")[0]}-REVREC'
                 revrec = QUEEN.get('revrec')
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=key, value=revrec)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=key, value=revrec, main_server=upsert_to_main_server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_RevRec_PICKLE'), {'revrec': QUEEN.get('revrec')}, console=console)
         
@@ -2478,7 +2479,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ## Clean ORders WORKERBE
         def archive_order(QUEEN, ORDERS_FINAL=ORDERS_FINAL):
             try:
+                db_root = QUEEN.get('db_root')
                 now_time_hash = hash_string(datetime.now(est).strftime("%y-%m-%d %M.%S.%f"))
+                final_batch_name = f'{db_root}_{now_time_hash}_final_orders' 
                 
                 queen_orders = copy.deepcopy(QUEEN['queen_orders'])
                 ARCHIVE_queenorder = kingdom__global_vars().get('ARCHIVE_queenorder') # ['final', 'archived']
@@ -2507,7 +2510,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         QUEEN['queen_orders'] = qo_new
                         
                         if pg_migration:
-                            PollenDatabase.upsert_data(table_name='final_orders', key=f'{now_time_hash}_final_orders', value=dump_orders)
+                            PollenDatabase.upsert_data(table_name='final_orders', key=final_batch_name, value=dump_orders)
                         
                         if ORDERS_FINAL:
                             qo_final = copy.deepcopy(ORDERS_FINAL['queen_orders'])
@@ -2798,8 +2801,7 @@ if __name__ == '__main__':
             time.sleep(3)
         else:
             break
-
-
+        
     queenbee(client_user, prod, queens_chess_piece='queen')
 
 """

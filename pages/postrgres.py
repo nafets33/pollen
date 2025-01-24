@@ -22,7 +22,7 @@ import json
 # from chess_piece.workerbees import queen_workerbees
 from chess_piece.king import return_db_root, ReadPickleData
 from chess_piece.queen_hive import return_all_client_users__db, init_queenbee, init_swarm_dbs
-# from chess_piece.app_hive import trigger_py_script, standard_AGgrid
+from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
@@ -206,7 +206,7 @@ if __name__ == '__main__':
                     st.success(f'{db_name} saved')
             
             users, all_users = return_all_client_users__db()
-            st.write(all_users)
+            grid = standard_AGgrid(all_users)
             
             with tabs[2]:
                 table_name = 'client_user_store' if prod else 'client_user_store_sandbox'

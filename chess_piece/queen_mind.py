@@ -257,7 +257,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=30,
                                     timeduration=43800,
-                                    take_profit=.05,
+                                    take_profit=.08,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*30,#mins
@@ -283,7 +283,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=60,
                                     timeduration=43800 * 3,
-                                    take_profit=.05,
+                                    take_profit=.1,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*60,#mins
@@ -309,7 +309,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=2,
                                     max_profit_waveDeviation_timeduration=120,
                                     timeduration=43800 * 6,
-                                    take_profit=.07,
+                                    take_profit=.2,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*120,#mins
@@ -335,7 +335,7 @@ def generate_TradingModel(
                                     max_profit_waveDeviation=3,
                                     max_profit_waveDeviation_timeduration=60 * 24, 
                                     timeduration=525600,
-                                    take_profit=.08,
+                                    take_profit=.5,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
                                     sell_trigbee_trigger_timeduration=60*300,#mins

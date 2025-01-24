@@ -103,9 +103,11 @@ def find_orders_to_meet_delta(orders, broker_qty_delta, qty_field='filled_qty'):
 
     for idx in orders.index:
         order_qty = orders.loc[idx, qty_field]
-        if total_qty + order_qty >= broker_qty_delta:
+        if total_qty + order_qty == broker_qty_delta:
             selected_orders.append(idx)
             total_qty += order_qty
+            break
+        if total_qty + order_qty > broker_qty_delta:
             break
         selected_orders.append(idx)
         total_qty += order_qty
@@ -159,7 +161,8 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
         avail_orders['filled_qty'] = avail_orders['filled_qty'].astype(float)
         # find order to match to Qty
         found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta)
-        st.write(symbol, total_qty)
+        print(symbol, total_qty)
+        # st.write(symbol, total_qty)
         reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
         # If Enough, create QUEEN order and attempt to use by remaining balance, if Not Skewed weight to 1 year ONLY if BUY... or BUY onlys skew evenly
         ## create QUEEN orders
@@ -264,13 +267,16 @@ def sync_current_broker_delta(client_user, prod, symbols=[], god_save=False):
         # find order to match to Qty
         found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta, qty_field='qty_available')
         st.write(symbol, len(found_orders), total_qty)
+        # for the found orders you need to match up the qty to the broker_qty_delta
+        # fake sell the order and match it an order in broker ..... else create a fake order to store and pull from 
+        # OR ARCHIVE
 
         # Route QUEEN Orders to Close
         for client_order_id in found_orders.index.tolist():
             QUEEN['queen_orders'].at[client_order_id, 'queen_order_state'] = 'completed_pollen'
         
-        if god_save:
-            god_save_the_queen(QUEEN, save_q=True, save_qo=True)
+        # if god_save:
+        #     god_save_the_queen(QUEEN, save_q=True, save_qo=True)
         
 
     return True

@@ -245,10 +245,12 @@ function(p) {
 """)        
 
 button_style_BUY_autopilot = JsCode("""
-function(p) {
-    if (p.data.buy_autopilot === "ON") {
+function(color_autobuy) {
+    if (color_autobuy.data.buy_autopilot === "ON") {
+        console.log('buy_autopilot value:', color_autobuy.data.buy_autopilot);
         return {
             backgroundColor: '#bff0c7',
+            color: 'blue',
             padding: '2px',
             boxSizing: 'border-box',
             border: '2px solid white',
@@ -260,7 +262,7 @@ function(p) {
             padding: '2px',
             boxSizing: 'border-box',
             border: '2px solid white',
-            // width: '100%',
+            color: 'yellow',
         };
     }
 }
@@ -368,11 +370,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
     # authorized_user = st.session_state['authorized_user']
 
     # return page last visited
-    if sneak_peak:
-        st.session_state['sneak_peak'] = True
-        st.info("Welcome You must be Family -- This QueenBot is LIVE Trading on its own using AI Algorithms")
-    else:
-        st.session_state['sneak_peak'] = False
     # revrec = QUEEN.get('revrec')
     # if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
     #     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
@@ -505,7 +502,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                             "border_color": "green",
                             'col_width':100,
                             'sortable': True,
-                            'pinned': 'left',
+                            # 'pinned': 'left',
                             'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
                             'cellStyle': button_suggestedallocation_style,
                             },
@@ -518,7 +515,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                             # "border_color": "red",
                             'col_width':100,
                             'sortable': True,
-                            'pinned': 'left',
+                            # 'pinned': 'left',
                             'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
                             'cellStyle': button_style, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
                             },
@@ -601,7 +598,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
 
-                'queen_wants_to_sell_qty': create_ag_grid_column(headerName='Suggested Sell Qty', initialWidth=89),
+                'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'star_buys_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'star_sells_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
@@ -621,6 +618,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
                 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
+                'broker_qty_available': {},
                 # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
                 'current_ask': {'headerName': 'ask', 'sortable':'true',},
                 # 'current_bid': {'headerName': 'bid', 'sortable':'true',},
@@ -704,7 +702,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
 
         # with story_tab:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-        refresh_sec = 23 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+        refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
         refresh_sec = 0 if refresh_grids == False else refresh_sec
 
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
@@ -721,8 +719,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
         cols = st.columns(2)
         with cols[0]:
             refresh_sec = 23 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
-            refresh_sec = None if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-            refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
+            refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+            refresh_sec = 0 if refresh_grids == False else refresh_sec
             # print("GRAPHS")
             st_custom_graph(
                 api=f'{ip_address}/api/data/symbol_graph',
@@ -759,7 +757,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=['bishop', 'castle', 'knight'])
             refresh_sec = 23 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
             refresh_sec = None if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-            refresh_sec = refresh_grids if refresh_grids == False else refresh_sec
+            refresh_sec = None if refresh_grids == False else refresh_sec
             symbols = []
             for qcp in graph_qcps:
                 symbols+= QUEEN_KING['chess_board'][qcp].get('tickers')

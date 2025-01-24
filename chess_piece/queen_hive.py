@@ -4031,7 +4031,7 @@ def init_swarm_dbs(prod, init=False, pg_migration=False, dbs=['KING', 'QUEEN', '
     return db_local_path
 
 
-def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "QUEEN_KING", "ORDERS", "ORDERS_FINAL", "QUEENsHeart", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV", "CHARLIE_BEE"], table_name=True):
+def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "QUEEN_KING", "ORDERS", "ORDERS_FINAL", "QUEENsHeart", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV", "CHARLIE_BEE", "CONVERSATIONAL_HISTORY", "MASTER_CONVERSATIONAL_HISTORY", "SESSION_STATE"], table_name=True):
      # db_root nEEDS to be the db__client_user_name
 
     def init_queen_orders(pickle_file=None, pg_migration=False):
@@ -4094,6 +4094,20 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                     data['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 691200)
                     data['queen_cyle_times']['beat_times'] = deque([], 365)
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
+            elif key =="CONVERSATIONAL_HISTORY":
+                if not PollenDatabase.key_exists(table_name, pg_table):
+                    data = {'data': []}
+                    PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data) 
+            elif key =="MASTER_CONVERSATIONAL_HISTORY":
+                if not PollenDatabase.key_exists(table_name, pg_table):
+                    data = {'data': []}
+                    PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data) 
+            elif key == "SESSION_STATE":
+                if not PollenDatabase.key_exists(table_name, pg_table):
+                    from master_ozz.utils import hoots_and_hootie_vars
+                    data = hoots_and_hootie_vars()
+                    PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
+
 
     if pg_migration:
         if "/" not in db_root:
@@ -4392,7 +4406,7 @@ def order_vars__queen_order_items(
                 order_vars["order_trig_sell_stop_limit"] = False
 
             order_vars["origin_wave"] = origin_wave
-            order_vars["power_up"] = power_up_rangers
+            order_vars["power_up"] = None
             order_vars["wave_amo"] = wave_amo
             order_vars["order_side"] = order_side
             order_vars["ticker_time_frame_origin"] = ticker_time_frame_origin
@@ -4426,7 +4440,7 @@ def order_vars__queen_order_items(
             
             order_vars["assigned_wave"] = assigned_wave
             order_vars["origin_wave"] = origin_wave
-            order_vars["power_up"] = sum(power_up_rangers.values())
+            order_vars["power_up"] = None
             order_vars["wave_amo"] = wave_amo
             order_vars["order_side"] = order_side
             order_vars["ticker_time_frame_origin"] = ticker_time_frame_origin
@@ -5785,7 +5799,7 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_
             if pg_migration:
                 pq_env.update({'env': prod})
                 save_key = f"{db_root}-ENV"
-                print("QH", "switch env", pq_env)
+                print(f"QH switch env {pq_env}")
                 PollenDatabase.upsert_data('client_user_env', key=save_key, value=pq_env)
 
             else:    

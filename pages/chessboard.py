@@ -175,7 +175,6 @@ hedge_funds = {
     }
 }
 
-
 def save_queen_king(QUEEN_KING):
     PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
 
@@ -219,7 +218,8 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
             'ticker': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
             'picture': {}, # image selection,
             'piece_name': {"cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor",}, #editable,
-            'model': {'headerName':'Model', "cellEditorParams": {"values": model_list},
+            'model': {'headerName':'Model',
+                      "cellEditorParams": {"values": model_list},
                                                                 "editable":True,
                                                                 "cellEditor":"agSelectCellEditor",
                                                                 },
@@ -246,6 +246,7 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
 
         mmissing = [i for i in story_col if i not in config_cols_.keys()]
         if len(mmissing) > 0:
+            print('cols missing', mmissing)
             for col in mmissing:
                 gb.configure_column(col) #{'hide': True})
 
@@ -544,37 +545,45 @@ def refresh_trading_models_button(QUEEN_KING):
         else:
             PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
         st.success("All Queen.TradingModels Reset")
-        st.experimental_rerun()
             
     return True
 
-# def refresh_queen_orders(QUEEN):
-#     refresh = st.button("Reset All Queen Orders", use_container_width=True)
+def align_autopilot_with_revrec(revrec, QUEEN_KING):
+    current_index = QUEEN_KING['king_controls_queen']['ticker_autopilot'].index
+    for symbol in revrec.get('storygauge').index:
+        if symbol not in current_index:
+            QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([False, False], index=['buy_autopilot', 'sell_autopilot'])
 
-#     if refresh:
-#         QUEEN['queen_orders'] = pd.DataFrame([create_QueenOrderBee(queen_init=True)]).set_index("client_order_id")
-#         PickleData(pickle_file=st.session_state['PB_QUEEN_Pickle'], data_to_store=QUEEN)
-#         st.success("Orders Reset")
-#         st.experimental_rerun()
+    return QUEEN_KING
 
-# def stash_queen(QUEEN):
-#     refresh = st.button("Stash All Queen Orders", use_container_width=True)
 
-#     if refresh:
-#         queen_logs = os.path.join(st.session_state['db_root'], '/logs/logs/queens')
-#         queen_log_filename = len(os.listdir(queen_logs))
-#         queen_log_filename = f'{len(os.listdir(queen_logs)) + 1}_queen.pkl'
-#         queen_logs = os.path.join(st.session_state['db_root'], queen_log_filename)
-#         PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN)
-#         st.success("Queen Stashed")
+def switch_autopilot_on_off(QUEEN_KING, x_autopilot='buy_autopilot', onoff=True, save=False):
+    for qcp, qcp_data in QUEEN_KING["chess_board"].items():
+        for symbol in qcp_data.get('tickers'):
+            # Ensure symbol exists in the DataFrame's index
+            if symbol not in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
+                # Add a new row for the missing symbol, initializing columns
+                QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = {x_autopilot: False}
+            
+            # Assign the boolean value
+            QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, x_autopilot] = onoff
+    if save:
+        if pg_migration:
+            PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+        else:
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    
+    return QUEEN_KING
 
 
 def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees_key = 'chess_board'):
     try:
         ip_address = st.session_state['ip_address']
         client_user = st.session_state["username"]
+        print(client_user, "CHESSBOARD")
 
-
+        hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
+        hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
 
         with st.sidebar:
             if st.toggle("Control Settings"):
@@ -584,24 +593,32 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     refresh_trading_models_button(QUEEN_KING)
                     # refresh_queen_orders(QUEEN)
                     # stash_queen(QUEEN)
-        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"] + list(hedge_funds.keys())
+        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"] + hedge_fund_names
         save_as_main_chessboard = st.checkbox("Save as Main Chessboard", True)
+
 
         optoins = []
         for op in all_portfolios:
             icon = "fas fa-chess-pawn"
             optoins.append({'id': op, 'icon': "fas fa-chess-pawn", 'label':op})
-        # with st.sidebar:
-        chessboard_selection = hc.option_bar(option_definition=optoins,title='Source', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+
+        chessboard_selection = hc.option_bar(option_definition=optoins, title='Source', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
         if chessboard_selection == 'Queen':
             pass
-        if chessboard_selection in hedge_funds.keys():
+        if chessboard_selection in hedge_fund_names:
             if save_as_main_chessboard == False:
                 qcp_bees_key = chessboard_selection
             if qcp_bees_key not in QUEEN_KING.keys():
                 QUEEN_KING[qcp_bees_key] = {}
-            data = hedge_funds.get(chessboard_selection)
-            for ticker, buying_power in data.get('portfolio').items():
+            # data = hedge_funds.get(chessboard_selection)
+            data = hedge_funds[hedge_funds['filer_name'] == chessboard_selection]
+            data = data.set_index('stock_ticker', drop=False)
+            data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
+            data = data[data['current_percent_of_portfolio'] > 0]
+            data['buying_power'] = data['current_percent_of_portfolio'] / 100
+            for ticker in data.index:
+                buying_power = data.loc[ticker].get('buying_power')
+                print(buying_power)
                 QUEEN_KING[qcp_bees_key][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
             symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
             if 'SPY' not in symbols:
@@ -645,19 +662,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
         # def AutoPilot(revrec, QUEEN_KING):
 
-        def align_autopilot_with_revrec(revrec, QUEEN_KING):
-            current_index = QUEEN_KING['king_controls_queen']['ticker_autopilot'].index
-            for symbol in revrec.get('storygauge').index:
-                if symbol not in current_index:
-                    QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([False, False], index=['buy_autopilot', 'sell_autopilot'])
 
-            return QUEEN_KING
-
-
-        def switch_autopilot_on_off(QUEEN_KING, x_autopilot='buy_autopilot', onoff=True):
-            for indx in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
-                QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[indx, x_autopilot] = onoff
-            return QUEEN_KING
 
         with st.sidebar:
             if st.button("align auto_pilot"):
@@ -668,7 +673,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
             
             buy_autopilot = st.checkbox("Switch buy auto pilot", False)
-            if st.button("Turn Auto Pilot ON for buys"):
+            if st.button("Switch Buys Auto Pilot"):
                 QUEEN_KING = switch_autopilot_on_off(QUEEN_KING, x_autopilot='buy_autopilot', onoff=buy_autopilot)
                 st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
                 if pg_migration:
@@ -677,7 +682,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
 
             sell_autopilot = st.checkbox("Switch sell auto pilot", False)
-            if st.button("Turn Auto Pilot OFF for buys"):
+            if st.button("Switch Sells Auto Pilot"):
                 QUEEN_KING = switch_autopilot_on_off(QUEEN_KING, x_autopilot='sell_autopilot', onoff=sell_autopilot)
                 st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
                 if pg_migration:

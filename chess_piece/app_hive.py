@@ -178,14 +178,14 @@ def sac_menu_buttons(main='Queen'):
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
             sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
-        ], format_func='title', align='end', type='text')
+        ], format_func='title', align='end')
     elif main == 'Account':
         sac_menu_buttons = sac.buttons([
             sac.ButtonsItem(label='account', icon='key'),
 
             sac.ButtonsItem(label='Queen', icon='house'),
             # sac.ButtonsItem(label='Log Out', icon='key'),
-        ], format_func='title', align='end', type='text')
+        ], format_func='title', align='end')
 
     return sac_menu_buttons
 
@@ -332,44 +332,150 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
             st.success("Theme Saved")
 
 
-def admin_queens_active(PB_KING_Pickle, KING):
-    pass # handle pg_migration
-    # if st.session_state['admin']:
-    #     with st.expander("admin QUEENS_ACTIVE"):
-    #         df = return_all_client_users__db()
-    #         # df = pd.DataFrame(KING['users'].get('client_users_db'))
-    #         allowed_list = KING['users']['client_user__allowed_queen_list']
-    #         df_map = pd.DataFrame(allowed_list)
-    #         df_map['queen_authorized'] = 'active'
-    #         df_map = df_map.rename(columns={0: 'email'})
-            
-    #         df = pd.merge(df, df_map, how='outer', on='email').fillna('')
-    #         grid = standard_AGgrid(data=df, use_checkbox=False, update_mode_value="MANUAL", grid_type='king_users')
-    #         grid_df = grid['data']
+# # WORKERBEE
+# def king_grid(chess_board, client_user, ip_address, refresh_sec=0, paginationOn=True, key='king_grid', seconds_to_market_close=0):
 
-    #         allowed_list_new = grid_df[grid_df['queen_authorized'] == 'active']
-    #         allowed_list_new = allowed_list_new['email'].tolist()
-    #         new_emails = [i for i in allowed_list_new if i not in allowed_list]
+    
+#     try:
+#         gb = GridOptionsBuilder.create()
+#         gb.configure_default_column(column_width=100, 
+#                                     resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, 
+#                                     suppress_menu=False, filterable=True,)            
+#         gb.configure_index('users')
+#         gb.configure_theme('ag-theme-material')
+#         if paginationOn:
+#             gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
 
-    #         if st.button("Save"):
-    #             KING['users']['client_user__allowed_queen_list'] = allowed_list_new
-    #             PickleData(PB_KING_Pickle, KING, write_temp=False)
-    #             st.success("Auth Queen Users Updated")
-    #             print(new_emails)
-    #             for email in new_emails:
-    #                 print(email)
-    #                 send_email(email, subject="Trading Bot is Now Active", 
-    #                 body=f""" Hey! Your Trading Bot is Now Active, She will Manage your Portoflio Based on your Settings!.
-    #                 Steps:
-    #                 1. Login to pollenq.com and enter your API credentials from alpaca brokerage >>> https://app.alpaca.markets/brokerage/dashboard/overview
-    #                 2. Customize Trading Bot Setting to Trade Specific to your Needs
-    #                 3. Or Join an Existing Fund Trading Strategies
+#         def story_grid_buttons():
+#             # exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
+#             buttons=[
+#                         # {'button_name': None,
+#                         # 'button_api': f'{ip_address}/api/data/chessboard',
+#                         # 'prompt_message': 'Edit Board',
+#                         # 'prompt_field': 'kors',
+#                         # 'col_headername': 'Update',
+#                         # "col_header": "chessboard_update_button",
+#                         # # "border_color": "green",
+#                         # 'col_width':100,
+#                         # 'sortable': True,
+#                         # 'pinned': 'left',
+#                         # 'prompt_order_rules': [] # [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
+#                         # # 'cellStyle': button_suggestedallocation_style,
+#                         # },
+#                     ]
+#             return buttons
 
-    #                 Happy Trading
-    #                 pollenq
-    #                 """
-                    
-    #                 )
+#         def config_cols(cols):
+#             values_list = list(star_names().keys())
+#             status = ['Active', 'Not Active']
+#             return  {
+#             # for col in cols:
+#             'ticker': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
+#             'picture': {}, # image selection,
+#             'piece_name': {"cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor",}, #editable,
+#             'model': {'headerName':'Model',
+#                       "cellEditorParams": {"values": model_list},
+#                                                                 "editable":True,
+#                                                                 "cellEditor":"agSelectCellEditor",
+#                                                                 },
+#             },
+#             # 'theme': {'headerName':'Theme', },
+#             'total_buyng_power_allocation': {'headerName':'Buying Power Allocation', 'sortable':'true', },
+#             'total_borrow_power_allocation': {'headerName': 'Margin Power Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
+#             'margin_power': {'headerName': 'Margin Power % Use', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
+#             'refresh_star': {'headerName': 'Re Allocate Every', 
+#                              "cellEditorParams": {"values": values_list},
+#                                                                 "editable":True,
+#                                                                 "cellEditor":"agSelectCellEditor",
+#                                                                 },
+
+#             }
+
+#         df = shape_chess_board(chess_board)
+#         chess_pieces = [v.get('piece_name') for i, v in chess_board.items()]
+#         story_col = df.columns.tolist()
+#         config_cols_ = config_cols(story_col)
+#         for col, config_values in config_cols_.items():
+#             config = config_values
+#             gb.configure_column(col, config)
+
+#         mmissing = [i for i in story_col if i not in config_cols_.keys()]
+#         if len(mmissing) > 0:
+#             print('cols missing', mmissing)
+#             for col in mmissing:
+#                 gb.configure_column(col) #{'hide': True})
+
+#         g_buttons = story_grid_buttons()
+
+#         go = gb.build()
+#         # with st.expander("default build check"):
+#         #     st.write(go)
+#         st_custom_grid(
+#             client_user=client_user,
+#             username=client_user, 
+#             api=f"{ip_address}/api/data/chessboard",
+#             api_update=f"{ip_address}/api/data/update_queenking_chessboard",
+#             refresh_sec=refresh_sec, 
+#             refresh_cutoff_sec=seconds_to_market_close, 
+#             prod=st.session_state['prod'],
+#             grid_options=go,
+#             key=key,
+#             api_key=os.environ.get("fastAPI_key"),
+#             symbols=symbols,
+#             buttons=g_buttons,
+#             grid_height='450px',
+#             toggle_views = chess_pieces,
+#             allow_unsafe_jscode=True,
+
+#         ) 
+
+#     except Exception as e:
+#         print_line_of_error(e)
+
+
+def admin_queens_active(KING, all_users): 
+# handle pg_migration
+    if st.session_state['admin']:
+        # with st.expander("admin QUEENS_ACTIVE"):
+            # df = return_all_client_users__db()
+            # df = pd.DataFrame(KING['users'].get('client_users_db'))
+        df = all_users
+        allowed_list = KING['users']['client_user__allowed_queen_list']
+        df['active_status'] = np.where(df["email"].isin(allowed_list), "active", 'not_activate')
+        grid = standard_AGgrid(data=df, use_checkbox=True, update_mode_value='MANUAL')
+        # st.write(grid.keys())
+        grid_df = grid.get('selected_data')
+
+        if grid_df is not None:
+
+            allowed_list_new = grid_df['email'].tolist()
+            new_emails = [i for i in allowed_list_new if i not in allowed_list]
+            st.write(f"New Emails to Add", allowed_list_new)
+
+            if st.button("Save"):
+                KING['users']['client_user__allowed_queen_list'] = new_emails
+                
+                if pg_migration:
+                    PollenDatabase.upsert_data(KING.get('table_name'), KING.get('key'), KING)
+                else:
+                    PickleData(KING.get('source'), KING, write_temp=False)
+                
+
+                st.success("Auth Queen Users Updated")
+                print(allowed_list_new)
+                for email in allowed_list_new:
+                    print(email)
+                    send_email(email, subject="Trading Account is Now Active", 
+                    body=f""" Account Accepted.
+                    Steps:
+                    1. Create a Broker account on alpaca >>> https://alpaca.markets/
+                    2. Enter API credentials
+                    3. Create a Portfolio Manager
+
+                    Enjoy your new portfolio Manager
+                    """
+                
+                    )
 
 
 def mark_down_text(
@@ -435,10 +541,12 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
         # gb = GridOptionsBuilder.create()
         gb = GOB.create()
         gb.configure_default_column(column_width=120, resizable=True,wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=False,sortable=True)            
-        # gb.configure_index('symbol')
+        gb.configure_index('Broker')
         gb.configure_theme('ag-theme-material')
 
-        cols=['Long',
+        cols=[
+        'Broker',
+        'Long',
         'Short',
         'Heart Beat',
         'Avg Beat',
@@ -455,6 +563,7 @@ def account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_
             backgroundColor = k_colors.get('default_background_color')
             default_text_color = k_colors.get('default_text_color')
             return  {
+        'Broker': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},                  
         'Long': {**{'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},                  
         'Short': {'width': 120, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Heart Beat': {**{'width': 100, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
@@ -1252,8 +1361,8 @@ def standard_AGgrid(
     grid_type=False
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
-    gb = GridOptionsBuilder.from_dataframe(data, min_column_width=30)
-    gb.configure_default_column(column_width=85, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)
+    gb = GridOptionsBuilder.from_dataframe(data)
+    gb.configure_default_column(minWidth=85, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)
     gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=False)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
@@ -1290,8 +1399,26 @@ def standard_AGgrid(
         allow_unsafe_jscode=True,
     )
 
+    # [
+    # 0:"columns_state"
+    # 1:"data"
+    # 2:"dataGroups"
+    # 3:"event_data"
+    # 4:"get"
+    # 5:"grid_options"
+    # 6:"grid_response"
+    # 7:"grid_state"
+    # 8:"items"
+    # 9:"keys"
+    # 10:"rows_id_after_filter"
+    # 11:"rows_id_after_sort_and_filter"
+    # 12:"selected_data"
+    # 13:"selected_dataGroups"
+    # 14:"selected_rows"
+    # 15:"selected_rows_id"
+    # 16:"values"
+    # ]
     return grid_response
-
 
 
 def download_df_as_CSV(df, button_name="download csv", file_name="name.csv"):
