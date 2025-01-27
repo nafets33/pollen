@@ -12,7 +12,7 @@ est = pytz.timezone("US/Eastern")
 def demo_bot():
     client_user = 'stefanstapinski@gmail.com'
     prod = False
-    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    KING = kingdom__grace_to_find_a_Queen()
 
     st.session_state['sneak_peak'] = True
     st.info("Welcome, feel free to place trades, every trade is handled and management by the AI using TimeSeries Weighted Averages...TimeValueMoney")

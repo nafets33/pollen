@@ -168,7 +168,7 @@ if __name__ == '__main__':
     ip_address = st.session_state['ip_address']
     prod = st.session_state['prod']
 
-    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    KING = kingdom__grace_to_find_a_Queen()
 
     queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 

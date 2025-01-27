@@ -323,16 +323,16 @@ const AgGrid = (props: Props) => {
         toggle_view_selection: toggle_views ? toggle_views[viewId] : "none",
       })
       const array = JSON.parse(res.data)
-      console.log(
-        "toggle_views[viewId],viewId :>> ",
-        toggle_views[viewId],
-        viewId
-      )
-      console.log("table data :>> ", array)
-      if (array.status == false) {
-        toastr.error(`Fetch Error: ${array.message}`)
-        return false
-      }
+      // console.log(
+      //   "toggle_views[viewId],viewId :>> ",
+      //   toggle_views[viewId],
+      //   viewId
+      // )
+      // console.log("table data :>> ", array)
+      // if (array.status == false) {
+      //   toastr.error(`Fetch Error: ${array.message}`)
+      //   return false
+      // }
       return array
     } catch (error: any) {
       toastr.error(`Fetch Error: ${error.message}`)

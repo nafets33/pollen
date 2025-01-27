@@ -167,13 +167,11 @@ def pollenq(admin_pq):
     king_G = kingdom__global_vars()
     main_root = hive_master_root()
     load_dotenv(os.path.join(main_root, ".env"))
-    users, all_users = return_all_client_users__db()
+    set_streamlit_page_config_once()
 
 
     ##### QuantQueen #####
     print(f'>>>> pollen START >>>> {return_timestamp_string()}' )  
-
-    set_streamlit_page_config_once()
 
     pq_buttons = pollenq_button_source()
     s = datetime.now(est)
@@ -213,9 +211,11 @@ def pollenq(admin_pq):
 
     table_name = 'db' if prod else 'db_sandbox'
     # KING = read_swarm_db(table_name, 'KING')
-    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-    # users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
-    admin_check(admin_pq, users_allowed_queen_email)
+    KING = kingdom__grace_to_find_a_Queen()
+    users, all_users = return_all_client_users__db()
+    admin_check(admin_pq, all_users['email'].tolist())
+    if 'admin__client_user' in st.session_state:
+        client_user = st.session_state['admin__client_user']
 
     if st.session_state['admin']:
         if st.sidebar.button("Refresh Ticker Universe to KING"):

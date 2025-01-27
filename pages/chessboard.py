@@ -796,7 +796,7 @@ if __name__ == '__main__':
 
     reset_theme = False
 
-    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    KING = kingdom__grace_to_find_a_Queen()
     # st.write(KING['alpaca_symbols_df'])
     qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')

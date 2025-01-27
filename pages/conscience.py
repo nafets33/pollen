@@ -247,10 +247,10 @@ function(p) {
 button_style_BUY_autopilot = JsCode("""
 function(color_autobuy) {
     if (color_autobuy.data.buy_autopilot === "ON") {
-        console.log('buy_autopilot value:', color_autobuy.data.buy_autopilot);
+        //console.log('buy_autopilot value:', color_autobuy.data.buy_autopilot);
         return {
             backgroundColor: '#bff0c7',
-            color: 'blue',
+            color: '#f8c6c6',
             padding: '2px',
             boxSizing: 'border-box',
             border: '2px solid white',
@@ -349,7 +349,7 @@ def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', ti
     return True 
 
 
-def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
+def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=False, show_graph_t=False):
     run_times = {}
     s = datetime.now()
     if not sneak_peak:
@@ -672,7 +672,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 api_key=os.environ.get("fastAPI_key"),
                 symbols=symbols,
                 buttons=g_buttons,
-                grid_height='450px',
+                grid_height='600px',
                 toggle_views = ["Queen", "King", '400_10M'] + chess_pieces + ["Not On Board"],
                 allow_unsafe_jscode=True,
 
@@ -707,7 +707,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
 
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
                         
-        if st.toggle("Show Wave Grid"):
+        if st.sidebar.toggle("Show Wave Grid"):
             if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
                 st.error("PENDING QUEEN")
             else:
@@ -717,7 +717,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                     wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
         cols = st.columns(2)
-        with cols[0]:
+        
+        def symbol_graph():
             refresh_sec = 23 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
             refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
             refresh_sec = 0 if refresh_grids == False else refresh_sec
@@ -752,7 +753,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 # y_max=420
                 )
 
-        with cols[1]:
+        if show_graph_s:
+            with cols[0]:
+                symbol_graph()
+
+        def trinity_graph():
             with st.sidebar:
                 graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=['bishop', 'castle', 'knight'])
             refresh_sec = 23 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
@@ -808,7 +813,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False):
                 # y_max=420
                 )
 
-        if st.toggle("Show Logs"):
+        if show_graph_t:
+            with cols[1]:
+                trinity_graph()
+        
+        if st.sidebar.toggle("Show Logs"):
             log_grid(KING)
         # print("END CONSCIENCE")
         ##### END ####
@@ -826,7 +835,7 @@ if __name__ == '__main__':
 
     client_user = os.environ.get('admin_user') ###??? 
     prod = st.session_state['prod']
-    KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+    KING = kingdom__grace_to_find_a_Queen()
 
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
     QUEEN_KING = qb.get('QUEEN_KING')

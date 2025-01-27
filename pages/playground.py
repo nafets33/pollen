@@ -28,7 +28,8 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from chess_piece.pollen_db import PollenDatabase
-from chess_piece.queen_bee import init_BROKER, append_queen_order, god_save_the_queen
+from chess_piece.queen_bee import init_BROKER, append_queen_order, god_save_the_queen, init_broker_orders
+from chess_piece.queen_mind import refresh_chess_board__revrec
 
 from tqdm import tqdm
 
@@ -93,7 +94,6 @@ def refresh_yfinance_ticker_info(main_symbols_full_list):
     return df
 
 
-
 def find_orders_to_meet_delta(orders, broker_qty_delta, qty_field='filled_qty'):
     """
     Find the orders that meet the target delta quantity
@@ -129,155 +129,155 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
     QUEEN = qb.get('QUEEN')
     BROKER = qb.get('BROKER')
     BROKER = init_BROKER(api, BROKER)
-    revrec = qb.get('revrec') # qb.get('queen_revrec')
+    BROKER = init_broker_orders(api, BROKER)
+    # revrec = qb.get('revrec') # qb.get('queen_revrec')
+
+    # REFRESH REVREC
+    king_G = kingdom__global_vars()
+    if pg_migration:
+        symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+        STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+    else:
+        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
+    revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
 
     queen_orders = QUEEN['queen_orders']
     queen_order_ids = queen_orders.index.tolist()
     broker_orders = BROKER['broker_orders']
+    broker_orders['created_at'] = pd.to_datetime(broker_orders['created_at'], errors='coerce')
+    broker_orders = broker_orders.sort_values('created_at', ascending=False)
     storygauge = revrec['storygauge'].copy()
-    df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
-    if len(df) == 0:
-        st.write("There is NO Delta returning out")
-        # return False
 
-    god_save = False
-    for symbol in df.index.tolist():
-        if symbols:
-            if symbol not in symbols:
-                continue
-        selected_row = df.loc[symbol]
-        broker_qty_delta = abs(selected_row.get('broker_qty_delta'))
-        avail_orders = broker_orders[(broker_orders['symbol']==symbol) & 
-                                        (broker_orders['side']=='buy') &
-                                        (broker_orders['status']=='filled') &
-                                        ~(broker_orders.index.isin(queen_order_ids)) # not in QUEEN
-                                        ].copy()
-        if len(avail_orders) == 0:
-            st.write(symbol, "No Orders Available go GET MORE ORDERS")
-            continue
-
-        # for all Available Orders return orders to match Qty
-                # Find matches
-        avail_orders['filled_qty'] = avail_orders['filled_qty'].astype(float)
-        # find order to match to Qty
-        found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta)
-        print(symbol, total_qty)
-        # st.write(symbol, total_qty)
-        reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
-        # If Enough, create QUEEN order and attempt to use by remaining balance, if Not Skewed weight to 1 year ONLY if BUY... or BUY onlys skew evenly
-        ## create QUEEN orders
-        for client_order_id in found_orders.index.tolist():
-            order_data = found_orders.loc[client_order_id].to_dict()
-            filled_qty = float(order_data['filled_qty'])
-            filled_avg_price = float(order_data['filled_avg_price'])
-            star_time = '1Day_1Year' #star_names(kors.get('star_list')[0])
-            ticker_time_frame = f'{symbol}_{star_time}'
-            symbol, tframe, tperiod = ticker_time_frame.split("_")
-            star = f'{tframe}_{tperiod}'
-            wave_blocktime = 'afternoon_2-4'
-            trigbee = 'buy_cross-0'
-            tm_trig = 'buy_cross-0'
-            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
-            king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
-            wave_amo = filled_qty * filled_avg_price
-            king_order_rules['sell_trigbee_trigger'] = False
-            
-            # Other Misc
-            order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
-                                                        king_order_rules=king_order_rules, 
-                                                        order_side='buy', 
-                                                        wave_amo=wave_amo, 
-                                                        ticker_time_frame_origin=ticker_time_frame, 
-                                                        symbol=symbol,
-                                                        trigbee=trigbee,
-                                                        tm_trig=tm_trig,
-                                                        )
-
-
-            # get latest pricing
-            # coin_exchange = "CBSE"
-            # snap = api.get_snapshot(symbol) if crypto == False else api.get_crypto_snapshot(symbol, exchange=coin_exchange)
-            # priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 'ask': snap.latest_quote.ask_price, 'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price}
-            priceinfo_order = {'price': filled_avg_price, 
-                               'bid': filled_avg_price, 'ask': filled_avg_price, 
-                               'bid_ask_var': filled_avg_price}
-
-            # Client Order Id
-            order = found_orders.loc[client_order_id].to_dict() # vars(order_submit.get('order'))['_raw']
-            
-            order_vars['qty_order'] = order.get('filled_qty')
-            
-            new_queen_order_df = process_order_submission(
-                trading_model=trading_model, 
-                order=order, 
-                order_vars=order_vars,
-                trig=trigbee,
-                symbol=symbol,
-                ticker_time_frame=ticker_time_frame,
-                star=star,
-                priceinfo=priceinfo_order
-            )
-
-            # logging.info(f"SUCCESS on BUY for {ticker}")
-            # msg = (f'Ex BUY Order {trigbee} {ticker_time_frame} {round(wave_amo,2):,}')
-            append_queen_order(QUEEN, new_queen_order_df)
-            god_save = True
-
-    if god_save:
-        god_save_the_queen(QUEEN, save_q=True, save_qo=True)
-
-    return True
-
-
-def sync_current_broker_delta(client_user, prod, symbols=[], god_save=False):
-    # Find combinations of orders where the total `filled_qty` matches the target
-
-
-    # WORKERBEE HANDLE WHEN NOT ENOUGH ORDERS AVAILABLE 
-    ## Sync current broker account
-    qb = init_queenbee(client_user=client_user, prod=prod, queen=True, revrec=True, pg_migration=pg_migration)
-    QUEEN = qb.get('QUEEN')
-    revrec = qb.get('revrec') # qb.get('queen_revrec')
-
-    # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
-    # for every broker order, if Order is not in QUEEN then create QUEEN order, seperate by BUY and SELL, run__ vs close__
-    
-    queen_orders = QUEEN['queen_orders']
-
-    storygauge = revrec['storygauge'].copy()
-    df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
-    if len(df) == 0:
-        st.write("There is NO Delta returning out")
-        # return False
+    """ HANDLE DELTA > 0"""
+    avail_orders = return_active_orders(QUEEN)
+    avail_orders['qty_available'] = avail_orders['qty_available'].astype(float)
 
     # reduce orders
+    god_save = False
     df = storygauge[storygauge['broker_qty_delta'] > 0].copy()
-    # find orders to reduce
-    for symbol in df.index.tolist():
-        if symbols:
-            if symbol not in symbols:
+    if len(df) > 0:
+        # find orders to reduce
+        for symbol in df.index.tolist():
+            if symbols:
+                if symbol not in symbols:
+                    continue
+            selected_row = df.loc[symbol]
+            broker_qty_delta = selected_row.get('broker_qty_delta')
+            symbol_orders = avail_orders[avail_orders['symbol']==symbol].copy()
+            
+            if len(symbol_orders) == 0:
+                st.write(symbol, "No Orders Available go GET MORE ORDERS")
                 continue
-        selected_row = df.loc[symbol]
-        broker_qty_delta = selected_row.get('broker_qty_delta')
-        avail_orders = return_active_orders(QUEEN)
-        if len(avail_orders) == 0:
-            st.write(symbol, "No Orders Available go GET MORE ORDERS")
-            continue
-        avail_orders['qty_available'] = avail_orders['qty_available'].astype(float)
-        # find order to match to Qty
-        found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta, qty_field='qty_available')
-        st.write(symbol, len(found_orders), total_qty)
-        # for the found orders you need to match up the qty to the broker_qty_delta
-        # fake sell the order and match it an order in broker ..... else create a fake order to store and pull from 
-        # OR ARCHIVE
+            # find order to match to Qty
+            found_orders, total_qty = find_orders_to_meet_delta(symbol_orders, broker_qty_delta, qty_field='qty_available')
+            st.write(f'{symbol} Delta is {broker_qty_delta} FOUND: {total_qty} num orders {len(found_orders)}')
+            # for the found orders you need to match up the qty to the broker_qty_delta
+            # fake sell the order and match it an order in broker ..... else create a fake order to store and pull from 
+            # OR ARCHIVE
+            # Route QUEEN Orders to Close
+            for client_order_id in found_orders.index.tolist():
+                QUEEN['queen_orders'].at[client_order_id, 'queen_order_state'] = 'archived'
+                god_save = True
+            
+        # Refresh RevRec
+        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
+        QUEEN['revrec'] = revrec
+        if god_save:
+            god_save_the_queen(QUEEN, save_q=True, save_qo=True, save_rr=True)
 
-        # Route QUEEN Orders to Close
-        for client_order_id in found_orders.index.tolist():
-            QUEEN['queen_orders'].at[client_order_id, 'queen_order_state'] = 'completed_pollen'
-        
-        # if god_save:
-        #     god_save_the_queen(QUEEN, save_q=True, save_qo=True)
-        
+    
+    """ HANDLE DELTA < 0"""
+    god_save = False
+    df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
+    if len(df) > 0:
+        for symbol in df.index.tolist():
+            if symbols:
+                if symbol not in symbols:
+                    continue
+            selected_row = df.loc[symbol]
+            broker_qty_delta = abs(selected_row.get('broker_qty_delta'))
+            avail_orders = broker_orders[(broker_orders['symbol']==symbol) & 
+                                            (broker_orders['side']=='buy') &
+                                            (broker_orders['status']=='filled') &
+                                            ~(broker_orders.index.isin(queen_order_ids)) # not in QUEEN
+                                            ].copy()
+            if len(avail_orders) == 0:
+                st.write(symbol, "No Orders Available go GET MORE ORDERS")
+                continue
+
+            # for all Available Orders return orders to match Qty
+                    # Find matches
+            avail_orders['filled_qty'] = avail_orders['filled_qty'].astype(float)
+            # find order to match to Qty
+            found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta)
+            # print(symbol, total_qty)
+            st.write(f'{symbol} found Qty: {total_qty}')
+            reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
+            # If Enough, create QUEEN order and attempt to use by remaining balance, if Not Skewed weight to 1 year ONLY if BUY... or BUY onlys skew evenly
+            ## create QUEEN orders
+            for client_order_id in found_orders.index.tolist():
+                order_data = found_orders.loc[client_order_id].to_dict()
+                filled_qty = float(order_data['filled_qty'])
+                filled_avg_price = float(order_data['filled_avg_price'])
+                star_time = '1Day_1Year' #star_names(kors.get('star_list')[0])
+                ticker_time_frame = f'{symbol}_{star_time}'
+                symbol, tframe, tperiod = ticker_time_frame.split("_")
+                star = f'{tframe}_{tperiod}'
+                wave_blocktime = 'afternoon_2-4'
+                trigbee = 'buy_cross-0'
+                tm_trig = 'buy_cross-0'
+                trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+                king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
+                wave_amo = filled_qty * filled_avg_price
+                king_order_rules['sell_trigbee_trigger'] = False
+                king_order_rules['queen_handles_trade'] = False
+                
+                # Other Misc
+                order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
+                                                            king_order_rules=king_order_rules, 
+                                                            order_side='buy', 
+                                                            wave_amo=wave_amo, 
+                                                            ticker_time_frame_origin=ticker_time_frame, 
+                                                            symbol=symbol,
+                                                            trigbee=trigbee,
+                                                            tm_trig=tm_trig,
+                                                            )
+
+
+                # get latest pricing
+                # coin_exchange = "CBSE"
+                # snap = api.get_snapshot(symbol) if crypto == False else api.get_crypto_snapshot(symbol, exchange=coin_exchange)
+                # priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 'ask': snap.latest_quote.ask_price, 'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price}
+                priceinfo_order = {'price': filled_avg_price, 
+                                'bid': filled_avg_price, 'ask': filled_avg_price, 
+                                'bid_ask_var': filled_avg_price}
+
+                # Client Order Id
+                order = found_orders.loc[client_order_id].to_dict() # vars(order_submit.get('order'))['_raw']
+                
+                order_vars['qty_order'] = order.get('filled_qty')
+                
+                new_queen_order_df = process_order_submission(
+                    trading_model=trading_model, 
+                    order=order, 
+                    order_vars=order_vars,
+                    trig=trigbee,
+                    symbol=symbol,
+                    ticker_time_frame=ticker_time_frame,
+                    star=star,
+                    priceinfo=priceinfo_order
+                )
+
+                # logging.info(f"SUCCESS on BUY for {ticker}")
+                # msg = (f'Ex BUY Order {trigbee} {ticker_time_frame} {round(wave_amo,2):,}')
+                append_queen_order(QUEEN, new_queen_order_df)
+                god_save = True
+
+        # Refresh RevRec
+        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
+        QUEEN['revrec'] = revrec
+        if god_save:
+            god_save_the_queen(QUEEN, save_q=True, save_qo=True, save_rr=True)
 
     return True
 
@@ -294,10 +294,9 @@ def PlayGround():
     prod = st.session_state['prod']
     client_user=st.session_state['client_user']
 
-    if st.button("Sync Current Broker Account -"):
-        sync_current_broker_account(client_user, prod)
-    if st.button("Sync With Broker Delta +"):
-        sync_current_broker_delta(client_user, prod)
+    if st.button("Sync Current Broker Account"):
+        # symbols = st.multiselect("symbols")
+        sync_current_broker_account(client_user, prod, symbols=None)
     
     print("PLAYGROUND", st.session_state['client_user'])
     king_G = kingdom__global_vars()
@@ -396,7 +395,7 @@ def PlayGround():
         with cols[3]:
             st.image(MISC.get('mainpage_bee_png'))
     
-        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+        KING = kingdom__grace_to_find_a_Queen()
         
         # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
         
@@ -470,9 +469,9 @@ def PlayGround():
 
 
         if st.toggle("yahoo", True):
-            db_qb_root = os.path.join(hive_master_root(), "db")
-            yahoo_stats_bee = os.path.join(db_qb_root, "yahoo_stats_bee.pkl")
-            db = ReadPickleData(yahoo_stats_bee)
+            # db_qb_root = os.path.join(hive_master_root(), "db")
+            # yahoo_stats_bee = os.path.join(db_qb_root, "yahoo_stats_bee.pkl")
+            # db = ReadPickleData(yahoo_stats_bee)
             # st.write(db['AAPL'])
             
 
@@ -484,7 +483,7 @@ def PlayGround():
                 if type(df_info) == pd.core.frame.DataFrame:
                     BISHOP['ticker_info'] = df_info
                     if pg_migration:
-                        PollenDatabase.upsert_data(BISHOP.get('table_name'), key=BISHOP.get('key'), data=BISHOP)
+                        PollenDatabase.upsert_data(BISHOP.get('table_name'), BISHOP.get('key'), BISHOP)
                     else:
                         PickleData(BISHOP.get('source'), BISHOP, console=True)
         
@@ -494,11 +493,12 @@ def PlayGround():
             if type(df_info) == pd.core.frame.DataFrame:
                 BISHOP['queen_story_symbol_stats'] = df_info
                 if pg_migration:
-                    PollenDatabase.upsert_data(BISHOP.get('table_name'), key=BISHOP.get('key'), data=BISHOP)
+                    PollenDatabase.upsert_data(BISHOP.get('table_name'), BISHOP.get('key'),BISHOP)
                 else:
                     PickleData(BISHOP.get('source'), BISHOP, console=True)        
         if 'queen_story_symbol_stats' in BISHOP.keys():
             st.header("QK Yahoo Stats")
+            st.write(BISHOP['queen_story_symbol_stats'])
             standard_AGgrid(BISHOP['queen_story_symbol_stats'])
         
         if 'ticker_info' in BISHOP.keys():
@@ -552,7 +552,7 @@ def PlayGround():
                 if st.form_submit_button("Save Screen to Bishop"):
                     BISHOP[screen_name] = df_filter
                     if pg_migration:
-                        PollenDatabase.upsert_data(BISHOP.get('table_name'), key=BISHOP.get('key'), data=BISHOP)
+                        PollenDatabase.upsert_data(BISHOP.get('table_name'),BISHOP.get('key'), BISHOP)
                     else:
                         PickleData(BISHOP.get('source'), BISHOP, console=True)
 
@@ -561,9 +561,10 @@ def PlayGround():
 
 
     except Exception as e:
-        print("playground error: ", e,  print_line_of_error())
+        print_line_of_error("playground error: , {e}")
 
 
 if __name__ == '__main__':
     signin_main()
+    print(st.session_state['prod'])
     PlayGround()

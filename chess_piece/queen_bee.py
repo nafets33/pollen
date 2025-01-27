@@ -66,7 +66,7 @@ est = pytz.timezone("US/Eastern")
 notification_list = deque([], 500)
 
 # ###### GLOBAL # ######
-KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
+KING = kingdom__grace_to_find_a_Queen()
 king_G = kingdom__global_vars()
 ARCHIVE_queenorder = king_G.get('ARCHIVE_queenorder') # ;'archived'
 active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
@@ -110,13 +110,16 @@ exclude_conditions = [
 #     return BROKER
 
 
-def init_broker_orders(api, BROKER):
+def init_broker_orders(api, BROKER, start_date=None, end_date=None):
     # Start and end dates for the last 100 days
-    end_date = datetime.now() + timedelta(days=1)
-    start_date = datetime.now() - timedelta(days=100)
+    if not start_date:
+        end_date = datetime.now() + timedelta(days=1)
+        start_date = datetime.now() - timedelta(days=100)
 
     # Initialize an empty DataFrame for broker orders
-    broker_orders = pd.DataFrame()
+    broker_orders = BROKER.get('broker_orders', pd.DataFrame())
+    if not isinstance(broker_orders, pd.DataFrame):
+        broker_orders = pd.DataFrame()
 
     # Iterate over 5-day intervals
     current_date = start_date
@@ -145,7 +148,10 @@ def init_broker_orders(api, BROKER):
             interval_df = pd.DataFrame(interval_orders)
             if not interval_df.empty:
                 interval_df.set_index('client_order_id', drop=False, inplace=True)
-                broker_orders = pd.concat([broker_orders, interval_df])
+                interval_df = interval_df[~(interval_df.index.isin(broker_orders.index))]
+                if len(interval_df) > 0:
+                    print("new orders to add num: ", len(interval_df))
+                    broker_orders = pd.concat([broker_orders, interval_df])
         
         # Move to the next 5-day interval
         current_date = next_date

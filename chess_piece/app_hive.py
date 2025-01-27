@@ -433,48 +433,78 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
 #         print_line_of_error(e)
 
 
-def admin_queens_active(KING, all_users): 
-# handle pg_migration
+def admin_queens_active(KING, all_users, pg_migration=False):
+    # Handle admin privilege
     if st.session_state['admin']:
-        # with st.expander("admin QUEENS_ACTIVE"):
-            # df = return_all_client_users__db()
-            # df = pd.DataFrame(KING['users'].get('client_users_db'))
-        df = all_users
+        # Extract current allowed list
         allowed_list = KING['users']['client_user__allowed_queen_list']
-        df['active_status'] = np.where(df["email"].isin(allowed_list), "active", 'not_activate')
+        df = all_users
+
+        # Add active_status column based on allowed list
+        df['active_status'] = np.where(df["email"].isin(allowed_list), "active", "not_active")
+
+        # Display the AG Grid with checkbox for selection
         grid = standard_AGgrid(data=df, use_checkbox=True, update_mode_value='MANUAL')
-        # st.write(grid.keys())
-        grid_df = grid.get('selected_data')
+        grid_df = grid.get('selected_data')  # Rows selected by the admin
 
         if grid_df is not None:
+            # Lists to track changes
+            emails_to_add = []
+            emails_to_remove = []
 
-            allowed_list_new = grid_df['email'].tolist()
-            new_emails = [i for i in allowed_list_new if i not in allowed_list]
-            st.write(f"New Emails to Add", allowed_list_new)
+            # Update king list based on active_status
+            for _, row in grid_df.iterrows():
+                email = row['email']
+                status = row['active_status']
+                if status == "active" and email not in allowed_list:
+                    emails_to_add.append(email)  # Add to king list
+                elif status == "not_active" and email in allowed_list:
+                    emails_to_remove.append(email)  # Remove from king list
+
+            # Show changes to the admin
+            st.write("Emails to Add:", emails_to_add)
+            st.write("Emails to Remove:", emails_to_remove)
 
             if st.button("Save"):
-                KING['users']['client_user__allowed_queen_list'] = new_emails
-                
+                # Update the king list by applying additions and removals
+                KING['users']['client_user__allowed_queen_list'] = list(
+                    set(allowed_list + emails_to_add) - set(emails_to_remove)
+                )
+
+                # Save changes to the database or pickle
                 if pg_migration:
                     PollenDatabase.upsert_data(KING.get('table_name'), KING.get('key'), KING)
                 else:
                     PickleData(KING.get('source'), KING, write_temp=False)
-                
 
-                st.success("Auth Queen Users Updated")
-                print(allowed_list_new)
-                for email in allowed_list_new:
-                    print(email)
-                    send_email(email, subject="Trading Account is Now Active", 
-                    body=f""" Account Accepted.
-                    Steps:
-                    1. Create a Broker account on alpaca >>> https://alpaca.markets/
-                    2. Enter API credentials
-                    3. Create a Portfolio Manager
+                # Notify success
+                st.success("Queen Users Updated Successfully")
 
-                    Enjoy your new portfolio Manager
-                    """
-                
+                # Send emails for activation
+                for email in emails_to_add:
+                    send_email(
+                        email,
+                        subject="Trading Account is Now Active",
+                        body=f"""
+                        Account Accepted.
+                        Steps:
+                        1. Create a Broker account on Alpaca >>> https://alpaca.markets/
+                        2. Enter API credentials
+                        3. Create a Portfolio Manager
+
+                        Enjoy your new Portfolio Manager!
+                        """
+                    )
+
+                # Optionally send deactivation emails
+                for email in emails_to_remove:
+                    send_email(
+                        email,
+                        subject="Trading Account Deactivation",
+                        body=f"""
+                        Your trading account access has been revoked.
+                        If this is a mistake, please contact support.
+                        """
                     )
 
 
@@ -1362,7 +1392,7 @@ def standard_AGgrid(
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
     gb = GridOptionsBuilder.from_dataframe(data)
-    gb.configure_default_column(minWidth=85, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)
+    gb.configure_default_column(minWidth=85, maxWidth=800, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True)
     gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=False)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination

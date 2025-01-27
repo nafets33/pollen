@@ -297,14 +297,12 @@ def signin_main(page=None):
 
     def define_authorized_user():
 
-
-
-        KING, users_allowed_queen_email, users_allowed_queen_emailname__db = kingdom__grace_to_find_a_Queen()
-        # print(st.session_state["username"])
-        if st.session_state["username"] in users_allowed_queen_email:
-            st.session_state["authorized_user"] = True
-        else:
+        KING = kingdom__grace_to_find_a_Queen()
+        not_allowed = KING['users']['not_allowed']
+        if st.session_state["username"] in not_allowed:
             st.session_state["authorized_user"] = False
+        else:
+            st.session_state["authorized_user"] = True
 
         st.session_state["admin"] = (
             True

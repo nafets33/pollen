@@ -175,18 +175,17 @@ def kingdom__grace_to_find_a_Queen(prod=True):
     else:
         KING = ReadPickleData(master_swarm_KING(prod))
     
-    users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
-    users_allowed_queen_email.append("stefanstapinski@gmail.com")
-    users_allowed_queen_email.append("stefanstapinski@yahoo.com")
-
-    users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
-    KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
+    if 'not_allowed' not in KING['users'].keys():
+        KING['users']['not_allowed'] = []
     
-    return (
-        KING,
-        users_allowed_queen_email,
-        users_allowed_queen_emailname__db,
-    )
+    # users_allowed_queen_email = KING['users'].get('client_user__allowed_queen_list')
+    # users_allowed_queen_email.append("stefanstapinski@gmail.com")
+    # users_allowed_queen_email.append("stefanstapinski@yahoo.com")
+
+    # users_allowed_queen_emailname__db = {clientusername: return_db_root(client_username=clientusername) for clientusername in users_allowed_queen_email}
+    # KING['users_allowed_queen_emailname__db'] = users_allowed_queen_emailname__db
+    
+    return KING
 
 def return_all_client_users__db(query="SELECT * FROM users"):
     if pg_migration:
@@ -4629,12 +4628,12 @@ def create_QueenOrderBee(
     return running_order
 
 
-def sync_current_broker_account(symbol, BROKER, QUEEN, ORDERS):
-    # WORKERBEE
-    ## Sync current broker account
-    # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
+# def sync_current_broker_account(symbol, BROKER, QUEEN, ORDERS):
+#     # WORKERBEE
+#     ## Sync current broker account
+#     # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
 
-    return True
+#     return True
 
 
 def generate_queen_buying_powers_settings(
