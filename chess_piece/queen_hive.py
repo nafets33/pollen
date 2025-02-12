@@ -363,7 +363,6 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
             if prod:
                 prod_keys_confirmed = QUEEN_KING["users_secrets"]["prod_keys_confirmed"]
                 if prod_keys_confirmed == False:
-                    # st.error("You Need to Add you PROD API KEYS")
                     return False
                 else:
                     api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"]
@@ -373,7 +372,6 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
             else:
                 sandbox_keys_confirmed = QUEEN_KING["users_secrets"]["sandbox_keys_confirmed"]
                 if sandbox_keys_confirmed == False:
-                    # st.error("You Need to Add you SandboxPAPER API KEYS")
                     return False
                 else:
                     api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID_PAPER"]
@@ -488,7 +486,7 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
         'max_budget_allowed': max_budget_allowed,
     }
 
-def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, qcp_tickers={'castle': ["SPY"], 'bishop': ["GOOG"], 'knight': ["OXY"], 'castle_coin':["BTCUSD", "ETHUSD"] }, qcp_theme={'castle': "nuetral", 'bishop': "nuetral", 'knight': "nuetral", 'castle_coin':"nuetral" }):
+def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, qcp_tickers={'castle': ["SPY"], 'bishop': ["GOOG"], 'knight': ["OXY"], 'castle_coin':["BTC/USD", "ETH/USD"] }, qcp_theme={'castle': "nuetral", 'bishop': "nuetral", 'knight': "nuetral", 'castle_coin':"nuetral" }):
     chess_board = {}
     for qcp, tickers in qcp_tickers.items():
         theme = qcp_theme.get(qcp)
@@ -1751,7 +1749,11 @@ def pollen_story(pollen_nectar):
                 STORY_bee[ticker_time_frame]["story"]["vwap_deviation"] = df.iloc[-1]["vwap_deviation"]
                 STORY_bee[ticker_time_frame]["story"]["vwap_deviation_pct"] = df.iloc[-1]["vwap_deviation_pct"]
                 current_ask = df.iloc[-1].get("current_ask")
+                if not current_ask:
+                    current_ask = df.iloc[-1].get("close")
                 current_bid = df.iloc[-1].get("current_bid")
+                if not current_bid:
+                    current_bid = df.iloc[-1].get("close")
                 STORY_bee[ticker_time_frame]["story"]["current_ask"] = current_ask
                 STORY_bee[ticker_time_frame]["story"]["current_bid"] = current_bid
                 best_limit_price = get_best_limit_price(ask=current_ask, 
@@ -1760,6 +1762,7 @@ def pollen_story(pollen_nectar):
                 ask_bid_variance = None if current_ask is None else current_bid / current_ask
                 STORY_bee[ticker_time_frame]["story"]["maker_middle"] = maker_middle
                 STORY_bee[ticker_time_frame]["story"]["ask_bid_variance"] = ask_bid_variance
+                # print(STORY_bee)
 
                 # Measure MACD WAVES
                 # change % shifts for each, close, macd, signal, hist....
@@ -1941,14 +1944,20 @@ def pollen_story(pollen_nectar):
 
                 try:
                     if "1Minute_1Day" in ticker_time_frame:
+                        # print(df.iloc[0], df.iloc[-1])
                         theme_df = df.copy()
                         theme_df = split_today_vs_prior(df=theme_df)  # remove prior day
                         theme_today_df = theme_df["df_today"]
                         theme_prior_df = theme_df['df_prior']
+
+
+                        if len(theme_prior_df) == 0:
+                            theme_prior_df = theme_today_df
                         if len(theme_prior_df) > 0:
                             yesterday_price = theme_prior_df.iloc[-1]['close']
                         else:
                             yesterday_price = theme_today_df.iloc[-1]['close']
+
                         current_price = theme_today_df.iloc[-1]["close"]
                         open_price = theme_today_df.iloc[0]["close"]  # change to timestamp lookup
             
@@ -2371,6 +2380,7 @@ def return_knightbee_waves(df, trigbees, ticker_time_frame):  # adds profit wave
 
 def split_today_vs_prior(df, timestamp="timestamp_est"):
     try:
+        # print(df.columns)
         last_date = df[timestamp].iloc[-1].replace(hour=1, minute=1, second=1)
         df_today = df[df[timestamp] > (last_date).astimezone(est)].copy()
         df_prior = df[~(df[timestamp].isin(df_today[timestamp].to_list()))].copy()
@@ -2432,15 +2442,44 @@ def return_alpc_portolio(api):
     
     return {"portfolio": portfolio}
 
-def refresh_broker_account_portolfio(api, QUEEN, account=False, portfolio=False):
-    if portfolio:
-        portfolio = return_alpc_portolio(api)['portfolio']
-        QUEEN['portfolio'] = portfolio
-        QUEEN['heartbeat']['portfolio'] = portfolio
-    if account:
-        acct_info = refresh_account_info(api=api)['info_converted']
-        QUEEN['account_info'] = acct_info
-        QUEEN['heartbeat']['account_info'] = acct_info
+def refresh_broker_account_portolfio(api, QUEEN):
+    
+    portfolio = return_alpc_portolio(api)['portfolio']
+    crypto_symbols = {'BTCUSD': 'BTC/USD', 'ETHUSD': 'ETH/USD',}
+    # ensure columns
+    for ticker, data in portfolio.items():
+        if data['symbol'] in crypto_symbols:
+            portfolio[ticker]['symbol'] = crypto_symbols[ticker]
+    
+    acct_info = refresh_account_info(api=api)['info_converted']
+    
+    QUEEN['portfolio'] = portfolio
+    QUEEN['account_info'] = acct_info
+    
+    QUEEN['heartbeat']['account_info'] = acct_info
+    QUEEN['heartbeat']['portfolio'] = portfolio
+    
+    
+    return QUEEN
+    # {'asset_id': '3f3e0ff9-599f-4fec-8842-6bc53f5129a1',
+    #  'symbol': 'WMT',
+    #  'exchange': 'NYSE',
+    #  'asset_class': 'us_equity',
+    #  'asset_marginable': True,
+    #  'qty': '222',
+    #  'avg_entry_price': '102.302444',
+    #  'side': 'long',
+    #  'market_value': '22861.56',
+    #  'cost_basis': '22711.142568',
+    #  'unrealized_pl': '150.417432',
+    #  'unrealized_plpc': '0.0066230675779359',
+    #  'unrealized_intraday_pl': '406.26',
+    #  'unrealized_intraday_plpc': '0.0180919426594167',
+    #  'current_price': '102.98',
+    #  'lastday_price': '101.15',
+    #  'change_today': '0.0180919426594167',
+    #  'qty_available': '222'}
+
 
 
 def check_order_status(api, client_order_id):  # return raw dict form
@@ -3124,7 +3163,7 @@ def KOR_close_order_today_vars(take_profit=True):
 
 def star_names(name=None):
     chart_times = {
-        'Flash': "1Minute_1Day",
+        'Day': "1Minute_1Day",
         'Week': "5Minute_5Day",
         'Month': "30Minute_1Month",
         'Quarter': "1Hour_3Month",
@@ -3140,7 +3179,7 @@ def star_names(name=None):
 def ttf_grid_names(ttf_name, symbol=True):
     symbol_n = ttf_name.split("_")[0]
     if '1Minute_1Day' in ttf_name:
-      ttf_name = "Flash"
+      ttf_name = "Day"
     elif '5Minute_5Day' in ttf_name:
       ttf_name = "Week"
     elif '30Minute_1Month' in ttf_name:
@@ -3157,38 +3196,6 @@ def ttf_grid_names(ttf_name, symbol=True):
     else:
        return ttf_name
 
-def buy_button_dict_items(queen_handles_trade=True, 
-                          star='1Minute_1Day',
-                          star_list=list(star_names().keys()),
-                          wave_amo=1000,
-                          trade_using_limits=None,
-                          limit_price=False,
-                          take_profit=.03,
-                          sell_out=-.03,
-                          sell_trigbee_trigger=True,
-                          sell_trigbee_trigger_timeduration=None, # deprecated
-                          close_order_today=False, 
-                          reverse_buy=None, # deprecated
-                          sell_at_vwap=False,
-                          sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M'), 
-                          ):
-    column = {
-                'queen_handles_trade': queen_handles_trade,
-                'star':star,
-                'wave_amo': wave_amo,
-                # 'trade_using_limits': trade_using_limits,
-                'limit_price': limit_price,
-                'take_profit': take_profit,
-                'sell_out': sell_out,
-                'sell_trigbee_trigger': sell_trigbee_trigger,
-                'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
-                'close_order_today': close_order_today,
-                'reverse_buy': reverse_buy,
-                'sell_at_vwap': sell_at_vwap,
-                'star_list': star_list,
-                'sell_trigbee_date': sell_trigbee_date,
-                }
-    return {key: value for key, value in column.items() if value is not None}
 
 def sell_button_dict_items(symbol="SPY", sell_qty=89):
     var_s = {
@@ -3196,6 +3203,7 @@ def sell_button_dict_items(symbol="SPY", sell_qty=89):
                 'sell_qty':sell_qty,
                 }
     return var_s
+
 
 def chessboard_button_dict_items(Save="Save"):
     var_s = {

@@ -24,7 +24,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 from chess_piece.pollen_db import PollenDatabase
 import copy
 import ipdb
-crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
+crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
 pg_migration = os.getenv('pg_migration')
 print("pg_migration", pg_migration)
 
@@ -584,6 +584,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
         hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
         hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
+        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"] + hedge_fund_names
+        save_as_main_chessboard = st.checkbox("Save as Main Chessboard", True)
 
         with st.sidebar:
             if st.toggle("Control Settings"):
@@ -593,8 +595,6 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     refresh_trading_models_button(QUEEN_KING)
                     # refresh_queen_orders(QUEEN)
                     # stash_queen(QUEEN)
-        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"] + hedge_fund_names
-        save_as_main_chessboard = st.checkbox("Save as Main Chessboard", True)
 
 
         optoins = []
@@ -787,7 +787,7 @@ if __name__ == '__main__':
     active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
     active_queen_order_states = king_G.get('active_queen_order_states')
 
-    crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
+    # crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
     admin = st.session_state['admin']
     prod = st.session_state['prod']
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'

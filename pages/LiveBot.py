@@ -37,7 +37,7 @@ def demo_bot():
     mkhrs = return_market_hours(trading_days=trading_days)
     seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
-    account_header_grid(client_user, refresh_sec, st.session_state["ip_address"], seconds_to_market_close)
+    account_header_grid(client_user, prod, refresh_sec, st.session_state["ip_address"], seconds_to_market_close)
     queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=True)
 if __name__ == '__main__':
     set_streamlit_page_config_once()

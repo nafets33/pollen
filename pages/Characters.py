@@ -83,7 +83,7 @@ def ozz():
     # user_session_state = init_user_session_state(prod, db_root)
 
     with col_2.container():
-        self_image = st.selectbox("Speak To", options=['stefan', 'hootsAndHootie', 'viki'], key='self_image')
+        self_image = st.selectbox("Speak To", options=['James CFP'], key='self_image')
 
     main_prompt = characters[st.session_state.get('self_image')].get('main_prompt')
 
@@ -131,6 +131,9 @@ def ozz():
         # user_session_state['use_embeddings'] = embedding_default
         # save_json(session_state_file_path, user_session_state)
 
+
+    if self_image == 'James CFP':
+        pass
 
     with st.sidebar:
         embeddings = os.listdir(CONSTANTS.get('PERSIST_PATH'))

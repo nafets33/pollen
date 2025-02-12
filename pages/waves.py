@@ -33,7 +33,6 @@ from custom_graph_v1 import st_custom_graph
 import hydralit_components as hc
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from chess_piece.pollen_db import PollenDatabase
-from chess_piece.fastapi_queen import buy_button_dict_items, sell_button_dict_items
 from chess_utils.conscience_utils import story_return
 
 # @st.cache_data
@@ -86,6 +85,7 @@ def waves():
 
 
     QUEEN, QUEEN_KING, api = queen_data(client_user, prod)
+    # st.write(QUEEN_KING['chess_board'])
     if pg_migration:
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
         db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name))).rename(columns={0:'key', 1:'timestamp'})

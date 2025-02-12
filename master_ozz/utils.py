@@ -777,7 +777,7 @@ def MergeIndexes(db_locations : list, new_location : str = None):
     return dbPrimary.docstore._dict
 
 
-def ozz_characters(population=['stefan', 'hootsAndHootie', 'viki']): # class
+def ozz_characters(population=['stefan', 'hootsAndHootie', 'viki', 'James CFP']): # class
     my_characters = {}
     def char_attributes(split_query_by, voice_id, main_prompt, conv_rules):
         return {'split_query_by':split_query_by, 'voice_id':voice_id, 
@@ -858,12 +858,22 @@ If you don't understand the query from the user try move forward with practicing
 """
 
 
+        elif char == 'James CFP':
+            conv_rules={}
+            split_query_by=['']
+            voice_id = '9BWtsMINqrJLrRacOk9x'
+            main_prompt = """
+
+Your name is James, you are a professional financial planner. Here to help review the users portfolio and assist them with their investments
+
+"""
+
         my_characters[char] = char_attributes(split_query_by, voice_id, main_prompt, conv_rules)
 
     return my_characters
 
-def refreshAsk_kwargs(color_dict={'background_color_chat': 'transparent'}, header_prompt=''):
-    return {'color_dict': color_dict, header_prompt: header_prompt}
+def refreshAsk_kwargs(color_dict={'background_color_chat': 'transparent'}, header_prompt='', return_audio=False):
+    return {'color_dict': color_dict, "header_prompt": header_prompt, "return_audio": return_audio}
 
 def ozzapi_script_Parser():
     parser = argparse.ArgumentParser()

@@ -13,6 +13,7 @@ import aiohttp
 import pytz
 import socket
 import json
+import requests
 from dotenv import load_dotenv
 
 
@@ -391,7 +392,7 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
         print_line_of_error('king symbols data')
 
 
-def return_QUEEN_KING_symbols(QUEEN_KING, QUEEN, symbols=[]):
+def return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None, symbols=[]):
     if QUEEN:
         current_active_orders = return_active_orders(QUEEN)
     else:
@@ -610,6 +611,90 @@ def main_index_tickers():
         }
     
     return main_indexes
+
+
+
+# CRYPTO
+def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, e_date=False):
+
+    CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
+    CRYPTO_HEADER = {"accept": "application/json"}
+
+    try:
+        current_date = datetime.now(est).strftime("%Y-%m-%d")
+        trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
+        s = datetime.now(est)
+        return_dict = {}
+        error_dict = {}
+
+        for charttime, ndays in chart_times.items():
+            timeframe = charttime.split("_")[0]  # '1Minute_1Day'
+            timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
+            if s_date and e_date:
+                start_date = s_date
+                end_date = e_date
+            else:
+                start_date = trading_days_df_.tail(ndays).head(1).date
+                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+                end_date = datetime.now(est).strftime("%Y-%m-%d")
+
+
+            params = {
+                "symbols": ticker_list,
+                "timeframe": timeframe,
+                "start": start_date,
+                "end": end_date,
+            }
+            data = requests.get(f"{CRYPTO_URL}/bars", headers=CRYPTO_HEADER, params=params).json()
+
+            bars_dataa = data["bars"][ticker_list[0]]
+
+            symbol_data = pd.DataFrame(bars_dataa)
+            symbol_data = symbol_data.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'n': 'trade_count', 'o': 'open', 't': 'timestamp', 'v': 'volume', 'vw': 'vwap'})
+            symbol_data.insert(8, "symbol", ticker_list[0])
+            symbol_data['timestamp'] = pd.to_datetime(symbol_data['timestamp'], utc=True)
+            symbol_data.set_index('timestamp', inplace=True)
+
+            if len(symbol_data) == 0:
+                print(f"{ticker_list} {charttime} NO Bars")
+                error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
+                return {}
+            # set index to EST time
+            symbol_data["timestamp_est"] = symbol_data.index
+            symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
+                lambda x: x.astimezone(est)
+            )
+            symbol_data["timeframe"] = timeframe
+            symbol_data["bars"] = "bars_list"
+
+            symbol_data = symbol_data.reset_index(drop=True)
+            return_dict[charttime] = symbol_data
+                
+ 
+        return {"resp": True, "return": return_dict, 'error_dict': error_dict}
+
+    except Exception as e:
+        print("Error in return_crypto_bars: ", print_line_of_error(e))
+
+def return_crypto_snapshots(symbols):
+
+    CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
+    CRYPTO_HEADER = {"accept": "application/json"}
+
+    symbols_str = ",".join(symbols) if isinstance(symbols, list) else symbols
+    params = {
+        "symbols": symbols_str
+    }
+    
+    response = requests.get(f"{CRYPTO_URL}/snapshots", headers=CRYPTO_HEADER, params=params)
+    
+    if response.status_code == 200:
+        data = response.json()
+        return data['snapshots']
+    else:
+        return {"error": f"Failed to fetch data for {symbols}, status code: {response.status_code}"}
+# CRYPTO
+
 
 #### #### if __name__ == '__main__'  ###
 

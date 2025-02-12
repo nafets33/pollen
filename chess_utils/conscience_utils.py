@@ -85,6 +85,18 @@ def return_trading_model_kors_v2(QUEEN_KING, symbol='SPY', trigbee='buy_cross-0'
      print_line_of_error("wwwwtf")
      return {}
 
+def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=list(star_names().keys()), max_budget_allowed=None):
+    var_s = {
+                'symbol': symbol,
+                'buying_power':buying_power,
+                'borrow_power': borrow_power,
+                'status': status,
+                'refresh_star': refresh_star,
+                'max_budget_allowed': max_budget_allowed,
+                }
+    return var_s
+
+
 def buy_button_dict_items(queen_handles_trade=True, 
                           star='1Minute_1Day',
                           star_list=list(star_names().keys()),
@@ -186,6 +198,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
 
         df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
 
+        symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+
         qcp_name = {data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() }
         qcp_name['Queen'] = 'Queen'
         qcp_name['King'] = 'King'
@@ -230,6 +244,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
         df['queens_suggested_sell'] = round(df['money'])
 
+        kors_dict = add_symbol_dict_items()
+        df['add_symbol_option'] = [kors_dict for _ in range(df.shape[0])]
+
         kors_dict = buy_button_dict_items()
         df['kors'] = [kors_dict for _ in range(df.shape[0])]
 
@@ -259,6 +276,18 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
                     sell_qty = df.at[symbol, 'qty_available']
                     sell_option = sell_button_dict_items(symbol, sell_qty)
                     df.at[symbol, 'sell_option'] = sell_option
+                    status = ['active', 'not_active'] if symbol in symbols else ['not_active', 'active']
+                    
+                    tic_star = df.at[symbol, 'refresh_star']
+                    refresh_star = [tic_star] + list(star_names().keys())
+                    buying_power = df_ticker.at[symbol, 'ticker_buying_power'] if symbol in df_ticker.index else 0
+                    option = add_symbol_dict_items(symbol=symbol, 
+                                                   buying_power=buying_power, 
+                                                   borrow_power=0, 
+                                                   status=status, 
+                                                   refresh_star=refresh_star, 
+                                                   max_budget_allowed=None)
+                    df.at[symbol, 'add_symbol_option'] = option
                     
                     remaining_budget__ = remaining_budget.get(symbol)
                     df.at[symbol, 'remaining_budget'] = remaining_budget__

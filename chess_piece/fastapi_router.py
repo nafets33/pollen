@@ -2,25 +2,11 @@ from fastapi import APIRouter, status, Header, Body
 from fastapi.responses import JSONResponse, FileResponse
 import pandas as pd
 import os
-
-# import ipdb
-# import openai
-# import json
+import random
 
 from master_ozz.ozz_query import ozz_query
 from master_ozz.utils import ozz_master_root, init_constants
-import random
-from chess_piece.fastapi_queen import (get_queen_messages_logfile_json,  app_buy_order_request,  get_queen_orders_json, app_Sellorder_request,  get_ticker_data, queen_wavestories__get_macdwave, app_buy_wave_order_request, 
-                                       app_archive_queen_order,
-                                       app_queen_order_update_order_rules,
-                                       get_ticker_time_frame,
-                                       grid_row_button_resp,
-                                       update_queenking_chessboard,
-                                       update_sell_autopilot,
-                                       update_buy_autopilot,
-                                       header_account,
-                                       chessboard_view,
-                                       )
+from chess_piece.fastapi_queen import *
 
 # from dotenv import load_dotenv
 
@@ -210,18 +196,6 @@ def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=B
     except Exception as e:
         print("router err ", e)
 
-@router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
-def buy_order(client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
-
-    if app_buy_wave_order_request(client_user, prod, selected_row, default_value=default_value, ready_buy=False):
-        return JSONResponse(content=grid_row_button_resp())
-    else:
-        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
-
-
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
 def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
@@ -346,3 +320,24 @@ def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...)):
 
 
     return JSONResponse(content=json_data)
+
+
+@router.post("/add_symbol_to_trading_board", status_code=status.HTTP_200_OK)
+def sell_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+    if not check_authKey(api_key): # fastapi_pollenq_key
+        return "NOTAUTH"
+    json_data = add_symbol_to_board(client_user, prod, selected_row, default_value)
+    return JSONResponse(content=json_data)
+
+
+#### WORKERBEE
+@router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
+def buy_order(client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
+
+    if app_buy_wave_order_request(client_user, prod, selected_row, default_value=default_value, ready_buy=False):
+        return JSONResponse(content=grid_row_button_resp())
+    else:
+        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))

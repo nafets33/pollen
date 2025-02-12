@@ -153,9 +153,9 @@ const AgGrid = (props: Props) => {
         onClick={btnClickedHandler}
         style={{
           background: "transparent",
-          color: props.color ? props.color : "black",
+          // color: props.color ? props.color : "black",
           width: props.width ? props.width : "100%",
-          borderColor: props.borderColor ? props.borderColor : "black",
+          // borderColor: props.borderColor ? props.borderColor : "black",
         }}
       >
         {props.col_header ? props.value : props.buttonName}
@@ -605,7 +605,7 @@ const AgGrid = (props: Props) => {
               </div>
             </div>
           )}
-          <div className="d-flex flex-row gap-2">
+          <div className="d-flex flex-row gap-2 flex-wrap">
             {toggle_views?.map((view: string, index: number) => (
               <span key={index}>
                 <button
@@ -613,9 +613,12 @@ const AgGrid = (props: Props) => {
                     viewId === index ? "btn-danger" : "btn-secondary"
                   }`}
                   style={{
-                    padding: "5px 8px", // Smaller padding
-                    fontSize: "12px", // Smaller font size
+                    padding: "4px 6px", // Reduce padding
+                    fontSize: "11px", // Reduce font size
                     borderRadius: "4px",
+                    whiteSpace: "nowrap", // Prevent text wrapping inside buttons
+                    color: 'white',
+                    //backgroundColor: '#85929e'
                   }}
                   onClick={() => setViewId(index)}
                 >

@@ -417,7 +417,7 @@ def pollenq(admin_pq):
                 else:
                     STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
                 
-                refresh_broker_account_portolfio(api, QUEEN, account=True, portfolio=True)
+                QUEEN = refresh_broker_account_portolfio(api, QUEEN)
                 QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee) ## Setup Board
                 god_save_the_queen(QUEENsHeart=QUEENsHeart, 
                                    QUEEN=QUEEN, 
@@ -454,7 +454,7 @@ def pollenq(admin_pq):
 
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
-        account_header_grid(client_user, refresh_sec, ip_address, seconds_to_market_close)
+        account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
         queens_conscience(revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1

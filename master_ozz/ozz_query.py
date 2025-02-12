@@ -19,7 +19,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from master_ozz.utils import llm_assistant_response, get_last_eight, ozz_characters, init_stories ,hoots_and_hootie_vars, common_phrases_for_Questions, save_json, load_local_json, init_text_audio_db, print_line_of_error, ozz_master_root, ozz_master_root_db, generate_audio, save_audio, Retriever, init_constants
-from chess_piece.queen_hive import init_clientUser_dbroot
+from chess_piece.queen_hive import init_clientUser_dbroot, init_queenbee
 from chess_piece.pollen_db import PollenDatabase
 
 main_root = ozz_master_root()  # os.getcwd()
@@ -258,7 +258,7 @@ def ai_create_name_for_session(master_conversation_history):
     return True
 
 ### MAIN 
-def Scenarios(text: list, current_query: str , conversation_history: list , master_conversation_history: list, session_state={}, audio_file=None, self_image='hootsAndHootie.png', client_user=None, use_embeddings=None, df_master_audio=None, check_for_story=False):
+def Scenarios(text: list, current_query: str , conversation_history: list , master_conversation_history: list, session_state={}, audio_file=None, self_image='hootsAndHootie.png', client_user=None, use_embeddings=None, df_master_audio=None, check_for_story=False, return_audio=False):
     scenario_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     OZZ = {}
     s3_filepath = f'{client_user}/'
@@ -418,6 +418,7 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
         return response
 
     print('QUERY ', current_query)
+    prod = session_state.get('prod')
     # print('SSTATE ', {i: v for i, v in session_state.items() if i != 'text'})
     
     user_query = current_query
@@ -484,7 +485,10 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
             audio_file = resp_func.get('audio_file')
             session_state = resp_func.get('session_state')
             conversation_history.append({"role": "assistant", "content": response, })
-            audio_file = handle_audio(user_query, response, audio_file, self_image, s3_filepath)
+            if return_audio:
+                audio_file = handle_audio(user_query, response, audio_file, self_image, s3_filepath)
+            else:
+                audio_file = False
             return scenario_return(response, conversation_history, audio_file, session_state, self_image)
 
     # Common Phrases # WORKERBEE Add check against audio_text DB
@@ -539,7 +543,17 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
     db_name, current_query = determine_embedding(current_query, use_embedding=use_embedding)
     return_only_text=True
     llm_convHistory = copy.deepcopy(conversation_history)
-    if db_name:
+    
+    if self_image == 'James CFP':
+        print("CALL JAMES - GPT")
+        REVREC = init_queenbee(client_user=client_user, prod=prod, revrec=True).get('REVREC')
+        story = REVREC.get('storygauge')
+
+        portfolio_data = story.to_dict()
+        current_query =  str(portfolio_data) + current_query
+        llm_convHistory.append({"role": "user", "content": current_query})
+        response = llm_assistant_response(llm_convHistory)
+    elif db_name:
         print("USE EMBEDDINGS: ", db_name)
         Retriever_db = os.path.join(PERSIST_PATH, db_name)
         response = Retriever(current_query, Retriever_db, return_only_text=return_only_text)
@@ -559,13 +573,16 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
 
     else:
         print("CALL LLM - GPT")
-        current_query =  handle_questions + current_query
+        current_query = current_query
         llm_convHistory.append({"role": "user", "content": current_query})
         response = llm_assistant_response(llm_convHistory)
     
     
     conversation_history.append({"role": "assistant", "content": response})
-    audio_file = handle_audio(user_query, response=response, audio_file=audio_file, self_image=self_image, s3_filepath=s3_filepath)
+    if return_audio:
+        audio_file = handle_audio(user_query, response=response, audio_file=audio_file, self_image=self_image, s3_filepath=s3_filepath)
+    else:
+        audio_file = False
 
     if 'viki' in self_image:
         copy_conversation_history = copy.deepcopy(conversation_history)
@@ -625,6 +642,8 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
         return ozz_query_json_return(text, self_image, audio_file, page_direct, listen_after_reply)
 
     db_root = init_clientUser_dbroot(client_username=client_user, force_db_root=force_db_root)
+
+    return_audio = refresh_ask.get('return_audio')
 
     # handle character from self_image
     # handle command type, if you don't know command type you need to ask?
@@ -700,7 +719,7 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     storytime = True if session_state['story_time'] else False
 
     # Call the Scenario Function and get the response accordingly
-    scenario_resp = Scenarios(text, current_query, conversation_history, master_conversation_history, session_state, self_image=self_image, client_user=client_user, use_embeddings=use_embeddings, df_master_audio=None) # df_master_audio
+    scenario_resp = Scenarios(text, current_query, conversation_history, master_conversation_history, session_state, self_image=self_image, client_user=client_user, use_embeddings=use_embeddings, df_master_audio=None, return_audio=return_audio) # df_master_audio
     response = scenario_resp.get('response')
     response = clean_response(response)
 

@@ -6,7 +6,7 @@ import { utcToZonedTime, format } from 'date-fns-tz';
 import moment from "moment";
 
 const formats = ["YYYY-MM-DDTHH:mm", "MM/DD/YYYYTHH:mm", "MM/DD/YYYY HH:mm", "YYYY-MM-DD HH:mm"];
-
+const sliderRules = ["buying_power", "borrow_power"]
 const modalStyle = {
   content: {
     top: "50%",
@@ -218,14 +218,35 @@ const MyModal: React.FC<MyModalProps> = ({
   
             {/* Other Fields (Text, Datetime, Array Fields) */}
             <div className="d-flex flex-row justify-content-between">
-              {/* Text Fields Column */}
-              {textFields.length > 0 && (
-                <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
-                  {textFields.map((rule: any, index: number) => (
-                    <div className="d-flex flex-column align-items-start mb-1" key={index}>
-                      <label className="mb-0" style={{ fontSize: "0.9rem" }}>
-                        {rule}:
-                      </label>
+            {/* Text Fields Column */}
+            {textFields.length > 0 && (
+              <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
+                {textFields.map((rule: any, index: number) => (
+                  <div className="d-flex flex-column align-items-start mb-1" key={index}>
+                    <label className="mb-0" style={{ fontSize: "0.9rem" }}>
+                      {rule}:
+                    </label>
+                    {sliderRules.includes(rule) ? (
+                      <>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step=".01"
+                          value={promptText[rule] || 0}
+                          onChange={(e) =>
+                            setPromptText({
+                              ...promptText,
+                              [rule]: Number(e.target.value),
+                            })
+                          }
+                          style={{ width: "100%" }}
+                        />
+                        <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
+                          {promptText[rule] || 0}
+                        </span>
+                      </>
+                    ) : (
                       <input
                         type="text"
                         value={promptText[rule]}
@@ -237,10 +258,11 @@ const MyModal: React.FC<MyModalProps> = ({
                         }
                         style={{ flex: 1, width: "100%", padding: "4px", fontSize: "0.9rem" }}
                       />
-                    </div>
-                  ))}
-                </div>
-              )}
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
   
               {/* Datetime Fields Column */}
               {datetimeFields.length > 0 && (

@@ -12,12 +12,12 @@ from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_
                               kingdom__global_vars, main_index_tickers, streamlit_config_colors, 
                               hive_master_root, ReadPickleData, PickleData, 
                               read_QUEENs__pollenstory, print_line_of_error)
+
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
                                     update_sell_date, 
                                     init_logging, 
                                     split_today_vs_prior, 
                                     kings_order_rules, 
-                                    buy_button_dict_items,
                                     order_vars__queen_order_items,
                                     find_symbol,
                                     power_amo,
@@ -31,6 +31,8 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     init_swarm_dbs,
                                     init_qcp_workerbees,
                                     chessboard_button_dict_items,
+                                    read_swarm_db,
+                                    init_qcp,
                                     )
 
 from chess_piece.queen_bee import execute_buy_order
@@ -683,7 +685,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
     print_line_of_error(f"{e} Orders Failed")
 
 
-def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type='waves', revrec=None):
+def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, grid_custom_options=None, return_type='waves', revrec=None):
     def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit', 'current_profit_deviation']):
       for col in df.columns:
         # print(type(df_storygauge.iloc[-1].get(col)))
@@ -696,7 +698,13 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
     
     try:
       s = datetime.now()
-      if toggle_view_selection.lower() == 'king':
+
+      if toggle_view_selection.lower() == 'queen':
+        qb = init_queenbee(client_user, prod, revrec=True, queen_king=True, pg_migration=pg_migration)
+        revrec = qb.get('revrec')
+        QUEEN_KING = qb.get('QUEEN_KING')
+
+      elif toggle_view_selection.lower() == 'king':
         king_G = kingdom__global_vars()
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
@@ -708,7 +716,8 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
             STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
                 
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
-      # elif toggle_view_selection == "Not On Board"
+      
+      # elif toggle_view_selection == "Not On Board"            
       elif toggle_view_selection == '400_10M':
         king_G = kingdom__global_vars()
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
@@ -716,8 +725,9 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         QUEEN_KING = qb.get('QUEEN_KING')
 
         QUEENBEE = {'workerbees': {}}
-        db=init_swarm_dbs(prod)
-        BISHOP = ReadPickleData(db.get('BISHOP'))
+        # db=init_swarm_dbs(prod)
+        # BISHOP = ReadPickleData(db.get('BISHOP'))
+        BISHOP = read_swarm_db(prod)
         df = BISHOP.get(toggle_view_selection)
         for sector in set(df['sector']):
             token = df[df['sector']==sector]
@@ -728,14 +738,44 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11') ## Setup Board
       else:
-        qb = init_queenbee(client_user, prod, revrec=True, queen_king=True, pg_migration=pg_migration)
+        qb = init_queenbee(client_user, prod, revrec=True, queen=True, queen_king=True, pg_migration=pg_migration)
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
+        QUEEN = qb.get('QUEEN')
+        hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
+        hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
+        if toggle_view_selection in hedge_fund_names:
+            data = hedge_funds[hedge_funds['filer_name'] == toggle_view_selection]
+            data = data.drop_duplicates(subset='stock_ticker')
+            data = data.set_index('stock_ticker', drop=False)
+            data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
+            data = data[data['current_percent_of_portfolio'] > 0]
+            data['buying_power'] = data['current_percent_of_portfolio'] / 100
+            symbols = []
+            board = {}
+            for ticker in data.index:
+                if ticker in symbols:
+                   print("DUP Ticker", ticker)
+                   continue # duplicate
+                # if ticker == 'DD':
+                #    ipdb.set_trace()
+                buying_power = data.loc[ticker].get('buying_power')
+                symbols.append(ticker)
+                board[ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
+            
+            QUEEN_KING[toggle_view_selection] = board
+            if 'SPY' not in symbols:
+                print("SPY not in symbols")
+                symbols.append('SPY')
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols).get('STORY_bee')
+            revrec = refresh_chess_board__revrec(acct_info=QUEEN.get('account_info'), QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, STORY_bee=STORY_bee, check_portfolio=False, chess_board=toggle_view_selection) ## Setup Board
+            # QUEEN_KING['revrec'] = revrec
+        else:
+           revrec = None
 
       if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
         print(f'rr not df null, {revrec}')
         return pd.DataFrame().to_json()
-
 
       if len(symbols) == 0:
         symbols=['SPY']
@@ -845,57 +885,101 @@ def header_account(client_user, prod):
   
   # heart
   if 'heartbeat' in QUEENsHeart.keys():
-      broker_qty_delta = QUEENsHeart['heartbeat'].get('broker_qty_delta')
+      # broker_qty_delta = QUEENsHeart['heartbeat'].get('broker_qty_delta')
       beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
-      if beat > 89:
+      # beat = QUEENsHeart.get('heartbeat_beat', 0)
+      avg_beat = QUEENsHeart.get('heartbeat_avg_beat', 0)
+      if beat > 1989:
           beat = "zZzzz"
-      try:
-        charlie_bee = QUEENsHeart.get('charlie_bee')
-        avg_beat = round(charlie_bee['queen_cyle_times']['QUEEN_avg_cycletime'])
-      except Exception as e:
-        print("charlie", e)
-        avg_beat = 0
+
       long = QUEENsHeart['heartbeat'].get('long')
       short = QUEENsHeart['heartbeat'].get('short')
-      long = '${:,}'.format(long)
-      short = '${:,}'.format(short)
   else:
      beat = 0
      avg_beat = 0
      long = 0
      short = 0
 
-  
-  
-  df_heart = pd.DataFrame([{'Broker': 'Alpaca', 'Long': long, 'Short': short, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
+  df = pd.DataFrame()
+  brokers = ['Alpaca', 'RobinHood']
+  for broker in brokers:
+    crypto_value = 0
 
-  # Account Info
-  acct_info = broker_info
-  if 'buying_power' not in acct_info.keys():
-  # if len(acct_info) == 0:
-      df_accountinfo = pd.DataFrame()
+    # Account Info
+    acct_info = broker_info
+    if 'buying_power' not in acct_info.keys():
+    # if len(acct_info) == 0:
+        df_accountinfo = pd.DataFrame()
+        acct_info = {'accrued_fees': 0.0,
+                  'buying_power': 100000,
+                  'cash': 0,
+                  'daytrade_count': 0,
+                  'last_equity': 100000,
+                  'portfolio_value': 100000,}
+
+    if broker == 'RobinHood':
+      print("rh")
+      crypto_value = 98289
+      long = 138689
+      short = 0
       acct_info = {'accrued_fees': 0.0,
-                'buying_power': 100000,
-                'cash': 0,
-                'daytrade_count': 0,
-                'last_equity': 100000,
-                'portfolio_value': 100000,}
-
-  honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
-  money_text = '${:,.0f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
-  
-  buying_power = '${:,}'.format(round(acct_info.get('buying_power')))
-  cash = '${:,}'.format(round(acct_info.get('cash')))
-  daytrade_count = round(acct_info.get('daytrade_count'))
-  portfolio_value = '${:,}'.format(round(acct_info.get('portfolio_value')))
-
-  df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count}])
+              'buying_power': 150852,
+              'cash': 30000,
+              'daytrade_count': 0,
+              'last_equity': 139524,
+              'portfolio_value': 139524,}
 
 
-  df = pd.concat([df_heart, df_accountinfo], axis=1)
+    # format
+    # 1
+    long = '${:,}'.format(long)
+    short = '${:,}'.format(short)
+    crypto_value = '${:,}'.format(crypto_value)
+    # 2
+    honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+    money_text = '${:,.0f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+    # 3
+    buying_power = '${:,}'.format(round(acct_info.get('buying_power')))
+    cash = '${:,}'.format(round(acct_info.get('cash')))
+    daytrade_count = round(acct_info.get('daytrade_count'))
+    portfolio_value = '${:,}'.format(round(acct_info.get('portfolio_value')))
+
+    df_heart = pd.DataFrame([{'Broker': broker, 'Long': long, 'Short': short, 'Crypto': crypto_value, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
+
+    df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count}])
+
+
+    df_ = pd.concat([df_heart, df_accountinfo], axis=1)
+
+    df = pd.concat([df, df_])
+
+    # k_colors = streamlit_config_colors()
+    # df['color_row'] = np.where(df['Broker'] == 'RobinHood', '#C0FBD3', k_colors.get('default_background_color'))
+    # df['color_row'] = '#C0FBD3'
+    # print(df.iloc[0])
 
   return df.to_json(orient='records')
 
+
+# Add Symbol to Board
+def add_symbol_to_board(client_user, prod, selected_row, default_value):
+    ticker = selected_row.get('symbol')
+    buying_power = default_value.get('buying_power', 0)
+    
+    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+    symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
+    if ticker in symbols:
+       return grid_row_button_resp(description="Symbol Already Exists on Board")
+    print(init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker))
+    
+    # QUEEN_KING["chess_board"][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
+    # if pg_migration:
+    #     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+    #     PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+    # else:
+    #    PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    
+    return grid_row_button_resp(description=f" {ticker} added to Trading Board")
 
 
 ### GRAPH

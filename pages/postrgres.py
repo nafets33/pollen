@@ -143,8 +143,18 @@ if __name__ == '__main__':
     print("POSTGRES", pg_migration)
     
     tables = PollenDatabase.get_all_tables()
+    tables = sorted(tables)
     db=init_swarm_dbs(prod, init=True, pg_migration=pg_migration)
+    st.write(pd.DataFrame(PollenDatabase.get_all_tables_with_sizes()))
 
+    if st.button("DELETE ALL POLLEN_STORY data"):
+        table_name='pollen_store'
+        numm = st.empty()
+        for idx, key in enumerate(PollenDatabase.get_all_keys(table_name)):
+            if 'POLLEN_STORY' in key:
+                PollenDatabase.delete_key(table_name, key)
+                with numm.container():
+                    st.write(idx)
 
     tab_list = ['Tables', 'Create', 'Migrate User', 'Delete'] + tables
     tabs = st.tabs(tab_list)
@@ -173,7 +183,8 @@ if __name__ == '__main__':
             with tabs[s_t]:
                 st.write(table)
                 df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table))).rename(columns={0:'key', 1:'timestamp'})
-                # st.write('key' in df.columns)
+                # df[2] = pd.to_numeric(2)
+                # st.write(sum(df[2]))
                 if table == 'client_user_store':
                     try:
                         df['key_name'] = df['key'].apply(lambda x: x.split("-")[-1])
@@ -189,7 +200,7 @@ if __name__ == '__main__':
         with tabs[1]:
             create_pg_table()
         with tabs[0]: 
-            st.write(tables)
+            # st.write(tables)
 
             with st.sidebar:
                 table_name = st.selectbox('table_name', options=tables)

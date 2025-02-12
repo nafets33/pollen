@@ -35,6 +35,8 @@ from chess_piece.king import (
     return_active_orders,
     main_index_tickers,
     master_swarm_QUEENBEE,
+    return_crypto_bars,
+    return_crypto_snapshots
     
 )
 from chess_piece.queen_hive import (
@@ -69,77 +71,7 @@ crypto_currency_symbols = ['BTC/USD', 'ETH/USD']
 CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
 CRYPTO_HEADER = {"accept": "application/json"}
 
-def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, e_date=False):
-    try:
-        current_date = datetime.now(est).strftime("%Y-%m-%d")
-        trading_days_df_ = trading_days_df[trading_days_df["date"] < current_date]  # less then current date
-        s = datetime.now(est)
-        return_dict = {}
-        error_dict = {}
 
-        for charttime, ndays in chart_times.items():
-            timeframe = charttime.split("_")[0]  # '1Minute_1Day'
-            timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
-            if s_date and e_date:
-                start_date = s_date
-                end_date = e_date
-            else:
-                start_date = trading_days_df_.tail(ndays).head(1).date
-                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-                end_date = datetime.now(est).strftime("%Y-%m-%d")
-
-
-            params = {
-                "symbols": ticker_list,
-                "timeframe": timeframe,
-                "start": start_date,
-                "end": end_date,
-            }
-            data = requests.get(f"{CRYPTO_URL}/bars", headers=CRYPTO_HEADER, params=params).json()
-
-            bars_dataa = data["bars"][ticker_list[0]]
-
-            symbol_data = pd.DataFrame(bars_dataa)
-            symbol_data = symbol_data.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'n': 'trade_count', 'o': 'open', 't': 'timestamp', 'v': 'volume', 'vw': 'vwap'})
-            symbol_data.insert(8, "symbol", ticker_list[0])
-            symbol_data['timestamp'] = pd.to_datetime(symbol_data['timestamp'], utc=True)
-            symbol_data.set_index('timestamp', inplace=True)
-
-            if len(symbol_data) == 0:
-                print(f"{ticker_list} {charttime} NO Bars")
-                error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
-                return {}
-            # set index to EST time
-            symbol_data["timestamp_est"] = symbol_data.index
-            symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
-                lambda x: x.astimezone(est)
-            )
-            symbol_data["timeframe"] = timeframe
-            symbol_data["bars"] = "bars_list"
-
-            symbol_data = symbol_data.reset_index(drop=True)
-            return_dict[charttime] = symbol_data
-                
- 
-        return {"resp": True, "return": return_dict, 'error_dict': error_dict}
-
-    except Exception as e:
-        print("Error in return_crypto_bars: ", print_line_of_error(e))
-
-def return_crypto_snapshots(symbols):
-    
-    symbols_str = ",".join(symbols) if isinstance(symbols, list) else symbols
-    params = {
-        "symbols": symbols_str
-    }
-    
-    response = requests.get(f"{CRYPTO_URL}/snapshots", headers=CRYPTO_HEADER, params=params)
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data['snapshots']
-    else:
-        return {"error": f"Failed to fetch data for {symbols}, status code: {response.status_code}"}
 
 
 def ttf__save(table_name, task_results):
@@ -196,26 +128,26 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         async with aiohttp.ClientSession() as session:
             return_list = []
             tasks = []
-            for ticker_time_frame in pollens_honey["pollen_story"]:
-                key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
-                ticker, ttime, tframe = ticker_time_frame.split("_")
-                pickle_file = os.path.join(
-                    symbols_pollenstory_dbs,
-                    f"{ticker_time_frame}{macd_part_fname}.pkl",
-                )
-                data = {
-                    "pollen_story": pollens_honey["pollen_story"][
-                        ticker_time_frame
-                    ]
-                }
+            # for ticker_time_frame in pollens_honey["pollen_story"]:
+            #     key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
+            #     ticker, ttime, tframe = ticker_time_frame.split("_")
+            #     pickle_file = os.path.join(
+            #         symbols_pollenstory_dbs,
+            #         f"{ticker_time_frame}{macd_part_fname}.pkl",
+            #     )
+            #     data = {
+            #         "pollen_story": pollens_honey["pollen_story"][
+            #             ticker_time_frame
+            #         ]
+            #     }
 
-                tasks.append(
-                    asyncio.ensure_future(
-                        main_func(
-                            session, ticker_time_frame, pickle_file, key, data
-                        )
-                    )
-                )
+            #     tasks.append(
+            #         asyncio.ensure_future(
+            #             main_func(
+            #                 session, ticker_time_frame, pickle_file, key, data
+            #             )
+            #         )
+            #     )
 
             for ticker_time_frame in pollens_honey["conscience"]["STORY_bee"]:
                 key = f"STORY_BEE_{ticker_time_frame}{macd_part_fname}"
@@ -546,7 +478,7 @@ def queen_workerbees(
         mkhrs = return_market_hours(trading_days=trading_days)
         if mkhrs != 'open':
             print("Bee to ZzzzZZzzzZzzz")
-            sys.exit()
+            # sys.exit()
 
     current_day = datetime.now(est).day
     current_month = datetime.now(est).month
@@ -575,17 +507,23 @@ def queen_workerbees(
 
     """# Main Arguments """
 
-    def close_worker(WORKERBEE_queens):
+    def close_worker(WORKERBEE_queens, crypto):
         s = datetime.now(est)
         date = datetime.now(est)
-        date = date.replace(hour=16, minute=0, second=1)
-        if s >= date:
-            logging.info("Happy Bee Day End")
-            print("Great Job! See you Tomorrow")
-            print("save all workers and their results")
-            return True
+        if crypto:
+            turn_off_time = date.replace(hour=22, minute=0, second=0)
+            if s > turn_off_time:
+                print("CRYPTO: Great Job! See you Tomorrow")
+                return True
         else:
-            return False
+            date = date.replace(hour=16, minute=0, second=1)
+            if s >= date:
+                # logging.info("Happy Bee Day End")
+                print("Great Job! See you Tomorrow")
+                print("save all workers and their results")
+                return True
+        
+        return False
 
     def return_getbars_WithIndicators(bars_data, MACD):
         # time = '1Minute' #TEST
@@ -633,12 +571,13 @@ def queen_workerbees(
             s = datetime.now(est)
             dfs_index_tickers = {}
             if '/' in ticker_list[0]:
-                print("crypto")
+                print("returning crypto bars")
                 bars = return_crypto_bars(
                     ticker_list=ticker_list,
                     chart_times=chart_times,
                     trading_days_df=trading_days_df,
                 )
+                # print("len of crypto bars", bars)
             else:
                 bars = return_bars_list(
                     api=api,
@@ -1271,10 +1210,12 @@ def queen_workerbees(
         def confirm_tickers_available(alpaca_symbols_dict, symbols):
             queens_master_tickers = []
             errors = []
+            alpaca_symbols_dict['BTC/USD'] = {}
             for i in symbols:
                 if i in alpaca_symbols_dict:
                     queens_master_tickers.append(i)
                 else:
+                    queens_master_tickers.append(i)
                     msg=(i, "Ticker NOT in Alpaca Ticker DB")
                     errors.append(msg)
             if errors:
@@ -1307,7 +1248,7 @@ def queen_workerbees(
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items() if qcp in queens_chess_pieces]
             symbols = [item for sublist in list_of_lists for item in sublist]
             queens_master_tickers = confirm_tickers_available(alpaca_symbols_dict, symbols)
-        
+
         if not queens_master_tickers:
             print(queens_chess_pieces, " No Tickers to Find EXITING", queens_master_tickers)
             sys.exit()
@@ -1333,7 +1274,7 @@ def queen_workerbees(
 
 
         # def check for new symbols
-        if 'castle' in queens_chess_pieces:
+        if queens_chess_pieces == 'castle':
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items()]
             all_symbols = [item for sublist in list_of_lists for item in sublist]
 
@@ -1365,8 +1306,10 @@ def queen_workerbees(
             p_num += 1
 
 
-        msg=f"{len(queens_master_tickers)} Tickers {queens_master_tickers}"
+        msg=f" Master Tickers {len(queens_master_tickers)} {queens_master_tickers}"
         print(msg)
+        crypto = True if [i for i in queens_master_tickers if i in crypto_currency_symbols] else False
+        print("CRYPTO:", crypto)
 
         try:
 
@@ -1393,7 +1336,7 @@ def queen_workerbees(
             last_queen_call = {"last_call": datetime.now(est)}
 
             chart_times_refresh = {
-                "1Minute_1Day": 1,
+                "1Minute_1Day": 3,
                 "5Minute_5Day": 5*60,
                 "30Minute_1Month": 30*60,
                 "1Hour_3Month": 60*60,
@@ -1439,7 +1382,9 @@ def queen_workerbees(
                         else:
                             star_frequency = 1
                         
-                        # if (now_time - last_modified).total_seconds() > star_frequency:
+                        if (now_time - last_modified).total_seconds() < star_frequency:
+                            # print(qcp, "workbee too fast")
+                            continue
                         WORKERBEE[qcp]['last_modified'] = now_time
                         ticker_star_hunter_bee(
                             WORKERBEE=WORKERBEE,
@@ -1456,9 +1401,9 @@ def queen_workerbees(
                 except Exception as e:
                     print("qtf", e, print_line_of_error())
 
-                # if backtesting or reset_only:
-                #     break
-                if close_worker(WORKERBEE_queens):
+                if backtesting or reset_only:
+                    break
+                if close_worker(WORKERBEE_queens, crypto):
                     break
 
         except Exception as errbuz:
@@ -1472,7 +1417,8 @@ def queen_workerbees(
     print(f"Queens Court, {queens_chess_piece} I beseech you")
     queens_court = queens_court__WorkerBees(QUEENBEE, prod, qcp_s, run_all_pawns, streamit)
 
-    return queens_court
+    print("EXIT BEE ")
+    return True
 
 
 
@@ -1499,16 +1445,16 @@ if __name__ == "__main__":
     prod = True if str(namespace.prod).lower() == "true" else False
 
 
-    if not reset_only:
-        while True:
-            seconds_to_market_open = (
-                datetime.now(est).replace(hour=9, minute=30, second=0) - datetime.now(est)
-            ).total_seconds()
-            if seconds_to_market_open > 0:
-                print(seconds_to_market_open, " ZZzzzZZ")
-                time.sleep(3)
-            else:
-                break
+    # if not reset_only:
+    #     while True:
+    #         seconds_to_market_open = (
+    #             datetime.now(est).replace(hour=9, minute=30, second=0) - datetime.now(est)
+    #         ).total_seconds()
+    #         if seconds_to_market_open > 0:
+    #             print(seconds_to_market_open, " ZZzzzZZ")
+    #             time.sleep(3)
+    #         else:
+    #             break
             
 
     print("printing qcp_s:\n", qcp_s)

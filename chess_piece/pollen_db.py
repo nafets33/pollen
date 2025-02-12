@@ -12,7 +12,7 @@ from psycopg2 import sql
 from psycopg2 import extras
 import pickle
 import streamlit as st
-import ipdb
+import sys
 
 server = os.getenv("server", False)
 
@@ -229,6 +229,7 @@ class PollenDatabase:
         # Ensure the table exists before attempting to upsert data
         PollenDatabase.create_table_if_not_exists(table_name)
         try:
+            # print(f"saving {key}  size: {sys.getsizeof(value)}")
             # Check if 'last_modified' column exists
             with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
                 cur.execute(f"""
@@ -478,6 +479,34 @@ class PollenDatabase:
             except Exception as e:
                 print("Error Fetch in All Tables:", e)
 
+
+    @staticmethod
+    def get_all_tables_with_sizes():
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                # Execute query to fetch all table names and their sizes in the public schema
+                cur.execute("""
+                    SELECT 
+                        table_name, 
+                        pg_size_pretty(pg_total_relation_size('public.' || table_name)) AS table_size
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    ORDER BY table_name;
+                """)
+                
+                # Fetch all tables and their sizes
+                tables = cur.fetchall()
+                
+                # Check if tables are fetched
+                if not tables:
+                    print("No tables found.")
+                
+                # Return the list of tuples (table_name, table_size)
+                return [(table[0], table[1]) for table in tables]
+
+            except Exception as e:
+                print(f"Error Fetching Table Sizes: {e}")
+                return []
 
     @staticmethod
     def get_all_keys(table_name='pollen_store'):
