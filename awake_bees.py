@@ -4,11 +4,14 @@ import schedule
 import sys, importlib, os
 import subprocess
 from chess_piece.king import hive_master_root, ReadPickleData
-from chess_piece.queen_hive import return_alpaca_api_keys, return_market_hours, init_swarm_dbs, init_qcp_workerbees
+from chess_piece.queen_hive import read_swarm_db, return_alpaca_api_keys, return_market_hours, init_swarm_dbs, init_qcp_workerbees
 from chess_piece.workerbees import queen_workerbees
 import pytz
 import pandas as pd
+from dotenv import load_dotenv
 
+load_dotenv()
+pg_migration = os.environ.get('pg_migration')
 
 try:
     run = sys.argv[1]
@@ -26,11 +29,14 @@ db=init_swarm_dbs(prod)
 
 def call_bishop_bees(prod=prod):
     print("HELLO BISHOP", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-    BISHOP = ReadPickleData(db.get('BISHOP'))
+    if pg_migration:
+        BISHOP = read_swarm_db(prod, 'BISHOP')
+    else:
+        BISHOP = ReadPickleData(db.get('BISHOP'))
 
     qcp_bees_key = 'workerbees'
     QUEENBEE = {qcp_bees_key: {}}
-    df = BISHOP.get('400_10M')
+    df = BISHOP.get('2025_Screen')
     sector_tickers = {}
     for sector in set(df['sector']):
         token = df[df['sector']==sector]

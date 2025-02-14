@@ -66,8 +66,6 @@ os.environ["no_proxy"] = "*"
 est = pytz.timezone("US/Eastern")
 crypto_currency_symbols = ['BTC/USD', 'ETH/USD']
 
-
-
 CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
 CRYPTO_HEADER = {"accept": "application/json"}
 
@@ -93,7 +91,7 @@ def ttf__save(table_name, task_results):
             executor.submit(process_batch, batch)
 
 
-def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False):
+def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False, upsert_to_main_server=upsert_to_main_server):
     s = datetime.now(est)
 
     table_name = "pollen_store"
@@ -103,7 +101,7 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         async with session:
             try:
                 if pg_migration:
-                    PollenDatabase.upsert_data(table_name ,key , data, console=False)
+                    PollenDatabase.upsert_data(table_name ,key , data, console=False, main_server=upsert_to_main_server)
                     task = (key, data)
                     task_results.append(task) # Collect tasks for threadded saving
                 else:
@@ -1058,7 +1056,7 @@ def queen_workerbees(
                 res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
                 if len(res) == 0:
                     print(f"{ticker} Resp for Inital Chart Data Failed")
-                    return {}
+                    continue
                 df_tickers_data = res["init_charts"]
                 df_all.update(df_tickers_data)
 
@@ -1146,7 +1144,7 @@ def queen_workerbees(
 
         return True
 
-    def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces, MACD_WAVES, reset_only=reset_only, backtesting=backtesting):
+    def init_QueenWorkersBees(QUEENBEE, queens_chess_pieces, MACD_WAVES, queens_master_tickers, reset_only=reset_only, backtesting=backtesting):
         try:
             speed_gauges = {}
 
@@ -1163,6 +1161,7 @@ def queen_workerbees(
                     print("QCP", qcp_worker)
                     continue
                 master_tickers = qcp.get('tickers')
+                master_tickers = [i for i in master_tickers if i in queens_master_tickers]
                 # master_tickers = ['SPY', 'BTC/USD', 'ETH/USD', 'LTC/USD']
 
                 star_times = stars() # QUEENBEE["workerbees"][qcp_worker]["stars"]
@@ -1210,18 +1209,19 @@ def queen_workerbees(
         def confirm_tickers_available(alpaca_symbols_dict, symbols):
             queens_master_tickers = []
             errors = []
-            alpaca_symbols_dict['BTC/USD'] = {}
+            alpaca_symbols_dict['BTC/USD', 'ETH/USD'] = {}
             for i in symbols:
                 if i in alpaca_symbols_dict:
                     queens_master_tickers.append(i)
                 else:
-                    queens_master_tickers.append(i)
                     msg=(i, "Ticker NOT in Alpaca Ticker DB")
                     errors.append(msg)
             if errors:
                 msg = str(errors)
                 # send_email(subject="Tickers Not Longer Active", body=msg)
                 print(msg)
+                if streamit:
+                    st.error(f'tickers NOT in Alpaca TICKER DB {errors}')
             
             return queens_master_tickers
 
@@ -1320,6 +1320,7 @@ def queen_workerbees(
                 QUEENBEE=QUEENBEE,
                 queens_chess_pieces=queens_chess_pieces,
                 MACD_WAVES=MACD_WAVES,
+                queens_master_tickers=queens_master_tickers,
                 reset_only=reset_only,
             )
             if reset_only:
@@ -1362,6 +1363,7 @@ def queen_workerbees(
                                 QUEENBEE=QUEENBEE,
                                 queens_chess_pieces=latest__queens_chess_pieces,
                                 MACD_WAVES=MACD_WAVES,
+                                queens_master_tickers=queens_master_tickers,
                             )
                             WORKERBEE_queens = queen_workers["WORKERBEE_queens"]
                             speed_gauges = queen_workers["speed_gauges"]

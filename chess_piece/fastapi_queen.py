@@ -287,9 +287,6 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     # Trading Model
     symbol=selected_row.get('symbol')
     if story:
-      # star_time=star_names(kors.get('star_list')[0])
-      # ticker_time_frame = f'{symbol}_{star_time}'
-      
       ticker_time_frame = kors.get('star')
       star_time = return_startime_from_ttf(ticker_time_frame)
       if not revrec:
@@ -299,10 +296,14 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
       else:
          wave_blocktime = 'afternoon_2-4'
     else:
-      star_time = selected_row.get('star')
-      ticker_time_frame = selected_row.get('ticker_time_frame')
-      trigbee = selected_row.get('macd_state')
-      wave_blocktime = selected_row.get('wave_blocktime')
+      star_time=star_names(kors.get('star_list')[0])
+      ticker_time_frame = f'{symbol}_{star_time}'
+      if not revrec:
+         wave_blocktime = 'afternoon_2-4'
+      elif ticker_time_frame in revrec.get('waveview').index:
+        wave_blocktime = revrec.get('waveview').loc[ticker_time_frame].get('wave_blocktime')
+      else:
+         wave_blocktime = 'afternoon_2-4'    
 
     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol) # main symbol for Model (SPY)
     if not trading_model:
@@ -717,8 +718,9 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
                 
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
       
-      # elif toggle_view_selection == "Not On Board"            
-      elif toggle_view_selection == '400_10M':
+      # elif toggle_view_selection == "Not On Board":
+                   
+      elif toggle_view_selection == '2025_Screen':
         king_G = kingdom__global_vars()
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
@@ -731,12 +733,18 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         df = BISHOP.get(toggle_view_selection)
         for sector in set(df['sector']):
             token = df[df['sector']==sector]
-            tickers=token['symbol'].tolist()
+            tickers=token['symbol'].tolist() # switch to init_qcp : ) # WORKERBEE
             QUEENBEE['workerbees'][sector] = init_qcp_workerbees(ticker_list=tickers, buying_power=0)
         QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
-        STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
-        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11') ## Setup Board
+        symbols = set(['SPY'] + symbols)
+        # print('SPY' in symbols)
+        if pg_migration:
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+        else:
+            STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
+        # print('SPY_1Minute_1Day' in STORY_bee.keys())
+        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11', check_portfolio=False) ## Setup Board
       else:
         qb = init_queenbee(client_user, prod, revrec=True, queen=True, queen_king=True, pg_migration=pg_migration)
         revrec = qb.get('revrec')

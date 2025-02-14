@@ -458,7 +458,7 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
 def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, trig, run_order_idx, crypto=False, limit_price=False, portfolio=None, order_type='market', side='sell', ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
     try:
         if ticker not in ACTIVE_SYMBOLS:
-            logging.error(f"{ticker} No Longer Active symbol")
+            print(f"{ticker} No Longer Active symbol")
             return {'executed': False}
 
         tic, tframe, tperiod = ticker_time_frame.split("_")
@@ -1514,8 +1514,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     return False
 
                 def autopilot_check(QUEEN_KING, symbol):
-                    if symbol in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
-                        if QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'] == False:
+                    auto_pilot_buy = QUEEN_KING['king_controls_queen']['ticker_autopilot']
+                    if symbol not in auto_pilot_buy.index:
+                        return True
+                    if symbol in auto_pilot_buy.index:
+                        if auto_pilot_buy.at[symbol, 'buy_autopilot'] == False:
                             print(symbol, ": buy_autopilot FALSE")
                             return True
 
@@ -1820,10 +1823,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         
         symbol = run_order.get('symbol')
         ttf = run_order.get('ticker_time_frame')
-        # revrec = QUEEN_KING['chess_board']
-        # refresh_star = QUEEN_KING['king_controls_queen']
-        if symbol in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
-            if QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'sell_autopilot'] == False:
+        # refresh_star = QUEEN_KING['king_controls_queen'] #### WORKERBEE
+        auto_pilot_df = QUEEN_KING['king_controls_queen']['ticker_autopilot']
+        if symbol not in auto_pilot_df.index:
+            return True
+        
+        if symbol in auto_pilot_df.index:
+            if auto_pilot_df.at[symbol, 'sell_autopilot'] == False:
                 print(symbol, ttf, ": sell_autopilot FALSE")
                 return True
         

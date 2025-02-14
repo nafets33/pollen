@@ -307,7 +307,7 @@ def PlayGround():
     
     
     db = init_swarm_dbs(prod, pg_migration=True)
-    BISHOP = read_swarm_db()
+    BISHOP = read_swarm_db(prod)
 
     # delete_dict_keys(BISHOP)
 
@@ -439,27 +439,27 @@ def PlayGround():
         #         nested_grid()
 
         # if st.toggle("pollenstory"):
-        with st.expander("pollenstory"):
-            ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
-            data=POLLENSTORY[ttf]
-            data['trinity_avg_tier'] = sum(data['trinity_tier']) / len(data)
-            default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number', 'trinity_tier', 'trinity_avg_tier']
-            cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
-            view=data[cols].copy()
-            view = data.reset_index()
-            grid = standard_AGgrid(data=view, configure_side_bar=True)
+        # with st.expander("pollenstory"):
+        #     ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
+        #     data=POLLENSTORY[ttf]
+        #     data['trinity_avg_tier'] = sum(data['trinity_tier']) / len(data)
+        #     default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number', 'trinity_tier', 'trinity_avg_tier']
+        #     cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
+        #     view=data[cols].copy()
+        #     view = data.reset_index()
+        #     grid = standard_AGgrid(data=view, configure_side_bar=True)
 
-            def create_wave_chart(df):
-                title = f'i know'
-                fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-                df = df.copy()
-                # df['timestamp_est'] = df['timestamp_est'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
+        #     def create_wave_chart(df):
+        #         title = f'i know'
+        #         fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
+        #         df = df.copy()
+        #         # df['timestamp_est'] = df['timestamp_est'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
 
-                fig.add_bar(x=df['timestamp_est'], y=df['trinity_tier'],  row=1, col=1, name='trinity')
-                fig.add_bar(x=df['timestamp_est'], y=df['trinity_avg_tier'],  row=1, col=1, name='sellcross wave')
-                fig.update_layout(height=600, width=900, title_text=title)
-                return fig
-            create_wave_chart(data)
+        #         fig.add_bar(x=df['timestamp_est'], y=df['trinity_tier'],  row=1, col=1, name='trinity')
+        #         fig.add_bar(x=df['timestamp_est'], y=df['trinity_avg_tier'],  row=1, col=1, name='sellcross wave')
+        #         fig.update_layout(height=600, width=900, title_text=title)
+        #         return fig
+        #     create_wave_chart(data)
 
         # if st.toggle("wave stories"):
         with st.expander("wave stories"):
@@ -557,7 +557,7 @@ def PlayGround():
                         PickleData(BISHOP.get('source'), BISHOP, console=True)
 
             st.header(screen_name)
-            standard_AGgrid(df_filter, hide_cols=hide_cols)
+            standard_AGgrid(df_filter, hide_cols=hide_cols, paginationOn=True)
 
 
     except Exception as e:

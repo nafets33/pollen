@@ -1,51 +1,56 @@
 import time
 from datetime import datetime
 import schedule
-import os, sys, importlib
+import os, sys
 from chess_piece.king import hive_master_root
-from chess_piece.queen_hive import init_logging
 import argparse
 import subprocess
 import logging
-run = sys.argv[1]
+# run = sys.argv[1]
 
 
 # init_logging('awake_queen', db_root=db_root, prod=True)
 
-def call_job_queen():
-
+def call_job_queen(prod, client_user):
     print("I'm Awake!: ", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
     script_path = os.path.join(hive_master_root(), 'chess_piece/queen_bee.py')
-    subprocess.call(['python', script_path])
-
-
-run_time = "09:32"
-queen_sch = schedule.every().day.at(run_time).do(call_job_queen)
-
-all_jobs = schedule.get_jobs()
-print(all_jobs)
-
-if run == 'run':
-    print("adhoc call run")
-    call_job_queen()
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
-
-
-# if __name__ == '__main__':
-#     # read
-#     def createParser():
-#         parser = argparse.ArgumentParser()
-#         parser.add_argument ('-run', default='false')
-#         parser.add_argument ('-prod', default='true')
-#         parser.add_argument ('-client_user', default='stefanstapinski@gmail.com')
-#         return parser
     
-#     parser = createParser()
-#     namespace = parser.parse_args()
-#     client_user = namespace.client_user
-#     prod = True if 'true' == namespace.prod.lower() else False
-#     run = True if 'true' == namespace.prod.lower() else False
+    # Pass the arguments to queen_bee.py
+    subprocess.call([
+        'python', script_path,
+        '-prod', str(prod).lower(),
+        '-client_user', client_user
+    ])
+
+if __name__ == '__main__':
+    # Create argument parser
+    def createParser():
+        parser = argparse.ArgumentParser(description="Run queen scheduler with arguments")
+        parser.add_argument('-run', default='false', help="Run the script immediately")
+        parser.add_argument('-prod', default='true', help="Run in production mode")
+        parser.add_argument('-client_user', default='stefanstapinski@gmail.com', help="Specify client user")
+        return parser
+
+    # Parse command-line arguments
+    parser = createParser()
+    namespace = parser.parse_args()
+    
+    # Convert arguments to appropriate types
+    client_user = namespace.client_user
+    prod = namespace.prod.lower() == 'true'
+    run = namespace.run.lower() == 'true'
+
+    if run:
+        print("Ad-hoc run triggered")
+        call_job_queen(prod, client_user)
+
+    # Schedule job if not running ad-hoc
+    run_time = "09:32"
+    schedule.every().day.at(run_time).do(call_job_queen, prod, client_user)
+
+    print(schedule.get_jobs())  # Print scheduled jobs
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
     

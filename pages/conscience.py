@@ -114,7 +114,7 @@ def generate_cell_style(flash_state_variable='Day_state'):
                         color: value < 0 ? '#f00' : '#000', // Red text if value < 0, otherwise black
                         padding: '2px',
                         boxSizing: 'border-box',
-                        border: '5px solid white' // White border
+                        border: '8px solid white' // White border
                     }};
                 }}
             }}
@@ -167,7 +167,7 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
                     padding: '5px',
                     boxSizing: 'border-box',
                     textAlign: 'center',
-                    border: '2px solid white' // White border
+                    border: '3px solid white' // White border
                 }};
             }}
 
@@ -176,21 +176,22 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
         }}
     """)      
 
+
 button_suggestedallocation_style = JsCode("""
 function(p) {
     if (p.data.allocation_long_deploy > 0) {
         return {
-            backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
+            //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
             padding: '2px',
             boxSizing: 'border-box',
-            border: '5px solid white' // White border
+            border: '5px solid' + '#bff0c7' // White border
         };
     } else if (p.data.allocation_long_deploy < 0) {
         return {
-            backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
+            //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
             padding: '2px',
             boxSizing: 'border-box',
-            border: '5px solid white' // White border
+            border: '5px solid' + '#f8c6c6' // White border
         };
     } else {
         return {
@@ -225,21 +226,21 @@ function(p) {
 """)
 
 
-button_style = JsCode("""
+button_style_sell = JsCode("""
 function(p) {
     if (p.data.money > 0) {
         return {
             //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
-            padding: '5px',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '2px solid white' // White border
+            border: '5px solid #bff0c7' // White border
         };
     } else if (p.data.money < 0) {
         return {
             //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
-            padding: '5px',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '2px solid white' // White border
+            border: '5px solid #f8c6c6' // White border
         };
     } else {
         return null; // No style for other cases (e.g., money === 0)
@@ -247,19 +248,19 @@ function(p) {
 }
 """)        
 
-button_style_add_symbol = JsCode("""
+button_style_symbol = JsCode("""
 function(p) {
     if (p.data.current_from_yesterday > 0) {
         return {
             color: 'red',
-            backgroundColor: '#bff0c7', // Light green
+            //backgroundColor: '#bff0c7', // Light green
             padding: '2px',
             boxSizing: 'border-box',
             border: '5px solid white' // White border
         };
     } else if (p.data.current_from_yesterday < 0) {
         return {
-            backgroundColor: '#f8c6c6', // Light red 
+            //backgroundColor: '#f8c6c6', // Light red 
             boxSizing: 'border-box',
             padding: '2px',
             border: '5px solid white' // White border
@@ -277,19 +278,19 @@ function(color_autobuy) {
     if (color_autobuy.data.buy_autopilot === "ON") {
         //console.log('buy_autopilot value:', color_autobuy.data.buy_autopilot);
         return {
-            backgroundColor: '#bff0c7',
+            //backgroundColor: '#bff0c7',
             color: 'red',
             padding: '5px',
             boxSizing: 'border-box',
-            border: '2px solid white',
+            border: '5px solid' + '#bff0c7',
             // width: '100%',
         };
     } else {
         return {
-            backgroundColor: '#f8c6c6', // Light red text
-            padding: '2px',
+            //backgroundColor: '#f8c6c6', // Light red text
+            padding: '5px',
             boxSizing: 'border-box',
-            border: '5px solid white',
+            border: '5px solid' + '#f8c6c6',
             color: 'yellow',
         };
     }
@@ -306,18 +307,18 @@ function(p) {
     if (autopilot === "OFF") {
         //console.log("WE ARE ON", symbol, autopilot);
         return {
-            backgroundColor: '#f8c6c6', // Light red text
+            //backgroundColor: '#f8c6c6', // Light red text
             padding: '5px',
             boxSizing: 'border-box',
-            border: '5px solid white' // White border
+            border: '5px solid' + '#f8c6c6' // White border
         };
     } else {
         console.log(symbol, autopilot);
         return {
-            backgroundColor: '#bff0c7', // Light green text
+            //backgroundColor: '#bff0c7', // Light green text
             padding: '5px',
             boxSizing: 'border-box',
-            border: '5px solid white' // White border
+            border: '5px solid' + '#bff0c7' // White border
         };
     }
 }
@@ -529,11 +530,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                             'col_headername': 'Symbol',
                             "col_header": "symbol",
                             # "border_color": "green",
-                            'col_width':89,
+                            'col_width':100,
                             'sortable': True,
                             'pinned': 'left',
                             'prompt_order_rules': [i for i in add_symbol_dict_items().keys()],
-                            # 'cellStyle': button_style_add_symbol,
+                            'cellStyle': button_style_symbol,
                             },
 
                             {'button_name': None,
@@ -560,7 +561,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                             'sortable': True,
                             # 'pinned': 'left',
                             'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
-                            'cellStyle': button_style, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
+                            'cellStyle': button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
                             },
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_queenking_chessboard',
@@ -617,7 +618,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                     else:
                         cellStyle = {}
                     temp = {'button_name': None,
-                            'button_api': f'{ip_address}/api/data/queen_buy_orders',
+                            'button_api': f'{ip_address}/api/data/ttf_buy_orders',
                             'prompt_message': 'Edit Buy',
                             'prompt_field': f'{star}_kors',
                             'col_headername': f'{starname}',
@@ -702,7 +703,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             #     QUEEN_KING[chess_board]['non_active_stories'] = init_qcp_workerbees(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=0)
 
             if client_user == 'stefanstapinski@gmail.com':
-                main_toggles = ["Queen", "King", '400_10M']
+                main_toggles = ["Queen", "King", '2025_Screen']
             else:
                 main_toggles = ["Queen", "King"]
 

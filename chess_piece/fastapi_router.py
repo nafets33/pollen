@@ -186,8 +186,7 @@ def archive_queen_order(client_user: str=Body(...), username: str=Body(...), pro
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
 def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     try:
-        if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-            print("Auth Failed", api_key)
+        if not check_authKey(api_key):
             return "NOTAUTH"
 
         rep = app_Sellorder_request(client_user, username, prod, selected_row, default_value)
@@ -195,13 +194,13 @@ def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=B
 
     except Exception as e:
         print("router err ", e)
+        return str(e)
 
-@router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
+@router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK)
 def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
+    if not check_authKey(api_key):
         return "NOTAUTH"
-    story = True if return_type == 'story' else False
+    story = True
     kors = default_value
     req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
     if req.get('status'):
@@ -210,10 +209,23 @@ def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Bo
         return JSONResponse(content=grid_row_button_resp(status="ERROR", description=req.get('msg')))
 
 
+@router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
+def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    if not check_authKey(api_key): # fastapi_pollenq_key
+        return "NOTAUTH"
+    story = False
+    kors = default_value
+    req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
+    if req.get('status'):
+        return JSONResponse(content=grid_row_button_resp(description=req.get('msg')))
+    else:
+        return JSONResponse(content=grid_row_button_resp(status="ERROR", description=req.get('msg')))
+
+
+
 @router.post("/update_orders", status_code=status.HTTP_200_OK)
 def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data= Body(...), api_key=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
+    if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
     # print(new_data)
     df = pd.DataFrame(new_data).T

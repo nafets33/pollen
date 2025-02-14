@@ -366,7 +366,6 @@ def return_active_orders(QUEEN):
 
 
 def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
-    active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
 
     try:
         if symbols:
