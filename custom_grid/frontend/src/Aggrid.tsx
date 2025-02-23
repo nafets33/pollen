@@ -40,7 +40,6 @@ import {
 } from "ag-grid-community"
 import {deepMap} from "./utils"
 
-import { order_rules_default } from "./utils/order_rules"
 
 type Props = {
   username: string
@@ -259,15 +258,6 @@ const AgGrid = (props: Props) => {
                     kwargs: kwargs,
                   })
                   setPromptText(selectedRow[prompt_field])
-                  // const num = prompt(prompt_message, selectedRow[prompt_field]);
-                  // if (num == null) return;
-                  // const res = await axios.post(button_api, {
-                  //   username: username,
-                  //   prod: prod,
-                  //   selected_row: selectedRow,
-                  //   default_value: num,
-                  //   ...kwargs,
-                  // })
                 } else {
                   if (window.confirm(prompt_message)) {
                     const res = await axios.post(button_api, {
@@ -432,14 +422,20 @@ const AgGrid = (props: Props) => {
     console.log("Data after change is", g_newRowData)
   }, [])
 
+
+  const [loading, setLoading] = useState(false);
+  
   const onRefresh = async () => {
+    setLoading(true);
     try {
-      const success = await fetchAndSetData()
-      success && toastr.success("Refresh success!")
+      const success = await fetchAndSetData();
+      success && toastr.success("Refresh success!");
     } catch (error: any) {
-      toastr.error(`Refresh Failed! ${error.message}`)
+      toastr.error(`Refresh Failed! ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const onUpdate = async () => {
     if (g_newRowData == null) {
@@ -554,6 +550,29 @@ const AgGrid = (props: Props) => {
     }
   };
 
+  // interface Props {
+  //   toggle_views: string[];
+  //   viewId: number;
+  //   setViewId: (id: number) => void;
+  //   loading: boolean;
+  //   onUpdate: () => void;
+  // }
+  const getButtonStyle = (length: number) => {
+    if (length < 3) {
+      return { padding: "15px 18px", fontSize: "18px" };
+    } else if (length < 8) {
+      return { padding: "15px 18px", fontSize: "15px" };
+    } else if (length < 15) {
+      return { padding: "12px 13px", fontSize: "13px" };
+    } else if (length < 35) {
+      return { padding: "10px 12px", fontSize: "11px" };
+    } else {
+      return { padding: "3px 5px", fontSize: "10px" };
+    }
+  };
+
+  const buttonStyle = getButtonStyle(toggle_views.length);
+
   const button_color = "#3498db"; // Set your custom button color here
 
   return (
@@ -582,11 +601,40 @@ const AgGrid = (props: Props) => {
                     padding: "5px 8px", // Smaller padding
                     fontSize: "12px", // Smaller font size
                     borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: "80px", // Ensure width stays the same during loading
                   }}
                   onClick={onRefresh}
+                  disabled={loading} // Disable button while loading
                 >
-                  Refresh
+                  {loading ? (
+                    <div
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid white",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.8s linear infinite",
+                      }}
+                    />
+                  ) : (
+                    "Refresh"
+                  )}
                 </button>
+
+                {/* Add CSS for spinner animation */}
+                <style>
+                  {`
+                    @keyframes spin {
+                      to {
+                        transform: rotate(360deg);
+                      }
+                    }
+                  `}
+                </style>
               </div>
               <div style={{ margin: "5px 5px 5px 2px" }}>
                 <button
@@ -606,27 +654,53 @@ const AgGrid = (props: Props) => {
             </div>
           )}
           <div className="d-flex flex-row gap-2 flex-wrap">
-            {toggle_views?.map((view: string, index: number) => (
-              <span key={index}>
-                <button
-                  className={`btn ${
-                    viewId === index ? "btn-danger" : "btn-secondary"
-                  }`}
+          {toggle_views?.map((view: string, index: number) => (
+          <span key={index}>
+            <button
+              className={`btn ${
+                viewId === index ? "btn-danger" : "btn-secondary"
+              }`}
+              style={{
+                ...buttonStyle,
+                borderRadius: "8px",
+                //whiteSpace: "nowrap", // Prevent text wrapping inside buttons
+                color: '#055A6E',
+                backgroundColor: '#F3FAFD',
+                margin: '3px',
+                fontWeight: 'bold',
+              }}
+              onClick={() => setViewId(index)}
+              disabled={loading} // Disable button while loading
+            >
+              {view}
+              {loading && viewId === index ? (
+                <div
                   style={{
-                    padding: "4px 6px", // Reduce padding
-                    fontSize: "11px", // Reduce font size
-                    borderRadius: "4px",
-                    whiteSpace: "nowrap", // Prevent text wrapping inside buttons
-                    color: 'white',
-                    //backgroundColor: '#85929e'
+                    width: "14px",
+                    height: "14px",
+                    border: "2px solid black",
+                    borderTop: "2px solid transparent",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                    marginLeft: "8px" // Add some space between text and spinner
                   }}
-                  onClick={() => setViewId(index)}
-                >
-                  {view}
-                </button>
-              </span>
-            ))}
-          </div>
+                />
+              ) : null}
+            </button>
+          </span>
+        ))}
+      </div>
+
+      {/* Add CSS for spinner animation */}
+      <style>
+        {`
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}
+      </style>
         </div>
   
         <div

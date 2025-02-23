@@ -2,7 +2,8 @@
 from pages.conscience import queens_conscience
 from chess_piece.queen_hive import init_queenbee, hive_dates, return_market_hours, kingdom__grace_to_find_a_Queen
 from chess_piece.king import return_app_ip
-from chess_piece.app_hive import set_streamlit_page_config_once, account_header_grid
+from chess_piece.app_hive import set_streamlit_page_config_once
+from pages.conscience import account_header_grid
 import streamlit as st
 import pytz
 from datetime import datetime
@@ -10,7 +11,7 @@ from datetime import datetime
 est = pytz.timezone("US/Eastern")
 
 def demo_bot():
-    client_user = 'stefanstapinski@gmail.com'
+    client_user = 'stapinskistefan@gmail.com'
     prod = False
     KING = kingdom__grace_to_find_a_Queen()
 
@@ -20,7 +21,7 @@ def demo_bot():
 
     st.session_state["ip_address"] = return_app_ip()
     st.session_state["username"] = client_user
-    st.session_state['db_root'] = 'db__stefanstapinski_11854791'
+    st.session_state['db_root'] = 'db__stapinskistefan_99757341'
     st.session_state['prod'] = False
     
 

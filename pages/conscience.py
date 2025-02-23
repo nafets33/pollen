@@ -11,7 +11,7 @@ import os
 import copy
 import hydralit_components as hc
 
-from chess_piece.app_hive import  symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
+from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, streamlit_config_colors, print_line_of_error
 from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee
 from chess_piece.pollen_db import PollenDatabase
@@ -114,7 +114,10 @@ def generate_cell_style(flash_state_variable='Day_state'):
                         color: value < 0 ? '#f00' : '#000', // Red text if value < 0, otherwise black
                         padding: '2px',
                         boxSizing: 'border-box',
-                        border: '8px solid white' // White border
+                        border: '8px solid white',
+                        fontSize: '16px', 
+                        fontWeight: 'bold', 
+
                     }};
                 }}
             }}
@@ -184,14 +187,16 @@ function(p) {
             //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
             padding: '2px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#bff0c7' // White border
+            border: '5px solid' + '#bff0c7', // White border
+            color: 'red'
         };
     } else if (p.data.allocation_long_deploy < 0) {
         return {
             //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
             padding: '2px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#f8c6c6' // White border
+            border: '5px solid' + '#f8c6c6', // White border
+            color: 'red'
         };
     } else {
         return {
@@ -208,14 +213,18 @@ function(p) {
             color: '#0a9d25', // Medium green for positive money
             padding: '0px',
             boxSizing: 'border-box',
-            textAlign: 'center' // Center the values
+            textAlign: 'center',
+            fontSize: '16px', 
+            //fontWeight: 'bold', 
         };
     } else if (p.value < 0) {
         return {
             color: '#ed370f', // Medium red for negative money
             padding: '0px',
             boxSizing: 'border-box',
-            textAlign: 'center' // Center the values
+            textAlign: 'center',
+            fontSize: '16px', 
+            //fontWeight: 'bold', 
         };
     } else {
         return {
@@ -267,7 +276,9 @@ function(p) {
         };
     } else {
         return {
-            border: '2px solid white' // Default white border for other cases
+            boxSizing: 'border-box',
+            padding: '2px',
+            border: '5px solid white' // White border
         };
     }
 }
@@ -288,7 +299,7 @@ function(color_autobuy) {
     } else {
         return {
             //backgroundColor: '#f8c6c6', // Light red text
-            padding: '5px',
+            padding: '5\px',
             boxSizing: 'border-box',
             border: '5px solid' + '#f8c6c6',
             color: 'yellow',
@@ -378,7 +389,114 @@ def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', ti
     return True 
 
 
-def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=False, show_graph_t=False):
+
+button_style_broker = JsCode("""
+function(ppp) {
+    if (ppp.data.Broker === 'Alpaca') {
+        return {
+            backgroundColor: '#eef856', // Yellow background for Alpaca
+        };
+    } else if (ppp.data.Broker === 'RobinHood') {
+        return {
+            backgroundColor: '#37e349', // Green background for Robinhood
+        };
+    } else {
+        return {
+            backgroundColor: 'white', // White background for other cases
+        };
+    }
+}
+""")
+
+def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close):
+    try:
+        k_colors = streamlit_config_colors()
+        gb = GridOptionsBuilder.create()
+        # gb = GOB.create()
+        gb.configure_default_column(
+            column_width=120,
+            resizable=True,
+            wrapText=False,
+            wrapHeaderText=True,
+            autoHeaderHeight=True,
+            autoHeight=True,
+            suppress_menu=False,
+            filterable=False,
+            sortable=True
+        )
+        gb.configure_index('Broker')
+        gb.configure_theme('ag-theme-material')
+
+        cols=[
+        'Broker',
+        'Long',
+        'Short',
+        'Crypto',
+        'Heart Beat',
+        'Avg Beat',
+        'Todays Money',
+        'Todays Honey',
+        'Portfolio Value',
+        'Buying Power',
+        'Cash',
+        'daytrade count']  
+
+        animate_numbers = {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,}
+
+        def config_cols(cols):
+            backgroundColor = k_colors.get('default_background_color')
+            default_text_color = k_colors.get('default_text_color')
+            return  {
+        'Broker': {'width': 130, 'cellStyle': button_style_broker},                  
+        'Long': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},                  
+        'Short': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Crypto': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Heart Beat': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
+        'Avg Beat': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Money': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, "type": ["customNumberFormat", "numericColumn", "customCurrencyFormat"], 'custom_currency_symbol':"$"}, **animate_numbers},
+        'Todays Honey': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Portfolio Value': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Buying Power': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
+        'Cash': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
+        'daytrade count': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
+        # 'Broker Delta': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
+            }
+              
+        config_cols_ = config_cols(cols)
+        for col, config_values in config_cols_.items():
+            config = config_values
+            gb.configure_column(col, config)
+        
+        go = gb.build()
+
+
+        st_custom_grid(
+            client_user=client_user,
+            username=client_user, #KING['users_allowed_queen_emailname__db'].get(client_user), 
+            api=f"{ip_address}/api/data/account_header",
+            api_update= None, #f"{ip_address}/api/data/update_queenking_chessboard",
+            refresh_sec=refresh_sec, 
+            refresh_cutoff_sec=seconds_to_market_close, 
+            prod=prod,
+            grid_options=go,
+            key=f'account_header',
+            # kwargs from here
+            prompt_message = None, #"symbol",
+            prompt_field = None, #"symbol", # "current_macd_tier", # for signle value
+            api_key=os.environ.get("fastAPI_key"),
+            buttons=[],
+            grid_height='110px',
+            toggle_views=[],
+            allow_unsafe_jscode=True,
+            ) 
+
+    except Exception as e:
+        print_line_of_error(e)
+
+
+
+
+def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=False, show_graph_t=False, show_acct=True):
     run_times = {}
     s = datetime.now()
     edit_grid = st.toggle("Edit Portfolio", False)
@@ -397,7 +515,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
     client_user = st.session_state["username"]
     db_root = st.session_state['db_root']
     prod, admin, prod_name = st.session_state['prod'], st.session_state.get('admin'), st.session_state.get('prod_name')
-    # authorized_user = st.session_state['authorized_user']
+    # st.write("PRODUCTION", prod)
 
     # return page last visited
     # revrec = QUEEN.get('revrec')
@@ -409,9 +527,23 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
     k_colors = streamlit_config_colors()
     default_text_color = k_colors['default_text_color'] # = '#59490A'
 
+    if show_acct:
+        seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+        seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
+        account_header_grid(client_user, prod, None, ip_address, seconds_to_market_close)
+
     def wave_grid(revrec, symbols, ip_address, refresh_sec=8, paginationOn=True, key='default'):
         gb = GridOptionsBuilder.create()
-        gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,sortable=True)            
+        gb.configure_default_column(column_width=100, 
+                                    resizable=True, 
+                                    wrapText=False, 
+                                    wrapHeaderText=True, 
+                                    autoHeaderHeight=True, 
+                                    autoHeight=True, 
+                                    suppress_menu=False, 
+                                    filterable=True, 
+                                    sortable=True, 
+                                    cellStyle={"fontSize": "16px", "fontWeight": "bold"})            
         gb.configure_index('ticker_time_frame')
         gb.configure_theme('ag-theme-material')
 
@@ -462,15 +594,15 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                             }
 
         config_cols = config_cols()
+        mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
+        if len(mmissing) > 0:
+            for col in mmissing:
+                gb.configure_column(col, {'hide': True})
         for col, config_values in config_cols.items():
             config = config_values
             config['sortable'] = True
             gb.configure_column(col, config)
             # gb.configure_column(col, {'pinned': 'left'})
-        mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
-        if len(mmissing) > 0:
-            for col in mmissing:
-                gb.configure_column(col, {'hide': True})
 
         go = gb.build()
         st_custom_grid(
@@ -509,12 +641,20 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
         ) 
 
     
-    def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default'):
+    def story_grid(client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default', toggle_view=None):
 
         
         try:
             gb = GridOptionsBuilder.create()
-            gb.configure_default_column(column_width=100, resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False,filterable=True,)            
+            gb.configure_default_column(column_width=100, 
+                                        resizable=True, 
+                                        wrapText=False, wrapHeaderText=True, 
+                                        sortable=True, 
+                                        autoHeaderHeight=True, 
+                                        autoHeight=True, 
+                                        suppress_menu=False, 
+                                        filter=True, 
+                                        cellStyle={"fontSize": "14px"})            
             gb.configure_index('symbol')
             gb.configure_theme('ag-theme-material')
             if paginationOn:
@@ -524,7 +664,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
                 buttons=[
                             {'button_name': None,
-                            'button_api': f'{ip_address}/api/data/add_symbol_to_trading_board',
+                            'button_api': f'{ip_address}/api/data/update_queenking_symbol',
                             'prompt_message': 'Manage Board',
                             'prompt_field': 'add_symbol_option',
                             'col_headername': 'Symbol',
@@ -633,8 +773,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 
                 return buttons
 
-            def config_cols(cols):
-
+            def config_cols(df_qcp):
+                df_ticker_qcp_names = df_qcp['piece_name'].tolist()
                 return  {
                 # for col in cols:
                 # 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
@@ -642,6 +782,9 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'current_from_open': {'headerName':"% From Open", 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
 
+                'piece_name': {'headerName': 'Budget Group', 
+                                "cellEditorParams": {"values": df_ticker_qcp_names},"editable":True, "cellEditor":"agSelectCellEditor",
+                                                                    },
                 'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'star_buys_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
@@ -672,24 +815,25 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                                                                     },
                 }
 
-            ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
-            for col in ticker_info_cols:
-                if col != 'symbol': 
-                    config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
-                    gb.configure_column(col, config)
             
             chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
             story_col = revrec.get('storygauge').columns.tolist()
-            config_cols_ = config_cols(story_col)
-            for col, config_values in config_cols_.items():
-                config = config_values
-                gb.configure_column(col, config)
-
+            config_cols_ = config_cols(revrec.get('df_qcp'))
             mmissing = [i for i in story_col if i not in config_cols_.keys()]
             if len(mmissing) > 0:
                 for col in mmissing:
                     gb.configure_column(col, {'hide': True})
+            for col, config_values in config_cols_.items():
+                config = config_values
+                gb.configure_column(col, config)
 
+
+            ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
+            for col in ticker_info_cols:
+                if col not in story_col:
+                    # config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
+                    gb.configure_column(col, {'hide': True, 'sortable': 'true'})
+            
             g_buttons = story_grid_buttons()
 
             go = gb.build()
@@ -706,10 +850,15 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 main_toggles = ["Queen", "King", '2025_Screen']
             else:
                 main_toggles = ["Queen", "King"]
+            
+            if toggle_view == 'Hedge Funds':
+                hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
+                hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
+                toggle_view = main_toggles + ["Warren Buffet"] + hedge_fund_names
+            elif toggle_view == 'Queen':
+                toggle_view = [QUEEN_KING['chess_board'][qcp].get('piece_name') for qcp in QUEEN_KING['chess_board'].keys()] #revrec['df_qcp']['piece_name'].tolist()
 
-            hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
-            hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
-            all_portfolios = main_toggles + ["Warren Buffet"] + hedge_fund_names
+            toggle_view = main_toggles + toggle_view
 
             st_custom_grid(
                 client_user=client_user,
@@ -729,7 +878,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 symbols=symbols,
                 buttons=g_buttons,
                 grid_height='600px',
-                toggle_views = all_portfolios + ["Not On Board"] ,
+                toggle_views = toggle_view,
                 allow_unsafe_jscode=True,
             ) 
 
@@ -764,7 +913,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             refresh_sec = ui_refresh_sec
         refresh_sec = refresh_sec if not edit_grid else 0
 
-        story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec)
+        # Toggle View
+        toggle_view = sac_tabs(["Queen", "Hedge Funds", "Sectors"])
+        print(toggle_view)
+
+        story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec, toggle_view=toggle_view)
                         
         if st.sidebar.toggle("Show Wave Grid"):
             if type(revrec.get('waveview')) != pd.core.frame.DataFrame:

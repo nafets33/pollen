@@ -58,6 +58,7 @@ from tqdm import tqdm
 
 pg_migration = os.getenv('pg_migration')
 upsert_to_main_server = os.getenv('upsert_to_main_server')
+server = os.getenv('server')
 
 pd.options.mode.chained_assignment = None
 est = pytz.timezone("US/Eastern")
@@ -175,51 +176,6 @@ def update_broker_order_status(BROKER, order_status):
         return True
     except Exception as e:
         print_line_of_error("broker update failed")
-
-def init_BROKER(api, BROKER):
-    if len(BROKER['broker_orders']) == 0:
-        print("INIT Broker ORDERS")
-        BROKER = init_broker_orders(api, BROKER)
-        if pg_migration:
-            PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER)
-        else:
-            PickleData(BROKER.get('source'), BROKER, console=False)
-    return BROKER
-
-def reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states, b_order_init=False):
-    
-    # if len(BROKER['broker_orders']) == 0:
-    #     print("INIT Broker ORDERS")
-    #     b_order_init = True
-    #     BROKER = init_broker_orders(api, BROKER)
-
-    BROKER = init_BROKER(api, BROKER)
-
-    # check for any missing orders
-    save_b = False
-    df = QUEEN.get('queen_orders')
-    df['status_q'] = df['status_q'].fillna('')
-    df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
-    if len(df_active) > 0 and len(BROKER['broker_orders']) > 0:
-        # ("Update QUEEN with Broker Orders")
-        df_active['client_order_id'] = df_active['client_order_id'].fillna('init')
-        qo_active_index = df_active['index'].to_list()
-        broker_corder_ids = BROKER['broker_orders']['client_order_id'].tolist()
-        for client_order_id in qo_active_index:
-            if client_order_id not in broker_corder_ids and client_order_id != 'init':
-                print(f"ALERT NEW CLIENT ORDER ID {client_order_id}")
-                order_status = check_order_status(api=api, client_order_id=client_order_id)
-                if order_status:
-                    save_b = True
-                    update_broker_order_status(BROKER, order_status)
-                if b_order_init:
-                    if df_active.at[client_order_id, 'status'] == 'filled':
-                        QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'filled'
-                    else:
-                        QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'pending'
-
-    return save_b, BROKER, QUEEN
-
 
 def generate_client_order_id(ticker, trig, sellside_client_order_id=False): # generate using main_order table and trig count
 
@@ -541,6 +497,7 @@ def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, t
         )
 
         msg = (f'ExOrder SELL {trig} {ticker_time_frame}')
+        print(msg)
 
         return{'executed': True, 'msg': msg, 'new_queen_order_df': new_queen_order_df, 'priceinfo_order': priceinfo_order}
 
@@ -858,12 +815,57 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
 
 def queenbee(client_user, prod, queens_chess_piece='queen'):
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-    # if client_user == 'stefanstapinski@gmail.com' and not prod:
-    #     print("TESTING LOCAL SANDBOX SAVE DATA TO SERVER")
-    #     upsert_to_main_server = True
-    # else:
-    #     upsert_to_main_server = False
+    if client_user in ['stapinskistefan@gmail.com'] and not prod: #'stefanstapinski@gmail.com', 
+        print("TESTING LOCAL SANDBOX SAVE DATA TO SERVER")
+        upsert_to_main_server = True
+        server = True
+    else:
+        upsert_to_main_server = False
 
+
+    def init_BROKER(api, BROKER):
+        if len(BROKER['broker_orders']) == 0:
+            print("INIT Broker ORDERS")
+            BROKER = init_broker_orders(api, BROKER)
+            if pg_migration:
+                PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER, main_server=server)
+            else:
+                PickleData(BROKER.get('source'), BROKER, console=False)
+        return BROKER
+
+    def reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states, b_order_init=False):
+        
+        # if len(BROKER['broker_orders']) == 0:
+        #     print("INIT Broker ORDERS")
+        #     b_order_init = True
+        #     BROKER = init_broker_orders(api, BROKER)
+
+        BROKER = init_BROKER(api, BROKER)
+
+        # check for any missing orders
+        save_b = False
+        df = QUEEN.get('queen_orders')
+        df['status_q'] = df['status_q'].fillna('')
+        df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
+        if len(df_active) > 0 and len(BROKER['broker_orders']) > 0:
+            # ("Update QUEEN with Broker Orders")
+            df_active['client_order_id'] = df_active['client_order_id'].fillna('init')
+            qo_active_index = df_active['index'].to_list()
+            broker_corder_ids = BROKER['broker_orders']['client_order_id'].tolist()
+            for client_order_id in qo_active_index:
+                if client_order_id not in broker_corder_ids and client_order_id != 'init':
+                    print(f"ALERT NEW CLIENT ORDER ID {client_order_id}")
+                    order_status = check_order_status(api=api, client_order_id=client_order_id)
+                    if order_status:
+                        save_b = True
+                        update_broker_order_status(BROKER, order_status)
+                    if b_order_init:
+                        if df_active.at[client_order_id, 'status'] == 'filled':
+                            QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'filled'
+                        else:
+                            QUEEN['queen_orders'].at[client_order_id, 'status_q'] = 'pending'
+
+        return save_b, BROKER, QUEEN
 
 
     def update_queen_order(QUEEN, update_package):
@@ -993,7 +995,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if queensleep:
                     print("WAIT for QUEEN to STOP")
                     if pg_migration:
-                        PollenDatabase.upsert_data(QUEEN.get('table_name'), key=QUEEN.get('key'), value=QUEEN)
+                        PollenDatabase.upsert_data(QUEEN.get('table_name'), key=QUEEN.get('key'), value=QUEEN, main_server=server)
                     else:
                         PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
                     print("QUEEN STOPPED")
@@ -2317,17 +2319,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 s_time_qOrders = datetime.now(est)
 
                 # api # refresh all broker orders which are still pending
+                after_hours = True if mkhrs == 'closed' else False
                 save_b = False 
                 for c_order_id in tqdm(qo_active_index):
+                    symbol = QUEEN['queen_orders'].loc[c_order_id].get('symbol')
+                    crypto = True if symbol in crypto_currency_symbols else False
+                    if not crypto and after_hours:
+                        continue # markets are not open for you
+            
                     pull_order_status = df_active.at[c_order_id, 'status_q']
                     if c_order_id not in BROKER['broker_orders'].index or pull_order_status != 'filled':
+                        print("checking order status for", c_order_id)
                         order_status = check_order_status(api=api, client_order_id=c_order_id)
                         if order_status:
                             save_b = True
                             update_broker_order_status(BROKER, order_status)
                 if save_b:
                     if pg_migration:
-                        PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER)
+                        PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER, main_server=server)
                     else:
                         PickleData(BROKER.get('source'), BROKER, console=False)
                 broker_time = (datetime.now(est) - s_time_qOrders).total_seconds()
@@ -2396,7 +2405,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                 )
                             if exx.get('executed'):
                                 save = True
-                                logging.info(exx.get('msg'))
+                                # logging.info(exx.get('msg'))
                                 append_queen_order(QUEEN, exx.get('new_queen_order_df'))
                                 queen_order_idx = exx.get('new_queen_order_df').index[0]
                                 queen_order = QUEEN['queen_orders'].loc[queen_order_idx].to_dict()
@@ -2499,11 +2508,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         
     ### Close the Day ###
 
-    def close_day__queen(QUEEN, ORDERS_FINAL=False): # clean all FINAL orders bucket 
+    def close_day__queen(QUEEN, BROKER, ORDERS_FINAL=False): # clean all FINAL orders bucket 
         def archive_queen(QUEEN):
             # archive_queen_copy
             if pg_migration:
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=f'previousDAY_{QUEEN.get("key")}', value=QUEEN)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=f'previousDAY_{QUEEN.get("key")}', value=QUEEN, main_server=server)
                 return True
             else:
                 root, name = os.path.split(QUEEN.get('source'))
@@ -2513,7 +2522,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         # Save Copy of Current day Queen
         archive_queen(QUEEN)
         if not pg_migration:
-            ORDERS_FINAL = init_queenbee(client_user=client_user, prod=prod, orders_final=True).get('ORDERS_FINAL')
+            ORDERS_FINAL = init_queenbee(client_user=client_user, prod=prod, orders_final=True, main_server=server).get('ORDERS_FINAL')
         
         ## Clean ORders WORKERBE
         def archive_order(QUEEN, ORDERS_FINAL=ORDERS_FINAL):
@@ -2549,7 +2558,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         QUEEN['queen_orders'] = qo_new
                         
                         if pg_migration:
-                            PollenDatabase.upsert_data(table_name='final_orders', key=final_batch_name, value=dump_orders)
+                            PollenDatabase.upsert_data(table_name='final_orders', key=final_batch_name, value=dump_orders, main_server=server)
                         
                         if ORDERS_FINAL:
                             qo_final = copy.deepcopy(ORDERS_FINAL['queen_orders'])
@@ -2566,10 +2575,19 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             if pg_migration:
                 pass
             else:
-                PickleData(ORDERS_FINAL.get('source'), ORDERS_FINAL)       
+                PickleData(ORDERS_FINAL.get('source'), ORDERS_FINAL)
+        
 
-        return QUEEN
+        # reduce Broker Orders to QUEENs
+        broker_orders = BROKER['broker_orders']
+        broker_orders = broker_orders[broker_orders['client_order_id'].isin(QUEEN['queen_orders']['client_order_id'])].copy()
+        BROKER['broker_orders'] = broker_orders # remove all QUEEN orders from broker orders
+        if pg_migration:
+            PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER, main_server=server)
+        else:
+            PickleData(BROKER.get('source'), BROKER)
 
+        return True    
 
     ################################################################# pollen
     #################################################################
@@ -2600,7 +2618,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel='info')
 
         # init files needed
-        qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, broker=True, init=True, pg_migration=pg_migration)
+        qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, broker=True, init=True, pg_migration=pg_migration, main_server=server)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
         api = qb.get('api')
@@ -2619,7 +2637,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             print("API Keys Failed, Queen goes back to Sleep")
             QUEEN['queens_messages'].update({"api_status": 'failed'})
             if pg_migration:
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=QUEEN.get('key'), value=QUEEN)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=QUEEN.get('key'), value=QUEEN, main_server=server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
             sys.exit()
@@ -2629,7 +2647,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         save_b, BROKER, QUEEN = reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states)
         if save_b:
             if pg_migration:
-                PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER)
+                PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER, main_server=server)
             else:
                 PickleData(BROKER.get('source'), BROKER, console=False)
 
@@ -2645,7 +2663,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         if QUEEN_req['update']:
             QUEEN = QUEEN_req['QUEEN']
             if pg_migration:
-                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=QUEEN.get('key'), value=QUEEN)
+                PollenDatabase.upsert_data(QUEEN.get('table_name'), key=QUEEN.get('key'), value=QUEEN, main_server=server)
             else:
                 PickleData(QUEEN['dbs'].get('PB_QUEEN_Pickle'), QUEEN)
         
@@ -2695,7 +2713,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ########################################################
         ########################################################
         last_order_refresh = datetime.now(est)
-        heartbeat_cyle = 0
+        heartbeat_cyle = deque([], 3000)
         while True:
 
             db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name))).rename(columns={0:'key', 1:'timestamp'})
@@ -2705,19 +2723,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             s = datetime.now(est)
             # Should you operate now? I thnik the brain never sleeps ?
             mkhrs = return_market_hours(trading_days=trading_days)
-            if datetime.now(est) > datetime.now(est).replace(hour=23, minute=00):
-            # if mkhrs != 'open':
-                QUEEN = close_day__queen(QUEEN) # cleaning orders to confirm WORKERBEE            
-                god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
-                                save_q=True,
-                                save_rr=True,
-                                save_qo=True,
-                                save_acct=True,
-                                console=True,
-                                upsert_to_main_server=upsert_to_main_server)
-                # hanlde_missing_broker_orders_with_queen_orders(BROKER, QUEEN)
-                print("Queen to ZzzzZZzzzZzzz see you tomorrow")
-                break
+            if 'crypto' not in queens_chess_piece:
+                if datetime.now(est) > datetime.now(est).replace(hour=16, minute=00):
+                # if mkhrs != 'open':
+                    close_day__queen(QUEEN, BROKER) # cleaning orders to confirm WORKERBEE            
+                    god_save_the_queen(QUEENsHeart=QUEENsHeart, QUEEN=QUEEN, charlie_bee=charlie_bee,
+                                    save_q=True,
+                                    save_rr=True,
+                                    save_qo=True,
+                                    save_acct=True,
+                                    console=True,
+                                    upsert_to_main_server=upsert_to_main_server)
+                    # hanlde_missing_broker_orders_with_queen_orders(BROKER, QUEEN)
+                    print("Queen to ZzzzZZzzzZzzz see you tomorrow")
+                    break
             
             # if queens_chess_piece.lower() == 'queen': # Rule On High
             seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
@@ -2732,12 +2751,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 if str(qk_lastmod) != str(pq_qk_lastmod):
                     pq_qk_lastmod = qk_lastmod
                     print("PGM: QUEENKING Updated Read New Data")
-                    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+                    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration, main_server=server).get('QUEEN_KING')
                     QUEEN['chess_board'] = QUEEN_KING['chess_board']
             else:
                 if str(os.stat(QUEEN['dbs'].get('PB_App_Pickle')).st_mtime) != QUEEN_KING['last_modified']:
                     print("QUEENKING Updated Read New Data")
-                    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True).get('QUEEN_KING')
+                    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, main_server=server).get('QUEEN_KING')
                     QUEEN['chess_board'] = QUEEN_KING['chess_board']
 
             # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
@@ -2807,13 +2826,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             #     PickleData(queens_charlie_bee, charlie_bee, console=False)
             
             charlie_bee['queen_cycle_count'] += 1
-            print("Beat", beat, charlie_bee['queen_cycle_count'])
+            print("Beat", beat, datetime.now(est).strftime('%y-%m-%d:%H:%M'))
             
             if beat > 23:
                 logging.warning((queens_chess_piece, ": SLOW cycle Heart Beat: ", beat, "use price gauge"))
                 # print('use price gauge') # (STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
-            heartbeat_cyle+= beat
-            avg_beat = heartbeat_cyle / beat
+            heartbeat_cyle.append(beat)
+            avg_beat = sum(heartbeat_cyle) / len(heartbeat_cyle)
             QUEENsHeart.update({"heartbeat_beat": round(beat)})
             QUEENsHeart.update({"heartbeat_avg_beat": round(avg_beat)})
             god_save_the_queen(QUEEN, QUEENsHeart)
@@ -2834,6 +2853,7 @@ if __name__ == '__main__':
     def createParser():
         parser = argparse.ArgumentParser()
         parser.add_argument ('-prod', default='true')
+        parser.add_argument ('-crypto', default='false')
         parser.add_argument ('-client_user', default=os.environ.get('admin_user'))
         return parser
     
@@ -2842,6 +2862,7 @@ if __name__ == '__main__':
     client_user = namespace.client_user
     prod = namespace.prod
     prod = True if str(prod).lower() == 'true' else False
+    crypto = 'crypto' if str(namespace.crypto).lower() == 'true' else ''
 
 
     # while True:
@@ -2854,7 +2875,7 @@ if __name__ == '__main__':
     #     else:
     #         break
         
-    queenbee(client_user, prod, queens_chess_piece='queen')
+    queenbee(client_user, prod, queens_chess_piece=f'queen{crypto}')
 
 """
 The Journey is Hard,

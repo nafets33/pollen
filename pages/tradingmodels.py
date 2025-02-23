@@ -4,6 +4,8 @@ from streamlit_extras.switch_page_button import switch_page
 from chess_piece.app_hive import set_streamlit_page_config_once, standard_AGgrid
 from dotenv import load_dotenv
 import os
+from chess_piece.pollen_db import PollenDatabase
+import ipdb
 
 set_streamlit_page_config_once()
 
@@ -11,28 +13,25 @@ if 'authentication_status' not in st.session_state or st.session_state['authenti
     switch_page('pollen')
 
 from chess_piece.king import print_line_of_error, master_swarm_KING
-from chess_piece.queen_hive import init_queenbee, hive_master_root, pollen_themes, ReadPickleData, PickleData, refresh_tickers_TradingModels
+from chess_piece.queen_hive import init_queenbee, read_swarm_db, hive_master_root, pollen_themes, ReadPickleData, PickleData, refresh_tickers_TradingModels
 from chess_piece.app_hive import page_line_seperator, create_AppRequest_package, return_image_upon_save
 
 
 main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
+pg_migration = os.environ.get('pg_migration')
 
 client_user=st.session_state['client_user']
 prod=st.session_state['prod']
+st.write(f'Production: {prod}')
 
-KING = ReadPickleData(master_swarm_KING(prod=prod))
+if pg_migration:
+    KING = read_swarm_db(prod, 'KING')
+else:
+    KING = ReadPickleData(master_swarm_KING(prod=prod))
 
-qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True)
-QUEEN = qb.get('QUEEN')
-QUEEN_KING = qb.get('QUEEN_KING')
-api = qb.get('api')
 
-PB_QUEEN_Pickle = st.session_state['PB_QUEEN_Pickle'] 
-PB_App_Pickle = st.session_state['PB_App_Pickle'] 
-PB_Orders_Pickle = st.session_state['PB_Orders_Pickle'] 
-PB_queen_Archives_Pickle = st.session_state['PB_queen_Archives_Pickle']
-PB_QUEENsHeart_PICKLE = st.session_state['PB_QUEENsHeart_PICKLE']
+PB_App_Pickle = st.session_state.get('PB_App_Pickle') 
 
 def update_trading_models(QUEEN_KING, KING):
     pollen_themes_selections = list(pollen_themes(KING).keys()) 
@@ -55,7 +54,14 @@ def update_trading_models(QUEEN_KING, KING):
         with cols[0]:
             models_avail = list(QUEEN_KING['king_controls_queen'][control_option].keys())
             ticker_option_qc = st.selectbox("Symbol", models_avail, index=models_avail.index(["SPY" if "SPY" in models_avail else models_avail[0]][0]))                
-
+        if st.button(f"{ticker_option_qc} Reset Model"):
+            QUEEN_KING = refresh_tickers_TradingModels(QUEEN_KING=QUEEN_KING, ticker=ticker_option_qc)
+            if pg_migration:
+                table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+            else:
+               PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+                
         ## Trading Model
         if saved_model_ticker != 'select':
             st.info("You Are Viewing Saved Model")
@@ -143,7 +149,10 @@ def update_trading_models(QUEEN_KING, KING):
             # wave_blocks_option = st.selectbox("Block Time", KING['waveBlocktimes'])
             wave_blocks_option = st.selectbox("BlockTime", blocktime_avail, index=blocktime_avail.index(["morning_9-11" if "morning_9-11" in blocktime_avail else blocktime_avail[0]][0]))
 
-        st.write(trading_model['stars_kings_order_rules'])
+        st.write(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker_option_qc].keys())
+        st.write(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker_option_qc]['stars_kings_order_rules'][star_option_qc].keys())
+        st.write(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker_option_qc]['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel].keys())
+        st.write(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker_option_qc]['stars_kings_order_rules'][star_option_qc]['trigbees'][trigbee_sel][wave_blocks_option].keys())
 
         with st.form('trading model form'):
             st.subheader("Kings Order Rules Settings")
@@ -379,6 +388,11 @@ def update_trading_models(QUEEN_KING, KING):
         print(e)
         print_line_of_error()
 
+if __name__ == '__main__':
 
+    qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, pg_migration=pg_migration)
+    QUEEN = qb.get('QUEEN')
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
 
-update_trading_models(QUEEN_KING, KING)                             
+    update_trading_models(QUEEN_KING, KING)                             

@@ -123,7 +123,7 @@ def kings_order_rules( # rules created for 1Minute
 
 def generate_TradingModel(
     theme="nuetral", portfolio_name="Jq", ticker="SPY",
-    stars=stars, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"], 
+    stars=stars, trigbees=["buy_cross-0", "sell_cross-0"], 
     trading_model_name="MACD", status="active", portforlio_weight_ask=0.01, init=False,
     ):
     # theme level settings
@@ -359,38 +359,38 @@ def generate_TradingModel(
             star_theme_vars = {
                 "1Minute_1Day": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .1,
-                    'buyingpower_allocation_ShortTerm': .5,
+                    'buyingpower_allocation_LongTerm': 0,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "5Minute_5Day" : {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .3,
-                    'buyingpower_allocation_ShortTerm': .5,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "30Minute_1Month": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .4,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "1Hour_3Month": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .5,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "2Hour_6Month": {
                     'stagger_profits':False, 
                     'buyingpower_allocation_LongTerm': .8,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "1Day_1Year": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .99,
-                    'buyingpower_allocation_ShortTerm': .2,
+                    'buyingpower_allocation_LongTerm': .89,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
         }
@@ -738,8 +738,8 @@ def generate_TradingModel(
             "theme": theme,
             "QueenBeeTrader": "Jq",
             "status": status,
-            "buyingpower_allocation_LongTerm": 0.2,
-            "buyingpower_allocation_ShortTerm": 0.8,
+            "buyingpower_allocation_LongTerm": 1,
+            "buyingpower_allocation_ShortTerm": 0,
             "index_long_X": "1X",
             "index_inverse_X": "1X",
             "portforlio_weight_ask": portforlio_weight_ask,
@@ -763,6 +763,7 @@ def generate_TradingModel(
             },
             "short_position": False,  # flip all star allocation to short
             "ticker_family": [ticker],
+            "refresh_star" : None, # WORKERBEE needs to update model to add in different stars
         }
 
         star_model = {ticker: model1}
@@ -1015,23 +1016,24 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         revrec__stars_borrow = {}
         symbol_qcp_dict = {}
         board_tickers = []
-        ticker_TradingModel = {}
+        # ticker_TradingModel = {}
         chess_board__revrec = {}
         revrec__ticker={}
+        revrec__ticker_borrow={}
         revrec__stars={}
         chess_board__revrec_borrow={}
         marginPower={}
         df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum', 'queen_wants_to_sell_qty': 'sum' } # 
 
         if not QUEEN.get('portfolio'):
-            df_broker_portfolio = pd.DataFrame([{'symbol': ''}])
+            df_broker_portfolio = pd.DataFrame([{'symbol': 'init_jq'}])
         else:
             df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
         df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
 
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING[chess_board].values()] for item in sublist]
         if check_portfolio:
-            missing_tickers = [i for i in df_broker_portfolio.index if i not in symbols]
+            missing_tickers = [i for i in df_broker_portfolio.index if i not in symbols and i not in ['init_jq']]
             if missing_tickers:
                 print("RR SYMBOLS NOT IN CHESSBOARD", missing_tickers)
                 if 'non_active_stories' not in QUEEN_KING[chess_board].keys():
@@ -1079,7 +1081,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             # current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave')
             # wave_blocktime = current_wave.get('wave_blocktime')
     except Exception as e:
-        print_line_of_error(e)
+        print_line_of_error(f"RevRec Setup Error {e}")
+        return None
 
     def shape_revrec_chesspieces(dic_items, acct_info, chess_board__revrec_borrow, marginPower):
         df_borrow = pd.DataFrame(chess_board__revrec_borrow.items())
@@ -1113,6 +1116,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         df = df.set_index('qcp_ticker', drop=False)
         df['qcp'] = df['qcp_ticker'].map(symbol_qcp_dict)
         df['margin_power'] = df['qcp'].map(dict(zip(df_qcp['qcp'], df_qcp['margin_power'])))
+        df['piece_name'] = df['qcp'].map(dict(zip(df_qcp['qcp'], df_qcp['piece_name'])))
         df__ = len(df)
 
         # drop duplicates
@@ -1313,12 +1317,12 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                                             "1Day_1Year": 23,
                                         }
             wave_stars_default_maxprofit_shot  = {
-                                            "1Minute_1Day": .01,
-                                            "5Minute_5Day": .03,
-                                            "30Minute_1Month": .05,
-                                            "1Hour_3Month": .08,
-                                            "2Hour_6Month": .15,
-                                            "1Day_1Year": .23,
+                                            "1Minute_1Day": .02,
+                                            "5Minute_5Day": .1,
+                                            "30Minute_1Month": .2,
+                                            "1Hour_3Month": .33,
+                                            "2Hour_6Month": .50,
+                                            "1Day_1Year": .89,
                                         }
             for ttf in df_current_waves.index:
                 tic, stime, sframe = ttf.split("_")
@@ -1493,16 +1497,18 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                         df_temp['borrow_budget'] = (df_temp['star_borrow_buying_power'] * df_ticker.loc[ticker].get('ticker_borrow_budget')) / bp_borrow
                     
                     ## Return price and stats & JOIN in ORDERS
-                    current_from_open = 0
-                    current_from_yesterday = 0
                     ticker_remaining_budget = 0
                     ticker_remaining_borrow = 0
                     ttf_storybeekeys=STORY_bee.keys()
                     for star in df_temp['star'].to_list():
                         ticker_time_frame = f'{ticker}_{star}'
-                        if '1Minute_1Day' in ticker_time_frame and ticker_time_frame in ttf_storybeekeys:
-                            current_from_open = STORY_bee[ticker_time_frame]["story"].get("current_from_open")
-                            current_from_yesterday = STORY_bee[ticker_time_frame]["story"].get("current_from_yesterday")
+                        if '1Minute_1Day' in ticker_time_frame and ticker_time_frame:
+                            if ticker_time_frame in ttf_storybeekeys:
+                                current_from_open = STORY_bee[ticker_time_frame]["story"].get("current_from_open", 0)
+                                current_from_yesterday = STORY_bee[ticker_time_frame]["story"].get("current_from_yesterday", 0)
+                            else:
+                                current_from_open = 0
+                                current_from_yesterday = 0
                             df_ticker.at[ticker, 'current_from_open'] = current_from_open
                             df_ticker.at[ticker, 'current_from_yesterday'] = current_from_yesterday
                         
@@ -1571,15 +1577,15 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
     
         # Handle Weight change
         s = datetime.now()
-
+        symbol_qcp_dict_name = {}
         for qcp, data in chessboard.items():
             
             # Refresh ChessBoard and RevRec
-            qcp_power = float(QUEEN_KING[chess_board][qcp]['total_buyng_power_allocation'])
-            qcp_borrow = float(QUEEN_KING[chess_board][qcp]['total_borrow_power_allocation'])
-            qcp_marginpower = float(QUEEN_KING[chess_board][qcp]['margin_power'])
+            qcp_power = float(QUEEN_KING[chess_board][qcp].get('total_buyng_power_allocation', 0))
+            qcp_borrow_power = float(QUEEN_KING[chess_board][qcp].get('total_borrow_power_allocation', 0))
+            qcp_marginpower = float(QUEEN_KING[chess_board][qcp].get('margin_power', 0))
             chess_board__revrec[qcp] = qcp_power
-            chess_board__revrec_borrow[qcp] = qcp_borrow
+            chess_board__revrec_borrow[qcp] = qcp_borrow_power
             marginPower[qcp] = qcp_marginpower
 
             qcp_tickers = QUEEN_KING[chess_board][qcp].get('tickers')
@@ -1600,25 +1606,47 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             #     # reallocate weights create a dictionary of ticker and triniity then create a weightet pct
             #     ticker__trinity = {k:v for (k,v) in ticker_trinity.items() if k in qcp_tickers}
             #     ticker_mapping = calculate_weights(ticker__trinity)
+            ticker_buying_power = {}
+            ticker_borrow_power = {}
+            for ticker in qcp_tickers:
+                trading_model = return_trading_model(QUEEN_KING, qcp, ticker)
+                ticker_buying_power[ticker] = trading_model.get('buyingpower_allocation_LongTerm', 0)
+                ticker_borrow_power[ticker] = trading_model.get('buyingpower_allocation_ShortTerm', 0)
+            total_weight = sum(ticker_buying_power.values())
+            total_weight_borrow = sum(ticker_borrow_power.values())
+            
+            # ticker_mapping_enabled = True if ticker_mapping else False
+            # total_weight = sum(ticker_mapping.values()) if ticker_mapping_enabled else num_tickers
 
             for ticker in qcp_tickers:
-                # if ticker in crypto_currency_symbols:
-                #     # print(ticker, "NOT HANLDING CRYPTO YET")
-                #     continue
-                symbol_qcp_dict[ticker] = qcp              
+
+                symbol_qcp_dict[ticker] = qcp
+                symbol_qcp_dict_name[ticker] = qcp        
                 
                 trading_model= return_trading_model(QUEEN_KING, qcp, ticker)
                 tm_keys = trading_model['stars_kings_order_rules'].keys()
-                ticker_TradingModel[ticker] = trading_model
 
                 ## Ticker Allocation Budget
-                if num_tickers == 1:
-                    revrec__ticker[ticker] = qcp_power
+
+                if total_weight:
+                    weight = ticker_buying_power[ticker]
+                    revrec__ticker[ticker] = (weight / total_weight) * qcp_power
                 else:
-                    if ticker in ticker_mapping.keys():
-                        revrec__ticker[ticker] = ticker_mapping[ticker]
-                    else:
-                        revrec__ticker[ticker] = qcp_power / num_tickers ## equal number disribution
+                    revrec__ticker[ticker] = 0
+                
+                if total_weight_borrow:
+                    weight = ticker_borrow_power.get(ticker, 0)
+                    revrec__ticker_borrow[ticker] = (weight / total_weight_borrow) * qcp_borrow_power
+                else:
+                    revrec__ticker_borrow[ticker] = 0
+                    # if ticker_mapping_enabled:
+                    #     print("Ticker Mapping Enabled")
+                    # # if ticker in ticker_mapping.keys():
+                    #     # Adjust allocation based on ticker_mapping weight
+                    #     weight = ticker_mapping[ticker]
+                    #     revrec__ticker[ticker] = (weight / total_weight) * qcp_power
+                    # else:
+                    #     revrec__ticker[ticker] = qcp_power / num_tickers ## equal number disribution
 
                 # Star Allocation Budget
                 for star in tm_keys:
@@ -1626,18 +1654,26 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     revrec__stars_borrow[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_ShortTerm")
 
         # Refresh RevRec Total Budgets
+        df_qcp_og = pd.DataFrame(chessboard).T
         df_qcp = shape_revrec_chesspieces(chess_board__revrec, acct_info, chess_board__revrec_borrow, marginPower)
-        df_qcp_cols = df_qcp.columns
-        for qcp in chessboard.keys():
-            for k,v in chessboard[qcp].items():
-                if k not in df_qcp_cols:                        
-                    df_qcp[k] = str(v)
-
+        df_qcp_og = df_qcp_og[[i for i in df_qcp_og.columns if i not in df_qcp.columns]]
+        df_qcp = pd.concat([df_qcp, df_qcp_og], axis=1)
         df_ticker = shape_revrec_tickers(revrec__ticker, symbol_qcp_dict, df_qcp)
         df_stars = shape_revrec_stars(revrec__stars, revrec__stars_borrow, symbol_qcp_dict, df_qcp)
         df_stars = df_stars.fillna(0) # tickers without budget move this to upstream in code and fillna only total budget column
         df_ticker['symbol'] = df_ticker.index
         df_stars['symbol'] = df_stars['ticker']
+
+        # # shape tickers
+        # df_qcp_og = pd.DataFrame(chessboard).T.explode('tickers')
+        # # Set 'tickers' as the index
+        # df_qcp_og = df_qcp_og.set_index('tickers')
+        # # Ensure that the index is unique if necessary
+        # df_qcp_og = df_qcp_og[~df_qcp_og.index.duplicated(keep='first')]
+        # df_qcp_og = df_qcp_og[['piece_name']]
+        # df_qcp_og = df_qcp_og[[i for i in df_qcp_og.columns if i not in df_ticker.columns]]
+        # df_ticker = pd.concat([df_ticker, df_qcp_og], axis=1)
+
 
         validate_qcp_balance(df_qcp)
         rr_run_cycle.update({'shape': (datetime.now() - s).total_seconds()})
@@ -1798,6 +1834,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         storygauge = storygauge.fillna(0)
         waveview = waveview.fillna(0)
 
+        # qcp name
+        # storygauge['qcp_name'] = storygauge['symbol'].map(dict(zip(df_ticker.index, df_ticker['piece_name'])))
+
         rr_run_cycle.update({'story gauge': (datetime.now() - s).total_seconds()})
         total = sum(rr_run_cycle.values())
         # for k,v in rr_run_cycle.items():
@@ -1817,5 +1856,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 'rr_run_cycle': rr_run_cycle}
     
     except Exception as e:
-        print_line_of_error(f'revrec failed {e}')
+        print_line_of_error(f'REVREC FAILED {e}')
+        print(qcp)
+        return None
 

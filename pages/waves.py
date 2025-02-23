@@ -177,49 +177,49 @@ def waves():
     tab = 0
     wave_view_input_cols = ['ticker_time_frame', 'alloc_macd_tier', 'macd_tier_gain_pct', 'start_tier_macd', 'end_tier_macd', 'vwap_tier_gain_pct',  'start_tier_vwap', 'end_tier_vwap', 'rsi_ema_tier_gain_pct', 'start_tier_rsi_ema', 'end_tier_rsi_ema',   'macd_tier_gain', 'vwap_tier_gain', 'rsi_tier_gain', 'macd_state', 'allocation_long', 'pct_budget_allocation', 'total_allocation_budget', 'star_total_budget', 'star_buys_at_play', 'star_sells_at_play',  'total_allocation_borrow_budget', 'star_borrow_budget', 'allocation_deploy', 'allocation_borrow_deploy', 'star_avg_time_to_max_profit', 'length', 'current_profit', 'time_to_max_profit', 'maxprofit', 'maxprofit_shot',  ] # 'allocation', 'allocation_trinity', 'allocation_trinity_amt'
     for revrec_key in revrec.keys():
-        with tabs[tab]:
-            st.write("RevRec KEY", revrec_key)
-            df = revrec.get(revrec_key)
-            if revrec_key == 'waveview':
-                all_ = df.copy()
-                buys = df[df['bs_position']=='buy']
-                sells = df[df['bs_position']!='buy']
-                market = df[df['symbol'].isin(['SPY', 'QQQ'])]
-                marketsells = market[market['bs_position']!='buy']
-                st.write(f"""Star Total Budget ${round(sum(all_["star_total_budget"]),0)}$""")
-                st.write(f"""Star Total Budget Allocation ${round(sum(all_["total_allocation_budget"]),0)}$""")
-                # with cols[0]:
-                #     st.write(f"""Deploy Long ${round(sum(all_["allocation_long_deploy"]),0)}$""")
-                # with cols[0]:
-                #     st.write(f"""Allocation long ${round(sum(all_["allocation_long"]),0)}$""")
-                # with cols[0]:
-                #     st.write(f"""buys ${round(sum(buys["total_allocation_budget"]),0)}$""")
-                # with cols[1]:
-                #     st.write(f"""sells ${round(sum(sells["total_allocation_budget"]))}$""")
-                #     st.write(f"""marketsells ${round(sum(marketsells["total_allocation_budget"]))}$""")
+        # with tabs[tab]:
+        st.write(f"#RevRec KEY {revrec_key}")
+        df = revrec.get(revrec_key)
+        if revrec_key == 'waveview':
+            all_ = df.copy()
+            buys = df[df['bs_position']=='buy']
+            sells = df[df['bs_position']!='buy']
+            market = df[df['symbol'].isin(['SPY', 'QQQ'])]
+            marketsells = market[market['bs_position']!='buy']
+            st.write(f"""Star Total Budget ${round(sum(all_["star_total_budget"]),0)}$""")
+            st.write(f"""Star Total Budget Allocation ${round(sum(all_["total_allocation_budget"]),0)}$""")
+            # with cols[0]:
+            #     st.write(f"""Deploy Long ${round(sum(all_["allocation_long_deploy"]),0)}$""")
+            # with cols[0]:
+            #     st.write(f"""Allocation long ${round(sum(all_["allocation_long"]),0)}$""")
+            # with cols[0]:
+            #     st.write(f"""buys ${round(sum(buys["total_allocation_budget"]),0)}$""")
+            # with cols[1]:
+            #     st.write(f"""sells ${round(sum(sells["total_allocation_budget"]))}$""")
+            #     st.write(f"""marketsells ${round(sum(marketsells["total_allocation_budget"]))}$""")
 
-                df = move_columns_to_front(df, wave_view_input_cols)
-                hide_cols = [i for i in df.columns.tolist() if i not in wave_view_input_cols]
-                df = df.rename(columns={i: i.replace('_', ' ') for i in df.columns.tolist()})
-                standard_AGgrid(df, hide_cols=hide_cols)
+            df = move_columns_to_front(df, wave_view_input_cols)
+            hide_cols = [i for i in df.columns.tolist() if i not in wave_view_input_cols]
+            df = df.rename(columns={i: i.replace('_', ' ') for i in df.columns.tolist()})
+            standard_AGgrid(df, hide_cols=hide_cols)
 
-            elif revrec_key == 'WAVE_ANALYSIS':
-                for objj, obj in revrec[revrec_key]['STORY_bee_wave_analysis'].items():
-                    for k, data in obj.items():
-                        st.write("wave analysis key", k)
-                        st.dataframe(data) if isinstance(data, pd.DataFrame) else st.write(data)
-            # elif revrec_key == 'rr_run_cycle':
-                # st.code(revrec[revrec_key], line_numbers=True)
-            #     df = pd.DataFrame(revrec.get(revrec_key)).T
-            #     st.write(df)
-            elif isinstance(df, pd.DataFrame):
-                st.write("Table")
-                standard_AGgrid(df)
-            else:
-                st.write("Table")
-                st.write(df)
+        elif revrec_key == 'WAVE_ANALYSIS':
+            for objj, obj in revrec[revrec_key]['STORY_bee_wave_analysis'].items():
+                for k, data in obj.items():
+                    st.write("wave analysis key", k)
+                    st.dataframe(data) if isinstance(data, pd.DataFrame) else st.write(data)
+        # elif revrec_key == 'rr_run_cycle':
+            # st.code(revrec[revrec_key], line_numbers=True)
+        #     df = pd.DataFrame(revrec.get(revrec_key)).T
+        #     st.write(df)
+        elif isinstance(df, pd.DataFrame):
+            st.write("Table")
+            standard_AGgrid(df)
+        else:
+            st.write("Table")
+            st.write(df)
         
-        tab+=1
+        # tab+=1
 
     st.write("# RevRec Check")
     df = revrec['waveview']
@@ -243,7 +243,7 @@ def waves():
         except Exception as e:
             print_line_of_error(e)
 
-    if st.toggle("test story fastappi return"):
+    if st.toggle("test story fastappi return", True):
         st.write(QUEEN['price_info_symbols'])
         df = story_return(QUEEN_KING, revrec, prod=True)
         st.write(df)

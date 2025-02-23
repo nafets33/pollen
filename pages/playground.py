@@ -28,7 +28,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from chess_piece.pollen_db import PollenDatabase
-from chess_piece.queen_bee import init_BROKER, append_queen_order, god_save_the_queen, init_broker_orders
+from chess_piece.queen_bee import append_queen_order, god_save_the_queen, init_broker_orders
 from chess_piece.queen_mind import refresh_chess_board__revrec
 
 from tqdm import tqdm
@@ -128,7 +128,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
     QUEEN_KING = qb.get('QUEEN_KING')
     QUEEN = qb.get('QUEEN')
     BROKER = qb.get('BROKER')
-    BROKER = init_BROKER(api, BROKER)
+    # BROKER = init_BROKER(api, BROKER)
     BROKER = init_broker_orders(api, BROKER)
     # revrec = qb.get('revrec') # qb.get('queen_revrec')
 
@@ -308,6 +308,8 @@ def PlayGround():
     
     db = init_swarm_dbs(prod, pg_migration=True)
     BISHOP = read_swarm_db(prod)
+    ticker_info = BISHOP.get('ticker_info').set_index('ticker')
+    st.write(ticker_info.columns)
 
     # delete_dict_keys(BISHOP)
 

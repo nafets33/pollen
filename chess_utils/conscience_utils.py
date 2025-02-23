@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from chess_piece.king import ReadPickleData, print_line_of_error, streamlit_config_colors
-from chess_piece.queen_hive import init_swarm_dbs, star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date
+from chess_piece.queen_hive import init_swarm_dbs, star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date, star_refresh_star_times
 from chess_piece.pollen_db import PollenDatabase
 import pytz
 from datetime import datetime, timedelta
@@ -85,7 +85,8 @@ def return_trading_model_kors_v2(QUEEN_KING, symbol='SPY', trigbee='buy_cross-0'
      print_line_of_error("wwwwtf")
      return {}
 
-def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=list(star_names().keys()), max_budget_allowed=None):
+def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=list(star_refresh_star_times().keys()), max_budget_allowed=None, star_powers=None, star_powers_borrow=None, symbol_qcp_group=None):
+    star_times = star_names().keys()
     var_s = {
                 'symbol': symbol,
                 'buying_power':buying_power,
@@ -93,7 +94,19 @@ def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=
                 'status': status,
                 'refresh_star': refresh_star,
                 'max_budget_allowed': max_budget_allowed,
+                'symbol group': symbol_qcp_group,
                 }
+    if star_powers:
+        for star in star_times:
+            var_s[star] = star_powers.get(star)
+        for star in star_times:
+            var_s[f'{star} Margin'] = star_powers_borrow.get(star)
+    else:
+        for star in star_times:
+            var_s[star] = 0
+        for star in star_times:
+            var_s[f'{star} Margin'] = 0
+
     return var_s
 
 
@@ -191,14 +204,36 @@ def return_waveview_fillers(QUEEN_KING, waveview):
         print_line_of_error(f"utils {e}")
         raise e
 
-def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
+
+
+
+def get_powers(trading_model):
+    starnames = {v: k for k, v in star_names().items()}
+    star_powers = {}
+    star_powers_borrow = {}
+    for star, star_vars in trading_model.get('stars_kings_order_rules').items():
+        star_powers[starnames[star]] = star_vars.get("buyingpower_allocation_LongTerm")
+        star_powers_borrow[starnames[star]] = star_vars.get("buyingpower_allocation_ShortTerm")
+    
+    return star_powers, star_powers_borrow
+
+def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', qk_chessboard=None):
+
+
     try:
         df = revrec.get('storygauge')
         waveview = revrec.get('waveview')
+        df_stars = revrec.get('df_stars')
+        df_qcp = revrec.get('df_qcp')
+        df_ticker = revrec.get('df_ticker')
 
         df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
+        if qk_chessboard:
+            symbols = [item for sublist in [v.get('tickers') for v in qk_chessboard.values()] for item in sublist]
+        else:
+            symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
 
-        symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+        qcp_piece_names = [QUEEN_KING['chess_board'][qcp].get('piece_name') for qcp in QUEEN_KING['chess_board'].keys()]
 
         qcp_name = {data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() }
         qcp_name['Queen'] = 'Queen'
@@ -212,6 +247,11 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         ticker_filter = [ticker for (ticker, qcp) in qcp_ticker.items() if qcp == toggle_view_selection]                
         if ticker_filter:
             df = df[df.index.isin(ticker_filter)]
+
+        if toggle_view_selection in df_ticker['piece_name'].tolist():
+            ticker_filter = df_ticker[df_ticker['piece_name'] == toggle_view_selection]
+            df = df[df.index.isin(ticker_filter)]
+        
         storygauge_columns = df.columns.tolist()
         waveview['buy_alloc_deploy'] = waveview['allocation_long_deploy'] ## clean up buy_alloc_deploy as they are the same
         # symbol group by to join on story
@@ -265,10 +305,24 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
         df_ticker = revrec.get('df_ticker')
         try:
             for symbol in df.index.tolist():
+                if symbol in df_ticker.index:
+                    symbol_qcp_name = df_ticker.at[symbol, 'piece_name']
+                    symbol_qcp_group = [symbol_qcp_name] + [i for i in qcp_piece_names if i != symbol_qcp_name]
+                else:
+                    print("NO SYMBOL FOUND QMIND")
+                    symbol_qcp_group = []
+
+                trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+                if not trading_model:
+                    print("MISSING TRADING MODEL default to SPY", symbol)
+                    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']['SPY']
 
                 if 'ticker_buying_power' not in df.columns:
                     alloc = .3
                 else:
+
+                    star_powers, star_powers_borrow = get_powers(trading_model)
+
                     alloc = df.at[symbol, 'ticker_buying_power']
                     alloc_option = {'allocation': alloc}
                     df.at[symbol, 'edit_allocation_option'] = alloc_option
@@ -277,18 +331,24 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
                     sell_option = sell_button_dict_items(symbol, sell_qty)
                     df.at[symbol, 'sell_option'] = sell_option
                     status = ['active', 'not_active'] if symbol in symbols else ['not_active', 'active']
-                    
                     tic_star = df.at[symbol, 'refresh_star']
-                    refresh_star = [tic_star] + list(star_names().keys())
-                    buying_power = df_ticker.at[symbol, 'ticker_buying_power'] if symbol in df_ticker.index else 0
+                    refresh_star = [trading_model.get('refresh_star')]
+                    # refresh_star = [tic_star] + list(star_names().keys())
+                    refresh_star = refresh_star + list(star_refresh_star_times().keys())
+                    # buying_power = df_ticker.at[symbol, 'ticker_buying_power'] if symbol in df_ticker.index else 0
+                    buying_power = trading_model.get('buyingpower_allocation_LongTerm')
+                    borrow_power = trading_model.get('buyingpower_allocation_ShortTerm')
+                    max_budget_allowed = trading_model.get('total_budget')
                     option = add_symbol_dict_items(symbol=symbol, 
                                                    buying_power=buying_power, 
-                                                   borrow_power=0, 
+                                                   borrow_power=borrow_power, 
                                                    status=status, 
                                                    refresh_star=refresh_star, 
-                                                   max_budget_allowed=None)
+                                                   max_budget_allowed=max_budget_allowed,
+                                                   star_powers=star_powers,
+                                                   star_powers_borrow=star_powers_borrow,
+                                                   symbol_qcp_group=symbol_qcp_group)
                     df.at[symbol, 'add_symbol_option'] = option
-                    
                     remaining_budget__ = remaining_budget.get(symbol)
                     df.at[symbol, 'remaining_budget'] = remaining_budget__
                     df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow.get(symbol)
@@ -315,10 +375,10 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
                     star_kors['wave_amo'] = df_waveview.at[ttf, "allocation_long_deploy"]
                     df.at[symbol, f'{star}_kors'] = star_kors
                     # message
-                    wavestate = f'{df_waveview.at[ttf, "bs_position"]}-{df_waveview.at[ttf, "length"]}'
-                    alloc_deploy_msg = '${:,.0f}'.format(round(df_waveview.at[ttf, "allocation_long_deploy"]))
+                    wavestate = f'{df_waveview.at[ttf, "bs_position"]}({df_waveview.at[ttf, "length"]})'
+                    alloc_deploy_msg = '${:,.0f}'.format(round(df_stars.at[ttf, "star_buys_at_play"]))
                     df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
-                    df.at[symbol, f'{star}_value'] = df_waveview.at[ttf, "allocation_long_deploy"]
+                    df.at[symbol, f'{star}_value'] = df_stars.at[ttf, "star_buys_at_play"]
         except Exception as e:
             print("mmm error", symbol, print_line_of_error(e))
 
@@ -408,6 +468,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen'):
             BISHOP = ReadPickleData(db.get('BISHOP'))
         
         try:
+
             ticker_info = BISHOP.get('ticker_info').set_index('ticker')
             ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
             df = df.set_index('symbol', drop=False)

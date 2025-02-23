@@ -16,7 +16,7 @@ from streamlit_extras.switch_page_button import switch_page
 
 from pq_auth import signin_main
 from chess_piece.king import return_QUEEN_KING_symbols, master_swarm_QUEENBEE, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, stars, generate_chess_board, refresh_account_info, init_queenbee,setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp, read_swarm_db
+from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, shape_chess_board, generate_chess_board, refresh_account_info, init_queenbee, unshape_chess_board, setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp, read_swarm_db, refresh_broker_account_portolfio
 from chess_piece.queen_mind import refresh_chess_board__revrec
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -26,7 +26,6 @@ import copy
 import ipdb
 crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
 pg_migration = os.getenv('pg_migration')
-print("pg_migration", pg_migration)
 
 hedge_funds = {
     "Bridgewater Associates": {
@@ -246,7 +245,7 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
 
         mmissing = [i for i in story_col if i not in config_cols_.keys()]
         if len(mmissing) > 0:
-            print('cols missing', mmissing)
+            print('chessboard page: cols missing', mmissing)
             for col in mmissing:
                 gb.configure_column(col) #{'hide': True})
 
@@ -277,45 +276,47 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
     except Exception as e:
         print_line_of_error(e)
 
-def shape_chess_board(chess_board):
-    reshaped_data = []
+
+def first_revrec_setup(QUEEN_KING):
+
+    QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
     
-    for key, value in chess_board.items():
-        for ticker in value["tickers"]:  # Expand each ticker into its own row
-            flat_data = {
-                "ticker": ticker,  # Use ticker as a separate column
-                "key": key,  # Preserve the key
-                **{k: v for k, v in value.items() if k != "tickers"},  # Add all other fields except tickers
-                "MACD_fast_slow_smooth": str(value["MACD_fast_slow_smooth"]),  # Serialize dict to string
-                "stars": str(value["stars"])  # Serialize dict to string
-            }
-            reshaped_data.append(flat_data)
+    if pg_migration:
+        symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+        STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+    else:
+        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
+    
+    from chess_piece.queen_bee import god_save_the_queen
+    pq = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_heart=True)
+    QUEEN = pq.get('QUEEN')
+    QUEENsHeart = pq.get('QUEENsHeart')
 
-    # Create DataFrame
-    df = pd.DataFrame(reshaped_data)
-    # df.set_index("ticker", inplace=True, drop=False)  # Set ticker as the index
-
-    return df
-
-def upshape_chess_board(df):
-    grouped = df.reset_index().groupby("key")
-
-    upshaped_data = {}
-    for key, group in grouped:
-        upshaped_data[key] = {
-            "tickers": sorted(group["ticker"].tolist()),  # Sort the tickers
-            **{
-                col: group[col].iloc[0]
-                for col in group.columns
-                if col not in ["ticker", "key"]
-            }
-        }
-
-        # Deserialize fields back to their original types
-        upshaped_data[key]["MACD_fast_slow_smooth"] = eval(upshaped_data[key]["MACD_fast_slow_smooth"])
-        upshaped_data[key]["stars"] = eval(upshaped_data[key]["stars"])
-
-    return upshaped_data
+    if pg_migration:
+        symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+        STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+    else:
+        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
+    
+    QUEEN = refresh_broker_account_portolfio(api, QUEEN)
+    revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee) ## Setup Board
+    if not revrec:
+        st.error("RevRec Failed")
+        return False
+    
+    QUEEN['revrec'] = revrec
+    god_save_the_queen(QUEENsHeart=QUEENsHeart, 
+                        QUEEN=QUEEN, 
+                    save_q=True,
+                    save_rr=True,
+                    console=True)
+    QUEEN_KING['revrec'] = True
+    if pg_migration:
+        PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+    else:
+        PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
+    
+    st.success("Trading RevRec Board Initialized")
 
 
 
@@ -353,7 +354,7 @@ def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key=
                         buying_power=qcp_vars.get('total_buyng_power_allocation'), 
                         borrow_power=qcp_vars.get('total_borrow_power_allocation'), 
                         picture='queen_png', 
-                        margin_power=qcp_vars['margin_power'])
+                        margin_power=qcp_vars.get('margin_power'))
         
         if st.form_submit_button('Add New Piece'):
             QUEEN_KING[qcp_bees_key][qcp.get('piece_name')] = qcp
@@ -365,6 +366,13 @@ def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key=
             st.success("New Piece Added Refresh")
         
         return QUEEN_KING
+
+
+# def return_star_power_allocation(trading_model):
+
+#     for star, star_vars in trading_model.get('stars_kings_order_rules').items():
+#         trading_model_revrec[star] = star_vars.get("buyingpower_allocation_LongTerm")
+#         trading_model_revrec_s[star] = star_vars.get("buyingpower_allocation_ShortTerm")
 
 
 def reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=False, formkey='Star__Allocation'):
@@ -438,7 +446,9 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
             print_line_of_error(e)
 
     models = ['MACD', 'story__AI']
-                
+
+    ticker_allowed = ticker_allowed + crypto_symbols__tickers_avail
+
     try:
         cols = st.columns((1,1,4,1,1,2,2,2))
         if headers == 0:
@@ -452,10 +462,8 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
                         st.write(f'{qcpvar}')
                         c+=1
                 except Exception as e:
-                    print(qcpvar, e)
+                    print("AHH", qcpvar, e)
 
-        # return_active_image(qcp)
-        # st.write(QUEEN_KING[qcp_bees_key])
         with st.container():
             cols = st.columns((1,1,4,1,1,2,2,2))
             with cols[0]:
@@ -464,7 +472,7 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
             with cols[1]:
                 QUEEN_KING[qcp_bees_key][qcp]['piece_name'] = st.text_input("Name", value=QUEEN_KING[qcp_bees_key][qcp]['piece_name'], key=f'{qcp}piece_name{admin}', label_visibility='hidden')
             with cols[2]:
-                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp]['tickers'], help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}',  label_visibility='hidden')
+                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp].get('tickers', []), help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}',  label_visibility='hidden')
             with cols[3]:
                 QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
             with cols[4]:
@@ -479,9 +487,7 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
         return QUEEN_KING
     
     except Exception as e:
-        st.write(QUEEN_KING[qcp_bees_key][qcp])
-        er_line=print_line_of_error("chess board")
-        st.write(f'{qcp_bees_key} {qcp} failed {er_line}')
+        st.write(print_line_of_error("chess board"))
 
 
 def handle__new_tickers__AdjustTradingModels(QUEEN_KING, qcp_bees_key='chess_board', reset_theme=False):
@@ -494,10 +500,10 @@ def handle__new_tickers__AdjustTradingModels(QUEEN_KING, qcp_bees_key='chess_boa
             for ticker in tickers:
                 try:
                     if reset_theme:
-                        QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
+                        QUEEN_KING = add_trading_model(QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
                     else:
                         if ticker not in trading_models.keys():
-                            QUEEN_KING = add_trading_model(status='active', QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
+                            QUEEN_KING = add_trading_model(QUEEN_KING=QUEEN_KING, ticker=ticker, model=bees_data.get('model'), theme=bees_data.get('theme'))
                 except Exception as e:
                     print('wtferr', e)
     return QUEEN_KING
@@ -581,11 +587,19 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         ip_address = st.session_state['ip_address']
         client_user = st.session_state["username"]
         print(client_user, "CHESSBOARD")
+        chessboard_setup = st.session_state.get('chessboard_setup')
+        if chessboard_setup:
+            st.write("# Setup Your Portfolio, Try Selecting a Hedge Fund and Edit from there ! :star2:")
+            st.write(":warning: Symbols in the same Group will share a Budget - You can edit Exact Amounts Later :gear:")
 
         hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
+        # print(len(hedge_funds))
+        # for fund in hedge_funds:
+            # print(len(fund))
+
         hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
-        all_portfolios = ['Queen', 'King', 'Bishop', "Warren Buffet"] + hedge_fund_names
-        save_as_main_chessboard = st.checkbox("Save as Main Chessboard", True)
+        all_portfolios = ['Queen']
+        save_as_main_chessboard = st.sidebar.checkbox("Save as Main Chessboard", True)
 
         with st.sidebar:
             if st.toggle("Control Settings"):
@@ -602,7 +616,10 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             icon = "fas fa-chess-pawn"
             optoins.append({'id': op, 'icon': "fas fa-chess-pawn", 'label':op})
 
-        chessboard_selection = hc.option_bar(option_definition=optoins, title='Source', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+        # chessboard_selection = hc.option_bar(option_definition=optoins, title='Queen is Your Portfolio', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
+        chessboard_selection = st.selectbox("Select Portfolio", [None] + hedge_fund_names)
+        if not chessboard_selection:
+            chessboard_selection = 'Queen'
         if chessboard_selection == 'Queen':
             pass
         if chessboard_selection in hedge_fund_names:
@@ -613,18 +630,21 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             # data = hedge_funds.get(chessboard_selection)
             data = hedge_funds[hedge_funds['filer_name'] == chessboard_selection]
             data = data.set_index('stock_ticker', drop=False)
+            data = data.replace('DROPME', .001)
             data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
             data = data[data['current_percent_of_portfolio'] > 0]
             data['buying_power'] = data['current_percent_of_portfolio'] / 100
+            st.write(data)
             for ticker in data.index:
-                buying_power = data.loc[ticker].get('buying_power')
-                print(buying_power)
-                QUEEN_KING[qcp_bees_key][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
+                if len(ticker) > 2 and ticker not in QUEEN_KING[qcp_bees_key].keys():
+                    buying_power = data.loc[ticker].get('buying_power')
+                    QUEEN_KING[qcp_bees_key][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
             symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
             if 'SPY' not in symbols:
                 print("SPY not in symbols")
                 symbols.append('SPY')
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols).get('STORY_bee')
+            # print("REVREC CALC")
             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, check_portfolio=False) ## Setup Board
             QUEEN_KING['revrec'] = revrec
         elif chessboard_selection == 'Bishop':
@@ -649,6 +669,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             QUEEN_KING['revrec'] = revrec
         
         chess_board = copy.deepcopy(QUEEN_KING[qcp_bees_key])
+        # st.write(chess_board)
         
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
@@ -695,7 +716,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         # if st.sidebar.toggle("autopilot funcs"):
         #     AutoPilot(revrec, QUEEN_KING)
         # with st.expander(name, True): # ChessBoard
-        cb_tab_list = ['Board', 'Star Allocation', 'Board Group', 'Board By Symbol', 'RevRec']
+        cb_tab_list = ['Board', 'Star Allocation', 'Board Group', 'Board By Symbol', 'Portfolio Story']
         tabs = st.tabs(cb_tab_list)
         with tabs[4]:
             st.write(revrec.get('storygauge'))
@@ -705,6 +726,14 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 
                     headers = 0
                     for qcp in all_workers:
+                        for tic in QUEEN_KING[qcp_bees_key][qcp].get('tickers', []):
+                            if tic not in ticker_allowed:
+                                print("TICKER NOT ALLOWED", tic)
+                                QUEEN_KING[qcp_bees_key][qcp]['tickers'].remove(tic)
+                        
+                        if len(QUEEN_KING[qcp_bees_key][qcp]['tickers']) == 0:
+                            continue
+
                         QUEEN_KING=setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
                         headers+=1
                     
@@ -726,7 +755,10 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                                 save_queen_king(QUEEN_KING)
                             else:
                                 PickleData(pickle_file=st.session_state['PB_App_Pickle'], data_to_store=QUEEN_KING)
-                            st.success("New Move Saved")
+                            if chessboard_setup:
+                                first_revrec_setup(QUEEN_KING)
+
+                            st.success("Trading Board Saved")
                     with cols[1]:
                         if st.form_submit_button('Reset ChessBoards Trading Models With Theme', use_container_width=True):
                             if authorized_user == False:
@@ -749,7 +781,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                 reallocate_star_power(QUEEN_KING, trading_model=False, ticker_option_qc=False, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=True, formkey="Reallocate_Star")
 
 
-        with st.expander("New Chess Piece"):
+        with st.expander("New Chess Piece", True):
             QUEEN_KING = add_new_qcp__to_chessboard(QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, qcp_bees_key='chess_board')
 
         with tabs[3]:
@@ -773,9 +805,6 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 if __name__ == '__main__':
 
     signin_main()
-
-    if st.button("Return home"):
-        switch_page("pollen")
 
     client_user = st.session_state['client_user']
     authorized_user = st.session_state['authorized_user']
@@ -815,17 +844,14 @@ if __name__ == '__main__':
 
     acct_info = alpaca_acct_info.get('info_converted')
 
-    # if pg_migration:
-    #     QUEENBEE = read_swarm_db(prod, 'QUEEN')
-    # else:
-    #     QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod))
-
-    # swarm_queen_symbols = []
-    # for qcp, va in QUEENBEE['workerbees'].items():
-    #     tickers = va.get('tickers')
-    #     if tickers:
-    #         for tic in tickers:
-    #             swarm_queen_symbols.append(tic)
-
     themes = list(pollen_themes(KING).keys())
     chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+
+    if not st.session_state.get('chessboard_setup'):
+        if st.button("Return To Trading Engine", use_container_width=True):
+            switch_page("pollen")
+    
+    # if admin:
+    if st.button("Reset RevRec"):
+
+        first_revrec_setup(QUEEN_KING)

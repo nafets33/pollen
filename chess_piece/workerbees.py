@@ -69,26 +69,26 @@ crypto_currency_symbols = ['BTC/USD', 'ETH/USD']
 CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
 CRYPTO_HEADER = {"accept": "application/json"}
 
+upsert_to_main_server=True
 
-
-
-def ttf__save(table_name, task_results):
-    """
-    Save data to the PostgreSQL database using ThreadPoolExecutor for concurrency.
+# # WORKEBEE WAS NOT AS EFFIIENT TO KEEP??? check on this
+# def ttf__save(table_name, task_results):
+#     """
+#     Save data to the PostgreSQL database using ThreadPoolExecutor for concurrency.
     
-    :param table_name: Name of the database table.
-    :param task_results: List of (key, data) tuples to be saved.
-    """
-    batch_size = 50  # Adjustable batch size for efficient inserts
-    batches = [task_results[i:i + batch_size] for i in range(0, len(task_results), batch_size)]
+#     :param table_name: Name of the database table.
+#     :param task_results: List of (key, data) tuples to be saved.
+#     """
+#     batch_size = 50  # Adjustable batch size for efficient inserts
+#     batches = [task_results[i:i + batch_size] for i in range(0, len(task_results), batch_size)]
 
-    def process_batch(batch):
-        data_dict = {key: data for key, data in batch}
-        PollenDatabase.upsert_multiple(table_name, data_dict)
+#     def process_batch(batch):
+#         data_dict = {key: data for key, data in batch}
+#         PollenDatabase.upsert_multiple(table_name, data_dict)
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        for batch in batches:
-            executor.submit(process_batch, batch)
+#     with ThreadPoolExecutor(max_workers=20) as executor:
+#         for batch in batches:
+#             executor.submit(process_batch, batch)
 
 
 def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False, upsert_to_main_server=upsert_to_main_server):
@@ -1209,9 +1209,10 @@ def queen_workerbees(
         def confirm_tickers_available(alpaca_symbols_dict, symbols):
             queens_master_tickers = []
             errors = []
-            alpaca_symbols_dict['BTC/USD', 'ETH/USD'] = {}
+            alpaca_symbols_dict['BTC/USD'] = {}
+            alpaca_symbols_dict['ETH/USD'] = {}
             for i in symbols:
-                if i in alpaca_symbols_dict:
+                if i in alpaca_symbols_dict.keys():
                     queens_master_tickers.append(i)
                 else:
                     msg=(i, "Ticker NOT in Alpaca Ticker DB")
@@ -1292,9 +1293,9 @@ def queen_workerbees(
                         current_active_orders.append(i)
 
 
-            nested_dict = main_index_tickers()
-            all_values = [val for sub_dict in nested_dict.values() for val in sub_dict.values()]
-            new_symbols = [i for i in current_active_orders if i not in all_symbols and i not in all_values]
+            # nested_dict = main_index_tickers()
+            # all_values = [val for sub_dict in nested_dict.values() for val in sub_dict.values()]
+            new_symbols = [i for i in current_active_orders if i not in all_symbols] # and i not in all_values
 
             if len(new_symbols)> 0:
                 print("new symbols needed", new_symbols)

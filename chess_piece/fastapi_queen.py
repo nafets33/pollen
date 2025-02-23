@@ -14,8 +14,8 @@ from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_
                               read_QUEENs__pollenstory, print_line_of_error)
 
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
-                                    update_sell_date, 
-                                    init_logging, 
+                                    add_trading_model, 
+                                    find_symbol_in_chess_board, 
                                     split_today_vs_prior, 
                                     kings_order_rules, 
                                     order_vars__queen_order_items,
@@ -33,13 +33,15 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     chessboard_button_dict_items,
                                     read_swarm_db,
                                     init_qcp,
+                                    shape_chess_board,
+                                    remove_symbol_from_chess_board,
+                                    add_symbol_to_chess_board
                                     )
 
 from chess_piece.queen_bee import execute_buy_order
 from chess_piece.queen_mind import refresh_chess_board__revrec
-from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade
+from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade, get_powers
 from chess_piece.pollen_db import PollenDatabase
-from pages.chessboard import shape_chess_board
 from dotenv import load_dotenv
 
 
@@ -257,9 +259,12 @@ def validate_return_kors(king_order_rules, kors):
         if type(value) != bool: ## BOOLS are already handled by frontend
           print("ERRROR BOOL CLOSE ORDER")
           continue
-    # elif rule == 'sell_trigbee_date': # KEEP as STRING
-    #     if type(value) != datetime:
-    #       value = pd.datetime(value)
+    elif rule == 'sell_trigbee_date': # KEEP as STRING
+       print(rule, value)
+       pass # check datetime is greate then if not change to now WORKERBEE
+    
+        # if type(value) != datetime:
+        #   value = pd.datetime(value)
         
     king_order_rules.update({rule: value})
 
@@ -696,7 +701,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
             else:
                 df[col] = round(df[col],2)
       return df
-    
+    qk_chessboard = None
     try:
       s = datetime.now()
 
@@ -725,6 +730,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
+        qk_chessboard = copy.deepcopy(QUEEN_KING['chess_board'])
 
         QUEENBEE = {'workerbees': {}}
         # db=init_swarm_dbs(prod)
@@ -746,16 +752,22 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         # print('SPY_1Minute_1Day' in STORY_bee.keys())
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11', check_portfolio=False) ## Setup Board
       else:
+
         qb = init_queenbee(client_user, prod, revrec=True, queen=True, queen_king=True, pg_migration=pg_migration)
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
+        
+        
         QUEEN = qb.get('QUEEN')
+
         hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
         hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
         if toggle_view_selection in hedge_fund_names:
             data = hedge_funds[hedge_funds['filer_name'] == toggle_view_selection]
             data = data.drop_duplicates(subset='stock_ticker')
             data = data.set_index('stock_ticker', drop=False)
+            if data.iloc[0].get('current_percent_of_portfolio') == 'DROPME':
+               data['current_percent_of_portfolio'] = 1 / len(data)
             data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
             data = data[data['current_percent_of_portfolio'] > 0]
             data['buying_power'] = data['current_percent_of_portfolio'] / 100
@@ -765,8 +777,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
                 if ticker in symbols:
                    print("DUP Ticker", ticker)
                    continue # duplicate
-                # if ticker == 'DD':
-                #    ipdb.set_trace()
+
                 buying_power = data.loc[ticker].get('buying_power')
                 symbols.append(ticker)
                 board[ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
@@ -779,7 +790,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
             revrec = refresh_chess_board__revrec(acct_info=QUEEN.get('account_info'), QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, STORY_bee=STORY_bee, check_portfolio=False, chess_board=toggle_view_selection) ## Setup Board
             # QUEEN_KING['revrec'] = revrec
         else:
-           revrec = None
+           revrec = init_queenbee(client_user, prod, revrec=True).get('revrec')
 
       if type(revrec.get('waveview')) != pd.core.frame.DataFrame:
         print(f'rr not df null, {revrec}')
@@ -813,7 +824,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
 
       elif return_type == 'story':
         print('prod', prod)
-        df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection)
+        df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection, qk_chessboard)
         
         json_data = df.to_json(orient='records')
         print("story runtime: ", (datetime.now() - s).total_seconds())
@@ -926,7 +937,6 @@ def header_account(client_user, prod):
                   'portfolio_value': 100000,}
 
     if broker == 'RobinHood':
-      print("rh")
       crypto_value = 98289
       long = 138689
       short = 0
@@ -970,24 +980,77 @@ def header_account(client_user, prod):
 
 
 # Add Symbol to Board
-def add_symbol_to_board(client_user, prod, selected_row, default_value):
-    ticker = selected_row.get('symbol')
+def queenking_symbol(client_user, prod, selected_row, default_value):
+    starnames = star_names()
+    starnames_margin = {f'{i} Margin': v for i, v in starnames.items()}
+    
+    symbol = selected_row.get('symbol')
     buying_power = default_value.get('buying_power', 0)
     
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
-    symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
-    if ticker in symbols:
-       return grid_row_button_resp(description="Symbol Already Exists on Board")
-    print(init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker))
+    chess_board = QUEEN_KING['chess_board']
+    # symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
+    # if ticker in symbols:
+    #    return grid_row_button_resp(description="Symbol Already Exists on Board")
+    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+    if not trading_model:
+        print("MISSING TRADING MODEL adding model", symbol)
+        QUEEN_KING = add_trading_model(QUEEN_KING=QUEEN_KING, ticker=symbol)
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][symbol]    
+    for key, value in default_value.items():
+        if key == 'buying_power':
+            if 'buyingpower_allocation_LongTerm' in trading_model:
+                trading_model['buyingpower_allocation_LongTerm'] = value
+            else:
+                print(f"Error: 'buyingpower_allocation_LongTerm' key not found in trading_model for {key}")
+        elif key == 'borrow_power':
+            if 'buyingpower_allocation_ShortTerm' in trading_model:
+                trading_model['buyingpower_allocation_ShortTerm'] = value
+            else:
+                print(f"Error: 'buyingpower_allocation_ShortTerm' key not found in trading_model for {key}")
+        elif key == 'max_budget_allowed':
+            if 'total_budget' in trading_model:
+                trading_model['total_budget'] = value
+            else:
+                print(f"Error: 'total_budget' key not found in trading_model for {key}")
+        elif key in starnames.keys():
+            if 'stars_kings_order_rules' in trading_model and starnames[key] in trading_model['stars_kings_order_rules']:
+                trading_model['stars_kings_order_rules'][starnames[key]]['buyingpower_allocation_LongTerm'] = value
+            else:
+                print(f"Error: '{starnames[key]}' key not found in trading_model['stars_kings_order_rules'] for {key}")
+        elif key in starnames_margin.keys():
+            margin_key = starnames[key.split(" ")[0]]
+            if 'stars_kings_order_rules' in trading_model and margin_key in trading_model['stars_kings_order_rules']:
+                trading_model['stars_kings_order_rules'][margin_key]['buyingpower_allocation_ShortTerm'] = value
+            else:
+                print(f"Error: '{margin_key}' key not found in trading_model['stars_kings_order_rules'] for {key}")
+        elif key == 'symbol_group':  # qcp data
+            qcp = find_symbol_in_chess_board(chess_board, symbol)
+            if qcp and value in chess_board.keys():
+                if qcp != value:
+                    if remove_symbol_from_chess_board(chess_board, symbol):
+                        add_symbol_to_chess_board(chess_board, value, symbol)
+        elif key == 'refresh_star': # add as new key to KORS?
+            trading_model['refresh_star'] = value
+        elif key == 'status': # qcp data ? change / remove
+            # QUEEN_KING["chess_board"][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
+            pass
+                  
+
+    # update trading model
+    QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][symbol] = trading_model
+    QUEEN_KING['chess_board'] = chess_board
+
+    # default_value
+    # {'symbol': 'GOOG', 'buying_power': 0.125, 'borrow_power': 0, 'status': ['active', 'not_active'], 'refresh_star': ['1Minute_1Day', 'Day', 'Week', 'Month', 'Quarter', 'Quarters', 'Year'], 'max_budget_allowed': None, 'symbol group': [], 'Day': 0.03, 'Week': 0.5, 'Month': 0.6, 'Quarter': 0.8, 'Quarters': 0.8, 'Year': 0.8, 'Day Margin': 0.03, 'Week Margin': 0.4, 'Month Margin': 0.4, 'Quarter Margin': 0.5, 'Quarters Margin': 0.8, 'Year Margin': 0.8, 'sell_date': 'Invalid date'}
+
+    if pg_migration:
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+    else:
+       PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     
-    # QUEEN_KING["chess_board"][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
-    # if pg_migration:
-    #     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-    #     PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
-    # else:
-    #    PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-    
-    return grid_row_button_resp(description=f" {ticker} added to Trading Board")
+    return grid_row_button_resp(description=f" {symbol} Trading Model Updated")
 
 
 ### GRAPH

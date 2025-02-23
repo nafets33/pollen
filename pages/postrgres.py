@@ -141,24 +141,29 @@ def copy_data_between_tables(source_table, target_table):
 
 if __name__ == '__main__':
     print("POSTGRES", pg_migration)
-    
+
+    admin = st.session_state['admin']
+
+    if not admin:
+        st.error("Join The Team for Admin Access To This Page")
+        st.stop()
+
     tables = PollenDatabase.get_all_tables()
     tables = sorted(tables)
     db=init_swarm_dbs(prod, init=True, pg_migration=pg_migration)
     st.write(pd.DataFrame(PollenDatabase.get_all_tables_with_sizes()))
 
-    if st.button("DELETE ALL POLLEN_STORY data"):
-        table_name='pollen_store'
-        numm = st.empty()
-        for idx, key in enumerate(PollenDatabase.get_all_keys(table_name)):
-            if 'POLLEN_STORY' in key:
-                PollenDatabase.delete_key(table_name, key)
-                with numm.container():
-                    st.write(idx)
+    # if st.button("DELETE ALL POLLEN_STORY data"):
+    #     table_name='pollen_store'
+    #     numm = st.empty()
+    #     for idx, key in enumerate(PollenDatabase.get_all_keys(table_name)):
+    #         if 'POLLEN_STORY' in key:
+    #             PollenDatabase.delete_key(table_name, key)
+    #             with numm.container():
+    #                 st.write(idx)
 
     tab_list = ['Tables', 'Create', 'Migrate User', 'Delete'] + tables
     tabs = st.tabs(tab_list)
-    admin = st.session_state['admin']
 
     if admin:
         with tabs[3]:
@@ -225,6 +230,25 @@ if __name__ == '__main__':
                 c_user_root = return_db_root(c_user)
                 c_user_root_name = os.path.split(c_user_root)[-1]
                 st.write(f'{c_user} <> {c_user_root} <> {c_user_root_name}')
+
+                st.subheader("Migrate PG local to PG Server")
+                tables_to_migrate = st.multiselect('migrate Tables', options=tables)
+                if st.button("Migrate PostGres Table Keys"):
+                    for table in tqdm(tables_to_migrate):
+                        if table == 'client_users':
+                            copy_data_between_tables(source_table='client_users', target_table='client_users')
+                            continue
+
+                        df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table))).rename(columns={0:'key', 1:'timestamp'})
+                        for key in df['key'].tolist():
+                            data = PollenDatabase.retrieve_data(table, key)
+                            if MigratePostgres.upsert_migrate_data(table, key, data):
+                                st.write(f'{key} migrated to server table {table}')
+                    st.success("MIGRATION COMPLETED")
+
+
+
+
                 migrate_keys = ['QUEEN_KING']
                 migrate_key = st.selectbox("migrate key", options=migrate_keys)
                 if st.button(f"Migration Pickle to Postgres {migrate_key}"):
@@ -241,7 +265,7 @@ if __name__ == '__main__':
                         else:
                             st.error(f"{key_name} C error")
                 
-                st.subheader("Migrate PG local to PG Server")
+                st.subheader("Migrate PICKLE to PG Server")
                 if st.button(f"Migrate user {c_user_root_name} pg tables to PG Server"):
                     st.write("PG Migration")
                     with st.spinner("Reading Client User DB"):
@@ -266,17 +290,3 @@ if __name__ == '__main__':
                                 st.error(f"{key_name} C error")
                     st.success("MIGRATION COMPLETED")
                 
-                st.subheader("Migrate PG local to PG Server")
-                tables_to_migrate = st.multiselect('migrate Tables', options=tables)
-                if st.button("Migrate PostGres Table Keys"):
-                    for table in tqdm(tables_to_migrate):
-                        if table == 'client_users':
-                            copy_data_between_tables(source_table='client_users', target_table='client_users')
-                            continue
-
-                        df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table))).rename(columns={0:'key', 1:'timestamp'})
-                        for key in df['key'].tolist():
-                            data = PollenDatabase.retrieve_data(table, key)
-                            if MigratePostgres.upsert_migrate_data(table, key, data):
-                                st.write(f'{key} migrated to server table {table}')
-                    st.success("MIGRATION COMPLETED")

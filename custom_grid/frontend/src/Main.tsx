@@ -22,7 +22,7 @@ const Main = (props: ComponentProps) => {
   } = props.args
   const { grid_options, kwargs = {} } = props.args
   const { index, theme } = grid_options
-  console.log('AAAAAAAA', grid_options)
+  // console.log('GridOptions', grid_options)
   return (
     <div>
       <Aggrid

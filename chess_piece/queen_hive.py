@@ -28,11 +28,10 @@ from tqdm import tqdm
 import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
-from chess_piece.pollen_db import PostgresHandler, PollenDatabase
-from chess_piece.app_hive import init_client_user_secrets
-from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 from streamlit_extras.switch_page_button import switch_page
 
+from chess_piece.pollen_db import PostgresHandler, PollenDatabase
+from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 # WORKERBEE MOVE STREAMLIT OUT OF HIVE
 
 queens_chess_piece = os.path.basename(__file__)
@@ -51,6 +50,7 @@ load_dotenv(os.path.join(main_root, ".env"))
 db_root = os.path.join(main_root, "db")
 
 pg_migration = os.getenv('pg_migration')
+server = os.getenv('server')
 
 """# Dates """
 current_day = datetime.now(est).day
@@ -252,54 +252,6 @@ def return_api_keys(base_url, api_key_id, api_secret, prod=True):
             api_version="v2",
         )
     return {"rest": rest, "api": api}
-
-
-def test_api_keys(user_secrets):
-    APCA_API_KEY_ID_PAPER = user_secrets["APCA_API_KEY_ID_PAPER"]
-    APCA_API_SECRET_KEY_PAPER = user_secrets["APCA_API_SECRET_KEY_PAPER"]
-    APCA_API_KEY_ID = user_secrets["APCA_API_KEY_ID"]
-    APCA_API_SECRET_KEY = user_secrets["APCA_API_SECRET_KEY"]
-    try:
-        base_url = "https://api.alpaca.markets"
-        rest = AsyncRest(key_id=APCA_API_KEY_ID, secret_key=APCA_API_SECRET_KEY)
-
-        api = tradeapi.REST(
-            key_id=APCA_API_KEY_ID,
-            secret_key=APCA_API_SECRET_KEY,
-            base_url=URL(base_url),
-            api_version="v2",
-        )
-        api.get_snapshot("SPY")
-        prod = True
-        prod_er = False
-    except Exception as e:
-        prod_er = e
-        prod = False
-
-    try:
-        base_url = "https://paper-api.alpaca.markets"
-        rest = AsyncRest(
-            key_id=APCA_API_KEY_ID_PAPER, secret_key=APCA_API_SECRET_KEY_PAPER
-        )
-
-        api = tradeapi.REST(
-            key_id=APCA_API_KEY_ID_PAPER,
-            secret_key=APCA_API_SECRET_KEY_PAPER,
-            base_url=URL(base_url),
-            api_version="v2",
-        )
-        api.get_snapshot("SPY")
-        sandbox = True
-        sb_er = False
-    except Exception as e:
-        sb_er = e
-        sandbox = False
-    return {
-        "prod": prod,
-        "sandbox": sandbox,
-        "prod_er": str(prod_er),
-        "sb_er": str(sb_er),
-    }
 
 
 def return_alpaca_api_keys(prod):
@@ -537,6 +489,74 @@ def setup_chess_board(QUEEN, qcp_bees_key='workerbees', screen='screen_1'):
     
     return QUEEN
 
+
+def shape_chess_board(chess_board):
+    reshaped_data = []
+    
+    for key, value in chess_board.items():
+        for ticker in value["tickers"]:  # Expand each ticker into its own row
+            flat_data = {
+                "ticker": ticker,  # Use ticker as a separate column
+                "key": key,  # Preserve the key
+                **{k: v for k, v in value.items() if k != "tickers"},  # Add all other fields except tickers
+                "MACD_fast_slow_smooth": str(value["MACD_fast_slow_smooth"]),  # Serialize dict to string
+                "stars": str(value["stars"])  # Serialize dict to string
+            }
+            reshaped_data.append(flat_data)
+
+    # Create DataFrame
+    df = pd.DataFrame(reshaped_data)
+    # df.set_index("ticker", inplace=True, drop=False)  # Set ticker as the index
+
+    return df
+
+def unshape_chess_board(df):
+    grouped = df.reset_index().groupby("key")
+
+    upshaped_data = {}
+    for key, group in grouped:
+        upshaped_data[key] = {
+            "tickers": sorted(group["ticker"].tolist()),  # Sort the tickers
+            **{
+                col: group[col].iloc[0]
+                for col in group.columns
+                if col not in ["ticker", "key"]
+            }
+        }
+
+        # Deserialize fields back to their original types
+        upshaped_data[key]["MACD_fast_slow_smooth"] = eval(upshaped_data[key]["MACD_fast_slow_smooth"])
+        upshaped_data[key]["stars"] = eval(upshaped_data[key]["stars"])
+
+    return upshaped_data
+
+def find_symbol_in_chess_board(chess_board, symbol):
+    for index, data in chess_board.items():
+        if symbol in data['tickers']:
+            return index
+    return None
+
+def remove_symbol_from_chess_board(chess_board, symbol):
+    """
+    Remove a symbol from the chess_board.
+    """
+    for index, data in chess_board.items():
+        if symbol in data['tickers']:
+            data['tickers'].remove(symbol)
+            return True
+    return False
+
+def add_symbol_to_chess_board(chess_board, index, symbol):
+    """
+    Add a symbol to a specific index's list of tickers in the chess_board.
+    """
+    if index in chess_board:
+        if symbol not in chess_board[index]['tickers']:
+            chess_board[index]['tickers'].append(symbol)
+            return True
+    return False
+
+
 def bishop_ticker_info():
     ticker_info_cols = [
     # 'address1',
@@ -687,8 +707,43 @@ def bishop_ticker_info():
     # 'yield',
     # 'industrySymbol'
     ]
+    bishop_symbols_keep = [
+        'sector',
+    'longBusinessSummary',
+    'fullTimeEmployees',
+    'dividendRate',
+    'trailingPE',
+    'forwardPE',
+    'fiftyTwoWeekLow',
+    'fiftyTwoWeekHigh',
+    'shortRatio',
+    'shortName',
+    'longName',
+    'debtToEquity',
+    'freeCashflow',
+    'grossMargins',
+    ]
+    return {'ticker_info_cols': bishop_symbols_keep}
 
-    return {'ticker_info_cols': ticker_info_cols}
+def init_client_user_secrets(
+    prod_keys_confirmed=False,
+    sandbox_keys_confirmed=False,
+    APCA_API_KEY_ID_PAPER="init",
+    APCA_API_SECRET_KEY_PAPER="init",
+    APCA_API_KEY_ID="init",
+    APCA_API_SECRET_KEY="init",
+    datetimestamp_est=datetime.now(est),
+):
+    return {
+        "prod_keys_confirmed": prod_keys_confirmed,
+        "sandbox_keys_confirmed": sandbox_keys_confirmed,
+        # 'client_user': client_user,
+        "APCA_API_KEY_ID_PAPER": APCA_API_KEY_ID_PAPER,
+        "APCA_API_SECRET_KEY_PAPER": APCA_API_SECRET_KEY_PAPER,
+        "APCA_API_KEY_ID": APCA_API_KEY_ID,
+        "APCA_API_SECRET_KEY": APCA_API_SECRET_KEY,
+        "datetimestamp_est": datetimestamp_est,
+    }
 
 def init_QUEEN_KING():
 
@@ -1125,7 +1180,7 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         print_line_of_error("return_ttf_remaining_budget")
 
 
-def add_trading_model(status, QUEEN_KING, ticker, model='MACD', theme="nuetral"):
+def add_trading_model(QUEEN_KING, ticker, model='MACD', theme="nuetral", status='active'):
     # tradingmodel1["SPY"]["stars_kings_order_rules"]["1Minute_1Day"]["trigbees" ]["buy_cross-0"]["morning_9-11"].items()
     try:
         if model is None or ticker is None or theme is None:
@@ -3028,6 +3083,24 @@ def star_trigbee_delay_times(name=None): # WORKERBEE put into queen controls
         return star_time
 
 
+def star_refresh_star_times(name=None):
+    star_time = {
+        '1 Minute Every Day': '1Minute_1Day',
+        '5 Minutes Every Day': '5Minute_1Day',
+        '15 Minutes Every Day': '15Minute_1Day',
+        '30 Minutes Every Day': '30Minute_1Day',
+        '1 Hour Every Day': '1Hour_1Day',
+        '2 Hours Every Day': '2Hour_1Day',
+        '1 Month Every Year': '1Month_1Year',
+        '1 Quarter Every Year': '1Quarter_1Year',
+        '6 Months Every Year': '6Months_1Year',
+        '1 Day Every Year': '1Day_1Year',
+    }
+    if name:
+        return star_time[name]
+    else:
+        return star_time
+
 # Function to update sell_date based on chart_time
 def update_sell_date(star_time, sell_date=None):
     if not sell_date:
@@ -3304,7 +3377,7 @@ def kings_order_rules( # rules created for 1Minute
 
 def generate_TradingModel(
     theme="nuetral", portfolio_name="Jq", ticker="SPY",
-    stars=stars, trigbees=["buy_cross-0", "sell_cross-0", "ready_buy_cross"], 
+    stars=stars, trigbees=["buy_cross-0", "sell_cross-0"], 
     trading_model_name="MACD", status="active", portforlio_weight_ask=0.01, init=False,
     ):
     # theme level settings
@@ -3944,6 +4017,7 @@ def generate_TradingModel(
             },
             "short_position": False,  # flip all star allocation to short
             "ticker_family": [ticker],
+            "refresh_star" : None,
         }
 
         star_model = {ticker: model1}
@@ -4281,12 +4355,12 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
 
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False):
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False, main_server=server):
     db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)    
     table_name = "client_user_store" if prod else 'client_user_store_sandbox'
 
     if demo:
-        db_root = 'db__stefanstapinski_11854791'
+        db_root = 'db__stapinskistefan_99757341'
         prod = False
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init, pg_migration=pg_migration, table_name=table_name)
@@ -4294,15 +4368,15 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         return {'init_pollen': init_pollen}
     
     if pg_migration:
-        QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN') if queen else {}
-        QUEENsHeart = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEENsHeart') if queen or queen_heart else {}
-        QUEEN_KING = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN_KING') if queen_king else {}
-        ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS') if orders else {}
-        ORDERS_FINAL = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS_FINAL') if orders_final else {}
-        BROKER = PollenDatabase.retrieve_data(table_name, f'{db_root}-BROKER') if broker else {}
-        broker_info = PollenDatabase.retrieve_data(table_name, f'{db_root}-ACCOUNT_INFO') if broker_info else {}
-        REVREC = PollenDatabase.retrieve_data(table_name, f'{db_root}-REVREC') if revrec else {}
-        CHARLIE_BEE = PollenDatabase.retrieve_data(table_name, f'{db_root}-CHARLIE_BEE') if charlie_bee else {}
+        QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN', main_server=main_server) if queen else {}
+        QUEENsHeart = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEENsHeart', main_server=main_server) if queen or queen_heart else {}
+        QUEEN_KING = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN_KING', main_server=main_server) if queen_king else {}
+        ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS', main_server=main_server) if orders else {}
+        ORDERS_FINAL = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS_FINAL', main_server=main_server) if orders_final else {}
+        BROKER = PollenDatabase.retrieve_data(table_name, f'{db_root}-BROKER', main_server=main_server) if broker else {}
+        broker_info = PollenDatabase.retrieve_data(table_name, f'{db_root}-ACCOUNT_INFO', main_server=main_server) if broker_info else {}
+        REVREC = PollenDatabase.retrieve_data(table_name, f'{db_root}-REVREC', main_server=main_server) if revrec else {}
+        CHARLIE_BEE = PollenDatabase.retrieve_data(table_name, f'{db_root}-CHARLIE_BEE', main_server=main_server) if charlie_bee else {}
     else:
         QUEEN = ReadPickleData(init_pollen.get('PB_QUEEN_Pickle')) if queen else {}
         QUEENsHeart = ReadPickleData(init_pollen['PB_QUEENsHeart_PICKLE']) if queen or queen_heart else {}
@@ -4711,7 +4785,7 @@ def return_queen_controls(stars=stars):
             "ready_buy_cross": "not_active", # NOT USED
         },        
         # revrec
-        'ticker_revrec_allocation_mapping' : {},
+        'ticker_revrec_allocation_mapping' : {}, # not needed done in KORS
         'ticker_autopilot' : pd.DataFrame([{'symbol': 'SPY', 'buy_autopilot': True, 'sell_autopilot': True}]).set_index('symbol'),
         # 'trade_only_margin': False, # control not adding WORKERBEE
 
@@ -4719,13 +4793,13 @@ def return_queen_controls(stars=stars):
         'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
         # GAMBLE_v2
         # 'gamble': [], # based on every ticker or ttf - df of last time gambled, result of gamble, risk level allowed, ?
-
+        # 'ticker_buying_powers': {'SPY': {'buying_power': 0, 'borrow_power': 0}}, # not needed done in KORS
         'throttle': .5,
 
     }
     return queen_controls_dict
 
-def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme):
+def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme='nuetral'):
     print("update generate trading model")
     tradingmodel1 = generate_TradingModel(ticker=ticker, status='active', theme=theme)['MACD'][ticker]
     QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker] = tradingmodel1

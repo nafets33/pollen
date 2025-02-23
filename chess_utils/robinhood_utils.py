@@ -32,6 +32,14 @@ def get_lib_keys_robinhood():
     g=vars(rs.robinhood).keys()
 
 def get_portfolio_robinhood():
+
+    acct_info = {'accrued_fees': 0.0,
+                'buying_power': 100000,
+                'cash': 0,
+                'daytrade_count': 0,
+                'last_equity': 100000,
+                'portfolio_value': 100000,}
+
     # Get your portfolio data
     portfolio = rs.robinhood.account.build_holdings() # dictionary
     crypto_positions = rs.robinhood.crypto.get_crypto_positions() # list

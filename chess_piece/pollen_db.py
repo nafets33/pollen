@@ -221,7 +221,7 @@ class PollenDatabase:
             conn.commit()
 
     @staticmethod
-    def upsert_data(table_name, key, value, console=True, console_table_ignore=['logging_store'], main_server=False):
+    def upsert_data(table_name, key, value, console=True, console_table_ignore=['logging_store'], main_server=server):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
         Dynamically handles 'last_modified' based on table schema.
@@ -231,7 +231,7 @@ class PollenDatabase:
         try:
             # print(f"saving {key}  size: {sys.getsizeof(value)}")
             # Check if 'last_modified' column exists
-            with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
                 cur.execute(f"""
                     SELECT column_name 
                     FROM information_schema.columns 
@@ -240,7 +240,8 @@ class PollenDatabase:
                 has_last_modified = cur.fetchone() is not None
             if not has_last_modified:
                 PollenDatabase.update_table_schema(table_name)
-            with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            
+            with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
                 value_json = json.dumps(value, cls=PollenJsonEncoder)
 
                 upsert_query = f"""
@@ -259,34 +260,6 @@ class PollenDatabase:
             print("issue arrived in upsert_data function")
             print_line_of_error(e)
             return False
-
-        try:
-            if main_server:
-                # Check if 'last_modified' column exists
-                # with PollenDatabase.get_connection(server=server) as conn, conn.cursor() as cur:
-                #     cur.execute(f"""
-                #         SELECT column_name 
-                #         FROM information_schema.columns 
-                #         WHERE table_name = %s AND column_name = 'last_modified'
-                #     """, (table_name,))
-                #     has_last_modified = cur.fetchone() is not None
-                # if not has_last_modified:
-                #     PollenDatabase.update_table_schema(table_name)
-                with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
-                    value_json = json.dumps(value, cls=PollenJsonEncoder)
-                    upsert_query = f"""
-                        INSERT INTO {table_name} (key, data, last_modified)
-                        VALUES (%s, %s, CURRENT_TIMESTAMP)
-                        ON CONFLICT (key) 
-                        DO UPDATE SET data = EXCLUDED.data, last_modified = CURRENT_TIMESTAMP;
-                    """
-                    cur.execute(upsert_query, (key, value_json))
-                    conn.commit()
-                    if console and table_name not in console_table_ignore:
-                        print(f'{key} Upserted to {table_name} server={main_server}')
-        except Exception as e:
-            print("issue arrived in upsert_data function")
-            print_line_of_error(e)
         
         return True
 
@@ -323,13 +296,11 @@ class PollenDatabase:
                 print("Error during bulk upsert:", e)
                 conn.rollback()
 
-
-
     @staticmethod
-    def retrieve_data(table_name, key):
+    def retrieve_data(table_name, key, main_server=server):
         conn = None
         try:
-            conn = PollenDatabase.get_connection()
+            conn = PollenDatabase.get_connection(main_server)
             cur = conn.cursor()
 
             # Retrieve using the configured table name

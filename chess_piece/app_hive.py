@@ -189,6 +189,9 @@ def sac_menu_buttons(main='Queen'):
 
     return sac_menu_buttons
 
+def sac_tabs(tab_names=["Tab 1", "Tab 2", "Tab 3"], key="tabs"):
+    return sac.tabs(tab_names, key=key)
+
 ################ AUTH ###################
 
 def trigger_py_script(script_path):
@@ -564,90 +567,6 @@ def stop_queenbee(QUEEN_KING, sidebar=False, pg_migration=False, table_name=None
     
     return True
 
-
-
-def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close):
-    try:
-        # gb = GridOptionsBuilder.create()
-        gb = GOB.create()
-        gb.configure_default_column(
-            column_width=120,
-            resizable=True,
-            wrapText=False,
-            wrapHeaderText=True,
-            autoHeaderHeight=True,
-            autoHeight=True,
-            suppress_menu=False,
-            filterable=False,
-            sortable=True
-        )
-        gb.configure_index('Broker')
-        gb.configure_theme('ag-theme-material')
-
-        cols=[
-        'Broker',
-        'Long',
-        'Short',
-        'Crypto',
-        'Heart Beat',
-        'Avg Beat',
-        'Todays Money',
-        'Todays Honey',
-        'Portfolio Value',
-        'Buying Power',
-        'Cash',
-        'daytrade count']  
-
-        animate_numbers = {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,}
-
-        def config_cols(cols):
-            backgroundColor = k_colors.get('default_background_color')
-            default_text_color = k_colors.get('default_text_color')
-            return  {
-        'Broker': {'width': 130, 'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},                  
-        'Long': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},                  
-        'Short': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Crypto': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Heart Beat': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
-        'Avg Beat': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
-        'Money': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, "type": ["customNumberFormat", "numericColumn", "customCurrencyFormat"], 'custom_currency_symbol':"$"}, **animate_numbers},
-        'Todays Honey': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
-        'Portfolio Value': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Buying Power': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Cash': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
-        'daytrade count': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
-        # 'Broker Delta': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
-            }
-              
-        config_cols_ = config_cols(cols)
-        for col, config_values in config_cols_.items():
-            config = config_values
-            gb.configure_column(col, config)
-        
-        go = gb.build()
-
-
-        st_custom_grid(
-            client_user=client_user,
-            username=client_user, #KING['users_allowed_queen_emailname__db'].get(client_user), 
-            api=f"{ip_address}/api/data/account_header",
-            api_update= None, #f"{ip_address}/api/data/update_queenking_chessboard",
-            refresh_sec=refresh_sec, 
-            refresh_cutoff_sec=seconds_to_market_close, 
-            prod=prod,
-            grid_options=go,
-            key=f'account_header',
-            # kwargs from here
-            prompt_message = None, #"symbol",
-            prompt_field = None, #"symbol", # "current_macd_tier", # for signle value
-            api_key=os.environ.get("fastAPI_key"),
-            buttons=[],
-            grid_height='110px',
-            toggle_views=[],
-            ) 
-
-    except Exception as e:
-        print_line_of_error(e)
 
 
 def queen_messages_grid__apphive(KING, log_file, f_api, grid_key='queen_logfile', varss={'seconds_to_market_close': 4, 'refresh_sec': 4}):
@@ -1405,7 +1324,7 @@ def standard_AGgrid(
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
     gb = GridOptionsBuilder.from_dataframe(data)
-    gb.configure_default_column(minWidth=85, maxWidth=800, resizable=True, autoSize=True, textWrap=True, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, sortable=True, filter=True)
+    gb.configure_default_column(minWidth=85, maxWidth=800, resizable=True, autoSize=True, textWrap=True, header_wrap=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, sortable=True, filter=True)
     gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=False)
     if paginationOn:
         gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
@@ -1732,14 +1651,15 @@ def queen__account_keys(QUEEN_KING, authorized_user, show_form=False):
 
     if keys_confirmed == False:
         with cols[0]:
-            st.error(
-                f"Enter Your API Keys To Activate {user_env_instance} QueenTraderBot"
+            alpp_url = "https://alpaca.markets/"
+            st.write(f"This is your SandBox Instance.")
+            st.write(f"Get your Alpaca Broker Keys at {alpp_url} These Keys are for {user_env_instance.upper()} Account"
             )
         with cols[1]:
             # view_account_button = st.button("Update API Keys", key='main_key')
             view_account_keys = True
             # with cols[2]:
-            local_gif(gif_path=runaway_bee_gif, height=33, width=33)
+            # local_gif(gif_path=runaway_bee_gif, height=33, width=33)
 
     if view_account_keys or show_form:
         with st.form("account keys"):
