@@ -191,7 +191,7 @@ def generate_client_order_id(ticker, trig, sellside_client_order_id=False): # ge
     return order_id
 
 
-def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False):
+def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False, crypto=False):
     def func_return(qty=False, queen_order_state=False, stop_order=False, qty_correction=False, log_msg=('msg'), log=False):
         return {
             'qty': qty,
@@ -215,11 +215,15 @@ def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False):
                     msg = (f' {ticker} buying too much you need to cover first, adjusting qty cover to {abs(position)}')
                     return func_return(qty=abs(position), qty_correction=True, log=True, log_msg=msg)
             elif qty < 1:
-                msg = (f'{ticker} Qty Value Not Valid (less then 1) setting to 1')
-                qty = 1.0
-                qty_correction = True
-                logging.warning("CORRECTION on BUY Quanity, Qty < 1 setting to 1")
-                return func_return(qty, qty_correction=qty_correction, log=True, log_msg=msg)
+                if not crypto:
+                    msg = (f'{ticker} Qty Value Not Valid (less then 1) setting to 1')
+                    qty = 1.0
+                    qty_correction = True
+                    logging.warning("CORRECTION on BUY Quanity, Qty < 1 setting to 1")
+                    return func_return(qty, qty_correction=qty_correction, log=True, log_msg=msg)
+                else:
+                    msg = ('Buy Order Validated')
+                    return func_return()
             else:
                 msg = ('Buy Order Validated')
                 return func_return()
@@ -307,20 +311,25 @@ def append_queen_order(QUEEN, new_queen_order_df):
     return True
 
 def get_priceinfo_snapshot(api, ticker, crypto):
-    snap = api.get_snapshot(ticker) if crypto == False else return_crypto_snapshots(ticker)
-    if crypto:
-        snap = snap[ticker]
-        priceinfo_order = {'price': snap['latestQuote']['ap'], 'bid': snap['latestQuote']['bp'], 
-                        'ask': snap['latestQuote']['ap'], 
-                        'bid_ask_var': snap['latestQuote']['bp']/snap['latestQuote']['ap']}
-    else:
-        priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 
-                        'ask': snap.latest_quote.ask_price, 
-                        'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price}
-    
-    priceinfo_order['ticker']= ticker
-    
-    return priceinfo_order
+    try:
+        snap = api.get_snapshot(ticker) if crypto == False else return_crypto_snapshots(ticker)
+        if crypto:
+            snap = snap[ticker]
+            priceinfo_order = {'price': snap['latestQuote']['ap'], 'bid': snap['latestQuote']['bp'], 
+                            'ask': snap['latestQuote']['ap'], 
+                            'bid_ask_var': snap['latestQuote']['bp']/snap['latestQuote']['ap']}
+        else:
+            priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 
+                            'ask': snap.latest_quote.ask_price, 
+                            'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price}
+        
+        priceinfo_order['ticker']= ticker
+        
+        return priceinfo_order
+    except Exception as e:
+        print("SNAP CALL ERROR", e)
+        # WORKERBEE handle error get priceinfo from YAHOO
+        return {'price': 0, 'bid': 0, 'ask': 0, 'bid_ask_var': 0, 'ticker': ticker}
 
 def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
     try:
@@ -348,9 +357,9 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
 
         # get latest pricing
         priceinfo_order = get_priceinfo_snapshot(api, ticker, crypto)
-
-        # logging.info(f"ATTEMPTING TO BUY {ticker}")
-        # if app order get order vars its way
+        if priceinfo_order['price'] == 0:
+            print(f"ERROR on GETTING PRICE INFO for {ticker}")
+            return {'executed': False}
 
         order_vars = blessing
         limit_price = limit_price if limit_price != False else False
@@ -362,7 +371,7 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
         client_order_id__gen = generate_client_order_id(ticker=ticker, trig=trig)
         
         if portfolio is not None:
-            order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio)                    
+            order_val = submit_order_validation(ticker=ticker, qty=qty_order, side=side, portfolio=portfolio, crypto=crypto)                    
             if order_val.get('log'):
                 logging.warning(order_val.get('log_msg'))
             if order_val.get('qty_correction'):
@@ -437,6 +446,11 @@ def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, t
         
         # get latest pricing
         priceinfo_order = get_priceinfo_snapshot(api, ticker, crypto)
+        # get latest pricing
+        priceinfo_order = get_priceinfo_snapshot(api, ticker, crypto)
+        if priceinfo_order['price'] == 0:
+            print(f"ERROR on GETTING PRICE INFO for {ticker}")
+            return {'executed': False}
 
         run_order_client_order_id = QUEEN['queen_orders'].at[run_order_idx, 'client_order_id']
         order_vars = king_eval_order['order_vars']
@@ -1505,6 +1519,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                                         (waveview['allocation_deploy'] > 89)
                                         ].copy()
                 # conflicts your sellhomes are cancel out the flying
+                
 
                 def repeat_purchase_delay(ticker_time_frame, QUEEN):
                     if ticker_time_frame in QUEEN['stars'].keys():
@@ -1545,11 +1560,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
 
                     # trading model
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(ticker)
-                    
                     # trigbee
                     trig = bees_fly.at[ticker_time_frame, 'macd_state']
                     # buying threshold if in SELL wave
-                    
                     tm_trig = trig
                     trig_wave_length = waveview.at[ticker_time_frame, 'length']
                     on_wave_buy = True if trig_wave_length != '0' else False
