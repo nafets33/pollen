@@ -1025,6 +1025,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         marginPower={}
         df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum', 'queen_wants_to_sell_qty': 'sum' } # 
 
+
+
         if not QUEEN.get('portfolio'):
             df_broker_portfolio = pd.DataFrame([{'symbol': 'init_jq'}])
         else:
@@ -1051,6 +1053,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         if not QUEEN.get('revrec'):
             print( "QUEENMIND", "Fresh Queen on the Block")
             ticker_trinity = None
+            q_revrec = None
             pass
         else:
             # Handle Weight Adjustments based on Story
@@ -1808,10 +1811,23 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         
         # Join Story to Tickers
         storygauge = df_ticker.merge(df_storygauge, left_index=True, right_index=True, how='left')
+        symbol_orders = {}
+        for symbol in storygauge.index:
+            if symbol in df_active_orders['symbol'].tolist():
+                orders = df_active_orders[df_active_orders['symbol'] == symbol]
+                orders = orders[['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']]
+                symbol_orders[symbol] = orders.to_dict(orient='records')
+        storygauge['active_orders'] = storygauge.index.to_series().apply(lambda x: symbol_orders.get(x, {}))
 
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
+        # Get refresh Star
+        ticker_refresh_star = QUEEN_KING['king_controls_queen'].get('ticker_refresh_star')
+        if type(ticker_refresh_star) == pd.DataFrame:
+            storygauge = storygauge.merge(ticker_refresh_star, left_index=True, right_index=True, how='left')
+            storygauge['ticker_refresh_star'] = storygauge['ticker_refresh_star'].fillna(False)
+            
         # Join in AutoPilot
         ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
         if type(ticker_autopilot) == pd.DataFrame:

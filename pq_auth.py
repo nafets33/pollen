@@ -1,7 +1,6 @@
 import os
 from random import randint
 from dotenv import load_dotenv
-import psycopg2
 from psycopg2 import sql
 import streamlit as st
 import streamlit_authenticator as stauth

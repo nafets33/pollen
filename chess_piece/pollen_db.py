@@ -255,7 +255,7 @@ class PollenDatabase:
                 conn.commit()
 
                 if console and table_name not in console_table_ignore:
-                    print(f'{key} Upserted to {table_name} server={server}')
+                    print(f'{key} Upserted to {table_name} server={main_server}')
         except Exception as e:
             print("issue arrived in upsert_data function")
             print_line_of_error(e)
@@ -639,6 +639,8 @@ class PollenDatabase:
 
             except Exception as e:
                 print("Error client users", e)
+
+
 class PostgresHandler(logging.Handler):
     def __init__(self, log_name):
         super().__init__()

@@ -72,7 +72,7 @@ def config_orders_cols(active_order_state_list):
                     }
 
 
-def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close):
+def order_grid(client_user, config_cols, missing_cols, ip_address):
     gb = GridOptionsBuilder.create()
     gb.configure_grid_options(pagination=True, enableRangeSelection=True, copyHeadersToClipboard=False, sideBar=False)
     gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
@@ -96,11 +96,11 @@ def order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds
     refresh_sec = 0 #5 if seconds_to_market_close > 0 and mkhrs == 'open' else None
     st_custom_grid(
         client_user=client_user,
-        username=KING['users_allowed_queen_emailname__db'].get(client_user), 
+        username=client_user, 
         api=f'{ip_address}/api/data/queen',
         api_update=f'{ip_address}/api/data/update_orders',
         refresh_sec=refresh_sec, 
-        refresh_cutoff_sec=seconds_to_market_close, 
+        refresh_cutoff_sec=0, 
         prod=st.session_state['prod'],
         key='maingrid',
         grid_options=go,
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     ip_address = st.session_state['ip_address']
     prod = st.session_state['prod']
 
-    KING = kingdom__grace_to_find_a_Queen()
+    # KING = kingdom__grace_to_find_a_Queen()
 
     queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 
@@ -177,4 +177,4 @@ if __name__ == '__main__':
     config_cols = config_orders_cols(active_order_state_list)
     missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
     
-    order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close)
+    order_grid(client_user, config_cols, missing_cols, ip_address)

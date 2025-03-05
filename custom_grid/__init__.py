@@ -4,8 +4,8 @@ from decouple import config
 from custom_grid.grid_options_builder import GridOptionsBuilder
 from custom_grid.JsCode import JsCode, walk_gridOptions
 
-_RELEASE = True
-# _RELEASE = False  #When using this, you need to start the server for the frontend using npm start on a terminal session.
+# _RELEASE = True
+_RELEASE = False  #When using this, you need to start the server for the frontend using npm start on a terminal session.
 
 if not _RELEASE:
     _component_func = components.declare_component(

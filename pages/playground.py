@@ -31,6 +31,8 @@ from chess_piece.pollen_db import PollenDatabase
 from chess_piece.queen_bee import append_queen_order, god_save_the_queen, init_broker_orders
 from chess_piece.queen_mind import refresh_chess_board__revrec
 
+from chess_piece.fastapi_queen import get_revrec_lastmod_time
+
 from tqdm import tqdm
 
 pg_migration = os.getenv('pg_migration')
@@ -258,6 +260,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
                 order_vars['qty_order'] = order.get('filled_qty')
                 
                 new_queen_order_df = process_order_submission(
+                    broker='alpaca',
                     trading_model=trading_model, 
                     order=order, 
                     order_vars=order_vars,
@@ -293,7 +296,7 @@ def PlayGround():
 
     prod = st.session_state['prod']
     client_user=st.session_state['client_user']
-
+    st.write(get_revrec_lastmod_time(client_user, prod))
     if st.button("Sync Current Broker Account"):
         # symbols = st.multiselect("symbols")
         sync_current_broker_account(client_user, prod, symbols=None)

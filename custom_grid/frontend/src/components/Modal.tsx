@@ -82,16 +82,11 @@ const MyModal: React.FC<MyModalProps> = ({
     if (isExecuting) return;
     isExecuting = true;
     try {
-      const formattedSellDate = moment(promptText.sell_date, formats, true).format('YYYY-MM-DDTHH:mm');
-
       const body = {
         username: modalData.username,
         prod: modalData.prod,
         selected_row: modalData.selectedRow,
-        default_value: {
-          ...promptText,
-          sell_date: formattedSellDate
-        },
+        default_value: promptText,
         ...modalData.kwargs,
       };
       console.log("body :>> ", body);
@@ -312,37 +307,37 @@ return (
                 </div>
               )}
 
- {/* New Column for sliderRules_stars */}
-{sliderRules_stars.some((rule: any) => promptText[rule] !== undefined) && (
-  <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
-    {sliderRules_stars.map((rule: any, index: number) => 
-      promptText[rule] !== undefined && (
-        <div className="d-flex flex-column align-items-start mb-1" key={index}>
-          <label className="mb-0" style={{ fontSize: "0.9rem" }}>
-            {rule}:
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step=".01"
-            value={promptText[rule] || 0}
-            onChange={(e) =>
-              setPromptText({
-                ...promptText,
-                [rule]: Number(e.target.value),
-              })
-            }
-            style={{ width: "100%" }}
-          />
-          <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
-            {promptText[rule] || 0}
-          </span>
-        </div>
-      )
-    )}
-  </div>
-)}
+            {/* New Column for sliderRules_stars */}
+            {sliderRules_stars.some((rule: any) => promptText[rule] !== undefined) && (
+              <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
+                {sliderRules_stars.map((rule: any, index: number) => 
+                  promptText[rule] !== undefined && (
+                    <div className="d-flex flex-column align-items-start mb-1" key={index}>
+                      <label className="mb-0" style={{ fontSize: "0.9rem" }}>
+                        {rule}:
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step=".01"
+                        value={promptText[rule] || 0}
+                        onChange={(e) =>
+                          setPromptText({
+                            ...promptText,
+                            [rule]: Number(e.target.value),
+                          })
+                        }
+                        style={{ width: "100%" }}
+                      />
+                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
+                        {promptText[rule] || 0}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
 
             {sliderRules_stars_margin.some((rule: any) => promptText[rule] !== undefined) && (
               <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>

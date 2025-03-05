@@ -400,6 +400,7 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
         order_vars['qty_order'] = qty_order
         
         new_queen_order_df = process_order_submission(
+            broker='alpaca',
             trading_model=trading_model, 
             order=order, 
             order_vars=order_vars,
@@ -499,6 +500,7 @@ def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, t
         
         # Order Vars 
         new_queen_order_df = process_order_submission(
+            broker='alpaca',
             trading_model=False,
             order=send_close_order, 
             order_vars=order_vars, 
@@ -782,6 +784,7 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx, order_status, pricein
 def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states, console=True, upsert_to_main_server=upsert_to_main_server):
     
     try:
+        print("upsert_to_main_server", upsert_to_main_server)
         # Save Heart to avoid saving Queen to improve speed
         # if charlie_bee:
         #     QUEENsHeart.update({"charlie_bee": charlie_bee})
@@ -827,7 +830,7 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
         sys.exit()
 
 
-def queenbee(client_user, prod, queens_chess_piece='queen'):
+def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     if client_user in ['stapinskistefan@gmail.com'] and not prod: #'stefanstapinski@gmail.com', 
         print("TESTING LOCAL SANDBOX SAVE DATA TO SERVER")
@@ -1137,16 +1140,16 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
         ####### Allow Stars to borrow power if cash available ###### its_morphin_time
         
         def kings_blessing_checks(ticker_time_frame, acct_info, wave_amo, king_order_rules, trig_action_num, time_delta, macd_tier, trigbee, crypto):
-            
+            # print(acct_info)
             # ACCOUNT amo greater then available account
-            if wave_amo > acct_info.get('daytrading_buying_power'):
+            if wave_amo > acct_info.get('buying_power'): # daytrading_buying_power
                 print("day trade buying power exceeded")
-                wave_amo = acct_info.get('daytrading_buying_power') - wave_amo
+                wave_amo = acct_info.get('buying_power') - wave_amo
                 if wave_amo <= 0:
-                    print(f"{ticker_time_frame} budget buying power is depleted for daytrading_buying_power")
+                    print(f"{ticker_time_frame} budget buying power is depleted for BUYING POWER")
                     return True
             # Ignore Tiering, this looks like dup WORKERBEE
-            elif "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
+            if "ignore_trigbee_in_macdstory_tier" in king_order_rules.keys():
                 if macd_tier in king_order_rules.get("ignore_trigbee_in_macdstory_tier"):
                     # print(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
                     return True #(f'{ticker_time_frame} Ignore Trigger macd_tier: , {macd_tier}')
@@ -1472,12 +1475,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                 QUEEN['revrec'] = revrec
                 god_save_the_queen(QUEEN, save_rr=True, save_q=True, save_qo=True, upsert_to_main_server=upsert_to_main_server)
 
-            # waveview current ask
-            def get_priceinfo_ask(x):
-                try:
-                    x['current_ask']
-                except Exception as e:
-                    print("Clean QUEEN Priceinfo", x)
         
             df = QUEEN.get('price_info_symbols')
             import ast ## WORKERBEE TEMP FIX UNTIL LATER FIX PRICEINFO STORAGE
@@ -1565,6 +1562,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     # buying threshold if in SELL wave
                     tm_trig = trig
                     trig_wave_length = waveview.at[ticker_time_frame, 'length']
+                    trig_wave_length_num = int(trig_wave_length)
                     on_wave_buy = True if trig_wave_length != '0' else False
                     if on_wave_buy:
                         tm_trig = 'buy_cross-0' if 'buy' in trig else 'sell_cross-0'
@@ -1600,11 +1598,18 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                         print(msg)
                         notification_list.append(msg)
                         continue
-
-                    # Stop Symbols from shorting unless you are main_index ("Wants to Short Stock Scenario") OR wants to buy during sell : 0
-                    if 'sell' in trig and ticker not in QUEEN['heartbeat']['main_indexes'].keys():
-                        # print("ticker not avail to short > short gauge >")
+                    
+                    if 'sell' in trig and ticker in QUEEN['heartbeat']['main_indexes'].keys():
+                        pass
+                    # if wave length > past max profit continue
+                    # elif 'buy' in trig and trig_wave_length_num > 23:
+                    #     # print("Not Buying until Wave ends then 22")
+                    #     continue
+                    elif 'sell' in trig and trig_wave_length_num < 22:
+                        print("Not Buying until Wave is longer then 22")
                         continue
+
+
 
                     # try: # """ Trigger Bees"""                         
                     # check if you already placed order or if a workerbee in transit to place order
@@ -1613,7 +1618,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
                     ticker_trig_action = ticker_trig_In_Action_cc(active_orders=active_orders, trig=tm_trig, ticker=ticker)
                     trig_action = trig_In_Action_cc(active_orders=active_orders, trig=tm_trig, ticker_time_frame=ticker_time_frame)
                     charlie_bee['queen_cyle_times']['cc_trig_in_action'] = (datetime.now(est) - s_).total_seconds()
-                    # Protect the Knight
+                    # Protect the Knight # WORKERBEE this is only meant if you're trying to buy and trying to short
                     if len(ticker_trig_action) > 0 and trading_model.get('short_position') == True: # shorting allowed
                         msg=("Only 1 Trigger Allowed in ticker Shorting")
                         logging.warning(msg)
@@ -2848,7 +2853,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen'):
             avg_beat = sum(heartbeat_cyle) / len(heartbeat_cyle)
             QUEENsHeart.update({"heartbeat_beat": round(beat)})
             QUEENsHeart.update({"heartbeat_avg_beat": round(avg_beat)})
-            god_save_the_queen(QUEEN, QUEENsHeart)
+            god_save_the_queen(QUEEN, QUEENsHeart, upsert_to_main_server=upsert_to_main_server)
 
     except Exception as errbuz:
         print("eeerbuz", errbuz)
@@ -2888,7 +2893,7 @@ if __name__ == '__main__':
     #     else:
     #         break
         
-    queenbee(client_user, prod, queens_chess_piece=f'queen{crypto}')
+    queenbee(client_user, prod, queens_chess_piece=f'queen{crypto}', server=server)
 
 """
 The Journey is Hard,

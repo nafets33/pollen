@@ -284,6 +284,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
         df['queens_suggested_sell'] = round(df['money'])
 
+        refresh_star_names = star_refresh_star_times()
+        refresh_star_names_switched = {v: k for k, v in refresh_star_names.items()}
+
         kors_dict = add_symbol_dict_items()
         df['add_symbol_option'] = [kors_dict for _ in range(df.shape[0])]
 
@@ -303,8 +306,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
             df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
 
         df_ticker = revrec.get('df_ticker')
-        try:
-            for symbol in df.index.tolist():
+        for symbol in df.index.tolist():
+            try:
                 if symbol in df_ticker.index:
                     symbol_qcp_name = df_ticker.at[symbol, 'piece_name']
                     symbol_qcp_group = [symbol_qcp_name] + [i for i in qcp_piece_names if i != symbol_qcp_name]
@@ -331,10 +334,16 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     sell_option = sell_button_dict_items(symbol, sell_qty)
                     df.at[symbol, 'sell_option'] = sell_option
                     status = ['active', 'not_active'] if symbol in symbols else ['not_active', 'active']
-                    tic_star = df.at[symbol, 'refresh_star']
-                    refresh_star = [trading_model.get('refresh_star')]
-                    # refresh_star = [tic_star] + list(star_names().keys())
-                    refresh_star = refresh_star + list(star_refresh_star_times().keys())
+                    # tic_star = df.at[symbol, 'refresh_star']
+                    tic_star = trading_model.get('refresh_star')
+                    if isinstance(tic_star, list):
+                        print(symbol, tic_star)
+                        tic_star = tic_star[0]
+                    tic_star_name = refresh_star_names_switched.get(tic_star)
+                    refresh_star = []
+                    if tic_star and isinstance(tic_star, str):
+                        refresh_star = [tic_star_name]
+                    refresh_star = refresh_star + [i for i in refresh_star_names.keys() if i != tic_star_name]
                     # buying_power = df_ticker.at[symbol, 'ticker_buying_power'] if symbol in df_ticker.index else 0
                     buying_power = trading_model.get('buyingpower_allocation_LongTerm')
                     borrow_power = trading_model.get('buyingpower_allocation_ShortTerm')
@@ -379,8 +388,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     alloc_deploy_msg = '${:,.0f}'.format(round(df_stars.at[ttf, "star_buys_at_play"]))
                     df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
                     df.at[symbol, f'{star}_value'] = df_stars.at[ttf, "star_buys_at_play"]
-        except Exception as e:
-            print("mmm error", symbol, print_line_of_error(e))
+            except Exception as e:
+                print("mmm error", symbol, print_line_of_error(e))
 
         story_grid_num_cols = ['star_buys_at_play',
         'star_sells_at_play',

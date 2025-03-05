@@ -166,10 +166,10 @@ def send_email(recipient, subject, body):
         smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
 
-def sac_menu_buttons(main='Queen'):
-    if main=='Queen':
-        sac_menu_buttons = sac.buttons([
-            sac.ButtonsItem(label='pollen', icon='robot'),
+def sac_menu_buttons(main='pollen'):
+    if main=='pollen':
+        menu_buttons = sac.buttons([
+            sac.ButtonsItem(label=main, icon='robot'),
             sac.ButtonsItem(label='Board', icon='box'),
             sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
             # sac.ButtonsItem(label='PlayGround', icon='fire'),
@@ -180,14 +180,26 @@ def sac_menu_buttons(main='Queen'):
             sac.ButtonsItem(label='Account', icon='share-fill'),
         ], format_func='title', align='end')
     elif main == 'Account':
-        sac_menu_buttons = sac.buttons([
+        menu_buttons = sac.buttons([
             sac.ButtonsItem(label='account', icon='key'),
 
             sac.ButtonsItem(label='Queen', icon='house'),
             # sac.ButtonsItem(label='Log Out', icon='key'),
         ], format_func='title', align='end')
 
-    return sac_menu_buttons
+    elif main == 'demo':
+            menu_buttons = sac.buttons([
+            sac.ButtonsItem(label=main, icon='robot'),
+            sac.ButtonsItem(label='Board', icon='box'),
+            sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
+            # sac.ButtonsItem(label='PlayGround', icon='fire'),
+            # sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
+            sac.ButtonsItem(label='Trading Models', disabled=False),
+            # sac.ButtonsItem(label='Waves', icon='share-fill'),
+            sac.ButtonsItem(label='Engine', icon='gem'),
+            sac.ButtonsItem(label='Account', icon='share-fill'),
+            ])
+    return menu_buttons
 
 def sac_tabs(tab_names=["Tab 1", "Tab 2", "Tab 3"], key="tabs"):
     return sac.tabs(tab_names, key=key)

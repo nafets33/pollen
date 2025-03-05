@@ -21,6 +21,8 @@ import { format } from "date-fns-tz"
 import { duration } from "moment"
 import "./styles.css"
 import axios from "axios"
+import { io } from "socket.io-client";
+
 import {
   ComponentProps,
   Streamlit,
@@ -175,7 +177,6 @@ const AgGrid = (props: Props) => {
     kwargs,
   } = props
   let { grid_options = {} } = props
-
   //parsing must be done here. For some unknow reason if its moved after the
   //button mapping, deepMap gets lots of React objects (api, symbolRefs, etc.)
   //this impacts performance and crashes the grid.
@@ -183,12 +184,49 @@ const AgGrid = (props: Props) => {
     grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
   }
 
-  let { buttons, toggle_views } = kwargs
+  let { buttons, toggle_views, api_key, api_lastmod_key = null} = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
   const [promptText, setPromptText] = useState("")
   const [viewId, setViewId] = useState(0)
+  const [lastModified, setLastModified] = useState<string | null>(null);
+
+  const checkLastModified = async (): Promise<boolean> => {
+    try {
+      console.log("checking last modified...", api_lastmod_key);
+      if (api_lastmod_key === null) {
+        console.log("api key is null, returning false");
+        return true;
+      }
+      if (api_lastmod_key !== null && api_lastmod_key !== undefined) {
+        const baseurl = api.split('/').slice(0, -1).join('/');
+        // console.log(baseurl);
+        console.log("api key", api_lastmod_key);
+        const res = await axios.get(`${baseurl}/lastmod_key`, {
+          params: {
+            api_key: api_key,
+            client_user: username,
+            prod: prod,
+            api_lastmod_key: api_lastmod_key,
+          },
+        });
+        // console.log("fetching data...", res.data.lastModified);
+        if (res.data?.lastModified !== lastModified) {
+          // console.log("setting modified changed, fetching data...", res.data.lastModified, lastModified);
+          setLastModified(res.data.lastModified);
+          return true;
+        } else {
+          return false;
+        }
+      }
+      return false;
+    } catch (error: any) {
+      toastr.error(`Failed to check last modified: ${error.message}`);
+      return false;
+    }
+  };
+
 
   useEffect(() => {
     Streamlit.setFrameHeight()
@@ -215,7 +253,7 @@ const AgGrid = (props: Props) => {
             clicked: async function (row_index: any) {
               try {
                 const selectedRow = g_rowdata.find(
-                  (row) => row[index] == row_index
+                  (row) => row[index] === row_index
                 )
                 if (prompt_order_rules) {
                   const str = selectedRow[prompt_field]
@@ -281,24 +319,12 @@ const AgGrid = (props: Props) => {
   })
 
   const fetchAndSetData = async () => {
-    const array = await fetchData()
-    if (array === false) return false
-    setRowData(array)
-    g_rowdata = array
-    // const api = gridRef.current!.api
-    // const id_array = array.map((item: any) => item[index])
-    // const old_id_array = g_rowdata.map((item: any) => item[index])
-    // const toUpdate = array.filter((row: any) => id_array.includes(row[index]))
-    // const toRemove = g_rowdata.filter((row) => !id_array.includes(row[index]))
-    // const toAdd = array.filter((row: any) => !old_id_array.includes(row[index]))
-    // api.applyTransactionAsync({
-    //   update: toUpdate,
-    //   remove: toRemove,
-    //   add: toAdd,
-    // })
-    // g_rowdata = array
-    return true
-  }
+    const array = await fetchData();
+    if (array === false) return false;
+    setRowData(array);
+    g_rowdata = array;
+    return true;
+  };
 
   useEffect(() => {
     onRefresh()
@@ -306,29 +332,25 @@ const AgGrid = (props: Props) => {
 
   const fetchData = async () => {
     try {
+      const isLastModified = await checkLastModified();
+      console.log("isLastModified", isLastModified, api);
+      if (!isLastModified) {
+        return false;
+      }
+      console.log("fetching data...", api);
       const res = await axios.post(api, {
         username: username,
         prod: prod,
         ...kwargs,
         toggle_view_selection: toggle_views ? toggle_views[viewId] : "none",
-      })
-      const array = JSON.parse(res.data)
-      // console.log(
-      //   "toggle_views[viewId],viewId :>> ",
-      //   toggle_views[viewId],
-      //   viewId
-      // )
-      // console.log("table data :>> ", array)
-      // if (array.status == false) {
-      //   toastr.error(`Fetch Error: ${array.message}`)
-      //   return false
-      // }
-      return array
+      });
+      const array = JSON.parse(res.data);
+      return array;
     } catch (error: any) {
-      toastr.error(`Fetch Error: ${error.message}`)
-      return false
+      toastr.error(`Fetch Error: ${error.message}`);
+      return false;
     }
-  }
+  };
 
   useEffect(() => {
     if (refresh_sec && refresh_sec > 0) {
@@ -349,6 +371,21 @@ const AgGrid = (props: Props) => {
     }
   }, [props, viewId])
 
+  // useEffect(() => {
+  //   const baseurl = api.split('/').slice(0, -1).join('/');
+  //   const socket = io(`${baseurl}/ws`);
+
+  //   socket.on("dataUpdated", () => {
+  //     console.log("Data update received via WebSocket");
+  //     onRefresh();
+  //   });
+
+  //   return () => {
+  //     socket.disconnect();
+  //   };
+  // }, []);
+
+
   const autoSizeAll = useCallback((skipHeader: boolean) => {
     const allColumnIds: string[] = []
     gridRef.current!.columnApi.getColumns()!.forEach((column: any) => {
@@ -368,7 +405,7 @@ const AgGrid = (props: Props) => {
       try {
         const array = await fetchData()
         // console.log("AAAAAAAAAAAAAAAAAAAAAAA", array)
-        if (array == false) {
+        if (array === false) {
           // toastr.error(`Error: ${array.message}`)
           return
         }
@@ -417,7 +454,7 @@ const AgGrid = (props: Props) => {
   }, [])
 
   const onCellValueChanged = useCallback((event) => {
-    if (g_newRowData == null) g_newRowData = {}
+    if (g_newRowData === null) g_newRowData = {}
     g_newRowData[event.data[index]] = event.data
     console.log("Data after change is", g_newRowData)
   }, [])
@@ -438,7 +475,7 @@ const AgGrid = (props: Props) => {
   };
 
   const onUpdate = async () => {
-    if (g_newRowData == null) {
+    if (g_newRowData === null) {
       toastr.warning(`No changes to update`)
       return
     }

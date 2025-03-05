@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Header, Body
+from fastapi import APIRouter, status, Header, Body, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, FileResponse
 import pandas as pd
 import os
@@ -15,6 +15,24 @@ router = APIRouter(
     prefix="/api/data",
     tags=["auth"]
 )
+
+# A set to store active WebSocket connections
+active_connections = set()
+
+async def notify_websockets():
+    for connection in active_connections:
+        await connection.send_text("dataUpdated")
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    active_connections.add(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        active_connections.remove(websocket)
+
 
 def check_authKey(api_key):
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
@@ -48,6 +66,16 @@ def check_authKey(api_key):
 def load_ozz_voice():
     json_data = {'msg': 'test'}
     return JSONResponse(content=json_data)
+
+@router.get("/lastmod_key", status_code=status.HTTP_200_OK)
+def get_revrec_lastmod(client_user: str = Query(...), prod: bool = Query(...), api_key: str = Query(...), api_lastmod_key: str = Query(...)):
+    print("ARG")
+    if check_authKey(api_key):
+        json_data = get_revrec_lastmod_time(client_user, prod, api_lastmod_key)
+        return JSONResponse(content=json_data)
+    else:
+        return "NOAUTH"
+
 
 # @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
 # def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
@@ -197,6 +225,19 @@ def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=B
         print("router err ", e)
         return str(e)
 
+@router.post("/queen_sell_orders_v2", status_code=status.HTTP_200_OK)
+def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    try:
+        if not check_authKey(api_key):
+            return "NOTAUTH"
+
+        rep = app_Sellorder_request_v2(client_user, username, prod, selected_row, default_value)
+        return JSONResponse(content=rep)
+
+    except Exception as e:
+        print("router err ", e)
+        return str(e)
+
 @router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK)
 def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
     if not check_authKey(api_key):
@@ -250,22 +291,24 @@ def check_api():
     return JSONResponse(content="online")
 
 @router.post("/update_queenking_chessboard", status_code=status.HTTP_200_OK)
-def update_qk_chessboard(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+async def update_qk_chessboard(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
         print("Auth Failed", api_key)
         return "NOTAUTH"
     
     # print("/data/queen", username, prod, kwargs)
     json_data = update_queenking_chessboard(client_user, prod, selected_row, default_value)
+    # await notify_websockets()
     return JSONResponse(content=json_data)
 
 
 @router.post("/update_buy_autopilot", status_code=status.HTTP_200_OK)
-def buy_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+async def buy_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
     
     json_data = update_buy_autopilot(client_user, prod, selected_row, default_value)
+    # await notify_websockets()
     return JSONResponse(content=json_data)
 
 @router.post("/update_sell_autopilot", status_code=status.HTTP_200_OK)

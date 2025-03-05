@@ -13,7 +13,7 @@ import hydralit_components as hc
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, streamlit_config_colors, print_line_of_error
-from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee
+from chess_piece.queen_hive import sell_button_dict_items_v2, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee, star_refresh_star_times
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
 from pq_auth import signin_main
@@ -524,13 +524,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
     #     QUEEN_KING['revrec'] = revrec
 
     ##### STREAMLIT ###
-    k_colors = streamlit_config_colors()
-    default_text_color = k_colors['default_text_color'] # = '#59490A'
 
-    if show_acct:
-        seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
-        seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
-        account_header_grid(client_user, prod, None, ip_address, seconds_to_market_close)
 
     def wave_grid(revrec, symbols, ip_address, refresh_sec=8, paginationOn=True, key='default'):
         gb = GridOptionsBuilder.create()
@@ -703,6 +697,21 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                             'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
                             'cellStyle': button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
                             },
+
+                            # {'button_name': None,
+                            # 'button_api': f'{ip_address}/api/data/queen_sell_orders_v2',
+                            # 'prompt_message': 'Edit Sell',
+                            # 'prompt_field': 'active_orders_option',
+                            # 'col_headername': 'Take Money',
+                            # "col_header": "active_orders",
+                            # # "border_color": "red",
+                            # 'col_width':100,
+                            # 'sortable': True,
+                            # # 'pinned': 'left',
+                            # 'prompt_order_rules': [i for i in sell_button_dict_items_v2().keys()],
+                            # 'cellStyle': button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
+                            # },
+
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_queenking_chessboard',
                             'prompt_message': 'Edit Allocation',
@@ -787,12 +796,12 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                                                                     },
                 'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'star_buys_at_play': create_ag_grid_column(headerName='$Long',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer', type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
-                'star_sells_at_play': create_ag_grid_column(headerName='$Short',sortable=True, initialWidth=100, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer',  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
+                'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'autoWidth': True, 'initialWidth': 110} ,
+                'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'autoWidth': True, 'initialWidth': 110},
                 # 'allocation_long_deploy': {'headerName':'Queen Allocation Deploy', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
                 #                            'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
                 #                            },
-                'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},              
+                'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'autoWidth': True, 'initialWidth': 110},              
                 'trinity_w_L': {'headerName': 'Price Position','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'pinned': 'right',
                                 'cellStyle': generate_shaded_cell_style('trinity_w_L')},
                 'trinity_w_15': {'headerName': 'Day Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -806,10 +815,12 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
                 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
                 'broker_qty_available': {},
-                # 'trinity_w_S': create_ag_grid_column(headerName='Margin Force',sortable=True, initialWidth=89, enableCellChangeFlash=True, cellRenderer='agAnimateShowChangeCellRenderer'),
+                'shortName' : {'headerName':'Symbol Name', },
+                'sector' : {'headerName':'Sector', },
+                'shortRatio' : {'headerName':'Short Ratio', 'initialWidth':89,},
                 'current_ask': {'headerName': 'ask', 'sortable':'true',},
-                'refresh_star': {'headerName': 'ReAllocate Time', 
-                                "cellEditorParams": {"values": list(star_names().keys())},
+                'ticker_refresh_star': {'headerName': 'ReAllocate Time', 
+                                "cellEditorParams": {"values": list(star_refresh_star_times().keys())},
                                                                     "editable":True,
                                                                     "cellEditor":"agSelectCellEditor",
                                                                     },
@@ -830,7 +841,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
 
             ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
             for col in ticker_info_cols:
-                if col not in story_col:
+                if col not in story_col + list(config_cols_.keys()):
                     # config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
                     gb.configure_column(col, {'hide': True, 'sortable': 'true'})
             
@@ -872,6 +883,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 key=f'story_grid',
                 return_type='story',
                 # kwargs from here
+                api_lastmod_key=f"REVREC",
                 prompt_message = "symbol",
                 prompt_field = "symbol", # "current_macd_tier", # for signle value
                 api_key=os.environ.get("fastAPI_key"),
@@ -913,9 +925,18 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             refresh_sec = ui_refresh_sec
         refresh_sec = refresh_sec if not edit_grid else 0
 
+        k_colors = streamlit_config_colors()
+        default_text_color = k_colors['default_text_color'] # = '#59490A'
+
+        if show_acct:
+            # seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
+            # seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
+            # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+            account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
+
+
         # Toggle View
         toggle_view = sac_tabs(["Queen", "Hedge Funds", "Sectors"])
-        print(toggle_view)
 
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec, toggle_view=toggle_view)
                         
@@ -1045,11 +1066,14 @@ if __name__ == '__main__':
         print("SWITCHING PAGES")
         switch_page('pollen')
 
-    client_user = os.environ.get('admin_user') ###??? 
+    client_user = st.session_state.get('client_user') if st.session_state.get('client_user') else switch_page('pollen')
     prod = st.session_state['prod']
     KING = kingdom__grace_to_find_a_Queen()
-
-    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True)
+    if st.sidebar.toggle("Read Main Server"):
+        main_server = True
+    else:
+        main_server = False
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, main_server=main_server)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     revrec = qb.get('revrec') 

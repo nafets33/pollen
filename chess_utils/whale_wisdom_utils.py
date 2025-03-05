@@ -119,4 +119,35 @@ def get_all_wwisdom_filer_holdings():
     return True 
 
 
+def hedge_fund_threeteenF_filing():
+    local_db_root = hive_master_root_db()
+    df = pd.read_csv(os.path.join(local_db_root, 'INFOTABLE.tsv'), sep='\t')
+    df_return = pd.DataFrame()
+    filers = set(df['NAMEOFISSUER'])
+    for filer in filers:
+        token = df[df['NAMEOFISSUER'] == filer]
+        if len(token) == 0:
+            print("NO DATA", filer)
+            continue
+        total_value = token['VALUE'].sum()
+        token['pct_allocation'] = token['VALUE'] / total_value
+        df_return = pd.concat([df_return, token])
 
+        
+
+
+# ACCESSION_NUMBER        0001085146-24-004530
+# INFOTABLE_SK                       105173556
+# NAMEOFISSUER                      ZOETIS INC
+# TITLEOFCLASS                            CL A
+# CUSIP                              98978V103
+# FIGI                            BBG0039320P7
+# VALUE                                2847785
+# SSHPRNAMT                              16427
+# SSHPRNAMTTYPE                             SH
+# PUTCALL                                  NaN
+# INVESTMENTDISCRETION                    SOLE
+# OTHERMANAGER                             NaN
+# VOTING_AUTH_SOLE                       16427
+# VOTING_AUTH_SHARED                         0
+# VOTING_AUTH_NONE                           0

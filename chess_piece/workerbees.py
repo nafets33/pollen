@@ -69,7 +69,7 @@ crypto_currency_symbols = ['BTC/USD', 'ETH/USD']
 CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
 CRYPTO_HEADER = {"accept": "application/json"}
 
-upsert_to_main_server=True
+upsert_to_main_server = os.getenv("upsert_to_main_server")
 
 # # WORKEBEE WAS NOT AS EFFIIENT TO KEEP??? check on this
 # def ttf__save(table_name, task_results):
@@ -126,26 +126,29 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         async with aiohttp.ClientSession() as session:
             return_list = []
             tasks = []
-            # for ticker_time_frame in pollens_honey["pollen_story"]:
-            #     key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
-            #     ticker, ttime, tframe = ticker_time_frame.split("_")
-            #     pickle_file = os.path.join(
-            #         symbols_pollenstory_dbs,
-            #         f"{ticker_time_frame}{macd_part_fname}.pkl",
-            #     )
-            #     data = {
-            #         "pollen_story": pollens_honey["pollen_story"][
-            #             ticker_time_frame
-            #         ]
-            #     }
+            for ticker_time_frame in pollens_honey["pollen_story"]:
+                key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
+                ticker, ttime, tframe = ticker_time_frame.split("_")
+                if ticker not in ['SPY', 'QQQ']:
+                    continue
+                
+                pickle_file = os.path.join(
+                    symbols_pollenstory_dbs,
+                    f"{ticker_time_frame}{macd_part_fname}.pkl",
+                )
+                data = {
+                    "pollen_story": pollens_honey["pollen_story"][
+                        ticker_time_frame
+                    ]
+                }
 
-            #     tasks.append(
-            #         asyncio.ensure_future(
-            #             main_func(
-            #                 session, ticker_time_frame, pickle_file, key, data
-            #             )
-            #         )
-            #     )
+                tasks.append(
+                    asyncio.ensure_future(
+                        main_func(
+                            session, ticker_time_frame, pickle_file, key, data
+                        )
+                    )
+                )
 
             for ticker_time_frame in pollens_honey["conscience"]["STORY_bee"]:
                 key = f"STORY_BEE_{ticker_time_frame}{macd_part_fname}"

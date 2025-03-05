@@ -3275,8 +3275,20 @@ def sell_button_dict_items(symbol="SPY", sell_qty=89):
                 'symbol': symbol,
                 'sell_qty':sell_qty,
                 }
+    # cols = ['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']
+    # for col in cols:
+    #     var_s[col] = True
     return var_s
 
+def sell_button_dict_items_v2(symbol="SPY", sell_qty=89):
+    var_s = {
+                'symbol': symbol,
+                'sell_qty':sell_qty,
+                }
+    cols = ['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']
+    for col in cols:
+        var_s[col] = True
+    return var_s
 
 def chessboard_button_dict_items(Save="Save"):
     var_s = {
@@ -4419,11 +4431,12 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             }
 
 
-def process_order_submission(trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
+def process_order_submission(broker, trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
 
     try:
         # Create Running Order
         new_queen_order = create_QueenOrderBee(
+        broker=broker,
         trading_model=trading_model,
         order_vars=order_vars, 
         order=order, 
@@ -4474,84 +4487,84 @@ def order_vars__queen_order_items(
     borrow_qty=0,
     long_short='long',
 ):
-    if order_side:
-        order_vars = {}
-        if order_side == "sell":
-            if maker_middle:
-                order_vars["order_type"] = "limit"
-                order_vars["limit_price"] = maker_middle  # 10000
-                order_vars["order_trig_sell_stop_limit"] = True
-            else:
-                order_vars["order_type"] = "market"
-                order_vars["limit_price"] = False
-                order_vars["order_trig_sell_stop_limit"] = False
-
-            order_vars["origin_wave"] = origin_wave
-            order_vars["power_up"] = None
-            order_vars["wave_amo"] = wave_amo
-            order_vars["order_side"] = order_side
-            order_vars["ticker_time_frame_origin"] = ticker_time_frame_origin
-            order_vars["power_up_rangers"] = power_up_rangers
-            order_vars["king_order_rules"] = king_order_rules
-            order_vars["trading_model"] = trading_model
-            order_vars["double_down_trade"] = double_down_trade
-            order_vars["sell_reason"] = sell_reason
-            order_vars["running_close_legs"] = running_close_legs
-            order_vars["wave_at_creation"] = wave_at_creation
-            order_vars["sell_qty"] = sell_qty
-            order_vars["first_sell"] = first_sell
-            order_vars["time_intrade"] = time_intrade
-            order_vars["updated_at"] = updated_at
-            order_vars["symbol"] = symbol
-            order_vars["long_short"] = long_short
-            
-            
-            return order_vars
-
-        elif order_side == "buy":
-            if maker_middle:
-                order_vars["order_type"] = "limit"
-                order_vars["limit_price"] = maker_middle  # 10000
-                order_vars["order_trig_sell_stop_limit"] = True
-            else:
-                order_vars["order_type"] = "market"
-                order_vars["limit_price"] = False
-                order_vars["order_trig_sell_stop_limit"] = False
-
-            
-            order_vars["assigned_wave"] = assigned_wave
-            order_vars["origin_wave"] = origin_wave
-            order_vars["power_up"] = None
-            order_vars["wave_amo"] = wave_amo
-            order_vars["order_side"] = order_side
-            order_vars["ticker_time_frame_origin"] = ticker_time_frame_origin
-            order_vars["power_up_rangers"] = power_up_rangers
-            order_vars["king_order_rules"] = king_order_rules
-            order_vars["trading_model"] = trading_model
-            order_vars["double_down_trade"] = double_down_trade
-            order_vars["sell_reason"] = sell_reason
-            order_vars["running_close_legs"] = running_close_legs
-            order_vars["wave_at_creation"] = wave_at_creation
-            order_vars["sell_qty"] = sell_qty
-            order_vars["first_sell"] = first_sell
-            order_vars["time_intrade"] = time_intrade
-            order_vars["updated_at"] = updated_at
-            order_vars["symbol"] = symbol
-            order_vars["trigbee"] = trigbee
-            order_vars["tm_trig"] = tm_trig
-            order_vars["borrowed_funds"] = borrowed_funds
-            order_vars["ready_buy"] = ready_buy
-            order_vars["borrow_qty"] = borrow_qty
-            order_vars["long_short"] = long_short
-
-            return order_vars
-
+    if not order_side:
+        return "You're better then this"
+    
+    order_vars = {}
+    if order_side == "sell":
+        if maker_middle:
+            order_vars["order_type"] = "limit"
+            order_vars["limit_price"] = maker_middle  # 10000
+            order_vars["order_trig_sell_stop_limit"] = True
         else:
-            print("break in program")
-            return False
+            order_vars["order_type"] = "market"
+            order_vars["limit_price"] = False
+            order_vars["order_trig_sell_stop_limit"] = False
+
+        order_vars["origin_wave"] = origin_wave
+        order_vars["power_up"] = None
+        order_vars["wave_amo"] = wave_amo
+        order_vars["order_side"] = order_side
+        order_vars["ticker_time_frame_origin"] = ticker_time_frame_origin
+        order_vars["power_up_rangers"] = power_up_rangers
+        order_vars["king_order_rules"] = king_order_rules
+        order_vars["trading_model"] = trading_model
+        order_vars["double_down_trade"] = double_down_trade
+        order_vars["sell_reason"] = sell_reason
+        order_vars["running_close_legs"] = running_close_legs
+        order_vars["wave_at_creation"] = wave_at_creation
+        order_vars["sell_qty"] = sell_qty
+        order_vars["first_sell"] = first_sell
+        order_vars["time_intrade"] = time_intrade
+        order_vars["updated_at"] = updated_at
+        order_vars["symbol"] = symbol
+        order_vars["long_short"] = long_short
+        
+        
+        return order_vars
+
+    elif order_side == "buy":
+        if maker_middle:
+            order_vars["order_type"] = "limit"
+            order_vars["limit_price"] = maker_middle  # 10000
+            order_vars["order_trig_sell_stop_limit"] = True
+        else:
+            order_vars["order_type"] = "market"
+            order_vars["limit_price"] = False
+            order_vars["order_trig_sell_stop_limit"] = False
+
+        
+        order_vars["assigned_wave"] = assigned_wave
+        order_vars["origin_wave"] = origin_wave
+        order_vars["power_up"] = None
+        order_vars["wave_amo"] = wave_amo
+        order_vars["order_side"] = order_side
+        order_vars["ticker_time_frame_origin"] = ticker_time_frame_origin
+        order_vars["power_up_rangers"] = power_up_rangers
+        order_vars["king_order_rules"] = king_order_rules
+        order_vars["trading_model"] = trading_model
+        order_vars["double_down_trade"] = double_down_trade
+        order_vars["sell_reason"] = sell_reason
+        order_vars["running_close_legs"] = running_close_legs
+        order_vars["wave_at_creation"] = wave_at_creation
+        order_vars["sell_qty"] = sell_qty
+        order_vars["first_sell"] = first_sell
+        order_vars["time_intrade"] = time_intrade
+        order_vars["updated_at"] = updated_at
+        order_vars["symbol"] = symbol
+        order_vars["trigbee"] = trigbee
+        order_vars["tm_trig"] = tm_trig
+        order_vars["borrowed_funds"] = borrowed_funds
+        order_vars["ready_buy"] = ready_buy
+        order_vars["borrow_qty"] = borrow_qty
+        order_vars["long_short"] = long_short
+
+        return order_vars
+
     else:
         print("break in program")
         return False
+
 
 
 def create_QueenOrderBee(
@@ -4568,10 +4581,11 @@ def create_QueenOrderBee(
     order={},
     priceinfo={},
     queen_init=False,
-    # long_short="init",
+    broker=None,
 ):  # Create Running Order
     def gen_queen_order(
         queen_order_version=queen_order_version,
+        broker=broker,
         trading_model=trading_model,
         double_down_trade=False,
         queen_order_state="submitted",
@@ -4642,6 +4656,7 @@ def create_QueenOrderBee(
         else:
 
             return {
+                "broker": broker,
                 "queen_order_version": queen_order_version,
                 "trading_model": trading_model,
                 "queen_order_state": queen_order_state,
@@ -4667,6 +4682,7 @@ def create_QueenOrderBee(
                 "qty_order": order_vars.get('qty_order'),
                 "assigned_wave": order_vars.get("wave_at_creation"),
                 "trigname": trig,
+                "tm_trig": order_vars.get("tm_trig"),
                 "datetime": date_mark,
                 "status_q": status_q,
                 "portfolio_name": portfolio_name,
@@ -4782,11 +4798,12 @@ def return_queen_controls(stars=stars):
         "trigbees": {
             "buy_cross-0": "active",
             "sell_cross-0": "active",
-            "ready_buy_cross": "not_active", # NOT USED
+            # "ready_buy_cross": "not_active", # NOT USED
         },        
         # revrec
         'ticker_revrec_allocation_mapping' : {}, # not needed done in KORS
         'ticker_autopilot' : pd.DataFrame([{'symbol': 'SPY', 'buy_autopilot': True, 'sell_autopilot': True}]).set_index('symbol'),
+        'ticker_refresh_star': pd.DataFrame([{'symbol': 'SPY', 'ticker_refresh_star': None}]).set_index('symbol'),
         # 'trade_only_margin': False, # control not adding WORKERBEE
 
         # working GAMBLE
