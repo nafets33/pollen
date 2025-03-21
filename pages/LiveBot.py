@@ -55,7 +55,7 @@ def demo_bot():
     # st.write(trading_days) # STORE IN KING and only call once
     mkhrs = return_market_hours(trading_days=trading_days)
     seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
-    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
+    refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 89
     account_header_grid(client_user, prod, refresh_sec, st.session_state["ip_address"], seconds_to_market_close)
     queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=True)
 if __name__ == '__main__':

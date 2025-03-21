@@ -17,7 +17,6 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     add_trading_model, 
                                     find_symbol_in_chess_board, 
                                     split_today_vs_prior, 
-                                    kings_order_rules, 
                                     order_vars__queen_order_items,
                                     find_symbol,
                                     power_amo,
@@ -33,15 +32,14 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     init_qcp_workerbees,
                                     chessboard_button_dict_items,
                                     read_swarm_db,
-                                    init_qcp,
                                     shape_chess_board,
                                     remove_symbol_from_chess_board,
                                     add_symbol_to_chess_board,
                                     star_refresh_star_times
                                     )
 
-from chess_piece.queen_bee import execute_buy_order
-from chess_piece.queen_mind import refresh_chess_board__revrec
+from chess_piece.queen_bee import execute_buy_order, get_priceinfo_snapshot, symbol_is_crypto
+from chess_piece.queen_mind import refresh_chess_board__revrec, init_qcp, kings_order_rules
 from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade, get_powers
 from chess_piece.pollen_db import PollenDatabase
 from dotenv import load_dotenv
@@ -449,18 +447,42 @@ def process_clean_on_QK_requests(QUEEN, QUEEN_KING, request_name='sell_orders'):
 
 def app_Sellorder_request(client_user, username, prod, selected_row, default_value):
   try:
-    # iterate over the dict of orders
-    # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
-    number_shares = int(default_value.get('sell_qty'))
-    client_order_id = selected_row.get('client_order_id')
-    symbol = selected_row.get('symbol')
-
-    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
-    ORDERS = init_queenbee(client_user=client_user, prod=prod, orders=True, pg_migration=pg_migration).get('ORDERS')
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, orders=True, pg_migration=pg_migration)
+    QUEEN_KING = qb.get('QUEEN_KING')
+    api = qb.get('api')
+    ORDERS = qb.get('ORDERS')
     if type(ORDERS) != dict:
       print("NO ORDERS")
-      return pd.DataFrame().to_json()
+      return grid_row_button_resp(description="NO ORDERS AVAILABLE")
+    
     queen_order = ORDERS['queen_orders']
+
+    # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
+    symbol = selected_row.get('symbol')
+    client_order_id = selected_row.get('client_order_id')
+    number_shares = int(default_value.get('sell_qty', 0))
+    sell_amount = int(default_value.get('sell_amount', 0))
+    limit_price = int(default_value.get('limit_price', 0))
+    if number_shares == 0 and sell_amount == 0:
+        print("SELL AMOUNT IS 0")
+        return grid_row_button_resp(description="SELL AMOUNT IS 0")
+    if sell_amount > 0:
+       crypto = symbol_is_crypto(symbol)
+       ask_price = get_priceinfo_snapshot(api=api, ticker=symbol, crypto=crypto).get('ask')
+       if not crypto:
+          if sell_amount < ask_price:
+             print("SELL AMOUNT LESS THAN ASK PRICE")
+             return grid_row_button_resp(description="SELL AMOUNT LESS THAN ASK PRICE")
+      
+       number_shares = sell_amount / ask_price #selected_row.get('current_ask') WORKERBEE until it can be trusted
+    
+    number_shares = max(1, int(number_shares)) if not crypto else round(number_shares,8)
+
+    # if not crypto:
+    #     number_shares = int(number_shares)
+    # if number_shares == 0:
+    #     print("SELL AMOUNT IS 0")
+    #     return grid_row_button_resp(description="SELL AMOUNT IS 0")
     
     if client_order_id:
       # VALIDATE check against available_shares and validate amount
@@ -474,7 +496,7 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
        orders_avial = queen_order[queen_order['symbol']==symbol]
        if len(orders_avial) > 0:
           # sort by borrowed = True
-          # sort by time purchased?
+          # sort by time purchased
           orders_avial = orders_avial.sort_values(by=['borrowed_funds', 'datetime'], ascending=[False, True])
           cumulative_sum = 0
 
@@ -753,7 +775,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       df["money"] = round(df["money"],0)
       # df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
       df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
-      df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
+      # df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
       df['sell_reason'] = df['sell_reason'].astype(str)
       df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
 

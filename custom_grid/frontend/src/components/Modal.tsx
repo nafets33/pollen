@@ -226,53 +226,61 @@ return (
                 <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
                   {textFields.map((rule: any, index: number) => {
 
-                    // Skip rendering if the rule is in the sliderRules_stars list
-                    if (sliderRules_stars.includes(rule)) return null;
-                    if (sliderRules_stars_margin.includes(rule)) return null;
+                  // Skip rendering if the rule is in the sliderRules_stars list
+                  if (sliderRules_stars.includes(rule)) return null;
+                  if (sliderRules_stars_margin.includes(rule)) return null;
 
-                    const isSliderRule = sliderRules.includes(rule);
+                  const isSliderRule = sliderRules.includes(rule);
 
-                    return (
-                      <div className="d-flex flex-column align-items-start mb-1" key={index}>
-                        <label className="mb-0" style={{ fontSize: "0.9rem" }}>
-                          {rule}:
-                        </label>
-                        {/* Render the slider for rules that are in sliderRules but not in sliderRules_stars */}
-                        {isSliderRule ? (
-                          <>
-                            <input
-                              type="range"
-                              min="0"
-                              max="1"
-                              step=".01"
-                              value={promptText[rule] || 0}
-                              onChange={(e) =>
-                                setPromptText({
-                                  ...promptText,
-                                  [rule]: Number(e.target.value),
-                                })
-                              }
-                              style={{ width: "100%" }}
-                            />
-                            <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
-                              {promptText[rule] || 0}
-                            </span>
-                          </>
-                        ) : (
-                          <input
-                            type="text"
-                            value={promptText[rule]}
-                            onChange={(e) =>
-                              setPromptText({
-                                ...promptText,
-                                [rule]: e.target.value,
-                              })
-                            }
-                            style={{ flex: 1, width: "100%", padding: "4px", fontSize: "0.9rem" }}
-                          />
-                        )}
-                      </div>
-                    );
+                  return (
+                    <div className="d-flex flex-column align-items-start mb-1" key={index}>
+                    <label className="mb-0" style={{ fontSize: "0.9rem" }}>
+                      {rule}:
+                      {rule === "sell_amount" && (
+                      <span
+                        style={{ marginLeft: "4px", cursor: "pointer" }}
+                        title="This amount will override sell_qty"
+                      >
+                        ❓
+                      </span>
+                      )}
+                    </label>
+                    {/* Render the slider for rules that are in sliderRules but not in sliderRules_stars */}
+                    {isSliderRule ? (
+                      <>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step=".01"
+                        value={promptText[rule] || 0}
+                        onChange={(e) =>
+                        setPromptText({
+                          ...promptText,
+                          [rule]: Number(e.target.value),
+                        })
+                        }
+                        style={{ width: "100%" }}
+                      />
+                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
+                        {promptText[rule] || 0}
+                      </span>
+                      </>
+                    ) : (
+                      <input
+                      type="text"
+                      value={promptText[rule]}
+                      onChange={(e) =>
+                        setPromptText({
+                        ...promptText,
+                        [rule]: e.target.value,
+                        })
+                      }
+                      style={{ flex: 1, width: "100%", padding: "4px", fontSize: "0.9rem" }}
+                      />
+                    )}
+                    </div>
+                  );
                   })}
                 </div>
               )}

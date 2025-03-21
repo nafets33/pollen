@@ -10,7 +10,6 @@ import logging
 import copy
 
 from chess_piece.king import print_line_of_error, stars, kingdom__global_vars
-from chess_piece.queen_hive import init_qcp
 from chess_piece.pollen_db import PollenDatabase
 
 prod = True
@@ -27,6 +26,35 @@ def search_for_gamble_trade(revrec):
     # WORKERBEE
     ## find me a good gamble 
     return True
+
+def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
+             ticker_list=['SPY'], 
+             theme='nuetral', 
+             model='MACD', 
+             piece_name='king', 
+             buying_power=1, 
+             borrow_power=0, 
+             picture='knight_png', 
+             margin_power=0, 
+             trade_only_margin=False, 
+             refresh_star='1Minute_1Day',
+             max_budget_allowed=None, # if int use in logic
+             ):
+    return {
+        "picture": picture,
+        "piece_name": piece_name,
+        "model": model,
+        "MACD_fast_slow_smooth": init_macd_vars,
+        "tickers": ticker_list,
+        "stars": stars(),
+        "theme": theme,
+        "total_buyng_power_allocation": buying_power,
+        "total_borrow_power_allocation": borrow_power,
+        "margin_power": margin_power,
+        "trade_only_margin": trade_only_margin,
+        'refresh_star': refresh_star, # anchor to use as reallocation # WORKERBEE..chess_board not Saving correclty or being overwritten?
+        'max_budget_allowed': max_budget_allowed,
+    }
 
 
 def kings_order_rules( # rules created for 1Minute
@@ -63,6 +91,7 @@ def kings_order_rules( # rules created for 1Minute
     close_order_today=False,
     close_order_today_allowed_timeduration=60, # seconds allowed to be past, sells at 60 seconds left in close
     borrow_qty=0,
+    ignore_refresh_star=False,
     # Not Used
     short_position=False,
     revisit_trade_frequency=60,
@@ -117,6 +146,7 @@ def kings_order_rules( # rules created for 1Minute
         'wave_amo': wave_amo,
         'limit_price': limit_price,
         'sell_trigbee_date': sell_trigbee_date,
+        'ignore_refresh_star': ignore_refresh_star,
 
     }
 
@@ -208,7 +238,6 @@ def generate_TradingModel(
                                     take_profit=.01,
                                     sell_out=0,
                                     sell_trigbee_trigger=False,
-                                    sell_trigbee_trigger_timeduration=60,#mins
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -234,7 +263,6 @@ def generate_TradingModel(
                                     take_profit=.05,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
-                                    sell_trigbee_trigger_timeduration=60*5,#mins
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -260,7 +288,6 @@ def generate_TradingModel(
                                     take_profit=.08,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
-                                    sell_trigbee_trigger_timeduration=60*30,#mins
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -286,7 +313,6 @@ def generate_TradingModel(
                                     take_profit=.1,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
-                                    sell_trigbee_trigger_timeduration=60*60,#mins
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -312,7 +338,6 @@ def generate_TradingModel(
                                     take_profit=.2,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
-                                    sell_trigbee_trigger_timeduration=60*120,#mins
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -338,7 +363,6 @@ def generate_TradingModel(
                                     take_profit=.5,
                                     sell_out=0,
                                     sell_trigbee_trigger=True,
-                                    sell_trigbee_trigger_timeduration=60*300,#mins
                                     stagger_profits=False,
                                     scalp_profits=False,
                                     scalp_profits_timeduration=30,
@@ -859,12 +883,14 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
     except Exception as e:
         print_line_of_error("return_ttf_remaining_budget")
 
+
 def return_trading_model_trigbee(tm_trig, trig_wave_length):
     on_wave_buy = True if trig_wave_length != '0' else False
     if on_wave_buy:
         tm_trig = 'buy_cross-0' if 'buy' in tm_trig else 'sell_cross-0'
     
     return tm_trig
+
 
 def return_star_from_ttf(x):
     try:
@@ -873,6 +899,7 @@ def return_star_from_ttf(x):
     except Exception as e:
         print(e)
         return x  
+
 
 def weight_team_keys():
     return {
@@ -885,6 +912,7 @@ def weight_team_keys():
         '2Hour_6Month': 'w_54',
         '1Day_1Year': 'w_54',
     }
+
 
 def wave_gauge_revrec_2(symbol, df_waves, weight_team = ['w_L', 'w_S', 'w_15', 'w_30', 'w_54'], 
                model_eight_tier=8, 
@@ -988,8 +1016,8 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
     current_sellwave = token_df.iloc[0]
 
-    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['ready_buy_cross']).T
-    ready_buy_cross = token_df.iloc[0]
+    # token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['ready_buy_cross']).T
+    # ready_buy_cross = token_df.iloc[0]
 
 
     if current_buywave['wave_start_time'] > current_sellwave['wave_start_time']:
@@ -998,7 +1026,7 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
         current_wave = current_sellwave
 
 
-    d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave, 'ready_buy_cross': ready_buy_cross }
+    d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave }
 
 
 
@@ -1109,7 +1137,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
         df = df.set_index('qcp', drop=False)
 
-        df['margin_power'] = df.index.map(marginPower)
+        df['margin_power'] = df.index.map(marginPower) # WORKERBE this needs fix to match as buying power is
         
         return df
 
@@ -1483,7 +1511,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.at[ticker, 'total_budget']
                     df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.at[ticker, 'equity_budget']
                     df_ticker.at[ticker, 'ticker_borrow_budget'] = df_temp.at[ticker, 'borrow_budget']
-                    df_ticker.at[ticker, 'refresh_star'] = df_qcp.at[qcp, 'refresh_star']
+                    df_ticker.at[ticker, 'refresh_star'] = df_qcp.at[qcp, 'refresh_star'] # WORKERBEE del this is a dup?
                     # df_ticker.at[ticker, 'ticker_remaining_borrow'] = borrowed_budget_remaining
 
                     # UPDATE star time 
@@ -1817,7 +1845,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 orders = df_active_orders[df_active_orders['symbol'] == symbol]
                 orders = orders[['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']]
                 symbol_orders[symbol] = orders.to_dict(orient='records')
-        storygauge['active_orders'] = storygauge.index.to_series().apply(lambda x: symbol_orders.get(x, {}))
+        storygauge['active_orders'] = storygauge.index.to_series().apply(lambda x: symbol_orders.get(x, []))  # Always return a list
 
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
@@ -1850,21 +1878,21 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         storygauge = storygauge.fillna(0)
         waveview = waveview.fillna(0)
 
-        # qcp name
-        # storygauge['qcp_name'] = storygauge['symbol'].map(dict(zip(df_ticker.index, df_ticker['piece_name'])))
+        # % Change per Star
+        for symbol in storygauge.index:
+            for star in stars().keys():
+                pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
+                storygauge.at[symbol, f'{star}_change'] = pct_change
+
 
         rr_run_cycle.update({'story gauge': (datetime.now() - s).total_seconds()})
         total = sum(rr_run_cycle.values())
-        # for k,v in rr_run_cycle.items():
-        #     rr_run_cycle[k].update({'pct': v/total})
-
 
         cycle_time = (datetime.now()-rr_starttime).total_seconds()
         rr_run_cycle.update({'final time': cycle_time})
         if cycle_time > 10:
             msg=("rervec cycle_time > 10 seconds", cycle_time)
             print(msg)
-            logging.warning(msg)
         
         return {'cycle_time': cycle_time, 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
                 'waveview': waveview, 'storygauge': storygauge, 

@@ -114,14 +114,12 @@ def buy_button_dict_items(queen_handles_trade=True,
                           star='1Minute_1Day',
                           star_list=list(star_names().keys()),
                           wave_amo=1000,
-                          trade_using_limits=None,
-                          limit_price=False,
+                          limit_price=0,
                           take_profit=.03,
                           sell_out=-.03,
                           sell_trigbee_trigger=True,
-                          sell_trigbee_trigger_timeduration=None,
                           close_order_today=False, 
-                          reverse_buy=None, 
+                          ignore_refresh_star=False, 
                           sell_at_vwap=None,
                           sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M'), 
                           ):
@@ -129,14 +127,12 @@ def buy_button_dict_items(queen_handles_trade=True,
                 'queen_handles_trade': queen_handles_trade,
                 'star':star,
                 'wave_amo': wave_amo,
-                # 'trade_using_limits': trade_using_limits,
                 'limit_price': limit_price,
                 'take_profit': take_profit,
                 'sell_out': sell_out,
                 'sell_trigbee_trigger': sell_trigbee_trigger,
-                'sell_trigbee_trigger_timeduration': sell_trigbee_trigger_timeduration,
                 'close_order_today': close_order_today,
-                'reverse_buy': reverse_buy,
+                'ignore_refresh_star': ignore_refresh_star,
                 'sell_at_vwap': sell_at_vwap,
                 'star_list': star_list,
                 'sell_trigbee_date': sell_trigbee_date,
@@ -190,9 +186,7 @@ def return_waveview_fillers(QUEEN_KING, waveview):
                                         sell_out=sell_out, 
                                         sell_trigbee_date=sell_trigbee_date,
                                         close_order_today=close_order_today, 
-                                        sell_trigbee_trigger_timeduration=None,
                                         star_list=None,
-                                        reverse_buy=None, 
             )
 
             df.at[ttf, 'kors'] = kors
@@ -299,8 +293,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         x_dict = {'allocation': .3}
         df['edit_allocation_option'] = [x_dict for _ in range(df.shape[0])]
 
-        df['current_from_open'] = round(df['current_from_open'] * 100,2)
-
         for star in star_names().keys():
             # kors per star
             df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
@@ -372,7 +364,12 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
                     sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
                     close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
-                    kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), wave_amo=buy_alloc_deploy.get(symbol), take_profit=take_profit, sell_out=sell_out, close_order_today=close_order_today)
+                    kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), 
+                                                 wave_amo=buy_alloc_deploy.get(symbol), 
+                                                 take_profit=take_profit, 
+                                                 sell_out=sell_out, 
+                                                 close_order_today=close_order_today
+                                                 )
                     df.at[symbol, 'kors'] = kors
 
             
@@ -388,6 +385,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     alloc_deploy_msg = '${:,.0f}'.format(round(df_stars.at[ttf, "star_buys_at_play"]))
                     df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
                     df.at[symbol, f'{star}_value'] = df_stars.at[ttf, "star_buys_at_play"]
+                    
             except Exception as e:
                 print("mmm error", symbol, print_line_of_error(e))
 
@@ -485,6 +483,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
             df = df.merge(ticker_info, left_index=True, right_index=True, how='left')
         except Exception as e:
             print("BISHOP", e)
+
 
 
         return df

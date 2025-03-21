@@ -297,20 +297,12 @@ with cols[1]:
     st.data_editor(df, key='222')
 
 st.sidebar.write('admin:', st.session_state["admin"])
-# # add new keys
-# KING_req = add_key_to_KING(KING=KING)
-# if KING_req.get('update'):
-#     KING = KING_req['KING']
-#     PickleData(KING.get('source'), KING)
 
 with st.sidebar:
     with st.expander("admin"):
         cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
         cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
-
-# if st.session_state.get('admin_queens'):
-#     admin_send_queen_airflow(KING)
 if st.session_state.get('admin_users'):
     admin_queens_active(KING.get('source'), KING)
 

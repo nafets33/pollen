@@ -234,6 +234,7 @@ function(p) {
 }
 """)
 
+value_format_pct = JsCode("function(params) { return params.value ? params.value.toFixed(2) + '%' : ''; }")
 
 button_style_sell = JsCode("""
 function(p) {
@@ -496,7 +497,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
 
 
 
-def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=False, show_graph_t=False, show_acct=True):
+def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=False, show_acct=True):
     run_times = {}
     s = datetime.now()
     edit_grid = st.toggle("Edit Portfolio", False)
@@ -642,7 +643,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             gb = GridOptionsBuilder.create()
             gb.configure_default_column(column_width=100, 
                                         resizable=True, 
-                                        wrapText=False, wrapHeaderText=True, 
+                                        wrapText=False, 
+                                        wrapHeaderText=True, 
                                         sortable=True, 
                                         autoHeaderHeight=True, 
                                         autoHeight=True, 
@@ -787,9 +789,17 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 return  {
                 # for col in cols:
                 # 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
-                'current_from_yesterday': {'headerName':'% Change', 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
+                'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',
+                                        'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'current_from_open': {'headerName':"% From Open", 'sortable':'true', 'cellStyle': honey_colors}, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
+                'current_from_open': {'headerName':"% From Open", 'sortable':'true', 
+                                        'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        },                   
 
                 'piece_name': {'headerName': 'Budget Group', 
                                 "cellEditorParams": {"values": df_ticker_qcp_names},"editable":True, "cellEditor":"agSelectCellEditor",
@@ -824,6 +834,28 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                                                                     "editable":True,
                                                                     "cellEditor":"agSelectCellEditor",
                                                                     },
+                '5Minute_5Day_change': {'headerName':"Week Change", 'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        },
+                '30Minute_1Month_change': {'headerName':"Month Change", 'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        },
+                '1Hour_3Month_change': {'headerName':"Quarter Change", 'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        } ,
+                '2Hour_6Month_change': {'headerName':"2 Quarters Change", 'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        },
+                '1Day_1Year_change': {'headerName':"1 Year Change", 'cellStyle': honey_colors,
+                                        'cellStyle': honey_colors,
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        } 
+                            
                 }
 
             
@@ -843,7 +875,9 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             for col in ticker_info_cols:
                 if col not in story_col + list(config_cols_.keys()):
                     # config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
-                    gb.configure_column(col, {'hide': True, 'sortable': 'true'})
+                    gb.configure_column(col, {'hide': True, 'sortable': 'true', 'cellEditorPopup': True, 'editable': True, 'cellEditorPopupParams': {
+              'popupWidth': '500',
+              'popupHeight': '300'}})
             
             g_buttons = story_grid_buttons()
 
@@ -892,6 +926,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 grid_height='600px',
                 toggle_views = toggle_view,
                 allow_unsafe_jscode=True,
+                columnOrder=['queens_suggested_sell', 'current_ask']
             ) 
 
         except Exception as e:
@@ -952,7 +987,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
         cols = st.columns(2)
         
         def symbol_graph():
-            refresh_sec = 23 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
+            refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
             refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
             refresh_sec = 0 if refresh_grids == False else refresh_sec
             # print("GRAPHS")

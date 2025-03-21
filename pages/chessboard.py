@@ -16,8 +16,8 @@ from streamlit_extras.switch_page_button import switch_page
 
 from pq_auth import signin_main
 from chess_piece.king import return_QUEEN_KING_symbols, master_swarm_QUEENBEE, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, shape_chess_board, generate_chess_board, refresh_account_info, init_queenbee, unshape_chess_board, setup_chess_board, add_trading_model, set_chess_pieces_symbols, init_qcp, read_swarm_db, refresh_broker_account_portolfio
-from chess_piece.queen_mind import refresh_chess_board__revrec
+from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, shape_chess_board, generate_chess_board, refresh_account_info, init_queenbee, unshape_chess_board, setup_chess_board, add_trading_model, set_chess_pieces_symbols, read_swarm_db, refresh_broker_account_portolfio
+from chess_piece.queen_mind import refresh_chess_board__revrec, init_qcp
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from custom_graph_v1 import st_custom_graph
@@ -191,7 +191,6 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
             gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
 
         def story_grid_buttons():
-            # exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
             buttons=[
                         # {'button_name': None,
                         # 'button_api': f'{ip_address}/api/data/chessboard',

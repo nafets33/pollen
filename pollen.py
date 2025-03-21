@@ -28,8 +28,8 @@ from pages.chessboard import chessboard
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData
-from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, kings_order_rules, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
-from chess_piece.queen_mind import refresh_chess_board__revrec
+from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.queen_mind import kings_order_rules
 from pages.conscience import account_header_grid
 # componenets
 # import streamlit_antd_components as sac
@@ -331,46 +331,6 @@ def pollenq(admin_pq):
     main_root = hive_master_root()
     load_dotenv(os.path.join(main_root, ".env"))
     set_streamlit_page_config_once()
-    
-    # local_db_root = hive_master_root_db()
-    # df = pd.read_csv(os.path.join(local_db_root, 'INFOTABLE.tsv'), sep='\t')
-    # # df_return = pd.DataFrame()
-    # # filers = set(df['NAMEOFISSUER'])
-    # # for filer in tqdm(filers):
-    # #     token = df[df['NAMEOFISSUER'] == filer]
-    # #     if len(token) == 0:
-    # #         print("NO DATA", filer)
-    # #         continue
-    # #     total_value = token['VALUE'].sum()
-    # #     token['pct_allocation'] = token['VALUE'] / total_value
-    # #     df_return = pd.concat([df_return, token])
-    # df = df.dropna(subset=['NAMEOFISSUER'])
-    # df['VALUE'] = pd.to_numeric(df['VALUE'], errors='coerce').fillna(0).astype(int)
-    # df['pct_allocation'] = df.groupby('NAMEOFISSUER')['VALUE'].apply(lambda x: x / x.sum())
-
-    
-    # st.write(df.loc[:33])
-
-
-    # local_db_root = hive_master_root_db()
-    # df = pd.read_csv(os.path.join(local_db_root, 'INFOTABLE.tsv'), sep='\t')
-
-    # # Ensure 'VALUE' is numeric
-    # df = df.dropna(subset=['NAMEOFISSUER'])
-    # df['VALUE'] = pd.to_numeric(df['VALUE'], errors='coerce').fillna(0).astype(int)
-
-    # # Calculate the total VALUE for each group of NAMEOFISSUER, CUSIP, and INVESTMENTDISCRETION
-    # df['total_value'] = df.groupby(['NAMEOFISSUER', 'CUSIP', 'INVESTMENTDISCRETION'])['VALUE'].transform('sum')
-
-    # # Calculate the percentage allocation for each issuer
-    # df['pct_allocation'] = (df['VALUE'] / df['total_value']) * 100
-
-    # # Drop the total_value column as it's no longer needed
-    # df.drop(columns=['total_value'], inplace=True)
-
-    # st.write(df.loc[:33])
-
-
 
     ##### QuantQueen #####
     print(f'>>>> pollen START >>>> {return_timestamp_string()}' )  

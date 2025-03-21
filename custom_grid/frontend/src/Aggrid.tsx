@@ -16,7 +16,7 @@ import "ag-grid-community/styles/ag-theme-balham.css"
 import "ag-grid-community/styles/ag-theme-material.css"
 import MyModal from './components/Modal'
 import "ag-grid-enterprise"
-import { parseISO, compareAsc } from "date-fns"
+import { parseISO, compareAsc, set } from "date-fns"
 import { format } from "date-fns-tz"
 import { duration } from "moment"
 import "./styles.css"
@@ -177,6 +177,7 @@ const AgGrid = (props: Props) => {
     kwargs,
   } = props
   let { grid_options = {} } = props
+
   //parsing must be done here. For some unknow reason if its moved after the
   //button mapping, deepMap gets lots of React objects (api, symbolRefs, etc.)
   //this impacts performance and crashes the grid.
@@ -184,14 +185,16 @@ const AgGrid = (props: Props) => {
     grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
   }
 
-  let { buttons, toggle_views, api_key, api_lastmod_key = null} = kwargs
+  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder=[]} = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
   const [promptText, setPromptText] = useState("")
   const [viewId, setViewId] = useState(0)
   const [lastModified, setLastModified] = useState<string | null>(null);
+  const [previousViewId, setpreviousViewId] = useState(89)
 
+  
   const checkLastModified = async (): Promise<boolean> => {
     try {
       console.log("checking last modified...", api_lastmod_key);
@@ -227,36 +230,53 @@ const AgGrid = (props: Props) => {
     }
   };
 
+  const checkViewIdChanged = async (currentViewId: number, previousViewId: number): Promise<boolean> => {
+    if (currentViewId !== previousViewId) {
+      console.log("viewId has changed from", previousViewId, "to", currentViewId);
+      return true;
+    } else {
+      console.log("viewId has not changed");
+      return false;
+    }
+  };
 
   useEffect(() => {
-    Streamlit.setFrameHeight()
+    Streamlit.setFrameHeight();
+  
     if (buttons.length) {
-
-      buttons = deepMap(buttons, parseJsCodeFromPython, ["rowData"]) //if JsCode comes through buttons props
-
-      buttons.map((button: any) => {
-        //extracts know parameters from button, all other unknow parameters sent are stored in otherKeys
-        const { prompt_field, prompt_message, button_api, prompt_order_rules, col_header, col_headername, col_width, 
-          pinned, button_name, border_color, ...otherKeys
-        } = button
+      buttons = deepMap(buttons, parseJsCodeFromPython, ["rowData"]); // process JsCode from buttons props
+  
+      buttons.forEach((button: any) => {
+        const {
+          prompt_field,
+          prompt_message,
+          button_api,
+          prompt_order_rules,
+          col_header,
+          col_headername,
+          col_width,
+          pinned,
+          button_name,
+          border_color,
+          ...otherKeys
+        } = button;
+  
         grid_options.columnDefs!.push({
-          ...otherKeys, //merges all other parameters sent on buttons array on columnDefs
-          field: col_header ? col_header : index,
+          ...otherKeys,
+          field: col_header || index,
           headerName: col_headername,
           width: col_width,
           pinned: pinned,
           cellRenderer: BtnCellRenderer,
           cellRendererParams: {
-            col_header: col_header,
+            col_header,
             buttonName: button_name,
             borderColor: border_color,
             clicked: async function (row_index: any) {
               try {
-                const selectedRow = g_rowdata.find(
-                  (row) => row[index] === row_index
-                )
+                const selectedRow = g_rowdata.find((row) => row[index] === row_index);
                 if (prompt_order_rules) {
-                  const str = selectedRow[prompt_field]
+                  const str = selectedRow[prompt_field];
                   const selectedField =
                     typeof str === "string"
                       ? JSON.parse(
@@ -267,8 +287,9 @@ const AgGrid = (props: Props) => {
                             .replace(/False/g, "false")
                             .replace(/True/g, "true")
                         )
-                      : str
-                  setModalshow(true)
+                      : str;
+  
+                  setModalshow(true);
                   setModalData({
                     prompt_message,
                     button_api: button_api,
@@ -279,14 +300,16 @@ const AgGrid = (props: Props) => {
                     prompt_field,
                     prompt_order_rules,
                     selectedField,
-                  })
-                  const rules_value: any = {}
-                  prompt_order_rules.map((rule: string) => {
-                    rules_value[rule] = selectedField[rule]
-                  })
-                  setPromptText(rules_value)
+                  });
+  
+                  const rules_value: any = {};
+                  prompt_order_rules.forEach((rule: string) => {
+                    rules_value[rule] = selectedField[rule];
+                  });
+  
+                  setPromptText(rules_value);
                 } else if (prompt_field && prompt_message) {
-                  setModalshow(true)
+                  setModalshow(true);
                   setModalData({
                     prompt_message,
                     button_api: button_api,
@@ -294,29 +317,52 @@ const AgGrid = (props: Props) => {
                     prod: prod,
                     selectedRow: selectedRow,
                     kwargs: kwargs,
-                  })
-                  setPromptText(selectedRow[prompt_field])
+                  });
+                  setPromptText(selectedRow[prompt_field]);
                 } else {
                   if (window.confirm(prompt_message)) {
-                    const res = await axios.post(button_api, {
+                    await axios.post(button_api, {
                       username: username,
                       prod: prod,
                       selected_row: selectedRow,
                       ...kwargs,
-                    })
+                    });
                   }
-                  toastr.success("Success!")
+                  toastr.success("Success!");
                 }
               } catch (error) {
-                alert(`${error}`)
+                alert(`${error}`);
               }
             },
           },
-        })
-      })
+        });
+      });
     }
-    // parseGridoptions()
-  })
+  
+    // Reorder columns based on a predefined list
+    // const columnOrder = ["sector", "broker_qty_available", "queens_suggested_sell"]; // Replace with your desired column order
+    
+    if (columnOrder.length > 0 && grid_options.columnDefs) {
+      grid_options.columnDefs.sort((a: any, b: any) => {
+      // If both columns are in the columnOrder array, maintain their order
+      if (columnOrder.indexOf(a.field) !== -1 && columnOrder.indexOf(b.field) !== -1) {
+        return columnOrder.indexOf(a.field) - columnOrder.indexOf(b.field);
+      }
+    
+      // If one of the columns isn't in columnOrder, keep its original position
+      if (columnOrder.indexOf(a.field) === -1) return 1;
+      if (columnOrder.indexOf(b.field) === -1) return -1;
+    
+      return 0;
+      });
+    }
+    
+  
+    // Optional: Refresh header if necessary (if needed)
+    if (gridRef.current?.api) {
+      gridRef.current.api.refreshHeader();
+    }
+  }, [buttons, grid_options.columnDefs]);
 
   const fetchAndSetData = async () => {
     const array = await fetchData();
@@ -332,17 +378,23 @@ const AgGrid = (props: Props) => {
 
   const fetchData = async () => {
     try {
-      const isLastModified = await checkLastModified();
-      console.log("isLastModified", isLastModified, api);
-      if (!isLastModified) {
-        return false;
+      // const checkViewIdChanged_result = await checkViewIdChanged(viewId, previousViewId);
+      let toggle_view = toggle_views ? toggle_views[viewId] : "none";
+      
+      if (refresh_sec && refresh_sec > 0) {
+        const isLastModified = await checkLastModified();
+        console.log("isLastModified", isLastModified, api);
+        if (!isLastModified) {
+          return false;
+        }
       }
+      
       console.log("fetching data...", api);
       const res = await axios.post(api, {
         username: username,
         prod: prod,
         ...kwargs,
-        toggle_view_selection: toggle_views ? toggle_views[viewId] : "none",
+        toggle_view_selection: toggle_view
       });
       const array = JSON.parse(res.data);
       return array;
@@ -706,7 +758,11 @@ const AgGrid = (props: Props) => {
                 margin: '3px',
                 fontWeight: 'bold',
               }}
-              onClick={() => setViewId(index)}
+              onClick={() => {
+                setViewId(index)
+                setpreviousViewId(viewId)
+              }
+              }
               disabled={loading} // Disable button while loading
             >
               {view}

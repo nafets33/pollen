@@ -517,6 +517,7 @@ def PlayGround():
             
             show_all = st.toggle("show all tickers")
             df = BISHOP.get('ticker_info')
+
             hide_cols = df.columns.tolist()
             
             view_cols = ['symbol', 'sector', 'shortName']

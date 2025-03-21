@@ -4,7 +4,7 @@ import schedule
 import sys, importlib, os
 import subprocess
 from chess_piece.king import hive_master_root, ReadPickleData
-from chess_piece.queen_hive import read_swarm_db, return_alpaca_api_keys, return_market_hours, init_swarm_dbs, init_qcp_workerbees
+from chess_piece.queen_hive import read_swarm_db, return_alpaca_api_keys, return_market_hours, init_swarm_dbs, init_qcp_workerbees, send_email
 from chess_piece.workerbees import queen_workerbees
 import pytz
 import pandas as pd
@@ -29,6 +29,7 @@ db=init_swarm_dbs(prod)
 
 def call_bishop_bees(prod=prod):
     print("HELLO BISHOP", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+    send_email("BISHOP OPEN", "BISHOP OPEN")
     if pg_migration:
         BISHOP = read_swarm_db(prod, 'BISHOP')
     else:
@@ -57,6 +58,7 @@ def call_bishop_bees(prod=prod):
                     # streamit=False,
                         )
     print("BISHOP COMPLETE", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+    send_email("BISHOP COMPLETE", "BISHOP COMPLETE")
 
 def call_job_workerbees(prod=prod):
 
@@ -87,7 +89,7 @@ def call_job_workerbees(prod=prod):
 run_time = "09:30"
 a = schedule.every().day.at(run_time).do(call_job_workerbees)
 
-run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
+# run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
 b = schedule.every().day.at("09:35").do(call_bishop_bees)
 c = schedule.every().day.at("10:15").do(call_bishop_bees)
 d = schedule.every().day.at("11:00").do(call_bishop_bees)

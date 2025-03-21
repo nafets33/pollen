@@ -1278,30 +1278,25 @@ def queen_workerbees(
 
 
         # def check for new symbols
-        if queens_chess_pieces == 'castle':
+        if 'castle' in queens_chess_pieces:
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items()]
             all_symbols = [item for sublist in list_of_lists for item in sublist]
+            # ipdb.set_trace()
+            df_tickers = init_queenbee(client_user='stefanstapinski@gmail.com', prod=True, revrec=True, pg_migration=True)['revrec'].get('df_ticker')
+            tickers_to_add = []
+            for ticker in df_tickers.index:
+                if ticker not in all_symbols and df_tickers.loc[ticker, 'ticker_buying_power'] > 0:
+                    print(ticker, "NOT IN QUEENBEE adding to Castle")
+                    tickers_to_add.append(ticker)
 
-            def get_all_active_queens_symbols(prod):
-                qb = init_queenbee(client_user='stefanstapinski@gmail.com', prod=prod, orders=True)
-                ORDERS = qb.get('ORDERS')
-                return [ORDERS]
-            QUEENS = get_all_active_queens_symbols(prod)
-            current_active_orders =[]
-            for queen in QUEENS:
-                df_orders = return_active_orders(queen)
-                if len(df_orders) > 0:
-                    symbols = set(df_orders['symbol'])
-                    for i in symbols:
-                        current_active_orders.append(i)
-
-
-            # nested_dict = main_index_tickers()
-            # all_values = [val for sub_dict in nested_dict.values() for val in sub_dict.values()]
-            new_symbols = [i for i in current_active_orders if i not in all_symbols] # and i not in all_values
+            new_symbols = [i for i in tickers_to_add if i not in all_symbols] # and i not in all_values
+            for i in new_symbols:
+                if i not in alpaca_symbols_dict.keys():
+                    print(i, "NOT IN ALPACA DB")
+                    new_symbols.remove(i)
 
             if len(new_symbols)> 0:
-                print("new symbols needed", new_symbols)
+                print("NEW SYMBOLS NEEDED FROM OPEN ORDERS", new_symbols)
                 QUEENBEE, queens_chess_pieces, queens_master_tickers =  handle_qcp_pawns(QUEENBEE, new_symbols)
         
         if run_all_pawns:

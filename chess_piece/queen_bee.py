@@ -82,6 +82,12 @@ TRINITY_ = "trinity_"
 
 # crypto
 crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+def symbol_is_crypto(symbol, crypto_currency_symbols=crypto_currency_symbols):
+    if symbol in crypto_currency_symbols:
+        return True
+    else:
+        return False
+
 coin_exchange = "CBSE"
 ACTIVE_SYMBOLS = return_Ticker_Universe().get('alpaca_symbols_dict')
 # misc
@@ -784,7 +790,7 @@ def route_queen_order(QUEEN, queen_order, queen_order_idx, order_status, pricein
 def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False, save_acct=False, save_rr=False, save_qo=False, active_queen_order_states=active_queen_order_states, console=True, upsert_to_main_server=upsert_to_main_server):
     
     try:
-        print("upsert_to_main_server", upsert_to_main_server)
+        # print("upsert_to_main_server", upsert_to_main_server)
         # Save Heart to avoid saving Queen to improve speed
         # if charlie_bee:
         #     QUEENsHeart.update({"charlie_bee": charlie_bee})
@@ -933,13 +939,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                 if app_request['app_requests_id'] in QUEEN[app_requests__bucket]:
                     continue
                 elif app_request['client_order_id'] == client_order_id:
-                    print(f"{client_order_id} ORDER ALREADY CLOSED")
                     if order_state in CLOSED_queenorders:
-                        msg = f'Queen Already Processing Sell Order'
-                        if client_order_id in QUEEN['queens_messages'].keys():
-                            QUEEN['queens_messages'][client_order_id].update({'msg': msg})
-                        else:
-                            QUEEN['queens_messages'][client_order_id] = {'msg': msg}
+                        print(f"{client_order_id} ORDER ALREADY CLOSED")
+                        # msg = f'Queen Already Processing Sell Order'
+                        # if client_order_id in QUEEN['queens_messages'].keys():
+                        #     QUEEN['queens_messages'][client_order_id].update({'msg': msg})
+                        # else:
+                        #     QUEEN['queens_messages'][client_order_id] = {'msg': msg}
                         QUEEN['app_requests__bucket'].append(app_request['app_requests_id'])
                     else:
                         print("App Req Sell Order")
@@ -1606,7 +1612,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                     #     # print("Not Buying until Wave ends then 22")
                     #     continue
                     elif 'sell' in trig and trig_wave_length_num < 22:
-                        print("Not Buying until Wave is longer then 22")
+                        # print("Not Buying until Wave is longer then 22")
                         continue
 
 
@@ -2813,7 +2819,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
 
             # Process All Orders
             s_time = datetime.now(est)
-            print("ORDER MANAGEMENT")
+            print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<ORDER MANAGEMENT>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee, mkhrs)
             charlie_bee['queen_cyle_times']['order management'] = (datetime.now(est) - s_time).total_seconds()
             
@@ -2826,7 +2832,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             # Hunt for Triggers
             # if seconds_to_market_close > 30:
             s_time = datetime.now(est)
-            print("COMMAND CONSCIENCE")
+            print("<<<<<<<<<<<<<<<<<<<<<<<COMMAND CONSCIENCE>>>>>>>>>>>>>>>>>>>>>>>>>>")
             command_conscience(QUEEN, STORY_bee, QUEEN_KING, api, mkhrs) ##### >   
             charlie_bee['queen_cyle_times']['command conscience'] = (datetime.now(est) - s_time).total_seconds()
             
