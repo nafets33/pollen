@@ -28,7 +28,6 @@ from tqdm import tqdm
 import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
-from streamlit_extras.switch_page_button import switch_page
 
 from chess_piece.pollen_db import PostgresHandler, PollenDatabase
 from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
@@ -2018,12 +2017,8 @@ def pollen_story(pollen_nectar):
                         current_price = theme_today_df.iloc[-1]["close"]
                         open_price = theme_today_df.iloc[0]["close"]  # change to timestamp lookup
             
-                        STORY_bee[ticker_time_frame]["story"]["current_from_open"] = (
-                            current_price - open_price
-                        ) / open_price
-                        STORY_bee[ticker_time_frame]["story"]["current_from_yesterday"] = (
-                            current_price - yesterday_price
-                        ) / yesterday_price
+                        STORY_bee[ticker_time_frame]["story"]["current_from_open"] = (current_price - open_price) / open_price
+                        STORY_bee[ticker_time_frame]["story"]["current_from_yesterday"] = (current_price - yesterday_price) / yesterday_price
 
                         # SLOPE NEEDED HERE WORKERBEE?
                         # e_timetoken = datetime.now(est)
@@ -2984,27 +2979,30 @@ def return_sma_slope(df, y_list, time_measure_list):
 # ###### >>>>>>>>>>>>>>>> QUEEN <<<<<<<<<<<<<<<#########
 
 
-def return_dfshaped_orders(running_orders, portfolio_name="Jq"):
-    running_orders_df = pd.DataFrame(running_orders)
-    if len(running_orders_df) > 0:
-        running_orders_df["filled_qty"] = running_orders_df["filled_qty"].apply(
-            lambda x: float(x)
+def fetch_portfolio_history(api, period='3M', timeframe='1D'):
+    try:
+        # Fetch portfolio history
+        portfolio_history = api.get_portfolio_history(
+            period=period,  # Options: '1D', '7D', '1M', '3M', '6M', '1A' -> for year
+            timeframe=timeframe,  # Options: '1Min', '5Min', '15Min', '1H', '1D'
         )
-        running_orders_df["req_qty"] = running_orders_df["req_qty"].apply(
-            lambda x: float(x)
-        )
-        running_orders_df = running_orders_df[
-            running_orders_df["portfolio_name"] == portfolio_name
-        ].copy()
-        running_portfolio = (
-            running_orders_df.groupby("symbol")[["filled_qty", "req_qty"]]
-            .sum()
-            .reset_index()
-        )
-    else:
-        running_portfolio = []  # empty
 
-    return running_portfolio
+        # Convert response to dictionary for better readability
+        history = portfolio_history._raw
+        df = pd.DataFrame(history)
+        # df['profit_loss'] = pd.to_numeric(df['profit_loss'])
+        # print(sum(df['profit_loss']))
+        # print(sum(df['profit_loss_pct']))
+        # print((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'])
+        # # Print summary
+        # print("Portfolio Equity: ", history['equity'])
+        # print("Timestamps: ", history['timestamp'])
+        # print("Profit/Loss: ", history['profit_loss'])
+        # print("Keys", history.keys())
+    # Keys dict_keys(['timestamp', 'equity', 'profit_loss', 'profit_loss_pct', 'base_value', 'base_value_asof', 'timeframe'])
+        return df
+    except Exception as e:
+        print("Error fetching portfolio history:", e)
 
 
 def createParser():
@@ -5152,7 +5150,7 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_
                 print(pq_env)
                 PickleData(pq_env.get('source'), pq_env, console=True)
             
-            switch_page('pollen')
+            # switch_page('pollen')
 
         return prod
     except Exception as e:

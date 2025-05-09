@@ -29,7 +29,7 @@ db=init_swarm_dbs(prod)
 
 def call_bishop_bees(prod=prod):
     print("HELLO BISHOP", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-    send_email("BISHOP OPEN", "BISHOP OPEN")
+    send_email(subject="BISHOP RUNNING")
     if pg_migration:
         BISHOP = read_swarm_db(prod, 'BISHOP')
     else:
@@ -58,7 +58,7 @@ def call_bishop_bees(prod=prod):
                     # streamit=False,
                         )
     print("BISHOP COMPLETE", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-    send_email("BISHOP COMPLETE", "BISHOP COMPLETE")
+    send_email(subject="BISHOP COMPLETE")
 
 def call_job_workerbees(prod=prod):
 
@@ -89,15 +89,15 @@ def call_job_workerbees(prod=prod):
 run_time = "09:30"
 a = schedule.every().day.at(run_time).do(call_job_workerbees)
 
-# run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
-b = schedule.every().day.at("09:35").do(call_bishop_bees)
-c = schedule.every().day.at("10:15").do(call_bishop_bees)
-d = schedule.every().day.at("11:00").do(call_bishop_bees)
-e = schedule.every().day.at("12:00").do(call_bishop_bees)
-f = schedule.every().day.at("13:00").do(call_bishop_bees)
-g = schedule.every().day.at("14:00").do(call_bishop_bees)
-h = schedule.every().day.at("15:00").do(call_bishop_bees)
-i = schedule.every().day.at("16:00").do(call_bishop_bees)
+# # run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
+# b = schedule.every().day.at("09:35").do(call_bishop_bees)
+# c = schedule.every().day.at("10:15").do(call_bishop_bees)
+# d = schedule.every().day.at("11:00").do(call_bishop_bees)
+# e = schedule.every().day.at("12:00").do(call_bishop_bees)
+# f = schedule.every().day.at("13:00").do(call_bishop_bees)
+# g = schedule.every().day.at("14:00").do(call_bishop_bees)
+# h = schedule.every().day.at("15:00").do(call_bishop_bees)
+# i = schedule.every().day.at("16:00").do(call_bishop_bees)
 
 
 all_jobs = schedule.get_jobs()

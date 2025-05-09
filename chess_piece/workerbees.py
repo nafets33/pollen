@@ -70,7 +70,7 @@ CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
 CRYPTO_HEADER = {"accept": "application/json"}
 
 upsert_to_main_server = os.getenv("upsert_to_main_server")
-
+pg_migration = os.getenv('pg_migration')
 # # WORKEBEE WAS NOT AS EFFIIENT TO KEEP??? check on this
 # def ttf__save(table_name, task_results):
 #     """
@@ -93,112 +93,63 @@ upsert_to_main_server = os.getenv("upsert_to_main_server")
 
 def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False, upsert_to_main_server=upsert_to_main_server):
     s = datetime.now(est)
+    table_name = "pollen_store" if not backtesting else "pollen_store_backtesting"
 
-    table_name = "pollen_store"
-    PollenDatabase.create_table_if_not_exists(table_name)
-
-    async def main_func(session, ticker_time_frame, pickle_file, key, data):
+    async def main_func(session, ticker_time_frame, pickle_file, key, data, allow_pg_migration, task_results):
         async with session:
             try:
-                if pg_migration:
-                    PollenDatabase.upsert_data(table_name ,key , data, console=False, main_server=upsert_to_main_server)
+                if backtesting:
+                    allow_pg_migration = False
+                if allow_pg_migration:
+                    PollenDatabase.upsert_data(table_name, key, data, console=False, main_server=upsert_to_main_server)
                     task = (key, data)
-                    task_results.append(task) # Collect tasks for threadded saving
+                    task_results.append(task)
                 else:
                     PickleData(pickle_file, data, console=False)
-                return {
-                    "status": "success",
-                    "ticker_time_frame": ticker_time_frame,
-                }
+                return {"status": "success", "ticker_time_frame": ticker_time_frame}
             except Exception as e:
                 print("ps_error", e, ticker_time_frame)
                 return {"status": "error", "error": e}
 
-    async def main(
-        symbols_pollenstory_dbs,
-        symbols_STORY_bee_root,
-        pollens_honey,
-        backtesting,
-        backtesting_star,
-        macd_part_fname,
-    ):
-
+    async def main(symbols_pollenstory_dbs, symbols_STORY_bee_root, pollens_honey, macd_part_fname, allow_pg_migration, task_results):
         async with aiohttp.ClientSession() as session:
             return_list = []
             tasks = []
+
             for ticker_time_frame in pollens_honey["pollen_story"]:
                 key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
                 ticker, ttime, tframe = ticker_time_frame.split("_")
                 if ticker not in ['SPY', 'QQQ']:
                     continue
-                
-                pickle_file = os.path.join(
-                    symbols_pollenstory_dbs,
-                    f"{ticker_time_frame}{macd_part_fname}.pkl",
-                )
-                data = {
-                    "pollen_story": pollens_honey["pollen_story"][
-                        ticker_time_frame
-                    ]
-                }
 
-                tasks.append(
-                    asyncio.ensure_future(
-                        main_func(
-                            session, ticker_time_frame, pickle_file, key, data
-                        )
-                    )
-                )
+                pickle_file = os.path.join(symbols_pollenstory_dbs, f"{ticker_time_frame}{macd_part_fname}.pkl")
+                data = {"pollen_story": pollens_honey["pollen_story"][ticker_time_frame]}
+                tasks.append(asyncio.ensure_future(main_func(session, ticker_time_frame, pickle_file, key, data, allow_pg_migration, task_results)))
 
             for ticker_time_frame in pollens_honey["conscience"]["STORY_bee"]:
                 key = f"STORY_BEE_{ticker_time_frame}{macd_part_fname}"
                 ticker, ttime, tframe = ticker_time_frame.split("_")
-                pickle_file = os.path.join(
-                    symbols_STORY_bee_root,
-                    f"{ticker_time_frame}{macd_part_fname}.pkl",
-                )
-                data = {
-                    "STORY_bee": pollens_honey["conscience"]["STORY_bee"][
-                        ticker_time_frame
-                    ]
-                }
+                pickle_file = os.path.join(symbols_STORY_bee_root, f"{ticker_time_frame}{macd_part_fname}.pkl")
+                data = {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]}
+                tasks.append(asyncio.ensure_future(main_func(session, ticker_time_frame, pickle_file, key, data, allow_pg_migration, task_results)))
 
-                tasks.append(
-                    asyncio.ensure_future(
-                        main_func(
-                            session, ticker_time_frame, pickle_file, key, data
-                        )
-                    )
-                )
+            results = await asyncio.gather(*tasks)
+            return results
 
-            original_pokemon = await asyncio.gather(*tasks)
-            for pokemon in original_pokemon:
-                return_list.append(pokemon)
-            return return_list
-
-    # for every ticker ticker write pickle file to db
-    symbols_pollenstory_dbs = (workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root())
-
-    symbols_STORY_bee_root = (workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee())
-
-    if backtesting:
-        macd_part_fname = "__{}-{}-{}".format(
-            MACD_settings["fast"], MACD_settings["slow"], MACD_settings["smooth"]
-        )
-    else:
-        macd_part_fname = ""
-
+    symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
+    symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee()
+    macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], MACD_settings["slow"], MACD_settings["smooth"]) if backtesting else ""
+    
     task_results = []
 
-    # if backtesting run day only
     save_all_pollenstory = asyncio.run(
         main(
             symbols_pollenstory_dbs,
             symbols_STORY_bee_root,
             pollens_honey,
-            backtesting,
-            backtesting_star,
             macd_part_fname,
+            pg_migration,
+            task_results,
         )
     )
 
@@ -209,8 +160,13 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
 
 
 
-def update_speed_gauges(pollens_honey, speed_gauges):
+def update_speed_gauges(pollens_honey, speed_gauges=None):
     # for each star append last macd state
+    if not speed_gauges:
+        pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"]["macd_gauge"] = []
+        pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]["story"]["price_gauge"] = [] 
+        return pollens_honey
+    
     for ticker_time_frame, i in pollens_honey["conscience"].get("STORY_bee").items():
         speed_gauges[ticker_time_frame]["macd_gauge"].append(i["story"]["macd_state"])
         speed_gauges[ticker_time_frame]["price_gauge"].append(i["story"]["last_close_price"])
@@ -397,6 +353,7 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
 
     except Exception as e:
         print_line_of_error("beeee worker error")
+        logging.error(str(e))
 
 
 
@@ -413,6 +370,7 @@ def queen_workerbees(
     backtesting_star=False,
     streamit=False,
     pg_migration=True,
+    upsert_to_main_server=upsert_to_main_server,
 ):
 
     if backtesting:
@@ -536,29 +494,29 @@ def queen_workerbees(
             # s = datetime.datetime.now(est) #TEST
             bars_data["vwap_original"] = bars_data["vwap"]
 
-            df_vwap = return_VWAP(bars_data)
+            bars_data = return_VWAP(bars_data)
             # df_vwap = vwap(bars_data)
 
-            df_vwap_rsi = return_RSI(df=df_vwap, length=14)
+            bars_data = return_RSI(df=bars_data, length=14)
 
-            df_vwap_rsi_macd = return_macd(
-                df_main=df_vwap_rsi,
+            bars_data = return_macd(
+                df_main=bars_data,
                 fast=MACD["fast"],
                 slow=MACD["slow"],
                 smooth=MACD["smooth"],
             )
-            df_vwap_rsi_macd_smaslope = return_sma_slope(
-                df=df_vwap_rsi_macd,
-                time_measure_list=[3, 6, 23, 33],
-                y_list=["close", "macd", "hist"],
-            )
+            # df_vwap_rsi_macd_smaslope = return_sma_slope(
+            #     df=df_vwap_rsi_macd,
+            #     time_measure_list=[3, 6, 23, 33],
+            #     y_list=["close", "macd", "hist"],
+            # )
             # e = datetime.datetime.now(est)
             # print(str((e - s)) + ": " + datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
             # 0:00:00.198920: Monday, 21. March 2022 03:02PM 2 days 1 Minute
-            return [True, df_vwap_rsi_macd_smaslope]
+            return [True, bars_data]
         except Exception as e:
-            print("log this error", print_line_of_error())
-            return [False, e, print_line_of_error()]
+            print_line_of_error("return_getbars_WithIndicators ERROR")
+            return [False]
 
     def Return_Init_ChartData(ticker_list, chart_times):  # Iniaite Ticker Charts with Indicator Data
         # ticker_list = ['SPY', 'QQQ']
@@ -969,87 +927,91 @@ def queen_workerbees(
             "rebuild_confirmation": rebuild_confirmation,
         }
 
-    def pollen_hunt(df_tickers_data, MACD, MACD_WAVES, reset_only=reset_only, backtesting=backtesting):
+    def pollen_hunt(df_tickers_data, MACD={"fast": 13,"slow": 28,"smooth": 9}, MACD_WAVES=None, reset_only=reset_only, backtesting=backtesting):
+        try:
         # Check to see if any charts need to be Recreate as times lapsed
-        if reset_only == False:
-            res = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
-            df_tickers_data = res.get("df_tickers_data")
-            df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data)
+            if reset_only == False:
+                res = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
+                df_tickers_data = res.get("df_tickers_data")
+                df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data)
 
-        main_rebuild_dict = {}  ##> only override current dict if memory becomes issues!
-        chart_rebuild_dict = {}
-        ttf_MACD = {ttf: MACD for ttf in df_tickers_data.keys()}
-        # print(f"Running, {MACD}, for {len(df_tickers_data)}")
-        
-        if backtesting:
-            pass
-        else:
-            MACD_WAVES_ttfs = MACD_WAVES.index.tolist()
-            for ttf, macd_var in ttf_MACD.items():
-                if ttf in MACD_WAVES_ttfs:
-                    story_AI_MACD = MACD_WAVES.loc[ttf].get("avg_ratio")
-                    m_fast, m_slow, m_smooth = story_AI_MACD.split("_")
-                    macd_var = {
-                        "fast": int(m_fast),
-                        "slow": int(m_slow),
-                        "smooth": int(m_smooth),
-                    }
-                    ttf_MACD[ttf] = macd_var
-
-        def add_techincals_indicator(ticker_time, df, MACD):
-            chart_rebuild_dict[ticker_time] = df
-            df_data_new = return_getbars_WithIndicators(bars_data=df, MACD=MACD)
-            if df_data_new[0] == True:
-                main_rebuild_dict[ticker_time] = df_data_new[1]
+            main_rebuild_dict = {}  ##> only override current dict if memory becomes issues!
+            chart_rebuild_dict = {}
+            ttf_MACD = {ttf: MACD for ttf in df_tickers_data.keys()}
+            # print(f"Running, {MACD}, for {len(df_tickers_data)}")
+            
+            if backtesting:
+                pass
             else:
-                print("error", ticker_time)
+                if isinstance(MACD_WAVES, pd.DataFrame):
+                    MACD_WAVES_ttfs = MACD_WAVES.index.tolist()
+                    for ttf, macd_var in ttf_MACD.items():
+                        if ttf in MACD_WAVES_ttfs:
+                            story_AI_MACD = MACD_WAVES.loc[ttf].get("avg_ratio")
+                            m_fast, m_slow, m_smooth = story_AI_MACD.split("_")
+                            macd_var = {
+                                "fast": int(m_fast),
+                                "slow": int(m_slow),
+                                "smooth": int(m_smooth),
+                            }
+                            ttf_MACD[ttf] = macd_var
 
-        s = datetime.now(est)
+            def add_techincals_indicator(ticker_time, df, MACD):
+                chart_rebuild_dict[ticker_time] = df
+                df_data_new = return_getbars_WithIndicators(bars_data=df, MACD=MACD)
+                if df_data_new[0] == True:
+                    main_rebuild_dict[ticker_time] = df_data_new[1]
+                else:
+                    print("error", ticker_time)
 
-        async def main_func(session, ticker_time, df, MACD):
-            async with session:
-                try:
-                    return_dict = add_techincals_indicator(ticker_time, df, MACD)
-                    return {
-                        "return_dict": return_dict
-                    }  # return Charts Data based on Queen's Query Params, (stars())
-                except Exception as e:
-                    print("erhere_3", e, ticker_time)
+            s = datetime.now(est)
 
-        async def main(df_tickers_data):
+            async def main_func(session, ticker_time, df, MACD):
+                async with session:
+                    try:
+                        return_dict = add_techincals_indicator(ticker_time, df, MACD)
+                        return {
+                            "return_dict": return_dict
+                        }  # return Charts Data based on Queen's Query Params, (stars())
+                    except Exception as e:
+                        print("erhere_3", e, ticker_time)
 
-            async with aiohttp.ClientSession() as session:
-                return_list = []
-                tasks = []
-                for ticker_time, df in df_tickers_data.items():
-                    if len(df) == 0:
-                        print("errrrr", ticker_time)
-                    #     ipdb.set_trace()
-                    #     continue
-                    MACD = ttf_MACD.get(ticker_time)  # get MAC from KING
-                    tasks.append(
-                        asyncio.ensure_future(main_func(session, ticker_time, df, MACD))
-                    )
-                original_pokemon = await asyncio.gather(*tasks)
-                for pokemon in original_pokemon:
-                    return_list.append(pokemon)
-                return return_list
+            async def main(df_tickers_data):
 
-        return_list = asyncio.run(main(df_tickers_data))
-        e = datetime.now(est)
-        # print(f"async Techincals Join {df_tickers_data.keys()} --- {(e - s)} seconds ---")
+                async with aiohttp.ClientSession() as session:
+                    return_list = []
+                    tasks = []
+                    for ticker_time, df in df_tickers_data.items():
+                        if len(df) == 0:
+                            print("errrrr", ticker_time)
+                        #     ipdb.set_trace()
+                        #     continue
+                        MACD = ttf_MACD.get(ticker_time)  # get MAC from KING
+                        tasks.append(
+                            asyncio.ensure_future(main_func(session, ticker_time, df, MACD))
+                        )
+                    original_pokemon = await asyncio.gather(*tasks)
+                    for pokemon in original_pokemon:
+                        return_list.append(pokemon)
+                    return return_list
 
-        # for ticker_time, df in df_tickers_data.items():
-        #     add_techincals_indicator(ticker_time, df, MACD)
+            return_list = asyncio.run(main(df_tickers_data))
+            e = datetime.now(est)
+            # print(f"async Techincals Join {df_tickers_data.keys()} --- {(e - s)} seconds ---")
 
-        return {
-            "pollencharts_nectar": main_rebuild_dict,
-            "pollencharts": chart_rebuild_dict,
-        }
+            # for ticker_time, df in df_tickers_data.items():
+            #     add_techincals_indicator(ticker_time, df, MACD)
+
+            return {
+                "pollencharts_nectar": main_rebuild_dict,
+                "pollencharts": chart_rebuild_dict,
+            }
+        except Exception as e:
+            print_line_of_error("del me")
 
     """ Initiate your Charts with Indicators """
 
-    def initiate_ttframe_charts(QUEEN, queens_chess_piece, master_tickers, star_times, MACD_settings, MACD_WAVES, speed_gauges, reset_only=reset_only, pg_migration=pg_migration):
+    def initiate_ttframe_charts(master_tickers, star_times, MACD_settings, MACD_WAVES, speed_gauges=None, reset_only=reset_only, pg_migration=pg_migration):
         try:
             s_mainbeetime = datetime.now(est)
             # WORKERBEE if backetesting no need to recall chart data
@@ -1057,9 +1019,6 @@ def queen_workerbees(
             
             for ticker in master_tickers:
                 res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
-                if len(res) == 0:
-                    print(f"{ticker} Resp for Inital Chart Data Failed")
-                    continue
                 df_tickers_data = res["init_charts"]
                 df_all.update(df_tickers_data)
 
@@ -1071,29 +1030,21 @@ def queen_workerbees(
 
             """ give it all to the QUEEN put directkly in function """
             pollen = pollen_hunt(df_tickers_data=df_tickers_data, MACD=MACD_settings, MACD_WAVES=MACD_WAVES)
-            QUEEN[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
-            QUEEN[queens_chess_piece]["pollencharts_nectar"] = pollen["pollencharts_nectar"]
-            """# mark final times and return values"""
-            e_mainbeetime = datetime.now(est)
             if reset_only: # run pollen story and save then quit
                 pollens_honey = pollen_story(pollen_nectar=pollen.get("pollencharts_nectar"))
-                for k,v in pollens_honey['pollen_story'].items():
-                    if '1Minute_1Day' in k:
-                        # WORKERBEE update 1 table of last column
-                        df = v.tail(1) # get last row
-                        # print(df)
-
                 pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
                 # s = datetime.now()
-                write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=pg_migration)
+                write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=pg_migration, upsert_to_main_server=upsert_to_main_server)
+                
+
+            """# mark final times and return values"""
+            e_mainbeetime = datetime.now(est)
                 # print((datetime.now() - s).total_seconds())
 
-            return QUEEN
+            return pollen
         except Exception as e:
             print_line_of_error(f"BEES IINIT FAILED {e} ")
-            print(e)
-            ipdb.set_trace()
-            sys.exit()
+            raise e
 
     def chunk(it, size):
         it = iter(it)
@@ -1126,7 +1077,7 @@ def queen_workerbees(
 
         pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
         s = datetime.now()
-        write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=pg_migration)
+        write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=pg_migration, upsert_to_main_server=upsert_to_main_server)
         write_time = (datetime.now() - s).total_seconds()
         
         print(f'{queens_chess_piece}: hunt {hunt_time} : story {story_time} : write {write_time}')
@@ -1154,6 +1105,7 @@ def queen_workerbees(
             WORKERBEE_queens = {i: init_QUEENWORKER(i) for i in queens_chess_pieces}
 
             for qcp_worker in WORKERBEE_queens.keys():
+            # for qcp_worker in WORKERBEE_queens.keys():
                 if backtesting:
                     MACD_settings = macd
                 else:
@@ -1165,6 +1117,9 @@ def queen_workerbees(
                     continue
                 master_tickers = qcp.get('tickers')
                 master_tickers = [i for i in master_tickers if i in queens_master_tickers]
+                if not master_tickers:
+                    print("not tics available in master")
+                    return None
                 # master_tickers = ['SPY', 'BTC/USD', 'ETH/USD', 'LTC/USD']
 
                 star_times = stars() # QUEENBEE["workerbees"][qcp_worker]["stars"]
@@ -1184,9 +1139,8 @@ def queen_workerbees(
                     }
                 )
 
-                init_data = initiate_ttframe_charts(
-                    QUEEN=WORKERBEE_queens[qcp_worker],
-                    queens_chess_piece=qcp_worker,
+                WORKERBEE_QUEEN = WORKERBEE_queens[qcp_worker]
+                pollen = initiate_ttframe_charts(
                     master_tickers=master_tickers,
                     star_times=star_times,
                     MACD_settings=MACD_settings,
@@ -1194,8 +1148,9 @@ def queen_workerbees(
                     speed_gauges=speed_gauges,
                     reset_only=reset_only,
                 )
-                if init_data:
-                    WORKERBEE_queens[qcp_worker] = init_data
+                WORKERBEE_QUEEN[qcp_worker]["pollencharts"] = pollen["pollencharts"]
+                WORKERBEE_QUEEN[qcp_worker]["pollencharts_nectar"] = pollen["pollencharts_nectar"]
+                WORKERBEE_queens[qcp_worker] = WORKERBEE_QUEEN
                 
 
             return {"WORKERBEE_queens": WORKERBEE_queens, "speed_gauges": speed_gauges}
@@ -1203,7 +1158,7 @@ def queen_workerbees(
             print_line_of_error(e)
     
     
-    def queens_court__WorkerBees(QUEENBEE, prod, qcp_s, run_all_pawns=False, streamit=False):
+    def queens_court__WorkerBees(QUEENBEE, prod, qcp_s, run_all_pawns=False, streamit=False, reset_only=reset_only):
 
         if type(qcp_s) == str:
             qcp_s = [qcp_s]
@@ -1295,7 +1250,7 @@ def queen_workerbees(
                     print(i, "NOT IN ALPACA DB")
                     new_symbols.remove(i)
 
-            if len(new_symbols)> 0:
+            if len(new_symbols)> 0 and reset_only == False:
                 print("NEW SYMBOLS NEEDED FROM OPEN ORDERS", new_symbols)
                 QUEENBEE, queens_chess_pieces, queens_master_tickers =  handle_qcp_pawns(QUEENBEE, new_symbols)
         
@@ -1315,13 +1270,27 @@ def queen_workerbees(
             if streamit:
                 st.write(msg)
 
-            queen_workers = init_QueenWorkersBees(
-                QUEENBEE=QUEENBEE,
-                queens_chess_pieces=queens_chess_pieces,
-                MACD_WAVES=MACD_WAVES,
-                queens_master_tickers=queens_master_tickers,
-                reset_only=reset_only,
-            )
+            # def chunk_queenbee(queens_master_tickers):
+            
+            if len(queens_master_tickers) > 89:
+                print("chunking queens")
+                from tqdm import tqdm
+                for ticker in tqdm(queens_master_tickers):
+                    queen_workers = init_QueenWorkersBees(
+                        QUEENBEE=QUEENBEE,
+                        queens_chess_pieces=queens_chess_pieces,
+                        MACD_WAVES=MACD_WAVES,
+                        queens_master_tickers=[ticker],
+                        reset_only=reset_only,
+                    )
+            else:
+                queen_workers = init_QueenWorkersBees(
+                    QUEENBEE=QUEENBEE,
+                    queens_chess_pieces=queens_chess_pieces,
+                    MACD_WAVES=MACD_WAVES,
+                    queens_master_tickers=queens_master_tickers,
+                    reset_only=reset_only,
+                )
             if reset_only:
                 msg=("EXITING RESET ONLY")
                 print(msg)
@@ -1404,7 +1373,7 @@ def queen_workerbees(
 
                 if backtesting or reset_only:
                     break
-                if close_worker(WORKERBEE_queens, crypto):
+                if close_worker(WORKERBEE_queens, crypto=False): #WORKERBEE HC UNTIL CRYPTO WORKING
                     break
 
         except Exception as errbuz:

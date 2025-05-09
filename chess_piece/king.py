@@ -67,7 +67,7 @@ def kingdom__global_vars():
         "completed",
         "completed_alpaca",
         "running_open",
-        "archived_bee",
+        "archived",
         "final",
         "completed_pollen",
     ],
@@ -613,7 +613,7 @@ def main_index_tickers():
 
 
 
-# CRYPTO
+# CRYPTO # WORKERBEE move to queen_hive
 def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, e_date=False):
 
     CRYPTO_URL = "https://data.alpaca.markets/v1beta3/crypto/us"
@@ -674,6 +674,7 @@ def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, 
 
     except Exception as e:
         print("Error in return_crypto_bars: ", print_line_of_error(e))
+        
 
 def return_crypto_snapshots(symbols):
 

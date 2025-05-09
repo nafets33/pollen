@@ -34,7 +34,7 @@ def generate_shade(number_variable, base_color=False, wave=False, shade_num_var=
         shade_num_var = shade_num_var * 3
       # if number_variable < -100 or number_variable > 100:
       #     raise ValueError("Number variable must be between -100 and 100")
-      if number_variable > -50 and number_variable < 50:
+      if number_variable > -75 and number_variable < 75:
           return None
       
       if base_color:
@@ -196,6 +196,7 @@ def return_waveview_fillers(QUEEN_KING, waveview):
         return df
     except Exception as e:
         print_line_of_error(f"utils {e}")
+        # print(remaining_budget, remaining_budget_borrow)
         raise e
 
 
@@ -221,6 +222,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df_qcp = revrec.get('df_qcp')
         df_ticker = revrec.get('df_ticker')
 
+
         df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
         if qk_chessboard:
             symbols = [item for sublist in [v.get('tickers') for v in qk_chessboard.values()] for item in sublist]
@@ -232,10 +234,15 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         qcp_name = {data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() }
         qcp_name['Queen'] = 'Queen'
         qcp_name['King'] = 'King'
+        return_early = False
         if toggle_view_selection in qcp_name.keys():
             toggle_view_selection = qcp_name[toggle_view_selection]
-        if toggle_view_selection == "Not On Board":
+        elif toggle_view_selection == "Not On Board":
             toggle_view_selection = "non_active_stories"
+        elif toggle_view_selection in ['Portfolio', 'King']:
+            pass
+        else:
+            return_early = True
 
         qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
         ticker_filter = [ticker for (ticker, qcp) in qcp_ticker.items() if qcp == toggle_view_selection]                
@@ -350,6 +357,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                                                    star_powers_borrow=star_powers_borrow,
                                                    symbol_qcp_group=symbol_qcp_group)
                     df.at[symbol, 'add_symbol_option'] = option
+                    
                     remaining_budget__ = remaining_budget.get(symbol)
                     df.at[symbol, 'remaining_budget'] = remaining_budget__
                     df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow.get(symbol)
@@ -360,34 +368,39 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     budget = df_ticker.at[symbol, 'ticker_total_budget']
                     df.at[symbol, 'total_budget'] = round(budget)
 
-                    df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
-                    take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
-                    sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
-                    close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
-                    kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), 
-                                                 wave_amo=buy_alloc_deploy.get(symbol), 
-                                                 take_profit=take_profit, 
-                                                 sell_out=sell_out, 
-                                                 close_order_today=close_order_today
-                                                 )
-                    df.at[symbol, 'kors'] = kors
+                    if not return_early:
+                        df['trading_model_kors'] = df['symbol'].apply(lambda x: return_trading_model_kors_v2(QUEEN_KING, symbol=x))
+                        take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
+                        sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
+                        close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
+                        kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), 
+                                                    wave_amo=buy_alloc_deploy.get(symbol), 
+                                                    take_profit=take_profit, 
+                                                    sell_out=sell_out, 
+                                                    close_order_today=close_order_today
+                                                    )
+                        df.at[symbol, 'kors'] = kors
 
-            
-                # star kors
-                for star in star_names().keys():
-                    ttf = f'{symbol}_{star_names(star)}'
-                    # kors per star
-                    star_kors = df_waveview.at[ttf, 'kors']
-                    star_kors['wave_amo'] = df_waveview.at[ttf, "allocation_long_deploy"]
-                    df.at[symbol, f'{star}_kors'] = star_kors
-                    # message
-                    wavestate = f'{df_waveview.at[ttf, "bs_position"]}({df_waveview.at[ttf, "length"]})'
-                    alloc_deploy_msg = '${:,.0f}'.format(round(df_stars.at[ttf, "star_buys_at_play"]))
-                    df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
-                    df.at[symbol, f'{star}_value'] = df_stars.at[ttf, "star_buys_at_play"]
+                if not return_early:
+                    # star kors
+                    for star in star_names().keys():
+                        ttf = f'{symbol}_{star_names(star)}'
+                        # kors per star
+                        star_kors = df_waveview.at[ttf, 'kors']
+                        star_kors['wave_amo'] = df_waveview.at[ttf, "allocation_long_deploy"]
+                        df.at[symbol, f'{star}_kors'] = star_kors
+                        # message
+                        wavestate = f'{df_waveview.at[ttf, "bs_position"]}({df_waveview.at[ttf, "length"]})'
+                        alloc_deploy_msg = '${:,.0f}'.format(round(df_stars.at[ttf, "star_buys_at_play"]))
+                        df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
+                        df.at[symbol, f'{star}_value'] = df_stars.at[ttf, "star_buys_at_play"]
                     
             except Exception as e:
                 print("mmm error", symbol, print_line_of_error(e))
+
+        if return_early:
+            return df
+
 
         story_grid_num_cols = ['star_buys_at_play',
         'star_sells_at_play',
@@ -467,22 +480,21 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
 
         # Bishop yahoo data
         # WORKERBEE, only read bishop once a day then cache it
-        if pg_migration:
-            table_name = 'db' if prod else 'db_sandbox'
-            BISHOP = PollenDatabase.retrieve_data(table_name, 'BISHOP')
-        else:
-            db=init_swarm_dbs(prod)
-            BISHOP = ReadPickleData(db.get('BISHOP'))
+        # if pg_migration:
+        #     table_name = 'db' if prod else 'db_sandbox'
+        #     BISHOP = PollenDatabase.retrieve_data(table_name, 'BISHOP')
+        # else:
+        #     db=init_swarm_dbs(prod)
+        #     BISHOP = ReadPickleData(db.get('BISHOP'))
         
-        try:
-
-            ticker_info = BISHOP.get('ticker_info').set_index('ticker')
-            ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
-            df = df.set_index('symbol', drop=False)
-            ticker_info = ticker_info[[i for i in ticker_info_cols if i not in df.columns]]
-            df = df.merge(ticker_info, left_index=True, right_index=True, how='left')
-        except Exception as e:
-            print("BISHOP", e)
+        # try:
+        #     ticker_info = BISHOP.get('ticker_info').set_index('ticker')
+        #     ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
+        #     df = df.set_index('symbol', drop=False)
+        #     ticker_info = ticker_info[[i for i in ticker_info_cols if i not in df.columns]]
+        #     df = df.merge(ticker_info, left_index=True, right_index=True, how='left')
+        # except Exception as e:
+        #     print("BISHOP", e)
 
 
 

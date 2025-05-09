@@ -4,32 +4,15 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta, date
 import pytz
-import subprocess
-import sys
-
-from PIL import Image
 from dotenv import load_dotenv
 import os
-import requests
-
 import streamlit as st
 from pq_auth import signin_main
-import time
-import argparse
-import json
 
 # main chess piece
-# from chess_piece.workerbees import queen_workerbees
 from chess_piece.king import return_db_root, ReadPickleData
 from chess_piece.queen_hive import return_all_client_users__db, init_queenbee, init_swarm_dbs
 from chess_piece.app_hive import trigger_py_script, standard_AGgrid
-# componenets
-from streamlit_extras.switch_page_button import switch_page
-from streamlit_extras.stoggle import stoggle
-import hydralit_components as hc
-from custom_button import cust_Button
-from custom_text import custom_text, TextOptionsBuilder
-
 from chess_piece.pollen_db import PollenDatabase, MigratePostgres
 from tqdm import tqdm
 
@@ -187,7 +170,7 @@ if __name__ == '__main__':
         for table in tables:
             with tabs[s_t]:
                 st.write(table)
-                df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table))).rename(columns={0:'key', 1:'timestamp'})
+                df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps_and_sizes(table))).rename(columns={0:'key', 1:'timestamp'})
                 # df[2] = pd.to_numeric(2)
                 # st.write(sum(df[2]))
                 if table == 'client_user_store':
@@ -233,7 +216,7 @@ if __name__ == '__main__':
 
                 st.subheader("Migrate PG local to PG Server")
                 tables_to_migrate = st.multiselect('migrate Tables', options=tables)
-                if st.button("Migrate PostGres Table Keys"):
+                if st.button(f"Migrate PostGres Table Keys {tables_to_migrate}"):
                     for table in tqdm(tables_to_migrate):
                         if table == 'client_users':
                             copy_data_between_tables(source_table='client_users', target_table='client_users')
@@ -289,4 +272,9 @@ if __name__ == '__main__':
                             else:
                                 st.error(f"{key_name} C error")
                     st.success("MIGRATION COMPLETED")
-                
+        
+
+        # VACCUM TABLE
+        table_key = st.selectbox("Vaccum Table", options=tables)
+        if st.button(f"Vaccum Table {table_key}"):
+            PollenDatabase.vacuum_table(table_key)

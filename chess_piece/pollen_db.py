@@ -221,7 +221,7 @@ class PollenDatabase:
             conn.commit()
 
     @staticmethod
-    def upsert_data(table_name, key, value, console=True, console_table_ignore=['logging_store'], main_server=server):
+    def upsert_data(table_name, key, value, console=True, console_table_ignore=[''], main_server=server):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
         Dynamically handles 'last_modified' based on table schema.
@@ -231,15 +231,15 @@ class PollenDatabase:
         try:
             # print(f"saving {key}  size: {sys.getsizeof(value)}")
             # Check if 'last_modified' column exists
-            with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
-                cur.execute(f"""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = %s AND column_name = 'last_modified'
-                """, (table_name,))
-                has_last_modified = cur.fetchone() is not None
-            if not has_last_modified:
-                PollenDatabase.update_table_schema(table_name)
+            # with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
+            #     cur.execute(f"""
+            #         SELECT column_name 
+            #         FROM information_schema.columns 
+            #         WHERE table_name = %s AND column_name = 'last_modified'
+            #     """, (table_name,))
+            #     has_last_modified = cur.fetchone() is not None
+            # if not has_last_modified:
+            #     PollenDatabase.update_table_schema(table_name)
             
             with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
                 value_json = json.dumps(value, cls=PollenJsonEncoder)
@@ -336,12 +336,12 @@ class PollenDatabase:
         return None
     
     @staticmethod
-    def retrieve_all_story_bee_data(symbols):
+    def retrieve_all_story_bee_data(symbols, main_server=server):
         conn = None
         merged_data = {"STORY_bee": {}}
 
         try:
-            conn = PollenDatabase.get_connection()
+            conn = PollenDatabase.get_connection(server)
             cur = conn.cursor()
 
             # Base query
@@ -572,6 +572,69 @@ class PollenDatabase:
                 return []
 
     @staticmethod
+    def get_all_keys_with_timestamps_and_sizes(table_name='db', db_root=None):
+        """
+        Fetch all keys along with their last modified timestamp and human-readable size from the specified table.
+        """
+        def format_size(size_in_bytes):
+            """Convert bytes to a human-readable format."""
+            if size_in_bytes < 1024:
+                return f"{size_in_bytes} B"
+            elif size_in_bytes < 1024**2:
+                return f"{size_in_bytes / 1024:.2f} KB"
+            elif size_in_bytes < 1024**3:
+                return f"{size_in_bytes / (1024**2):.2f} MB"
+            else:
+                return f"{size_in_bytes / (1024**3):.2f} GB"
+
+        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            try:
+                if db_root:
+                    query = f"""
+                        SELECT key, last_modified, pg_column_size(key) AS size
+                        FROM {table_name}
+                        WHERE key LIKE %s
+                        ORDER BY last_modified DESC;
+                    """
+                    cur.execute(query, (f'%{db_root}%',))
+                else:
+                    query = f"""
+                        SELECT key, last_modified, pg_column_size(key) AS size
+                        FROM {table_name}
+                        ORDER BY last_modified DESC;
+                    """
+                    cur.execute(query)
+
+                # Fetch all keys, timestamps, and sizes
+                results = cur.fetchall()
+
+                # Convert sizes to human-readable format
+                return [(key, last_modified, format_size(size)) for key, last_modified, size in results]
+
+            except Exception as e:
+                if table_name != 'client_users':
+                    print_line_of_error(f"GET KEYS Error: {e}")
+                return []
+
+    @staticmethod
+    def vacuum_table(table_name='db'):
+        try:
+            conn = PollenDatabase.get_connection()  # Get connection
+            conn.autocommit = True  # Ensure autocommit is enabled
+            
+            with conn.cursor() as cur:
+                cur.execute(f"VACUUM FULL ANALYZE {table_name};")
+                print(f"VACUUM FULL completed for table: {table_name}")
+
+        except Exception as e:
+            print(f"Error running VACUUM FULL: {e}")
+
+        finally:
+            if conn:
+                conn.close()  # Ensure connection is closed
+
+
+    @staticmethod
     def delete_table(table_name):
         """
         Delete the specified table from the database.
@@ -719,7 +782,7 @@ class MigratePostgres:
 
 
     @staticmethod
-    def upsert_migrate_data(table_name, key, value, console=True, console_table_ignore=['logging_store']):
+    def upsert_migrate_data(table_name, key, value, console=True, console_table_ignore=[]):
         """
         Upsert data into a specified table. If the table doesn't exist, it will be created.
         Dynamically handles 'last_modified' based on table schema.
@@ -746,7 +809,7 @@ class MigratePostgres:
             
             return True
         except Exception as e:
-            print("issue arrived in upsert_data function")
+            print(f"issue arrived in upsert_data function {key}")
             print_line_of_error(e)
             return False
 

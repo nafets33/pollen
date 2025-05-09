@@ -16,7 +16,7 @@ from alpaca_trade_api.rest import URL
 from alpaca_trade_api.rest_async import AsyncRest
 from PIL import Image
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
-from streamlit_extras.switch_page_button import switch_page
+# from streamlit_extras.switch_page_button import switch_page
 import requests
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
@@ -33,8 +33,6 @@ import subprocess
 
 # componenets
 import streamlit_antd_components as sac
-
-from streamlit_extras.switch_page_button import switch_page
 from streamlit_extras.stoggle import stoggle
 import hydralit_components as hc
 from custom_button import cust_Button
@@ -524,10 +522,10 @@ def admin_queens_active(KING, all_users, pg_migration=False):
 
 
 def mark_down_text(
+    text="Hello There",
     align="center",
     color=default_text_color,
     fontsize="33",
-    text="Hello There",
     font=default_font,
     hyperlink=False,
     sidebar=False
@@ -672,55 +670,6 @@ def log_grid(KING):
         queen_messages_logfile_grid(KING, log_file, grid_key='queen_logfile', f_api=api, varss={'seconds_to_market_close': None, 'refresh_sec': None}, toggle_views=[])
     
     return True
-
-def sneak_peak_form():
-    # if st.session_state['SneakQueen']:
-    # if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-    with st.form("Sneak Peak Access"):
-        st.session_state["sneak_peak"] = True
-        # sneak_name = st.text_input("Your Name", key='sneak_name')
-        # sneak_pw = st.text_input("Sneak Key", key='sneak_key')
-        if st.form_submit_button("Watch a Live Bot", use_container_width=True):
-            # if len(sneak_name) == 0:
-            #     st.error("Enter Your Name To Get In")
-            #     st.stop()
-            # if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
-            #     st.error("Incorrect Password")
-            #     st.stop()
-            st.session_state['sneak_pw'] = os.environ.get("quantqueen_pw")
-            switch_page("LiveBot")
-            
-            return True
-    
-    return False
-
-
-def display_for_unAuth_client_user(pct_queens_taken=89):
-    # newuser = st.button("New User")
-    # signin_button = st.button("SignIn")
-
-    
-    cols = st.columns((6, 7, 2))
-    # with cols[0]:
-    #     st.subheader("Create an Account To Get a QueenTraderBot")
-    # with cols[1]:
-    #     progress_bar(
-    #         value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
-    #     )
-    # with cols[2]:
-    sneak_peak_form()
-
-                    
-
-    page_line_seperator("25")
-    # sneak_peak = st.button("Watch a QueenBot Trade Live")
-    # if sneak_peak:
-        # switch_page("LiveBot")
-    # st.error(
-    #     "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
-    # )
-
-    page_line_seperator("1")
 
 
 def page_tab_permission_denied(admin, st_stop=True):
@@ -1329,10 +1278,11 @@ def standard_AGgrid(
     fit_columns_on_grid_load=False,
     height=500,
     update_mode_value="NO_UPDATE",
-    paginationOn=False,
+    paginationOn=True,
     use_checkbox=False,
     hide_cols=[],
-    grid_type=False
+    grid_type=False,
+    config_cols={},
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
     gb = GridOptionsBuilder.from_dataframe(data)
@@ -1356,6 +1306,11 @@ def standard_AGgrid(
     if hide_cols:
         for col in hide_cols:
             gb.configure_column(col, hide=True)
+    
+    if config_cols:
+        for col, config in config_cols.items():
+            gb.configure_selection(col, **config)
+    
     gridOptions = gb.build()
     gridOptions["rememberGroupStateWhenNewData"] = "true"
     gridOptions["resizable"] = "true"

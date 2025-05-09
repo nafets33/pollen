@@ -130,36 +130,35 @@ class Authenticate:
         """
         Checks the validity of the reauthentication cookie.
         """
-        with st.spinner("Buzzz BUzzzz Buzzzz What have you brought the hive"):
-            self.token = self.cookie_manager.get(self.cookie_name)
-            if self.token is not None:
-                self.token = self._token_decode()
-                if self.token is not False:
-                    if not st.session_state["logout"]:
-                        if self.token["exp_date"] > datetime.utcnow().timestamp():
-                            if "name" and "username" in self.token:
+        self.token = self.cookie_manager.get(self.cookie_name)
+        if self.token is not None:
+            self.token = self._token_decode()
+            if self.token is not False:
+                if not st.session_state["logout"]:
+                    if self.token["exp_date"] > datetime.utcnow().timestamp():
+                        if "name" and "username" in self.token:
+                            username = self.token["username"]
+                            if username in self.credentials["usernames"]:
+                                # username is valid, continue
                                 st.session_state["name"] = self.token["name"]
                                 st.session_state["username"] = self.token["username"]
                                 st.session_state["authentication_status"] = True
-                                self.credentials["usernames"][
-                                    st.session_state["username"]
-                                ]["login_count"] = (
-                                    int(
-                                        self.credentials["usernames"][
-                                            st.session_state["username"]
-                                        ]["login_count"]
-                                    )
-                                    + 1
+                                self.credentials["usernames"][st.session_state["username"]]["login_count"] = (
+                                    int(self.credentials["usernames"][st.session_state["username"]]["login_count"]) + 1
                                 )
-                                self.credentials["usernames"][
-                                    st.session_state["username"]
-                                ]["last_login_date"] = datetime.now().strftime(
-                                    "%d/%m/%Y %H:%M"
-                                )
-                                st.sidebar.write(
-                                    f"Welcome *{st.session_state['name']}*"
-                                )
+                                self.credentials["usernames"][st.session_state["username"]]["last_login_date"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+                                st.sidebar.write(f"Welcome *{st.session_state['name']}*")
                                 st.session_state["logout"] = False
+
+                            else:
+                                # username not found -> clear cookie and reset session
+                                self.cookie_manager.delete(self.cookie_name)
+                                st.session_state["authentication_status"] = None
+                                if "name" in st.session_state:
+                                    del st.session_state["name"]
+                                if "username" in st.session_state:
+                                    del st.session_state["username"]
+                                st.session_state["logout"] = True
 
     def _check_credentials(self, inplace: bool = True) -> bool:
         """
@@ -239,49 +238,66 @@ class Authenticate:
         str
             Username of the authenticated user.
         """
-        if location not in ["main", "sidebar"]:
-            raise ValueError("Location must be one of 'main' or 'sidebar'")
-        if not st.session_state["authentication_status"]:
-            self._check_cookie()
-            time.sleep(1)
+        try:
+            if location not in ["main", "sidebar"]:
+                raise ValueError("Location must be one of 'main' or 'sidebar'")
+            if not st.session_state["authentication_status"]:
 
-            if st.session_state["authentication_status"] != True:
+                self._check_cookie()
+                time.sleep(1)
+                print(st.session_state["authentication_status"])
+                if st.session_state["authentication_status"] != True:
 
-                if location == "main":
-                    login_form = st.form("Login")
-                elif location == "sidebar":
-                    login_form = st.sidebar.form("Login")
+                    if location == "main":
+                        login_form = st.form("Login")
+                    elif location == "sidebar":
+                        login_form = st.sidebar.form("Login")
 
-                login_form.subheader(form_name)
-                self.username = login_form.text_input("Email").lower()
-                st.session_state["username"] = self.username
-                self.password = login_form.text_input("Password", type="password")
+                    login_form.subheader(form_name)
+                    self.username = login_form.text_input("Email").lower()
+                    st.session_state["username"] = self.username
+                    self.password = login_form.text_input("Password", type="password")
 
-                if login_form.form_submit_button("Login"):
-                    self._check_credentials()
+                    if login_form.form_submit_button("Login"):
+                        self._check_credentials()
 
-                    if st.session_state["authentication_status"]:
-                        self.credentials["usernames"][st.session_state["username"]][
-                            "login_count"
-                        ] = (
-                            int(
-                                self.credentials["usernames"][
-                                    st.session_state["username"]
-                                ]["login_count"]
+                        if st.session_state["authentication_status"]:
+                            self.credentials["usernames"][st.session_state["username"]][
+                                "login_count"
+                            ] = (
+                                int(
+                                    self.credentials["usernames"][
+                                        st.session_state["username"]
+                                    ]["login_count"]
+                                )
+                                + 1
                             )
-                            + 1
-                        )
-                        self.credentials["usernames"][st.session_state["username"]][
-                            "last_login_date"
-                        ] = datetime.now(timezone("EST")).strftime("%d/%m/%Y %H:%M")
-                        st.sidebar.write(f"Welcome *{st.session_state['name']}*")
-                        st.session_state["logout"] = False
+                            self.credentials["usernames"][st.session_state["username"]][
+                                "last_login_date"
+                            ] = datetime.now(timezone("EST")).strftime("%d/%m/%Y %H:%M")
+                            st.sidebar.write(f"Welcome *{st.session_state['name']}*")
+                            st.session_state["logout"] = False
 
-        return (
-            st.session_state["name"],
-            st.session_state["authentication_status"],
-            st.session_state["username"],
-        )
+            return (
+                st.session_state["name"],
+                st.session_state["authentication_status"],
+                st.session_state["username"],
+            )
+        except Exception as e:
+            import sys
+            def print_line_of_error(e='print_error_message'):
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                print(e, exc_type, exc_tb.tb_lineno)
+                return exc_type, exc_tb.tb_lineno
+            print_line_of_error(e)
+            st.session_state["name"] = 'ERROR'
+            st.session_state["authentication_status"] = False
+            st.session_state["username"] = 'ERROR'
+            return (
+                st.session_state["name"],
+                st.session_state["authentication_status"],
+                st.session_state["username"],
+            )
 
     def logout(self, button_name: str, location: str = "main", use_container_width: bool=True):
         """

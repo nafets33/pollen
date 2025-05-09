@@ -8,7 +8,6 @@ import pytz
 from dotenv import load_dotenv
 import logging
 import copy
-
 from chess_piece.king import print_line_of_error, stars, kingdom__global_vars
 from chess_piece.pollen_db import PollenDatabase
 
@@ -16,16 +15,30 @@ prod = True
 pg_migration = True
 est = pytz.timezone("America/New_York")
 
+pd.set_option('display.float_format', '{:.10f}'.format)
+pd.set_option('display.max_columns', None)
+
 # main_root = hive_master_root()  # os.getcwd()
 # load_dotenv(os.path.join(main_root, ".env"))
 # db_root = os.path.join(main_root, "db")
 crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
 macd_tiers = 8
 
+
 def search_for_gamble_trade(revrec):
     # WORKERBEE
     ## find me a good gamble 
     return True
+
+# handle long_short in update WORKERBEE
+def return_long_short(active_orders, cost_basis_ref='cost_basis_current'):
+    reverse_indexes = ['SH', 'PSQ']
+    mask = active_orders['symbol'].isin(reverse_indexes)
+    long = active_orders.loc[~mask, cost_basis_ref].fillna(0).sum()
+    short = active_orders.loc[mask, cost_basis_ref].fillna(0).sum()
+    cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
+
+    return long, short, cost_basis_current
 
 def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
              ticker_list=['SPY'], 
@@ -186,25 +199,25 @@ def generate_TradingModel(
         star_theme_vars = {
                 "1Minute_1Day": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .03,
-                    'buyingpower_allocation_ShortTerm': .03,
+                    'buyingpower_allocation_LongTerm': 0,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "5Minute_5Day" : {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .5,
-                    'buyingpower_allocation_ShortTerm': .4,
+                    'buyingpower_allocation_LongTerm': 0,
+                    'buyingpower_allocation_ShortTerm': 0,
                     'use_margin': False,
                     },
                 "30Minute_1Month": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .6,
+                    'buyingpower_allocation_LongTerm': .4,
                     'buyingpower_allocation_ShortTerm': .4,
                     'use_margin': False,
                     },
                 "1Hour_3Month": {
                     'stagger_profits':False, 
-                    'buyingpower_allocation_LongTerm': .8,
+                    'buyingpower_allocation_LongTerm': .6,
                     'buyingpower_allocation_ShortTerm': .5,
                     'use_margin': False,
                     },
@@ -846,14 +859,17 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         if len(active_orders) == 0:
             return '', total_budget, borrow_budget, 0, 0, 0, 0
         
-        # handle long_short in update WORKERBEE
-        active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'short') 
-        buy_orders = active_orders[active_orders['long_short'] == 'long']
-        sell_orders = active_orders[active_orders['long_short'] == 'short']
-        # get cost basis
-        cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
-        buys_at_play = sum(buy_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
-        sells_at_play = sum(sell_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
+
+        
+        # active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'long') # WORKERBEE NO SHORTING ALLOWED YET...
+        # buy_orders = active_orders[active_orders['long_short'] == 'long']
+        # sell_orders = active_orders[active_orders['long_short'] == 'short']
+        # # get cost basis
+        # cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
+        # buys_at_play = sum(buy_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
+        # sells_at_play = sum(sell_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
+
+        buys_at_play, sells_at_play, cost_basis_current = return_long_short(active_orders, cost_basis_ref)
 
         # check current cost_basis
         if cost_basis_current == 0:
@@ -1033,7 +1049,7 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     return {'current_wave': current_wave, 'current_active_waves': d_return}
 
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, check_portfolio=True, chess_board='chess_board'): # WORKERBEE remove queen order states
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, check_portfolio=True, chess_board='chess_board', wash_sale_rule=None): # WORKERBEE remove queen order states
     # WORKERBEE move out QUEEN_KING and only bring in chess_board *
     try:
         rr_starttime = datetime.now()
@@ -1055,7 +1071,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
 
 
-        if not QUEEN.get('portfolio'):
+        if not QUEEN.get('portfolio') or not check_portfolio:
             df_broker_portfolio = pd.DataFrame([{'symbol': 'init_jq'}])
         else:
             df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
@@ -1115,30 +1131,41 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         print_line_of_error(f"RevRec Setup Error {e}")
         return None
 
-    def shape_revrec_chesspieces(dic_items, acct_info, chess_board__revrec_borrow, marginPower):
-        df_borrow = pd.DataFrame(chess_board__revrec_borrow.items())
-        df_borrow = df_borrow.rename(columns={0: 'qcp', 1: 'buying_power_borrow'})
-        bpb = sum(df_borrow['buying_power_borrow'])
-        df_borrow['borrow_budget'] = (df_borrow['buying_power_borrow'] * acct_info.get('buying_power')) / bpb
-        
-        df = pd.DataFrame(dic_items.items())
-        df = df.rename(columns={0: 'qcp', 1: 'buying_power'})
-        bp = sum(df['buying_power'])
-        if bp == 0 :
-            df['total_budget'] = 0
-            df['equity_budget'] = 0
-            df['cash_budget'] = 0
+    def shape_revrec_chesspieces(dic_items, acct_info, chess_board__revrec_borrow, marginPower, cash):
+
+        # -- Borrow DF
+        df_borrow = pd.DataFrame(chess_board__revrec_borrow.items(), columns=['qcp', 'buying_power_borrow'])
+        bpb = df_borrow['buying_power_borrow'].sum()
+
+        if bpb > 0:
+            if cash < 0:
+            # -- Apply cash cap if negative (e.g., -0.25 means only 25% of borrow budget allowed)
+                df_borrow['borrow_budget'] = (df_borrow['buying_power_borrow'] * acct_info.get('buying_power', 0)) / bpb
+                borrow_cap = abs(cash)
+                df_borrow['borrow_budget'] = df_borrow['borrow_budget'] * borrow_cap
+            else:
+                df_borrow['borrow_budget'] = 0
         else:
-            df['total_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
-            df['equity_budget'] = (df['buying_power'] * acct_info.get('last_equity')) / bp
-            df['cash_budget'] = (df['buying_power'] * acct_info.get('cash')) / bp
-        
+            df_borrow['borrow_budget'] = 0
+
+        # -- Regular DF
+        df = pd.DataFrame(dic_items.items(), columns=['qcp', 'buying_power'])
+        bp = df['buying_power'].sum()
+
+        if bp > 0:
+            base_budget = (df['buying_power'] * acct_info.get('last_equity', 0)) / bp
+            if cash > 0:
+                df['total_budget'] = base_budget - (base_budget * cash)  # total_budget absorbs cash
+            else:
+                df['total_budget'] = base_budget
+        else:
+            df['total_budget'] = 0
+
+        # -- Merge & Final Touches
         df = pd.merge(df, df_borrow, how='left', on='qcp')
-
         df = df.set_index('qcp', drop=False)
+        df['margin_power'] = df['qcp'].map(marginPower)
 
-        df['margin_power'] = df.index.map(marginPower) # WORKERBE this needs fix to match as buying power is
-        
         return df
 
     def shape_revrec_tickers(dic_items, symbol_qcp_dict, df_qcp):
@@ -1295,6 +1322,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 trigbee = f'{bs_position}_cross-0'
                 token = STORY_bee[ttf]['waves'][trigbee]
                 first_key = next(iter(token))
+                # print(ttf, len(token), first_key, token[first_key].get('wave_id'))
                 dict_return['maxprofit'] = token[first_key].get('maxprofit')
                 dict_return['current_profit'] = token[first_key].get('current_profit')
                 dict_return['time_to_max_profit'] = token[first_key].get('time_to_max_profit')
@@ -1482,6 +1510,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
     def calculate_budgets__query_queen_orders(df_ticker, df_stars, STORY_bee):
         try:
+            tt_ = df_ticker.copy()
+            tt_2 = df_stars.copy()
             df_active_orders = pd.DataFrame()
 
             # calculate budgets dollar values and join in current buys / sells as play
@@ -1499,19 +1529,19 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     bp_ticker = sum(df_temp['ticker_buying_power'])
                     if bp_ticker == 0:
                         df_temp['total_budget'] = 0
-                        df_temp['equity_budget'] = 0
+                        # df_temp['equity_budget'] = 0
                         df_temp['borrow_budget'] = 0
                     else:
                         df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'total_budget']) / bp_ticker
-                        df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'equity_budget']) / bp_ticker
+                        # df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'equity_budget']) / bp_ticker
                         df_temp['borrow_budget'] = ((df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'borrow_budget']) / bp_ticker) * df_qcp.at[qcp, 'margin_power']
                         # budget_remaining, borrowed_budget_remaining = return_ticker_remaining_budgets(cost_basis_current, ticker, df_temp)
 
                     # UPDTAE TICKER
                     df_ticker.at[ticker, 'ticker_total_budget'] = df_temp.at[ticker, 'total_budget']
-                    df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.at[ticker, 'equity_budget']
+                    # df_ticker.at[ticker, 'ticker_equity_budget'] = df_temp.at[ticker, 'equity_budget']
                     df_ticker.at[ticker, 'ticker_borrow_budget'] = df_temp.at[ticker, 'borrow_budget']
-                    df_ticker.at[ticker, 'refresh_star'] = df_qcp.at[qcp, 'refresh_star'] # WORKERBEE del this is a dup?
+                    # df_ticker.at[ticker, 'refresh_star'] = df_qcp.at[qcp, 'refresh_star'] # WORKERBEE del this is a dup?
                     # df_ticker.at[ticker, 'ticker_remaining_borrow'] = borrowed_budget_remaining
 
                     # UPDATE star time 
@@ -1519,12 +1549,12 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     bp = sum(df_temp['star_buying_power'])
                     if bp_ticker == 0:
                         df_temp['total_budget'] = 0
-                        df_temp['equity_budget'] = 0
+                        # df_temp['equity_budget'] = 0
                         df_temp['borrow_budget'] = 0
                     else:
                         bp_borrow = sum(df_temp['star_borrow_buying_power'])
                         df_temp['total_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_total_budget')) / bp
-                        df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
+                        # df_temp['equity_budget'] = (df_temp['star_buying_power'] * df_ticker.loc[ticker].get('ticker_equity_budget')) / bp
                         df_temp['borrow_budget'] = (df_temp['star_borrow_buying_power'] * df_ticker.loc[ticker].get('ticker_borrow_budget')) / bp_borrow
                     
                     ## Return price and stats & JOIN in ORDERS
@@ -1544,7 +1574,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                             df_ticker.at[ticker, 'current_from_yesterday'] = current_from_yesterday
                         
                         df_stars.at[f'{ticker}_{star}', 'star_total_budget'] = df_temp.loc[f'{ticker}_{star}'].get('total_budget')
-                        df_stars.at[f'{ticker}_{star}', 'star_equity_budget'] = df_temp.loc[f'{ticker}_{star}'].get('equity_budget')
+                        # df_stars.at[f'{ticker}_{star}', 'star_equity_budget'] = df_temp.loc[f'{ticker}_{star}'].get('equity_budget')
                         df_stars.at[f'{ticker}_{star}', 'star_borrow_budget'] = df_temp.loc[f'{ticker}_{star}'].get('borrow_budget')
                         star_total_budget = df_stars.at[ticker_time_frame, 'star_total_budget']
                         star_borrow_budget = df_stars.at[ticker_time_frame, 'star_borrow_budget']
@@ -1575,9 +1605,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                             active_orders_close_today = active_orders[active_orders['side'] == 'buy']
                             if len(active_orders_close_today) > 0:
                                 active_orders_close_today = active_orders_close_today[(active_orders_close_today['order_rules'].apply(lambda x: x.get('close_order_today') == True))]
-                                active_orders_close_today['long_short'] = np.where(active_orders_close_today['trigname'].str.contains('buy'), 'long', 'short') 
-                                buy_orders = active_orders_close_today[active_orders_close_today['long_short'] == 'long']
-                                buys_at_play_close_today = sum(buy_orders["cost_basis_current"]) if len(buy_orders) > 0 else 0
+                                # active_orders_close_today['long_short'] = np.where(active_orders_close_today['trigname'].str.contains('buy'), 'long', 'short') 
+                                # buy_orders = active_orders_close_today[active_orders_close_today['long_short'] == 'long']
+                                buys_at_play_close_today, sells_at_play_today, cost_basis_current = return_long_short(active_orders_close_today)
+                                # buys_at_play_close_today = buys_at_play #sum(buy_orders["cost_basis_current"]) if len(buy_orders) > 0 else 0
                                 df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play - buys_at_play_close_today
                             else:
                                 df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play
@@ -1685,8 +1716,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     revrec__stars_borrow[f'{ticker}_{star}'] = trading_model['stars_kings_order_rules'][star].get("buyingpower_allocation_ShortTerm")
 
         # Refresh RevRec Total Budgets
+        cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
         df_qcp_og = pd.DataFrame(chessboard).T
-        df_qcp = shape_revrec_chesspieces(chess_board__revrec, acct_info, chess_board__revrec_borrow, marginPower)
+        df_qcp = shape_revrec_chesspieces(chess_board__revrec, acct_info, chess_board__revrec_borrow, marginPower, cash)
         df_qcp_og = df_qcp_og[[i for i in df_qcp_og.columns if i not in df_qcp.columns]]
         df_qcp = pd.concat([df_qcp, df_qcp_og], axis=1)
         df_ticker = shape_revrec_tickers(revrec__ticker, symbol_qcp_dict, df_qcp)
@@ -1709,13 +1741,31 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         validate_qcp_balance(df_qcp)
         rr_run_cycle.update({'shape': (datetime.now() - s).total_seconds()})
         s = datetime.now()
-        df_ticker, df_stars, df_active_orders = calculate_budgets__query_queen_orders(df_ticker, df_stars, STORY_bee)
+        if check_portfolio:
+            df_ticker, df_stars, df_active_orders = calculate_budgets__query_queen_orders(df_ticker, df_stars, STORY_bee)
+        else:
+            t_col = ['ticker_total_budget', 'ticker_borrow_budget', 'current_from_open', 'current_from_yesterday', 'ticker_remaining_budget', 'ticker_remaining_borrow']
+            s_col = ['star_total_budget', 'star_borrow_budget', 'remaining_budget', 'remaining_budget_borrow', 'star_at_play', 'star_at_play_borrow', 'star_buys_at_play', 'star_sells_at_play', 'queen_wants_to_sell_qty', 'money', 'honey', 'star_buys_at_play_allocation']
+            for col in t_col:
+                df_ticker[col] = 0
+            for col in s_col:
+                df_stars[col] = 0
+            df_active_orders = []
+
         ## print("ORDERS")
         if len(df_active_orders) > 0:
             df_active_orders['qty_available'] = pd.to_numeric(df_active_orders['qty_available'], errors='coerce')
             symbols_qty_avail = df_active_orders.groupby("symbol")[['qty_available']].sum().reset_index().set_index('symbol', drop=False)
         else:
             symbols_qty_avail = pd.DataFrame({'symbol':'SPY', 'qty_available':0}, index=['symbol'])
+
+        if wash_sale_rule:
+            df_wash = pd.DataFrame(wash_sale_rule)
+            if len(df_wash) > 0:
+                df_wash['loss'] = pd.to_numeric(df_wash['loss'], errors='coerce')
+                df_wash = df_wash.groupby(['symbol', 'wash_sale_next_buy_date']).agg({'loss': 'sum'}).reset_index().set_index('symbol')
+        else:
+            df_wash = pd.DataFrame()
 
         # Story Bee
         # def storybee__data(STORY_bee, df_ticker):
@@ -1726,7 +1776,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 df_ticker.at[symbol, 'current_from_open'] = None
             else:
                 df_ticker.at[symbol, 'current_from_open'] = STORY_bee[ttf]['story'].get('current_from_open')
-            
             ### Broker DELTA ###
             if symbol in symbols_qty_avail.index:
                 df_ticker.at[symbol, 'qty_available'] = float(symbols_qty_avail.at[symbol, 'qty_available'])
@@ -1735,12 +1784,25 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             
             if symbol in df_broker_portfolio.index:
                 df_ticker.at[symbol, 'broker_qty_available'] = float(df_broker_portfolio.at[symbol, 'qty_available'])
+                df_ticker.at[symbol, 'unrealized_pl'] = float(df_broker_portfolio.at[symbol, 'unrealized_pl'])
+                df_ticker.at[symbol, 'unrealized_plpc'] = float(df_broker_portfolio.at[symbol, 'unrealized_plpc'])
             else:
                 df_ticker.at[symbol, 'broker_qty_available'] = 0
-        
+                df_ticker.at[symbol, 'unrealized_pl'] = 0
+                df_ticker.at[symbol, 'unrealized_plpc'] = 0
+            
+            # wash sale
+            if symbol in df_wash.index:
+                df_ticker.at[symbol, 'wash_loss'] = float(df_wash.at[symbol, 'wash_loss'])
+                df_ticker.at[symbol, 'wash_sale_next_buy_date'] = df_wash.at[symbol, 'wash_sale_next_buy_date']
+            else:
+                df_ticker.at[symbol, 'wash_loss'] = 0
+                df_ticker.at[symbol, 'wash_sale_next_buy_date'] = None
+
+
         df_ticker['broker_qty_delta'] = df_ticker['qty_available'] - df_ticker['broker_qty_available']
         
-        QUEEN['heartbeat']['broker_qty_delta'] = sum(df_ticker['broker_qty_delta'])           
+        QUEEN['heartbeat']['broker_qty_delta'] = df_ticker['broker_qty_delta'].sum()
 
         waveview = df_stars.copy()
         ## updated, was removed before bc revalocation wasn't able to handle missing from STORY_bee -- fix allows since mapping is still done
@@ -1763,6 +1825,9 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         s = datetime.now()
         waveview = revrec_allocation(waveview, wave_blocktime)
         rr_run_cycle.update({'revrec allocation': (datetime.now() - s).total_seconds()})
+        
+        
+        ########### gauge ############
         s = datetime.now()
 
         def revrec_lastmod(QUEEN):
@@ -1777,13 +1842,13 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         def calculate_wave_gauge(symbols, waveview, weight_team_keys=weight_team_keys):
             
             # Wave Gauge # WORKERBEE
-            waveview_symbols = waveview['symbol'].tolist()
+            # waveview_symbols = waveview['symbol'].tolist()
             story_guages_view = []
             weight_team = list(weight_team_keys().values()) # ['w_L', 'w_S', 'w_15', 'w_30', 'w_54']
             for symbol in set(symbols):
-                if symbol not in waveview_symbols:
-                    print(f'queen_mind: {symbol} MISSING IN waveview')
-                    continue
+                # if symbol not in waveview_symbols:
+                #     print(f'queen_mind: {symbol} MISSING IN waveview')
+                #     continue
                 df_waves = waveview[waveview['symbol'] == symbol]
                 story_guages = wave_gauge_revrec_2(symbol=symbol, df_waves=df_waves, weight_team=weight_team)
                 if story_guages:
@@ -1802,7 +1867,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 return pd.DataFrame()
 
         ### Return Story Gauge
-        wave_symbols = waveview['symbol'].tolist()
+        wave_symbols = list(set(waveview['symbol'].tolist()))
         cols =['w_L_macd_tier_position', 'w_L_vwap_tier_position',
        'w_L_rsi_tier_position', 'w_S_macd_tier_position',
        'w_S_vwap_tier_position', 'w_S_rsi_tier_position',
@@ -1825,7 +1890,11 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         #         df_storygauge = story_g
         # else:
         #     df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
-        df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+        if check_portfolio:
+            df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+        df_storygauge = pd.DataFrame(index=wave_symbols)
+        for col in cols:
+            df_storygauge[col] = 0
 
         df_storygauge = df_storygauge[cols]
         symbols_failed = [i for i in df_ticker.index if i not in df_storygauge.index]
@@ -1839,16 +1908,21 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         
         # Join Story to Tickers
         storygauge = df_ticker.merge(df_storygauge, left_index=True, right_index=True, how='left')
+        budget_sum = sum(storygauge['ticker_total_budget'])
+        storygauge['pct_portfolio'] = storygauge['ticker_total_budget']  / budget_sum
         symbol_orders = {}
         for symbol in storygauge.index:
-            if symbol in df_active_orders['symbol'].tolist():
-                orders = df_active_orders[df_active_orders['symbol'] == symbol]
-                orders = orders[['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']]
-                symbol_orders[symbol] = orders.to_dict(orient='records')
-        storygauge['active_orders'] = storygauge.index.to_series().apply(lambda x: symbol_orders.get(x, []))  # Always return a list
+            if len(df_active_orders) > 0:
+                if symbol in df_active_orders['symbol'].tolist():
+                    orders = df_active_orders[df_active_orders['symbol'] == symbol]
+                    orders = orders[['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']]
+                    symbol_orders[symbol] = orders.to_dict(orient='records')
+        if symbol_orders:
+            storygauge['active_orders'] = storygauge.index.to_series().apply(lambda x: symbol_orders.get(x, []))  # Always return a list
 
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
+        ########### gauge ############
 
         # Get refresh Star
         ticker_refresh_star = QUEEN_KING['king_controls_queen'].get('ticker_refresh_star')
@@ -1893,6 +1967,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         if cycle_time > 10:
             msg=("rervec cycle_time > 10 seconds", cycle_time)
             print(msg)
+        print(rr_run_cycle)
         
         return {'cycle_time': cycle_time, 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
                 'waveview': waveview, 'storygauge': storygauge, 

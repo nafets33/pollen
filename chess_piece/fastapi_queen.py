@@ -10,7 +10,7 @@ import ipdb
 import copy
 from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_data, 
                               kingdom__global_vars, main_index_tickers, streamlit_config_colors, 
-                              hive_master_root, ReadPickleData, PickleData, 
+                              hive_master_root, ReadPickleData, PickleData, hive_master_root_db, 
                               read_QUEENs__pollenstory, print_line_of_error)
 
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
@@ -18,7 +18,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     find_symbol_in_chess_board, 
                                     split_today_vs_prior, 
                                     order_vars__queen_order_items,
-                                    find_symbol,
+                                    fetch_portfolio_history,
                                     power_amo,
                                     init_queenbee,
                                     return_trading_model_trigbee,
@@ -315,8 +315,8 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
     
     # Ensure Symbol for Inverse Indexes
-    main_indexes = main_index_tickers()
-    symbol = find_symbol(main_indexes, symbol, trading_model, trigbee).get('ticker') # FOR BUYING
+    # main_indexes = main_index_tickers()
+    # symbol = find_symbol(main_indexes, symbol, trading_model, trigbee).get('ticker') # FOR BUYING
     
     # Ensure Trading Model TrigName
     tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
@@ -446,6 +446,7 @@ def process_clean_on_QK_requests(QUEEN, QUEEN_KING, request_name='sell_orders'):
 
 
 def app_Sellorder_request(client_user, username, prod, selected_row, default_value):
+  # WORKERBEE attempt to handle WashSale Rule
   try:
     qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, orders=True, pg_migration=pg_migration)
     QUEEN_KING = qb.get('QUEEN_KING')
@@ -463,11 +464,11 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
     number_shares = int(default_value.get('sell_qty', 0))
     sell_amount = int(default_value.get('sell_amount', 0))
     limit_price = int(default_value.get('limit_price', 0))
+    crypto = symbol_is_crypto(symbol)
     if number_shares == 0 and sell_amount == 0:
         print("SELL AMOUNT IS 0")
         return grid_row_button_resp(description="SELL AMOUNT IS 0")
     if sell_amount > 0:
-       crypto = symbol_is_crypto(symbol)
        ask_price = get_priceinfo_snapshot(api=api, ticker=symbol, crypto=crypto).get('ask')
        if not crypto:
           if sell_amount < ask_price:
@@ -723,7 +724,7 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
 def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
   try:
-      if toggle_view_selection.lower() == 'queen':
+      if toggle_view_selection.lower() in ['queen', 'portfolio']:
           ORDERS = init_queenbee(client_user, prod, queen=True, pg_migration=pg_migration).get('QUEEN')
       elif toggle_view_selection.lower() == 'final':
           ORDERS = init_queenbee(client_user, prod, orders_final=True, pg_migration=pg_migration).get('ORDERS_FINAL')
@@ -835,7 +836,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
     try:
       s = datetime.now()
 
-      if toggle_view_selection.lower() == 'queen':
+      if toggle_view_selection.lower() in ['queen', 'portfolio']:
         qb = init_queenbee(client_user, prod, revrec=True, queen_king=True, pg_migration=pg_migration)
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
@@ -850,7 +851,6 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
         else:
             STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
-                
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
       
       # elif toggle_view_selection == "Not On Board":
@@ -887,20 +887,40 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
         
-        
         QUEEN = qb.get('QUEEN')
 
-        hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
-        hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
-        if toggle_view_selection in hedge_fund_names:
-            data = hedge_funds[hedge_funds['filer_name'] == toggle_view_selection]
-            data = data.drop_duplicates(subset='stock_ticker')
-            data = data.set_index('stock_ticker', drop=False)
-            if data.iloc[0].get('current_percent_of_portfolio') == 'DROPME':
-               data['current_percent_of_portfolio'] = 1 / len(data)
-            data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
-            data = data[data['current_percent_of_portfolio'] > 0]
-            data['buying_power'] = data['current_percent_of_portfolio'] / 100
+        def read_filer_names_coverpage():
+          # df = pd.read_csv(os.path.join(hive_master_root_db(), 'COVERPAGE.tsv'), sep='\t')
+          df = PollenDatabase.retrieve_data('hedgefund_13f_data', 'COVERPAGE')
+          return df
+        # Get the available hedge fund accession numbers
+        all_avail_hfunds = set(PollenDatabase.get_all_keys('hedgefund_holdings'))
+        # Read the filing names
+        df = read_filer_names_coverpage()
+        # Filter only rows where ACCESSION_NUMBER is in all_avail_hfunds
+        df_filtered = df[df['ACCESSION_NUMBER'].isin(all_avail_hfunds)]
+        filer_names_ = dict(zip(df_filtered['FILINGMANAGER_NAME'], df_filtered['ACCESSION_NUMBER']))
+
+        if toggle_view_selection in filer_names_.keys():
+            sl = datetime.now()         
+            ACCESSION_NUMBER = filer_names_[toggle_view_selection]
+            data = PollenDatabase.retrieve_data('hedgefund_holdings', ACCESSION_NUMBER)
+            data['VALUE'] = pd.to_numeric(data['VALUE'], errors='coerce')
+            data = data.groupby(['symbol']).agg({'VALUE': 'sum'}).reset_index()
+            data['buying_power'] = data['VALUE'] / data['VALUE'].sum()
+            data['pct_portfolio'] = data['VALUE'] / data['VALUE'].sum()
+            data = data.set_index('symbol')
+            print("ACCESSION_NUMBER runtime: ", (datetime.now() - sl).total_seconds())
+            
+            # data = hedge_funds[hedge_funds['filer_name'] == toggle_view_selection]
+            # data = data.drop_duplicates(subset='stock_ticker')
+            # data = data.set_index('stock_ticker', drop=False)
+            # if data.iloc[0].get('current_percent_of_portfolio') == 'DROPME':
+            #    data['current_percent_of_portfolio'] = 1 / len(data)
+            # data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
+            # data = data[data['current_percent_of_portfolio'] > 0]
+            # data['buying_power'] = data['current_percent_of_portfolio'] / 100
+            sb = datetime.now()
             symbols = []
             board = {}
             for ticker in data.index:
@@ -916,9 +936,32 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
             if 'SPY' not in symbols:
                 print("SPY not in symbols")
                 symbols.append('SPY')
-            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols).get('STORY_bee')
+            print("INIT runtime: ", (datetime.now() - sb).total_seconds())
+
+            sb = datetime.now()
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+            print("STORY_bee runtime: ", (datetime.now() - sb).total_seconds())
+            
             revrec = refresh_chess_board__revrec(acct_info=QUEEN.get('account_info'), QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, STORY_bee=STORY_bee, check_portfolio=False, chess_board=toggle_view_selection) ## Setup Board
-            # QUEEN_KING['revrec'] = revrec
+            df_story = revrec['storygauge']
+            df_story['pct_portfolio'] = df_story.index.map(dict(zip(data.index, data['pct_portfolio'])))
+            # check for new storybee data and call it
+            # you could also consider waveview?
+            # symbols = revrec['storygauge'].index.tolist()
+            sb_symbols = set([i.split("_")[0] for i in STORY_bee.keys()])
+            missing = [i for i in symbols if i not in list(sb_symbols)]
+            if missing:
+              print("NEED SYMBOLS", missing)
+
+              # queen_workerbees(
+              #                 qcp_s=['apicall'],
+              #                 QUEENBEE=QUEENBEE,
+              #                 prod=prod, 
+              #                 reset_only=True, 
+              #                 pg_migration=pg_migration,
+              #                 upsert_to_main_server=True,
+              #                     )
+
         else:
            revrec = init_queenbee(client_user, prod, revrec=True).get('revrec')
 
@@ -935,8 +978,10 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
       waveview = revrec.get('waveview')
-   
+
+      sw = datetime.now()
       df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
+      print("wave runtime: ", (datetime.now() - sw).total_seconds())
 
       if return_type == 'waves':
         
@@ -1035,6 +1080,7 @@ def get_revrec_lastmod_time(client_user, prod, api_lastmod_key='REVREC'):
 def header_account(client_user, prod):
   QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration).get('QUEENsHeart')
   broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
+
 
   if 'charlie_bee' not in QUEENsHeart.keys():
     df = pd.DataFrame()
@@ -1209,9 +1255,31 @@ def get_ticker_data(symbols, toggles_selection):
     df = df[['timestamp_est', 'close', 'vwap']]
     if time_frame == '1Minute_1Day':
       df = add_priorday_tic_value(df)
-    
-    df['timestamp_est'] = pd.to_datetime(df['timestamp_est']).dt.floor('min')
-    df['timestamp_est'] = df['timestamp_est'].dt.strftime('%Y-%m-%d %H:%M:%S%z')
+      # # Assuming your dataframe is called df
+      # df['timestamp_est'] = pd.to_datetime(df['timestamp_est'])  # Ensure timestamp is datetime
+
+      # # Get the last timestamp in the dataframe
+      # last_time = df['timestamp_est'].iloc[-1]
+
+      # # Get the current time in EST and calculate the remaining minutes to 4 PM
+      # now = datetime.now(est)
+      # market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
+      # remaining_minutes = int((market_close - last_time).total_seconds() // 60)
+
+      # # Generate new timestamps for the remaining minutes
+      # new_timestamps = [last_time + timedelta(minutes=i) for i in range(1, remaining_minutes + 1)]
+
+      # # Create a new DataFrame with NaN values for 'close' and 'vwap'
+      # new_data = pd.DataFrame({
+      #     'timestamp_est': new_timestamps,
+      #     'close': [np.nan] * remaining_minutes,
+      #     'vwap': [np.nan] * remaining_minutes
+      # })
+
+      # # Append new data to the original DataFrame
+      # df = pd.concat([df, new_data], ignore_index=False)
+      # print(len(df))
+      # print(df)
 
     c_start = df.iloc[0]['close']
 

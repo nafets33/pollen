@@ -18,6 +18,7 @@ import ipdb
 main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
 pg_migration = os.getenv('pg_migration')
+testing = False
 
 def register_user(authenticator, con, cur):
     try:
@@ -310,8 +311,8 @@ def signin_main(page=None):
         )
         
         return setup_user_pollenqdbs()
-
-    # print("AUTH FIRST LOOK")
+    if testing:
+        print("AUTH FIRST LOOK")
     try:
         already_setup = True if 'instance_setup' in st.session_state and st.session_state['instance_setup'] else False
         con, cur = PollenDatabase.return_db_conn()
@@ -340,6 +341,8 @@ def signin_main(page=None):
             return authenticator
         else:
             name, authentication_status, email = authenticator.login("Login", "main")
+            if testing:
+                print(email, name)
             st.session_state['auth_email'] = email
             st.session_state['auth_name'] = name
         
@@ -377,6 +380,7 @@ def signin_main(page=None):
             
             # cust_Button(file_path_url='misc/pollen_preview.gif', height='150px', hoverText='')
     
+        print("ATUH", authentication_status)
 
         
         return authenticator

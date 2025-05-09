@@ -35,7 +35,18 @@ from chess_piece.queen_mind import refresh_chess_board__revrec
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import story_return
 
-# @st.cache_data
+
+#### MOVE STORY STYLE TO UTILS Generate COLORS
+def save_king_queen(QUEEN_KING):
+    QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = st.session_state['cash_slider']
+    PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+
+def cash_slider(QUEEN_KING, key='cash_slider'):
+    cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+    cash = max(min(cash, 1), -1)
+    return st.number_input("Cash %", min_value=-1.0, max_value=1.0, value=cash, on_change=lambda: save_king_queen(QUEEN_KING), key=key)
+
+
 def queen_data(client_user, prod):
     qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')
@@ -85,6 +96,7 @@ def waves():
 
 
     QUEEN, QUEEN_KING, api = queen_data(client_user, prod)
+    cash_slider(QUEEN_KING)
     # st.write(QUEEN_KING['chess_board'])
     if pg_migration:
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
@@ -198,6 +210,7 @@ def waves():
             #     st.write(f"""sells ${round(sum(sells["total_allocation_budget"]))}$""")
             #     st.write(f"""marketsells ${round(sum(marketsells["total_allocation_budget"]))}$""")
 
+            # df.loc['Total', 'star_total_budget'] = df['star_total_budget'].sum()
             df = move_columns_to_front(df, wave_view_input_cols)
             hide_cols = [i for i in df.columns.tolist() if i not in wave_view_input_cols]
             df = df.rename(columns={i: i.replace('_', ' ') for i in df.columns.tolist()})
@@ -208,15 +221,14 @@ def waves():
                 for k, data in obj.items():
                     st.write("wave analysis key", k)
                     st.dataframe(data) if isinstance(data, pd.DataFrame) else st.write(data)
-        # elif revrec_key == 'rr_run_cycle':
-            # st.code(revrec[revrec_key], line_numbers=True)
-        #     df = pd.DataFrame(revrec.get(revrec_key)).T
-        #     st.write(df)
-        elif isinstance(df, pd.DataFrame):
-            st.write("Table")
+        elif revrec_key == 'df_qcp':
+            df.loc['Total', 'total_budget'] = df['total_budget'].sum()
+            df.loc['Total', 'borrow_budget'] = df['borrow_budget'].sum()
+            newIndex=['Total']+[ind for ind in df.index if ind!='Total']
+            df=df.reindex(index=newIndex)
+        if isinstance(df, pd.DataFrame):
             standard_AGgrid(df)
         else:
-            st.write("Table")
             st.write(df)
         
         # tab+=1
@@ -226,7 +238,7 @@ def waves():
     wave_revrec_key_cols = ['ticker_time_frame', 'allocation_long', 'macd_state', 'pct_budget_allocation', 'total_allocation_budget', 'alloc_maxprofit_shot', 'alloc_currentprofit', 'alloc_time', 'alloc_ttmp_length', 'maxprofit_shot_weight_score', 'current_profit_deviation_pct', 'current_profit_deviation', 'alloc_powerlen']
     df = df[wave_revrec_key_cols]
     standard_AGgrid(df)
-
+    
     if st.toggle("wave stories", False):
         try:
             with st.expander("wave stories"):
@@ -247,6 +259,7 @@ def waves():
         st.write(QUEEN['price_info_symbols'])
         df = story_return(QUEEN_KING, revrec, prod=True)
         st.write(df)
+        print("HERE")
 
 
 if __name__ == '__main__':

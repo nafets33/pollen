@@ -722,7 +722,11 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         with tabs[0]:
             with st.form(f'ChessBoard_form{admin}'):
                 try:
-
+                    # st.write(QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_dayTrade_allocation'])
+                    cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+                    cash = max(min(cash, 1), -1)
+                    QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = st.slider("Cash", min_value=-1.0, max_value=1.0, value=cash)
+                    
                     headers = 0
                     for qcp in all_workers:
                         for tic in QUEEN_KING[qcp_bees_key][qcp].get('tickers', []):
@@ -848,7 +852,7 @@ if __name__ == '__main__':
 
     if not st.session_state.get('chessboard_setup'):
         if st.button("Return To Trading Engine", use_container_width=True):
-            switch_page("pollen")
+            st.switch_page("pages/pollen.py")
     
     # if admin:
     if st.button("Reset RevRec"):

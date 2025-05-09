@@ -19,7 +19,7 @@ import copy
 from pq_auth import signin_main
 from chess_piece.king import master_swarm_QUEENBEE, print_line_of_error, ReadPickleData, PickleData, local__filepaths_misc
 from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, setup_chess_board, init_qcp_workerbees, init_swarm_dbs, stars, add_key_to_KING, init_queenbee, set_chess_pieces_symbols, return_timestamp_string
-from chess_piece.app_hive import display_for_unAuth_client_user, admin_queens_active
+from chess_piece.app_hive import admin_queens_active
 from custom_button import cust_Button
 
 from chess_piece.pollen_db import PollenDatabase
@@ -217,9 +217,7 @@ st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state els
 print(st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
 
 if st.session_state['authentication_status'] != True: ## None or False
-    
-    display_for_unAuth_client_user()
-    st.stop()
+        st.stop()
 
 
 if st.session_state['admin'] != True:

@@ -26,14 +26,14 @@ from pages.chessboard import chessboard
 # main chess piece
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import sneak_peak_form, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag,  display_for_unAuth_client_user, queen__account_keys, page_line_seperator
+from chess_piece.app_hive import sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData
 from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import kings_order_rules
 from pages.conscience import account_header_grid
 # componenets
 # import streamlit_antd_components as sac
-from streamlit_extras.switch_page_button import switch_page
+# from streamlit_extras.switch_page_button import switch_page
 # from streamlit_extras.stoggle import stoggle
 # import hydralit_components as hc
 from custom_button import cust_Button
@@ -213,6 +213,60 @@ bishop_symbols_keep = [
 'grossMargins',
 ]
 
+
+
+def sneak_peak_form():
+    # if st.session_state['SneakQueen']:
+    # if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+    with st.form("Sneak Peak Access"):
+        st.session_state["sneak_peak"] = True
+        # sneak_name = st.text_input("Your Name", key='sneak_name')
+        # sneak_pw = st.text_input("Sneak Key", key='sneak_key')
+        if st.form_submit_button("Watch a Live Bot", use_container_width=True):
+            # if len(sneak_name) == 0:
+            #     st.error("Enter Your Name To Get In")
+            #     st.stop()
+            # if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
+            #     st.error("Incorrect Password")
+            #     st.stop()
+            st.session_state['sneak_pw'] = os.environ.get("quantqueen_pw")
+            # switch_page("LiveBot")
+            st.switch_page("pages/LiveBot.py")
+            
+            return True
+    
+    return False
+
+
+def display_for_unAuth_client_user(pct_queens_taken=89):
+    # newuser = st.button("New User")
+    # signin_button = st.button("SignIn")
+
+    
+    cols = st.columns((6, 7, 2))
+    # with cols[0]:
+    #     st.subheader("Create an Account To Get a QueenTraderBot")
+    # with cols[1]:
+    #     progress_bar(
+    #         value=pct_queens_taken, text=f"{100-pct_queens_taken} Trading Bots Available"
+    #     )
+    # with cols[2]:
+    sneak_peak_form()
+
+                    
+
+    page_line_seperator("25")
+    # sneak_peak = st.button("Watch a QueenBot Trade Live")
+    # if sneak_peak:
+        # switch_page("LiveBot")
+    # st.error(
+    #     "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
+    # )
+
+    page_line_seperator("1")
+
+
+
 def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
     # try:
     save = False
@@ -346,6 +400,7 @@ def pollenq(admin_pq):
 
 
     with st.spinner("Verifying Your Scent, Hang Tight"):
+        # print(st.session_state)
         authenticator = signin_main(page="pollenq")
     if st.session_state['authentication_status'] != True: ## None or False
         st.warning("Sign In")
@@ -407,8 +462,8 @@ def pollenq(admin_pq):
         st.write(f'menu selection {menu_id}')
 
 
-    if menu_id == 'Waves':
-        switch_page('waves')
+    # if menu_id == 'Waves':
+        # switch_page('waves')
 
     if menu_id == 'PlayGround':
         from pages.playground import PlayGround
@@ -418,11 +473,11 @@ def pollenq(admin_pq):
         PlayGround()
         st.stop()
     
-    if menu_id == 'Account':
-        switch_page('account')
+    # if menu_id == 'Account':
+        # switch_page('account')
 
     if menu_id == 'Orders':
-        switch_page('orders')
+        # switch_page('orders')
         # queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 
         # active_order_state_list = king_G.get('active_order_state_list')
@@ -433,10 +488,10 @@ def pollenq(admin_pq):
         st.stop()
 
     if menu_id == 'Trading Models':
-        switch_page('trading_models')
+        st.switch_page('pages/trading_models.py')
 
     if menu_id == 'Board':
-        switch_page("chessboard")
+        st.switch_page('pages/chessboard.py')
 
     print("WORKING")
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
@@ -483,7 +538,7 @@ def pollenq(admin_pq):
             if live_sb_button:
                 st.session_state['prod'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
                 prod = st.session_state['prod']
-                switch_page('switch_back')
+                # switch_page('switch_back')
                 # qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True)
                 # # QUEEN = qb.get('QUEEN')
                 # QUEEN_KING = qb.get('QUEEN_KING')
@@ -546,7 +601,8 @@ def pollenq(admin_pq):
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             print("SETUP QUEEN KING")
             st.session_state['chessboard_setup'] = True
-            switch_page('chessboard')
+            # switch_page('chessboard')
+            st.switch_page('pages/chessboard.py')
 
         # QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_heart=True, pg_migration=False).get('QUEENsHeart')
         # st.write(QUEENsHeart)
@@ -570,15 +626,15 @@ def pollenq(admin_pq):
             from pages.pollen_engine import pollen_engine
             pollen_engine(acct_info_raw)
 
-        if menu_id == 'orders':
-            switch_page('orders')
+        # if menu_id == 'orders':
+            # switch_page('orders')
 
 
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         # account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
         queens_conscience(revrec, KING, QUEEN_KING, api)
-    print("WORKING")
+
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
