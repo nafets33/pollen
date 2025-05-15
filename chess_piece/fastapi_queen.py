@@ -384,8 +384,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
       QUEEN_KING['buy_orders'].append(buy_package)
 
       if pg_migration:
-        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-        PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+        PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), key=QUEEN_KING.get('key'), value=QUEEN_KING)
       else:
         PickleData(QUEEN_KING.get('source'), QUEEN_KING)
 
@@ -1255,32 +1254,7 @@ def get_ticker_data(symbols, toggles_selection):
     df = df[['timestamp_est', 'close', 'vwap']]
     if time_frame == '1Minute_1Day':
       df = add_priorday_tic_value(df)
-      # # Assuming your dataframe is called df
-      # df['timestamp_est'] = pd.to_datetime(df['timestamp_est'])  # Ensure timestamp is datetime
-
-      # # Get the last timestamp in the dataframe
-      # last_time = df['timestamp_est'].iloc[-1]
-
-      # # Get the current time in EST and calculate the remaining minutes to 4 PM
-      # now = datetime.now(est)
-      # market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
-      # remaining_minutes = int((market_close - last_time).total_seconds() // 60)
-
-      # # Generate new timestamps for the remaining minutes
-      # new_timestamps = [last_time + timedelta(minutes=i) for i in range(1, remaining_minutes + 1)]
-
-      # # Create a new DataFrame with NaN values for 'close' and 'vwap'
-      # new_data = pd.DataFrame({
-      #     'timestamp_est': new_timestamps,
-      #     'close': [np.nan] * remaining_minutes,
-      #     'vwap': [np.nan] * remaining_minutes
-      # })
-
-      # # Append new data to the original DataFrame
-      # df = pd.concat([df, new_data], ignore_index=False)
-      # print(len(df))
-      # print(df)
-
+ 
     c_start = df.iloc[0]['close']
 
     df[f'{symbol}'] = round((df['close'] - c_start) / c_start * 100,2)
@@ -1309,13 +1283,14 @@ def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
     else:
       pollenstory = read_QUEENs__pollenstory(symbols=symbols,read_storybee=False, read_pollenstory=True,).get('pollenstory')
     for symbol in symbols:
+      if f'{symbol}_{star_time}' not in pollenstory.keys():
+        #  print("Need Pollenstory Charts: ", symbol)
+         continue
          
       df = pollenstory[f'{symbol}_{star_time}']
       if star_time == '1Minute_1Day':
         df = add_priorday_tic_value(df)
       df = df[['timestamp_est', 'trinity_tier']] #'ticker_time_frame',
-      df['timestamp_est'] = pd.to_datetime(df['timestamp_est']).dt.floor('min')
-      df['timestamp_est'] = df['timestamp_est'].dt.strftime('%Y-%m-%d %H:%M:%S%z')
       df = df.rename(columns={'trinity_tier': symbol})
 
       if type(df_main) == bool:

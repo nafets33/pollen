@@ -8,7 +8,8 @@ from tqdm import tqdm
 import streamlit as st
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.queen_hive import analyze_waves, send_email
-from chess_piece.king import hive_master_root, workerbee_dbs_backtesting_root, workerbee_dbs_backtesting_root__STORY_bee, stars, master_swarm_QUEENBEE, ReadPickleData
+from chess_piece.king import hive_master_root, workerbee_dbs_backtesting_root__STORY_bee, stars, master_swarm_QUEENBEE, ReadPickleData
+from chess_piece.pollen_db import PollenDatabase
 
 send_email(subject=f"Running BackTesting")
 fast_vals = range(7,15)
@@ -22,7 +23,8 @@ if use_blocktime:
 else:
     df = pd.DataFrame(columns = ["ttf", "macd_fast", "macd_slow", "macd_smooth", "winratio", "maxprofit"]) 
 
-# workerbee_dbs_backtesting_root()
+pg_migration = os.getenv('pg_migration')
+
 backtest_folder = workerbee_dbs_backtesting_root__STORY_bee()
 
 def read_backtest_folder_assert_insight(backtest_folder, return_len=15):
@@ -135,6 +137,10 @@ def run_backtesting_pollenstory(QUEENBEE=None, run_wave_analysis=True, qcp_s=['c
                     pattern = re.compile(".*__{}-{}-{}_\.pkl".format(macd["fast"], macd["slow"], macd["smooth"]))
                     folder = "symbols_STORY_bee_dbs_backtesting"
                     to_continue = False
+                    # if not pg_migration:
+                    #     key_paths = os.listdir(backtest_folder)
+                    # else:
+                    #     key_paths = PollenDatabase.get_all_keys('pollen_store_backtesting')
                     for filepath in os.listdir(backtest_folder):
                         if pattern.match(filepath):
                             print("\tcontinued")
@@ -166,6 +172,14 @@ def run_backtesting_pollenstory(QUEENBEE=None, run_wave_analysis=True, qcp_s=['c
     send_email(subject=f"BackTesting Run {run_time}")
 
 if __name__ == '__main__':
+    prod = True
+    pg_migration = True
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+    else:
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+
     QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=True))
 
     run_backtesting_pollenstory(QUEENBEE=QUEENBEE, run_wave_analysis=True, qcp_s=['castle', ]) # 'knight', 'bishop', 'pawn_6', 'Basic Materials', 'Communication Services', 'Technology', 'Consumer Cyclical', 'Financial Services', 'Industrials'

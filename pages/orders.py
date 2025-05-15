@@ -176,5 +176,5 @@ if __name__ == '__main__':
     active_order_state_list = king_G.get('active_order_state_list')
     config_cols = config_orders_cols(active_order_state_list)
     missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
-    
+
     order_grid(client_user, config_cols, missing_cols, ip_address)

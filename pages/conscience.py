@@ -522,7 +522,7 @@ def load_storybee(QUEEN_KING, pg_migration, symbols, QUEEN=None):
     
     return STORY_bee
 
-def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=False, show_acct=True):
+def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=True, show_acct=True):
     run_times = {}
     s = datetime.now()
     with st.sidebar:
@@ -1050,7 +1050,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
 
         k_colors = streamlit_config_colors()
         default_text_color = k_colors['default_text_color'] # = '#59490A'
-        cols = st.columns((10,1))
+        cols = st.columns((8,1,1))
         if show_acct and tab_view == 'Portfolio':
             # seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
             # seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
@@ -1062,7 +1062,13 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
                 cash = max(min(cash, 1), -1)
                 QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
-            
+            with cols[1]:
+                # Call the function
+                tt_tabs = st.selectbox("Portfolio History", options=['7D', '1M', '3M', '6M', '1A'])
+                df = fetch_portfolio_history(api, period=tt_tabs)
+                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity']* 100 , 2)
+            with cols[2]:
+                mark_down_text(f'Portfolio {tt_tabs} %{portfolio_perf}', fontsize='23')
 
 
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec, tab_view=tab_view)
@@ -1116,13 +1122,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
         if show_graph_s:
             with cols[0]:
                 symbol_graph()
-            with cols[1]:
-                # Call the function
-                tt_tabs = st.selectbox("Portfolio History", options=['7D', '1M', '3M', '6M', '1A'])
-                df = fetch_portfolio_history(api, period=tt_tabs)
-                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity']* 100 , 2)
-                mark_down_text(f'Portfolio {tt_tabs} %{portfolio_perf}', fontsize='23')
-                st.dataframe(df)
+
 
         def trinity_graph():
             with st.sidebar:
@@ -1183,7 +1183,9 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
         if show_graph_t:
             with cols[1]:
                 trinity_graph()
-        
+
+
+
         if st.sidebar.toggle("Show Logs"):
             log_grid(KING)
         # print("END CONSCIENCE")

@@ -1856,7 +1856,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             
             if story_guages_view:
                 df_storyguage = pd.DataFrame(story_guages_view)
-                df_storyguage = df_storyguage.set_index('symbol')
+                df_storyguage = df_storyguage.set_index('symbol', drop=False)
                 
                 # Trinity 
                 for w_t in weight_team:
@@ -1892,9 +1892,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         #     df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
         if check_portfolio:
             df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
-        df_storygauge = pd.DataFrame(index=wave_symbols)
-        for col in cols:
-            df_storygauge[col] = 0
+        else:
+            df_storygauge = pd.DataFrame(index=wave_symbols)
+            for col in cols:
+                df_storygauge[col] = 0
 
         df_storygauge = df_storygauge[cols]
         symbols_failed = [i for i in df_ticker.index if i not in df_storygauge.index]

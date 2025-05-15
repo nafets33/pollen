@@ -852,7 +852,7 @@ if __name__ == '__main__':
 
     if not st.session_state.get('chessboard_setup'):
         if st.button("Return To Trading Engine", use_container_width=True):
-            st.switch_page("pages/pollen.py")
+            st.switch_page("pollen.py")
     
     # if admin:
     if st.button("Reset RevRec"):

@@ -3694,8 +3694,9 @@ def process_order_submission(broker, trading_model, order, order_vars, trig, sym
         exit_order_link=exit_order_link, 
         priceinfo=priceinfo,
         )
+
         # Append Order
-        new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id")
+        new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
         new_queen_order_df['cost_basis_current'] = new_queen_order_df.get('wave_amo')
         
         return new_queen_order_df

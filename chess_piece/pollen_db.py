@@ -536,11 +536,11 @@ class PollenDatabase:
                 print("Error updating table schema:", e)
 
     @staticmethod
-    def get_all_keys_with_timestamps(table_name='db', db_root=None):
+    def get_all_keys_with_timestamps(table_name='db', db_root=None, server=server):
         """
         Fetch all keys along with their last modified timestamp from the specified table.
         """
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
             try:
                 if db_root:
                     query = f"""

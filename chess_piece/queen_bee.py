@@ -98,26 +98,6 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U'
 
-# # BROKER
-# def init_broker_orders(api, BROKER):
-
-#     init_api_orders_start_date =(datetime.now() - timedelta(days=100)).strftime("%Y-%m-%d")
-#     init_api_orders_end_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-#     api_orders = initialize_orders(api, init_api_orders_start_date, init_api_orders_end_date, symbols=False, limit=500)
-#     queen_orders_closed = api_orders.get('closed')
-#     queen_orders_open = api_orders.get('open')
-#     c_order_ids_dict_closed = [vars(queen_orders_closed[n])['_raw'] for n in range(len(queen_orders_closed))]
-#     c_order_ids_dict_open = [vars(queen_orders_open[n])['_raw'] for n in range(len(queen_orders_open))]
-#     broker_orders = c_order_ids_dict_closed + c_order_ids_dict_open
-#     if broker_orders:
-#         broker_orders = pd.DataFrame(broker_orders).set_index('client_order_id', drop=False)
-#     else:
-#         broker_orders = pd.DataFrame()
-
-#     BROKER['broker_orders'] = broker_orders
-
-#     return BROKER
-
 
 def init_broker_orders(api, BROKER, start_date=None, end_date=None):
     # Start and end dates for the last 100 days
@@ -344,6 +324,7 @@ def update_origin_order_qty_available(QUEEN, run_order_idx, RUNNING_CLOSE_Orders
 def append_queen_order(QUEEN, new_queen_order_df):
     QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0) # , ignore_index=True
     QUEEN['queen_orders']['client_order_id'] = QUEEN['queen_orders'].index
+    # QUEEN['queen_orders'] = QUEEN['queen_orders'].set_index('client_order_id', drop=False)
     return True
 
 def get_priceinfo_snapshot(api, ticker, crypto):
@@ -355,17 +336,26 @@ def get_priceinfo_snapshot(api, ticker, crypto):
                             'ask': snap['latestQuote']['ap'], 
                             'bid_ask_var': snap['latestQuote']['bp']/snap['latestQuote']['ap']}
         else:
-            priceinfo_order = {'price': snap.latest_trade.price, 'bid': snap.latest_quote.bid_price, 
+            ask = snap.latest_quote.ask_price
+            price = snap.latest_trade.price
+            if ask == 0 or price == 0:
+                print("ERROR Price OR Ask is 0 Ignore: ", ticker)
+                return {}
+            
+            priceinfo_order = {
+                            'price': snap.latest_trade.price, 
+                            'bid': snap.latest_quote.bid_price, 
                             'ask': snap.latest_quote.ask_price, 
-                            'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price}
+                            'bid_ask_var': snap.latest_quote.bid_price/snap.latest_quote.ask_price
+                            }
         
-        priceinfo_order['ticker']= ticker
+        priceinfo_order['ticker'] = ticker
         
         return priceinfo_order
     except Exception as e:
-        print("SNAP CALL ERROR", e)
+        print("SNAP CALL ERROR", e, ticker)
         # WORKERBEE handle error get priceinfo from YAHOO
-        return {'price': 0, 'bid': 0, 'ask': 0, 'bid_ask_var': 0, 'ticker': ticker}
+        return {}
 
 def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
     try:
@@ -393,7 +383,7 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
 
         # get latest pricing
         priceinfo_order = get_priceinfo_snapshot(api, ticker, crypto)
-        if priceinfo_order['price'] == 0:
+        if not priceinfo_order:
             print(f"ERROR on GETTING PRICE INFO for {ticker}")
             return {'executed': False}
 
@@ -414,7 +404,6 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
                 logging.warning(order_val.get('log_msg'))
                 # QUEEN['queen_orders'].at[run_order_idx, 'validation_correction'] = 'true' # WORKERBEE handle later
                 qty_order = order_val.get('qty')
-
         # Submit Order
         order_submit = submit_order(api=api, 
                                     symbol=ticker, 
@@ -430,6 +419,7 @@ def execute_buy_order(api, blessing, ticker, ticker_time_frame, trig, wave_amo, 
 
         # logging.info("order submit")
         order = vars(order_submit.get('order'))['_raw']
+        print("SUBMIT ORDER", client_order_id__gen, order.get('client_order_id'))
 
         if 'borrowed_funds' not in order_vars.keys():
             order_vars['borrowed_funds'] = False
@@ -484,7 +474,7 @@ def execute_sell_order(api, QUEEN, king_eval_order, ticker, ticker_time_frame, t
         
         # get latest pricing
         priceinfo_order = get_priceinfo_snapshot(api, ticker, crypto)
-        if priceinfo_order['price'] == 0:
+        if not priceinfo_order:
             print(f"ERROR on GETTING PRICE INFO for {ticker}")
             return {'executed': False}
 
@@ -904,7 +894,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
         if len(df_active) > 0 and len(BROKER['broker_orders']) > 0:
             # ("Update QUEEN with Broker Orders")
             df_active['client_order_id'] = df_active['client_order_id'].fillna('init')
-            qo_active_index = df_active['index'].to_list()
+            qo_active_index = df_active['client_order_id'].to_list()
             broker_corder_ids = BROKER['broker_orders']['client_order_id'].tolist()
             for client_order_id in qo_active_index:
                 if client_order_id not in broker_corder_ids and client_order_id != 'init':
@@ -1492,7 +1482,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             if type(QUEEN.get('price_info_symbols')) is not pd.core.frame.DataFrame:
                 print("OLD QUEEN")
                 return False
-            
+
             req = process_app_requests(QUEEN, QUEEN_KING, request_name='buy_orders')
             if req.get('app_flag'):
                 acct_info = QUEEN['account_info']
@@ -1742,6 +1732,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
 
                 # get latest pricing
                 temp = get_priceinfo_snapshot(api, ticker, crypto)
+                if not temp:
+                    print("ERROR in Get priceinfo SNAPSHOT")
+                    return {}
+
                 current_price = temp['price']
                 current_ask = temp['ask']
                 current_bid = temp['bid']
@@ -1896,7 +1890,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
         async def get_priceinfo(session, ticker, api, STORY_bee, QUEEN, crypto):
             async with session:
                 try:
+                    if ticker == 'GSHD':
+                        return {}
                     priceinfo = return_snap_priceinfo__pollenData(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker, api=api, crypto=crypto)
+                    if not priceinfo:
+                        return {}
                     return {'priceinfo': priceinfo, 'ticker': ticker}
                 except Exception as e:
                     print(e)
@@ -2341,10 +2339,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             try: # Order Loop
                 s_loop = datetime.now(est)
                 df = QUEEN['queen_orders']
-                df['index'] = df.index
-                queen_orders__index_dic = dict(zip(df['client_order_id'], df['index']))
                 df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
-                qo_active_index = df_active['index'].to_list()
+                qo_active_index = df_active['client_order_id'].to_list()
                 symbols = list(set(df_active['symbol'].to_list()))
                 if not symbols:
                     print("No Orders Yet")
@@ -2369,7 +2365,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                 # api # refresh all broker orders which are still pending
                 after_hours = True if mkhrs == 'closed' else False
                 save_b = False 
-                for c_order_id in tqdm(qo_active_index):
+                for idx, c_order_id in enumerate(qo_active_index):
+                    if pd.isna(c_order_id):
+                        print("CLIENT ORDER ID is NAN: index: ", idx)
+                        continue
                     symbol = QUEEN['queen_orders'].loc[c_order_id].get('symbol')
                     crypto = True if symbol in crypto_currency_symbols else False
                     if not crypto and after_hours:
@@ -2395,7 +2394,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                 queen_orders__dict = {}
 
                 save = False
-                for idx in tqdm(qo_active_index):
+                for idex, idx in enumerate(qo_active_index):
+                    if pd.isna(idx):
+                        print("CLIENT ORDER ID is NAN: index: ", idex)
+                        continue
                     # Queen Order Local Vars
                     run_order = QUEEN['queen_orders'].loc[idx].to_dict()
                     app_req = process_sell_app_request(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, run_order=run_order, check_only=True).get('app_flag')
@@ -2450,7 +2452,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                                     ticker=king_eval_order['bishop_keys']['ticker'], 
                                     ticker_time_frame=king_eval_order['bishop_keys'].get('ticker_time_frame'),
                                     trig=king_eval_order['bishop_keys']['trigname'], 
-                                    run_order_idx=queen_orders__index_dic[king_eval_order['bishop_keys']['client_order_id']], 
+                                    run_order_idx=king_eval_order['bishop_keys']['client_order_id'], 
                                     order_type=king_eval_order['bishop_keys']['order_type'],
                                     crypto=king_eval_order['bishop_keys']['qo_crypto'],
                                 )
@@ -2543,6 +2545,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                     # print(i, "time delta", time_delta)
                     ticker, ttime, tframe = i.split("_")
                     if ticker not in tics_missing:
+                        print(f'ticker missing {ticker} time delta story {time_delta} seconds')
                         tics_missing.append(ticker)
             
             if tics_missing:
@@ -2761,7 +2764,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             queens_charlie_bee, charlie_bee = init_charlie_bee(db_root) # monitors queen order cycles, also seen in heart
         charlie_bee['queen_cycle_count'] = 0
         
-        db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name))).rename(columns={0:'key', 1:'timestamp'})
+        db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name, server=server))).rename(columns={0:'key', 1:'timestamp'})
         db_keys_df['key_name'] = db_keys_df['key'].apply(lambda x: x.split("-")[-1])
         db_keys_df = db_keys_df.set_index('key_name')
         pq_qk_lastmod = db_keys_df.at['QUEEN_KING', 'timestamp']
@@ -2776,7 +2779,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
         heartbeat_cyle = deque([], 3000)
         while True:
 
-            db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name))).rename(columns={0:'key', 1:'timestamp'})
+            db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name, server=server))).rename(columns={0:'key', 1:'timestamp'})
             db_keys_df['key_name'] = db_keys_df['key'].apply(lambda x: x.split("-")[-1])
             db_keys_df = db_keys_df.set_index('key_name')
 

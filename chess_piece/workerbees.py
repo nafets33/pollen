@@ -90,6 +90,7 @@ pg_migration = os.getenv('pg_migration')
 #         for batch in batches:
 #             executor.submit(process_batch, batch)
 
+pollenstory_tickers = ['SPY', 'QQQ', 'GOOG', 'AAPL', 'TSLA', 'META', 'MSFT', 'NVDA', 'AMZN', 'ADBE'] + crypto_currency_symbols
 
 def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False, upsert_to_main_server=upsert_to_main_server):
     s = datetime.now(est)
@@ -98,6 +99,9 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
     async def main_func(session, ticker_time_frame, pickle_file, key, data, allow_pg_migration, task_results):
         async with session:
             try:
+                ticker, tt, tg = ticker_time_frame.split("_")
+                if 'GOLD' == ticker:
+                    print("YEEEES")
                 if backtesting:
                     allow_pg_migration = False
                 if allow_pg_migration:
@@ -119,9 +123,9 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
             for ticker_time_frame in pollens_honey["pollen_story"]:
                 key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
                 ticker, ttime, tframe = ticker_time_frame.split("_")
-                if ticker not in ['SPY', 'QQQ']:
+                if ticker not in pollenstory_tickers:
                     continue
-
+                # print("Saving Pollen Story ", ticker)
                 pickle_file = os.path.join(symbols_pollenstory_dbs, f"{ticker_time_frame}{macd_part_fname}.pkl")
                 data = {"pollen_story": pollens_honey["pollen_story"][ticker_time_frame]}
                 tasks.append(asyncio.ensure_future(main_func(session, ticker_time_frame, pickle_file, key, data, allow_pg_migration, task_results)))
@@ -1178,7 +1182,7 @@ def queen_workerbees(
             if errors:
                 msg = str(errors)
                 # send_email(subject="Tickers Not Longer Active", body=msg)
-                print(msg)
+                print("MISSING TICKER NOT IN ALPACA", msg)
                 if streamit:
                     st.error(f'tickers NOT in Alpaca TICKER DB {errors}')
             
@@ -1213,22 +1217,44 @@ def queen_workerbees(
             sys.exit()
         
         def handle_qcp_pawns(QUEENBEE, tickers, queens_chess_pieces=queens_chess_pieces, queens_master_tickers=queens_master_tickers):
-            for pawn in tickers:
-                pawn_qcp = (
-                    init_qcp_workerbees(
+            CHUNK_SIZE = 20
+
+            if len(tickers) < CHUNK_SIZE:
+                print("< 20 catch call pawn")
+                pawn = 'catch_all_bucket'
+                pawn_qcp = init_qcp_workerbees(
+                    init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
+                    ticker_list=tickers,
+                    theme=None,
+                    model=None,
+                    piece_name=pawn,
+                    buying_power=None,
+                    borrow_power=None,
+                    picture="knight_png",
+                )
+                QUEENBEE["workerbees"].update({pawn: pawn_qcp})
+                queens_chess_pieces.append(pawn)
+                queens_master_tickers += tickers
+
+            else:
+                print("> 20 catch call pawns")
+                for i in range(0, len(tickers), CHUNK_SIZE):
+                    chunk = tickers[i:i + CHUNK_SIZE]
+                    pawn = f'{str(chunk)}'
+                    pawn_qcp = init_qcp_workerbees(
                         init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
-                        ticker_list=[pawn],
+                        ticker_list=chunk,
                         theme=None,
                         model=None,
                         piece_name=pawn,
                         buying_power=None,
                         borrow_power=None,
-                        picture=f"knight_png",
+                        picture="knight_png",
                     )
-                )
-                QUEENBEE["workerbees"].update({pawn: pawn_qcp})
-                queens_chess_pieces.append(pawn)
-                queens_master_tickers = queens_master_tickers + pawn_qcp.get("tickers")
+                    QUEENBEE["workerbees"].update({pawn: pawn_qcp})
+                    queens_chess_pieces.append(pawn)
+                    queens_master_tickers += chunk
+
             return QUEENBEE, queens_chess_pieces, queens_master_tickers
 
 
@@ -1241,7 +1267,7 @@ def queen_workerbees(
             tickers_to_add = []
             for ticker in df_tickers.index:
                 if ticker not in all_symbols and df_tickers.loc[ticker, 'ticker_buying_power'] > 0:
-                    print(ticker, "NOT IN QUEENBEE adding to Castle")
+                    # print(ticker, "NOT IN QUEENBEE adding to Castle")
                     tickers_to_add.append(ticker)
 
             new_symbols = [i for i in tickers_to_add if i not in all_symbols] # and i not in all_values
