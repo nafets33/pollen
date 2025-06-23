@@ -1283,8 +1283,12 @@ def standard_AGgrid(
     hide_cols=[],
     grid_type=False,
     config_cols={},
+    key='grid1',
 ):
     # ['NO_UPDATE', # 'MANUAL',# 'VALUE_CHANGED',    # 'SELECTION_CHANGED',# 'FILTERING_CHANGED',# 'SORTING_CHANGED',  # 'COLUMN_RESIZED',   # 'COLUMN_MOVED',     # 'COLUMN_PINNED',    # 'COLUMN_VISIBLE',   # 'MODEL_CHANGED',# 'COLUMN_CHANGED', # 'GRID_CHANGED']
+    if key in st.session_state:
+        print("NEED NEW KEY")
+        key = f"{key}_{random.randint(1000, 9999)}"
     gb = GridOptionsBuilder.from_dataframe(data)
     gb.configure_default_column(minWidth=85, maxWidth=800, resizable=True, autoSize=True, textWrap=True, header_wrap=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, sortable=True, filter=True)
     gb.configure_grid_options(enableRangeSelection=True, copyHeadersToClipboard=False)
@@ -1326,6 +1330,7 @@ def standard_AGgrid(
         height=height,
         reload_data=reload_data,
         allow_unsafe_jscode=True,
+        key=key,
     )
 
     # [

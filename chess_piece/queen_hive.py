@@ -28,7 +28,7 @@ from tqdm import tqdm
 import logging
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
-
+import copy
 from chess_piece.pollen_db import PostgresHandler, PollenDatabase
 from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 from chess_piece.queen_mind import init_qcp, kings_order_rules, generate_TradingModel
@@ -2000,11 +2000,12 @@ def pollen_story(pollen_nectar):
 
                 try:
                     if "1Minute_1Day" in ticker_time_frame:
-                        # print(df.iloc[0], df.iloc[-1])
+                        # print(df.iloc[0]['timestamp_est'], df.iloc[-1]['timestamp_est'])
                         theme_df = df.copy()
                         theme_df = split_today_vs_prior(df=theme_df)  # remove prior day
                         theme_today_df = theme_df["df_today"]
                         theme_prior_df = theme_df['df_prior']
+                        # print(len(theme_today_df), "<today prior>", len(theme_prior_df))
 
 
                         if len(theme_prior_df) == 0:
@@ -2540,7 +2541,7 @@ def check_order_status(api, client_order_id):  # return raw dict form
         order_ = vars(order)["_raw"]
         return order_
     except Exception as e:
-        print(f"qplcacae {client_order_id} error {e}")
+        print(f"ERROR-qplcacae {client_order_id} {e}")
         return {}
 
 
@@ -3082,6 +3083,23 @@ def star_trigbee_delay_times(name=None): # WORKERBEE put into queen controls
     else:
         return star_time
 
+def star_refresh_star_seconds(name=None):
+    star_seconds = {
+        '1Minute_1Day': 60,
+        '5Minute_1Day': 300,
+        '15Minute_1Day': 900,
+        '30Minute_1Day': 1800,
+        '1Hour_1Day': 3600,
+        '2Hour_1Day': 7200,
+        '1Month_1Year': 2592000,  # Approximate seconds in a month
+        '1Quarter_1Year': 7776000,  # Approximate seconds in a quarter (3 months)
+        '6Months_1Year': 15552000,  # Approximate seconds in 6 months
+        '1Day_1Year': 86400,
+    }
+    if name:
+        return star_seconds.get(name, 15552000)
+    else:
+        return star_seconds
 
 def star_refresh_star_times(name=None):
     star_time = {
@@ -3270,12 +3288,13 @@ def ttf_grid_names(ttf_name, symbol=True):
        return ttf_name
 
 
-def sell_button_dict_items(symbol="SPY", sell_qty=89, sell_amount=0, limit_price=0):
+def sell_button_dict_items(symbol="SPY", sell_qty=89, sell_amount=0, limit_price=0, broker=['queens_choice', 'alpaca', 'robinhood']):
     var_s = {
                 'symbol': symbol,
                 'sell_qty':sell_qty,
                 'sell_amount': sell_amount,
                 'limit_price': limit_price,
+                 'broker': broker,
                 }
     # cols = ['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']
     # for col in cols:
@@ -3612,7 +3631,7 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
 
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False, main_server=server):
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False, main_server=server, orders_v2=False):
     db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)    
     table_name = "client_user_store" if prod else 'client_user_store_sandbox'
 
@@ -3625,10 +3644,28 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         return {'init_pollen': init_pollen}
     
     if pg_migration:
+        if orders_v2:
+            s = datetime.now()
+            client_order_store = "queen_orders" if prod else 'queen_orders_sandbox'
+            order_rows = PollenDatabase.get_keys_by_db_root(client_order_store, db_root)
+            df = pd.DataFrame(order_rows).set_index('client_order_id', drop=False)
+            ORDERS = {'queen_orders': df, 
+                      'db_root': db_root, 
+                      'table_name': table_name, 
+                      'client_order_store': client_order_store}
+            print((datetime.now() - s).total_seconds(), "Seconds to read orders")
+        else:
+            ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS', main_server=main_server) if orders else {}
+
         QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN', main_server=main_server) if queen else {}
+        
+        if queen and orders_v2:
+            print("Set QUEEN ORDERS in QUEEN")
+            queen_orders = copy.deepcopy(ORDERS['queen_orders'])
+            QUEEN['queen_orders'] = queen_orders
+
         QUEENsHeart = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEENsHeart', main_server=main_server) if queen or queen_heart else {}
         QUEEN_KING = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN_KING', main_server=main_server) if queen_king else {}
-        ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS', main_server=main_server) if orders else {}
         ORDERS_FINAL = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS_FINAL', main_server=main_server) if orders_final else {}
         BROKER = PollenDatabase.retrieve_data(table_name, f'{db_root}-BROKER', main_server=main_server) if broker else {}
         broker_info = PollenDatabase.retrieve_data(table_name, f'{db_root}-ACCOUNT_INFO', main_server=main_server) if broker_info else {}
@@ -3676,8 +3713,8 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             }
 
 
-def process_order_submission(broker, trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
-
+def process_order_submission(order_key, prod, broker, trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
+    # client_order_id = order["client_order_id"]
     try:
         # Create Running Order
         new_queen_order = create_QueenOrderBee(
@@ -3698,6 +3735,11 @@ def process_order_submission(broker, trading_model, order, order_vars, trig, sym
         # Append Order
         new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
         new_queen_order_df['cost_basis_current'] = new_queen_order_df.get('wave_amo')
+
+        # # Append to queen_orders table
+        # table_name = 'queen_orders' if prod else 'queen_orders_sandbox'
+        # key = f'{order_key}___{client_order_id}'
+        # PollenDatabase.upsert_data(table_name=table_name, key=key, value=new_queen_order_df.loc[client_order_id].to_dict(), console=True)
         
         return new_queen_order_df
 
@@ -3865,8 +3907,8 @@ def create_QueenOrderBee(
         price_time_of_request=False,
         bid=False,
         ask=False,
-        honey_gauge=False,
-        macd_gauge=False,
+        # honey_gauge=False,
+        # macd_gauge=False,
         honey_money=False,
         sell_reason=False,
         honey_time_in_profit=0,
@@ -3911,6 +3953,28 @@ def create_QueenOrderBee(
                 "running_close_legs": False,
                 "ticker_time_frame": ticker_time_frame,
                 "star": star,
+                "datetime": date_mark,
+                "status_q": status_q,
+                "portfolio_name": portfolio_name,
+                "exit_order_link": exit_order_link,
+                "price_time_of_request": priceinfo.get("price"),
+                "bid": priceinfo.get("bid"),
+                "ask": priceinfo.get("ask"),
+                # "honey_gauge": deque([], 89),
+                # "macd_gauge": deque([], 89),
+                "money": 0,
+                "honey": 0,
+                "cost_basis": 0,
+                'cost_basis_current': 0,
+                'market_value': market_value,
+                "honey_time_in_profit": {},
+                "profit_loss": profit_loss,
+                "revisit_trade_datetime": revisit_trade_datetime,
+                "long_short": order_vars.get("long_short"),
+                "queen_wants_to_sell_qty": queen_wants_to_sell_qty,
+                "system_recon": False,
+                "trigname": trig,
+                "tm_trig": order_vars.get("tm_trig"),
                 "double_down_trade": order_vars.get("double_down_trade"),
                 "order_trig_sell_stop_limit": order_vars.get("order_trig_sell_stop_limit"),
                 "req_limit_price": order_vars.get("limit_price"),
@@ -3927,38 +3991,16 @@ def create_QueenOrderBee(
                 "ready_buy": order_vars.get('ready_buy'),
                 "qty_order": order_vars.get('qty_order'),
                 "assigned_wave": order_vars.get("wave_at_creation"),
-                "trigname": trig,
-                "tm_trig": order_vars.get("tm_trig"),
-                "datetime": date_mark,
-                "status_q": status_q,
-                "portfolio_name": portfolio_name,
-                "exit_order_link": exit_order_link,
-                "system_recon": False,
-                "order": "alpaca",
+                # "order": "alpaca",
                 "client_order_id": order.get("client_order_id"),
                 "side": order.get("side"),
                 "ticker": order.get("symbol"),
                 "symbol": order.get("symbol"),
                 "req_qty": order.get("qty"),
                 "qty": order.get("qty"),
-                "filled_qty": order.get("filled_qty"),
-                "qty_available": order.get("filled_qty"),
-                "filled_avg_price": order.get("filled_avg_price"),
-                "price_time_of_request": priceinfo.get("price"),
-                "bid": priceinfo.get("bid"),
-                "ask": priceinfo.get("ask"),
-                "honey_gauge": deque([], 89),
-                "macd_gauge": deque([], 89),
-                "money": 0,
-                "honey": 0,
-                "cost_basis": 0,
-                'cost_basis_current': 0,
-                'market_value': market_value,
-                "honey_time_in_profit": {},
-                "profit_loss": profit_loss,
-                "revisit_trade_datetime": revisit_trade_datetime,
-                "long_short": order_vars.get("long_short"),
-                "queen_wants_to_sell_qty": queen_wants_to_sell_qty,
+                "filled_qty": order.get("filled_qty", 0),
+                "qty_available": order.get("filled_qty", 0),
+                "filled_avg_price": order.get("filled_avg_price", 0),
             }
 
     if queen_init:

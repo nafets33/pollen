@@ -10,7 +10,7 @@ import ipdb
 import copy
 from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_data, 
                               kingdom__global_vars, main_index_tickers, streamlit_config_colors, 
-                              hive_master_root, ReadPickleData, PickleData, hive_master_root_db, 
+                              hive_master_root, stars, PickleData, hive_master_root_db, 
                               read_QUEENs__pollenstory, print_line_of_error)
 
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
@@ -18,7 +18,6 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     find_symbol_in_chess_board, 
                                     split_today_vs_prior, 
                                     order_vars__queen_order_items,
-                                    fetch_portfolio_history,
                                     power_amo,
                                     init_queenbee,
                                     return_trading_model_trigbee,
@@ -289,8 +288,11 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     buy_package.update({'buy_order': {}})
     blessing={} #{i: '': for i in []}, # order_vars
     
+    # Broker
+    broker = kors['broker']
+    print("BROKER", broker)
     # Trading Model
-    symbol=selected_row.get('symbol')
+    symbol = selected_row.get('symbol')
     if story:
       ticker_time_frame = kors.get('star')
       star_time = return_startime_from_ttf(ticker_time_frame)
@@ -361,6 +363,9 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     blessing = order_vars
 
     exx = execute_buy_order(
+                    broker=broker,
+                    order_key=QUEEN_KING.get('db_root'),
+                    prod=prod,
                     api=api, 
                     portfolio=portfolio, 
                     blessing=blessing,
@@ -724,28 +729,31 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
   
   try:
       if toggle_view_selection.lower() in ['queen', 'portfolio']:
-          ORDERS = init_queenbee(client_user, prod, queen=True, pg_migration=pg_migration).get('QUEEN')
-      elif toggle_view_selection.lower() == 'final':
-          ORDERS = init_queenbee(client_user, prod, orders_final=True, pg_migration=pg_migration).get('ORDERS_FINAL')
+          ORDERS = init_queenbee(client_user, prod, queen=True, orders_v2=True, pg_migration=pg_migration).get('QUEEN')
+      # elif toggle_view_selection.lower() == 'final':
+      #     ORDERS = init_queenbee(client_user, prod, orders_final=True, orders_v2=True, pg_migration=pg_migration).get('ORDERS_FINAL')
       else:
-          ORDERS = init_queenbee(client_user, prod, orders=True, pg_migration=pg_migration).get('ORDERS')
-
-      df = ORDERS['queen_orders']
+          ORDERS = init_queenbee(client_user, prod, orders=False, orders_v2=True, pg_migration=pg_migration).get('ORDERS')
+      
+      if isinstance(ORDERS, pd.DataFrame):
+         df = ORDERS
+      else:
+         df = ORDERS['queen_orders']
 
       # ORDERS NOT Available
-      if type(ORDERS) != dict:
-        print("NO ORDERS")
-        return pd.DataFrame().to_json()
-      if type(df) != pd.core.frame.DataFrame:
-        return pd.DataFrame().to_json()
+      # if type(ORDERS) != dict:
+      #   print("NO ORDERS")
+      #   return pd.DataFrame().to_json()
+      # if type(df) != pd.core.frame.DataFrame:
+      #   return pd.DataFrame().to_json()
       if len(df) == 1:
         print("init queen")
-        return pd.DataFrame().to_json()
+        return df.to_json(orient='records')
       
       king_G = kingdom__global_vars()
       active_queen_order_states = king_G.get('active_queen_order_states')
       # filter for range
-      df = df[(df['datetime'] >= datetime.now(est).replace(year=2024, month=10, day=1)) | (df['queen_order_state'].isin(active_queen_order_states))]
+      # df = df[(df['datetime'] >= datetime.now(est).replace(year=2024, month=10, day=1)) | (df['queen_order_state'].isin(active_queen_order_states))]
 
 
       # Colors
@@ -881,7 +889,7 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         # print('SPY_1Minute_1Day' in STORY_bee.keys())
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11', check_portfolio=False) ## Setup Board
       else:
-
+        # hedge funds
         qb = init_queenbee(client_user, prod, revrec=True, queen=True, queen_king=True, pg_migration=pg_migration)
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
@@ -940,8 +948,23 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
             sb = datetime.now()
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
             print("STORY_bee runtime: ", (datetime.now() - sb).total_seconds())
-            
-            revrec = refresh_chess_board__revrec(acct_info=QUEEN.get('account_info'), QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, STORY_bee=STORY_bee, check_portfolio=False, chess_board=toggle_view_selection) ## Setup Board
+
+            # % Change per Star failed couldn't get it to work?
+            # storybee_pct_change = {}
+            # STORY_bee_keys = STORY_bee.keys()
+            # for symbol in symbols:
+            #     for star in stars().keys():
+            #         if f'{symbol}_{star}' in STORY_bee_keys:
+            #             pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
+            #             # storybee_pct_change[f'{symbol}{star}_change'] = pct_change
+            #             data.at[symbol, f'{symbol}{star}_change'] = pct_change if pct_change else 89
+            #         else:
+            #             print(symbol, star, "not in STORY_bee_keys")
+            #             data.at[symbol, f'{symbol}{star}_change'] = 89
+            # df_story = data
+            sb = datetime.now()
+            revrec = refresh_chess_board__revrec(acct_info=QUEEN.get('account_info'), QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, STORY_bee=STORY_bee, check_portfolio=False, chess_board=toggle_view_selection, exit_early=True) ## Setup Board
+            print("RevRec runtime: ", (datetime.now() - sb).total_seconds())
             df_story = revrec['storygauge']
             df_story['pct_portfolio'] = df_story.index.map(dict(zip(data.index, data['pct_portfolio'])))
             # check for new storybee data and call it
@@ -961,6 +984,8 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
               #                 upsert_to_main_server=True,
               #                     )
 
+              return df_story.to_json(orient='records')
+
         else:
            revrec = init_queenbee(client_user, prod, revrec=True).get('revrec')
 
@@ -973,16 +998,14 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
 
       k_colors = streamlit_config_colors()
       default_text_color = k_colors['default_text_color'] # = '#59490A'
-      default_font = k_colors['default_font'] # = "sans serif"
-      default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
-
-      waveview = revrec.get('waveview')
-
-      sw = datetime.now()
-      df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
-      print("wave runtime: ", (datetime.now() - sw).total_seconds())
+      # default_font = k_colors['default_font'] # = "sans serif"
+      # default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
 
       if return_type == 'waves':
+        waveview = revrec.get('waveview')
+        sw = datetime.now()
+        df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
+        print("wave runtime: ", (datetime.now() - sw).total_seconds())
         
         df = df_waveview
           

@@ -274,7 +274,44 @@ if __name__ == '__main__':
                     st.success("MIGRATION COMPLETED")
         
 
+            st.subheader("Copy Data Between Tables")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                table_main1 = st.selectbox("Source Table", options=tables, key="table_main1")
+            with col2:
+                table_main2 = st.selectbox("Target Table", options=tables, key="table_main2")
+
+            if st.button(f"Copy all data from {table_main1} → {table_main2}"):
+                with st.spinner(f"Copying data from {table_main1} to {table_main2}..."):
+                    PollenDatabase.copy_table_to_table(table_main1, table_main2)
+                st.success(f"Copied all data from {table_main1} to {table_main2}!")
+        
+
         # VACCUM TABLE
         table_key = st.selectbox("Vaccum Table", options=tables)
         if st.button(f"Vaccum Table {table_key}"):
             PollenDatabase.vacuum_table(table_key)
+        
+        demo_sync = st.sidebar.toggle("Sync Orders v2 DEMO ")
+        if st.toggle('Sync Orders v2'):
+            if demo_sync:
+                prod = False
+                client_user = 'stapinskistefan@gmail.com'
+            table_name = 'queen_orders' if prod else 'queen_orders_sandbox'
+            print(c_user, prod)
+            ORDERS = init_queenbee(client_user, prod, orders=True, pg_migration=pg_migration).get('ORDERS')
+            st.write(ORDERS['db_root'])
+            df = ORDERS['queen_orders']
+
+            if st.button(f"sync orders to table **{table_name}** --{client_user} prod={prod}"):
+                print('len', len(df))
+                for i, idx in enumerate(df.index):
+                    # print(i)
+                    key = f"{ORDERS['db_root']}___{idx}"
+                    data = df.loc[idx].to_dict()
+
+                    PollenDatabase.upsert_data(table_name=table_name, key=key, value=data, console=True)
+                st.success(f"Orders synced to {table_name} for {client_user} prod={prod}")
+            # run_order = PollenDatabase.retrieve_data(table_name, key=f"{ORDERS.get('db_root')}___{ORDERS['queen_orders'].iloc[-1]['client_order_id']}")
+            # st.write(run_order)

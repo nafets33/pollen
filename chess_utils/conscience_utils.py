@@ -85,7 +85,7 @@ def return_trading_model_kors_v2(QUEEN_KING, symbol='SPY', trigbee='buy_cross-0'
      print_line_of_error("wwwwtf")
      return {}
 
-def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=list(star_refresh_star_times().keys()), max_budget_allowed=None, star_powers=None, star_powers_borrow=None, symbol_qcp_group=None):
+def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=list(star_refresh_star_times().keys()), max_budget_allowed=None, star_powers=None, star_powers_borrow=None, symbol_qcp_group=None, broker=['alpaca', 'robinhood']):
     star_times = star_names().keys()
     var_s = {
                 'symbol': symbol,
@@ -95,6 +95,7 @@ def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=
                 'refresh_star': refresh_star,
                 'max_budget_allowed': max_budget_allowed,
                 'symbol group': symbol_qcp_group,
+                # 'broker': broker,
                 }
     if star_powers:
         for star in star_times:
@@ -122,6 +123,7 @@ def buy_button_dict_items(queen_handles_trade=True,
                           ignore_refresh_star=False, 
                           sell_at_vwap=None,
                           sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M'), 
+                          broker =['queens_choice', 'alpaca', 'robinhood'],
                           ):
     column = {
                 'queen_handles_trade': queen_handles_trade,
@@ -136,6 +138,7 @@ def buy_button_dict_items(queen_handles_trade=True,
                 'sell_at_vwap': sell_at_vwap,
                 'star_list': star_list,
                 'sell_trigbee_date': sell_trigbee_date,
+                'broker': broker,
                 }
     return {key: value for key, value in column.items() if value is not None}
 
@@ -207,8 +210,8 @@ def get_powers(trading_model):
     star_powers = {}
     star_powers_borrow = {}
     for star, star_vars in trading_model.get('stars_kings_order_rules').items():
-        star_powers[starnames[star]] = star_vars.get("buyingpower_allocation_LongTerm")
-        star_powers_borrow[starnames[star]] = star_vars.get("buyingpower_allocation_ShortTerm")
+        star_powers[starnames[star]] = star_vars.get("buyingpower_allocation_LongTerm", 0)
+        star_powers_borrow[starnames[star]] = star_vars.get("buyingpower_allocation_ShortTerm", 0)
     
     return star_powers, star_powers_borrow
 
@@ -281,9 +284,10 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
             if 'trinity' in col:
                 df[col] = round(pd.to_numeric(df[col]),2) * 100
 
-        df['queens_suggested_sell'] = df['symbol'].map(sell_msg)
+        # df['queens_suggested_sell'] = df['symbol'].map(sell_msg)
         df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
         df['queens_suggested_sell'] = round(df['money'])
+        df['queens_suggested_sell'] = df.apply(lambda row: '${:,.0f}'.format(row['queens_suggested_sell']), axis=1)
 
         refresh_star_names = star_refresh_star_times()
         refresh_star_names_switched = {v: k for k, v in refresh_star_names.items()}
@@ -373,7 +377,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                         take_profit = df.at[symbol, "trading_model_kors"].get('take_profit')
                         sell_out = df.at[symbol, "trading_model_kors"].get('sell_out')
                         close_order_today = df.at[symbol, "trading_model_kors"].get('close_order_today')
-                        kors = buy_button_dict_items(star="1Day_1Year", star_list=list(star_names().keys()), 
+                        kors = buy_button_dict_items(
+                                                    star="1Day_1Year", 
+                                                    star_list=list(star_names().keys()), 
                                                     wave_amo=buy_alloc_deploy.get(symbol), 
                                                     take_profit=take_profit, 
                                                     sell_out=sell_out, 

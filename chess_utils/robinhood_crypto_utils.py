@@ -154,9 +154,9 @@ def main():
     api_rh = CryptoAPITrading()
     print(api_rh.get_account(), api_rh.get_trading_pairs(), api_rh.get_holdings(),)
     symbol_info = api_rh.get_best_bid_ask('BTC-USD')
-    wave_amo = 89 / float(symbol_info.get('results')[0]['ask_inclusive_of_buy_spread'])
+    wave_amo = 100000 / float(symbol_info.get('results')[0]['ask_inclusive_of_buy_spread'])
 
-    api_rh.get_account_activity()
+    # api_rh.get_account_activity()
 
     # In [10]: api_rh.get_holdings()
     # Out[10]: 
@@ -241,5 +241,25 @@ def main():
     'updated_at': '2025-02-17T13:20:51.050895-05:00',
     'market_order_config': {'asset_quantity': '0.000100000000000000'}}
     """
+
+    # In [5]: api_rh.get_order("67b37e02-ac37-434e-a2d4-b14cb8
+    #    ...: 9f74cc")
+    # Out[5]: 
+    # {'symbol': 'BTC-USD',
+    #  'client_order_id': '1b54ccdc-6946-45ef-81bf-6c9974951e63',
+    #  'side': 'buy',
+    #  'type': 'market',
+    #  'id': '67b37e02-ac37-434e-a2d4-b14cb89f74cc',
+    #  'account_number': '311015558547',
+    #  'state': 'filled',
+    #  'filled_asset_quantity': '0.000100000000000000',
+    #  'executions': [{'effective_price': '96328.270000000000000000',
+    #    'quantity': '0.000100000000000000',
+    #    'timestamp': '2025-02-17T13:20:50.565000-05:00'}],
+    #  'average_price': '96328.270000000000000000',
+    #  'created_at': '2025-02-17T13:20:50.234331-05:00',
+    #  'updated_at': '2025-02-17T13:20:51.050895-05:00',
+    #  'market_order_config': {'asset_quantity': '0.000100000000000000'}}
+
 if __name__ == "__main__":
     main()

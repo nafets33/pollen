@@ -149,14 +149,17 @@ const AgGrid = (props: Props) => {
     const btnClickedHandler = () => {
       props.clicked(props.node.id)
     }
+    // console.log("BtnCellRenderer props", props)
     return (
       <button
         onClick={btnClickedHandler}
         style={{
           background: "transparent",
-          // color: props.color ? props.color : "black",
+          border: (props.cellStyle && props.cellStyle.border !== undefined)
+            ? props.cellStyle.border
+            : "none",          
           width: props.width ? props.width : "100%",
-          // borderColor: props.borderColor ? props.borderColor : "black",
+              ...(props.cellStyle || {}), // <-- Merge in cellStyle from params ? NOT WORKING?
         }}
       >
         {props.col_header ? props.value : props.buttonName}
@@ -185,7 +188,7 @@ const AgGrid = (props: Props) => {
     grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
   }
 
-  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder=[]} = kwargs
+  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder=[], grid_type = null} = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
@@ -258,6 +261,7 @@ const AgGrid = (props: Props) => {
           pinned,
           button_name,
           border_color,
+          border,
           ...otherKeys
         } = button;
   
@@ -272,6 +276,8 @@ const AgGrid = (props: Props) => {
             col_header,
             buttonName: button_name,
             borderColor: border_color,
+            border: border,
+            ...(button.cellRendererParams || {}),
             clicked: async function (row_index: any) {
               try {
                 const selectedRow = g_rowdata.find((row) => row[index] === row_index);
@@ -742,58 +748,108 @@ const AgGrid = (props: Props) => {
               </div>
             </div>
           )}
-          <div className="d-flex flex-row gap-2 flex-wrap">
-          {toggle_views?.map((view: string, index: number) => (
-          <span key={index}>
-            <button
-              className={`btn ${
-                viewId === index ? "btn-danger" : "btn-secondary"
-              }`}
-              style={{
-                ...buttonStyle,
-                borderRadius: "8px",
-                //whiteSpace: "nowrap", // Prevent text wrapping inside buttons
-                color: '#055A6E',
-                backgroundColor: '#F3FAFD',
-                margin: '3px',
-                fontWeight: 'bold',
-              }}
-              onClick={() => {
-                setViewId(index)
-                setpreviousViewId(viewId)
-              }
-              }
-              disabled={loading} // Disable button while loading
-            >
-              {view}
-              {loading && viewId === index ? (
-                <div
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    border: "2px solid black",
-                    borderTop: "2px solid transparent",
-                    borderRadius: "50%",
-                    animation: "spin 0.8s linear infinite",
-                    marginLeft: "8px" // Add some space between text and spinner
-                  }}
-                />
-              ) : null}
-            </button>
-          </span>
+          {toggle_views && toggle_views.length > 0 && (
+  <>
+    {toggle_views.length < 20 ? (
+      // Render normal buttons if toggle_views is less than 20
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "10px",
+          padding: "10px",
+          marginBottom: "10px",
+        }}
+      >
+        {toggle_views.map((view: string, index: number) => (
+          <button
+            key={index}
+            className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
+            style={{
+              ...buttonStyle,
+              borderRadius: "8px",
+              color: "#055A6E",
+              backgroundColor: "#F3FAFD",
+              fontWeight: "bold",
+            }}
+            onClick={() => {
+              setViewId(index);
+              setpreviousViewId(viewId);
+            }}
+            disabled={loading}
+          >
+            {view}
+            {loading && viewId === index ? (
+              <div
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  border: "2px solid black",
+                  borderTop: "2px solid transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                  marginLeft: "8px",
+                }}
+              />
+            ) : null}
+          </button>
         ))}
       </div>
-
-      {/* Add CSS for spinner animation */}
-      <style>
-        {`
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        `}
-      </style>
+    ) : (
+      // Render overlap container if toggle_views is 20 or more
+      <div
+        className="toggle-view-container"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+          gap: "10px",
+          overflowY: "auto",
+          maxHeight: "200px",
+          padding: "10px",
+          border: "1px solid #ddd",
+          borderRadius: "8px",
+          backgroundColor: "#eef9f8",
+          width: "100%",
+          marginBottom: "10px",
+        }}
+      >
+        {toggle_views.map((view: string, index: number) => (
+          <button
+            key={index}
+            className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
+            style={{
+              ...buttonStyle,
+              borderRadius: "8px",
+              color: "#055A6E",
+              backgroundColor: "#F3FAFD",
+              fontWeight: "bold",
+            }}
+            onClick={() => {
+              setViewId(index);
+              setpreviousViewId(viewId);
+            }}
+            disabled={loading}
+          >
+            {view}
+            {loading && viewId === index ? (
+              <div
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  border: "2px solid black",
+                  borderTop: "2px solid transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                  marginLeft: "8px",
+                }}
+              />
+            ) : null}
+          </button>
+        ))}
+      </div>
+    )}
+  </>
+)}
         </div>
   
         <div

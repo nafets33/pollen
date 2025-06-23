@@ -278,6 +278,7 @@ def return_bars(
         symbol_data = symbol_data.reset_index(drop=True)
 
         e = datetime.now(est)
+        print("?????", symbol_data.iloc[-1]["timestamp_est"])
         # (str((e - s)) + ": " + datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         return {
@@ -306,51 +307,51 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
         error_dict = {}
 
         for charttime, ndays in chart_times.items():
-            timeframe = charttime.split("_")[0]  # '1Minute_1Day'
-            timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
-            if s_date and e_date:
-                start_date = s_date
-                end_date = e_date
-            else:
-                start_date = trading_days_df_.tail(ndays).head(1).date
-                start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-                end_date = datetime.now(est).strftime("%Y-%m-%d")
+            try:
+                timeframe = charttime.split("_")[0]  # '1Minute_1Day'
+                timeframe = timeframe.replace("ute", '') if 'Minute' in timeframe else timeframe
+                if s_date and e_date:
+                    start_date = s_date
+                    end_date = e_date
+                else:
+                    start_date = trading_days_df_.tail(ndays).head(1).date
+                    start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
+                    end_date = datetime.now(est).strftime("%Y-%m-%d")
 
-            if exchange:
-                symbol_data = api.get_crypto_bars(
-                    ticker_list,
-                    timeframe=timeframe,
-                    start=start_date,
-                    end=end_date,
-                    exchanges=exchange,
-                ).df
-            else:
-                try:
-                    symbol_data = api.get_bars(
+                if exchange:
+                    symbol_data = api.get_crypto_bars(
                         ticker_list,
                         timeframe=timeframe,
                         start=start_date,
                         end=end_date,
-                        adjustment="all",
+                        exchanges=exchange,
                     ).df
+                else:
+                        symbol_data = api.get_bars(
+                            ticker_list,
+                            timeframe=timeframe,
+                            start=start_date,
+                            end=end_date,
+                            adjustment="all",
+                        ).df
                     
-                    if len(symbol_data) == 0:
-                        print(f"{ticker_list} {charttime} NO Bars")
-                        error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
-                        return {}
-                    # set index to EST time
-                    symbol_data["timestamp_est"] = symbol_data.index
-                    symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(lambda x: x.astimezone(est))
-                    symbol_data["timeframe"] = timeframe
-                    symbol_data["bars"] = "bars_list"
-
-                    symbol_data = symbol_data.reset_index(drop=True)
-
-                    return_dict[charttime] = symbol_data  
-                except Exception as e:
-                    print("QH_getbars", print_line_of_error(), e)
-                    print(ticker_list)
+                if len(symbol_data) == 0:
+                    print(f"{ticker_list} {charttime} NO Bars")
+                    error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
                     return {}
+                # set index to EST time
+                symbol_data["timestamp_est"] = symbol_data.index
+                symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(lambda x: x.astimezone(est))
+                symbol_data["timeframe"] = timeframe
+                symbol_data["bars"] = "bars_list"
+                symbol_data = symbol_data.reset_index(drop=True)
+                print("?????", symbol_data.iloc[-1]["timestamp_est"])
+
+                return_dict[charttime] = symbol_data  
+            except Exception as e:
+                print("QH_getbars", print_line_of_error(), e)
+                print(ticker_list)
+                return {}
         
         e = datetime.now(est)
         return {"resp": True, "return": return_dict, 'error_dict': error_dict}
@@ -529,12 +530,13 @@ def queen_workerbees(
         #     "1Hour_3Month": 48, "2Hour_6Month": 72,
         #     "1Day_1Year": 250}
         try:
+            crypto = True if '/' in ticker_list[0] else False
 
             error_dict = {}
             s = datetime.now(est)
             dfs_index_tickers = {}
-            if '/' in ticker_list[0]:
-                print("returning crypto bars")
+            if crypto:
+                # print("returning crypto bars")
                 bars = return_crypto_bars(
                     ticker_list=ticker_list,
                     chart_times=chart_times,
@@ -556,7 +558,7 @@ def queen_workerbees(
             #     # bars_dfs = bars['return']
             for timeframe, df in bars["return"].items():
                 time_frame = timeframe.split("_")[0]  # '1day_1year'
-                if "1day" in time_frame.lower():
+                if "1day" in time_frame.lower() or crypto:
                     for ticker in ticker_list:
                         df_return = df[df["symbol"] == ticker].copy()
                         dfs_index_tickers[f'{ticker}{"_"}{timeframe}'] = df_return

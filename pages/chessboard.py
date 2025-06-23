@@ -24,7 +24,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder
 from chess_piece.pollen_db import PollenDatabase
 import copy
 import ipdb
-crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+crypto_symbols__tickers_avail = ['BTC/USD', 'ETH/USD']
 pg_migration = os.getenv('pg_migration')
 
 hedge_funds = {
@@ -177,9 +177,10 @@ hedge_funds = {
 def save_queen_king(QUEEN_KING):
     PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
 
-def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_sec=0, paginationOn=False, key='chessboard', seconds_to_market_close=0):
+def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_sec=0, paginationOn=False, key='chessboard', seconds_to_market_close=0, prod=None):
 
-    
+    if not prod:
+        prod = prod
     try:
         gb = GridOptionsBuilder.create()
         gb.configure_default_column(column_width=100, 
@@ -260,7 +261,7 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
             api_update=f"{ip_address}/api/data/update_queenking_chessboard",
             refresh_sec=refresh_sec, 
             refresh_cutoff_sec=seconds_to_market_close, 
-            prod=st.session_state['prod'],
+            prod=prod,
             grid_options=go,
             key=key,
             api_key=os.environ.get("fastAPI_key"),
@@ -471,7 +472,7 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
             with cols[1]:
                 QUEEN_KING[qcp_bees_key][qcp]['piece_name'] = st.text_input("Name", value=QUEEN_KING[qcp_bees_key][qcp]['piece_name'], key=f'{qcp}piece_name{admin}', label_visibility='hidden')
             with cols[2]:
-                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed + crypto_symbols__tickers_avail, default=QUEEN_KING[qcp_bees_key][qcp].get('tickers', []), help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}',  label_visibility='hidden')
+                QUEEN_KING[qcp_bees_key][qcp]['tickers'] = st.multiselect(label=qcp, options=ticker_allowed, default=QUEEN_KING[qcp_bees_key][qcp].get('tickers', []), help='Castle Should Hold your Highest Valued Symbols', key=f'{qcp}tickers{admin}',  label_visibility='hidden')
             with cols[3]:
                 QUEEN_KING[qcp_bees_key][qcp]['model'] = st.selectbox(label='-', options=models, index=models.index(QUEEN_KING[qcp_bees_key][qcp].get('model')), key=f'{qcp}model{admin}')
             with cols[4]:
@@ -819,7 +820,6 @@ if __name__ == '__main__':
     active_order_state_list = king_G.get('active_order_state_list') # = ['running', 'running_close', 'submitted', 'error', 'pending', 'completed', 'completed_alpaca', 'running_open', 'archived_bee']
     active_queen_order_states = king_G.get('active_queen_order_states')
 
-    # crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD']
     admin = st.session_state['admin']
     prod = st.session_state['prod']
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
@@ -853,6 +853,19 @@ if __name__ == '__main__':
     if not st.session_state.get('chessboard_setup'):
         if st.button("Return To Trading Engine", use_container_width=True):
             st.switch_page("pollen.py")
+    
+    
+    st.write(len(QUEEN_KING['sell_orders']), "sell orders")
+    st.write(len(QUEEN_KING['buy_orders']), "buy_orders orders")
+    st.write(len(QUEEN['queen_orders']), "queen_orders orders")
+
+    if st.button("clear sell orders"):
+        QUEEN_KING['sell_orders'] = []
+        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+        
+    if st.button("clear buy orders"):
+        QUEEN_KING['buy_orders'] = []
+        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
     
     # if admin:
     if st.button("Reset RevRec"):

@@ -4,7 +4,7 @@ import json
 import os
 import pandas as pd
 import numpy as np
-from chess_piece.king import print_line_of_error
+from chess_piece.king import print_line_of_error, send_email
 import logging
 import json
 import psycopg2
@@ -257,8 +257,11 @@ class PollenDatabase:
                 if console and table_name not in console_table_ignore:
                     print(f'{key} Upserted to {table_name} server={main_server}')
         except Exception as e:
-            print("issue arrived in upsert_data function")
-            print_line_of_error(e)
+            print_line_of_error(f"issue arrived in upsert_data function {table_name} {key}")
+            send_email(
+                subject=f"Error in upsert_data function for {key}",
+                body=f"An error occurred while upserting data into the table {table_name} with key {key}. Error: {e}",
+            )
             return False
         
         return True
@@ -334,7 +337,69 @@ class PollenDatabase:
                 conn.close()
 
         return None
-    
+
+    @staticmethod
+    def copy_table_to_table(source_table, target_table, show_progress=True):
+        """
+        Copy all key/data pairs from source_table to target_table using your upsert/retrieve helpers.
+        """
+        # Get all keys from the source table
+        keys = PollenDatabase.get_all_keys(source_table)
+        if show_progress:
+            from tqdm import tqdm
+            keys_iter = tqdm(keys, desc=f"Copying {source_table} → {target_table}")
+        else:
+            keys_iter = keys
+
+        count = 0
+        for key in keys_iter:
+            data = PollenDatabase.retrieve_data(source_table, key)
+            if data is not None:
+                # Remove helper fields if present
+                data.pop('key', None)
+                data.pop('table_name', None)
+                data.pop('db_root', None)
+                # Upsert into the target table
+                PollenDatabase.upsert_data(target_table, key, data, console=False)
+                count += 1
+        print(f"Copied {count} records from {source_table} to {target_table}")
+
+    # @staticmethod
+    # def retrieve_data_queen_orders(table_name, db_root):
+    # # def retrieve_all_story_bee_data(symbols, main_server=server):
+    #     conn = None
+    #     try:
+    #         conn = PollenDatabase.get_connection(server)
+    #         cur = conn.cursor()
+            
+    #         order_keys = PollenDatabase.get_all_keys(table_name)
+    #         user_keys = [i for i in order_keys if i.startswith(f'{db_root}___')]
+
+    #         placeholders = ','.join(['%s'] * len(user_keys))
+    #         query = f"SELECT key, data FROM {table_name} WHERE key IN ({placeholders});"
+    #         cur.execute(query, user_keys)
+    #         results = cur.fetchall()
+    #         all_data = []
+    #         for key, data in results:
+    #             decoded = json.loads(data, cls=PollenJsonDecoder)
+    #             all_data.append(decoded)
+    #         return all_data
+    #     except Exception as e:
+    #         print_line_of_error(e)
+    #     finally:
+    #         if conn:
+    #             conn.close()
+    #     return None
+
+
+
+    #     # orders = []
+    #     # for orders in user_keys:
+    #     #     order_key = 
+    #     #     orders.append(PollenDatabase.retrieve_data(client_order_store, orders, main_server=main_server))
+
+
+
     @staticmethod
     def retrieve_all_story_bee_data(symbols, main_server=server):
         conn = None
@@ -500,6 +565,34 @@ class PollenDatabase:
                     print(f"Error Fetch in all Keys table {table_name} {e}")
                 return []
 
+    @staticmethod
+    def get_keys_by_db_root(table_name, db_root, server=server):
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+            try:
+                query = f"SELECT key, data FROM {table_name} WHERE key LIKE %s;"
+                cur.execute(query, (f"{db_root}___%",))
+                results = cur.fetchall()
+                decoded_data = []
+                for key, serialized_data in results:
+                    if isinstance(serialized_data, str):
+                        serialized_data = serialized_data
+                    elif isinstance(serialized_data, dict):
+                        serialized_data = json.dumps(serialized_data)
+                    else:
+                        print(f"ERROR Unexpected data type for key {key}: {type(serialized_data)}")
+                        continue  # skip if data is not valid
+                    
+                    # Always deserialize using custom decoder
+                    data = json.loads(serialized_data, cls=PollenJsonDecoder)
+
+                    data['key'] = key
+                    data['table_name'] = table_name
+                    data['db_root'] = db_root
+                    decoded_data.append(data)
+                return decoded_data
+            except Exception as e:
+                print(f"Error: {e}")
+                return []
 
     @staticmethod
     def update_table_schema(table_name='pollen_store'):

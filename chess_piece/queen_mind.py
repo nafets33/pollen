@@ -71,7 +71,8 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
 
 
 def kings_order_rules( # rules created for 1Minute
-    KOR_version=3,
+    broker=None,
+    KOR_version=4,
     queen_handles_trade=True,
     order_side='buy', # 'sell'
     order_type='market',
@@ -121,6 +122,7 @@ def kings_order_rules( # rules created for 1Minute
 ):
 
     return {
+        "broker": broker,
         "KOR_version": KOR_version,
         "queen_handles_trade": queen_handles_trade,
         "theme": theme,
@@ -236,162 +238,162 @@ def generate_TradingModel(
         }
         wave_block_theme__kor = {}
 
-        if theme.lower() == 'nuetral':
-            symbol_theme_vars = symbol_theme_vars
-            star_theme_vars = star_theme_vars
-            wave_block_theme__kor = {
-                "1Minute_1Day": kings_order_rules(
-                                    theme=theme,
-                                    status='active',
-                                    doubledown_timeduration=60,
-                                    trade_using_limits=False,
-                                    max_profit_waveDeviation=3,
-                                    max_profit_waveDeviation_timeduration=5,
-                                    timeduration=360,
-                                    take_profit=.01,
-                                    sell_out=0,
-                                    sell_trigbee_trigger=False,
-                                    stagger_profits=False,
-                                    scalp_profits=False,
-                                    scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
-                                    limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=1,
-                                    ignore_trigbee_at_power=0.01,
-                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-                                    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-                                    short_position=False,
-                                    use_wave_guage=False,
-                                    close_order_today=False,
-                                    revisit_trade_frequency=60,
-                ),
-                "5Minute_5Day": kings_order_rules(
-                                    theme=theme,
-                                    status='active',
-                                    doubledown_timeduration=60,
-                                    trade_using_limits=False,
-                                    max_profit_waveDeviation=3,
-                                    max_profit_waveDeviation_timeduration=10,
-                                    timeduration=320,
-                                    take_profit=.05,
-                                    sell_out=0,
-                                    sell_trigbee_trigger=True,
-                                    stagger_profits=False,
-                                    scalp_profits=False,
-                                    scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=3,
-                                    limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
-                                    ignore_trigbee_at_power=0.01,
-                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-                                    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-                                    short_position=False,
-                                    use_wave_guage=False,
-                                    close_order_today=False,
-                                    revisit_trade_frequency=5 * 3600,
-                ),
-                "30Minute_1Month": kings_order_rules(
-                                    theme=theme,
-                                    status='active',
-                                    doubledown_timeduration=60,
-                                    trade_using_limits=False,
-                                    max_profit_waveDeviation=2,
-                                    max_profit_waveDeviation_timeduration=30,
-                                    timeduration=43800,
-                                    take_profit=.08,
-                                    sell_out=0,
-                                    sell_trigbee_trigger=True,
-                                    stagger_profits=False,
-                                    scalp_profits=False,
-                                    scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
-                                    limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
-                                    ignore_trigbee_at_power=0.01,
-                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-                                    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-                                    short_position=False,
-                                    use_wave_guage=False,
-                                    close_order_today=False,
-                                    revisit_trade_frequency=10 * 3600,
-                ),
-                "1Hour_3Month": kings_order_rules(
-                                    theme=theme,
-                                    status='active',
-                                    doubledown_timeduration=60,
-                                    trade_using_limits=False,
-                                    max_profit_waveDeviation=2,
-                                    max_profit_waveDeviation_timeduration=60,
-                                    timeduration=43800 * 3,
-                                    take_profit=.1,
-                                    sell_out=0,
-                                    sell_trigbee_trigger=True,
-                                    stagger_profits=False,
-                                    scalp_profits=False,
-                                    scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
-                                    limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
-                                    ignore_trigbee_at_power=0.01,
-                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-                                    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-                                    short_position=False,
-                                    use_wave_guage=False,
-                                    close_order_today=False,
-                                    revisit_trade_frequency=10 * 3600,
-                ),
-                "2Hour_6Month": kings_order_rules(
-                                    theme='nuetral',
-                                    status='active',
-                                    doubledown_timeduration=60,
-                                    trade_using_limits=False,
-                                    max_profit_waveDeviation=2,
-                                    max_profit_waveDeviation_timeduration=120,
-                                    timeduration=43800 * 6,
-                                    take_profit=.2,
-                                    sell_out=0,
-                                    sell_trigbee_trigger=True,
-                                    stagger_profits=False,
-                                    scalp_profits=False,
-                                    scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
-                                    limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
-                                    ignore_trigbee_at_power=0.01,
-                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-                                    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-                                    short_position=False,
-                                    use_wave_guage=False,
-                                    close_order_today=False,
-                                    revisit_trade_frequency=10 * 3600,
-                ),
-                "1Day_1Year": kings_order_rules(
-                                    theme=theme,
-                                    status='active',
-                                    doubledown_timeduration=60,
-                                    trade_using_limits=False,
-                                    max_profit_waveDeviation=3,
-                                    max_profit_waveDeviation_timeduration=60 * 24, 
-                                    timeduration=525600,
-                                    take_profit=.5,
-                                    sell_out=0,
-                                    sell_trigbee_trigger=True,
-                                    stagger_profits=False,
-                                    scalp_profits=False,
-                                    scalp_profits_timeduration=30,
-                                    stagger_profits_tiers=1,
-                                    limitprice_decay_timeduration=1,
-                                    skip_sell_trigbee_distance_frequency=0,
-                                    ignore_trigbee_at_power=0.01,
-                                    # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
-                                    take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
-                                    short_position=False,
-                                    use_wave_guage=False,
-                                    close_order_today=False,
-                                    revisit_trade_frequency=60 * 3600,
-                ),
-            }
-        elif theme.lower() == 'long_star':
+        # if theme.lower() == 'nuetral':
+        symbol_theme_vars = symbol_theme_vars
+        star_theme_vars = star_theme_vars
+        wave_block_theme__kor = {
+            "1Minute_1Day": kings_order_rules(
+                                theme=theme,
+                                status='active',
+                                doubledown_timeduration=60,
+                                trade_using_limits=False,
+                                max_profit_waveDeviation=3,
+                                max_profit_waveDeviation_timeduration=5,
+                                timeduration=360,
+                                take_profit=.01,
+                                sell_out=0,
+                                sell_trigbee_trigger=False,
+                                stagger_profits=False,
+                                scalp_profits=False,
+                                scalp_profits_timeduration=30,
+                                stagger_profits_tiers=1,
+                                limitprice_decay_timeduration=1,
+                                skip_sell_trigbee_distance_frequency=1,
+                                ignore_trigbee_at_power=0.01,
+                                # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+                                short_position=False,
+                                use_wave_guage=False,
+                                close_order_today=False,
+                                revisit_trade_frequency=60,
+            ),
+            "5Minute_5Day": kings_order_rules(
+                                theme=theme,
+                                status='active',
+                                doubledown_timeduration=60,
+                                trade_using_limits=False,
+                                max_profit_waveDeviation=3,
+                                max_profit_waveDeviation_timeduration=10,
+                                timeduration=320,
+                                take_profit=.05,
+                                sell_out=0,
+                                sell_trigbee_trigger=True,
+                                stagger_profits=False,
+                                scalp_profits=False,
+                                scalp_profits_timeduration=30,
+                                stagger_profits_tiers=3,
+                                limitprice_decay_timeduration=1,
+                                skip_sell_trigbee_distance_frequency=0,
+                                ignore_trigbee_at_power=0.01,
+                                # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+                                short_position=False,
+                                use_wave_guage=False,
+                                close_order_today=False,
+                                revisit_trade_frequency=5 * 3600,
+            ),
+            "30Minute_1Month": kings_order_rules(
+                                theme=theme,
+                                status='active',
+                                doubledown_timeduration=60,
+                                trade_using_limits=False,
+                                max_profit_waveDeviation=2,
+                                max_profit_waveDeviation_timeduration=30,
+                                timeduration=43800,
+                                take_profit=.08,
+                                sell_out=0,
+                                sell_trigbee_trigger=True,
+                                stagger_profits=False,
+                                scalp_profits=False,
+                                scalp_profits_timeduration=30,
+                                stagger_profits_tiers=1,
+                                limitprice_decay_timeduration=1,
+                                skip_sell_trigbee_distance_frequency=0,
+                                ignore_trigbee_at_power=0.01,
+                                # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+                                short_position=False,
+                                use_wave_guage=False,
+                                close_order_today=False,
+                                revisit_trade_frequency=10 * 3600,
+            ),
+            "1Hour_3Month": kings_order_rules(
+                                theme=theme,
+                                status='active',
+                                doubledown_timeduration=60,
+                                trade_using_limits=False,
+                                max_profit_waveDeviation=2,
+                                max_profit_waveDeviation_timeduration=60,
+                                timeduration=43800 * 3,
+                                take_profit=.1,
+                                sell_out=0,
+                                sell_trigbee_trigger=True,
+                                stagger_profits=False,
+                                scalp_profits=False,
+                                scalp_profits_timeduration=30,
+                                stagger_profits_tiers=1,
+                                limitprice_decay_timeduration=1,
+                                skip_sell_trigbee_distance_frequency=0,
+                                ignore_trigbee_at_power=0.01,
+                                # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+                                short_position=False,
+                                use_wave_guage=False,
+                                close_order_today=False,
+                                revisit_trade_frequency=10 * 3600,
+            ),
+            "2Hour_6Month": kings_order_rules(
+                                theme='nuetral',
+                                status='active',
+                                doubledown_timeduration=60,
+                                trade_using_limits=False,
+                                max_profit_waveDeviation=2,
+                                max_profit_waveDeviation_timeduration=120,
+                                timeduration=43800 * 6,
+                                take_profit=.2,
+                                sell_out=0,
+                                sell_trigbee_trigger=True,
+                                stagger_profits=False,
+                                scalp_profits=False,
+                                scalp_profits_timeduration=30,
+                                stagger_profits_tiers=1,
+                                limitprice_decay_timeduration=1,
+                                skip_sell_trigbee_distance_frequency=0,
+                                ignore_trigbee_at_power=0.01,
+                                # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+                                short_position=False,
+                                use_wave_guage=False,
+                                close_order_today=False,
+                                revisit_trade_frequency=10 * 3600,
+            ),
+            "1Day_1Year": kings_order_rules(
+                                theme=theme,
+                                status='active',
+                                doubledown_timeduration=60,
+                                trade_using_limits=False,
+                                max_profit_waveDeviation=3,
+                                max_profit_waveDeviation_timeduration=60 * 24, 
+                                timeduration=525600,
+                                take_profit=.5,
+                                sell_out=0,
+                                sell_trigbee_trigger=True,
+                                stagger_profits=False,
+                                scalp_profits=False,
+                                scalp_profits_timeduration=30,
+                                stagger_profits_tiers=1,
+                                limitprice_decay_timeduration=1,
+                                skip_sell_trigbee_distance_frequency=0,
+                                ignore_trigbee_at_power=0.01,
+                                # ignore_trigbee_in_vwap_range={"low_range": -0.05, "high_range": 0.05},
+                                take_profit_in_vwap_deviation_range={"low_range": -0.05, "high_range": 0.05},
+                                short_position=False,
+                                use_wave_guage=False,
+                                close_order_today=False,
+                                revisit_trade_frequency=60 * 3600,
+            ),
+        }
+        if theme.lower() == 'long_star':
             symbol_theme_vars = symbol_theme_vars
             star_theme_vars = {
                 "1Minute_1Day": {
@@ -573,8 +575,8 @@ def generate_TradingModel(
                                     use_wave_guage=False,
                 ),
             }
-        else: # custom catch all ? Random AI
-            print("there is no else, get it right")
+        # else: # custom catch all ? Random AI
+        #     print("there is no else, get it right")
 
         return symbol_theme_vars, star_theme_vars,  wave_block_theme__kor
     
@@ -1049,7 +1051,7 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
     return {'current_wave': current_wave, 'current_active_waves': d_return}
 
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=None, wave_blocktime=None, check_portfolio=True, chess_board='chess_board', wash_sale_rule=None): # WORKERBEE remove queen order states
+def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=kingdom__global_vars().get('active_queen_order_states'), wave_blocktime='Day', check_portfolio=True, chess_board='chess_board', wash_sale_rule=None, ticker_trinity=False, exit_early=False): # WORKERBEE remove queen order states
     # WORKERBEE move out QUEEN_KING and only bring in chess_board *
     try:
         rr_starttime = datetime.now()
@@ -1069,15 +1071,15 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         marginPower={}
         df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum', 'queen_wants_to_sell_qty': 'sum' } # 
 
-
-
         if not QUEEN.get('portfolio') or not check_portfolio:
             df_broker_portfolio = pd.DataFrame([{'symbol': 'init_jq'}])
         else:
             df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
         df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
 
+
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING[chess_board].values()] for item in sublist]
+        
         if check_portfolio:
             missing_tickers = [i for i in df_broker_portfolio.index if i not in symbols and i not in ['init_jq']]
             if missing_tickers:
@@ -1090,30 +1092,28 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                         if tic not in non_tics:
                             non_tics.append(tic)
                     QUEEN_KING[chess_board]['non_active_stories']['tickers'] = non_tics
-        # Check for First
-        # if not active_queen_order_states:
-        active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
-
-        if not QUEEN.get('revrec'):
-            print( "QUEENMIND", "Fresh Queen on the Block")
-            ticker_trinity = None
-            q_revrec = None
-            pass
-        else:
-            # Handle Weight Adjustments based on Story
-            q_revrec = QUEEN.get('revrec')
-            # q_story = q_revrec.get('storygauge')
-            # ticker_trinity = dict(zip(q_story['symbol'], q_story['trinity_w_L']))
-            waveview = q_revrec.get('waveview')
-            waveview['total_allocation_budget_long'] = np.where((waveview['bs_position']=='buy'), 
-                                                    waveview['total_allocation_budget'], 
-                                                    (waveview['star_total_budget'] - waveview['total_allocation_budget'])
-                                                    )
-            alloc_weight = 'total_allocation_budget_long' if 'total_allocation_budget_long' in waveview.columns.tolist() else 'total_allocation_budget'
-            symbols_budget_alloc = waveview.groupby(['symbol']).agg({alloc_weight: 'sum', 'star_total_budget': 'sum'}).reset_index()
-            symbols_budget_alloc['symbol_allocation_pct'] = symbols_budget_alloc[alloc_weight] / symbols_budget_alloc['star_total_budget']
-            ticker_trinity = dict(zip(symbols_budget_alloc['symbol'], symbols_budget_alloc['symbol_allocation_pct']))
-            
+        
+        if ticker_trinity:
+            if not QUEEN.get('revrec'):
+                print( "QUEENMIND", "Fresh Queen on the Block")
+                ticker_trinity = None
+                q_revrec = None
+                pass
+            else:
+                # Handle Weight Adjustments based on Story
+                q_revrec = QUEEN.get('revrec')
+                # q_story = q_revrec.get('storygauge')
+                # ticker_trinity = dict(zip(q_story['symbol'], q_story['trinity_w_L']))
+                waveview = q_revrec.get('waveview')
+                waveview['total_allocation_budget_long'] = np.where((waveview['bs_position']=='buy'), 
+                                                        waveview['total_allocation_budget'], 
+                                                        (waveview['star_total_budget'] - waveview['total_allocation_budget'])
+                                                        )
+                alloc_weight = 'total_allocation_budget_long' if 'total_allocation_budget_long' in waveview.columns.tolist() else 'total_allocation_budget'
+                symbols_budget_alloc = waveview.groupby(['symbol']).agg({alloc_weight: 'sum', 'star_total_budget': 'sum'}).reset_index()
+                symbols_budget_alloc['symbol_allocation_pct'] = symbols_budget_alloc[alloc_weight] / symbols_budget_alloc['star_total_budget']
+                ticker_trinity = dict(zip(symbols_budget_alloc['symbol'], symbols_budget_alloc['symbol_allocation_pct']))
+                
 
         # WORKERBEE: Add validation only 1 symbol per qcp --- QUEEN not needed only need ORDERS and QUEEN_KING
         if not acct_info:
@@ -1123,8 +1123,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                         'daytrade_count': 0,
                         'last_equity': 100000,
                         'portfolio_value': 100000,}
-        if not wave_blocktime:
-            wave_blocktime = 'Day'
+        # if not wave_blocktime:
+        #     wave_blocktime = 'Day'
             # current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave')
             # wave_blocktime = current_wave.get('wave_blocktime')
     except Exception as e:
@@ -1310,7 +1310,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             # return all STORY BEE Data
             current_wave_stats = []
             for ttf in waveview.index:
-
                 dict_return = {}
                 dict_return['ttf'] = ttf
                 # story
@@ -1534,7 +1533,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     else:
                         df_temp['total_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'total_budget']) / bp_ticker
                         # df_temp['equity_budget'] = (df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'equity_budget']) / bp_ticker
-                        df_temp['borrow_budget'] = ((df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'borrow_budget']) / bp_ticker) * df_qcp.at[qcp, 'margin_power']
+                        df_temp['borrow_budget'] = ((df_temp['ticker_buying_power'] * df_qcp.at[qcp, 'borrow_budget']) / bp_ticker) # * df_qcp.at[qcp, 'margin_power'] not necessary to put power / power should be used for like a day week trade... like trade with power
                         # budget_remaining, borrowed_budget_remaining = return_ticker_remaining_budgets(cost_basis_current, ticker, df_temp)
 
                     # UPDTAE TICKER
@@ -1635,6 +1634,25 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         rr_run_cycle.update({'load': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
+        # % Change per Star
+        storybee_pct_change = {}
+        STORY_bee_keys = STORY_bee.keys()
+        for symbol in symbols:
+            for star in stars().keys():
+                if f'{symbol}_{star}' in STORY_bee_keys:
+                    pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
+                    storybee_pct_change[f'{symbol}{star}_change'] = pct_change
+                # else:
+                #     print(symbol, star, "not in STORY_bee_keys")
+        # if exit_early:
+        #     df = pd.DataFrame(index=symbols)
+        #     df['symbol'] = df.index
+        #     for symbol in df.index:
+        #         for star in stars().keys():
+        #             df.at[symbol, f'{symbol}{star}_change'] = storybee_pct_change.get(f'{symbol}{star}_change', 0)
+        #     print("EXIT", df.iloc[-1])
+        #     return {'storygauge': df}
+
         chessboard = QUEEN_KING[chess_board]
     
         # Handle Weight change
@@ -1655,7 +1673,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
             num_tickers = len(qcp_tickers)
             if num_tickers == 0:
-                print("No Tickers in Chess Piece", qcp)
+                # print("No Tickers in Chess Piece", qcp)
                 continue
 
             # Group Trinity and Re-Calculate qcp buying power ??? # WORKERBEE
@@ -1956,8 +1974,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         # % Change per Star
         for symbol in storygauge.index:
             for star in stars().keys():
-                pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
-                storygauge.at[symbol, f'{star}_change'] = pct_change
+                storygauge.at[symbol, f'{star}_change'] = storybee_pct_change.get(f'{symbol}{star}_change', 0)
 
 
         rr_run_cycle.update({'story gauge': (datetime.now() - s).total_seconds()})
@@ -1968,11 +1985,17 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         if cycle_time > 10:
             msg=("rervec cycle_time > 10 seconds", cycle_time)
             print(msg)
-        print(rr_run_cycle)
         
-        return {'cycle_time': cycle_time, 'df_qcp': df_qcp, 'df_ticker': df_ticker, 'df_stars':df_stars, 
-                'waveview': waveview, 'storygauge': storygauge, 
-                'symbols_failed': symbols_failed, 'ttf_failed': ttf_errors, 
+        # print(rr_run_cycle)
+        
+        return {'cycle_time': cycle_time, 
+                'df_qcp': df_qcp, 
+                'df_ticker': df_ticker, 
+                'df_stars':df_stars, 
+                'waveview': waveview, 
+                'storygauge': storygauge,
+                'symbols_failed': symbols_failed, 
+                'ttf_failed': ttf_errors, 
                 'rr_run_cycle': rr_run_cycle}
     
     except Exception as e:

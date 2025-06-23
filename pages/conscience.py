@@ -49,7 +49,7 @@ def save_king_queen(QUEEN_KING):
 def cash_slider(QUEEN_KING, key='cash_slider'):
     cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
     cash = max(min(cash, 1), -1)
-    return st.number_input("Cash %", min_value=-1.0, max_value=1.0, value=cash, on_change=lambda: save_king_queen(QUEEN_KING), key=key)
+    return st.slider("Cash %", min_value=-1.0, max_value=1.0, value=cash, on_change=lambda: save_king_queen(QUEEN_KING), key=key)
 
 def generate_cell_style(flash_state_variable='Day_state'):
     return JsCode(f"""
@@ -137,6 +137,108 @@ def generate_cell_style(flash_state_variable='Day_state'):
         }}
     """)
 
+def generate_cell_style_range(max_number=40):
+    """
+    Generates a JS cell style function that colors the cell based on the 'length' value,
+    breaking up the range [0, max_number] equally for color assignment.
+    Uses the 'Day_state' field by default.
+    """
+    # Color codes for buy and sell actions, in order from lowest to highest
+    buy_colors = [
+        '#e0f8e4',  # Light green
+        '#c8f3d1',
+        '#aef0bc',
+        '#94ecaa',
+        '#7ae897',
+        '#60e484',
+        '#46e071',
+        '#2cdc5e',
+        '#12d84b',
+        '#00d438',  # Darkest green
+    ]
+    sell_colors = [
+        '#f8e0e0',  # Light red
+        '#f3c8c8',
+        '#f0aeae',
+        '#ec9494',
+        '#e87a7a',
+        '#e46060',
+        '#e04646',
+        '#dc2c2c',
+        '#d81212',
+        '#d40000',  # Darkest red
+    ]
+    # Number of color steps
+    n_steps = len(buy_colors)
+    # JS arrays for color codes
+    buy_colors_js = str(buy_colors).replace("'", '"')
+    sell_colors_js = str(sell_colors).replace("'", '"')
+    return JsCode(f"""
+        function(p) {{
+            var max_number = {max_number};
+            var n_steps = {n_steps};
+            var buy_colors = {buy_colors_js};
+            var sell_colors = {sell_colors_js};
+            var color = '';
+            var value = null;
+            var length = 0;
+            var is_string = typeof p.value === 'string' && p.value.includes('$');
+            var is_number = typeof p.value === 'number' && !isNaN(p.value);
+
+            if (is_string) {{
+                var parts = p.value.split('$');
+                if (parts.length === 2) {{
+                    var action_part = parts[0].toLowerCase();
+                    value = parseInt(parts[1], 10);
+                    var action_split = action_part.split('-');
+                    var action = action_split[0];
+                    length = action_split.length > 1 ? parseInt(action_split[1], 10) : 0;
+                }}
+            }} else if (is_number) {{
+                value = p.value;
+                length = value;
+            }}
+
+            if (value !== null && !isNaN(length)) {{
+                var idx;
+                if (length >= 0) {{
+                    // Positive: green
+                    var clamped = Math.min(length, max_number);
+                    idx = Math.floor((clamped / max_number) * (n_steps - 1));
+                    color = buy_colors[idx];
+                }} else {{
+                    // Negative: red
+                    var clamped = Math.min(Math.abs(length), max_number);
+                    idx = Math.floor((clamped / max_number) * (n_steps - 1));
+                    color = sell_colors[idx];
+                }}
+
+                // If string with action, override color logic
+                if (is_string) {{
+                    if (action && action.includes('buy')) {{
+                        var clamped = Math.min(Math.abs(length), max_number);
+                        idx = Math.floor((clamped / max_number) * (n_steps - 1));
+                        color = buy_colors[idx];
+                    }} else if (action && action.includes('sell')) {{
+                        var clamped = Math.min(Math.abs(length), max_number);
+                        idx = Math.floor((clamped / max_number) * (n_steps - 1));
+                        color = sell_colors[idx];
+                    }}
+                }}
+
+                return {{
+                    backgroundColor: color,
+                    color: color, //value < 0 ? '#f00' : '#000',
+                    padding: '0px',
+                    border: '8px solid white',  // Change thickness here (e.g., '0px' to remove, '1px' for thin)
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                }};
+            }}
+            return null;
+        }}
+    """)
+
 
 def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
     return JsCode(f"""
@@ -195,22 +297,22 @@ function(p) {
     if (p.data.allocation_long_deploy > 0) {
         return {
             //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
-            padding: '2px',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#bff0c7', // White border
+            border: '8px solid' + '#bff0c7', // White border
             color: 'red'
         };
     } else if (p.data.allocation_long_deploy < 0) {
         return {
             //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
-            padding: '2px',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#f8c6c6', // White border
+            border: '8px solid' + '#f8c6c6', // White border
             color: 'red'
         };
     } else {
         return {
-            border: '2px solid white' // Default white border for other cases
+            border: '3px solid white' // Default white border for other cases
         };
     }
 }
@@ -253,25 +355,33 @@ value_format_pct_2 = JsCode("function(params) { return params.value ? (params.va
 
 button_style_sell = JsCode("""
 function(p) {
-    if (p.data.money > 0) {
+    var value = p.data.money;
+    // Try to split by '$' if value is a string
+    if (typeof value === 'string' && value.includes('$')) {
+        var parts = value.split('$');
+        if (parts.length === 2) {
+            value = parseFloat(parts[1]);
+        }
+    }
+    if (value > 0) {
         return {
             //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
             padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid #bff0c7' // White border
+            border: '8px solid #bff0c7' // White border
         };
-    } else if (p.data.money < 0) {
+    } else if (value < 0) {
         return {
             //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
             padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid #f8c6c6' // White border
+            border: '8px solid #f8c6c6' // White border
         };
     } else {
         return null; // No style for other cases (e.g., money === 0)
     }
 }
-""")        
+""")
 
 button_style_symbol = JsCode("""
 function(p) {
@@ -306,47 +416,48 @@ function(color_autobuy) {
         //console.log('buy_autopilot value:', color_autobuy.data.buy_autopilot);
         return {
             //backgroundColor: '#bff0c7',
-            color: 'red',
-            padding: '5px',
+            // color: 'red',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#bff0c7',
+            border: '8px solid' + '#bff0c7',
             // width: '100%',
         };
-    } else {
+    } else if (color_autobuy.data.buy_autopilot === "OFF") {
         return {
             //backgroundColor: '#f8c6c6', // Light red text
-            padding: '5\px',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#f8c6c6',
-            color: 'yellow',
+            border: '8px solid' + '#f8c6c6',
+            // color: 'yellow',
         };
+    } else {
+        return {};
     }
 }
 """)
 
 button_style_SELL_autopilot = JsCode("""
-function(p) {
-    //console.log('sell_autopilot value:', p.data.sell_autopilot);
-    //console.log('Type of sell_autopilot:', typeof p.data.sell_autopilot);
-
-    let autopilot = String(p.data.sell_autopilot).trim().toUpperCase();
-    let symbol = p.data.Symbol;
-    if (autopilot === "OFF") {
-        //console.log("WE ARE ON", symbol, autopilot);
+function(color_autobuy) {
+    if (color_autobuy.data.sell_autopilot === "ON") {
+        //console.log('sell_autopilot value:', color_autobuy.data.sell_autopilot);
+        return {
+            //backgroundColor: '#bff0c7',
+            // color: 'red',
+            padding: '3px',
+            boxSizing: 'border-box',
+            border: '8px solid' + '#bff0c7',
+            // width: '100%',
+        };
+    } else if (color_autobuy.data.sell_autopilot === "OFF") {
         return {
             //backgroundColor: '#f8c6c6', // Light red text
-            padding: '5px',
+            padding: '3px',
             boxSizing: 'border-box',
-            border: '5px solid' + '#f8c6c6' // White border
+            border: '8px solid' + '#f8c6c6',
+            // color: 'yellow',
         };
     } else {
-        console.log(symbol, autopilot);
-        return {
-            //backgroundColor: '#bff0c7', // Light green text
-            padding: '5px',
-            boxSizing: 'border-box',
-            border: '5px solid' + '#bff0c7' // White border
-        };
+        return {};
     }
 }
 """)
@@ -410,11 +521,11 @@ button_style_broker = JsCode("""
 function(ppp) {
     if (ppp.data.Broker === 'Alpaca') {
         return {
-            backgroundColor: '#eef856', // Yellow background for Alpaca
+            backgroundColor: '#f5f55b', // Yellow background for Alpaca
         };
     } else if (ppp.data.Broker === 'RobinHood') {
         return {
-            backgroundColor: '#37e349', // Green background for Robinhood
+            backgroundColor: '#9fe899', // Green background for Robinhood
         };
     } else {
         return {
@@ -525,8 +636,8 @@ def load_storybee(QUEEN_KING, pg_migration, symbols, QUEEN=None):
 def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=True, show_acct=True):
     run_times = {}
     s = datetime.now()
-    with st.sidebar:
-        edit_grid = st.toggle("Edit Portfolio", True)
+    # with st.sidebar:
+    #     edit_grid = st.toggle("Edit Portfolio", True)
     if not sneak_peak:
         with st.sidebar:
             refresh_grids = st.toggle("Refresh Grids", True)
@@ -710,8 +821,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                                                     'valueFormatter': value_format_pct_2
                                                     } 
             }
-
             def story_grid_buttons(hf=False):
+                # try:
                 buttons = []
                 exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
                 buttons=[
@@ -752,8 +863,14 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                             'col_width':100,
                             'sortable': True,
                             # 'pinned': 'left',
+                            'border': '2px solid red',
                             'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
-                            'cellStyle': button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
+                            'cellStyle': button_style_sell, #generate_cell_style_range(100000), #button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
+                            # 'cellRendererParams': {
+                            #     'cellStyle': generate_cell_style_range(100000),
+                            #       'color': 'red',  # or button_style_sell, etc.
+                            #     # ...add any other params you want to pass to the renderer
+                            # },
                             },
 
                             # {'button_name': None,
@@ -839,6 +956,8 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                                 'cellStyle': cellStyle,
                                 }
                         buttons.append(temp)
+                # except Exception as e:
+                #     print_line_of_error(f'ERRRROR BUSTSON {e}')
                 
                 return buttons
 
@@ -906,7 +1025,9 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 return {**configg, **pct_change_columns_config}
 
             
-            story_col_order = ['queens_suggested_buy', 
+            story_col_order = [
+                               'piece_name',
+                               'queens_suggested_buy', 
                                'unrealized_plc', 
                                'queens_suggested_sell', 
                                'unrealized_pl', 
@@ -963,8 +1084,11 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
 
             elif tab_view == 'Portfolio':
 
-                toggle_view = [QUEEN_KING['chess_board'][qcp].get('piece_name') for qcp in QUEEN_KING['chess_board'].keys()] #revrec['df_qcp']['piece_name'].tolist()
-                # chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
+                toggle_view = [
+                    QUEEN_KING['chess_board'][qcp].get('piece_name')
+                    for qcp in QUEEN_KING['chess_board'].keys()
+                    if len(QUEEN_KING['chess_board'][qcp].get('tickers', [])) > 0
+                ]                # chess_pieces = [v.get('piece_name') for i, v in QUEEN_KING['chess_board'].items()]
                 story_col = revrec.get('storygauge').columns.tolist()
                 config_cols_ = config_cols(revrec.get('df_qcp'))
                 mmissing = [i for i in story_col if i not in config_cols_.keys()]
@@ -984,7 +1108,6 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
                 #   'popupHeight': '300'}})
 
             toggle_views = main_toggles + toggle_view
-
             g_buttons = story_grid_buttons(hf)
             go = gb.build()
 
@@ -1013,7 +1136,9 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             ) 
 
         except Exception as e:
-            print_line_of_error(e)
+            print_line_of_error(f"STORYGRID FAILED {e}")
+
+
 
     ########################################################
     ########################################################
@@ -1028,6 +1153,7 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
         tab_view = sac_tabs(["Portfolio", "Hedge Funds", "Sectors"])
         if tab_view == 'Hedge Funds':
             show_graph_s = False
+            show_graph_t = False
 
         # # if authorized_user: log type auth and none
         log_dir = os.path.join(db_root, 'logs')
@@ -1040,37 +1166,81 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
 
 
         # with story_tab:
-        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
+        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 889
         refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-        refresh_sec = 0 if refresh_grids == False else refresh_sec
         ui_refresh_sec = st.sidebar.number_input('story grid refresh sec', min_value=0)
         if ui_refresh_sec > 0:
             refresh_sec = ui_refresh_sec
-        refresh_sec = refresh_sec if not edit_grid else 0
 
         k_colors = streamlit_config_colors()
         default_text_color = k_colors['default_text_color'] # = '#59490A'
-        cols = st.columns((8,1,1))
+        cols = st.columns((8,1))
         if show_acct and tab_view == 'Portfolio':
+            with cols[0]:
+                print("account_header_grid refresh_sec", refresh_sec)
+                account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
+        # cols = st.columns((8,1,1))
             # seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
             # seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0
             # refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
-            with cols[0]:
-                account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
     
             with cols[1]:
                 cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
                 cash = max(min(cash, 1), -1)
                 QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
-            with cols[1]:
-                # Call the function
-                tt_tabs = st.selectbox("Portfolio History", options=['7D', '1M', '3M', '6M', '1A'])
-                df = fetch_portfolio_history(api, period=tt_tabs)
-                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity']* 100 , 2)
-            with cols[2]:
-                mark_down_text(f'Portfolio {tt_tabs} %{portfolio_perf}', fontsize='23')
+                # show_margin = st.toggle("Margin Allocations", True)
+                # show_budget = st.toggle("Budget Allocations", True)
+                # margin & budget controls
+        
+                # with st.form("Margin Guage"):
+                #     for qcp in revrec['storygauge']:
 
+            # def chunk_list(data, chunk_size=6):
+            #     return [data[i:i+chunk_size] for i in range(0, len(data), chunk_size)]
+ 
+            # if show_margin:
+            #     # Streamlit form
+            #     with st.form("slider_form"):
+            #         st.write("### Set Margin Budget")
+            #         # item_list = sorted(set(revrec['storygauge']['piece_name']))
+            #         for row in chunk_list(sorted(set(revrec['df_qcp']['piece_name'].tolist())), 3):
+            #             cols = st.columns(len(row))
+            #             for i, label in enumerate(row):
+            #                 token = revrec['df_qcp'].reset_index().set_index('piece_name')
+            #                 value = token.loc[label].get('margin_power', 0)
+            #                 # Assign slider with unique key
+            #                 cols[i].slider(label, min_value=-1.0, max_value=1.0, value=float(value), key=f"slider_{label}_margin")
+            #         submitted = st.form_submit_button("Submit")                    
+            #         # After form is submitted, collect values using keys
+            #         if submitted:
+            #             st.write("### Save")
+            #             # allocation save fastapi
+            # ticker_allowed = KING['alpaca_symbols_df'].index.tolist()
+            # crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+            # ticker_allowed =  ticker_allowed + crypto_symbols__tickers_avail
 
+            # if show_budget:
+            #     with st.form("slider_form budget"):
+            #         st.write("### Set Budget")
+            #         # item_list = sorted(set(revrec['storygauge']['piece_name']))
+            #         for row in chunk_list(sorted(set(revrec['df_qcp']['piece_name'].tolist())), 3):
+            #             cols = st.columns(len(row))
+            #             for i, label in enumerate(row):
+            #                 token = revrec['df_qcp'].reset_index().set_index('piece_name')
+            #                 value = token.loc[label].get('buying_power', 0)
+            #                 t_budget = f'{round(float(token.loc[label].get("total_budget", 0)))}'
+            #                 tickers = token.loc[label]['tickers']
+            #                 print(tickers)
+            #                 cols[i].slider(f'{label}: Budget {t_budget}', min_value=-1.0, max_value=1.0, value=float(value), key=f"slider_{label}_budget")
+            #                 cols[i].multiselect(label=f'symbols', options=ticker_allowed, default=tickers, help='Castle Should Hold your Highest Valued Symbols', key=f'{label}tickers', label_visibility='hidden')
+
+            #         submitted = st.form_submit_button("Submit")                    
+            #         # After form is submitted, collect values using keys
+            #         if submitted:
+            #             st.write("### Save")
+            #             # allocation save fastapi
+        refresh_sec = None if not refresh_grids else refresh_sec
+        print("story_grid refresh timer", refresh_sec)
         story_grid(client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec, tab_view=tab_view)
           
         if st.sidebar.toggle("Show Wave Grid"):
@@ -1184,6 +1354,13 @@ def queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=False, show_grap
             with cols[1]:
                 trinity_graph()
 
+        if show_acct:
+            with cols[1]:
+                # Call the function
+                tt_tabs = st.selectbox("Portfolio History", options=['7D', '1M', '3M', '6M', '1A'])
+                df = fetch_portfolio_history(api, period=tt_tabs)
+                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity']* 100 , 2)
+                mark_down_text(f'Portfolio {tt_tabs} %{portfolio_perf}', fontsize='23')
 
 
         if st.sidebar.toggle("Show Logs"):

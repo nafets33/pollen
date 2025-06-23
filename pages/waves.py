@@ -3,7 +3,7 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from chess_piece.app_hive import set_streamlit_page_config_once, standard_AGgrid
 from chess_piece.king import return_QUEEN_KING_symbols
-from chess_piece.queen_hive import init_swarm_dbs, init_qcp_workerbees
+from chess_piece.queen_hive import init_swarm_dbs, init_qcp_workerbees,refresh_broker_account_portolfio
 from dotenv import load_dotenv
 from pq_auth import signin_main
 import ipdb 
@@ -48,7 +48,7 @@ def cash_slider(QUEEN_KING, key='cash_slider'):
 
 
 def queen_data(client_user, prod):
-    qb = init_queenbee(client_user, prod, queen=True, queen_king=True, api=True, pg_migration=pg_migration)
+    qb = init_queenbee(client_user, prod, queen=True, orders_v2=True, queen_king=True, api=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
@@ -97,7 +97,7 @@ def waves():
 
     QUEEN, QUEEN_KING, api = queen_data(client_user, prod)
     cash_slider(QUEEN_KING)
-    # st.write(QUEEN_KING['chess_board'])
+    QUEEN = refresh_broker_account_portolfio(api, QUEEN)
     if pg_migration:
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
         db_keys_df = (pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table_name))).rename(columns={0:'key', 1:'timestamp'})
@@ -227,7 +227,7 @@ def waves():
             newIndex=['Total']+[ind for ind in df.index if ind!='Total']
             df=df.reindex(index=newIndex)
         if isinstance(df, pd.DataFrame):
-            standard_AGgrid(df)
+            standard_AGgrid(df, key=f'grid {revrec_key}')
         else:
             st.write(df)
         

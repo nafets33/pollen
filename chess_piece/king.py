@@ -2,6 +2,7 @@ import asyncio
 import os
 import pickle
 import sqlite3
+import ssl
 import sys
 import time
 from datetime import datetime
@@ -14,6 +15,10 @@ import pytz
 import socket
 import json
 import requests
+from email.message import EmailMessage
+import smtplib
+
+
 from dotenv import load_dotenv
 
 
@@ -695,6 +700,31 @@ def return_crypto_snapshots(symbols):
         return {"error": f"Failed to fetch data for {symbols}, status code: {response.status_code}"}
 # CRYPTO
 
+
+def send_email(
+    recipient="stapinski89@gmail.com",
+    subject="you forgot a subject",
+    body="you forgot to same something",
+):
+    # Define email sender and receiver
+    pollenq_gmail = os.environ.get("pollenq_gmail")
+    pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
+
+    em = EmailMessage()
+    em["From"] = pollenq_gmail
+    em["To"] = recipient
+    em["Subject"] = subject
+    em.set_content(body)
+
+    # Add SSL layer of security
+    context = ssl.create_default_context()
+
+    # Log in and send the email
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
+        smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
+        smtp.sendmail(pollenq_gmail, recipient, em.as_string())
+
+    return True
 
 #### #### if __name__ == '__main__'  ###
 

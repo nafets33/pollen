@@ -44,7 +44,10 @@ const MyModal: React.FC<MyModalProps> = ({
   toastr,
 }) => {
   const { prompt_field, prompt_order_rules, selectedRow, selectedField } = modalData;
-
+  // console.log("modalData :>> ", selectedRow);
+  const [showStarsSliders, setShowStarsSliders] = React.useState(false);
+  const [showStarsMarginSliders, setShowStarsMarginSliders] = React.useState(false);
+  
   const ref = useRef<HTMLButtonElement>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
 
@@ -315,68 +318,89 @@ return (
                 </div>
               )}
 
-            {/* New Column for sliderRules_stars */}
-            {sliderRules_stars.some((rule: any) => promptText[rule] !== undefined) && (
-              <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
-                {sliderRules_stars.map((rule: any, index: number) => 
-                  promptText[rule] !== undefined && (
-                    <div className="d-flex flex-column align-items-start mb-1" key={index}>
-                      <label className="mb-0" style={{ fontSize: "0.9rem" }}>
-                        {rule}:
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step=".01"
-                        value={promptText[rule] || 0}
-                        onChange={(e) =>
-                          setPromptText({
-                            ...promptText,
-                            [rule]: Number(e.target.value),
-                          })
-                        }
-                        style={{ width: "100%" }}
-                      />
-                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
-                        {promptText[rule] || 0}
-                      </span>
+              {/* Expander for sliderRules_stars */}
+              {sliderRules_stars.some((rule: any) => prompt_order_rules?.includes(rule)) && (
+                <div style={{ flex: 1, marginRight: "8px" }}>
+                  <div
+                    style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                    onClick={() => setShowStarsSliders((prev) => !prev)}
+                  >
+                    {showStarsSliders ? "▼" : "►"} Advanced Allocation Options
+                  </div>
+                  {showStarsSliders && (
+                    <div>
+                      {sliderRules_stars.map((rule: any, index: number) =>
+                        prompt_order_rules?.includes(rule) && promptText[rule] !== undefined && (
+                          <div className="d-flex flex-column align-items-start mb-1" key={index}>
+                            <label className="mb-0" style={{ fontSize: "0.9rem" }}>
+                              {rule}:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step=".01"
+                              value={promptText[rule] || 0}
+                              onChange={(e) =>
+                                setPromptText({
+                                  ...promptText,
+                                  [rule]: Number(e.target.value),
+                                })
+                              }
+                              style={{ width: "100%" }}
+                            />
+                            <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
+                              {promptText[rule] || 0}
+                            </span>
+                          </div>
+                        )
+                      )}
                     </div>
-                  )
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
 
-            {sliderRules_stars_margin.some((rule: any) => promptText[rule] !== undefined) && (
-              <div className="d-flex flex-column" style={{ flex: 1, marginRight: "8px" }}>
-                {sliderRules_stars_margin.map((rule: any, index: number) => 
-                  promptText[rule] !== undefined && (
-                    <div className="d-flex flex-column align-items-start mb-1" key={index}>
-                      <label className="mb-0" style={{ fontSize: "0.9rem" }}>
-                        {rule}:
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step=".01"
-                        value={promptText[rule] || 0}
-                        onChange={(e) =>
-                          setPromptText({
-                            ...promptText,
-                            [rule]: Number(e.target.value),
-                          })
-                        }
-                        style={{ width: "100%" }}
-                      />
-                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
-                        {promptText[rule] || 0}
-                      </span>
+              {/* Expander for sliderRules_stars_margin */}
+              {sliderRules_stars_margin.some((rule: any) => prompt_order_rules?.includes(rule)) && (
+                <div style={{ flex: 1, marginRight: "8px" }}>
+                  <div
+                    style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                    onClick={() => setShowStarsMarginSliders((prev) => !prev)}
+                  >
+                    {showStarsMarginSliders ? "▼" : "►"} Advanced Margin Allocation Options
+                  </div>
+                  {showStarsMarginSliders && (
+                    <div>
+                      {sliderRules_stars_margin.map((rule: any, index: number) =>
+                        prompt_order_rules?.includes(rule) && promptText[rule] !== undefined && (
+                          <div className="d-flex flex-column align-items-start mb-1" key={index}>
+                            <label className="mb-0" style={{ fontSize: "0.9rem" }}>
+                              {rule}:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step=".01"
+                              value={promptText[rule] || 0}
+                              onChange={(e) =>
+                                setPromptText({
+                                  ...promptText,
+                                  [rule]: Number(e.target.value),
+                                })
+                              }
+                              style={{ width: "100%" }}
+                            />
+                            <span style={{ fontSize: "0.9rem", fontWeight: "bold", marginTop: "4px" }}>
+                              {promptText[rule] || 0}
+                            </span>
+                          </div>
+                        )
+                      )}
                     </div>
-                  )
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
   
               {/* Datetime Fields Column */}
               {datetimeFields.length > 0 && (
@@ -406,7 +430,37 @@ return (
             </div>
           </div>
         </div>
-  
+
+        {selectedRow && selectedRow.current_ask !== undefined && (
+          <div>
+            <b>current_ask: </b>
+            {Number(selectedRow.current_ask).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+
+          </div>
+        )}
+
+        {selectedRow && selectedRow.ticker_total_budget !== undefined && (
+          <div>
+            <b>Total Budget:$ </b>
+            {Number(selectedRow.ticker_total_budget).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </div>
+        )}
+
+        {selectedRow && selectedRow.star_buys_at_play !== undefined && (
+          <div>
+            <b>Currently Long:$ </b>
+            {Number(selectedRow.star_buys_at_play).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </div>
+        )}
+
+        {selectedRow && selectedRow.ticker_remaining_budget !== undefined && (
+          <div>
+            <b>Remaining Budget:$ </b>
+            {Number(selectedRow.ticker_remaining_budget).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </div>
+        )}
+
+
         {/* Modal Footer */}
         <div className="modal-footer d-flex justify-content-center">
           <button type="button" className="btn btn-primary mx-2" onClick={handleOkSecond} ref={ref}>
