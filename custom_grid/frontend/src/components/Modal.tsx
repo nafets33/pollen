@@ -11,6 +11,7 @@ const sliderRules_stars = ["Day", "Week", "Month", "Quarter", "Quarters", "Year"
 const sliderRules_stars_margin = sliderRules_stars.map(rule => `${rule} Margin`);
 
 
+
 const modalStyle = {
   content: {
     top: "50%",
@@ -43,13 +44,24 @@ const MyModal: React.FC<MyModalProps> = ({
   setPromptText,
   toastr,
 }) => {
-  const { prompt_field, prompt_order_rules, selectedRow, selectedField } = modalData;
-  // console.log("modalData :>> ", selectedRow);
+  const { prompt_field, prompt_order_rules, selectedRow, selectedField, add_symbol_row_info, display_grid_column, editableCols } = modalData;
+  // console.log("modalData :>> ", display_grid_column, prompt_field); // workerbee handle in agagrid display_grid_column add var from mount
   const [showStarsSliders, setShowStarsSliders] = React.useState(false);
   const [showStarsMarginSliders, setShowStarsMarginSliders] = React.useState(false);
+  const [showActiveOrders, setShowActiveOrders] = React.useState(false);
+  const [showWaveData, setShowWaveData] = React.useState(false);
+  const [showButtonColData, setShowButtonColData] = React.useState(false);
+  const [sellQtys, setSellQtys] = React.useState<{ [key: number]: string }>({});
+  const handleSellQtyChange = (idx: number, value: string) => {
+    setSellQtys((prev) => ({ ...prev, [idx]: value }));
+  };
   
   const ref = useRef<HTMLButtonElement>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
+
+  // const editableCols = ["allocation_long", "buy_amount"];
+  // console.log("editableCols :>> ", editableCols);
+
 
   const handleOk = async () => {
     if (isExecuting) return;
@@ -112,42 +124,14 @@ const MyModal: React.FC<MyModalProps> = ({
     isExecuting = false;
   };
 
-  const handleOkOnArray = async () => {
-    console.log("selectRef.current.value :>> ", selectRef.current?.value);
-    if (isExecuting) return;
-    isExecuting = true;
-    try {
-      const body = {
-        username: modalData.username,
-        prod: modalData.prod,
-        selected_row: modalData.selectedRow,
-        default_value: selectRef.current?.value,
-        ...modalData.kwargs,
-      };
-      console.log("body :>> ", body);
-      const { data: res } = await axios.post(modalData.button_api, body);
-      const { status, data, description } = res;
-      console.log("res :>> ", res);
-      if (status === "success") {
-        data.message_type === "fade"
-          ? toastr.success(description, "Success")
-          : alert("Success!\nDescription: " + description);
-      } else {
-        data.message_type === "fade"
-          ? toastr.error(description, "Error")
-          : alert("Error!\nDescription: " + description);
-      }
-      if (data?.close_modal != false) closeModal();
-    } catch (error: any) {
-      console.log("error :>> ", error);
-      toastr.error(error.message);
-    }
-    isExecuting = false;
-  };
 
   useEffect(() => {
     if (isOpen) setTimeout(() => ref.current?.focus(), 100);
   }, [isOpen]);
+
+  useEffect(() => {
+  setSellQtys({}); // Reset sellQtys to an empty object
+}, [isOpen, selectedRow]);
 
   const isValidDate = (dateStr: string) => {
     return formats.some(format => moment(dateStr, format, true).isValid());
@@ -166,6 +150,11 @@ const MyModal: React.FC<MyModalProps> = ({
   const datetimeFields = [];
   const arrayFields = [];
 
+  const filtered_prompt_order_rules = Array.isArray(prompt_order_rules) && promptText
+  ? prompt_order_rules.filter((field) => field && (field in promptText))
+  : [];
+  // console.log("filtered_prompt_order_rules :>> ", filtered_prompt_order_rules);
+
   if (prompt_order_rules) {
     for (const rule of prompt_order_rules) {
       const value = promptText[rule];
@@ -180,9 +169,8 @@ const MyModal: React.FC<MyModalProps> = ({
       }
     }
   }
-  
 
-  
+
 return (
     <div className="my-modal" style={{ display: isOpen ? "block" : "none" }}>
       <div className="my-modal-content">
@@ -197,6 +185,7 @@ return (
         {/* Modal Body */}
         <div className="modal-body p-3">
           <div className="d-flex flex-column">
+            
             {/* Boolean Fields Top Row */}
             {booleanFields.length > 0 && (
               <div className="d-flex flex-row justify-content-between mb-2">
@@ -431,33 +420,245 @@ return (
           </div>
         </div>
 
-        {selectedRow && selectedRow.current_ask !== undefined && (
-          <div>
-            <b>current_ask: </b>
-            {Number(selectedRow.current_ask).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-
+        {/* Add Symbol Row Info Column */}
+        {add_symbol_row_info && Array.isArray(add_symbol_row_info) && (
+          <div className="d-flex flex-column" style={{ flex: 1 }}>
+            {add_symbol_row_info.map((col: string) => (
+              selectedRow && selectedRow[col] !== undefined && (
+          <div key={col}>
+            <b>{col}: </b>
+            {typeof selectedRow[col] === "number"
+              ? Number(selectedRow[col]).toLocaleString(undefined, { maximumFractionDigits: 2 })
+              : String(selectedRow[col])}
+          </div>
+              )
+            ))}
           </div>
         )}
 
-        {selectedRow && selectedRow.ticker_total_budget !== undefined && (
-          <div>
-            <b>Total Budget:$ </b>
-            {Number(selectedRow.ticker_total_budget).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </div>
+        {prompt_field === "sell_option" &&
+          selectedRow &&
+          Array.isArray(selectedRow.active_orders) &&
+          selectedRow.active_orders.length > 0 && (
+            <div style={{ margin: "16px 0" }}>
+              <div
+                style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                onClick={() => setShowActiveOrders((prev: boolean) => !prev)}
+              >
+                {showActiveOrders ? "▼" : "►"} Active Orders
+              </div>
+              {showActiveOrders && (() => {
+                // 👇 Define ordersToRender here
+                const ordersToRender = selectedRow.active_orders;
+
+                return (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="table table-bordered table-sm" style={{ fontSize: "0.8rem" }}>
+                      <thead>
+                        <tr>
+                          {Object.keys(ordersToRender[0]).map((col) => (
+                            <th key={col}>{col}</th>
+                          ))}
+                          <th>sell_qty</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ordersToRender.map((order: any, idx: number) => (
+                          <tr key={idx}>
+                            {Object.keys(ordersToRender[0]).map((col) => (
+                              <td key={col}>
+                                {order && order[col] !== undefined ? String(order[col]) : ""}
+                              </td>
+                            ))}
+                            <td>
+                              <input
+                                type="number"
+                                min={0}
+                                max={order.qty_available}
+                                value={sellQtys[idx] || ""}
+                                onChange={e => {
+                                  let value = e.target.value;
+                                  if (value === "") {
+                                    handleSellQtyChange(idx, "");
+                                    return;
+                                  }
+                                  let num = Number(value);
+                                  if (num < 0) num = 0;
+                                  if (order.qty_available !== undefined && num > order.qty_available) num = order.qty_available;
+                                  handleSellQtyChange(idx, String(num));
+
+                                  // Always update based on the latest ordersToRender
+                                  const updatedOrders = ordersToRender.map((ord: any, i: number) => ({
+                                    ...ord,
+                                    sell_qty: i === idx ? String(num) : (sellQtys[i] !== undefined && sellQtys[i] !== "" ? sellQtys[i] : "")
+                                  }));
+
+                                  setPromptText({
+                                    ...promptText,
+                                    active_orders_with_qty: updatedOrders
+                                  });
+                                }}
+                                style={{ width: "80px", fontSize: "0.8rem" }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
         )}
 
-        {selectedRow && selectedRow.star_buys_at_play !== undefined && (
-          <div>
-            <b>Currently Long:$ </b>
-            {Number(selectedRow.star_buys_at_play).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </div>
+        
+        {prompt_field === "kors" &&
+          selectedRow &&
+          Array.isArray(selectedRow['wave_data']) &&
+          selectedRow['wave_data'].length > 0 && (
+            <div style={{ margin: "16px 0" }}>
+              <div
+                style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                onClick={() => setShowWaveData((prev: boolean) => !prev)}
+              >
+                {showWaveData ? "▼" : "►"} Show Buy Time Set Allocations
+              </div>
+              {showWaveData && (() => {
+                // 👇 Define ordersToRender here
+                const ordersToRender = selectedRow['wave_data'];
+
+                return (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="table table-bordered table-sm" style={{ fontSize: "0.8rem" }}>
+                      <thead>
+                        <tr>
+                          {Object.keys(ordersToRender[0]).map((col) => (
+                            <th key={col}>{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(promptText.wave_data || ordersToRender).map((order: any, idx: number) => (
+                          <tr key={idx}>
+                            {Object.keys(ordersToRender[0]).map((col) => (
+                              <td key={col}>
+                                {Array.isArray(editableCols) && editableCols.includes(col) ? (
+                                  <input
+                                    type="number"
+                                    value={order[col] || ""}
+                                    onChange={e => {
+                                      const value = e.target.value;
+                                      // Always update from promptText.wave_data if available, else fallback
+                                      const currentWaveData = promptText.wave_data
+                                        ? [...promptText.wave_data]
+                                        : [...ordersToRender];
+                                      const updatedOrders = currentWaveData.map((ord: any, i: number) =>
+                                        i === idx ? { ...ord, [col]: value } : ord
+                                      );
+                                      setPromptText({
+                                        ...promptText,
+                                        wave_data: updatedOrders
+                                      });
+                                    }}
+                                    style={{ width: "80px", fontSize: "0.8rem" }}
+                                  />
+                                ) : (
+                                  order && order[col] !== undefined
+                                    ? typeof order[col] === "number"
+                                      ? Number(order[col]).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                                      : String(order[col])
+                                    : ""
+                                )}
+                              </td>
+                            ))}
+                            {/* ...any extra columns, like Buy Amount, as before... */}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
         )}
 
-        {selectedRow && selectedRow.ticker_remaining_budget !== undefined && (
-          <div>
-            <b>Remaining Budget:$ </b>
-            {Number(selectedRow.ticker_remaining_budget).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </div>
+        {display_grid_column &&
+          selectedRow &&
+          Array.isArray(selectedRow[display_grid_column]) &&
+          selectedRow[display_grid_column].length > 0 && (
+            <div style={{ margin: "16px 0" }}>
+              <div
+                style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                onClick={() => setShowButtonColData((prev: boolean) => !prev)}
+              >
+                {showButtonColData ? "▼" : "►"} {display_grid_column}
+              </div>
+              {showButtonColData && (() => {
+                // 👇 Define ordersToRender here
+                const ordersToRender = selectedRow[display_grid_column];
+
+                return (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="table table-bordered table-sm" style={{ fontSize: "0.8rem" }}>
+                      <thead>
+                        <tr>
+                          {Object.keys(ordersToRender[0]).map((col) => (
+                            <th key={col}>{col}</th>
+                          ))}
+                          <th>Buy Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ordersToRender.map((order: any, idx: number) => (
+                          <tr key={idx}>
+                          {Object.keys(ordersToRender[0]).map((col) => (
+                            <td key={col}>
+                            {order && order[col] !== undefined
+                              ? typeof order[col] === "number"
+                              ? Number(order[col]).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                              : String(order[col])
+                              : ""}
+                            </td>
+                          ))}
+                          {/* <td>
+                            <input
+                            type="number"
+                            min={0}
+                            max={order.qty_available}
+                            value={sellQtys[idx] || ""}
+                            onChange={e => {
+                                  let value = e.target.value;
+                                  if (value === "") {
+                                    handleSellQtyChange(idx, "");
+                                    return;
+                                  }
+                                  let num = Number(value);
+                                  if (num < 0) num = 0;
+                                  // if (order.qty_available !== undefined && num > order.qty_available) num = order.qty_available;
+                                  handleSellQtyChange(idx, String(num));
+
+                                  // Always update based on the latest ordersToRender
+                                  const updatedOrders = ordersToRender.map((ord: any, i: number) => ({
+                                    ...ord,
+                                    sell_qty: i === idx ? String(num) : (sellQtys[i] !== undefined && sellQtys[i] !== "" ? sellQtys[i] : "")
+                                  }));
+
+                                  setPromptText({
+                                    ...promptText,
+                                    active_orders_with_qty: updatedOrders
+                                  });
+                                }}
+                                style={{ width: "80px", fontSize: "0.8rem" }}
+                              />
+                            </td> */}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
         )}
 
 

@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import pytz
 import requests
-import streamlit as st
+# import streamlit as st
 import alpaca_trade_api as tradeapi
 from alpaca_trade_api.rest import URL
 from alpaca_trade_api.rest_async import AsyncRest
@@ -333,7 +333,7 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
                     )["api"]
                     return api
         else:
-            st.warning("USER NOT YET AUTHORIZED AND SHOWING PREVIEW")
+            # st.warning("USER NOT YET AUTHORIZED AND SHOWING PREVIEW")
             return return_alpaca_api_keys(prod=False)["api"]
     except Exception as e:
         print_line_of_error()
@@ -1122,62 +1122,6 @@ def return_queen_orders__profit_loss(QUEEN, queen_orders, queen_order_states, ti
         return ''
 
     return orders
-
-
-def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen_order_states, ticker_time_frame, cost_basis_ref='cost_basis_current'):
-    try:
-        if not QUEEN:
-            print("NO QUEEN")
-            active_orders = {}
-            remaining_budget = 0
-            remaining_budget_borrow = 0
-            budget_cost_basis = 0
-            borrowed_cost_basis = 0
-            buys_at_play = 0
-            sells_at_play = 0
-            return active_orders, remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
-        
-        # Total In Running, Remaining
-        active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
-        if len(active_orders) == 0:
-            return '', total_budget, borrow_budget, 0, 0, 0, 0
-        
-        # handle long_short in update WORKERBEE
-        active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'short') 
-        buy_orders = active_orders[active_orders['long_short'] == 'long']
-        sell_orders = active_orders[active_orders['long_short'] == 'short']
-        # get cost basis
-        cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
-        buys_at_play = sum(buy_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
-        sells_at_play = sum(sell_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
-
-        # check current cost_basis
-        if cost_basis_current == 0:
-            budget_cost_basis = 0
-            borrowed_cost_basis = 0
-            remaining_budget = total_budget
-            remaining_budget_borrow = borrow_budget
-            return active_orders, remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
-        
-        remaining_budget = total_budget - cost_basis_current
-        if remaining_budget < 0:
-            budget_cost_basis = total_budget
-            borrowed_cost_basis = abs(remaining_budget)
-            # (ticker_time_frame, "over budget")
-            remaining_budget_borrow = borrow_budget - borrowed_cost_basis
-            if remaining_budget_borrow < 0:
-                # (ticker_time_frame, "WHATT YOU WENT OVER BORROW BUDGET")
-                remaining_budget_borrow = 0
-        else:
-            budget_cost_basis = cost_basis_current
-            borrowed_cost_basis = 0
-            remaining_budget = remaining_budget
-            remaining_budget_borrow = borrow_budget
-        
-        return active_orders, remaining_budget, remaining_budget_borrow, budget_cost_basis, borrowed_cost_basis, buys_at_play, sells_at_play
-    
-    except Exception as e:
-        print_line_of_error("return_ttf_remaining_budget")
 
 
 def add_trading_model(QUEEN_KING, ticker, model='MACD', theme="nuetral", status='active'):
@@ -2533,16 +2477,40 @@ def refresh_broker_account_portolfio(api, QUEEN):
     #  'change_today': '0.0180919426594167',
     #  'qty_available': '222'}
 
+def broker_orders_fields():
+    return ['id', 'client_order_id', 'symbol', 'side', 'type', 'qty', 'filled_qty', 'filled_avg_price', 'status', 'created_at', 'updated_at', 'expires_at', 'time_in_force', 'asset_class']
 
+def convert_robinhood_crypto_order_fields(order):
+    return {
+        'id': order.get('id'),
+        'client_order_id': order.get('client_order_id'),
+        'symbol': order.get('symbol'),
+        'side': order.get('side'),
+        'type': order.get('type'),
+        'qty': order.get('market_order_config', {}).get('asset_quantity', ''),
+        'filled_qty': order.get('filled_asset_quantity', 0),
+        'filled_avg_price': order.get('average_price', 0),
+        'status': order.get('state'),
+        'created_at': order.get('created_at'),
+        'updated_at': order.get('updated_at')
+    }
 
-def check_order_status(api, client_order_id):  # return raw dict form
+def check_order_status(broker, api, client_order_id):  # return raw dict form
     try:
-        order = api.get_order_by_client_order_id(client_order_id=client_order_id)
-        order_ = vars(order)["_raw"]
-        return order_
+        if not broker:
+            print("ERROR: No broker specified default to alpaca")
+            broker = 'alpaca'  # default to alpaca if not specified
+        
+        if broker == 'alpaca' or broker == 'queens_choice': #WORKERBEE remove queens_choice
+            order = api.get_order_by_client_order_id(client_order_id=client_order_id)
+            order = vars(order)["_raw"]
+        elif broker == 'robinhood':
+            order = api.get_order(order_id=client_order_id)
+            order = convert_robinhood_crypto_order_fields(order)
+        return order
     except Exception as e:
         print(f"ERROR-qplcacae {client_order_id} {e}")
-        return {}
+        return False
 
 
 def submit_best_limit_order(api, symbol, qty, side, client_order_id=False):
@@ -3288,7 +3256,7 @@ def ttf_grid_names(ttf_name, symbol=True):
        return ttf_name
 
 
-def sell_button_dict_items(symbol="SPY", sell_qty=89, sell_amount=0, limit_price=0, broker=['queens_choice', 'alpaca', 'robinhood']):
+def sell_button_dict_items(symbol="SPY", sell_qty=0, sell_amount=0, limit_price=0, broker=['queens_choice', 'alpaca', 'robinhood']):
     var_s = {
                 'symbol': symbol,
                 'sell_qty':sell_qty,
@@ -3301,15 +3269,6 @@ def sell_button_dict_items(symbol="SPY", sell_qty=89, sell_amount=0, limit_price
     #     var_s[col] = True
     return var_s
 
-def sell_button_dict_items_v2(symbol="SPY", sell_qty=89):
-    var_s = {
-                'symbol': symbol,
-                'sell_qty':sell_qty,
-                }
-    cols = ['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']
-    for col in cols:
-        var_s[col] = True
-    return var_s
 
 def chessboard_button_dict_items(Save="Save"):
     var_s = {
@@ -3327,10 +3286,12 @@ def chessboard_button_dict_items(Save="Save"):
 def ensure_postgres_tables(tables):
     main_tables = ['pollen_store', 'db', 'db_sandbox', 'client_user_store', 'client_user_store_sandbox', 'final_orders'] ## 'client_users' handled in first pq_auth
     init_main_tables = [i for i in main_tables if i not in tables]
+    results = []
     if init_main_tables:
         for table_name in init_main_tables:
             if PollenDatabase.create_table_if_not_exists(table_name):
-                st.success(f'PG {table_name} Created')
+                results.append(f"Table {table_name} created successfully.")
+    return results
 
 def read_swarm_db(prod=False, key='BISHOP'):
     table_name = 'db' if prod else 'db_sandbox'
@@ -3561,19 +3522,6 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                 PickleData(pickle_file=PB_KING_Pickle, data_to_store=KING)
 
 
-    if queenKING:
-        st.session_state["PB_QUEEN_Pickle"] = PB_QUEEN_Pickle
-        st.session_state["PB_App_Pickle"] = PB_App_Pickle
-        st.session_state["PB_Orders_Pickle"] = PB_Orders_Pickle
-        st.session_state["PB_queen_Archives_Pickle"] = PB_queen_Archives_Pickle
-        st.session_state["PB_QUEENsHeart_PICKLE"] = PB_QUEENsHeart_PICKLE
-        st.session_state["PB_KING_Pickle"] = PB_KING_Pickle
-        st.session_state["PB_RevRec_PICKLE"] = PB_RevRec_PICKLE
-        st.session_state["PB_account_info_PICKLE"] = PB_account_info_PICKLE
-        st.session_state["PB_broker_PICKLE"] = PB_broker_PICKLE
-        st.session_state["PB_Orders_FINAL_Pickle"] = PB_Orders_FINAL_Pickle
-
-
     return {
         "PB_QUEEN_Pickle": PB_QUEEN_Pickle,
         "PB_App_Pickle": PB_App_Pickle,
@@ -3618,14 +3566,8 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
         table_name = "client_user_store" if prod else 'client_user_store_sandbox'
         init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece='queen', queenKING=queenKING, init=init, pg_migration=pg_migration, table_name=table_name)
-            
-        st.session_state['prod'] = prod
-        st.session_state['client_user'] = client_username
-        
-        if prod == False:
-            st.warning("SANDBOX")
 
-        return prod
+        return prod, db_root
     except Exception as e:
         print_line_of_error("setup instance")
 
@@ -3648,6 +3590,10 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             s = datetime.now()
             client_order_store = "queen_orders" if prod else 'queen_orders_sandbox'
             order_rows = PollenDatabase.get_keys_by_db_root(client_order_store, db_root)
+            print("ORDER ROWS", len(order_rows))
+            if len(order_rows) == 0:
+                print("No Orders Found for", db_root)
+                order_rows = [create_QueenOrderBee(queen_init=True)]
             df = pd.DataFrame(order_rows).set_index('client_order_id', drop=False)
             ORDERS = {'queen_orders': df, 
                       'db_root': db_root, 
@@ -3658,11 +3604,14 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS', main_server=main_server) if orders else {}
 
         QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN', main_server=main_server) if queen else {}
-        
+
         if queen and orders_v2:
             print("Set QUEEN ORDERS in QUEEN")
             queen_orders = copy.deepcopy(ORDERS['queen_orders'])
             QUEEN['queen_orders'] = queen_orders
+            QUEEN['orders_v2'] = True
+        else:
+            QUEEN['orders_v2'] = False
 
         QUEENsHeart = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEENsHeart', main_server=main_server) if queen or queen_heart else {}
         QUEEN_KING = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN_KING', main_server=main_server) if queen_king else {}
@@ -3710,6 +3659,8 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             "revrec": REVREC,
             "ORDERS_FINAL": ORDERS_FINAL,
             "CHARLIE_BEE": CHARLIE_BEE,
+            "db_root": db_root,
+            "table_name": table_name,
             }
 
 
@@ -4230,7 +4181,7 @@ def init_ticker_stats__from_yahoo():
             print(symbol, e)
     e = datetime.now(est)
     time_delta = (e-s)
-    st.write(f'{time_delta} __ total Seconds: {time_delta.total_seconds()}')
+
 
     yahoo_stats_bee = os.path.join(db_root, "yahoo_stats_bee.pkl")
 
@@ -4610,9 +4561,6 @@ def model_wave_results(STORY_bee):
                 return_results[f'{ticker_option}{"_bee_"}{trigbee}'] = f'{"~Total Max Profits "}{round(t_maxprofits * 100, 2)}{"%"}{"  ~Win Pct "}{win_pct}{"%"}{": Winners "}{t_winners}{" :: Losers "}{t_losers}'
             # df_bestwaves = analyze_waves(STORY_bee, ttframe_wave_trigbee=df_trigbee_waves['ticker_time_frame'].iloc[-1])['df_bestwaves']
 
-        # df = pd.DataFrame(return_results.items())
-        # mark_down_text(color='#C5B743', text=f'{"Trigger Bee Model Results "}')
-        # st.write(df) 
 
         return return_results, dict_list_ttf
     
@@ -5164,22 +5112,16 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_
 
     try:
         prod = pq_env.get('env')
-        prod_name = "LIVE" if prod else "Sandbox"
+        # prod_name = "LIVE" if prod else "Sandbox"
         
-        st.session_state["prod_name"] = prod_name
-        st.session_state["prod"] = prod
 
         if switch_env:
             if prod:
                 prod = False
-                st.session_state["prod"] = prod
-                prod_name = "Sanbox"
-                st.session_state["prod_name"] = prod_name
+                # prod_name = "Sanbox"
             else:
                 prod = True
-                st.session_state["prod"] = prod
-                prod_name = "LIVE"
-                st.session_state["prod_name"] = prod_name
+                # prod_name = "LIVE"
             
             # save
             if pg_migration:
@@ -5187,7 +5129,6 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_
                 save_key = f"{db_root}-ENV"
                 print(f"QH switch env {pq_env}")
                 PollenDatabase.upsert_data('client_user_env', key=save_key, value=pq_env)
-
             else:    
                 pq_env.update({'env': prod})
                 print(pq_env)
@@ -5214,9 +5155,9 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
                     os.mkdir(db_root)
                     # os.mkdir(os.path.join(db_root, "logs"))
         
-        if queenKING:
-            st.session_state['db_root'] = db_root
-            st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
+        # if queenKING:
+        #     st.session_state['db_root'] = db_root
+        #     st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
 
         return db_root
     except Exception as e:

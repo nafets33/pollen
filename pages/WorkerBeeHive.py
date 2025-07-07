@@ -21,7 +21,7 @@ import argparse
 # main chess piece
 from chess_piece.workerbees import queen_workerbees
 from chess_piece.king import hive_master_root_db, master_swarm_QUEENBEE, hive_master_root, print_line_of_error, ReadPickleData, read_QUEENs__pollenstory
-from chess_piece.queen_hive import init_qcp_workerbees, init_queenbee, init_swarm_dbs, read_swarm_db, return_Ticker_Universe
+from chess_piece.queen_hive import init_qcp_workerbees, init_swarm_dbs, read_swarm_db, return_Ticker_Universe
 from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 # componenets
 from streamlit_extras.switch_page_button import switch_page

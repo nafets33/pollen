@@ -209,6 +209,13 @@ class Authenticate:
         self.username = email
         self.password = password
         st.session_state["username"] = self.username
+        print(" DIRECT auth!!", email)
+        # if st.session_state["username"] in st.session_state['auth_email']:
+        #     return (
+        #         st.session_state["name"],
+        #         True,
+        #         st.session_state["username"],
+        #     )
 
         self._check_credentials()
 

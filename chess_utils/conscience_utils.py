@@ -8,6 +8,7 @@ from chess_piece.pollen_db import PollenDatabase
 import pytz
 from datetime import datetime, timedelta
 import os
+import json
 pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
 
 import ipdb
@@ -146,13 +147,6 @@ def return_waveview_fillers(QUEEN_KING, waveview):
     try:
         df = waveview
 
-        df['sell_alloc_deploy'] =  np.where((df['macd_state'].str.contains("buy")) & (df['allocation_deploy'] < 0), round(df['allocation_deploy']), 0)
-        df['sellbuy_alloc_deploy'] =  np.where((df['macd_state'].str.contains("sell")) & (df['allocation_deploy'] > 0), round(df['allocation_deploy']), 0)
-        df['sell_alloc_deploy'] = df['sell_alloc_deploy'] + df['sellbuy_alloc_deploy']
-        df['buysell_alloc_deploy'] =  np.where((df['macd_state'].str.contains("sell")) & (df['allocation_deploy'] < 0), round(abs(waveview['allocation_deploy'])), 0) 
-
-        # sell_options = sell_button_dict_items()
-        # df['sell_option'] = [sell_options for _ in range(df.shape[0])]
         kors_dict = buy_button_dict_items()
         df['kors'] = [kors_dict for _ in range(df.shape[0])]
         df['kors_key'] = df["ticker_time_frame"] +  "__" + df['macd_state']
@@ -219,6 +213,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
 
 
     try:
+        toggle_view_selection = toggle_view_selection.split("-")[0].strip()
         df = revrec.get('storygauge')
         waveview = revrec.get('waveview')
         df_stars = revrec.get('df_stars')
@@ -239,27 +234,30 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         qcp_name['King'] = 'King'
         return_early = False
         if toggle_view_selection in qcp_name.keys():
-            toggle_view_selection = qcp_name[toggle_view_selection]
-        elif toggle_view_selection == "Not On Board":
-            toggle_view_selection = "non_active_stories"
+            pass
         elif toggle_view_selection in ['Portfolio', 'King']:
             pass
         else:
             return_early = True
+        #     toggle_view_selection = qcp_name[toggle_view_selection]
+        # elif toggle_view_selection == "Not On Board":
+        #     toggle_view_selection = "non_active_stories"
 
-        qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
-        ticker_filter = [ticker for (ticker, qcp) in qcp_ticker.items() if qcp == toggle_view_selection]                
+        # qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
+        qcp_ticker = dict(zip(revrec.get('storygauge')['symbol'],revrec.get('storygauge')['piece_name']))
+
+        # Normalize both qcp and toggle_view_selection for comparison
+        ticker_filter = [
+            ticker for (ticker, qcp) in qcp_ticker.items()
+            if qcp and qcp.strip().lower() == toggle_view_selection.strip().lower()
+        ]
         if ticker_filter:
             df = df[df.index.isin(ticker_filter)]
 
-        if toggle_view_selection in df_ticker['piece_name'].tolist():
-            ticker_filter = df_ticker[df_ticker['piece_name'] == toggle_view_selection]
-            df = df[df.index.isin(ticker_filter)]
-        
         storygauge_columns = df.columns.tolist()
         waveview['buy_alloc_deploy'] = waveview['allocation_long_deploy'] ## clean up buy_alloc_deploy as they are the same
         # symbol group by to join on story
-        num_cols = ['allocation_long_deploy', 'allocation_long', 'star_buys_at_play', 'sell_alloc_deploy', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
+        num_cols = ['allocation_long_deploy', 'allocation_long', 'star_buys_at_play', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
         for col in num_cols:
             waveview[col] = round(waveview[col])
             if col in storygauge_columns:
@@ -268,15 +266,15 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df_wave_symbol = waveview.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
 
 
-        df_wave_symbol['sell_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['sell_alloc_deploy']), axis=1)
+        
         df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['allocation_long_deploy']), axis=1)
 
         remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
         remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
-        sell_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_msg']))
+        
         buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
         buy_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['allocation_long_deploy']))
-        sell_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['sell_alloc_deploy']))
+
         allocation_long = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['allocation_long']))
         
         # display whole number
@@ -284,13 +282,22 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
             if 'trinity' in col:
                 df[col] = round(pd.to_numeric(df[col]),2) * 100
 
-        # df['queens_suggested_sell'] = df['symbol'].map(sell_msg)
+        
         df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
         df['queens_suggested_sell'] = round(df['money'])
         df['queens_suggested_sell'] = df.apply(lambda row: '${:,.0f}'.format(row['queens_suggested_sell']), axis=1)
 
         refresh_star_names = star_refresh_star_times()
         refresh_star_names_switched = {v: k for k, v in refresh_star_names.items()}
+
+        # df["active_orders"] = df["active_orders"].astype(str)
+        # df["active_orders"] = df["active_orders"].apply(json.dumps)
+        # print(df.iloc[-1]['active_orders'])
+        # sample = df.iloc[-1]["active_orders"]
+        # print("typing sample", type(sample))
+        # # if not isinstance(sample, dict):
+        # #     sample = json.loads(sample)
+        # df["active_orders"] = [sample for _ in range(df.shape[0])]
 
         kors_dict = add_symbol_dict_items()
         df['add_symbol_option'] = [kors_dict for _ in range(df.shape[0])]
@@ -333,8 +340,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     alloc_option = {'allocation': alloc}
                     df.at[symbol, 'edit_allocation_option'] = alloc_option
 
-                    sell_qty = df.at[symbol, 'qty_available']
-                    sell_option = sell_button_dict_items(symbol, sell_qty)
+                    # sell_qty = df.at[symbol, 'qty_available']
+                    sell_option = sell_button_dict_items(symbol)
                     df.at[symbol, 'sell_option'] = sell_option
                     status = ['active', 'not_active'] if symbol in symbols else ['not_active', 'active']
                     # tic_star = df.at[symbol, 'refresh_star']
@@ -361,12 +368,16 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                                                    star_powers_borrow=star_powers_borrow,
                                                    symbol_qcp_group=symbol_qcp_group)
                     df.at[symbol, 'add_symbol_option'] = option
+
+                    #active orders
+                    option = df.at[symbol, 'active_orders']
+                    df.at[symbol, 'active_orders'] = option
                     
                     remaining_budget__ = remaining_budget.get(symbol)
                     df.at[symbol, 'remaining_budget'] = remaining_budget__
                     df.at[symbol, 'remaining_budget_borrow'] = remaining_budget_borrow.get(symbol)
                     df.at[symbol, 'allocation_long_deploy'] = buy_alloc_deploy.get(symbol)
-                    df.at[symbol, 'sell_alloc_deploy'] = sell_alloc_deploy.get(symbol)
+   
                     df.at[symbol, 'allocation_long'] = allocation_long.get(symbol)
 
                     budget = df_ticker.at[symbol, 'ticker_total_budget']
@@ -442,29 +453,27 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df['buy_autopilot'] = df['edit_buy_autopilot_option'].apply(lambda x: "ON" if x.get('buy_autopilot') else "OFF")
         df['sell_autopilot'] = df['edit_sell_autopilot_option'].apply(lambda x: "ON" if x.get('sell_autopilot') else "OFF")
 
-        # # Totals Index
-        df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
-        colss = df.columns.tolist()
-        for totalcols in story_grid_num_cols:
-            if totalcols in colss:
-                if 'trinity' in totalcols:
-                    df_total.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
-                elif totalcols == 'queens_suggested_buy':
-                    df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["allocation_long_deploy"].sum()))
-                elif totalcols == 'queens_suggested_sell':
-                    df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["money"].sum()))
-                elif totalcols == 'total_budget':
-                    df_total.loc['Total', totalcols] = df["total_budget"].sum()
-                elif totalcols == 'Month':
-                    print("month")
-                    df_total.loc['Total', 'Month_value'] = df["Month_value"].sum()
-                    # df.loc['Total', 'Month_kors'] = df["Month_value"].sum()
-                else:
-                    df_total.loc['Total', totalcols] = df[totalcols].sum()
-        
-        df = pd.concat([df_total, df])
-        df.at['Total', 'symbol'] = 'Total'
-
+        """ # Totals Index """
+        # df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
+        # colss = df.columns.tolist()
+        # for totalcols in story_grid_num_cols:
+        #     if totalcols in colss:
+        #         if 'trinity' in totalcols:
+        #             df_total.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
+        #         elif totalcols == 'queens_suggested_buy':
+        #             df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["allocation_long_deploy"].sum()))
+        #         elif totalcols == 'queens_suggested_sell':
+        #             df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["money"].sum()))
+        #         elif totalcols == 'total_budget':
+        #             df_total.loc['Total', totalcols] = df["total_budget"].sum()
+        #         elif totalcols == 'Month':
+        #             print("month")
+        #             df_total.loc['Total', 'Month_value'] = df["Month_value"].sum()
+        #             # df.loc['Total', 'Month_kors'] = df["Month_value"].sum()
+        #         else:
+        #             df_total.loc['Total', totalcols] = df[totalcols].sum()
+        # df = pd.concat([df_total, df])
+        # df.at['Total', 'symbol'] = 'Total'
         # df.at['Total', 'edit_buy_autopilot_option'] = ""
         # df.at['Total', 'edit_sell_autopilot_option'] = ""
 

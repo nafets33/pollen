@@ -324,14 +324,14 @@ class PollenDatabase:
                 if len(data) == 0:
                     print('NO DATA AVAIL for ', key)
                     return None
-                
+                # print("Retrieved data for key:", key)
                 data['key'] = key
                 data['table_name'] = table_name
                 data['db_root'] = key.split("-")[0]
                 return data
 
         except Exception as e:
-            print_line_of_error()
+            print_line_of_error(f'ERROR RETERIVING DATA PG {e}')
         finally:
             if conn:
                 conn.close()

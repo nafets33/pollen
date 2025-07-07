@@ -9,7 +9,7 @@ import ssl
 from email.message import EmailMessage
 from chess_piece.king import hive_master_root, local__filepaths_misc, return_app_ip
 from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, setup_instance, print_line_of_error
-from chess_piece.app_hive import set_streamlit_page_config_once
+from chess_piece.app_hive import set_streamlit_page_config_once, mark_down_text
 from datetime import datetime
 from chess_piece.pollen_db import PollenDatabase
 from custom_button import cust_Button
@@ -263,6 +263,7 @@ def read_user_db(cur):
 def signin_main(page=None):
     """Return True or False if the user is signed in"""
     ip_address = return_app_ip()
+    st.session_state['ip_address'] = ip_address
     MISC = local__filepaths_misc()
     set_streamlit_page_config_once()
 
@@ -270,8 +271,11 @@ def signin_main(page=None):
     def setup_user_pollenqdbs():
         # print("AUTH SETUP")
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'] == 'family':
-            prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=False, queenKING=True, prod=False, init=True)
+            prod, db_root = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=False, queenKING=True, prod=False, init=True)
             st.session_state['instance_setup'] = True
+            st.session_state['prod'] = prod
+            st.session_state['db_root'] = db_root
+            st.session_state['client_user'] = st.session_state["username"]
             return prod
 
         if st.session_state["authorized_user"]:
@@ -289,10 +293,11 @@ def signin_main(page=None):
                 send_email(recipient=os.environ.get('pollenq_gmail'), subject="QueenRequest", body=f'{st.session_state["username"]} Asking for a Queen')
                 st.success("Message Sent To Hive Master, We'll talk soon")
 
-
-        prod = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True, init=True)
+        prod, db_root = setup_instance(client_username=st.session_state["username"], switch_env=False, force_db_root=force_db_root, queenKING=True, init=True)
         st.session_state['instance_setup'] = True
-
+        st.session_state['prod'] = prod
+        st.session_state['client_user'] = st.session_state["username"]
+        st.session_state['db_root'] = db_root
         return prod
 
     def define_authorized_user():
@@ -326,6 +331,18 @@ def signin_main(page=None):
             cookie_expiry_days=int(os.environ.get("cookie_expiry_days")),
             preauthorized={"emails": "na"},
         )
+        
+        # st.write(st.session_state)
+        # if 'stefanstapinski@gmail.com' in st.session_state['auth_email']:
+        #     print("YESSS")
+        #     authentication_status = True
+        #     # st.session_state['name'] = 'stefanstapinski@yahoo.com'
+        #     # st.session_state['auth_email'] = "stefanstapinski@yahoo.com"
+        #     # st.session_state['auth_name'] = "Kings Guest"
+        #     # st.session_state['auth_pw'] = os.environ.get("quantqueen_pw")
+        #     name, authentication_status, email = authenticator.direct_login(st.session_state['auth_email'], os.environ.get("quantqueen_pw"))
+        #     return authenticator
+
 
         # Check login. Automatically gets stored in session state
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'].lower() == 'family':

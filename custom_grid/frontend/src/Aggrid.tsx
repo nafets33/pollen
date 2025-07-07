@@ -16,12 +16,12 @@ import "ag-grid-community/styles/ag-theme-balham.css"
 import "ag-grid-community/styles/ag-theme-material.css"
 import MyModal from './components/Modal'
 import "ag-grid-enterprise"
-import { parseISO, compareAsc, set } from "date-fns"
+import { parseISO, compareAsc, set, sub } from "date-fns"
 import { format } from "date-fns-tz"
 import { duration } from "moment"
 import "./styles.css"
 import axios from "axios"
-import { io } from "socket.io-client";
+// import { io } from "socket.io-client";
 
 import {
   ComponentProps,
@@ -149,7 +149,7 @@ const AgGrid = (props: Props) => {
     const btnClickedHandler = () => {
       props.clicked(props.node.id)
     }
-    // console.log("BtnCellRenderer props", props)
+    // console.log("props.cellStyle", props.cellStyle)
     return (
       <button
         onClick={btnClickedHandler}
@@ -188,7 +188,9 @@ const AgGrid = (props: Props) => {
     grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
   }
 
-  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder=[], grid_type = null} = kwargs
+  const [subtotalsRow, setSubtotalsRow] = useState<any[]>([]);
+  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder=[], 
+    refresh_success=null, total_col=false, subtotal_cols=[], filter_button=''} = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
@@ -196,19 +198,16 @@ const AgGrid = (props: Props) => {
   const [viewId, setViewId] = useState(0)
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [previousViewId, setpreviousViewId] = useState(89)
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-  
   const checkLastModified = async (): Promise<boolean> => {
     try {
-      console.log("checking last modified...", api_lastmod_key);
       if (api_lastmod_key === null) {
         console.log("api key is null, returning false");
         return true;
       }
       if (api_lastmod_key !== null && api_lastmod_key !== undefined) {
         const baseurl = api.split('/').slice(0, -1).join('/');
-        // console.log(baseurl);
-        console.log("api key", api_lastmod_key);
         const res = await axios.get(`${baseurl}/lastmod_key`, {
           params: {
             api_key: api_key,
@@ -235,10 +234,11 @@ const AgGrid = (props: Props) => {
 
   const checkViewIdChanged = async (currentViewId: number, previousViewId: number): Promise<boolean> => {
     if (currentViewId !== previousViewId) {
-      console.log("viewId has changed from", previousViewId, "to", currentViewId);
+      // console.log("viewId has changed from", previousViewId, "to", currentViewId);
+      setpreviousViewId(currentViewId);
       return true;
     } else {
-      console.log("viewId has not changed");
+      // console.log("viewId has not changed");
       return false;
     }
   };
@@ -262,9 +262,17 @@ const AgGrid = (props: Props) => {
           button_name,
           border_color,
           border,
+          add_symbol_row_info,
+          display_grid_column,
+          editableCols,
           ...otherKeys
         } = button;
-  
+
+        let filterParams = button.filterParams || {};
+        if (kwargs['filter_apply']) {
+          filterParams = { ...filterParams, buttons: ['apply', 'reset'] };
+        }
+
         grid_options.columnDefs!.push({
           ...otherKeys,
           field: col_header || index,
@@ -272,11 +280,14 @@ const AgGrid = (props: Props) => {
           width: col_width,
           pinned: pinned,
           cellRenderer: BtnCellRenderer,
+          filterParams,
           cellRendererParams: {
             col_header,
             buttonName: button_name,
             borderColor: border_color,
             border: border,
+            filterParams,
+            cellStyle: button.cellStyle,
             ...(button.cellRendererParams || {}),
             clicked: async function (row_index: any) {
               try {
@@ -306,6 +317,9 @@ const AgGrid = (props: Props) => {
                     prompt_field,
                     prompt_order_rules,
                     selectedField,
+                    add_symbol_row_info,
+                    display_grid_column,
+                    editableCols,
                   });
   
                   const rules_value: any = {};
@@ -382,19 +396,22 @@ const AgGrid = (props: Props) => {
     onRefresh()
   }, [viewId])
 
+
   const fetchData = async () => {
     try {
-      // const checkViewIdChanged_result = await checkViewIdChanged(viewId, previousViewId);
       let toggle_view = toggle_views ? toggle_views[viewId] : "none";
-      
-      if (refresh_sec && refresh_sec > 0) {
+      const hasViewChanged = await checkViewIdChanged(viewId, previousViewId);
+      // console.log("hasViewChanged", hasViewChanged, viewId, previousViewId);
+
+      // If view has changed, skip checkLastModified
+      if (!hasViewChanged && refresh_sec && refresh_sec > 0) {
         const isLastModified = await checkLastModified();
-        console.log("isLastModified", isLastModified, api);
+        // console.log("isLastModified", isLastModified, api);
         if (!isLastModified) {
           return false;
         }
       }
-      
+
       console.log("fetching data...", api);
       const res = await axios.post(api, {
         username: username,
@@ -403,12 +420,97 @@ const AgGrid = (props: Props) => {
         toggle_view_selection: toggle_view
       });
       const array = JSON.parse(res.data);
+
+
       return array;
-    } catch (error: any) {
+    }
+    catch (error: any) {
       toastr.error(`Fetch Error: ${error.message}`);
       return false;
     }
   };
+
+ /// for title outside grid
+// const [subtotals, setSubtotals] = useState<any>(null);
+
+// const calculateSubtotals = useCallback(() => {
+//   if (!gridRef.current) return;
+//   if (!subtotal_cols || subtotal_cols.length === 0) {
+//     setSubtotals(null);
+//     return;
+//   }
+//   const api = gridRef.current.api;
+//   let filteredRows: any[] = [];
+//   api.forEachNodeAfterFilterAndSort((node) => {
+//     if (node.data) filteredRows.push(node.data);
+//   });
+
+//   if (filteredRows.length === 0) {
+//     setSubtotals(null);
+//     return;
+//   }
+
+//   let subtotal: any = {};
+//   subtotal[total_col] = "Subtotal";
+//   subtotal_cols.forEach((col: string) => {
+//     subtotal[col] = filteredRows.reduce((sum, row) => sum + (Number(row[col]) || 0), 0);
+//   });
+
+//   setSubtotals(subtotal);
+// }, [subtotal_cols, total_col]);
+// const onFilterChanged = useCallback(() => {
+//   calculateSubtotals();
+// }, [calculateSubtotals]);
+
+// const [subtotalsRow, setSubtotalsRow] = useState<any[]>([]);
+
+const calculateSubtotals = useCallback(() => {
+  if (!gridRef.current) return;
+  if (!subtotal_cols || subtotal_cols.length === 0) {
+    setSubtotalsRow([]);
+    return;
+  }
+  const api = gridRef.current.api;
+  let filteredRows: any[] = [];
+  api.forEachNodeAfterFilterAndSort((node) => {
+    if (node.data) filteredRows.push(node.data);
+  });
+
+  if (filteredRows.length === 0) {
+    setSubtotalsRow([]);
+    return;
+  }
+
+let subtotal: any = {};
+// Ensure total_col is a valid string and exists in the columns
+let allCols: string[] = [];
+if (grid_options && grid_options.columnDefs) {
+  allCols = grid_options.columnDefs.map((colDef: any) => colDef.field).filter(Boolean);
+} else if (filteredRows.length > 0) {
+  allCols = Object.keys(filteredRows[0]);
+}
+
+// Place "subTotals" label in the correct column
+if (typeof total_col === "string" && allCols.includes(total_col)) {
+  subtotal[total_col] = "subTotals";
+} else if (allCols.length > 0) {
+  subtotal[allCols[0]] = "subTotals"; // fallback to first column
+}
+
+allCols.forEach((col: string) => {
+  if (subtotal_cols.includes(col)) {
+    const sum = filteredRows.reduce((sum, row) => sum + (Number(row[col]) || 0), 0);
+    subtotal[col] = isNaN(sum) ? "" : sum;
+  } else if (subtotal[total_col] !== "subTotals" || col !== total_col) {
+    subtotal[col] = ""; // or null, or a placeholder
+  }
+});
+
+  setSubtotalsRow([subtotal]);
+}, [subtotal_cols, total_col]);
+const onFilterChanged = useCallback(() => {
+  calculateSubtotals();
+}, [calculateSubtotals]);
 
   useEffect(() => {
     if (refresh_sec && refresh_sec > 0) {
@@ -469,6 +571,13 @@ const AgGrid = (props: Props) => {
         }
         setRowData(array)
         g_rowdata = array
+      
+      if (subtotal_cols && subtotal_cols.length > 0) {
+        calculateSubtotals();
+      } else {
+        setSubtotalsRow([]);
+      }
+
       } catch (error: any) {
         toastr.error(`Error: ${error.message}`)
       }
@@ -519,12 +628,14 @@ const AgGrid = (props: Props) => {
 
 
   const [loading, setLoading] = useState(false);
-  
+  const subtotalTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const onRefresh = async () => {
     setLoading(true);
     try {
       const success = await fetchAndSetData();
-      success && toastr.success("Refresh success!");
+      
+      refresh_success && success && toastr.success("Refresh success!");
     } catch (error: any) {
       toastr.error(`Refresh Failed! ${error.message}`);
     } finally {
@@ -614,6 +725,7 @@ const AgGrid = (props: Props) => {
   type RowStyle = {
     background?: string;
     color?: string;
+    fontWeight?: string;
   };
 
   function parseJsCodeFromPython(v: string) {
@@ -635,6 +747,9 @@ const AgGrid = (props: Props) => {
   }
 
   const getRowStyle = (params: RowClassParams<any>): RowStyle | undefined => {
+        if (params.data && params.data[total_col] === "subTotals") {
+      return { fontWeight: "bold", background: "#f8f8f8" }; // Add background if you want
+    }
     try {
       const background = params.data["color_row"] ?? undefined;
       const color = params.data["color_row_text"] ?? undefined;
@@ -669,6 +784,48 @@ const AgGrid = (props: Props) => {
   const buttonStyle = getButtonStyle(toggle_views.length);
 
   const button_color = "#3498db"; // Set your custom button color here
+
+  // let pinnedTopRowData: any[] = [];
+  // let filteredRowData = rowData;
+  
+  // console.log("total_col", total_col)
+  // if (total_col) {
+  //   // Use total_col as the column to check for "Total" row
+  //   const totalRow = rowData.find(row => row[total_col] === "Total");
+  //   pinnedTopRowData = totalRow ? [totalRow] : [];
+  //   filteredRowData = rowData.filter(row => row[total_col] !== "Total");
+  // }
+
+
+  const getUniqueColumnValues = (column: string, rowData: any[]) => {
+    return Array.from(new Set(rowData.map(row => row[column]))).filter(
+      v => v !== undefined && v !== null
+    );
+  };
+// let filter_button = "piece_name";
+
+const uniqueValues = useMemo(
+  () => getUniqueColumnValues(filter_button, rowData),
+  [rowData, filter_button]
+);
+
+const handleButtonFilter = (value: string | null) => {
+  setActiveFilter(value);
+
+  if (gridRef.current && gridRef.current.api) {
+    const api = gridRef.current.api;
+    if (value) {
+      api.setFilterModel({
+        ...api.getFilterModel(),
+        [filter_button]: { filterType: "set", values: [value] }
+      });
+    } else {
+      const model = api.getFilterModel();
+      delete model[filter_button];
+      api.setFilterModel(model);
+    }
+  }
+};
 
   return (
     <>
@@ -859,9 +1016,114 @@ const AgGrid = (props: Props) => {
             height: kwargs["grid_height"] ? kwargs["grid_height"] : "100%",
           }}
         >
+          {/* Add test streaming_list_text to kwargs for testing
+          {(() => {
+            if (!kwargs.streaming_list_text) {
+              kwargs.streaming_list_text = ["some", "test", "list"];
+            }
+            return null;
+          })()} */}
+          {/* Streamer for streaming_list_text if present */}
+          {kwargs.streaming_list_text && Array.isArray(kwargs.streaming_list_text) && (
+            <div
+              style={{
+              width: "100%",
+              background: "#F3FAFD", // Match toggle_views button background
+              color: "#055A6E",      // Match toggle_views button text color
+              padding: "4px 10px",
+              fontSize: "13px",
+              borderBottom: "1px solid #ddd",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              marginBottom: "4px",
+              fontWeight: "bold",    // Match bold style from buttons
+              }}
+            >
+              <div
+              style={{
+                display: "block",
+                width: "100%",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                position: "relative",
+              }}
+              >
+              <div
+                style={{
+                display: "inline-block",
+                paddingLeft: "100%",
+                animation: "scroll-left 20s linear infinite",
+                }}
+              >
+                {kwargs.streaming_list_text.join("   |   ")}
+              </div>
+              <style>
+                {`
+                @keyframes scroll-left {
+                  0% {
+                  transform: translateX(0%);
+                  }
+                  100% {
+                  transform: translateX(-100%);
+                  }
+                }
+                `}
+              </style>
+              </div>
+            </div>
+          )}
+
+{kwargs['filter_button'] && kwargs['filter_button'] !== '' && (
+  <div style={{ marginBottom: 8 }}>
+    {uniqueValues.map(val => (
+      <button
+        key={val}
+        onClick={() => handleButtonFilter(val)}
+        style={{
+          background: activeFilter === val ? "#3498db" : "#F3FAFD", // match main button color and toggle_views bg
+          color: activeFilter === val ? "white" : "#055A6E",        // match toggle_views text color
+          border: activeFilter === val ? "2px solid #1abc9c" : "1px solid #ddd",
+          borderRadius: "6px",
+          fontWeight: "bold",
+          fontSize: "12px",
+          padding: "5px 10px",
+          margin: "0 4px 4px 0",
+          boxShadow: activeFilter === val ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
+          transition: "all 0.15s",
+          cursor: "pointer",
+        }}
+      >
+        {val}
+      </button>
+    ))}
+    <button
+      onClick={() => handleButtonFilter(null)}
+      style={{
+        background: "#b0c4de", // blue-grey (LightSteelBlue)
+        color: "#055A6E",
+        border: "1.5px solid #8fa6bc",
+        borderRadius: "6px",
+        fontWeight: "bold",
+        fontSize: "12px",
+        padding: "5px 10px",
+        margin: "0 4px 4px 0",
+        boxShadow: "0 2px 6px rgba(176,196,222,0.10)",
+        transition: "all 0.15s",
+        cursor: "pointer",
+      }}
+    >
+      Clear
+    </button>
+  </div>
+)}
+
+
           <AgGridReact
             ref={gridRef}
             rowData={rowData}
+            pinnedBottomRowData={subtotalsRow}
+            onFilterChanged={onFilterChanged}
             getRowStyle={getRowStyle}
             rowStyle={{ fontSize: 12, padding: 0 }}
             headerHeight={30}
@@ -874,6 +1136,7 @@ const AgGrid = (props: Props) => {
             gridOptions={grid_options}
             onCellValueChanged={onCellValueChanged}
             columnTypes={columnTypes}
+            sideBar={grid_options.sideBar === false ? false : sideBar}
           />
         </div>
       </div>

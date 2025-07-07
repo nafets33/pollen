@@ -437,7 +437,7 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
             df_mch = df_mch[df_mch['datetime'] > today]
             cl_user_questions = len(df_mch[df_mch['client_user'] == client_user])
             print('stop len', cl_user_questions)
-            if cl_user_questions > 15 and client_user != 'stefanstapinski@gmail.com':
+            if cl_user_questions > 8 and client_user != 'stefanstapinski@gmail.com':
                 # return good bye message 
                 response = "Hey sorry but you've reached the max number of questions to ask. Talking to me literally costs money...time is money after all even with computers. Maybe next time we can speak for real. "
                 # Appending the response from json file
@@ -476,66 +476,9 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
         session_state['current_youtube_search'] = False
 
     ### WATER FALL RESPONSE ###
-    # check_for_story
-    if check_for_story:
-        resp_func = story_response(current_query, session_state)
-        if resp_func.get('response'):
-            print("func response found")
-            response = resp_func.get('response')
-            audio_file = resp_func.get('audio_file')
-            session_state = resp_func.get('session_state')
-            conversation_history.append({"role": "assistant", "content": response, })
-            if return_audio:
-                audio_file = handle_audio(user_query, response, audio_file, self_image, s3_filepath)
-            else:
-                audio_file = False
-            return scenario_return(response, conversation_history, audio_file, session_state, self_image)
 
-    # Common Phrases # WORKERBEE Add check against audio_text DB
-    # print("common phrases")
     s = datetime.now()
-    # for query, response in common_phrases.items():
-    #     if query.lower() == current_query.lower():
-    #         print("QUERY already found in db: ", query)
-
-    #         # Appending the response from json file
-    #         conversation_history.append({"role": "assistant", "content": response})
-    #         ## find audio file to set to new_audio False
-    #         # return audio file
-    #         audio_file = handle_audio(user_query, response, audio_file=audio_file, self_image=self_image, s3_filepath=s3_filepath) 
-    #         print('common phrases:', (datetime.now() - s).total_seconds())
-    #         # self_image = 'hoots_waves.gif'
-    #         return scenario_return(response, conversation_history, audio_file, session_state, self_image)
-
-    # if len(df_master_audio) == 1:
-    #     response = df_master_audio.iloc[-1].get('text')
-    #     # Appending the response from json file
-    #     conversation_history.append({"role": "assistant", "content": response})
-    #     ## find audio file to set to new_audio False
-    #     # return audio file
-    #     audio_file = handle_audio(user_query, response, audio_file=audio_file, self_image=self_image) 
-    #     print('common phrases:', (datetime.now() - s).total_seconds())
-    #     # self_image = 'hoots_waves.gif'
-    #     return scenario_return(response, conversation_history, audio_file, session_state, self_image)
-
-
-    # LLM
     print("LLM")
-    # try: ## force not responding with a question
-    #     assistant = [v['content'] for v in conversation_history if v['role'] == 'assistant']
-    #     questions=0
-    #     if len(assistant) > 0:
-    #         for as_resp in assistant:
-    #             if "?" in as_resp:
-    #                 questions+=1
-    #     do_not_reply_as_a_question = True if questions > 1 else False
-    #     print("do_not_reply_as_a_question", do_not_reply_as_a_question)
-
-    #     if do_not_reply_as_a_question:
-    #         current_query = "do not respond with a question"  + current_query
-   
-    # except Exception as e:
-    #     print_line_of_error(e)
 
     handle_questions = f"If you are not asking a question do not put any question mark symbols in the response. If you are asking a question make sure the question mark symbol is exactly at the end of the text: "
     
@@ -544,7 +487,8 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
     return_only_text=True
     llm_convHistory = copy.deepcopy(conversation_history)
     
-    if self_image == 'James CFP':
+    """ CALL LLM RETURN RESPONSE"""
+    if self_image == 'jamescfp':
         print("CALL JAMES - GPT")
         REVREC = init_queenbee(client_user=client_user, prod=prod, revrec=True).get('REVREC')
         story = REVREC.get('storygauge')
@@ -570,7 +514,6 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
             response = llm_assistant_response(llm_convHistory)
         else:
             response = response.get('result')
-
     else:
         print("CALL LLM - GPT")
         current_query = current_query
@@ -584,14 +527,6 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
     else:
         audio_file = False
 
-    if 'viki' in self_image:
-        copy_conversation_history = copy.deepcopy(conversation_history)
-        copy_conversation_history = []
-        copy_conversation_history.append({"role": "user", "content": f"take this below text and return it translated into Russian {response}"})
-        russ_response = llm_assistant_response(copy_conversation_history)
-        conversation_history.pop()
-        conversation_history.append({"role": "assistant", "content": f'{response} -TRANSLATED- {russ_response}'})
-        response = f'{response} -TRANSLATED- {russ_response}'
 
     return scenario_return(response, conversation_history, audio_file, session_state, self_image)
 

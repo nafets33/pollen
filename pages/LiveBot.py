@@ -4,7 +4,6 @@ from pages.conscience import queens_conscience
 from chess_piece.queen_hive import init_queenbee, hive_dates, return_market_hours, kingdom__grace_to_find_a_Queen, create_QueenOrderBee, kingdom__global_vars
 from chess_piece.king import return_app_ip
 from chess_piece.app_hive import set_streamlit_page_config_once, sac_menu_buttons
-from pages.conscience import account_header_grid
 from pages.orders import order_grid, config_orders_cols
 import streamlit as st
 import pytz
@@ -43,7 +42,7 @@ def demo_bot():
         st.stop()
 
 
-    qb = init_queenbee(client_user=client_user, prod=prod, 
+    qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, 
                        queen_king=True, api=True, init=True, 
                        revrec=True, 
                        demo=True)
@@ -56,8 +55,8 @@ def demo_bot():
     mkhrs = return_market_hours(trading_days=trading_days)
     seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 89
-    account_header_grid(client_user, prod, refresh_sec, st.session_state["ip_address"], seconds_to_market_close)
-    queens_conscience(revrec, KING, QUEEN_KING, api, sneak_peak=True)
+    # account_header_grid(client_user, prod, refresh_sec, st.session_state["ip_address"], seconds_to_market_close)
+    queens_conscience(api, revrec, KING, QUEEN_KING, api, sneak_peak=True, show_acct=True)
 if __name__ == '__main__':
     set_streamlit_page_config_once()
     demo_bot()

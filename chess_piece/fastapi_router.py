@@ -4,8 +4,19 @@ import pandas as pd
 import os
 import random
 from dotenv import load_dotenv
-
 from chess_piece.fastapi_queen import *
+from master_ozz.utils import init_constants
+from fastapi import Request
+import asyncio
+
+
+constants = init_constants()
+OZZ_DB = constants.get('OZZ_DB')
+DATA_PATH = constants.get('DATA_PATH')
+PERSIST_PATH = constants.get('PERSIST_PATH')
+OZZ_BUILD_dir = constants.get('OZZ_BUILD_dir')
+OZZ_db_audio = constants.get('OZZ_db_audio')
+OZZ_db_images = constants.get('OZZ_db_images')
 
 # WORKERBEE FIX TO AVOID WARNING STREAMLIT ERROR..WARNING streamlit.runtime.scriptrunner_utils.script_run_context
 # from master_ozz.ozz_query import ozz_query
@@ -41,26 +52,26 @@ def check_authKey(api_key):
     else:
         return True
 
-# @router.get("/{file_name}")
-# def get_file(file_name: str):
-#     constants = init_constants()
-#     OZZ_db_audio = constants.get('OZZ_db_audio')
-#     OZZ_db_images = constants.get('OZZ_db_images')
-#     file_path = os.path.join(OZZ_db_audio, file_name)
+@router.get("/{file_name}")
+def get_file(file_name: str):
+    constants = init_constants()
+    OZZ_db_audio = constants.get('OZZ_db_audio')
+    OZZ_db_images = constants.get('OZZ_db_images')
+    file_path = os.path.join(OZZ_db_audio, file_name)
     
-#     # Determine the media type based on the file extension
-#     media_type = "application/octet-stream"
-#     if file_name.lower().endswith(".mp3"):
-#         media_type = "audio/mp3"
-#         file_path = os.path.join(OZZ_db_audio, file_name)
-#     elif file_name.lower().endswith(".png"):
-#         media_type = "image/png"
-#         file_path = os.path.join(OZZ_db_images, file_name)
-#     elif file_name.lower().endswith(".gif"):
-#         media_type = "image/gif"
-#         file_path = os.path.join(OZZ_db_images, file_name)
+    # Determine the media type based on the file extension
+    media_type = "application/octet-stream"
+    if file_name.lower().endswith(".mp3"):
+        media_type = "audio/mp3"
+        file_path = os.path.join(OZZ_db_audio, file_name)
+    elif file_name.lower().endswith(".png"):
+        media_type = "image/png"
+        file_path = os.path.join(OZZ_db_images, file_name)
+    elif file_name.lower().endswith(".gif"):
+        media_type = "image/gif"
+        file_path = os.path.join(OZZ_db_images, file_name)
 
-#     return FileResponse(file_path, media_type=media_type)
+    return FileResponse(file_path, media_type=media_type)
 
 @router.get("/test", status_code=status.HTTP_200_OK)
 def load_ozz_voice():
@@ -213,30 +224,33 @@ def archive_queen_order(client_user: str=Body(...), username: str=Body(...), pro
         print("router queen error", e)
 
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
-def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+async def sell_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...),):
     try:
+        if request is not None and isinstance(request, Request):
+            data = await request.json()
+            df = data['default_value'].get('active_orders_with_qty', [])
+            df = pd.DataFrame(df)
+            if len(df) > 0:
+                df['sell_qty'] = pd.to_numeric(df['sell_qty'], errors='coerce')
+                df = df[df['sell_qty'] > 0]
+                if len(df) > 0:
+                    order_ids = df['client_order_id'].tolist()
+                    print("selected ORDER IDs to sell", order_ids)
+            # print("Request body as dict:", data.keys())
+            # print(data['buttons']) # remove the parts fo the body not needed ? promptText WORKERBEE
+            # print(data['default_value']['active_orders_with_qty']) # it has the orders --- selling can be done then with either OR not BOTH
+
         if not check_authKey(api_key):
             return "NOTAUTH"
 
         rep = app_Sellorder_request(client_user, username, prod, selected_row, default_value)
+        # rep = grid_row_button_resp() # TESING 
         return JSONResponse(content=rep)
 
     except Exception as e:
         print("router err ", e)
         return str(e)
 
-@router.post("/queen_sell_orders_v2", status_code=status.HTTP_200_OK)
-def sell_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
-    try:
-        if not check_authKey(api_key):
-            return "NOTAUTH"
-
-        rep = app_Sellorder_request_v2(client_user, username, prod, selected_row, default_value)
-        return JSONResponse(content=rep)
-
-    except Exception as e:
-        print("router err ", e)
-        return str(e)
 
 @router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK)
 def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):

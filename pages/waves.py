@@ -214,7 +214,7 @@ def waves():
             df = move_columns_to_front(df, wave_view_input_cols)
             hide_cols = [i for i in df.columns.tolist() if i not in wave_view_input_cols]
             df = df.rename(columns={i: i.replace('_', ' ') for i in df.columns.tolist()})
-            standard_AGgrid(df, hide_cols=hide_cols)
+            standard_AGgrid(df, hide_cols=hide_cols, key=f'grid{revrec_key}')
 
         elif revrec_key == 'WAVE_ANALYSIS':
             for objj, obj in revrec[revrec_key]['STORY_bee_wave_analysis'].items():

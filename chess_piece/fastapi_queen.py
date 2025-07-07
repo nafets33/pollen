@@ -21,7 +21,6 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     power_amo,
                                     init_queenbee,
                                     return_trading_model_trigbee,
-                                    sell_button_dict_items_v2,
                                     bishop_ticker_info,
                                     ttf_grid_names,
                                     sell_button_dict_items,
@@ -37,7 +36,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     star_refresh_star_times
                                     )
 
-from chess_piece.queen_bee import execute_buy_order, get_priceinfo_snapshot, symbol_is_crypto
+from chess_piece.queen_bee import execute_buy_order, get_priceinfo_snapshot, symbol_is_crypto, handle_broker
 from chess_piece.queen_mind import refresh_chess_board__revrec, init_qcp, kings_order_rules
 from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade, get_powers
 from chess_piece.pollen_db import PollenDatabase
@@ -290,6 +289,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     
     # Broker
     broker = kors['broker']
+    broker = handle_broker(broker)
     print("BROKER", broker)
     # Trading Model
     symbol = selected_row.get('symbol')
@@ -449,10 +449,10 @@ def process_clean_on_QK_requests(QUEEN, QUEEN_KING, request_name='sell_orders'):
        return False
 
 
-def app_Sellorder_request(client_user, username, prod, selected_row, default_value):
+def app_Sellorder_request(client_user, username, prod, selected_row, default_value): # sell_orders
   # WORKERBEE attempt to handle WashSale Rule
   try:
-    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, orders=True, pg_migration=pg_migration)
+    qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, queen_king=True, api=True, orders=True, pg_migration=pg_migration)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
     ORDERS = qb.get('ORDERS')
@@ -461,6 +461,10 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
       return grid_row_button_resp(description="NO ORDERS AVAILABLE")
     
     queen_order = ORDERS['queen_orders']
+    queen_order['qty_available'] = pd.to_numeric(queen_order['qty_available'], errors='coerce')
+
+    king_G = kingdom__global_vars()
+    RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
 
     # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
     symbol = selected_row.get('symbol')
@@ -480,15 +484,10 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
              return grid_row_button_resp(description="SELL AMOUNT LESS THAN ASK PRICE")
       
        number_shares = sell_amount / ask_price #selected_row.get('current_ask') WORKERBEE until it can be trusted
+       print("SELL AMOUNT: ", number_shares, ' sell amount', sell_amount, ' ask price', ask_price)
     
     number_shares = max(1, int(number_shares)) if not crypto else round(number_shares,8)
 
-    # if not crypto:
-    #     number_shares = int(number_shares)
-    # if number_shares == 0:
-    #     print("SELL AMOUNT IS 0")
-    #     return grid_row_button_resp(description="SELL AMOUNT IS 0")
-    
     if client_order_id:
       # VALIDATE check against available_shares and validate amount
       df = queen_order.loc[client_order_id]
@@ -496,9 +495,10 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
       number_shares = qty_available if number_shares > qty_available else number_shares 
       selected_client_order_ids = {client_order_id: number_shares}
     else:
-       print("Find Available Orders")
+       print("SELL AMOUNT: Find Available Orders")
        selected_client_order_ids = {}
-       orders_avial = queen_order[queen_order['symbol']==symbol]
+       orders_avial = queen_order[(queen_order['symbol']==symbol) & (queen_order['qty_available'] > 0) & (queen_order['queen_order_state'].isin(RUNNING_Orders)) & (queen_order['side'] == 'buy')]
+       # filter to available orders
        if len(orders_avial) > 0:
           # sort by borrowed = True
           # sort by time purchased
@@ -567,100 +567,6 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
      return {'status': 'error', 'error': e}
 
 
-def app_Sellorder_request_v2(client_user, prod, selected_row, default_value):
-  try:
-    # iterate over the dict of orders
-    # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
-    number_shares = int(default_value.get('sell_qty'))
-    client_order_id = selected_row.get('client_order_id')
-    symbol = selected_row.get('symbol')
-
-    QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
-    ORDERS = init_queenbee(client_user=client_user, prod=prod, orders=True, pg_migration=pg_migration).get('ORDERS')
-    if type(ORDERS) != dict:
-      print("NO ORDERS")
-      return pd.DataFrame().to_json()
-    queen_order = ORDERS['queen_orders']
-    
-    if client_order_id:
-      # VALIDATE check against available_shares and validate amount
-      df = queen_order.loc[client_order_id]
-      qty_available = float(df.get('qty_available'))
-      number_shares = qty_available if number_shares > qty_available else number_shares 
-      selected_client_order_ids = {client_order_id: number_shares}
-    else:
-       print("Find Available Orders")
-       selected_client_order_ids = {}
-       orders_avial = queen_order[queen_order['symbol']==symbol]
-       if len(orders_avial) > 0:
-          # sort by borrowed = True
-          # sort by time purchased?
-          orders_avial = orders_avial.sort_values(by=['borrowed_funds', 'datetime'], ascending=[False, True])
-          cumulative_sum = 0
-
-          # Iterate over DataFrame rows
-          for client_order_id, row in orders_avial.iterrows():
-              # Add qty_available to cumulative sum
-              qty_available = row.get('qty_available', 0)
-              if not isinstance(qty_available, (float, int)):
-                print("qty_available NOT AVAILABLE", qty_available)
-                continue
-              cumulative_sum += row.get('qty_available', 0)              
-              # Check if cumulative sum exceeds or equals numshares
-              if cumulative_sum >= number_shares:
-                  # Calculate remaining qty_available to satisfy numshares
-                  remaining_qty = number_shares - (cumulative_sum - row['qty_available'])
-                  selected_client_order_ids[client_order_id] = remaining_qty
-                  break
-              else:
-                  selected_client_order_ids[client_order_id] = row['qty_available']
-
-    status = ''
-    save=False
-    for client_order_id, number_shares in selected_client_order_ids.items():
-      if client_order_id in queen_order.index:
-        # Sell Order
-        df = queen_order.loc[client_order_id]
-        sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-        sell_package['sell_qty'] = number_shares
-        sell_package['side'] = 'sell'
-        sell_package['type'] = 'market'
-        QUEEN_KING['sell_orders'].append(sell_package)
-        save=True
-        if status:
-          status = status + f' __ {client_order_id} : Selling {number_shares}'
-        else:
-           status = f'{client_order_id} : Selling {number_shares}'
-    if save:
-      if pg_migration:
-        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-        PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
-      else:
-        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-
-    # if len(df) > 0:
-    #     current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
-    #     if len(current_requests) > 0:
-    #         status = "You Already Requested Queen To Sell order, Refresh Orders to View latest Status"
-    #     else:
-    #         sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-    #         sell_package['sell_qty'] = number_shares
-    #         sell_package['side'] = 'sell'
-    #         sell_package['type'] = 'market'
-    #         QUEEN_KING['sell_orders'].append(sell_package)
-    #         PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-    #         status = f'{client_order_id} : Selling {number_shares} share, Please wait for QueenBot to process'
-    # else:
-    #     status = "Nothing to Sell"
-    print(status)
-    return grid_row_button_resp(description=status)
-  except Exception as e:
-     print("fapi e", e)
-     print_line_of_error()
-     return {'status': 'error', 'error': e}
-
-
-
 def app_archive_queen_order(username, prod, selected_row, default_value):
     # number_shares = default_value
     # print(default_value)
@@ -725,9 +631,10 @@ def app_queen_order_update_order_rules(client_user, username, prod, selected_row
 ## MAIN GRIDS
 
 
-def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
+def get_queen_orders_json(client_user, username, prod, toggle_view_selection): # get_orders, return_orders
   
   try:
+      toggle_view_selection = toggle_view_selection.split("-")[0].strip()
       if toggle_view_selection.lower() in ['queen', 'portfolio']:
           ORDERS = init_queenbee(client_user, prod, queen=True, orders_v2=True, pg_migration=pg_migration).get('QUEEN')
       # elif toggle_view_selection.lower() == 'final':
@@ -740,21 +647,12 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       else:
          df = ORDERS['queen_orders']
 
-      # ORDERS NOT Available
-      # if type(ORDERS) != dict:
-      #   print("NO ORDERS")
-      #   return pd.DataFrame().to_json()
-      # if type(df) != pd.core.frame.DataFrame:
-      #   return pd.DataFrame().to_json()
       if len(df) == 1:
         print("init queen")
         return df.to_json(orient='records')
       
-      king_G = kingdom__global_vars()
-      active_queen_order_states = king_G.get('active_queen_order_states')
-      # filter for range
-      # df = df[(df['datetime'] >= datetime.now(est).replace(year=2024, month=10, day=1)) | (df['queen_order_state'].isin(active_queen_order_states))]
-
+      # king_G = kingdom__global_vars()
+      # active_queen_order_states = king_G.get('active_queen_order_states')
 
       # Colors
       k_colors = streamlit_config_colors()
@@ -764,12 +662,6 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
 
       sell_options = sell_button_dict_items()
       df['sell_option'] = [sell_options for _ in range(df.shape[0])]
-
-      # sell_options_v2 = sell_button_dict_items_v2()
-      # df['active_orders'] = [sell_options_v2 for _ in range(df.shape[0])]
-      # df['sell_option_v2'] = df['active_orders']
-      # for symbol in df.index:
-      #   df['sell_option_v2'] = df['active_orders']
 
       df = df[df['client_order_id']!='init']
       df = df.fillna('000')
@@ -781,9 +673,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       df["honey"] = pd.to_numeric(df["honey"], errors='coerce')
       df["honey"] = round(df["honey"] * 100,2)
       df["money"] = round(df["money"],0)
-      # df['color_row'] = np.where(df['honey'] > 0, default_yellow_color, "#ACE5FB")
       df['color_row_text'] = np.where(df['honey'] > 0, default_text_color, default_text_color)
-      # df['color_row'] = df['honey'].apply(lambda x: generate_shade(x, wave=False))
       df['sell_reason'] = df['sell_reason'].astype(str)
       df['time_frame'] = df['ticker_time_frame'].apply(lambda x: ttf_grid_names(x, symbol=True))
 
@@ -800,9 +690,6 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       
       if toggle_view_selection == 'today':
          df = split_today_vs_prior(df, timestamp='datetime').get('df_today')
-      # else:
-      #   qos_view=['running', 'running_close', 'running_open']
-      #   df = df[df['queen_order_state'].isin(qos_view)]
 
       for ttf in df.index:
         symbol = df.at[ttf, 'symbol']
@@ -814,14 +701,14 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
       sort_colname = 'cost_basis_current'
       df = df.sort_values(sort_colname, ascending=False)
       
-      # # Totals Index
-      df.loc['Total', 'money'] = df['money'].sum()
-      df.loc['Total', 'honey'] = df['honey'].sum()
-      # df.loc['Total', 'datetime'] = ''
-      df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
-      df.loc['Total', 'cost_basis_current'] = df['cost_basis_current'].sum()
-      newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-      df=df.reindex(index=newIndex)
+      # # # Totals Index
+      # df.loc['Total', 'money'] = df['money'].sum()
+      # df.loc['Total', 'honey'] = df['honey'].sum()
+      # # df.loc['Total', 'datetime'] = ''
+      # df.loc['Total', 'cost_basis'] = df['cost_basis'].sum()
+      # df.loc['Total', 'cost_basis_current'] = df['cost_basis_current'].sum()
+      # newIndex=['Total']+[ind for ind in df.index if ind!='Total']
+      # df=df.reindex(index=newIndex)
 
       json_data = df.to_json(orient='records')
       return json_data
@@ -830,6 +717,8 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection):
 
 
 def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, grid_custom_options=None, return_type='waves', revrec=None):
+    toggle_view_selection = toggle_view_selection.split("-")[0].strip()
+    print("toggle_view_selection", toggle_view_selection)
     def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit', 'current_profit_deviation']):
       for col in df.columns:
         # print(type(df_storygauge.iloc[-1].get(col)))
@@ -850,11 +739,11 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
 
       elif toggle_view_selection.lower() == 'king':
         king_G = kingdom__global_vars()
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
+        qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
         if pg_migration:
-            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, symbols=QUEEN['revrec']['storygauge'].index.tolist())
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
         else:
             STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func

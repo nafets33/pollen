@@ -279,7 +279,7 @@ def chessboard_grid(chess_board, client_user, ip_address, symbols=[], refresh_se
 
 def first_revrec_setup(QUEEN_KING):
 
-    QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
+    QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True, orders_v2=True).get('QUEEN')
     
     if pg_migration:
         symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)

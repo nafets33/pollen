@@ -5,8 +5,7 @@ import sqlite3
 import ssl
 import sys
 import time
-from datetime import datetime
-import streamlit as st
+from datetime import datetime, timedelta
 import hashlib
 import shutil
 import pandas as pd
@@ -22,10 +21,9 @@ import smtplib
 from dotenv import load_dotenv
 
 
+
 est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
-
-pg_migration = os.getenv('pg_migration')
 
 
 def hive_master_root(info='\pollen\pollen'):
@@ -39,6 +37,9 @@ def hive_master_root_db(info='\pollen\pollen\db'):
 main_root = hive_master_root()  # os.getcwd()
 load_dotenv(os.path.join(main_root, ".env"))
 
+pg_migration = os.getenv('pg_migration')
+
+
 def get_ip_address():
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
@@ -49,10 +50,6 @@ def return_app_ip(streamlit_ip="http://localhost:8501", ip_address="http://127.0
     if machine_ip == os.environ.get('gcp_ip'):
         # print("IP", ip_address, os.environ.get('gcp_ip'))
         ip_address = "https://api.quantqueen.com"
-
-    if ss_state:
-        st.session_state['ip_address'] = ip_address
-        st.session_state['streamlit_ip'] = streamlit_ip
 
     return ip_address
 
@@ -362,12 +359,15 @@ def return_QUEENs_workerbees_chessboard(QUEEN_KING):
 
 
 def return_active_orders(QUEEN):
+    # try:
     active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
     df = QUEEN["queen_orders"]
-    df["index"] = df.index
     df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
-
     return df_active
+
+    # except Exception as e:
+    #     print_line_of_error('king return active orders failed')
+    #     raise e
 
 
 def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, swarmQueen=False, read_pollenstory=True, read_storybee=True, info="returns all ticker_time_frame data for open orders and chessboard"):
@@ -504,8 +504,7 @@ def streamlit_config_colors():
         "default_yellow_color": "#E6C93B",
         "default_background_color": '#F3FAFD',
     }
-    for k,v in k_colors.items():
-        st.session_state[k] = v
+
     return k_colors
 
 
@@ -640,45 +639,64 @@ def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, 
             else:
                 start_date = trading_days_df_.tail(ndays).head(1).date
                 start_date = start_date.iloc[-1].strftime("%Y-%m-%d")
-                end_date = datetime.now(est).strftime("%Y-%m-%d")
-
-
+                end_date = datetime.now(est).strftime("%Y-%m-%d")# (datetime.now(est) + timedelta(days=1)).strftime("%Y-%m-%d") 
+                # start_date = datetime.now(est).strftime("%Y-%m-%d") # start_date.iloc[-1].strftime("%Y-%m-%d")
+                # end_date = (datetime.now(est) + timedelta(days=1)).strftime("%Y-%m-%d")
+                if timeframe == '1Min':
+                    end_date = datetime.now(est).strftime("%Y-%m-%d") 
+            
             params = {
                 "symbols": ticker_list,
                 "timeframe": timeframe,
                 "start": start_date,
                 "end": end_date,
             }
+            print("king: crypto bars request params", params)
             data = requests.get(f"{CRYPTO_URL}/bars", headers=CRYPTO_HEADER, params=params).json()
 
-            bars_dataa = data["bars"][ticker_list[0]]
+            # Combine all symbols' bars into one DataFrame for this charttime
+            # import ipdb
+            # ipdb.set_trace()
+            bars_list = []
+            for symbol in ticker_list:
+                if symbol in data["bars"]:
+                    bars_data = data["bars"][symbol]
+                    if bars_data:
+                        df = pd.DataFrame(bars_data)
+                        df = df.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'n': 'trade_count', 'o': 'open', 't': 'timestamp', 'v': 'volume', 'vw': 'vwap'})
+                        df.insert(8, "symbol", symbol)
+                        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
+                        df.set_index('timestamp', inplace=True)
+                        # set index to EST time
+                        df["timestamp_est"] = df.index
+                        df["timestamp_est"] = df["timestamp_est"].apply(lambda x: x.astimezone(est))
+                        df["timeframe"] = timeframe
+                        df["bars"] = "bars_list"
+                        df = df.reset_index(drop=True)
+                        bars_list.append(df)
+                    else:
+                        print(f"{symbol} {charttime} NO Bars")
+                        error_dict[str(symbol)] = {"msg": "no data returned", "time": datetime.now()}
+                else:
+                    print(f"{symbol} {charttime} not in response")
+                    error_dict[str(symbol)] = {"msg": "symbol not in response", "time": datetime.now()}
+            if bars_list:
+                symbol_data = pd.concat(bars_list, ignore_index=True)
+            else:
+                symbol_data = pd.DataFrame()
 
-            symbol_data = pd.DataFrame(bars_dataa)
-            symbol_data = symbol_data.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'n': 'trade_count', 'o': 'open', 't': 'timestamp', 'v': 'volume', 'vw': 'vwap'})
-            symbol_data.insert(8, "symbol", ticker_list[0])
-            symbol_data['timestamp'] = pd.to_datetime(symbol_data['timestamp'], utc=True)
-            symbol_data.set_index('timestamp', inplace=True)
-
-            if len(symbol_data) == 0:
-                print(f"{ticker_list} {charttime} NO Bars")
-                error_dict[str(ticker_list)] = {"msg": "no data returned", "time": datetime.now()}
-                return {}
-            # set index to EST time
-            symbol_data["timestamp_est"] = symbol_data.index
-            symbol_data["timestamp_est"] = symbol_data["timestamp_est"].apply(
-                lambda x: x.astimezone(est)
-            )
-            symbol_data["timeframe"] = timeframe
-            symbol_data["bars"] = "bars_list"
-
-            symbol_data = symbol_data.reset_index(drop=True)
             return_dict[charttime] = symbol_data
-                
+
+            if timeframe == '1Min':
+                print("max date EST", symbol_data["timestamp_est"].max())
+                print("start & end dates", start_date, end_date)
+                print("king: crypto last mod time bars", ticker_list, timeframe, symbol_data.iloc[-1]["timestamp_est"])
  
         return {"resp": True, "return": return_dict, 'error_dict': error_dict}
 
     except Exception as e:
         print("Error in return_crypto_bars: ", print_line_of_error(e))
+        print("king: timeframe: ", timeframe)
         
 
 def return_crypto_snapshots(symbols):

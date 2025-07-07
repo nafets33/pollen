@@ -51,6 +51,7 @@ import replicate as rp
 
 import subprocess
 from chess_piece.pollen_db import PollenDatabase
+from chess_piece.king import hive_master_root, hive_master_root_db
 
 pg_migration = os.getenv('pg_migration')
 
@@ -91,13 +92,11 @@ def init_user_session_state(prod, db_root, init_sessstate=True):
 # search_google_images, define when to set true and when it does it will display the images in slider form auto flipping each image every 3 seconds until user clicks and then it will stop slider from moving
 
 
-def ozz_master_root(info='\ozz\ozz'):
-    script_path = os.path.abspath(__file__)
-    return os.path.dirname(os.path.dirname(script_path)) # \pollen\pollen
+def ozz_master_root(info='\pollen\pollen'):
+    return hive_master_root() # \pollen\pollen
 
-def ozz_master_root_db(info='\ozz\ozz\ozz_db'):
-    script_path = os.path.abspath(__file__)
-    return os.path.join(os.path.dirname(os.path.dirname(script_path)), 'ozz_db')
+def ozz_master_root_db(info='/ozz_db'):
+    return os.path.join(hive_master_root(), 'ozz_db')
 
 
 def init_constants():
@@ -777,7 +776,7 @@ def MergeIndexes(db_locations : list, new_location : str = None):
     return dbPrimary.docstore._dict
 
 
-def ozz_characters(population=['stefan', 'hootsAndHootie', 'viki', 'James CFP']): # class
+def ozz_characters(population=['stefan', 'hootsAndHootie', 'viki', 'jamescfp']): # class
     my_characters = {}
     def char_attributes(split_query_by, voice_id, main_prompt, conv_rules):
         return {'split_query_by':split_query_by, 'voice_id':voice_id, 
@@ -858,7 +857,7 @@ If you don't understand the query from the user try move forward with practicing
 """
 
 
-        elif char == 'James CFP':
+        elif char.lower() == 'jamescfp':
             conv_rules={}
             split_query_by=['']
             voice_id = '9BWtsMINqrJLrRacOk9x'

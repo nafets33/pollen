@@ -278,7 +278,7 @@ def return_bars(
         symbol_data = symbol_data.reset_index(drop=True)
 
         e = datetime.now(est)
-        print("?????", symbol_data.iloc[-1]["timestamp_est"])
+        # print("?????", symbol_data.iloc[-1]["timestamp_est"])
         # (str((e - s)) + ": " + datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         return {
@@ -345,7 +345,7 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
                 symbol_data["timeframe"] = timeframe
                 symbol_data["bars"] = "bars_list"
                 symbol_data = symbol_data.reset_index(drop=True)
-                print("?????", symbol_data.iloc[-1]["timestamp_est"])
+                # print("?????", symbol_data.iloc[-1]["timestamp_est"])
 
                 return_dict[charttime] = symbol_data  
             except Exception as e:
@@ -577,38 +577,6 @@ def queen_workerbees(
         except Exception as e:
             print("eeeeeror", e, print_line_of_error())
 
-    def Return_Bars_LatestDayRebuild(ticker_time,):  # Iniaite Ticker Charts with Indicator Data
-        # IMPROVEMENT: use Return_bars_list for Return Bars_LatestDayRebuild
-        # ticker_time = "SPY_1Minute_1Day"
-
-        ticker, timeframe, days = ticker_time.split("_")
-        error_dict = {}
-        s = datetime.now(est)
-        dfs_index_tickers = {}
-        try:
-            # return market hours data from bars
-            bars_data = return_bars(
-                api=api,
-                symbol=ticker,
-                timeframe=timeframe,
-                ndays=0,
-                trading_days_df=trading_days_df,
-            )  # return [True, symbol_data, market_hours_data, after_hours_data]
-            df_bars_data = bars_data["market_hours_data"]  # mkhrs if in minutes
-            dfs_index_tickers[ticker_time] = df_bars_data
-        except Exception as e:
-            print("err__", ticker_time, e)
-
-        e = datetime.now(est)
-        msg = {
-            "function": "Return_Bars_Latest Day Rebuild",
-            "func_timeit": str((e - s)),
-            "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
-        }
-        # print(msg)
-        # dfs_index_tickers['SPY_5Minute']
-        return [dfs_index_tickers, error_dict, msg]
-
     def Return_Snapshots_Rebuild(df_tickers_data, init=False):  # from snapshots & consider using day.min.chart to rebuild other timeframes
         def ticker_Snapshots(ticker_list, float_cols, int_cols):
             return_dict = {}
@@ -828,6 +796,38 @@ def queen_workerbees(
         return_dict = {}
         rebuild_confirmation = {}
 
+        def Return_Bars_LatestDayRebuild(ticker_time):  # Iniaite Ticker Charts with Indicator Data
+            # IMPROVEMENT: use Return_bars_list for Return Bars_LatestDayRebuild
+            # ticker_time = "SPY_1Minute_1Day"
+            print("REBUILDING BARS for ", ticker_time)
+            ticker, timeframe, days = ticker_time.split("_")
+            error_dict = {}
+            s = datetime.now(est)
+            dfs_index_tickers = {}
+            try:
+                # return market hours data from bars
+                bars_data = return_bars(
+                    api=api,
+                    symbol=ticker,
+                    timeframe=timeframe,
+                    ndays=0,
+                    trading_days_df=trading_days_df,
+                )  # return [True, symbol_data, market_hours_data, after_hours_data]
+                df_bars_data = bars_data["market_hours_data"]  # mkhrs if in minutes
+                dfs_index_tickers[ticker_time] = df_bars_data
+            except Exception as e:
+                print("err__", ticker_time, e)
+
+            e = datetime.now(est)
+            msg = {
+                "function": "Return_Bars_Latest Day Rebuild",
+                "func_timeit": str((e - s)),
+                "datetime": datetime.now(est).strftime("%Y-%m-%d_%H:%M:%S_%p"),
+            }
+            # print(msg)
+            # dfs_index_tickers['SPY_5Minute']
+            return [dfs_index_tickers, error_dict, msg]
+
         def tag_current_day(timestamp):
             if (
                 timestamp.day == current_day
@@ -846,6 +846,7 @@ def queen_workerbees(
             now_day = now.day
             last_day = last.day
             if now_day != last_day:
+                print(f"NOT Rebuilding {ticker_time_frame} as day has changed")
                 return_dict[ticker_time_frame] = df
                 return return_dict, rebuild_confirmation
 
@@ -937,6 +938,7 @@ def queen_workerbees(
         try:
         # Check to see if any charts need to be Recreate as times lapsed
             if reset_only == False:
+                print("POLLEN HUNT")
                 res = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
                 df_tickers_data = res.get("df_tickers_data")
                 df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data)
@@ -1073,11 +1075,14 @@ def queen_workerbees(
             MACD_WAVES=MACD_WAVES,
         )
         hunt_time =  (datetime.now() - s).total_seconds()
+        # print(pollen["pollencharts"]['BTC/USD_1Minute_1Day'].tail(1)[['symbol', 'timestamp_est', 'close']])
         WORKERBEE[queens_chess_piece]["pollencharts"] = pollen["pollencharts"]
         WORKERBEE[queens_chess_piece]["pollencharts_nectar"] = pollen["pollencharts_nectar"]  # bars and techicnals
         s = datetime.now()
         pollens_honey = pollen_story(pollen_nectar=pollen.get("pollencharts_nectar"))
         story_time = (datetime.now() - s).total_seconds()
+        # print(pollen["pollencharts"]['BTC/USD_1Minute_1Day'].tail(1)[['symbol', 'timestamp_est', 'close']])
+        # print(pollens_honey["conscience"]["STORY_bee"]['BTC/USD_1Minute_1Day']['story'])
 
         betty_bee = pollens_honey["betty_bee"]
 

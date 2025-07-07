@@ -168,13 +168,13 @@ def sac_menu_buttons(main='pollen'):
     if main=='pollen':
         menu_buttons = sac.buttons([
             sac.ButtonsItem(label=main, icon='robot'),
-            sac.ButtonsItem(label='Board', icon='box'),
+            sac.ButtonsItem(label='Portfolio Allocations', icon='box'),
             sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
             # sac.ButtonsItem(label='PlayGround', icon='fire'),
             # sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
-            sac.ButtonsItem(label='Trading Models', disabled=False),
+            # sac.ButtonsItem(label='Trading Models', disabled=False),
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
-            sac.ButtonsItem(label='Engine', icon='gem'),
+            # sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
         ], format_func='title', align='end')
     elif main == 'Account':
@@ -1274,7 +1274,7 @@ def queens_orders__aggrid_v2(
 def standard_AGgrid(
     data,
     reload_data=False,
-    configure_side_bar=False,
+    configure_side_bar=True,
     fit_columns_on_grid_load=False,
     height=500,
     update_mode_value="NO_UPDATE",

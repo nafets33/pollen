@@ -8,7 +8,7 @@ import pytz
 from dotenv import load_dotenv
 import logging
 import copy
-from chess_piece.king import print_line_of_error, stars, kingdom__global_vars
+from chess_piece.king import print_line_of_error, return_QUEEN_KING_symbols, stars, kingdom__global_vars
 from chess_piece.pollen_db import PollenDatabase
 
 prod = True
@@ -860,16 +860,6 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         active_orders = return_queen_orders__query(QUEEN, queen_order_states=active_queen_order_states, ticker_time_frame=ticker_time_frame,)
         if len(active_orders) == 0:
             return '', total_budget, borrow_budget, 0, 0, 0, 0
-        
-
-        
-        # active_orders['long_short'] = np.where(active_orders['trigname'].str.contains('buy'), 'long', 'long') # WORKERBEE NO SHORTING ALLOWED YET...
-        # buy_orders = active_orders[active_orders['long_short'] == 'long']
-        # sell_orders = active_orders[active_orders['long_short'] == 'short']
-        # # get cost basis
-        # cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
-        # buys_at_play = sum(buy_orders[cost_basis_ref]) if len(buy_orders) > 0 else 0
-        # sells_at_play = sum(sell_orders[cost_basis_ref]) if len(sell_orders) > 0 else 0
 
         buys_at_play, sells_at_play, cost_basis_current = return_long_short(active_orders, cost_basis_ref)
 
@@ -1054,6 +1044,11 @@ def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy
 def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=kingdom__global_vars().get('active_queen_order_states'), wave_blocktime='Day', check_portfolio=True, chess_board='chess_board', wash_sale_rule=None, ticker_trinity=False, exit_early=False): # WORKERBEE remove queen order states
     # WORKERBEE move out QUEEN_KING and only bring in chess_board *
     try:
+        if not STORY_bee:
+            print("REVREC STORY_BEE is empty, Fetching from PollenDatabase")
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+        
         rr_starttime = datetime.now()
         s = datetime.now()
 
@@ -1069,7 +1064,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         revrec__stars={}
         chess_board__revrec_borrow={}
         marginPower={}
-        df_star_agg = {'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum', 'queen_wants_to_sell_qty': 'sum' } # 
+        df_star_agg = {'allocation_deploy': 'sum', 'allocation_long': 'sum', 'allocation_long_deploy': 'sum', 'star_buys_at_play': 'sum', 'star_sells_at_play': 'sum', 'money': 'sum', 'honey': 'sum', 'queen_wants_to_sell_qty': 'sum' } # 
 
         if not QUEEN.get('portfolio') or not check_portfolio:
             df_broker_portfolio = pd.DataFrame([{'symbol': 'init_jq'}])
@@ -1093,7 +1088,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                             non_tics.append(tic)
                     QUEEN_KING[chess_board]['non_active_stories']['tickers'] = non_tics
         
-        if ticker_trinity:
+        if ticker_trinity: # WORKERBEE CURRENTLY NOT IN USE
             if not QUEEN.get('revrec'):
                 print( "QUEENMIND", "Fresh Queen on the Block")
                 ticker_trinity = None
@@ -1105,11 +1100,11 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 # q_story = q_revrec.get('storygauge')
                 # ticker_trinity = dict(zip(q_story['symbol'], q_story['trinity_w_L']))
                 waveview = q_revrec.get('waveview')
-                waveview['total_allocation_budget_long'] = np.where((waveview['bs_position']=='buy'), 
+                waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), 
                                                         waveview['total_allocation_budget'], 
                                                         (waveview['star_total_budget'] - waveview['total_allocation_budget'])
                                                         )
-                alloc_weight = 'total_allocation_budget_long' if 'total_allocation_budget_long' in waveview.columns.tolist() else 'total_allocation_budget'
+                alloc_weight = 'allocation_long' if 'allocation_long' in waveview.columns.tolist() else 'total_allocation_budget'
                 symbols_budget_alloc = waveview.groupby(['symbol']).agg({alloc_weight: 'sum', 'star_total_budget': 'sum'}).reset_index()
                 symbols_budget_alloc['symbol_allocation_pct'] = symbols_budget_alloc[alloc_weight] / symbols_budget_alloc['star_total_budget']
                 ticker_trinity = dict(zip(symbols_budget_alloc['symbol'], symbols_budget_alloc['symbol_allocation_pct']))
@@ -1446,10 +1441,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             waveview['alloc_currentprofit'] = ((waveview['star_total_budget'] * waveview['current_profit_deviation_pct'])/waveview['star_total_budget']) * alloc_currentprofit_weight * (waveview['star_total_budget'] * waveview['current_profit_deviation_pct'])/revrec_weight_sum
             waveview['alloc_maxprofit_shot'] = ((waveview['star_total_budget'] * waveview['maxprofit_shot_weight_score'])/waveview['star_total_budget']) * alloc_maxprofit_shot_weight * (waveview['star_total_budget'] * waveview['maxprofit_shot_weight_score'])/revrec_weight_sum
             waveview['total_allocation_budget'] = waveview['alloc_time'] + waveview['alloc_ttmp_length'] + waveview['alloc_currentprofit'] + waveview['alloc_maxprofit_shot']
-            waveview['total_allocation_budget_long'] = np.where((waveview['bs_position']=='buy'), 
-                                                    waveview['total_allocation_budget'], 
-                                                    (waveview['star_total_budget'] - waveview['total_allocation_budget'])
-                                                    ) 
             # -Tiers
             # # tier divergence, how many tiers have been gain'd / lost MACD/RSI/VWAP // current profit deviation
             weight_tier_team = ['macd', 'vwap', 'rsi_ema']
@@ -1472,35 +1463,34 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             # total_allocation_budget
             waveview['total_allocation_budget_single'] = waveview['total_allocation_budget'].copy()
             waveview['total_allocation_budget'] = (waveview['total_allocation_budget'] + waveview['tier_gain_movement']) / 2
-
+            
             waveview['pct_budget_allocation'] = waveview['total_allocation_budget'] / waveview['star_total_budget']
             waveview['total_allocation_borrow_budget'] = (waveview['pct_budget_allocation'] * waveview['star_borrow_budget'])
 
-            #Hold the Line Minimum Allocation with Margin
-            # Deploy Allocation Number
-            waveview['allocation_deploy'] = np.where((waveview['bs_position']=='buy'), 
-                                                        waveview['total_allocation_budget'] - waveview['star_buys_at_play_allocation'], 
-                                                        waveview['total_allocation_budget'] - waveview['star_sells_at_play']
-                                                        )
-            waveview['allocation_deploy'] = np.where(waveview['star_total_budget']<=0,0,waveview['allocation_deploy'])
-            
+            """#Hold the Line Minimum Allocation allocation_long"""
             waveview['allocation_long'] = np.where((waveview['bs_position']=='buy'), 
                                                     waveview['total_allocation_budget'], 
                                                     (waveview['star_total_budget'] - waveview['total_allocation_budget'])
                                                     )
-            waveview['allocation_borrow_deploy'] = np.where((waveview['bs_position']=='buy'), # WORKERBEE, consider allocation_deploy for full consideration
-                                                            (waveview['total_allocation_borrow_budget'] - waveview['star_buys_at_play_allocation']) , 
-                                                            (waveview['total_allocation_borrow_budget'] - waveview['star_sells_at_play']) 
-                                                            )
-            waveview['allocation_borrow_deploy'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_deploy'])
-
             waveview['allocation_borrow_long'] = np.where((waveview['bs_position']=='buy'), 
                                                     waveview['total_allocation_borrow_budget'], 
                                                     (waveview['star_borrow_budget'] - waveview['total_allocation_borrow_budget'])
-                                                    )
-            waveview['allocation_borrow_long'] = np.where(waveview['star_borrow_budget']<=0,0,waveview['allocation_borrow_long'])
-            
-            waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long']) - waveview['star_buys_at_play_allocation']
+                                                    ) 
+
+            # Deploy Allocation Number
+            waveview['allocation_deploy'] = waveview['allocation_long'] - waveview['star_at_play']
+            waveview['allocation_deploy'] = np.where(waveview['star_total_budget']<=0,
+                                                     0, 
+                                                     waveview['allocation_deploy']
+                                                     ) # WORKERBEE This check should'v been handled earlier?
+            # Total Allocation Deploy Borrow        
+            waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long']) - waveview['star_at_play']
+            waveview['allocation_borrow_deploy'] = waveview['allocation_long_deploy'] - waveview['allocation_deploy']
+
+            # **New Logic for Deployment vs Margin** # Calculate deployment based on remaining budget and margin 
+            # waveview['deploy_vs_margin_ratio'] = np.where( waveview['remaining_budget_margin'] > 0, waveview['remaining_budget'] / (waveview['remaining_budget'] + waveview['remaining_budget_margin']), 1 # If margin is zero, deploy everything ) # Adjust deployment allocation based on the ratio 
+            # waveview['final_deploy_allocation'] = waveview['allocation_long_deploy'] * waveview['deploy_vs_margin_ratio'] # Calculate margin allocation 
+            # waveview['final_margin_allocation'] = waveview['allocation_long_deploy'] - waveview['final_deploy_allocation']
 
         except Exception as e:
             print_line_of_error(e)
@@ -1925,7 +1915,8 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                 df_storygauge = pd.concat([df_storygauge, story_token])
 
         
-        # Join Story to Tickers
+        # Join Story to Tickers and add active orders
+        active_orders_order_book = ['client_order_id', 'ticker_time_frame', 'created_at', 'updated_at', 'side', 'status', 'queen_order_state', 'wave_amo', 'qty', 'filled_qty', 'qty_available', 'queen_wants_to_sell_qty', 'money', 'honey', 'trigname'] # 'order_rules' WORKERBEE not ready for order_rules 
         storygauge = df_ticker.merge(df_storygauge, left_index=True, right_index=True, how='left')
         budget_sum = sum(storygauge['ticker_total_budget'])
         storygauge['pct_portfolio'] = storygauge['ticker_total_budget']  / budget_sum
@@ -1934,10 +1925,21 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             if len(df_active_orders) > 0:
                 if symbol in df_active_orders['symbol'].tolist():
                     orders = df_active_orders[df_active_orders['symbol'] == symbol]
-                    orders = orders[['ticker_time_frame', 'side', 'qty_available', 'qty', 'money', 'honey', 'trigname']]
+                    orders = orders[active_orders_order_book]
                     symbol_orders[symbol] = orders.to_dict(orient='records')
         if symbol_orders:
             storygauge['active_orders'] = storygauge.index.to_series().apply(lambda x: symbol_orders.get(x, []))  # Always return a list
+        # Join Wave Data
+        wave_data = {}
+        wave_data_num_cols = ['star_total_budget', 'remaining_budget', 'star_borrow_budget', 'remaining_budget_borrow', 'star_at_play', 'star_at_play_borrow', 'allocation_long', 'allocation_long_deploy', 'allocation_deploy']
+        wave_data_str_cols = ['symbol', 'ticker_time_frame']
+        waveview_data = waveview[wave_data_str_cols + wave_data_num_cols].copy()
+        for symbol in storygauge.index:
+            token = waveview_data[waveview_data['symbol'] == symbol]
+            if not token.empty:
+                wave_data[symbol] = token.to_dict(orient='records')
+        if wave_data:
+            storygauge['wave_data'] = storygauge.index.to_series().apply(lambda x: wave_data.get(x, []))  # Always return a list
 
         rr_run_cycle.update({'create gauge': (datetime.now() - s).total_seconds()})
         s = datetime.now()
@@ -1958,18 +1960,42 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
 
         # Price Info data
-        if 'price_info_symbols' in QUEEN.keys(): # WORKERBEE handle in new table of all
-            price_info_symbols = QUEEN['price_info_symbols']
-            df_new = pd.json_normalize(price_info_symbols['priceinfo']).set_index('ticker')
-            # storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
-            storygauge = storygauge.merge(df_new, left_index=True, right_index=True, how='left')
-            for col in df_new.columns:
-                storygauge[col] = storygauge[col].fillna(0)
+        # if 'price_info_symbols' in QUEEN.keys(): # WORKERBEE handle in new table of all
+        #     price_info_symbols = QUEEN['price_info_symbols']
+        #     df_new = pd.json_normalize(price_info_symbols['priceinfo']).set_index('ticker')
+        #     # storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
+        #     storygauge = storygauge.merge(df_new, left_index=True, right_index=True, how='left')
+        #     for col in df_new.columns:
+        #         storygauge[col] = storygauge[col].fillna(0)
+        # price_info = [STORY_bee[pi]['story'] for pi in STORY_bee.keys() if pi.endswith("1Minute_1Day")]
+        # for symbol in storygauge.index:
+        #     ttf = f'{symbol}_1Minute_1Day'
+        #     if ttf in STORY_bee.keys():
+        #         storygauge.at[symbol, 'ask'] = STORY_bee[ttf]['story'].get('current_ask', 0)
+        #         storygauge.at[symbol, 'bid'] = STORY_bee[ttf]['story'].get('current_bid', 0)
+        #     else:
+        #         storygauge.at[symbol, 'ask'] = 0
+        #         storygauge.at[symbol, 'bid'] = 0
+        # Build a DataFrame from STORY_bee
+        story_data = []
+        for ttf, val in STORY_bee.items():
+            symbol = ttf.split('_')[0]
+            story = val.get('story', {})
+            story_data.append({
+                'symbol': symbol,
+                'ask': story.get('current_ask', 0),
+                'bid': story.get('current_bid', 0)
+            })
+
+        story_df = pd.DataFrame(story_data).set_index('symbol')
+        storygauge['current_ask'] = storygauge.index.map(dict(zip(story_df.index, story_df['ask'])))
+        storygauge['current_bid'] = storygauge.index.map(dict(zip(story_df.index, story_df['bid'])))
 
         df_star_token = waveview.groupby('symbol').agg(df_star_agg).reset_index().set_index('symbol')
         storygauge = storygauge.merge(df_star_token, left_index=True, right_index=True, how='left')
         storygauge = storygauge.fillna(0)
         waveview = waveview.fillna(0)
+
 
         # % Change per Star
         for symbol in storygauge.index:

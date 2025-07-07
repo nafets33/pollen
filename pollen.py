@@ -26,7 +26,7 @@ from pages.chessboard import chessboard
 # main chess piece
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator
+from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData
 from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import kings_order_rules
@@ -38,9 +38,8 @@ from pages.conscience import account_header_grid
 # import hydralit_components as hc
 from custom_button import cust_Button
 from chess_piece.pollen_db import PollenDatabase
-from pages.Characters import ozz 
-# ozz
-# from ozz.ozz_bee import send_ozz_call
+# from pages.PortfolioManager import ozz 
+
 
 import ipdb
 
@@ -214,6 +213,14 @@ bishop_symbols_keep = [
 ]
 
 
+def save_king_queen(QUEEN_KING):
+    QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = st.session_state['cash_slider']
+    PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+
+def cash_slider(QUEEN_KING, key='cash_slider'):
+    cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+    cash = max(min(cash, 1), -1)
+    return st.slider("Cash %", min_value=-1.0, max_value=1.0, value=cash, on_change=lambda: save_king_queen(QUEEN_KING), key=key)
 
 def sneak_peak_form():
     # if st.session_state['SneakQueen']:
@@ -325,7 +332,7 @@ def admin_check(admin_pq, users_allowed_queen_email):
                 if st.button('admin change user', use_container_width=True):
                     st.session_state['admin__client_user'] = admin_client_user
                     st.session_state["prod"] = False
-                    st.session_state['prod'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
+                    st.session_state['prod'], st.session_state['db_root'] = setup_instance(client_username=admin_client_user, switch_env=False, force_db_root=False, queenKING=True)
                     st.rerun()
 
     return True
@@ -377,8 +384,9 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets, prod):
     return True
 
 
-def pollenq(admin_pq):
+def pollenq(sandbox=False):
     # try:
+    # check if page is sandbox and prod, if so go to pollen.py
 
     main_page_start = datetime.now()
     king_G = kingdom__global_vars()
@@ -386,8 +394,11 @@ def pollenq(admin_pq):
     load_dotenv(os.path.join(main_root, ".env"))
     set_streamlit_page_config_once()
 
+    # st.write(st.query_params)
+
     ##### QuantQueen #####
-    print(f'>>>> pollen START >>>> {return_timestamp_string()}' )  
+    print(f'>>>> pollen START >>>> {return_timestamp_string()}' )
+
 
     pq_buttons = pollenq_button_source()
     s = datetime.now(est)
@@ -402,11 +413,19 @@ def pollenq(admin_pq):
     with st.spinner("Verifying Your Scent, Hang Tight"):
         # print(st.session_state)
         authenticator = signin_main(page="pollenq")
+        admin_pq = st.session_state.get('admin', False)
     if st.session_state['authentication_status'] != True: ## None or False
         st.warning("Sign In")
         display_for_unAuth_client_user()
         st.stop()
     prod = st.session_state['prod']
+    
+    if sandbox and prod:
+        st.switch_page('pollen.py')
+    if not sandbox and not prod:
+        st.switch_page('pages/sandbox.py')
+    
+    # check if main
     authorized_user = st.session_state['authorized_user']
     client_user = st.session_state["username"]
     
@@ -419,11 +438,29 @@ def pollenq(admin_pq):
             st.stop()
 
     ip_address = st.session_state['ip_address'] # return_app_ip()
-    db_root = st.session_state['db_root']
+    # db_root = st.session_state['db_root']
 
     st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
     # print("SNEAKPEAK", st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
-    
+
+    # HEADER
+    cols = st.columns((1,2,2,3))
+    with cols[0]:
+        header_text = st.empty()
+        height=50
+        prod_name = "Switch to Sandbox" if prod else "Switch to Live"
+        image__ = "misc/power.png" if prod else "misc/bitcoin_spinning.gif"
+        prod_switch = cust_Button(image__, hoverText=f'{prod_name}', key=f'switch_env', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+    with cols[1]:
+        header_text_1 = st.empty()
+
+    with header_text_1.container():
+        if not prod:
+            mark_down_text("SandBox Account", fontsize="28", color="#a8b702", align="left")
+        else:
+            mark_down_text("Live Account", fontsize="28", color="#03457C", align="left")
+
+    # mark_down_text("Live Account", fontsize="28", color="#EDF2F6", align="left")
     log_dir = os.path.join(st.session_state['db_root'], 'logs')
 
     table_name = 'db' if prod else 'db_sandbox'
@@ -445,26 +482,10 @@ def pollenq(admin_pq):
                 PickleData(KING.get('source'), KING)
                 st.success("KING Saved")
 
-        # if st.button("Refresh Adhoc Charlie Bee Heart"): # Workerbee set this up in ini_charliebee
-        #     queens_charlie_bee, charlie_bee = init_charlie_bee(db_root) # monitors queen order cycles, also seen in heart
-        #     charlie_bee['queen_cyle_times']['QUEEN_avg_cycle'] = deque([], 691200)
-        #     charlie_bee['queen_cyle_times']['beat_times'] = deque([], 365)
-        #     PickleData(queens_charlie_bee, charlie_bee, console=True)
-
-
-    cols = st.columns((8,2))
-    with cols[1]:
-        height=50
-        cust_Button("misc/power.png", hoverText='Trading Bots', key='workerbees', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-    with cols[0]:
-        menu_id = sac_menu_buttons("pollen")
+    menu_id = sac_menu_buttons("pollen")
+    # with cols[0]:
     with st.sidebar:
         st.write(f'menu selection {menu_id}')
-
-
-    # if menu_id == 'Waves':
-        # switch_page('waves')
-
     if menu_id == 'PlayGround':
         from pages.playground import PlayGround
 
@@ -490,7 +511,7 @@ def pollenq(admin_pq):
     if menu_id == 'Trading Models':
         st.switch_page('pages/trading_models.py')
 
-    if menu_id == 'Board':
+    if menu_id == 'Portfolio Allocations':
         st.switch_page('pages/chessboard.py')
 
     print("WORKING")
@@ -506,17 +527,18 @@ def pollenq(admin_pq):
         qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
-        # st.write(QUEEN_KING['chess_board'])
-        # st.write((QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel']['SPY']))
-        # # st.write(list(QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].keys())[0])
+
+        with cols[1]:
+            cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+            cash = max(min(cash, 1), -1)
+            QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
+
         api = qb.get('api')
         revrec = qb.get('revrec')
 
         if st.sidebar.button("Clear App Requests"):
             QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
             clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'], prod=prod)
-
-
 
         with st.sidebar:
             # with st.expander("admin"):
@@ -529,21 +551,22 @@ def pollenq(admin_pq):
             admin_queens_active(KING, all_users)
         
 
-
         if sneak_peak:
             st.info("Preview")
             pass
         else:
-            live_sb_button = st.sidebar.button(f'Switch Enviroment', key='pollenq', use_container_width=True)
-            if live_sb_button:
-                st.session_state['prod'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
+            switch_env = f'{"Switch to Sandbox" if prod else "Switch to Prod"}'
+            live_sb_button = st.sidebar.button(switch_env, key='pollenq', use_container_width=True)
+            if live_sb_button or prod_switch:
+                st.session_state['prod'], st.session_state['db_root'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
                 prod = st.session_state['prod']
-                # switch_page('switch_back')
-                # qb = init_queenbee(client_user=client_user, prod=prod, queen=False, queen_king=True, api=True)
-                # # QUEEN = qb.get('QUEEN')
-                # QUEEN_KING = qb.get('QUEEN_KING')
-                # api = qb.get('api')
+                st.session_state['env'] = prod
+                if not prod:
+                    st.switch_page('pages/sandbox.py')
+                else:
+                    st.switch_page('pollen.py')
         
+
 
         table_name = "client_user_store" if prod else 'client_user_store_sandbox'
         
@@ -626,14 +649,11 @@ def pollenq(admin_pq):
             from pages.pollen_engine import pollen_engine
             pollen_engine(acct_info_raw)
 
-        # if menu_id == 'orders':
-            # switch_page('orders')
-
 
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         # account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
-        queens_conscience(revrec, KING, QUEEN_KING, api)
+        queens_conscience(prod, revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
@@ -650,13 +670,13 @@ def pollenq(admin_pq):
 
 
 if __name__ == '__main__':
-    def createParser():
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-admin', default=False)
-        # parser.add_argument ('-instance', default=False)
-        return parser
-    parser = createParser()
-    namespace = parser.parse_args()
-    admin_pq = namespace.admin
-    # instance_pq = namespace.instance
-    pollenq(admin_pq)
+    # def createParser():
+    #     parser = argparse.ArgumentParser()
+    #     parser.add_argument ('-admin', default=False)
+    #     # parser.add_argument ('-instance', default=False)
+    #     return parser
+    # parser = createParser()
+    # namespace = parser.parse_args()
+    # admin_pq = namespace.admin
+
+    pollenq()

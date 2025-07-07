@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Streamlit } from "streamlit-component-lib";
+// import { Streamlit } from "streamlit-component-lib";
 import SpeechRecognition from "react-speech-recognition";
 import Dictaphone from "./Dictaphone";
 import MediaDisplay from "./MediaDisplay";
+import './spinner.css';
+import ReactMarkdown from 'react-markdown';
 
 // import Dictaphone_ss from "./Dictaphone_ss";
-import * as faceapi from "@vladmandic/face-api";
-import DOMPurify from 'dompurify';
+// import * as faceapi from "@vladmandic/face-api";
+// import DOMPurify from 'dompurify';
 
 let timer = null;
 let faceTimer = null;
@@ -31,6 +33,7 @@ const CustomVoiceGPT = (props) => {
     client_user,
     force_db_root,
     before_trigger,
+    agent_actions,
   } = kwargs;
   const [imageSrc, setImageSrc] = useState(kwargs.self_image);
   const [imageSrc_name, setImageSrc_name] = useState(kwargs.self_image);
@@ -68,6 +71,7 @@ const CustomVoiceGPT = (props) => {
   const [buttonName_listen, setButtonName_listen] = useState("Listening");
 
   const [showImage, setShowImage] = useState(false); // Step 1: Define showImage state
+  const [selectedActions, setSelectedActions] = useState([]);
 
   
 
@@ -158,24 +162,24 @@ useEffect(() => {
   }
     }
 
-  useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = process.env.PUBLIC_URL + "/models";
+  // useEffect(() => {
+  //   const loadModels = async () => {
+  //     const MODEL_URL = process.env.PUBLIC_URL + "/models";
 
-      Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-        faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
-      ]).then(() => setModelsLoaded(true));
-    };
-    loadModels();
-    const interval = setInterval(() => {
-      // console.log("faceData.current :>> ", faceData.current);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  //     Promise.all([
+  //       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+  //       faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+  //       faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+  //       faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+  //       faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
+  //     ]).then(() => setModelsLoaded(true));
+  //   };
+  //   loadModels();
+  //   const interval = setInterval(() => {
+  //     // console.log("faceData.current :>> ", faceData.current);
+  //   }, 3000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
 
   const handleInputText = (event) => {
@@ -194,90 +198,90 @@ useEffect(() => {
     }
   };
 
-  const startVideo = () => {
-    setCaptureVideo(true);
-    navigator.mediaDevices
-      .getUserMedia({ video: { width: 300 } })
-      .then((stream) => {
-        let video = videoRef.current;
-        video.srcObject = stream;
-        video.play();
-      })
-      .catch((err) => {
-        console.error("error:", err);
-      });
-  };
+  // const startVideo = () => {
+  //   setCaptureVideo(true);
+  //   navigator.mediaDevices
+  //     .getUserMedia({ video: { width: 300 } })
+  //     .then((stream) => {
+  //       let video = videoRef.current;
+  //       video.srcObject = stream;
+  //       video.play();
+  //     })
+  //     .catch((err) => {
+  //       console.error("error:", err);
+  //     });
+  // };
 
-  const handleVideoOnPlay = () => {
-    setInterval(async () => {
-      if (canvasRef && canvasRef.current) {
-        canvasRef.current.innerHTML = faceapi.createCanvasFromMedia(
-          videoRef.current
-        );
-        const displaySize = {
-          width: videoWidth,
-          height: videoHeight,
-        };
+  // const handleVideoOnPlay = () => {
+  //   setInterval(async () => {
+  //     if (canvasRef && canvasRef.current) {
+  //       canvasRef.current.innerHTML = faceapi.createCanvasFromMedia(
+  //         videoRef.current
+  //       );
+  //       const displaySize = {
+  //         width: videoWidth,
+  //         height: videoHeight,
+  //       };
 
-        faceapi.matchDimensions(canvasRef.current, displaySize);
+  //       faceapi.matchDimensions(canvasRef.current, displaySize);
 
-        const detections = await faceapi
-          .detectAllFaces(
-            videoRef.current,
-            new faceapi.TinyFaceDetectorOptions()
-          )
-          .withFaceLandmarks()
-          .withFaceExpressions();
+  //       const detections = await faceapi
+  //         .detectAllFaces(
+  //           videoRef.current,
+  //           new faceapi.TinyFaceDetectorOptions()
+  //         )
+  //         .withFaceLandmarks()
+  //         .withFaceExpressions();
 
-        const resizedDetections = faceapi.resizeResults(detections, displaySize);
+  //       const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-        if (resizedDetections.length > 0) {
-          faceData.current = resizedDetections;
-          if (!faceTriggered.current && face_recon) {
-            myFunc("", { api_body: { keyword: "" } }, 2);
-            faceTriggered.current = true;
-          }
-        } else {
-          faceTimer && clearTimeout(faceTimer);
-          setTimeout(() => {
-            faceData.current = [];
-          }, 1000);
-        }
+  //       if (resizedDetections.length > 0) {
+  //         faceData.current = resizedDetections;
+  //         if (!faceTriggered.current && face_recon) {
+  //           myFunc("", { api_body: { keyword: "" } }, 2);
+  //           faceTriggered.current = true;
+  //         }
+  //       } else {
+  //         faceTimer && clearTimeout(faceTimer);
+  //         setTimeout(() => {
+  //           faceData.current = [];
+  //         }, 1000);
+  //       }
 
-        if (resizedDetections.length > 0 && !firstFace) {
-          firstFace = true;
-          if (kwargs.hello_audio) {
-            const audio = new Audio(kwargs.hello_audio);
-            audio.play();
-          }
-        }
+  //       if (resizedDetections.length > 0 && !firstFace) {
+  //         firstFace = true;
+  //         if (kwargs.hello_audio) {
+  //           const audio = new Audio(kwargs.hello_audio);
+  //           audio.play();
+  //         }
+  //       }
 
-        canvasRef &&
-          canvasRef.current &&
-          canvasRef.current
-            .getContext("2d")
-            .clearRect(0, 0, videoWidth, videoHeight);
-        canvasRef &&
-          canvasRef.current &&
-          faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-        canvasRef &&
-          canvasRef.current &&
-          faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections);
-        canvasRef &&
-          canvasRef.current &&
-          faceapi.draw.drawFaceExpressions(
-            canvasRef.current,
-            resizedDetections
-          );
-      }
-    }, 300);
-  };
+  //       canvasRef &&
+  //         canvasRef.current &&
+  //         canvasRef.current
+  //           .getContext("2d")
+  //           .clearRect(0, 0, videoWidth, videoHeight);
+  //       canvasRef &&
+  //         canvasRef.current &&
+  //         faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
+  //       canvasRef &&
+  //         canvasRef.current &&
+  //         faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections);
+  //       canvasRef &&
+  //         canvasRef.current &&
+  //         faceapi.draw.drawFaceExpressions(
+  //           canvasRef.current,
+  //           resizedDetections
+  //         );
+  //     }
+  //   }, 300);
+  // };
 
-  const closeWebcam = () => {
-    videoRef.current.pause();
-    videoRef.current.srcObject.getTracks()[0].stop();
-    setCaptureVideo(false);
-  };
+  // const closeWebcam = () => {
+  //   videoRef.current.pause();
+  //   videoRef.current.srcObject.getTracks()[0].stop();
+  //   setCaptureVideo(false);
+  // };
 
   const click_listenButton = () => {
     setlistenButton(true)
@@ -289,9 +293,6 @@ useEffect(() => {
     console.log(listenButton);
   };
 
-  function isHTML(str) {
-    return /^</.test(str);
-  }
 
   const myFunc = async (ret, command, type) => {
     setMessage(` (${command["api_body"]["keyword"]}) ${ret},`);
@@ -313,6 +314,7 @@ useEffect(() => {
         force_db_root:force_db_root,
         session_listen:session_listen,
         before_trigger_vars:before_trigger_vars,
+        selected_actions: selectedActions,
       };
       console.log("api");
       const { data } = await axios.post(api, body);
@@ -361,7 +363,6 @@ useEffect(() => {
       setSpeakingInProgress(false)
       setApiInProgress(false)
 
-      console.log("Audio ENDED MOVE TO SET VARS .");
       
       setListenAfterReply(data["listen_after_reply"]);
       console.log("listen after reply", data["listen_after_reply"], listenAfterReply);
@@ -400,9 +401,11 @@ useEffect(() => {
     console.log("ReSize Window")
   };
   
-  const background_color_chat = refresh_ask.color_dict?.background_color_chat || 'transparent';
+  const background_color_chat = refresh_ask?.color_dict?.background_color_chat || 'transparent';
   const splitImage = self_image.split('.')[0]; // Split by dot
   const placeholder = `Chat with ${splitImage}`;
+  console.log("session_listen", session_listen)
+
 
   return (
     <>
@@ -451,7 +454,7 @@ useEffect(() => {
                     <div
                       className="chat-user"
                       style={{
-                        backgroundColor: '#f2f2f2',
+                        backgroundColor: '#e4eafe',
                         textAlign: 'right',
                         marginLeft: 'auto',
                         padding: '5px',
@@ -473,18 +476,21 @@ useEffect(() => {
                           <img src={imageSrc} alt="response" style={{ width: '50px' }} />
                         </div>
                       )}
-                      <div
-                        className="chat-response-text"
-                        style={{ flex: 1, wordBreak: 'break-word' }}
-                        dangerouslySetInnerHTML={{ __html: answer.resp || "thinking..." }}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div
+                className="chat-response-text"
+                style={{ flex: 1, wordBreak: 'break-word' }}
+              >
+                {answer.resp
+                  ? <span dangerouslySetInnerHTML={{ __html: answer.resp }} />
+                  : <span className="spinner" />}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
 
         {/* Input text section */}
         {input_text && (
@@ -499,10 +505,12 @@ useEffect(() => {
                 onChange={handleInputText}
                 onKeyDown={handleOnKeyDown}
               />
+
             </div>
             <hr style={{ margin: '3px 0' }} />
           </>
         )}
+
 
       {/* Buttons with indicators under each */}
       <div style={{ display: 'flex', marginTop: '3px' }}>
@@ -513,8 +521,8 @@ useEffect(() => {
               fontSize: '12px',
               padding: '5px',
               margin: '5px 0',
-              backgroundColor: '#3498db',
-              color: 'white',
+              backgroundColor: listenButton ? '#478728': "rgb(196, 230, 252)",
+              color: 'black',
               border: '1px solid #2980b9',
               borderRadius: '4px',
               cursor: 'pointer',
@@ -524,19 +532,7 @@ useEffect(() => {
           >
             {buttonName}
           </button>
-          {listening && (
-            <div
-              style={{
-                width: '89%',
-                height: '10px',
-                backgroundImage: 'linear-gradient(90deg, green, transparent 50%, green)',
-                animation: 'flashLine 1s infinite',
-                marginTop: '5px',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'black' }}>{buttonName_listen}</div>
-            </div>
-          )}
+
         </div>
 
         {/* Button 2 with Conversational Mode Indicator */}
@@ -546,8 +542,8 @@ useEffect(() => {
               fontSize: '12px',
               padding: '5px',
               margin: '5px 0',
-              backgroundColor: '#2980b9',
-              color: 'white',
+              backgroundColor: convo_button ? "rgb(87, 188, 100)": "rgb(196, 230, 252)",
+              color: 'black',
               border: '1px solid #2980b9',
               borderRadius: '4px',
               cursor: 'pointer',
@@ -557,6 +553,21 @@ useEffect(() => {
           >
             {convo_button ? "End Conversation" : "Start Conversation"}
           </button>
+          
+          {listening && (
+                          <div
+                            style={{
+                              width: '89%',
+                              height: '10px',
+                              backgroundImage: 'linear-gradient(90deg, green, transparent 50%, green)',
+                              animation: 'flashLine 1s infinite',
+                              marginTop: '5px',
+                            }}
+                          >
+                            <div style={{ fontSize: '12px', color: 'black' }}>{buttonName_listen}</div>
+                          </div>
+                        )}
+
           {speaking && (
             <div
               style={{
@@ -569,21 +580,23 @@ useEffect(() => {
               }}
             >
               <div style={{ fontSize: '12px', color: 'black' }}>Speaking</div>
+            
             </div>
           )}
         </div>
 
         {/* Button 3 with Session Started Indicator */}
+
         <div style={{ flex: 1, textAlign: 'center' }}>
           <button
             style={{
               fontSize: '12px',
               padding: '5px',
               margin: '5px 0',
-              backgroundColor: '#2980b9',
-              color: 'white',
+              backgroundColor: session_listen ? "rgb(250, 234, 131)": "rgb(196, 230, 252)",
+              color: 'black',
               border: '1px solid #2980b9',
-              borderRadius: '4px',
+              borderRadius: '1px',
               cursor: 'pointer',
               width: '89%',
             }}
@@ -606,25 +619,48 @@ useEffect(() => {
           )}
         </div>
 
-        {/* Toggle Image Button */}
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <button
-            style={{
-              fontSize: '12px',
-              padding: '5px',
-              margin: '5px 0',
-              backgroundColor: '#7f8c8d',
-              color: 'white',
-              border: '1px solid #7f8c8d',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-            onClick={stopListening}
-          >
-            {listening ? "Stop Listening" : ""}
-          </button>
-        </div>
       </div>
+
+    {/* Agent Actions Horizontal Button-Style Multi-Select */}
+    {Array.isArray(agent_actions) && agent_actions.length > 0 && (
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          marginTop: '8px',
+          gap: '6px',
+        }}
+      >
+        {agent_actions.map((action, idx) => {
+          const selected = selectedActions.includes(action);
+          return (
+            <button
+              key={idx}
+              onClick={() => {
+                if (selected) {
+                  setSelectedActions(selectedActions.filter((a) => a !== action));
+                } else {
+                  setSelectedActions([...selectedActions, action]);
+                }
+              }}
+              style={{
+                fontSize: '12px',
+                padding: '5px 10px',
+                backgroundColor: selected ? '#1abc9c' : '#ecf0f1',
+                color: selected ? 'white' : 'black',
+                border: '1px solid #bdc3c7',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              {action}
+            </button>
+          );
+        })}
+      </div>
+    )}
+
 
         {/* Dictaphone component */}
         <div className="p-2" style={{ marginBottom: '15px' }}>

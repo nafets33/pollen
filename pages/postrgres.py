@@ -222,7 +222,13 @@ if __name__ == '__main__':
                             copy_data_between_tables(source_table='client_users', target_table='client_users')
                             continue
 
-                        df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table))).rename(columns={0:'key', 1:'timestamp'})
+                        df = pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table)).rename(columns={0: 'key', 1: 'timestamp'})
+                        # Filter for last 3 days if table is 'pollen_store'
+                        if table == 'pollen_store':
+                            three_days_ago = datetime.now() - timedelta(days=3)
+                            df['timestamp'] = pd.to_datetime(df['timestamp'])
+                            df = df[df['timestamp'] >= three_days_ago]
+                        st.write(f"Table: {table} - Keys to migrate: {len(df)}")
                         for key in df['key'].tolist():
                             data = PollenDatabase.retrieve_data(table, key)
                             if MigratePostgres.upsert_migrate_data(table, key, data):
