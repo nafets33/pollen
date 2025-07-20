@@ -8,10 +8,8 @@ from PIL import Image
 from dotenv import load_dotenv
 import streamlit as st
 import os
-import copy
-import hydralit_components as hc
 
-from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, send_email, pollenq_button_source, standard_AGgrid, create_AppRequest_package, create_wave_chart_all, create_slope_chart, create_wave_chart_single, create_wave_chart, create_guage_chart, create_main_macd_chart,  queen_order_flow, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
+from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
 from chess_piece.queen_hive import fetch_portfolio_history, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee, star_refresh_star_times
 from chess_piece.pollen_db import PollenDatabase
@@ -39,16 +37,6 @@ est = pytz.timezone("US/Eastern")
 utc = pytz.timezone('UTC')
 pg_migration = os.environ.get('pg_migration')
 
-
-# #### MOVE STORY STYLE TO UTILS Generate COLORS
-# def save_king_queen(QUEEN_KING):
-#     QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = st.session_state['cash_slider']
-#     PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
-
-# def cash_slider(QUEEN_KING, key='cash_slider'):
-#     cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
-#     cash = max(min(cash, 1), -1)
-#     return st.slider("Cash %", min_value=-1.0, max_value=1.0, value=cash, on_change=lambda: save_king_queen(QUEEN_KING), key=key)
 
 def generate_cell_style(flash_state_variable='Day_state'):
     return JsCode(f"""
@@ -388,28 +376,12 @@ function(p) {
 
 button_style_symbol = JsCode("""
 function(p) {
-    if (p.data.current_from_yesterday > 0) {
-        return {
-            color: 'red',
-            //backgroundColor: '#bff0c7', // Light green
-            padding: '2px',
-            boxSizing: 'border-box',
-            border: '5px solid white' // White border
-        };
-    } else if (p.data.current_from_yesterday < 0) {
-        return {
-            //backgroundColor: '#f8c6c6', // Light red 
-            boxSizing: 'border-box',
-            padding: '2px',
-            border: '5px solid white' // White border
-        };
-    } else {
-        return {
-            boxSizing: 'border-box',
-            padding: '2px',
-            border: '5px solid white' // White border
-        };
-    }
+    return {
+        boxSizing: 'border-box',
+        padding: '5px',
+        border: '10px solid #f2f7ff', // Light grey border
+        // backgroundColor: '#f5f5f5'   // Light grey background
+    };
 }
 """)
 
@@ -675,116 +647,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
     ##### STREAMLIT ###
 
-
-    def wave_grid(revrec, symbols, ip_address, refresh_sec=8, paginationOn=True, key='default'):
-        gb = GridOptionsBuilder.create()
-        gb.configure_default_column(column_width=100, 
-                                    resizable=True, 
-                                    wrapText=False, 
-                                    wrapHeaderText=True, 
-                                    autoHeaderHeight=True, 
-                                    autoHeight=True, 
-                                    suppress_menu=False, 
-                                    filterable=True, 
-                                    sortable=True, 
-                                    cellStyle={"fontSize": "16px", "fontWeight": "bold"})            
-        gb.configure_index('ticker_time_frame')
-        gb.configure_theme('ag-theme-material')
-
-
-        def config_cols():
-
-            return {
-                # 'ticker_time_frame': {'initialWidth': 168,},
-                    # 'symbol': {'headerName': 'Symbol', 'enableRowGroup':True, 'rowGroup': 'True'},
-                    'ttf_grid_name': create_ag_grid_column(headerName='Star', width=148),
-                    'current_profit': create_ag_grid_column(headerName='Curent Profit', initialWidth=89, type=["customNumberFormat", "numericColumn", "numberColumnFilter"], cellRenderer='agAnimateShowChangeCellRenderer', enableCellChangeFlash=True,),
-                    'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
-                    
-                    'star_buys_at_play': {'headerName':'Long At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],'initialWidth':123,},
-                    'star_sells_at_play': {'headerName':'Short At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                    #    'custom_currency_symbol':"$",
-                                                    'initialWidth':123,
-                                                    },
-                    'allocation_deploy': {'headerName':'Allocation Deploy', 'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
-                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                                'initialWidth':123,
-                                },
-                    'allocation_borrow_deploy': {'headerName':'Allocation Borrow Deploy',
-                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                                'initialWidth':123,
-                                },
-                    'total_allocation_budget': {'headerName':'Budget Allocation',
-                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                                'initialWidth':123,
-                                },
-                    
-                    'total_allocation_borrow_budget': {'headerName':'Margin Budget Allocation',
-                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
-                                'initialWidth':123,
-                                },
-
-                    'remaining_budget': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                    #    'custom_currency_symbol':"$",
-                                                    'initialWidth':123,
-                                                    },
-                    'remaining_budget_borrow': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
-                                                    #    'custom_currency_symbol':"$",
-                                                    'initialWidth':123,
-                                                    },
-                    'ticker_time_frame__budget': {'hide': True},
-                    
-                            }
-
-        config_cols = config_cols()
-        mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
-        if len(mmissing) > 0:
-            for col in mmissing:
-                gb.configure_column(col, {'hide': True})
-        for col, config_values in config_cols.items():
-            config = config_values
-            config['sortable'] = True
-            gb.configure_column(col, config)
-            # gb.configure_column(col, {'pinned': 'left'})
-
-        go = gb.build()
-        st_custom_grid(
-            client_user=client_user,
-            username=client_user, 
-            api=f'{ip_address}/api/data/wave_stories',
-            api_update= f'{ip_address}/api/data/update_orders',
-            refresh_sec=refresh_sec, 
-            refresh_cutoff_sec=seconds_to_market_close, 
-            prod=st.session_state['prod'],
-            grid_options=go,
-            key=f'waves',
-            return_type='waves',
-            # kwargs from here
-            api_key=os.environ.get("fastAPI_key"),
-            prompt_message ="Buy Amount",
-            prompt_field = "star", # "current_macd_tier",
-            read_pollenstory = False,
-            read_storybee = True,
-            symbols=symbols,
-            buttons=[
-
-                    {'button_name': None, # this used to name the button
-                    'button_api': f'{ip_address}/api/data/queen_buy_orders',
-                    'prompt_message': 'Edit Buy',
-                    'prompt_field': 'kors',
-                    'col_headername': 'Buy Wave',
-                    "col_header": "ticker_time_frame__budget", # button display
-                    'col_width':125,
-                    'pinned': 'left',
-                    'prompt_order_rules': [i for i in buy_button_dict_items().keys()],
-                    },
-                    ],
-            grid_height='350px',
-            toggle_views = ["Queen", 'Buys', 'Sells', ] + list(star_names().keys()) + ['King'],
-        ) 
-
-    
+  
     def story_grid(prod, client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default', tab_view=None):
 
         
@@ -1177,14 +1040,25 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 api_key=os.environ.get("fastAPI_key"),
                 symbols=symbols,
                 buttons=g_buttons,
-                grid_height='600px',
+                grid_height='550px',
                 toggle_views = toggle_views,
                 allow_unsafe_jscode=True,
                 columnOrder=story_col_order,
                 refresh_success=True,
                 total_col="symbol", # where total is located
-                subtotal_cols = ["allocation_long","Minimum Allocation Long", "total_budget", "qty_available", "money", "Day_kors", 'star_buys_at_play', 'remaining_budget', 'allocation_long', 
-                                                       'remaining_budget_borrow', 'pct_portfolio', ],
+                subtotal_cols = ["queens_suggested_buy", #"Advisors Allocation",
+                                 "broker_qty_delta",
+                                 "allocation_long", #"Minimum Allocation Long", 
+                                 "total_budget", 
+                                 "qty_available", 
+                                 "money", 
+                                 "Day_state", 
+                                 'star_buys_at_play', 
+                                 'remaining_budget', 
+                                #  'allocation_long', 
+                                'remaining_budget_borrow', 
+                                'pct_portfolio', 
+                                ],
                 filter_apply=True,
                 filter_button='piece_name',
 
@@ -1203,6 +1077,21 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
     ########################################################kjm,mmmm
 
     try:
+
+        # if show_acct:
+
+        #     # Show all portfolio history periods in columns
+        #     periods = ['7D', '1M', '3M', '6M', '1A']
+        #     perf_cols = st.columns(len(periods))
+        #     for i, period in enumerate(periods):
+        #         df = fetch_portfolio_history(api, period=period)
+        #         if df is not None and not df.empty:
+        #             portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
+        #             with perf_cols[i]:
+        #                 if i != 0:
+        #                     mark_down_text(f'{period} %{portfolio_perf}', fontsize='23')
+        #                 else:
+        #                     mark_down_text(f'Portfolio')
 
         # Toggle View
         tab_view = sac_tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds", "Sectors"])
@@ -1237,7 +1126,9 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         
         if tab_view == 'AI Portfolio Manager':
             # st.switch_page("pages/PortfolioManager.py")
-            ozz()
+            print("AI Portfolio Manager")
+            ozz(st.session_state['authentication_status'])
+            st.stop()
             
         # cols = st.columns((8,1,1))
  
@@ -1299,7 +1190,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 with st.expander("Star Grid :sparkles:", True):
                     # refresh_sec = 8 if seconds_to_market_close > 120 and mkhrs == 'open' else 0
                     # refresh_sec = 54 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-                    wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
+                    wave_grid(client_user, revrec, symbols, ip_address, 
+                              prompt_order_rules=[i for i in buy_button_dict_items().keys()], 
+                              toggle_views=[], 
+                              refresh_sec=8, 
+                              refresh_cutoff_sec=seconds_to_market_close, 
+                              paginationOn=True, 
+                              key='wave_grid')
+                    # wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
 
         cols = st.columns(2)
         
@@ -1334,7 +1232,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 return_type=None,
                 graph_height=300,
                 key="Index_Graph",
-                toggles=list(star_names().keys()),
+                toggles=list(reversed(list(star_names().keys()))),
                 # y_max=420
                 )
 
@@ -1403,13 +1301,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
             with cols[1]:
                 trinity_graph()
 
-        if show_acct:
-            with cols[1]:
-                # Call the function
-                tt_tabs = st.selectbox("Portfolio History", options=['7D', '1M', '3M', '6M', '1A'])
-                df = fetch_portfolio_history(api, period=tt_tabs)
-                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity']* 100 , 2)
-                mark_down_text(f'Portfolio {tt_tabs} %{portfolio_perf}', fontsize='23')
+
 
 
         if st.sidebar.toggle("Show Logs"):

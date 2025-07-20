@@ -35,6 +35,7 @@ const CustomVoiceGPT = (props) => {
     before_trigger,
     agent_actions,
   } = kwargs;
+
   const [imageSrc, setImageSrc] = useState(kwargs.self_image);
   const [imageSrc_name, setImageSrc_name] = useState(kwargs.self_image);
 
@@ -72,12 +73,200 @@ const CustomVoiceGPT = (props) => {
 
   const [showImage, setShowImage] = useState(false); // Step 1: Define showImage state
   const [selectedActions, setSelectedActions] = useState([]);
+  const [datatree, setDataTree] = useState(kwargs.datatree || {});
+  const [datatreeTitle, setDataTreeTitle] = useState(kwargs.datatree_title || "");
 
   
 
-  const toggleShowImage = () => { // Step 2: Create toggle function
-    setShowImage((prevShowImage) => !prevShowImage);
+const [selectedNodes, setSelectedNodes] = useState([]);
+
+// SidebarTree with collapsible nodes, no text wrapping, and improved style
+const SidebarTree = ({ datatree = {}, onSelectionChange }) => {
+  const [collapsed, setCollapsed] = useState({});
+  const [selected, setSelected] = useState([]);
+
+  // Sync selectedNodes with parent state
+  useEffect(() => {
+    setSelected(selectedNodes);
+  }, [selectedNodes]);
+
+  const handleSelect = (key) => {
+    setSelected((prev) => {
+      const newSelected = prev.includes(key)
+        ? prev.filter((k) => k !== key)
+        : [...prev, key];
+      if (onSelectionChange) onSelectionChange(newSelected);
+      return newSelected;
+    });
   };
+
+  const toggleCollapse = (key) => {
+    setCollapsed((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+
+
+  const renderNodes = (tree, level = 1, parentKeys = []) => {
+    if (!tree || typeof tree !== "object" || Array.isArray(tree)) return null;
+    const entries = Object.entries(tree);
+    return entries.map(([key, value], idx) => {
+      const hasChildren =
+        value.children &&
+        typeof value.children === "object" &&
+        !Array.isArray(value.children) &&
+        Object.keys(value.children).length > 0;
+      const isCollapsed = collapsed[key];
+      const isLast = idx === entries.length - 1;
+
+      return (
+        <div
+          key={key}
+          style={{
+            marginLeft: level * 16,
+            position: "relative",
+            whiteSpace: "nowrap",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            fontSize: "14px",
+            fontFamily: "inherit",
+            marginBottom: "2px",      // <-- Increase this for more space between nodes
+            paddingTop: "4px",         // <-- Optional: add more vertical padding
+            paddingBottom: "4px",
+          }}
+        >
+          {/* Draw lines from parent to children */}
+          {level > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                left: -5,
+                top: 0,
+                height: "100%",
+                width: 16,
+                zIndex: 0,
+              }}
+            >
+              {/* Vertical line from parent */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: -5,
+                  top: 0,
+                  bottom: isLast ? "50%" : 0,
+                  width: 2,
+                  background: "#bbb",
+                  height: hasChildren && !isCollapsed ? "50%" : "100%",
+                }}
+              />
+              {/* Horizontal line to node */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 7,
+                  top: 12,
+                  width: 9,
+                  height: 2,
+                  background: "#bbb",
+                }}
+              />
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", position: "relative", zIndex: 1 }}>
+            {hasChildren && (
+              <button
+                onClick={() => toggleCollapse(key)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  marginRight: "4px",
+                  padding: 0,
+                  width: "18px",
+                  height: "18px",
+                  lineHeight: "18px",
+                  userSelect: "none",
+                }}
+                aria-label={isCollapsed ? "Expand" : "Collapse"}
+                tabIndex={-1}
+              >
+                {isCollapsed ? "▶" : "▼"}
+              </button>
+            )}
+            <input
+              type="checkbox"
+              checked={selected.includes(key)}
+              onChange={() => handleSelect(key)}
+              style={{ marginRight: "10px" }}
+            />
+            {value.hyperlink ? (
+              <a
+                href={value.hyperlink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: "none",
+                  color: "#2980b9",
+                  fontWeight: 500,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "100%",
+                  display: "inline-block",
+                  verticalAlign: "middle",
+                }}
+                title={value.field_name}
+              >
+                {value.field_name}
+              </a>
+            ) : (
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "160px",
+                  display: "inline-block",
+                  verticalAlign: "middle",
+                }}
+                title={value.field_name}
+              >
+                {value.field_name}
+              </span>
+            )}
+          </div>
+          {hasChildren && !isCollapsed && (
+            <div style={{ width: "100%" }}>
+              {renderNodes(value.children, level + 1, [...parentKeys, key])}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
+  if (!datatreeTitle || !datatree) return null;
+  return (
+    <div
+      style={{
+        width: "100%",
+        // borderRight: "1px solid #ccc",
+        padding: 10,
+        maxHeight: 800,
+        overflowY: "auto",
+        // boxSizing: "border-box",
+        background: "transparent",
+      }}
+    >
+      <h4 style={{ margin: "0 0 8px 0", fontWeight: 600 }}>{datatreeTitle}</h4>
+      <div>{renderNodes(datatree)}</div>
+    </div>
+  );
+};
 
   const [windowWidth, setWindowWidth] = useState(0); // Initial value
 
@@ -300,6 +489,7 @@ useEffect(() => {
     setAnswers([...text]);
     try {
       console.log("api call on listen...", command);
+      console.log("selected_nodes", selectedNodes);
       setApiInProgress(true); // Set API in progress to true
       stopListening()
 
@@ -315,6 +505,7 @@ useEffect(() => {
         session_listen:session_listen,
         before_trigger_vars:before_trigger_vars,
         selected_actions: selectedActions,
+        selected_nodes: selectedNodes,
       };
       console.log("api");
       const { data } = await axios.post(api, body);
@@ -400,17 +591,124 @@ useEffect(() => {
     updateWindowWidth();
     console.log("ReSize Window")
   };
-  
+
+// Recursive function to find a node by key in the datatree
+function findNodeByKey(tree, key) {
+  if (!tree || typeof tree !== "object") return null;
+  for (const [k, value] of Object.entries(tree)) {
+    if (k === key) return value;
+    if (value.children) {
+      const found = findNodeByKey(value.children, key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
   const background_color_chat = refresh_ask?.color_dict?.background_color_chat || 'transparent';
   const splitImage = self_image.split('.')[0]; // Split by dot
   const placeholder = `Chat with ${splitImage}`;
   console.log("session_listen", session_listen)
+  console.log("selectedNodes", selectedNodes)
+  const firstKey = selectedNodes[0] || null;
+  const nodeObj = firstKey ? findNodeByKey(datatree, firstKey) : null;
+  const nodeTitle = nodeObj?.field_name;
+  const nodeLink = nodeObj?.hyperlink;
 
+//     console.log("selectedNodes", selectedNodes)
+// };
+
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [sidebarWide, setSidebarWide] = useState(250);
 
   return (
-    <>
+    <div style={{ display: "flex", width: "100%" }}>
 
-      <div className="p-2">
+      {/* Sidebar Toggle and Sidebar */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {/* Sidebar Toggle Button */}
+        <div style={{ display: "flex", alignItems: "center", padding: "4px 8px" }}>
+          <button
+            onClick={() => setShowSidebar((prev) => !prev)}
+            style={{
+              fontSize: "18px",
+              padding: "4px 10px",
+              marginRight: "6px",
+              border: "none",
+              borderRadius: "50%",
+              background: "transparent",
+              color: "#2980b9",
+              cursor: "pointer",
+              height: "32px",
+              width: "32px",
+              boxShadow: "none",
+              outline: "none",
+              transition: "background 0.2s",
+            }}
+            aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+          >
+            {showSidebar ? "⏴" : "⏵"}
+          </button>
+        </div>
+        {/* Sidebar Width Toggle Button (only visible when sidebar is open) */}
+          {showSidebar && (
+            <button
+              onClick={() => setSidebarWide((prev) => (prev === 250 ? 450 : 250))}
+              style={{
+                // fontSize: "10px",
+                // padding: "2px 3px",
+                border: "transparent",
+                // borderRadius: "1px",
+                background: "transparent",
+                cursor: "pointer",
+                height: "15px",
+                margin: "6px 0 0 8px",
+                width: "90px",
+                alignSelf: "flex-start",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              {sidebarWide === 250 ? (
+                <>
+            <span style={{ }}>⏩</span>
+                </>
+              ) : (
+                <>
+            <span style={{ }}>⏪</span>
+                </>
+              )}
+            </button>
+          )}
+          {/* Sidebar Tree */}
+        {showSidebar && (
+          <div style={{ width: sidebarWide, borderRight: "1px solid #ccc", padding: 10, transition: "width 0.2s" }}>
+            <SidebarTree datatree={datatree} onSelectionChange={setSelectedNodes} />
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="p-2" style={{ flex: 1 }}>
+
+        <div>
+          {firstKey && nodeObj ? (
+            <div>
+              Working Page:{" "}
+              {nodeLink ? (
+                <a href={nodeLink} target="_blank" rel="noopener noreferrer">
+                  {nodeTitle}
+                </a>
+              ) : (
+                nodeTitle
+              )}
+            </div>
+          ) : (
+            <div></div>
+          )}
+        </div>
+  
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {/* Image or video section */}
           <div>
@@ -418,13 +716,13 @@ useEffect(() => {
             <MediaDisplay
               showImage={showImage}
               imageSrc={imageSrc}
-              largeHeight={100}   // Customize as needed
-              largeWidth={100}    // Customize as needed
-              smallHeight={40}    // Customize as needed
-              smallWidth={40}     // Customize as needed
+              largeHeight={100}
+              largeWidth={100}
+              smallHeight={40}
+              smallWidth={40}
             />
           </div>
-  
+
           {/* Chat window, taking full width if no image is shown */}
           <div style={{ flex: showImage ? 1 : '100%', overflowY: 'auto', maxHeight: '350px' }}>
             {show_conversation && (
@@ -435,7 +733,7 @@ useEffect(() => {
                   maxHeight: '350px',
                   height: '350px',
                   overflowY: 'auto',
-                  border: '1px solid #ccc',
+                  // border: '1px solid #ccc',
                   padding: '10px',
                 }}
               >
@@ -476,26 +774,26 @@ useEffect(() => {
                           <img src={imageSrc} alt="response" style={{ width: '50px' }} />
                         </div>
                       )}
-              <div
-                className="chat-response-text"
-                style={{ flex: 1, wordBreak: 'break-word' }}
-              >
-                {answer.resp
-                  ? <span dangerouslySetInnerHTML={{ __html: answer.resp }} />
-                  : <span className="spinner" />}
+                      <div
+                        className="chat-response-text"
+                        style={{ flex: 1, wordBreak: 'break-word' }}
+                      >
+                        {answer.resp
+                          ? <span dangerouslySetInnerHTML={{ __html: answer.resp }} />
+                          : <span className="spinner" />}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
+        </div>
 
         {/* Input text section */}
         {input_text && (
           <>
-          <hr style={{ margin: '3px 0' }} />
+            <hr style={{ margin: '3px 0' }} />
             <div className="form-group">
               <input
                 className="form-control"
@@ -505,162 +803,152 @@ useEffect(() => {
                 onChange={handleInputText}
                 onKeyDown={handleOnKeyDown}
               />
-
             </div>
             <hr style={{ margin: '3px 0' }} />
           </>
         )}
 
-
-      {/* Buttons with indicators under each */}
-      <div style={{ display: 'flex', marginTop: '3px' }}>
-        {/* Button 1 with Listen Indicator */}
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <button
-            style={{
-              fontSize: '12px',
-              padding: '5px',
-              margin: '5px 0',
-              backgroundColor: listenButton ? '#478728': "rgb(196, 230, 252)",
-              color: 'black',
-              border: '1px solid #2980b9',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              width: '89%',
-            }}
-            onClick={click_listenButton}
-          >
-            {buttonName}
-          </button>
-
-        </div>
-
-        {/* Button 2 with Conversational Mode Indicator */}
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <button
-            style={{
-              fontSize: '12px',
-              padding: '5px',
-              margin: '5px 0',
-              backgroundColor: convo_button ? "rgb(87, 188, 100)": "rgb(196, 230, 252)",
-              color: 'black',
-              border: '1px solid #2980b9',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              width: '89%',
-            }}
-            onClick={convo_mode}
-          >
-            {convo_button ? "End Conversation" : "Start Conversation"}
-          </button>
-          
-          {listening && (
-                          <div
-                            style={{
-                              width: '89%',
-                              height: '10px',
-                              backgroundImage: 'linear-gradient(90deg, green, transparent 50%, green)',
-                              animation: 'flashLine 1s infinite',
-                              marginTop: '5px',
-                            }}
-                          >
-                            <div style={{ fontSize: '12px', color: 'black' }}>{buttonName_listen}</div>
-                          </div>
-                        )}
-
-          {speaking && (
-            <div
-              style={{
-                // width: '89%',
-                height: '10px',
-                background: 'linear-gradient(to right, blue, transparent, purple)',
-                animation: 'waveAnimation 1s infinite',
-                marginTop: '5px',
-                borderRadius: '10px',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'black' }}>Speaking</div>
-            
-            </div>
-          )}
-        </div>
-
-        {/* Button 3 with Session Started Indicator */}
-
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <button
-            style={{
-              fontSize: '12px',
-              padding: '5px',
-              margin: '5px 0',
-              backgroundColor: session_listen ? "rgb(250, 234, 131)": "rgb(196, 230, 252)",
-              color: 'black',
-              border: '1px solid #2980b9',
-              borderRadius: '1px',
-              cursor: 'pointer',
-              width: '89%',
-            }}
-            onClick={listenSession}
-          >
-            {session_listen ? "Stop Session" : "Start Session"}
-          </button>
-          {session_listen && (
-            <div
-              style={{
-                width: '89%',
-                height: '10px',
-                backgroundImage: 'linear-gradient(90deg, orange, transparent 50%, orange)',
-                animation: 'flashLine 1s infinite',
-                marginTop: '5px',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'black' }}>Session Started</div>
-            </div>
-          )}
-        </div>
-
-      </div>
-
-    {/* Agent Actions Horizontal Button-Style Multi-Select */}
-    {Array.isArray(agent_actions) && agent_actions.length > 0 && (
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          marginTop: '8px',
-          gap: '6px',
-        }}
-      >
-        {agent_actions.map((action, idx) => {
-          const selected = selectedActions.includes(action);
-          return (
+        {/* Buttons with indicators under each */}
+        <div style={{ display: 'flex', marginTop: '3px' }}>
+          {/* Button 1 with Listen Indicator */}
+          <div style={{ flex: 1, textAlign: 'center' }}>
             <button
-              key={idx}
-              onClick={() => {
-                if (selected) {
-                  setSelectedActions(selectedActions.filter((a) => a !== action));
-                } else {
-                  setSelectedActions([...selectedActions, action]);
-                }
-              }}
               style={{
                 fontSize: '12px',
-                padding: '5px 10px',
-                backgroundColor: selected ? '#1abc9c' : '#ecf0f1',
-                color: selected ? 'white' : 'black',
-                border: '1px solid #bdc3c7',
+                padding: '5px',
+                margin: '5px 0',
+                backgroundColor: listenButton ? '#478728': "rgb(196, 230, 252)",
+                color: 'black',
+                border: '1px solid #2980b9',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                width: '89%',
               }}
+              onClick={click_listenButton}
             >
-              {action}
+              {buttonName}
             </button>
-          );
-        })}
-      </div>
-    )}
+          </div>
 
+          {/* Button 2 with Conversational Mode Indicator */}
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <button
+              style={{
+                fontSize: '12px',
+                padding: '5px',
+                margin: '5px 0',
+                backgroundColor: convo_button ? "rgb(87, 188, 100)": "rgb(196, 230, 252)",
+                color: 'black',
+                border: '1px solid #2980b9',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                width: '89%',
+              }}
+              onClick={convo_mode}
+            >
+              {convo_button ? "End Conversation" : "Start Conversation"}
+            </button>
+            {listening && (
+              <div
+                style={{
+                  width: '89%',
+                  height: '10px',
+                  backgroundImage: 'linear-gradient(90deg, green, transparent 50%, green)',
+                  animation: 'flashLine 1s infinite',
+                  marginTop: '5px',
+                }}
+              >
+                <div style={{ fontSize: '12px', color: 'black' }}>{buttonName_listen}</div>
+              </div>
+            )}
+            {speaking && (
+              <div
+                style={{
+                  height: '10px',
+                  background: 'linear-gradient(to right, blue, transparent, purple)',
+                  animation: 'waveAnimation 1s infinite',
+                  marginTop: '5px',
+                  borderRadius: '10px',
+                }}
+              >
+                <div style={{ fontSize: '12px', color: 'black' }}>Speaking</div>
+              </div>
+            )}
+          </div>
+
+          {/* Button 3 with Session Started Indicator */}
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <button
+              style={{
+                fontSize: '12px',
+                padding: '5px',
+                margin: '5px 0',
+                backgroundColor: session_listen ? "rgb(250, 234, 131)": "rgb(196, 230, 252)",
+                color: 'black',
+                border: '1px solid #2980b9',
+                borderRadius: '1px',
+                cursor: 'pointer',
+                width: '89%',
+              }}
+              onClick={listenSession}
+            >
+              {session_listen ? "Stop Session" : "Start Session"}
+            </button>
+            {session_listen && (
+              <div
+                style={{
+                  width: '89%',
+                  height: '10px',
+                  backgroundImage: 'linear-gradient(90deg, orange, transparent 50%, orange)',
+                  animation: 'flashLine 1s infinite',
+                  marginTop: '5px',
+                }}
+              >
+                <div style={{ fontSize: '12px', color: 'black' }}>Session Started</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Agent Actions Horizontal Button-Style Multi-Select */}
+        {Array.isArray(agent_actions) && agent_actions.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              marginTop: '8px',
+              gap: '6px',
+            }}
+          >
+            {agent_actions.map((action, idx) => {
+              const selected = selectedActions.includes(action);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    if (selected) {
+                      setSelectedActions(selectedActions.filter((a) => a !== action));
+                    } else {
+                      setSelectedActions([...selectedActions, action]);
+                    }
+                  }}
+                  style={{
+                    fontSize: '12px',
+                    padding: '5px 10px',
+                    backgroundColor: selected ? '#1abc9c' : '#ecf0f1',
+                    color: selected ? 'white' : 'black',
+                    border: '1px solid #bdc3c7',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {action}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Dictaphone component */}
         <div className="p-2" style={{ marginBottom: '15px' }}>
@@ -675,13 +963,8 @@ useEffect(() => {
             listening={listening}
           />
         </div>
-  
-
       </div>
-
-
-
-    </>
+    </div>
   );
 }
 

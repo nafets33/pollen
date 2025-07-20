@@ -10,16 +10,8 @@ from fastapi import Request
 import asyncio
 
 
-constants = init_constants()
-OZZ_DB = constants.get('OZZ_DB')
-DATA_PATH = constants.get('DATA_PATH')
-PERSIST_PATH = constants.get('PERSIST_PATH')
-OZZ_BUILD_dir = constants.get('OZZ_BUILD_dir')
-OZZ_db_audio = constants.get('OZZ_db_audio')
-OZZ_db_images = constants.get('OZZ_db_images')
-
 # WORKERBEE FIX TO AVOID WARNING STREAMLIT ERROR..WARNING streamlit.runtime.scriptrunner_utils.script_run_context
-# from master_ozz.ozz_query import ozz_query
+from master_ozz.ozz_query import ozz_query
 # from master_ozz.utils import ozz_master_root, init_constants
 
 router = APIRouter(
@@ -52,8 +44,9 @@ def check_authKey(api_key):
     else:
         return True
 
-@router.get("/{file_name}")
+@router.get("/local/{file_name}")
 def get_file(file_name: str):
+    print("GET FILE", file_name)
     constants = init_constants()
     OZZ_db_audio = constants.get('OZZ_db_audio')
     OZZ_db_images = constants.get('OZZ_db_images')
@@ -80,7 +73,6 @@ def load_ozz_voice():
 
 @router.get("/lastmod_key", status_code=status.HTTP_200_OK)
 def get_revrec_lastmod(client_user: str = Query(...), prod: bool = Query(...), api_key: str = Query(...), api_lastmod_key: str = Query(...)):
-    print("ARG")
     if check_authKey(api_key):
         json_data = get_revrec_lastmod_time(client_user, prod, api_lastmod_key)
         return JSONResponse(content=json_data)
@@ -88,18 +80,18 @@ def get_revrec_lastmod(client_user: str = Query(...), prod: bool = Query(...), a
         return "NOAUTH"
 
 
-# @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
-# def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
-#     # print(f'face data {face_data}')
-#     print(f'trig TYPE: {tigger_type}')
+@router.post("/voiceGPT", status_code=status.HTTP_200_OK)
+def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
+    # print(f'face data {face_data}')
+    print(f'trig TYPE: {tigger_type}')
     
-#     if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
-#         print("Auth Failed", api_key)
-#         # Log the trader WORKERBEE
-#         return "NOTAUTH"
+    if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        # Log the trader WORKERBEE
+        return "NOTAUTH"
 
-#     json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars)
-#     return JSONResponse(content=json_data)
+    json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars)
+    return JSONResponse(content=json_data)
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
 def load_wavestories_json(client_user: str=Body(...), symbols: list=Body(...), toggle_view_selection: str=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
@@ -333,62 +325,20 @@ def sell_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Bo
     return JSONResponse(content=json_data)
 
 @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
-def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...)):
-    # print(kwargs)
-    # text = [{'user': 'hey hootie tell me a story'}]
-    # text = [  # future state
-    #         {'user': 'hey hootie tell me a story', 'resp': 'what story would you like to hear'}, 
-    #         {'user': 'could you make up a story?'}]
-    # ipdb.set_trace()
-    def handle_response(text):
-        text_obj = text[-1]['user']
+async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
+    # Print the entire body of the POST request
+    body = await request.json()
+    print("Full Request Body:", body)
+    selected_actions = body.get('selected_actions', [])
+    use_embeddings = body.get('use_embeddings', [])
 
-        # handle text_obj
-        # WORK take query/history of current question and attempt to handle reponse back ""
-        ## Scenarios 
-
-        call_llm=True # goal is to set it to False and figure action/response
-
-        def Scenarios(db_actions, self_image, current_query, first_ask=True, conv_history=False):
-            # is this first ask?
-            # saying hello, say hello based on whos talking? hoots or hootie, moody
-            # how are you...
-            # 
-            # if first_ask:
-            #     # based on question do we have similar listed type quetsion with response action?
-            #     if current_query is in db_actions.get('db_first_asks'):
-            #         text = db_actions.get('id')
-            #         self_image = db_actions.get('id')
-                
-            return True
-
-        # get final response
-        resp = 'what story would you like to hear?'
-        
-        # update reponse to self
-        text[-1].update({'resp': resp})
-
-        return text
-
-    text = handle_response(text)
+    print(f'trig TYPE: {tigger_type} {before_trigger_vars}')
     
-    def handle_image(text, self_image):
-        # based on LLM response handle image if needs to change
-        self_image = 'hootsAndHootie.png'
+    if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return "NOTAUTH"
 
-        return self_image
-
-    self_image = handle_image(text, self_image)
-    
-    # audio_file = 'pollen/db/audio_files/file1.mp4'
-    audio_file = 'test_audio.mp3'
-
-    page_direct='http://localhost:8501/heart'
-    listen_after_reply = False
-    
-    json_data = {'text': text, 'audio_path': audio_file, 'page_direct': page_direct, 'self_image': self_image, 'listen_after_reply': listen_after_reply}
-
-
+    # json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
     return JSONResponse(content=json_data)
 
 

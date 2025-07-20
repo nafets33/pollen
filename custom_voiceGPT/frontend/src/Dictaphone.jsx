@@ -27,6 +27,7 @@ const Dictaphone = ({
     resetTranscript();
     setEditableTranscript(""); // Clear editable transcript
   };
+  
   const textareaRef = useRef(null);
   const cursorPosRef = useRef(null);
   // Logic to process transcript based on session_listen
@@ -41,7 +42,7 @@ const Dictaphone = ({
       // When session_listen is false and not using listenButton, just append
       myFunc(finalTranscript, { api_body: {} }, 5);
       setEditableTranscript((prev) => `${prev} ${finalTranscript}`.trim());
-      resetTranscript();
+      // resetTranscript();
       setEditableTranscript("");
       return;
       }

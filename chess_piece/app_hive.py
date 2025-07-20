@@ -188,13 +188,13 @@ def sac_menu_buttons(main='pollen'):
     elif main == 'demo':
             menu_buttons = sac.buttons([
             sac.ButtonsItem(label=main, icon='robot'),
-            sac.ButtonsItem(label='Board', icon='box'),
+            sac.ButtonsItem(label='Portfolio Allocations', icon='box'),
             sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
             # sac.ButtonsItem(label='PlayGround', icon='fire'),
             # sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
-            sac.ButtonsItem(label='Trading Models', disabled=False),
+            # sac.ButtonsItem(label='Trading Models', disabled=False),
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
-            sac.ButtonsItem(label='Engine', icon='gem'),
+            # sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
             ])
     return menu_buttons
@@ -2508,5 +2508,115 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_m
     st.session_state['menu_id']= menu_id
 
     return menu_id
+
+
+
+def wave_grid(client_user, revrec, symbols, ip_address, prompt_order_rules, toggle_views, refresh_sec=8, refresh_cutoff_sec=1000, paginationOn=True, key='default'):
+    gb = GridOptionsBuilder.create()
+    gb.configure_default_column(column_width=100, 
+                                resizable=True, 
+                                wrapText=False, 
+                                wrapHeaderText=True, 
+                                autoHeaderHeight=True, 
+                                autoHeight=True, 
+                                suppress_menu=False, 
+                                filterable=True, 
+                                sortable=True, 
+                                cellStyle={"fontSize": "16px", "fontWeight": "bold"})            
+    gb.configure_index('ticker_time_frame')
+    gb.configure_theme('ag-theme-material')
+
+
+    def config_cols():
+
+        return {
+            # 'ticker_time_frame': {'initialWidth': 168,},
+                # 'symbol': {'headerName': 'Symbol', 'enableRowGroup':True, 'rowGroup': 'True'},
+                'ttf_grid_name': create_ag_grid_column(headerName='Star', width=148),
+                'current_profit': create_ag_grid_column(headerName='Curent Profit', initialWidth=89, type=["customNumberFormat", "numericColumn", "numberColumnFilter"], cellRenderer='agAnimateShowChangeCellRenderer', enableCellChangeFlash=True,),
+                'maxprofit': {'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],},
+                
+                'star_buys_at_play': {'headerName':'Long At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],'initialWidth':123,},
+                'star_sells_at_play': {'headerName':'Short At Play', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                #    'custom_currency_symbol':"$",
+                                                'initialWidth':123,
+                                                },
+                'allocation_deploy': {'headerName':'Allocation Deploy', 'cellRenderer': 'agAnimateShowChangeCellRenderer','enableCellChangeFlash': True,
+                            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                            'initialWidth':123,
+                            },
+                'allocation_borrow_deploy': {'headerName':'Allocation Borrow Deploy',
+                            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                            'initialWidth':123,
+                            },
+                'total_allocation_budget': {'headerName':'Budget Allocation',
+                            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                            'initialWidth':123,
+                            },
+                
+                'total_allocation_borrow_budget': {'headerName':'Margin Budget Allocation',
+                            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ],
+                            'initialWidth':123,
+                            },
+
+                'remaining_budget': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                #    'custom_currency_symbol':"$",
+                                                'initialWidth':123,
+                                                },
+                'remaining_budget_borrow': {'header_name':'Remaining Budget', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], # "customCurrencyFormat"
+                                                #    'custom_currency_symbol':"$",
+                                                'initialWidth':123,
+                                                },
+                'ticker_time_frame__budget': {'hide': True},
+                
+                        }
+
+    config_cols = config_cols()
+    mmissing = [i for i in revrec.get('waveview').columns.tolist() if i not in config_cols.keys()]
+    if len(mmissing) > 0:
+        for col in mmissing:
+            gb.configure_column(col, {'hide': True})
+    for col, config_values in config_cols.items():
+        config = config_values
+        config['sortable'] = True
+        gb.configure_column(col, config)
+        # gb.configure_column(col, {'pinned': 'left'})
+
+    go = gb.build()
+    st_custom_grid(
+        client_user=client_user,
+        username=client_user, 
+        api=f'{ip_address}/api/data/wave_stories',
+        api_update= f'{ip_address}/api/data/update_orders',
+        refresh_sec=refresh_sec, 
+        refresh_cutoff_sec=refresh_cutoff_sec, 
+        prod=st.session_state['prod'],
+        grid_options=go,
+        key=f'waves',
+        return_type='waves',
+        # kwargs from here
+        api_key=os.environ.get("fastAPI_key"),
+        prompt_message ="Buy Amount",
+        prompt_field = "star", # "current_macd_tier",
+        read_pollenstory = False,
+        read_storybee = True,
+        symbols=symbols,
+        buttons=[
+
+                {'button_name': None, # this used to name the button
+                'button_api': f'{ip_address}/api/data/queen_buy_orders',
+                'prompt_message': 'Edit Buy',
+                'prompt_field': 'kors',
+                'col_headername': 'Buy Wave',
+                "col_header": "ticker_time_frame__budget", # button display
+                'col_width':125,
+                'pinned': 'left',
+                'prompt_order_rules': prompt_order_rules, #  [i for i in buy_button_dict_items().keys()],
+                },
+                ],
+        grid_height='350px',
+        toggle_views = toggle_views, # ["Queen", 'Buys', 'Sells', ] + list(star_names().keys()) + ['King'],
+    ) 
 
 

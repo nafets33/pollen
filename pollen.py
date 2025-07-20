@@ -19,15 +19,15 @@ import time
 import argparse
 
 #pages
-from pages.orders import order_grid, config_orders_cols
+# from pages.orders import order_grid, config_orders_cols
 from pages.conscience import queens_conscience
-from pages.chessboard import chessboard
+# from pages.chessboard import chessboard
 
 # main chess piece
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator
-from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData
+from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData, return_app_ip
 from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import kings_order_rules
 from pages.conscience import account_header_grid
@@ -383,9 +383,30 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets, prod):
     
     return True
 
+@st.cache_data(ttl=timedelta(days=1))
+def fetch_portfolio_history(_api, period='3M', timeframe='1D'):
+    try:
+        # Fetch portfolio history
+        portfolio_history = _api.get_portfolio_history(
+            period=period,  # Options: '1D', '7D', '1M', '3M', '6M', '1A' -> for year
+            timeframe=timeframe,  # Options: '1Min', '5Min', '15Min', '1H', '1D'
+        )
 
-def pollenq(sandbox=False):
-    # try:
+        # Convert response to dictionary for better readability
+        history = portfolio_history._raw
+        df = pd.DataFrame(history)
+
+        df = df[df['profit_loss'] != 0]
+        print(len(df), "rows in portfolio history for period:", period)
+
+        return df
+    except Exception as e:
+        print("Error fetching portfolio history:", e)
+
+def pollenq(sandbox=False, demo=False):
+    # st.write("pollenq", demo, sandbox)
+    # print("pollenq", demo, sandbox)
+    pollen = 'pollen' if not demo else 'demo'
     # check if page is sandbox and prod, if so go to pollen.py
 
     main_page_start = datetime.now()
@@ -412,18 +433,43 @@ def pollenq(sandbox=False):
 
     with st.spinner("Verifying Your Scent, Hang Tight"):
         # print(st.session_state)
-        authenticator = signin_main(page="pollenq")
-        admin_pq = st.session_state.get('admin', False)
+        if demo:
+            admin_pq = False
+            st.session_state['admin_pq'] = admin_pq
+            client_user = 'stapinskistefan@gmail.com'
+            prod = False
+            KING = kingdom__grace_to_find_a_Queen()
+            st.session_state['sneak_peak'] = True
+            st.info("Welcome, feel free to place trades, every trade is handled and management by the AI using TimeSeries Weighted Averages...TimeValueMoney")
+            st.session_state['sneak_peak'] = False
+            st.session_state["ip_address"] = return_app_ip()
+            st.session_state["username"] = client_user
+            st.session_state['db_root'] = 'db__stapinskistefan_99757341'
+            st.session_state['authorized_user'] = True
+            st.session_state['authentication_status'] = True
+            st.session_state['prod'] = False
+            qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, 
+                            queen_king=True, api=True, init=True, 
+                            revrec=True, 
+                            demo=True)
+            QUEEN_KING = qb.get('QUEEN_KING')
+            api = qb.get('api')
+            revrec = qb.get('revrec')
+        else:
+            authenticator = signin_main(page="pollenq")
+    
+    admin_pq = st.session_state.get('admin', False)
     if st.session_state['authentication_status'] != True: ## None or False
         st.warning("Sign In")
         display_for_unAuth_client_user()
         st.stop()
     prod = st.session_state['prod']
     
-    if sandbox and prod:
-        st.switch_page('pollen.py')
-    if not sandbox and not prod:
-        st.switch_page('pages/sandbox.py')
+    if not demo:
+        if sandbox and prod:
+            st.switch_page('pollen.py')
+        if not sandbox and not prod:
+            st.switch_page('pages/sandbox.py')
     
     # check if main
     authorized_user = st.session_state['authorized_user']
@@ -444,7 +490,7 @@ def pollenq(sandbox=False):
     # print("SNEAKPEAK", st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
 
     # HEADER
-    cols = st.columns((1,2,2,3))
+    cols = st.columns((1,2,2,4))
     with cols[0]:
         header_text = st.empty()
         height=50
@@ -460,29 +506,34 @@ def pollenq(sandbox=False):
         else:
             mark_down_text("Live Account", fontsize="28", color="#03457C", align="left")
 
-    # mark_down_text("Live Account", fontsize="28", color="#EDF2F6", align="left")
-    log_dir = os.path.join(st.session_state['db_root'], 'logs')
+        # if show_acct:
+        with cols[3]:
+        # Show all portfolio history periods in columns
+            periods = ["title", '7D', '1M', '3M', '6M', '1A']
+            perf_cols = st.columns(len(periods))
+            perf_containers = [col.container() for col in perf_cols]
+
 
     table_name = 'db' if prod else 'db_sandbox'
-    # KING = read_swarm_db(table_name, 'KING')
-    KING = kingdom__grace_to_find_a_Queen()
-    users, all_users = return_all_client_users__db()
-    admin_check(admin_pq, all_users['email'].tolist())
-    if 'admin__client_user' in st.session_state:
-        client_user = st.session_state['admin__client_user']
+    if not demo:
+        KING = kingdom__grace_to_find_a_Queen()
+        users, all_users = return_all_client_users__db()
+        admin_check(admin_pq, all_users['email'].tolist())
+        if 'admin__client_user' in st.session_state:
+            client_user = st.session_state['admin__client_user']
 
-    if st.session_state['admin']:
-        if st.sidebar.button("Refresh Ticker Universe to KING"):
-            ticker_universe = return_Ticker_Universe()
-            KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
-            KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
-            if pg_migration:
-                PollenDatabase.upsert_data(table_name, KING.get('key'), KING)
-            else:
-                PickleData(KING.get('source'), KING)
-                st.success("KING Saved")
+        if st.session_state['admin']:
+            if st.sidebar.button("Refresh Ticker Universe to KING"):
+                ticker_universe = return_Ticker_Universe()
+                KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
+                KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
+                if pg_migration:
+                    PollenDatabase.upsert_data(table_name, KING.get('key'), KING)
+                else:
+                    PickleData(KING.get('source'), KING)
+                    st.success("KING Saved")
 
-    menu_id = sac_menu_buttons("pollen")
+    menu_id = sac_menu_buttons(pollen)
     # with cols[0]:
     with st.sidebar:
         st.write(f'menu selection {menu_id}')
@@ -523,18 +574,18 @@ def pollenq(sandbox=False):
         prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
         sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
         sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
-
-        qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
-        # QUEEN = qb.get('QUEEN')
-        QUEEN_KING = qb.get('QUEEN_KING')
+        if not demo:
+            qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
+            api = qb.get('api')
+            revrec = qb.get('revrec')
+            # QUEEN = qb.get('QUEEN')
+            QUEEN_KING = qb.get('QUEEN_KING')
 
         with cols[1]:
             cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
             cash = max(min(cash, 1), -1)
             QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
 
-        api = qb.get('api')
-        revrec = qb.get('revrec')
 
         if st.sidebar.button("Clear App Requests"):
             QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
@@ -545,8 +596,8 @@ def pollenq(sandbox=False):
             cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
             cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
-        if st.session_state.get('admin_queens'):
-            admin_send_queen_airflow(KING)
+        # if st.session_state.get('admin_queens'):
+        #     admin_send_queen_airflow(KING)
         if st.session_state.get('admin_users'):
             admin_queens_active(KING, all_users)
         
@@ -570,7 +621,8 @@ def pollenq(sandbox=False):
 
         table_name = "client_user_store" if prod else 'client_user_store_sandbox'
         
-        stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
+        if not demo:
+            stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
 
         init_swarm_dbs(prod, init=True)
 
@@ -649,6 +701,22 @@ def pollenq(sandbox=False):
             from pages.pollen_engine import pollen_engine
             pollen_engine(acct_info_raw)
 
+        # Show all portfolio history periods in columns
+    for i, period in enumerate(periods):
+        if i == 0:
+            with perf_containers[i]:
+                # mark_down_text('Portfolio', fontsize='23')
+                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText='Portfolio', key='portfolio_ahe', )
+        else:
+            df = fetch_portfolio_history(api, period=period)
+            
+            if df is not None and not df.empty:
+                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
+                with perf_containers[i]:
+                    color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
+                    mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
+                    mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
+
 
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
@@ -680,3 +748,4 @@ if __name__ == '__main__':
     # admin_pq = namespace.admin
 
     pollenq()
+    # st.write(st.session_state.items())

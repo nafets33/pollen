@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from bs4 import BeautifulSoup
 import re
-from master_ozz.utils import ozz_characters, save_json, init_text_audio_db, ozz_master_root_db, init_user_session_state, hoots_and_hootie_keywords, ozz_master_root, print_line_of_error, Directory, CreateChunks, CreateEmbeddings, Retriever, init_constants, refreshAsk_kwargs
+from master_ozz.utils import ozz_characters, hoots_and_hootie_keywords, ozz_master_root, print_line_of_error, Directory, CreateChunks, CreateEmbeddings, Retriever, init_constants, refreshAsk_kwargs
 # from streamlit_extras.switch_page_button import switch_page
 from dotenv import load_dotenv
 from custom_voiceGPT import custom_voiceGPT, VoiceGPT_options_builder
@@ -45,7 +45,7 @@ def hoots_and_hootie(width=350, height=350,
         self_image=self_image,
         width=width,
         height=height,
-        hello_audio="test_audio.mp3",
+        hello_audio=None, # "test_audio.mp3",
         face_recon=face_recon, # True False, if face for 4 seconds, trigger api unless text being recorded trigger api, else pass
         show_video=show_video, # True False, show the video on page
         # listen=listen, # True False if True go into listen mode to trigger api
@@ -55,7 +55,7 @@ def hoots_and_hootie(width=350, height=350,
         refresh_ask=refresh_ask,
         force_db_root=force_db_root,
         before_trigger={'how are you': 'hoots_waves__272.mp3', 'phrases': phrases},
-        api_audio=f"{st.session_state['ip_address']}/api/data/",
+        api_audio=f"{st.session_state['ip_address']}/api/data/local/",
         # use_embeddings=use_embeddings,
         commands=[{
             "keywords": phrases, # keywords are case insensitive
@@ -64,12 +64,16 @@ def hoots_and_hootie(width=350, height=350,
             "keywords": ["bye Hoots"],
             "api_body": {"keyword": "bye hoots"},
         }
-        ]
+        ],
+        agent_actions=agent_actions,
+        key=st.session_state.get('self_image', 'jamescfp'),
+        datatree={},
+        datatree_title="",
     )
 
     return True
 
-def ozz():
+def ozz(user_auth=False):
 
     client_user = st.session_state['client_user']
     db_root = st.session_state['db_root']
@@ -97,17 +101,8 @@ def ozz():
         header_prompt = st.text_area("System_Prompt", header_prompt, height=500)
         if st.button("save main prompt"):
             st.info("DB Not Setup Yet")
-            # user_session_state['characters'][self_image].update({'main_prompt': header_prompt})
-            # save_json(st.session_state['ss_file'], user_session_state)
-    # main_tabs = [f"{self_image.split('.')[0]}"]
-    # if "System_Prompt" in st.session_state:
-    #     main_tabs.append("System_Prompt")
-    
-    # tabs = st.tabs(main_tabs)
 
-    refresh_ask = refreshAsk_kwargs(header_prompt=header_prompt)
-        
-
+    refresh_ask = refreshAsk_kwargs(prod, user_auth=user_auth, header_prompt=header_prompt)
     width= 350 #st.session_state['hh_vars']['width'] if 'hc_vars' in st.session_state else 350
     height= 350 # st.session_state['hh_vars']['height'] if 'hc_vars' in st.session_state else 350
     self_image= f"{st.session_state.get('self_image')}.png" # st.session_state['hh_vars']['self_image'] if 'hc_vars' in st.session_state else f"{st.session_state.get('self_image')}.png"
@@ -116,7 +111,6 @@ def ozz():
     input_text= True # st.session_state['hh_vars']['input_text'] if 'hc_vars' in st.session_state else True
     show_conversation= True # st.session_state['hh_vars']['show_conversation'] if 'hc_vars' in st.session_state else True
     no_response_time= 3 # st.session_state['hh_vars']['no_response_time'] if 'hc_vars' in st.session_state else 3
-    refresh_ask = refreshAsk_kwargs() # st.session_state['hh_vars']['refresh_ask'] if 'hc_vars' in st.session_state else refreshAsk_kwargs()
 
     no_response_time = st.sidebar.slider('No Response Time', max_value=8, value=no_response_time)
 
@@ -202,8 +196,8 @@ def ozz():
     if client_user == 'stefanstapinski@gmail.com':
         with st.sidebar:
             st.write("Admin Only")
-            st.write(st.session_state)
 if __name__ == '__main__':
     signin_main()
-    ozz()
+    user_auth = True if 'authentication_status' in st.session_state and st.session_state['authentication_status'] else False
+    ozz(user_auth)
 

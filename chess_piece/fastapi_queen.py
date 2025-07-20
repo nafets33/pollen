@@ -718,7 +718,6 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection): #
 
 def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, grid_custom_options=None, return_type='waves', revrec=None):
     toggle_view_selection = toggle_view_selection.split("-")[0].strip()
-    print("toggle_view_selection", toggle_view_selection)
     def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit', 'current_profit_deviation']):
       for col in df.columns:
         # print(type(df_storygauge.iloc[-1].get(col)))

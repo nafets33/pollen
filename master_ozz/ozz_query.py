@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import openai
 from dotenv import load_dotenv
 import shutil
@@ -34,6 +35,66 @@ OZZ_BUILD_dir = constants.get('OZZ_BUILD_dir')
 characters = ozz_characters()
 root_db = ozz_master_root_db()
 
+def parse_string_to_html(response):
+    """
+    Converts an LLM response string into HTML, handling code blocks, inline code,
+    lists, tables, and links.
+    """
+    try:
+        # Handle code blocks (```language ... ```plaintext)
+        def code_block_replacer(match):
+            code = match.group(2)
+            language = match.group(1) or ""
+            return f'<pre><code class="language-{language}">{code}</code></pre>'
+        html = re.sub(r"```(\w*)\n(.*?)```", code_block_replacer, response, flags=re.DOTALL)
+        # Handle headers (e.g., ### Header)
+        def header_replacer(match):
+            level = len(match.group(1))  # Number of '#' determines the header level
+            text = match.group(2).strip()
+            return f"<h{level}>{text}</h{level}>"
+        html = re.sub(r"^(#{1,6})\s*(.+)$", header_replacer, response, flags=re.MULTILINE)
+        # Handle bold text (**text**)
+        html = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", html)
+        # Handle inline code (`code`)
+        html = re.sub(r"`([^`]+)`", r'<code>\1</code>', html)
+        # Handle links [text](url)
+        html = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', html)
+        # Handle unordered lists
+        def ul_replacer(match):
+            items = match.group(0).strip().split('\n')
+            items = [f"<li>{item.lstrip('- ').strip()}</li>" for item in items]
+            return "<ul>" + "".join(items) + "</ul>"
+        html = re.sub(r"(^- .+(?:\n- .+)*)", ul_replacer, html, flags=re.MULTILINE)
+        # Handle ordered lists
+        def ol_replacer(match):
+            items = []
+            for item in match.group(0).strip().split('\n'):
+                clean_item = re.sub(r'^\d+\.\s*', '', item).strip()
+                items.append(f"<li>{clean_item}</li>")
+            return "<ol>" + "".join(items) + "</ol>"
+        html = re.sub(r"(^\d+\. .+(?:\n\d+\. .+)*)", ol_replacer, html, flags=re.MULTILINE)
+        # Handle tables (simple markdown tables)
+        def table_replacer(match):
+            lines = match.group(0).strip().split('\n')
+            header = lines[0].split('|')[1:-1]
+            rows = [line.split('|')[1:-1] for line in lines[2:]]
+            ths = ''.join(f"<th>{cell.strip()}</th>" for cell in header)
+            trs = ''.join('<tr>' + ''.join(f"<td>{cell.strip()}</td>" for cell in row) + '</tr>' for row in rows)
+            return f"<table><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>"
+        html = re.sub(
+            r"((?:\|.+\|\n)+\|[-:| ]+\|\n(?:\|.+\|\n?)+)",
+            table_replacer,
+            html
+        )
+        # Handle newlines as <br> (except inside <pre>...</pre>)
+        def br_replacer(match):
+            return match.group(0).replace('\n', '')
+        html = re.sub(r'(<pre>.*?</pre>)', br_replacer, html, flags=re.DOTALL)
+        html = re.sub(r'(?<!</pre>)\n', '', html)
+        return html
+    except Exception as e:
+        print_line_of_error(f'{e}')
+        return response
 
 def clean_response(response):
     # Remove asterisks specifically, but keep other punctuation like ? and !
@@ -258,13 +319,14 @@ def ai_create_name_for_session(master_conversation_history):
     return True
 
 ### MAIN 
-def Scenarios(text: list, current_query: str , conversation_history: list , master_conversation_history: list, session_state={}, audio_file=None, self_image='hootsAndHootie.png', client_user=None, use_embeddings=None, df_master_audio=None, check_for_story=False, return_audio=False):
+def Scenarios(text: list, current_query: str , conversation_history: list , master_conversation_history: list, session_state={}, audio_file=None, self_image='hootsAndHootie.png', client_user=None, use_embeddings=None, df_master_audio=None, refresh_ask=False, return_audio=False):
     scenario_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     OZZ = {}
     s3_filepath = f'{client_user}/'
 
-    def scenario_return(response, conversation_history, audio_file, session_state, self_image=None):
+    def scenario_return(response, html_response, conversation_history, audio_file, session_state, self_image=None):
         return {'response': response,
+                'html_response': html_response,
                 'conversation_history': conversation_history,
                 'audio_file': audio_file,
                 'session_state': session_state,
@@ -425,9 +487,33 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
 
     # WATERFALL OF QUERY RESPONSE
     ## checks (limit)
+
     ## check commands
 
-    # Scenario Limit
+    common_phrases_for_Questions = {
+        "Place Trades": "Hi! I can help you place trades. Just tell me the stock or crypto and whether you'd like to buy or sell.",
+        "Investment Advice": "Looking for guidance? I can provide general investment advice based on trends and your risk profile.",
+        "Risk Management": "I can review your current portfolio and suggest ways to manage or diversify your risk.",
+        "Performance Review": "I can give you a summary of how your investments have been performing over time.",
+        "Rebalance Portfolio": "Need to rebalance? I’ll help shift your holdings to better match your strategy.",
+        "Explore Sectors": "Want to explore sector-based investments? I can surface top performers by industry.",
+        "Market Overview": "I can brief you on current market conditions, top movers, and economic headlines.",
+        "Alerts & Monitoring": "I can set up alerts for your portfolio, so you're notified of key changes.",
+        "Goal Tracking": "Have a financial goal in mind? I’ll help you monitor progress and suggest adjustments.",
+        "Tax Strategy Tips": "I can offer basic tax-aware investing suggestions to help you stay efficient.",
+        "Educational Insights": "Want to learn more? I can explain terms, strategies, and tools in plain English.",
+        "Crypto Guidance": "I can provide insight into crypto trends and help you explore coins beyond Bitcoin.",
+        "News Reactions": "Ask me what recent headlines mean for your holdings or the broader market."
+    }
+
+    if not refresh_ask.get('user_auth'):
+        print("NOT ADMIN USER")
+        key, value = random.choice(list(common_phrases_for_Questions.items()))
+        response = f'{value} \n\n Once you signup I will be at your service'
+        html_response = parse_string_to_html(response)
+
+        return scenario_return(response, html_response, conversation_history, audio_file, session_state, self_image)
+
     df_mch = pd.DataFrame(conversation_history)
 
     if len(df_mch) > 0:
@@ -440,6 +526,7 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
             if cl_user_questions > 8 and client_user != 'stefanstapinski@gmail.com':
                 # return good bye message 
                 response = "Hey sorry but you've reached the max number of questions to ask. Talking to me literally costs money...time is money after all even with computers. Maybe next time we can speak for real. "
+                html_response = parse_string_to_html(response)
                 # Appending the response from json file
                 conversation_history.append({"role": "assistant", "content": response})
                 
@@ -453,7 +540,7 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
                 session_state['response_type'] = 'response'
                 listen_after_reply = session_state['returning_question']
 
-                return scenario_return(response, conversation_history, audio_file, session_state, self_image)
+                return scenario_return(response, html_response, conversation_history, audio_file, session_state, self_image)
         
             if cl_user_questions == 5:
                 system_info = " Please tell the user that they have 5 more questions remaining before you need to leave"
@@ -488,13 +575,19 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
     llm_convHistory = copy.deepcopy(conversation_history)
     
     """ CALL LLM RETURN RESPONSE"""
+    print(self_image)
     if self_image == 'jamescfp':
         print("CALL JAMES - GPT")
         REVREC = init_queenbee(client_user=client_user, prod=prod, revrec=True).get('REVREC')
         story = REVREC.get('storygauge')
+        story = story[["piece_name","symbol",
+                       "ticker_total_budget","ticker_borrow_budget",
+                       "current_from_open","current_from_yesterday","ticker_remaining_budget","ticker_remaining_borrow",
+                       "qty_available","broker_qty_available",
+                       "unrealized_pl","unrealized_plpc",]]
 
         portfolio_data = story.to_dict()
-        current_query =  str(portfolio_data) + current_query
+        current_query =  f'{current_query} -- BELOW IS THE USERS PORTFOLIO DATA USE THIS AS REFERENCE IF NEEDED TO RESPOND: {str(portfolio_data)}'
         llm_convHistory.append({"role": "user", "content": current_query})
         response = llm_assistant_response(llm_convHistory)
     elif db_name:
@@ -527,8 +620,9 @@ def Scenarios(text: list, current_query: str , conversation_history: list , mast
     else:
         audio_file = False
 
+    html_response = parse_string_to_html(response)
 
-    return scenario_return(response, conversation_history, audio_file, session_state, self_image)
+    return scenario_return(response, html_response, conversation_history, audio_file, session_state, self_image)
 
 def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, page_direct=False, listen_after_reply=False, session_listen=False, before_trigger_vars={}):
     
@@ -587,8 +681,9 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     #         save_json()
     self_image_name = self_image.split('.')[0]
     split_query_by = characters[self_image_name].get('split_query_by')
-    text, current_query = clean_current_query_from_previous_ai_response(text, split_query_by)
-    print(current_query)
+    current_query = current_query = text[-1]['user'] # user query
+    # text, current_query = clean_current_query_from_previous_ai_response(text, split_query_by)
+    print("current_query:", current_query)
     if len(current_query) <= 1:
         print("NO RESPONSE RETURN BLANK")
         # return ozz_query_json_return(text, self_image, audio_file=None, page_direct=None, listen_after_reply=False)
@@ -596,13 +691,14 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     
     first_ask = True if len(text) <= 1 else False
 
-    common_phrases_ = common_phrases_for_Questions()
-
     ## Load Client session and conv history # based on character
+    prod = True if 'prod' in refresh_ask and refresh_ask['prod'] else False
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     if pg_migration:
-        master_conversation_history = PollenDatabase.retrieve_data(db_root, '-MASTER_CONVERSATIONAL_HISTORY')
-        conversation_history = PollenDatabase.retrieve_data(db_root, '-CONVERSATIONAL_HISTORY')
-        session_state = PollenDatabase.retrieve_data(db_root, 'SESSION_STATE')
+        master_conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY').get('data', [])
+        conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-CONVERSATIONAL_HISTORY').get('data', [])
+        session_state = PollenDatabase.retrieve_data(table_name, f'{db_root}-SESSION_STATE')
+
         master_conversation_history_file_path = None
         conversation_history_file_path = None
         session_state_file_path = None
@@ -610,7 +706,6 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
         master_conversation_history_file_path = os.path.join(db_root, 'master_conversation_history.json')
         conversation_history_file_path = os.path.join(db_root, 'conversation_history.json')
         session_state_file_path = os.path.join(db_root, 'session_state.json')
-    
         # load db
         master_conversation_history = load_local_json(master_conversation_history_file_path)
         conversation_history = load_local_json(conversation_history_file_path)
@@ -629,7 +724,6 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     conversation_history = get_last_eight(conversation_history)
 
     # # If query was already ASKED find audio and don't call LLM # WORKERBEE
-    self_image_name = self_image.split('.')[0]
     # master_text_audio_name, master_text_audio = init_text_audio_db()
     # df_master_audio = pd.DataFrame(master_text_audio)
     # if len(df_master_audio) > 0:
@@ -654,9 +748,10 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     storytime = True if session_state['story_time'] else False
 
     # Call the Scenario Function and get the response accordingly
-    scenario_resp = Scenarios(text, current_query, conversation_history, master_conversation_history, session_state, self_image=self_image, client_user=client_user, use_embeddings=use_embeddings, df_master_audio=None, return_audio=return_audio) # df_master_audio
+    scenario_resp = Scenarios(text, current_query, conversation_history, master_conversation_history, session_state, self_image=self_image_name, client_user=client_user, use_embeddings=use_embeddings, df_master_audio=None, return_audio=return_audio, refresh_ask=refresh_ask) # df_master_audio
     response = scenario_resp.get('response')
-    response = clean_response(response)
+    # response = clean_response(response)
+    html_response = scenario_resp.get('html_response')
 
     # print("RESPONSE", response)
     conversation_history = scenario_resp.get('conversation_history')
@@ -667,9 +762,9 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     # Save Data
     # def save_response(text, current_query, response, client_user, self_image, session_state, master_conversation_history)
     session_listen = session_state.get('session_listen')
-    master_conversation_history.append({"role": "user", "content": current_query, 'client_user': client_user, 'datetime': return_timestamp_string(), 'session': session_listen, })
+    master_conversation_history.append({"role": "user", "content": current_query, 'client_user': client_user, 'datetime': return_timestamp_string(), 'session': session_listen})
     master_conversation_history.append({"role": "assistant", "content": response, "self_image": self_image, 'datetime': return_timestamp_string(), 'session': session_listen})
-    text[-1].update({'resp': response})
+    text[-1].update({'resp': html_response})
     session_state['text'] = text
     
     # # Question Return?
@@ -688,14 +783,21 @@ def ozz_query(text, self_image, refresh_ask, client_user, force_db_root=False, p
     else:
         page_direct="http://localhost:8501/"
 
-    # For saving a chat history for current session in json file
-    save_json(master_conversation_history_file_path, master_conversation_history)
-    save_json(conversation_history_file_path, conversation_history)
-    save_json(session_state_file_path, session_state)
+    if pg_migration:
+        # save to db
+        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+        PollenDatabase.upsert_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY', master_conversation_history)
+        PollenDatabase.upsert_data(table_name, f'{db_root}-CONVERSATIONAL_HISTORY', conversation_history)
+        PollenDatabase.upsert_data(table_name, f'{db_root}-SESSION_STATE', session_state)
+    else:
+        # For saving a chat history for current session in json file
+        save_json(master_conversation_history_file_path, master_conversation_history)
+        save_json(conversation_history_file_path, conversation_history)
+        save_json(session_state_file_path, session_state)
 
-    print("listen after reply", listen_after_reply)
-    print("AUDIOFILE:", audio_file)
-    print("IMAGE:", self_image)
+    # print("listen after reply", listen_after_reply)
+    # print("AUDIOFILE:", audio_file)
+    # print("IMAGE:", self_image)
     
     return ozz_query_json_return(text, self_image, audio_file, page_direct, listen_after_reply)
 

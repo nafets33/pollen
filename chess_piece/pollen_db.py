@@ -312,6 +312,7 @@ class PollenDatabase:
                 (key,),
             )
             result = cur.fetchone()
+
             if result:
                 # Check the type of the result
                 if isinstance(result[0], str):
@@ -324,18 +325,30 @@ class PollenDatabase:
                 if len(data) == 0:
                     print('NO DATA AVAIL for ', key)
                     return None
-                # print("Retrieved data for key:", key)
-                data['key'] = key
-                data['table_name'] = table_name
-                data['db_root'] = key.split("-")[0]
-                return data
+                
+                if isinstance(data, dict):
+                    data['key'] = key
+                    data['table_name'] = table_name
+                    data['db_root'] = key.split("-")[0]
+                    return data
+                elif isinstance(data, list):
+                    # Optionally wrap in a dict, or just return the list
+                    return {
+                        "key": key,
+                        "table_name": table_name,
+                        "db_root": key.split("-")[0],
+                        "data": data
+                    }
+                else:
+                    print(f"Unexpected data type for key {key}: {type(data)}")
+                    return data
 
         except Exception as e:
             print_line_of_error(f'ERROR RETERIVING DATA PG {e}')
         finally:
             if conn:
                 conn.close()
-
+        print(f"Key '{key}' not found in table '{table_name}'.")
         return None
 
     @staticmethod

@@ -126,17 +126,22 @@ const columnFormaters = {
 }
 
 const HyperlinkRenderer = (props: any) => {
-  return (
-    <a
-      href={`${props.column.colDef.baseURL}/${
-        props.data[props.column.colDef["linkField"]]
-      }`}
-      target="_blank"
-    >
-      {props.value}
-    </a>
-  )
-}
+  const linkField = props.column.colDef["linkField"];
+  const baseURL = props.column.colDef.baseURL;
+  const linkValue = props.data && linkField ? props.data[linkField] : null;
+
+  // Only render a link for real data rows
+  if (linkValue && baseURL) {
+    return (
+      <a href={`${baseURL}/${linkValue}`} target="_blank" rel="noopener noreferrer">
+        {props.value}
+      </a>
+    );
+  }
+  // For pivot/group/total rows, just render the value
+  return <span>{props.value}</span>;
+};
+
 
 toastr.options = {
   positionClass: "toast-top-full-width",
@@ -497,9 +502,31 @@ if (typeof total_col === "string" && allCols.includes(total_col)) {
   subtotal[allCols[0]] = "subTotals"; // fallback to first column
 }
 
+// Add button columns if not already present
+if (Array.isArray(buttons)) {
+  buttons.forEach((btn: any) => {
+    if (btn.col_header && !allCols.includes(btn.col_header)) {
+      allCols.push(btn.col_header);
+    }
+  });
+}
+
+
 allCols.forEach((col: string) => {
   if (subtotal_cols.includes(col)) {
-    const sum = filteredRows.reduce((sum, row) => sum + (Number(row[col]) || 0), 0);
+    // Try to split by $ and sum the numeric part if possible
+    const sum = filteredRows.reduce((sum, row) => {
+      let val = row[col];
+      if (typeof val === "string" && val.includes("$")) {
+        // Try to extract number after $
+        const match = val.match(/\$([\d,.\-]+)/);
+        if (match && match[1]) {
+          val = match[1].replace(/,/g, "");
+        }
+      }
+      const num = Number(val);
+      return sum + (isNaN(num) ? 0 : num);
+    }, 0);
     subtotal[col] = isNaN(sum) ? "" : sum;
   } else if (subtotal[total_col] !== "subTotals" || col !== total_col) {
     subtotal[col] = ""; // or null, or a placeholder
@@ -760,13 +787,7 @@ const onFilterChanged = useCallback(() => {
     }
   };
 
-  // interface Props {
-  //   toggle_views: string[];
-  //   viewId: number;
-  //   setViewId: (id: number) => void;
-  //   loading: boolean;
-  //   onUpdate: () => void;
-  // }
+
   const getButtonStyle = (length: number) => {
     if (length < 3) {
       return { padding: "15px 18px", fontSize: "18px" };
@@ -826,6 +847,7 @@ const handleButtonFilter = (value: string | null) => {
     }
   }
 };
+
 
   return (
     <>

@@ -1557,15 +1557,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             return False
 
         def refresh_star_check(QUEEN_KING, queen_orders, symbol, ttf):
-            if 'ticker_refresh_star' in QUEEN_KING['king_controls_queen'].keys():
-                refresh_star = QUEEN_KING['king_controls_queen']['ticker_refresh_star'].get(symbol, '1Day_1Year')
-                last_buy_datetime = queen_orders[(queen_orders['symbol'] == symbol) & (queen_orders['side']=='buy')]
-                if len(last_buy_datetime) > 0:
-                    last_buy_datetime = last_buy_datetime.iloc[-1]['datetime']
-                else:
-                    last_buy_datetime = datetime.now(est).replace(year=1989) # no last buy ~ buy away
-                seconds_needed = star_refresh_star_seconds(refresh_star)
-                time_in_trade_datetime = datetime.now(est) - last_buy_datetime
+            # if 'ticker_refresh_star' in QUEEN_KING['king_controls_queen'].keys():
+            #     refresh_star = QUEEN_KING['king_controls_queen']['ticker_refresh_star'].get(symbol, '1Day_1Year')
+            #     last_buy_datetime = queen_orders[(queen_orders['symbol'] == symbol) & (queen_orders['side']=='buy')]
+            #     if len(last_buy_datetime) > 0:
+            #         last_buy_datetime = last_buy_datetime.iloc[-1]['datetime']
+            #     else:
+            #         last_buy_datetime = datetime.now(est).replace(year=1989) # no last buy ~ buy away
+            #     seconds_needed = star_refresh_star_seconds(refresh_star)
+            #     time_in_trade_datetime = datetime.now(est) - last_buy_datetime
                 # if seconds_needed > time_in_trade_datetime.total_seconds():
                 #     print(symbol, ttf, ": STAR REFRESH TIME IN TRADE", time_in_trade_datetime.total_seconds(), "SECONDS NEEDED", seconds_needed)
                     # return True
@@ -2398,13 +2398,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             ttf = run_order.get('ticker_time_frame')
             client_order_id = run_order.get('client_order_id')
             # refresh_star = QUEEN_KING['king_controls_queen'] #### WORKERBEE
-            refresh_star = QUEEN_KING['king_controls_queen']['ticker_refresh_star'].get(symbol, '1Day_1Year')
             entered_trade_time = run_order['datetime'].astimezone(est)
-            seconds_needed = star_refresh_star_seconds(refresh_star)
-            time_in_trade_datetime = datetime.now(est) - entered_trade_time
-            # if seconds_needed > time_in_trade_datetime.total_seconds():
-            #     print(symbol, ttf, ": STAR REFRESH TIME IN TRADE", time_in_trade_datetime.total_seconds(), "SECONDS NEEDED", seconds_needed)
-                # return True
+            # if 'ticker_refresh_star' in QUEEN_KING['king_controls_queen'].keys():
+            #     refresh_star = QUEEN_KING['king_controls_queen']['ticker_refresh_star'].get(symbol, '1Day_1Year')
+            #     seconds_needed = star_refresh_star_seconds(refresh_star)
+            #     time_in_trade_datetime = datetime.now(est) - entered_trade_time
+                # if seconds_needed > time_in_trade_datetime.total_seconds():
+                #     print(symbol, ttf, ": STAR REFRESH TIME IN TRADE", time_in_trade_datetime.total_seconds(), "SECONDS NEEDED", seconds_needed)
+                    # return True
             # measure times for all ticker_refresh_star
             """ AUTO PILOT """
             auto_pilot_df = QUEEN_KING['king_controls_queen']['ticker_autopilot']
@@ -2429,6 +2430,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
                 return False
 
 
+        # WORKERBEE FIND RETURN BROKER DELTA AND FIX WITH QTY_AVAILABLE
         def queen_orders_main(BROKER, QUEEN, STORY_bee, QUEEN_KING, charlie_bee, mkhrs):
             # WORKERBEE move info just api?
             def long_short_queenorders(df_active, QUEEN, col_metric='cost_basis_current'):
@@ -3022,20 +3024,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server):
             #     PollenDatabase.upsert_data(table_name, key=charlie_bee.get('key'), value=charlie_bee)
             # else:
             #     PickleData(queens_charlie_bee, charlie_bee, console=False)
+            heartbeat_cyle.append(beat)
             
             charlie_bee['queen_cycle_count'] += 1
             if datetime.now(est) - cycle_time > timedelta(seconds=60):
                 cycle_time = datetime.now(est)
                 print("Beat", beat, datetime.now(est).strftime('%y-%m-%d:%H:%M'))
+                avg_beat = sum(heartbeat_cyle) / len(heartbeat_cyle)
+                QUEENsHeart.update({"heartbeat_beat": round(beat)})
+                QUEENsHeart.update({"heartbeat_avg_beat": round(avg_beat)})
+                god_save_the_queen(QUEEN, QUEENsHeart, upsert_to_main_server=upsert_to_main_server)
             
             if beat > 23:
                 logging.warning((queens_chess_piece, ": SLOW cycle Heart Beat: ", beat, "use price gauge"))
                 # print('use price gauge') # (STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
-            heartbeat_cyle.append(beat)
-            avg_beat = sum(heartbeat_cyle) / len(heartbeat_cyle)
-            QUEENsHeart.update({"heartbeat_beat": round(beat)})
-            QUEENsHeart.update({"heartbeat_avg_beat": round(avg_beat)})
-            god_save_the_queen(QUEEN, QUEENsHeart, upsert_to_main_server=upsert_to_main_server)
 
             # Should you operate now? I thnik the brain never sleeps ?
             if 'crypto' not in queens_chess_piece:

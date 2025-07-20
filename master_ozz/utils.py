@@ -1,5 +1,3 @@
-import streamlit as st
-
 import speech_recognition as sr
 import time 
 from dotenv import load_dotenv
@@ -7,7 +5,6 @@ import os
 import pickle
 import time
 from datetime import datetime
-import streamlit as st
 import pandas as pd
 import socket
 import ipdb
@@ -71,19 +68,13 @@ def init_user_session_state(prod, db_root, init_sessstate=True):
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
         data = PollenDatabase.retrieve_data(table_name, f'{db_root}-SESSION_STATE')
         if 'hh_vars' not in data.keys():
-            data['hh_vars'] = hoots_and_hootie_vars()
+            data['hh_vars'] = hoots_and_hootie_vars(prod)
         
-        if init_sessstate:
-            for k,v in data.items():
-                st.session_state[k] = v
-
         return data
     
-    ss_file  = os.path.join(st.session_state['db_root'], 'session_state.json')
-    st.session_state['ss_file'] = ss_file
+    ss_file  = os.path.join(db_root, 'session_state.json')
     ss_data = load_local_json(ss_file)
-    for k,v in ss_data.items():
-        st.session_state[k] = v
+
     
     return ss_data
 
@@ -115,8 +106,6 @@ def init_constants():
             "OZZ_db_images": OZZ_db_images,
             "ROOT_PATH": ROOT_PATH,
             "OZZ_DB": OZZ_DB,}
-    for k,v in data_paths.items():
-        st.session_state[k] = v
     
     return data_paths
 
@@ -518,39 +507,6 @@ def common_phrases_for_Questions():
     "Where can",
 ]
 
-def page_line_seperator(height="3", border="none", color="#C5B743"):
-    return st.markdown(
-        """<hr style="height:{}px;border:{};color:#333;background-color:{};" /> """.format(
-            height, border, color
-        ),
-        unsafe_allow_html=True,
-    )
-
-def set_streamlit_page_config_once():
-    try:
-        main_root = ozz_master_root()
-
-        jpg_root = os.path.join(main_root, "misc")
-        queenbee = os.path.join(jpg_root, "hootsAndHootie.png")
-        page_icon = Image.open(queenbee)
-        st.set_page_config(
-            page_title="Ozz",
-            page_icon=page_icon,
-            layout="wide",
-            initial_sidebar_state='collapsed',
-            #  menu_items={
-            #      'Get Help': 'https://www.extremelycoolapp.com/help',
-            #      'Report a bug': "https://www.extremelycoolapp.com/bug",
-            #      'About': "# This is a header. This is an *extremely* cool app!"
-            #  }
-        )            
-    except st.errors.StreamlitAPIException as e:
-        if "can only be called once per app" in e.__str__():
-            # ignore this error
-            return True
-        raise e
-
-
 def run_pq_fastapi_server():
 
     script_path = os.path.join(ozz_master_root(), 'ozz_api.py')
@@ -580,28 +536,6 @@ def get_ip_address():
     ip_address = socket.gethostbyname(hostname)
     return ip_address
 
-
-def return_app_ip():
-    ip_address = st.session_state.get('ip_address')
-    streamlit_ip=os.environ.get('streamlit_ip'), 
-    # ip_address=os.environ.get('local_fastapi_address')
-    
-    if ip_address:
-        return ip_address, streamlit_ip
-    else:
-        ip_address = get_ip_address()
-    
-    if ip_address == os.environ.get('gcp_ip'):
-        # print("IP", ip_address, os.environ.get('gcp_ip'))
-        ip_address = "https://api.divergent-thinkers.com"
-        streamlit_ip = ip_address
-    else:
-        ip_address = os.environ.get('local_fastapi_address')
-
-    st.session_state['ip_address'] = ip_address
-    st.session_state['streamlit_ip'] = streamlit_ip
-
-    return ip_address, streamlit_ip
 
 
 def LoadMultipleFiles(files):
@@ -680,13 +614,12 @@ def CreateEmbeddings(textChunks :str ,persist_directory : str):
     vector_store.save_local(persist_directory)
     return vector_store
 
-def get_last_eight(lst=[], num_items=3):
-    if len(lst) <= 1:
+def get_last_eight(lst=[], num_items=8):
+    if not lst:
+        return []
+    if len(lst) == 1:
         return lst
-
-    max_items = min(len(lst), num_items)
-
-    return [lst[0]] + lst[-(max_items - 1):]
+    return lst[:1] + lst[-(num_items - 1):]
 
 
 def handle_prompt(characters, self_image, conversation_history, main_prompt=None, system_info=False):
@@ -871,8 +804,9 @@ Your name is James, you are a professional financial planner. Here to help revie
 
     return my_characters
 
-def refreshAsk_kwargs(color_dict={'background_color_chat': 'transparent'}, header_prompt='', return_audio=False):
-    return {'color_dict': color_dict, "header_prompt": header_prompt, "return_audio": return_audio}
+def refreshAsk_kwargs(prod, user_auth=False, color_dict={'background_color_chat': 'transparent'}, header_prompt='', return_audio=False):
+    return {'prod': prod, 'user_auth': user_auth,
+            'color_dict': color_dict, "header_prompt": header_prompt, "return_audio": return_audio}
 
 def ozzapi_script_Parser():
     parser = argparse.ArgumentParser()
@@ -1170,8 +1104,8 @@ def hoots_and_hootie_keywords(characters, self_image):
     return characters[self_image].get('split_query_by')
 
 
-def hoots_and_hootie_vars(width=350, height=350, self_image="hootsAndHootie", face_recon=False, show_video=False, input_text=True, show_conversation=True, no_response_time=3, refresh_ask={}):
-    refresh_ask = refreshAsk_kwargs()
+def hoots_and_hootie_vars(prod=False, width=350, height=350, self_image="hootsAndHootie", face_recon=False, show_video=False, input_text=True, show_conversation=True, no_response_time=3, refresh_ask={}):
+    refresh_ask = refreshAsk_kwargs(prod, user_auth=True)
     return {'width':width,
      'height':height,
      'self_image':self_image, 

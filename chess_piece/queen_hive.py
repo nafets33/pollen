@@ -175,6 +175,7 @@ def kingdom__grace_to_find_a_Queen(prod=True):
     else:
         KING = ReadPickleData(master_swarm_KING(prod))
     
+    
     if 'not_allowed' not in KING['users'].keys():
         KING['users']['not_allowed'] = []
     
@@ -3580,6 +3581,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     if demo:
         db_root = 'db__stapinskistefan_99757341'
         prod = False
+        main_server = True
 
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init, pg_migration=pg_migration, table_name=table_name)
     if init_pollen_ONLY:
@@ -5153,11 +5155,6 @@ def init_clientUser_dbroot(client_username, force_db_root=False, queenKING=False
             if not pg_migration:
                 if os.path.exists(db_root) == False:
                     os.mkdir(db_root)
-                    # os.mkdir(os.path.join(db_root, "logs"))
-        
-        # if queenKING:
-        #     st.session_state['db_root'] = db_root
-        #     st.session_state["admin"] = True if client_username == "stefanstapinski@gmail.com" else False
 
         return db_root
     except Exception as e:

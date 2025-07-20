@@ -156,6 +156,8 @@ def main():
     symbol_info = api_rh.get_best_bid_ask('BTC-USD')
     wave_amo = 100000 / float(symbol_info.get('results')[0]['ask_inclusive_of_buy_spread'])
 
+    # api_rh.get_order("67b37e02-ac37-434e-a2d4-b14cb89f74cc")
+
     # api_rh.get_account_activity()
 
     # In [10]: api_rh.get_holdings()
@@ -260,6 +262,24 @@ def main():
     #  'created_at': '2025-02-17T13:20:50.234331-05:00',
     #  'updated_at': '2025-02-17T13:20:51.050895-05:00',
     #  'market_order_config': {'asset_quantity': '0.000100000000000000'}}
+
+    def broker_orders_fields() -> list:
+        return ['id', 'client_order_id', 'symbol', 'side', 'type', 'qty', 'filled_qty', 'filled_avg_price', 'status', 'created_at', 'updated_at']
+
+    def convert_robinhood_crypto_order_fields(order) -> Dict[str, Any]:
+        return {
+            'id': order.get('id'),
+            'client_order_id': order.get('client_order_id'),
+            'symbol': order.get('symbol'),
+            'side': order.get('side'),
+            'type': order.get('type'),
+            'qty': order.get('market_order_config', {}).get('asset_quantity', ''),
+            'filled_qty': order.get('filled_asset_quantity', 0),
+            'filled_avg_price': order.get('average_price', 0),
+            'status': order.get('state'),
+            'created_at': order.get('created_at'),
+            'updated_at': order.get('updated_at')
+        }
 
 if __name__ == "__main__":
     main()

@@ -477,12 +477,12 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         # df.at['Total', 'edit_buy_autopilot_option'] = ""
         # df.at['Total', 'edit_sell_autopilot_option'] = ""
 
-        for star in star_names().keys():
-            try:
-                df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
-                df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
-            except Exception as e:
-                print_line_of_error(e)
+        # for star in star_names().keys():
+        #     try:
+        #         df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
+        #         df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
+        #     except Exception as e:
+        #         print_line_of_error(e)
         
             # Colors
         k_colors = streamlit_config_colors()
