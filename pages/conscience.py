@@ -721,7 +721,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'prompt_field': 'add_symbol_option',
                             'col_headername': 'Symbol',
                             "col_header": "symbol",
-                            # "border_color": "green",
                             'col_width':100,
                             'sortable': True,
                             'pinned': 'left',
@@ -738,7 +737,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'prompt_field': 'kors',
                             'col_headername': 'Advisors Allocation',
                             "col_header": "queens_suggested_buy", # allocation_long_deploy
-                            "border_color": "green",
                             'col_width':100,
                             'sortable': True,
                             # 'pinned': 'left',
@@ -755,11 +753,10 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'prompt_field': 'sell_option',
                             'col_headername': 'Sell',
                             "col_header": "queens_suggested_sell",
-                            # "border_color": "red",
                             'col_width':100,
                             'sortable': True,
                             # 'pinned': 'left',
-                            'border': '2px solid red',
+                            # 'border': '2px solid red',
                             'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
                             'cellStyle': button_style_sell, #generate_cell_style_range(100000), #button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
                             'cellRendererParams': {
@@ -868,13 +865,13 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'autoWidth': True, 'initialWidth': 110} ,
                 'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'autoWidth': True, 'initialWidth': 110},
                 'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'autoWidth': True, 'initialWidth': 110},              
-                'trinity_w_L': {'headerName': 'Price Position','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
+                'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
                                 'cellStyle': generate_shaded_cell_style('trinity_w_L')},
-                'trinity_w_15': {'headerName': 'Day Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                                 'cellStyle': generate_shaded_cell_style('trinity_w_15')},
-                'trinity_w_30': {'headerName': 'Mid Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                                 'cellStyle': generate_shaded_cell_style('trinity_w_30')},
-                'trinity_w_54': {'headerName': 'Future Force','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                'trinity_w_54': {'headerName': 'MACD-VWAP-RSI Year','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                                 'cellStyle': generate_shaded_cell_style('trinity_w_54')},
                 'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
@@ -1053,6 +1050,11 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                  "qty_available", 
                                  "money", 
                                  "Day_state", 
+                                 "Week_state", 
+                                 "Month_state", 
+                                 "Quarter_state", 
+                                 "Quarters_state", 
+                                 "Year_state", 
                                  'star_buys_at_play', 
                                  'remaining_budget', 
                                 #  'allocation_long', 
@@ -1110,7 +1112,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
 
         # with story_tab:
-        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 889
+        refresh_sec = 60 if seconds_to_market_close > 0 and mkhrs == 'open' else 889
         refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
         ui_refresh_sec = st.sidebar.number_input('story grid refresh sec', min_value=0)
         if ui_refresh_sec > 0:

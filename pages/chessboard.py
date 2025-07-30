@@ -320,7 +320,7 @@ def first_revrec_setup(QUEEN_KING):
 
 
 
-def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key='chess_board'):
+def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key='chess_board', admin=False):
     models = ['MACD', 'story__AI']
     qcp_pieces = QUEEN_KING[qcp_bees_key].keys()
     qcp_name = st.text_input(label='piece name', value=f'pawn_{len(qcp_pieces)}', help="Theme your names to match your strategy")
@@ -368,13 +368,6 @@ def add_new_qcp__to_chessboard(QUEEN_KING, ticker_allowed, themes, qcp_bees_key=
         return QUEEN_KING
 
 
-# def return_star_power_allocation(trading_model):
-
-#     for star, star_vars in trading_model.get('stars_kings_order_rules').items():
-#         trading_model_revrec[star] = star_vars.get("buyingpower_allocation_LongTerm")
-#         trading_model_revrec_s[star] = star_vars.get("buyingpower_allocation_ShortTerm")
-
-
 def reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=False, formkey='Star__Allocation'):
     try:
         cols = st.columns((1,8))
@@ -409,43 +402,9 @@ def reallocate_star_power(QUEEN_KING, trading_model, ticker_option_qc, trading_m
         print_line_of_error("rev allocation error")
 
 
-def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, new_piece=False, headers=0):
-    def return_active_image(qcp):
-        if 'qcp_k' not in st.session_state:
-            b_key = 89
-            st.session_state['qcp_k'] = 89
-        else:
-            b_key = st.session_state['qcp_k'] + 1
-            st.session_state['qcp_k'] = b_key
-        if 'qcp_k' in st.session_state and b_key == st.session_state['qcp_k']:
-            b_key+=1
-        try:
-            with cols[0]:
-                if qcp == 'castle':
-                    cust_Button(local__filepaths_misc().get('castle_png'), key=f'{b_key} castle')
+def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, new_piece=False, headers=0, admin=False):
 
-                else:
-                    cust_Button(local__filepaths_misc().get('queen_png'), key=f'{b_key}')
-                #     # hc.option_bar(option_definition=pq_buttons.get('castle_option_data'),title='', key='castle_qcp', horizontal_orientation=False)
-                # elif qcp == 'bishop':
-                #     st.write(qcp)
-                #     # hc.option_bar(option_definition=pq_buttons.get('bishop_option_data'),title='', key='bishop_qcp', horizontal_orientation=False)                                
-                # elif qcp == 'knight':
-                #     st.write(qcp)
-                #     # hc.option_bar(option_definition=pq_buttons.get('knight_option_data'),title='', key='knight_qcp', horizontal_orientation=False)                                
-                # elif qcp == 'castle_coin':
-                #     st.write(qcp)
-                #     # hc.option_bar(option_definition=pq_buttons.get('coin_option_data'),title='', key='coin_qcp', horizontal_orientation=False)                                
-                # else:
-                #     st.write(qcp)
-                #     # st.image(MISC.get('knight_png'), width=74)
-                # cust_Button(os.path.join(hive_master_root(), 'misc/dollar_symbol.gif'), height='38px')
-
-            return True
-        except Exception as e:
-            print_line_of_error(e)
-
-    models = ['MACD', 'story__AI']
+    models = themes
 
     ticker_allowed = ticker_allowed + crypto_symbols__tickers_avail
 
@@ -737,8 +696,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                         
                         if len(QUEEN_KING[qcp_bees_key][qcp]['tickers']) == 0:
                             continue
-
-                        QUEEN_KING=setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers)
+                        
+                        QUEEN_KING=setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers, admin=admin)
                         headers+=1
                     
                     # RevRec

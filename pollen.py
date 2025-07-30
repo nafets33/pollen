@@ -431,7 +431,7 @@ def pollenq(sandbox=False, demo=False):
         pq_buttons['chess_board'] = True
 
 
-    with st.spinner("Verifying Your Scent, Hang Tight"):
+    with st.spinner("Checking Your Keys...hang tight"):
         # print(st.session_state)
         if demo:
             admin_pq = False
@@ -726,13 +726,14 @@ def pollenq(sandbox=False, demo=False):
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-    if st.button("Reset Queen Controls"):
-        king_controls_queen=return_queen_controls(stars)
-        QUEEN_KING['king_controls_queen'] = king_controls_queen
-        if st.session_state.get('pg_migration'):
-            PollenDatabase.upsert_data(table_name=table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
-        else:
-            PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
+    if admin_pq:
+        if st.button("Reset Queen Controls"):
+            king_controls_queen=return_queen_controls(stars)
+            QUEEN_KING['king_controls_queen'] = king_controls_queen
+            if st.session_state.get('pg_migration'):
+                PollenDatabase.upsert_data(table_name=table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+            else:
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
 
     print(f'>>>> pollen END >>>> {(datetime.now() - main_page_start).total_seconds()}' )
 

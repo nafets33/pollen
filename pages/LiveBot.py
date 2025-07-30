@@ -1,10 +1,11 @@
 # LiveBot
 import pandas as pd
 from pages.conscience import queens_conscience
-from chess_piece.queen_hive import init_queenbee, hive_dates, return_market_hours, kingdom__grace_to_find_a_Queen, create_QueenOrderBee, kingdom__global_vars
+from chess_piece.queen_hive import init_queenbee, hive_dates, return_market_hours, kingdom__grace_to_find_a_Queen, create_QueenOrderBee, kingdom__global_vars, pollen_themes
 from chess_piece.king import return_app_ip
 from chess_piece.app_hive import set_streamlit_page_config_once, sac_menu_buttons, mark_down_text
 from pages.orders import order_grid, config_orders_cols
+from pages.chessboard import chessboard
 from pollen import fetch_portfolio_history
 import streamlit as st
 import pytz
@@ -28,7 +29,7 @@ def demo_bot():
     prod = False
     KING = kingdom__grace_to_find_a_Queen()
     st.session_state['sneak_peak'] = True
-    st.info("Welcome, feel free to place trades, every trade is handled and management by the AI using TimeSeries Weighted Averages...TimeValueMoney")
+    st.info("Welcome, This Portoflio is currently being managed by James-CFP, an AI Agentic Trader, FEEL free to utilize the Trading Tool, James will manage all Trades you Place")
     st.session_state['sneak_peak'] = False
     st.session_state["ip_address"] = return_app_ip()
     st.session_state["username"] = client_user
@@ -39,8 +40,10 @@ def demo_bot():
     qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, 
                        queen_king=True, api=True, init=True, 
                        revrec=True, 
-                       demo=True)
+                       demo=True,
+                       main_server=True,)
     QUEEN_KING = qb.get('QUEEN_KING')
+    # st.write(QUEEN_KING['chess_board'])
     api = qb.get('api')
     revrec = qb.get('revrec')
 
@@ -49,7 +52,12 @@ def demo_bot():
     mkhrs = return_market_hours(trading_days=trading_days)
     seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
     refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 89
-
+    if menu_id == 'Portfolio Allocations':
+        ticker_allowed = KING['alpaca_symbols_df'].index.tolist()
+        themes = list(pollen_themes(KING).keys())
+        chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=False)
+        st.stop()
+    
     if menu_id == 'Orders':
         # seconds_to_market_close = st.session_state['seconds_to_market_close'] if 'seconds_to_market_close' in st.session_state else 0
         # client_user = st.session_state['client_user']
@@ -62,6 +70,7 @@ def demo_bot():
         missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
         order_grid(client_user, config_cols, missing_cols, ip_address)
         st.stop()
+    
     for i, period in enumerate(periods):
         if i == 0:
             with perf_containers[i]:

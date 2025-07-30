@@ -33,18 +33,14 @@ const Dictaphone = ({
   // Logic to process transcript based on session_listen
   const processTranscript = () => {
     if (finalTranscript !== "") {
-      // console.log("Listening?", listening);
-      // console.log("listenAfterReply:", listenAfterReply);
-      // console.log("session_listen:", session_listen);
-      // console.log("apiInProgress:", apiInProgress);
-  
+
       if (listenButton) {
-      // When session_listen is false and not using listenButton, just append
-      myFunc(finalTranscript, { api_body: {} }, 5);
-      setEditableTranscript((prev) => `${prev} ${finalTranscript}`.trim());
-      // resetTranscript();
-      setEditableTranscript("");
-      return;
+        // When session_listen is false and not using listenButton, just append
+        myFunc(finalTranscript, { api_body: {} }, 8);
+        setEditableTranscript((prev) => `${prev} ${finalTranscript}`.trim());
+        resetTranscript();
+        setEditableTranscript(""); // Clear editable transcript state
+        return;
       }
 
 
@@ -61,7 +57,7 @@ const Dictaphone = ({
               console.log(`Keyword found: ${keywords[j]}`);
               myFunc(finalTranscript, commands[i], 1);
               resetTranscript(); // Reset transcript after processing keyword
-              setEditableTranscript(""); // Clear editable transcript state
+              // setEditableTranscript(""); // Clear editable transcript state
               keywordFound = true;
               return;
             }
@@ -86,6 +82,7 @@ const Dictaphone = ({
     }
   };
 
+  
   // Use processTranscript in useEffect to handle updates
   useEffect(() => {
     processTranscript();
@@ -120,48 +117,51 @@ const Dictaphone = ({
             myFunc(editableTranscript, { api_body: {} }, 5);
             resetTranscript();
             setEditableTranscript("");
-          }}
-          style={{
+            }}
+            style={{
             backgroundColor: "rgb(196, 230, 252)",
             color: "black",
             border: "none",
-            padding: "10px 20px",
-            borderRadius: "5px",
+            padding: "5px 10px",
+            borderRadius: "3px",
             cursor: "pointer",
-          }}
-        >
-          Send Transcript
-        </button>
-        <button
-          onClick={showTranscript_func}
-          style={{
+            fontSize: "0.9em",
+            }}
+          >
+            Send Transcript
+          </button>
+          <button
+            onClick={showTranscript_func}
+            style={{
             backgroundColor: "white",
             color: "grey",
             border: "none",
-            padding: "10px 20px",
-            borderRadius: "5px",
+            padding: "5px 10px",
+            borderRadius: "3px",
             cursor: "pointer",
-          }}
-        >
-          {show_transcript ? "Hide Transcript" : "Show Transcript"}
-        </button>
-        <button
-          onClick={clearTranscript_func}
-          style={{
+            fontSize: "0.9em",
+            }}
+          >
+            {show_transcript ? "Hide Transcript" : "Show Transcript"}
+          </button>
+          <button
+            onClick={clearTranscript_func}
+            style={{
             backgroundColor: "white",
             color: "grey",
             border: "none",
-            padding: "10px 20px",
-            borderRadius: "5px",
+            padding: "5px 10px",
+            borderRadius: "3px",
             cursor: "pointer",
-          }}
-        >
-          Clear Transcript
-        </button>
-      </div>
-      {show_transcript && (
-        <div
-          style={{
+            fontSize: "0.9em",
+            }}
+          >
+            Clear Transcript
+          </button>
+          </div>
+          {show_transcript && (
+          <div
+            style={{
             display: "flex",
             flexDirection: "column",
             maxHeight: "800px",
@@ -169,26 +169,45 @@ const Dictaphone = ({
             overflowY: "auto",
             border: "1px solid #ccc",
             padding: "10px",
-          }}
-        >
-          <span>
-            <strong>Listening:</strong> {listening ? "on" : "off"}
-          </span>
-          <span>
+            }}
+          >
+<span>
+  <strong>Listening:</strong>{" "}
+  <span
+    style={{
+      color: listening ? "green" : "gray",
+      fontWeight: 600,
+      animation: listening ? "flash-green 1s infinite alternate" : "none",
+    }}
+  >
+    {listening ? "ON" : "OFF"}
+  </span>
+  {/* Add the animation style only once in your component */}
+  <style>
+    {`
+      @keyframes flash-green {
+        0% { opacity: 1; }
+        100% { opacity: 0.4; }
+      }
+    `}
+  </style>
+</span>         
+            
+            <span>
             <strong>Transcript:</strong>
-          </span>
-      {/* Live preview of interim transcript */}
-        {interimTranscript && (
-          <div style={{ color: "#888", fontStyle: "italic", marginBottom: "8px" }}>
-            {interimTranscript}
-          </div>
-        )}
+            </span>
+          {/* Live preview of interim transcript */}
+            {interimTranscript && (
+              <div style={{ color: "#888", fontStyle: "italic", marginBottom: "8px" }}>
+                {interimTranscript}
+              </div>
+            )}
           <textarea
             ref={textareaRef}
             value={editableTranscript}
             onChange={handleTranscriptChange}
             style={{
-              backgroundColor: "rgb(238, 242, 245)",
+              backgroundColor: "rgb(255, 255, 255)",
               color: "black",
               width: "100%",
               height: "550px",

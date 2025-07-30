@@ -1,29 +1,4 @@
-/* .example-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
 
-#myGrid {
-  flex: 1 1 0px;
-  width: 100%;
-}
-
-.number {
-  text-align: right;
-}
-
-.ag-row-level-0 {
-  font-weight: bold;
-}
-
-a .ag-row-level-1 {
-  color: darkblue;
-}
-
-.ag-row-level-2 {
-  color: darkgreen;
-} */
 #myGrid {
   /* flex: 1 1 0px; */
   width: 100%;
@@ -56,3 +31,16 @@ a .ag-row-level-1 {
   box-shadow:0px 0px 10px rgba(0,0,0,0.4);
 }
 
+.ag-theme-material .ag-header {
+  background-color: #eaf3fb !important; /* Light blue, almost white */
+  color: #1a3556 !important; /* Darker blue for text */
+}
+.ag-theme-material .ag-header-cell-label {
+  color: #1a3556 !important; /* Darker blue for header cell label text */
+}
+
+/* Fix header hover background so text stays visible */
+.ag-theme-material .ag-header-cell:hover {
+  background-color: #b3d1f2 !important; /* Slightly darker light blue */
+  color: #1a3556 !important; /* Darker blue for text */
+}

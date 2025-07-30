@@ -1,33 +1,59 @@
 .my-modal {
-  display: block; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 5; /* Sit on top */
-  padding: 50px; /* Location of the box */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  z-index: 5;
   left: 0;
   top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0, 0, 0); /* Fallback color */
-  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 0;
 }
 
 /* Modal Content */
 .my-modal-content {
+  display: flex;
+  flex-direction: column;
   position: relative;
   background-color: #fefefe;
-  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  max-width: 80%;
-  width: fit-content;
-  /* display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); Adjust column width as needed */
-  grid-gap: 20px; /* Adjust the gap between columns */
-  -webkit-animation-name: animatetop;
-  -webkit-animation-duration: 0.4s;
+  max-width: 90vw;         /* Allow modal to grow wider */
+  min-width: 300px;
+  width: auto;              /* Let content determine width */
+  max-height: 90vh;         /* Prevent modal from exceeding viewport */
+  overflow: auto;           /* Enable scrolling inside modal if needed */
+  box-sizing: border-box;
+  margin: 16px;
   animation-name: animatetop;
   animation-duration: 0.4s;
+  font-size: 0.85rem;      /* Smaller base font size for modal */
+  padding: 12px; 
+}
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+/* Responsive for mobile */
+@media (max-width: 600px) {
+  .my-modal-content {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    padding: 8px !important;
+    font-size: 1rem !important;
+    margin: 4px !important;
+    max-height: 98vh !important;
+  }
+  .modal-header, .modal-body {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .table {
+    font-size: 0.9rem !important;
+  }
 }
 
 /* Add Animation */
@@ -67,10 +93,22 @@
   text-decoration: none;
   cursor: pointer;
 }
+.modal-header,
+.modal-body {
+  padding: 6px 10px !important; /* Reduce padding in modal sections */
+}
 
-.modal-header {
-  padding: 1px 5px;
-  background-color: #34985e;
+.table {
+  font-size: 0.75rem !important; /* Smaller table text */
+}
+
+.table td,
+.table th {
+  padding: 3px 6px !important;   /* Less cell padding */
+}
+/* .modal-header {
+  padding: 1px 2px;
+  background-color: #f4f9fb;
   color: white;
 }
 
@@ -80,7 +118,30 @@
 }
 
 .modal-footer {
-  padding: 1px 5px;
-  background-color: #34985e;
+  padding: 1px 2px;
+  background-color: #f4f9fb;
   color: white;
+} */
+
+.modal-header-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  background-color: #f4f9fb;
+  border-bottom: 1px solid #eee;
+}
+.header-main {
+  flex: 7;
+  font-weight: bold;
+  font-size: 1rem;
+  /* Add more styles as needed */
+}
+
+.header-actions {
+  flex: 3;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }

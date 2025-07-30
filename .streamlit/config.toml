@@ -118,7 +118,7 @@ showPyplotGlobalUse = true
 primaryColor = '#004e92'
 
 # Background color for the main content area
-backgroundColor = "#f2f7ff"
+backgroundColor = '#fcfdff'
 
 # Background color for sidebar and most interactive widgets
 secondaryBackgroundColor = '#d9e8ff'

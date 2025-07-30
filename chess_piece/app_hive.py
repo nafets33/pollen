@@ -680,7 +680,7 @@ def page_tab_permission_denied(admin, st_stop=True):
             st.stop()
 
 
-def page_line_seperator(height="3", border="none", color="#C5B743"):
+def page_line_seperator(height="3", border="none", color="#4176A1"):
     return st.markdown(
         """<hr style="height:{}px;border:{};color:#333;background-color:{};" /> """.format(
             height, border, color

@@ -54,11 +54,14 @@ type Props = {
   grid_options?: any
   index: string
   enable_JsCode: boolean
-  kwargs: any
+  nestedGridEnabled?: boolean
+  nested_columnDefs?: any[]
+  kwargs: any,
 }
 
 let g_rowdata: any[] = []
 let g_newRowData: any = null
+
 
 function dateFormatter(isoString: string, formaterString: string): String {
   try {
@@ -171,6 +174,28 @@ const AgGrid = (props: Props) => {
       </button>
     )
   }
+
+    const getGridOptions = () => {
+    let options = { ...grid_options };
+
+    if (props.nestedGridEnabled && props.nested_columnDefs) {
+      options.masterDetail = true;
+      options.detailCellRendererParams = {
+        detailGridOptions: {
+          columnDefs: props.nested_columnDefs,
+        },
+        getDetailRowData: (params: any) => {
+          params.successCallback(params.data.nestedRows || []);
+        },
+      };
+    } else {
+      options.masterDetail = false;
+      options.detailCellRendererParams = undefined;
+    }
+
+    return options;
+  };
+
 
   const gridRef = useRef<AgGridReact>(null)
   const {
@@ -1075,7 +1100,7 @@ const handleButtonFilter = (value: string | null) => {
                 style={{
                 display: "inline-block",
                 paddingLeft: "100%",
-                animation: "scroll-left 20s linear infinite",
+                animation: "scroll-left 40s linear infinite",
                 }}
               >
                 {kwargs.streaming_list_text.join("   |   ")}
@@ -1155,7 +1180,7 @@ const handleButtonFilter = (value: string | null) => {
             animateRows={true}
             suppressAggFuncInHeader={true}
             getRowId={getRowId}
-            gridOptions={grid_options}
+            gridOptions={getGridOptions()}
             onCellValueChanged={onCellValueChanged}
             columnTypes={columnTypes}
             sideBar={grid_options.sideBar === false ? false : sideBar}

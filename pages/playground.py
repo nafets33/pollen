@@ -342,21 +342,41 @@ def PlayGround():
     # delete_dict_keys(BISHOP)
 
     broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=True).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
-    with st.expander("broker info"):
-        st.write(broker_info)
+    # with st.expander("broker info"):
+    #     st.write(broker_info)
 
     # if True:
     table_name = 'db' if prod else 'db_sandbox'
     QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+    KING = kingdom__grace_to_find_a_Queen()
     # print(QUEENBEE.keys())
-
     # init files needed
     # prod = False
     # client_user = 'stapinskiststefan@gmail.com'
     qb = init_queenbee(client_user=client_user, prod=prod, queen=True, orders=True, orders_v2=True, queen_king=True, api=True, broker=True, init=True, pg_migration=True, charlie_bee=True, revrec=True, 
                        main_server=False, demo=False)
+    
+    QUEEN_KING = qb.get('QUEEN_KING')
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+    db_root = qb.get('db_root')
+    master_conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY')
+    conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-CONVERSATIONAL_HISTORY')
+    session_state = PollenDatabase.retrieve_data(table_name, f'{db_root}-SESSION_STATE')
+    st.write(master_conversation_history, conversation_history, session_state)
+    st.stop()
+    # st.write("QUEEN_KING", QUEEN_KING.keys())
+    # st.write("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
+    api = qb.get('api')
+    QUEENsHeart = qb.get('QUEENsHeart')
+    BROKER = qb.get('BROKER')
+    # st.write("alpaca broker orders cols", BROKER['broker_orders'].columns.tolist())
+    # standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
     QUEEN = qb.get('QUEEN')
+    df=return_active_orders(QUEEN)
+    # for k, v in QUEEN.items():
+    #     print(f"{k}: {sys.getsizeof(v)} bytes")
     queen_orders = QUEEN['queen_orders'] #['datetime'].max())
+    # st.write(queen_orders.columns.tolist())
     ORDERS = qb.get('ORDERS')
     df = ORDERS['queen_orders']
     del df['honey_gauge']
@@ -366,32 +386,33 @@ def PlayGround():
         # st.write(df)
     
     client_order_store = "queen_orders" if prod else 'queen_orders_sandbox'
-    order_keys = PollenDatabase.get_keys_by_db_root(client_order_store, QUEEN['db_root'])
-    st.write(len(order_keys), "QUEEN Orders Keys")
 
-    # for idx, order in enumerate(queen_orders.index):
-    #     if not check_order_status(qb.get('api'), order):
-    #         st.write("Error in Order", order)
-    #     time.sleep(1)
-    
-    # last_buy_datetime = queen_orders[(queen_orders['symbol'] == 'SPY') & (queen_orders['queen_order_state'].isin(active_queen_order_states)) & (queen_orders['side']=='buy')]
-    # if len(last_buy_datetime) > 0:
-    #     last_buy_datetime = last_buy_datetime.iloc[-1]['datetime']
-    # else:
-    #     last_buy_datetime = datetime.now(est).replace(year=1989) # no last buy ~ buy away
-    # st.write("Last Buy Datetime:", last_buy_datetime)
-    
-    print(qb.get('QUEEN').get('revrec').keys())
+
+    print("HERE")
+    symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+    STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+
     revrec = qb.get('revrec')
-    df = revrec['storygauge']
-    app = get_priceinfo_snapshot(api=qb.get('api'),ticker='BTC/USD', crypto=True)
-    # st.write("BTC/USD Price Info", app)
-    # min_allocation = revrec['storygauge'].loc["SPY"].to_dict()
-    # st.write(f'DEBUG {min_allocation}')
-    QUEEN_KING = qb.get('QUEEN_KING')
-    api = qb.get('api')
-    QUEENsHeart = qb.get('QUEENsHeart')
-    BROKER = qb.get('BROKER')
+    waveview = revrec['waveview']
+    revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
+    story = revrec['storygauge']
+    # is MinAllocation < Long?
+    story = story[story['allocation_deploy']> 0]
+    standard_AGgrid(story, key='storygauge_index')
+    for symbol in story.index.tolist():
+        wave = waveview[waveview['symbol']==symbol]
+        wave = wave[wave['allocation_deploy'] > 0]
+        wave = wave.sort_values('allocation_deploy', ascending=False)
+        wave['margin_buy'] = wave['allocation_long_deploy'] - wave['allocation_deploy']
+        not_enough = wave[(wave['allocation_deploy'] > 0) & (wave['allocation_deploy'] < story.at[symbol, 'current_ask'])].copy()
+        st.write("Margin Buy", wave['margin_buy'].sum())
+        if len(not_enough) > 0:
+            st.write(f"Not Enough Allocation Long Deploy for", not_enough)
+            # give budget to next wave
+        
+        standard_AGgrid(wave, key=f'{symbol}_waveview_index', height=250)
+
+
     st.write("BROKER Orders", BROKER['broker_orders'].shape)
     if st.toggle("Show Broker Orders", False):
         standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
@@ -414,46 +435,14 @@ def PlayGround():
         alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(
             all_alpaca_tickers[n]
         )
-    # ipdb.set_trace()
-    st.write(api.get_snapshot("GOLD"))
+    # st.write(api.get_snapshot("GOLD"))
 
     st.write("#ticker refresh star")
     st.write(QUEEN_KING['king_controls_queen']['ticker_refresh_star'])
-    # st.write(alpaca_symbols_dict['GOLD'])
-    # df = pd.DataFrame(alpaca_symbols_dict)
-    # standard_AGgrid(df)
 
-    # st.write(QUEEN['app_requests__bucket'])
-    # st.write(QUEEN_KING['buy_orders'])
-    # df = QUEEN['queen_orders']
-    # st.write(len(df.columns))
-    # st.write([i for i in df.columns.tolist() if i != 'level_0'])
-    # df = df[[i for i in df.columns.tolist() if i != 'level_0']]
-    # df = df.set_index('client_order_id', drop=False)
-    # st.write(df.index)
-    # ll = [i for i in df['client_order_id'].tolist() if len(str(i)) > 4]
-    # st.write(len(ll))
-    # st.write(len(df))
-    # nan_index = df[~df['client_order_id'].isin(ll)]
-    # standard_AGgrid(nan_index)
-    # standard_AGgrid(df)
-    # df_active = df[df['queen_order_state'].isin(active_queen_order_states)].copy()
-    # if st.button("save QUEEN del me"):
-    #     QUEEN['queen_orders'] = df # df[df['client_order_id'].isin(ll)]
-    #     god_save_the_queen(QUEEN, save_q=True, save_qo=True)
-    
-    # st.write(df_active['client_order_id'].to_list())
 
     st.write(pd.DataFrame(QUEENsHeart['heartbeat'].get('portfolio')).T)
 
-
-
-
-    api = qb.get('api')
-    if prod:
-        BASE_URL = "https://api.alpaca.markets"  # Paper trading URL
-    else:
-        BASE_URL = "https://paper-api.alpaca.markets"  # Paper trading URL
 
     try:
 
@@ -481,16 +470,7 @@ def PlayGround():
     
         KING = kingdom__grace_to_find_a_Queen()
         
-        # QUEEN = ReadPickleData(st.session_state['PB_QUEEN_Pickle'])
-        
 
-        print("HERE")
-        symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
-        STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
-        # st.write(STORY_bee['SPY_1Minute_1Day']['story'].keys())
-        # st.write(STORY_bee['SPY_1Minute_1Day']['waves']['buy_cross-0'])
-        
-        # POLLENSTORY = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
 
         tickers_avail = [set(i.split("_")[0] for i in STORY_bee.keys())][0]
         # st.write(fetch_dividends(QUEEN_KING['users_secrets'].get('APCA_API_SECRET_KEY'), QUEEN_KING['users_secrets'].get('APCA_API_KEY_ID')))
@@ -509,40 +489,6 @@ def PlayGround():
 
         st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
         cols = st.columns(2)
-        # with cols[0]:
-        #     with st.expander('nested columns'):
-        #         cols_2 = st.columns(2)
-        #         with cols_2[1]:
-        #             st.markdown("[![Click me](app/static/cat.png)](https://pollenq.com)",unsafe_allow_html=True)
-        
-        # with st.expander("button on grid"):
-        #     click_button_grid()
-        # if st.toggle("nested grid"):
-        #     with st.expander("nested grid"):
-        #         nested_grid()
-
-        # if st.toggle("pollenstory"):
-        # with st.expander("pollenstory"):
-        #     ttf = st.selectbox('ttf', list(STORY_bee.keys())) # index=['no'].index('no'))
-        #     data=POLLENSTORY[ttf]
-        #     data['trinity_avg_tier'] = sum(data['trinity_tier']) / len(data)
-        #     default_cols = ['timestamp_est', 'open', 'close', 'high', 'low', 'buy_cross-0', 'buy_cross-0__wave_number', 'trinity_tier', 'trinity_avg_tier']
-        #     cols = st.multiselect('qcp', options=data.columns.tolist(), default=default_cols)
-        #     view=data[cols].copy()
-        #     view = data.reset_index()
-        #     grid = standard_AGgrid(data=view, configure_side_bar=True)
-
-        #     def create_wave_chart(df):
-        #         title = f'i know'
-        #         fig = make_subplots(rows=1, cols=1, shared_xaxes=True, vertical_spacing=0.01)
-        #         df = df.copy()
-        #         # df['timestamp_est'] = df['timestamp_est'].apply(lambda x: f'{x.month}{"-"}{x.day}{"_"}{x.hour}{":"}{x.minute}')
-
-        #         fig.add_bar(x=df['timestamp_est'], y=df['trinity_tier'],  row=1, col=1, name='trinity')
-        #         fig.add_bar(x=df['timestamp_est'], y=df['trinity_avg_tier'],  row=1, col=1, name='sellcross wave')
-        #         fig.update_layout(height=600, width=900, title_text=title)
-        #         return fig
-        #     create_wave_chart(data)
 
         # if st.toggle("wave stories"):
         with st.expander("wave stories"):
