@@ -47,18 +47,33 @@ def st_custom_grid(
                 )
             kwargs['buttons'] = buttons
 
+    def convert_js_code(obj):
+        if isinstance(obj, JsCode):
+            return obj.js_code
+        elif isinstance(obj, dict):
+            return {k: convert_js_code(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_js_code(v) for v in obj]
+        else:
+            return obj
 
+    # Convert all JsCode objects in kwargs
+    kwargs = convert_js_code(kwargs)
 
-    component_value = _component_func(
-        username=username,
-        api=api,
-        api_update=api_update,
-        refresh_sec=refresh_sec,
-        refresh_cutoff_sec=refresh_cutoff_sec,
-        prod=prod,
-        key=key,
-        grid_options=grid_options,
-        enable_JsCode=enable_JsCode,
-        kwargs=kwargs,
-    )
+    try:
+        component_value = _component_func(
+            username=username,
+            api=api,
+            api_update=api_update,
+            refresh_sec=refresh_sec,
+            refresh_cutoff_sec=refresh_cutoff_sec,
+            prod=prod,
+            key=key,
+            grid_options=grid_options,
+            enable_JsCode=enable_JsCode,
+            kwargs=kwargs,
+        )
+    except TypeError as e:
+        print(f"Custom grid failed to serialize: {e}")
+        component_value = None
     return component_value

@@ -1,3 +1,4 @@
+import Select from "react-select";
 import React, {
   useState,
   useEffect,
@@ -54,8 +55,6 @@ type Props = {
   grid_options?: any
   index: string
   enable_JsCode: boolean
-  nestedGridEnabled?: boolean
-  nested_columnDefs?: any[]
   kwargs: any,
 }
 
@@ -152,49 +151,86 @@ toastr.options = {
   timeOut: 3000,
 }
 
+
+
 const AgGrid = (props: Props) => {
-  const BtnCellRenderer = (props: any) => {
-    const btnClickedHandler = () => {
-      props.clicked(props.node.id)
+const BtnCellRenderer = (props: any) => {
+  const btnClickedHandler = () => {
+    props.clicked(props.node.id)
+  };
+  if (!props || !props.node) return null;
+  if (props.node.rowPinned === 'bottom') {
+    return <span>{props.value}</span>;
+  }
+  // Use subtotal row style if present
+  const subtotalStyle =
+    props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
+      ? props.data[`${props.col_header}_cellStyle`]
+      : props.cellStyle;
+
+  return (
+    <button
+      onClick={btnClickedHandler}
+      style={{
+        background: "transparent",
+        border: subtotalStyle?.border || "none",
+        width: props.width ? props.width : "100%",
+        color: subtotalStyle?.color || "inherit",
+        ...subtotalStyle,
+      }}
+    >
+      {props.col_header ? props.value : props.buttonName}
+    </button>
+  );
+};
+function buildDetailGridOptions(detailGridOptions: any, level: number): any {
+  const options = { ...detailGridOptions, masterDetail: true };
+
+  options.getDetailRowData = (params: any) => {
+    let nestedRows = [];
+    if (Array.isArray(params.data.nestedRows)) {
+      nestedRows = params.data.nestedRows;
+    } else if (params.data.nestedRows) {
+      nestedRows = [params.data.nestedRows];
     }
-    // console.log("props.cellStyle", props.cellStyle)
-    return (
-      <button
-        onClick={btnClickedHandler}
-        style={{
-          background: "transparent",
-          border: (props.cellStyle && props.cellStyle.border !== undefined)
-            ? props.cellStyle.border
-            : "none",          
-          width: props.width ? props.width : "100%",
-              ...(props.cellStyle || {}), // <-- Merge in cellStyle from params ? NOT WORKING?
-        }}
-      >
-        {props.col_header ? props.value : props.buttonName}
-      </button>
-    )
+    params.successCallback(nestedRows.length ? nestedRows : []);
+  };
+
+  if (
+    options.detailCellRendererParams &&
+    options.detailCellRendererParams.detailGridOptions
+  ) {
+    options.detailCellRendererParams.detailGridOptions = buildDetailGridOptions(
+      options.detailCellRendererParams.detailGridOptions,
+      level + 1
+    );
   }
 
-    const getGridOptions = () => {
-    let options = { ...grid_options };
+  return options;
+}
 
-    if (props.nestedGridEnabled && props.nested_columnDefs) {
-      options.masterDetail = true;
-      options.detailCellRendererParams = {
-        detailGridOptions: {
-          columnDefs: props.nested_columnDefs,
-        },
-        getDetailRowData: (params: any) => {
-          params.successCallback(params.data.nestedRows || []);
-        },
-      };
-    } else {
-      options.masterDetail = false;
-      options.detailCellRendererParams = undefined;
-    }
-
-    return options;
-  };
+const getGridOptions = () => {
+  let options = { ...grid_options };
+  if (kwargs.nestedGridEnabled && kwargs.detailGridOptions) {
+    options.masterDetail = true;
+    options.detailCellRendererParams = {
+      detailGridOptions: buildDetailGridOptions(kwargs.detailGridOptions, 1),
+      getDetailRowData: (params: any) => {
+        let nestedRows = [];
+        if (Array.isArray(params.data.nestedRows)) {
+          nestedRows = params.data.nestedRows;
+        } else if (params.data.nestedRows) {
+          nestedRows = [params.data.nestedRows];
+        }
+        params.successCallback(nestedRows.length ? nestedRows : []);
+      },
+    };
+  } else {
+    options.masterDetail = false;
+    options.detailCellRendererParams = undefined;
+  }
+  return options;
+};
 
 
   const gridRef = useRef<AgGridReact>(null)
@@ -229,7 +265,8 @@ const AgGrid = (props: Props) => {
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [previousViewId, setpreviousViewId] = useState(89)
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-
+const [selectedColumnSetKeys, setSelectedColumnSetKeys] = useState<string[]>([]);
+const [initialColumnState, setInitialColumnState] = useState<any>(null);
   const checkLastModified = async (): Promise<boolean> => {
     try {
       if (api_lastmod_key === null) {
@@ -273,6 +310,7 @@ const AgGrid = (props: Props) => {
     }
   };
 
+  // BUTTONS, MOVE OUT OF USEEFFECT
   useEffect(() => {
     Streamlit.setFrameHeight();
   
@@ -280,6 +318,7 @@ const AgGrid = (props: Props) => {
       buttons = deepMap(buttons, parseJsCodeFromPython, ["rowData"]); // process JsCode from buttons props
   
       buttons.forEach((button: any) => {
+        
         const {
           prompt_field,
           prompt_message,
@@ -310,6 +349,7 @@ const AgGrid = (props: Props) => {
           width: col_width,
           pinned: pinned,
           cellRenderer: BtnCellRenderer,
+          // valueFormatter: otherKeys.valueFormatter ? otherKeys.valueFormatter : undefined,
           filterParams,
           cellRendererParams: {
             col_header,
@@ -318,6 +358,7 @@ const AgGrid = (props: Props) => {
             border: border,
             filterParams,
             cellStyle: button.cellStyle,
+            // valueFormatter: button.valueFormatter,
             ...(button.cellRendererParams || {}),
             clicked: async function (row_index: any) {
               try {
@@ -418,6 +459,7 @@ const AgGrid = (props: Props) => {
     const array = await fetchData();
     if (array === false) return false;
     setRowData(array);
+    // console.log("rowData", array);
     g_rowdata = array;
     return true;
   };
@@ -527,15 +569,16 @@ if (typeof total_col === "string" && allCols.includes(total_col)) {
   subtotal[allCols[0]] = "subTotals"; // fallback to first column
 }
 
+
+
 // Add button columns if not already present
 if (Array.isArray(buttons)) {
   buttons.forEach((btn: any) => {
-    if (btn.col_header && !allCols.includes(btn.col_header)) {
-      allCols.push(btn.col_header);
+    if (btn.col_header && btn.cellStyle) {
+      subtotal[`${btn.col_header}_cellStyle`] = btn.cellStyle;
     }
   });
 }
-
 
 allCols.forEach((col: string) => {
   if (subtotal_cols.includes(col)) {
@@ -615,19 +658,23 @@ const onFilterChanged = useCallback(() => {
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
       try {
-        const array = await fetchData()
-        // console.log("AAAAAAAAAAAAAAAAAAAAAAA", array)
-        if (array === false) {
-          // toastr.error(`Error: ${array.message}`)
-          return
+        const array = await fetchData();
+        if (array === false) return;
+        
+        setRowData(array);
+        g_rowdata = array;
+
+        if (subtotal_cols && subtotal_cols.length > 0) {
+          calculateSubtotals();
+        } else {
+          setSubtotalsRow([]);
         }
-        setRowData(array)
-        g_rowdata = array
-      
-      if (subtotal_cols && subtotal_cols.length > 0) {
-        calculateSubtotals();
-      } else {
-        setSubtotalsRow([]);
+        // Autosize all columns after data is set
+        autoSizeAll(true);
+
+      // Store initial column state
+      if (params.columnApi) {
+        setInitialColumnState(params.columnApi.getColumnState());
       }
 
       } catch (error: any) {
@@ -874,6 +921,10 @@ const handleButtonFilter = (value: string | null) => {
 };
 
 
+
+
+
+
   return (
     <>
       <MyModal
@@ -897,22 +948,23 @@ const handleButtonFilter = (value: string | null) => {
                   style={{
                     backgroundColor: button_color,
                     color: "white",
-                    padding: "5px 8px", // Smaller padding
-                    fontSize: "12px", // Smaller font size
+                    padding: "2px 5px", // Smaller padding
+                    // fontSize: "12px", // Smaller font size
                     borderRadius: "4px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    minWidth: "80px", // Ensure width stays the same during loading
+                    minWidth: "50px", // Ensure width stays the same during loading
                   }}
                   onClick={onRefresh}
+                  title="Refresh"
                   disabled={loading} // Disable button while loading
                 >
                   {loading ? (
                     <div
                       style={{
-                        width: "14px",
-                        height: "14px",
+                        width: "12px",
+                        height: "12px",
                         border: "2px solid white",
                         borderTop: "2px solid transparent",
                         borderRadius: "50%",
@@ -920,7 +972,7 @@ const handleButtonFilter = (value: string | null) => {
                       }}
                     />
                   ) : (
-                    "Refresh"
+                    <span style={{ fontSize: "25px", lineHeight: "1" }}>⟳</span>
                   )}
                 </button>
 
@@ -935,25 +987,43 @@ const handleButtonFilter = (value: string | null) => {
                   `}
                 </style>
               </div>
-              <div style={{ margin: "5px 5px 5px 2px" }}>
+                <div style={{ margin: "5px 5px 5px 2px" }}>
                 <button
                   className="btn"
                   style={{
-                    backgroundColor: "green",
-                    color: "white",
-                    padding: "5px 8px", // Smaller padding
-                    fontSize: "12px", // Smaller font size
-                    borderRadius: "4px",
+                  backgroundColor: "green",
+                  color: "white",
+                  padding: "5px 8px",
+                  fontSize: "12px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                   }}
                   onClick={onUpdate}
+                  title="Update"
                 >
-                  Update
+                  <span style={{ fontSize: "18px", lineHeight: "1" }}>↑</span>
+                  {/* <span>Update</span> */}
                 </button>
               </div>
             </div>
           )}
-          {toggle_views && toggle_views.length > 0 && (
+          
+          
+          
+{toggle_views && toggle_views.length > 0 && (
   <>
+    <div
+      style={{
+        fontWeight: "bold",
+        color: "#055A6E",
+        marginBottom: "4px",
+        fontSize: "15px",
+      }}
+    >
+      {kwargs.toggle_header ? kwargs.toggle_header : "Main Tabs"}
+    </div>
     {toggle_views.length < 20 ? (
       // Render normal buttons if toggle_views is less than 20
       <div
@@ -1063,13 +1133,94 @@ const handleButtonFilter = (value: string | null) => {
             height: kwargs["grid_height"] ? kwargs["grid_height"] : "100%",
           }}
         >
-          {/* Add test streaming_list_text to kwargs for testing
-          {(() => {
-            if (!kwargs.streaming_list_text) {
-              kwargs.streaming_list_text = ["some", "test", "list"];
+
+{kwargs.column_sets && (
+
+  <div style={{ marginBottom: 12, display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+
+<button
+  onClick={() => {
+    setSelectedColumnSetKeys([]);
+    setTimeout(() => {
+      const columnApi = gridRef.current?.columnApi;
+      if (columnApi && initialColumnState) {
+        columnApi.applyColumnState({
+          state: initialColumnState,
+          applyOrder: true,
+        });
+      }
+    }, 0);
+  }}
+    style={{
+      background: "rgb(194, 194, 194)",
+      color: "white",
+      border: "1.5px solid rgb(213, 213, 213)",
+      borderRadius: "6px",
+      fontWeight: "bold",
+      fontSize: "12px",
+      padding: "5px 10px",
+      margin: "0 4px 4px 0",
+      boxShadow: "0 2px 6px rgb(216, 216, 216)",
+      transition: "all 0.15s",
+      cursor: "pointer",
+    }}
+>
+  Reset Columns
+</button>
+
+    
+    {Object.keys(kwargs.column_sets).map(key => (
+      
+      
+      <button
+        key={key}
+        onClick={() => {
+          setSelectedColumnSetKeys(prev =>
+            prev.includes(key)
+              ? prev.filter(k => k !== key)
+              : [...prev, key]
+          );
+          setTimeout(() => {
+            const keys = selectedColumnSetKeys.includes(key)
+              ? selectedColumnSetKeys.filter(k => k !== key)
+              : [...selectedColumnSetKeys, key];
+            const columnsToShow = Array.from(
+              new Set(keys.flatMap(k => kwargs.column_sets[k]))
+            );
+            const columnApi = gridRef.current?.columnApi;
+            if (columnApi && Array.isArray(grid_options.columnDefs)) {
+              grid_options.columnDefs.forEach((col: any) => {
+                columnApi.setColumnVisible(
+                  col.field,
+                  columnsToShow.includes(col.field)
+                );
+              });
+              columnsToShow.forEach((field, idx) => {
+                columnApi.moveColumn(field, idx);
+              });
             }
-            return null;
-          })()} */}
+          }, 0);
+        }}
+        style={{
+          background: selectedColumnSetKeys.includes(key) ? "#3498db" : "#F3FAFD",
+          color: selectedColumnSetKeys.includes(key) ? "white" : "#055A6E",
+          border: selectedColumnSetKeys.includes(key) ? "2px solid #1abc9c" : "1px solid #ddd",
+          borderRadius: "6px",
+          fontWeight: "bold",
+          fontSize: "12px",
+          padding: "5px 10px",
+          margin: "0 4px 4px 0",
+          boxShadow: selectedColumnSetKeys.includes(key) ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
+          transition: "all 0.15s",
+          cursor: "pointer",
+        }}
+      >
+        {key}
+      </button>
+    ))}
+
+  </div>
+)}
           {/* Streamer for streaming_list_text if present */}
           {kwargs.streaming_list_text && Array.isArray(kwargs.streaming_list_text) && (
             <div
@@ -1123,6 +1274,34 @@ const handleButtonFilter = (value: string | null) => {
 
 {kwargs['filter_button'] && kwargs['filter_button'] !== '' && (
   <div style={{ marginBottom: 8 }}>
+
+
+{kwargs['show_clear_all_filters'] && (
+  <button
+    onClick={() => {
+      if (gridRef.current && gridRef.current.api) {
+        gridRef.current.api.setFilterModel({});
+      }
+    }}
+    style={{
+      background: "rgb(194, 194, 194)",
+      color: "white",
+      border: "1.5px solid rgb(213, 213, 213)",
+      borderRadius: "6px",
+      fontWeight: "bold",
+      fontSize: "12px",
+      padding: "5px 10px",
+      margin: "0 4px 4px 0",
+      boxShadow: "0 2px 6px rgb(216, 216, 216)",
+      transition: "all 0.15s",
+      cursor: "pointer",
+    }}
+  >
+    Clear Filters
+  </button>
+)}
+
+    
     {uniqueValues.map(val => (
       <button
         key={val}
@@ -1144,24 +1323,7 @@ const handleButtonFilter = (value: string | null) => {
         {val}
       </button>
     ))}
-    <button
-      onClick={() => handleButtonFilter(null)}
-      style={{
-        background: "#b0c4de", // blue-grey (LightSteelBlue)
-        color: "#055A6E",
-        border: "1.5px solid #8fa6bc",
-        borderRadius: "6px",
-        fontWeight: "bold",
-        fontSize: "12px",
-        padding: "5px 10px",
-        margin: "0 4px 4px 0",
-        boxShadow: "0 2px 6px rgba(176,196,222,0.10)",
-        transition: "all 0.15s",
-        cursor: "pointer",
-      }}
-    >
-      Clear
-    </button>
+
   </div>
 )}
 
@@ -1172,7 +1334,7 @@ const handleButtonFilter = (value: string | null) => {
             pinnedBottomRowData={subtotalsRow}
             onFilterChanged={onFilterChanged}
             getRowStyle={getRowStyle}
-            rowStyle={{ fontSize: 12, padding: 0 }}
+            // rowStyle={{ fontSize: kwargs.fontSize ? kwargs.fontSize : 12, padding: 0 }}
             headerHeight={30}
             rowHeight={30}
             onGridReady={onGridReady}

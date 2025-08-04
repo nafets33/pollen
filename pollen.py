@@ -383,7 +383,7 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets, prod):
     
     return True
 
-@st.cache_data(ttl=timedelta(days=1))
+
 def fetch_portfolio_history(_api, period='3M', timeframe='1D'):
     try:
         # Fetch portfolio history
@@ -402,6 +402,18 @@ def fetch_portfolio_history(_api, period='3M', timeframe='1D'):
         return df
     except Exception as e:
         print("Error fetching portfolio history:", e)
+
+@st.cache_data(ttl=timedelta(days=1))
+def get_portfolio_performance(_api, periods):
+    perf_dict = {}
+    for period in periods:
+        df = fetch_portfolio_history(_api, period=period)
+        if df is not None and not df.empty:
+            portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
+            perf_dict[period] = portfolio_perf
+        else:
+            perf_dict[period] = None
+    return perf_dict
 
 def pollenq(sandbox=False, demo=False):
     # st.write("pollenq", demo, sandbox)
@@ -508,10 +520,11 @@ def pollenq(sandbox=False, demo=False):
 
         # if show_acct:
         with cols[3]:
-        # Show all portfolio history periods in columns
-            periods = ["title", '7D', '1M', '3M', '6M', '1A']
-            perf_cols = st.columns(len(periods))
-            perf_containers = [col.container() for col in perf_cols]
+            with st.expander("Portfolio Performance", expanded=True):
+            # Show all portfolio history periods in columns
+                periods = ['7D', '1M', '3M', '6M', '1A']
+                perf_cols = st.columns(len(periods))
+                perf_containers = [col.container() for col in perf_cols]
 
 
     table_name = 'db' if prod else 'db_sandbox'
@@ -701,21 +714,22 @@ def pollenq(sandbox=False, demo=False):
             from pages.pollen_engine import pollen_engine
             pollen_engine(acct_info_raw)
 
-        # Show all portfolio history periods in columns
+    portfolio_performance = get_portfolio_performance(api, periods)
     for i, period in enumerate(periods):
-        if i == 0:
+        # if i == 0:
+        #     with perf_containers[i]:
+        #         # mark_down_text('Portfolio', fontsize='23')
+        #         cust_Button("misc/dollar-symbol-unscreen.gif", hoverText='Portfolio', key='portfolio_ahe', )
+        # else:
+        # df = fetch_portfolio_history(api, period=period)
+        portfolio_perf = portfolio_performance.get(period)
+        if portfolio_perf is not None:
+        # if df is not None and not df.empty:
+            # portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
             with perf_containers[i]:
-                # mark_down_text('Portfolio', fontsize='23')
-                cust_Button("misc/dollar-symbol-unscreen.gif", hoverText='Portfolio', key='portfolio_ahe', )
-        else:
-            df = fetch_portfolio_history(api, period=period)
-            
-            if df is not None and not df.empty:
-                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
-                with perf_containers[i]:
-                    color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
-                    mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
-                    mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
+                color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
+                mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
+                mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
 
 
     if 'pollen' in menu_id:

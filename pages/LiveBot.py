@@ -6,7 +6,7 @@ from chess_piece.king import return_app_ip
 from chess_piece.app_hive import set_streamlit_page_config_once, sac_menu_buttons, mark_down_text
 from pages.orders import order_grid, config_orders_cols
 from pages.chessboard import chessboard
-from pollen import fetch_portfolio_history
+from pollen import get_portfolio_performance
 import streamlit as st
 import pytz
 from datetime import datetime
@@ -18,10 +18,11 @@ def demo_bot():
     menu_id = sac_menu_buttons("demo")
     cols = st.columns((2, 1, 1, 4))
     with cols[3]:
-    # Show all portfolio history periods in columns
-        periods = ["title", '7D', '1M', '3M', '6M', '1A']
-        perf_cols = st.columns(len(periods))
-        perf_containers = [col.container() for col in perf_cols]
+        with st.expander("Portfolio Performance", expanded=True):
+        # Show all portfolio history periods in columns
+            periods = ['7D', '1M', '3M', '6M', '1A']
+            perf_cols = st.columns(len(periods))
+            perf_containers = [col.container() for col in perf_cols]
 
 
 
@@ -71,19 +72,22 @@ def demo_bot():
         order_grid(client_user, config_cols, missing_cols, ip_address)
         st.stop()
     
+    portfolio_performance = get_portfolio_performance(api, periods)
     for i, period in enumerate(periods):
-        if i == 0:
+        # if i == 0:
+        #     with perf_containers[i]:
+        #         # mark_down_text('Portfolio', fontsize='23')
+        #         cust_Button("misc/dollar-symbol-unscreen.gif", hoverText='Portfolio', key='portfolio_ahe', )
+        # else:
+        # df = fetch_portfolio_history(api, period=period)
+        portfolio_perf = portfolio_performance.get(period)
+        if portfolio_perf is not None:
+        # if df is not None and not df.empty:
+            # portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
             with perf_containers[i]:
-                mark_down_text('Portfolio', fontsize='23')
-        else:
-            df = fetch_portfolio_history(api, period=period)
-            # print(period, df)
-            if df is not None and not df.empty:
-                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
-                with perf_containers[i]:
-                        color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
-                        mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
-                        mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
+                color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
+                mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
+                mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
 
     queens_conscience(api, revrec, KING, QUEEN_KING, api, sneak_peak=True, show_acct=True)
 if __name__ == '__main__':
