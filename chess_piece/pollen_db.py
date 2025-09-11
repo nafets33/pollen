@@ -722,6 +722,31 @@ class PollenDatabase:
                     print_line_of_error(f"GET KEYS Error: {e}")
                 return []
 
+
+    @staticmethod
+    def get_key_timestamp(table_name='db', server=server):
+        """
+        Return only the last modified timestamp for the given key object table.
+        If db_root is provided, returns the latest last_modified for that db_root.
+        Otherwise, returns the latest last_modified in the table.
+        """
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+            try:
+                query = f"""
+                    SELECT last_modified
+                    FROM {table_name}
+                    ORDER BY last_modified DESC
+                    LIMIT 1;
+                """
+                cur.execute(query)
+                result = cur.fetchone()
+                return result[0] if result else None
+
+            except Exception as e:
+                if table_name != 'client_users':
+                    print_line_of_error(f"GET KEYS Error: {e}")
+                return None
+
     @staticmethod
     def vacuum_table(table_name='db'):
         try:

@@ -358,7 +358,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     buying_power = trading_model.get('buyingpower_allocation_LongTerm')
                     borrow_power = trading_model.get('buyingpower_allocation_ShortTerm')
                     max_budget_allowed = trading_model.get('total_budget')
-                    option = add_symbol_dict_items(symbol=symbol, 
+                    df.at[symbol, 'add_symbol_option'] = add_symbol_dict_items(symbol=symbol, 
                                                    buying_power=buying_power, 
                                                    borrow_power=borrow_power, 
                                                    status=status, 
@@ -367,11 +367,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                                                    star_powers=star_powers,
                                                    star_powers_borrow=star_powers_borrow,
                                                    symbol_qcp_group=symbol_qcp_group)
-                    df.at[symbol, 'add_symbol_option'] = option
 
                     #active orders
-                    option = df.at[symbol, 'active_orders']
-                    df.at[symbol, 'active_orders'] = option
+                    df.at[symbol, 'active_orders'] = df.at[symbol, 'active_orders']
                     
                     remaining_budget__ = remaining_budget.get(symbol)
                     df.at[symbol, 'remaining_budget'] = remaining_budget__
@@ -454,35 +452,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df['sell_autopilot'] = df['edit_sell_autopilot_option'].apply(lambda x: "ON" if x.get('sell_autopilot') else "OFF")
 
         """ # Totals Index """
-        # df_total = pd.DataFrame([{'symbol': 'Total'}]).set_index('symbol')
-        # colss = df.columns.tolist()
-        # for totalcols in story_grid_num_cols:
-        #     if totalcols in colss:
-        #         if 'trinity' in totalcols:
-        #             df_total.loc['Total', totalcols] = f'{round(df[totalcols].sum() / len(df))} %'
-        #         elif totalcols == 'queens_suggested_buy':
-        #             df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["allocation_long_deploy"].sum()))
-        #         elif totalcols == 'queens_suggested_sell':
-        #             df_total.loc['Total', totalcols] = '${:,.0f}'.format(round(df["money"].sum()))
-        #         elif totalcols == 'total_budget':
-        #             df_total.loc['Total', totalcols] = df["total_budget"].sum()
-        #         elif totalcols == 'Month':
-        #             print("month")
-        #             df_total.loc['Total', 'Month_value'] = df["Month_value"].sum()
-        #             # df.loc['Total', 'Month_kors'] = df["Month_value"].sum()
-        #         else:
-        #             df_total.loc['Total', totalcols] = df[totalcols].sum()
-        # df = pd.concat([df_total, df])
-        # df.at['Total', 'symbol'] = 'Total'
-        # df.at['Total', 'edit_buy_autopilot_option'] = ""
-        # df.at['Total', 'edit_sell_autopilot_option'] = ""
-
-        # for star in star_names().keys():
-        #     try:
-        #         df[f'{star}_value'] = df[f'{star}_value'].fillna(0)
-        #         df.at['Total', f'{star}_state'] = '${:,.0f}'.format(round(sum(df[f'{star}_value'])))
-        #     except Exception as e:
-        #         print_line_of_error(e)
         
             # Colors
         k_colors = streamlit_config_colors()

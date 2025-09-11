@@ -1,8 +1,8 @@
 import os
 import streamlit.components.v1 as components
 from decouple import config
-from custom_grid.grid_options_builder import GridOptionsBuilder
-from custom_grid.JsCode import JsCode, walk_gridOptions
+from .grid_options_builder import GridOptionsBuilder  # Relative import
+from .JsCode import JsCode, walk_gridOptions  # Relative import
 
 _RELEASE = True
 # _RELEASE = False  #When using this, you need to start the server for the frontend using npm start on a terminal session.
@@ -77,3 +77,11 @@ def st_custom_grid(
         print(f"Custom grid failed to serialize: {e}")
         component_value = None
     return component_value
+
+
+__all__ = [
+    "st_custom_grid",  # The main function
+    "GridOptionsBuilder",  # Utility class
+    "JsCode",  # Utility class
+    "walk_gridOptions",  # Utility function
+]

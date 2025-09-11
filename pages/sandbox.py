@@ -1,3 +1,3 @@
 from pollen import pollenq
 
-pollenq(True)
+pollenq(sandbox=True)

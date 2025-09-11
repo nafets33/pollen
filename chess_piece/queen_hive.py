@@ -1210,6 +1210,22 @@ def return_STORYbee_trigbees(QUEEN, STORY_bee, tickers_filter=False):
     return {"active_trigs": active_trigs, "all_current_trigs": all_current_trigs}
 
 
+def assign_block_time(tframe='1Minute', wave_starttime=datetime.now()):
+    if "Day" in tframe:
+        wave_blocktime = "Day"
+    else:
+        wave_starttime_token = wave_starttime.replace(tzinfo=None)
+        if wave_starttime_token < wave_starttime_token.replace(hour=11, minute=0):
+            wave_blocktime = "morning_9-11"
+        elif wave_starttime_token >= wave_starttime_token.replace(hour=11, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=14, minute=0):
+            wave_blocktime = "lunch_11-2"
+        elif wave_starttime_token >= wave_starttime_token.replace(hour=14, minute=0) and wave_starttime_token < wave_starttime_token.replace(hour=16, minute=1):
+            wave_blocktime = "afternoon_2-4"
+        else:
+            wave_blocktime = "afterhours"
+    
+    return wave_blocktime
+
 """ STORY: I want a dict of every ticker and the chart_time TRADE buy/signal weights """
 
 
@@ -2505,9 +2521,9 @@ def check_order_status(broker, api, client_order_id):  # return raw dict form
         if broker == 'alpaca' or broker == 'queens_choice': #WORKERBEE remove queens_choice
             order = api.get_order_by_client_order_id(client_order_id=client_order_id)
             order = vars(order)["_raw"]
-        elif broker == 'robinhood':
-            order = api.get_order(order_id=client_order_id)
-            order = convert_robinhood_crypto_order_fields(order)
+        # elif broker == 'robinhood': # WORKERBEE HANDLE ROBINHOOD
+        #     order = api.get_order(order_id=client_order_id)
+        #     order = convert_robinhood_crypto_order_fields(order)
         return order
     except Exception as e:
         print(f"ERROR-qplcacae {client_order_id} {e}")
@@ -3713,7 +3729,7 @@ def order_vars__queen_order_items(
     symbol=False,
     ticker_time_frame_origin=False,
     double_down_trade=False,
-    sell_reason={},
+    sell_reason=[],
     running_close_legs=False,
     wave_at_creation={},
     assigned_wave={},
@@ -3796,7 +3812,7 @@ def order_vars__queen_order_items(
         order_vars["trigbee"] = trigbee
         order_vars["tm_trig"] = tm_trig
         order_vars["borrowed_funds"] = borrowed_funds
-        order_vars["ready_buy"] = ready_buy
+        # order_vars["ready_buy"] = ready_buy
         order_vars["borrow_qty"] = borrow_qty
         order_vars["long_short"] = long_short
 
@@ -3941,7 +3957,7 @@ def create_QueenOrderBee(
                 "wave_amo": order_vars.get("wave_amo"),
                 "sell_reason": order_vars.get("sell_reason"),
                 "borrowed_funds": order_vars.get('borrowed_funds'),
-                "ready_buy": order_vars.get('ready_buy'),
+                # "ready_buy": order_vars.get('ready_buy'),
                 "qty_order": order_vars.get('qty_order'),
                 "assigned_wave": order_vars.get("wave_at_creation"),
                 # "order": "alpaca",
@@ -4022,6 +4038,36 @@ def generate_chessboards_trading_models(chessboard):
             tradingmodels[ticker] = generate_TradingModel(ticker=ticker, theme=chesspiece.get('theme'), init=True)["MACD"][ticker]
     return tradingmodels
 
+
+def Create_TrigRule(
+                    symbol,
+                    trigrule_type='trinity', # vwap, rsi, macd, trinity..
+                    trigrule_status='active',
+                    expire_date=datetime.now().strftime('%m/%d/%YT%H:%M'), 
+                    user_accept=True, 
+                    max_order_nums=3, 
+                    max_budget=89, 
+                    marker=None, # vwap, rsi, macd, trinity..
+                    marker_value=None, #
+                    deviation_symbols=[], 
+                    deviation_group=False, 
+                    ttf=None, # Comparsion then only on TTF
+                    block_time=[] # trigging active when in block time
+                    ):
+    return {
+        "symbol": symbol,
+        "trigrule_status": trigrule_status,
+        "expire_date": expire_date,
+        "user_accept": user_accept,
+        "max_order_nums": max_order_nums,
+        "max_budget": max_budget,
+        "marker": marker,
+        "deviation_symbols": deviation_symbols,
+        "deviation_group": deviation_group,
+        "block_time": block_time,
+        "marker_value": marker_value,
+        "ttf": ttf,
+    }
 
 def return_queen_controls(stars=stars):
 

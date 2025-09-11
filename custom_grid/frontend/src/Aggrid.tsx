@@ -48,6 +48,7 @@ type Props = {
   username: string
   api: string
   api_update: string
+  api_ws?: string
   refresh_sec?: number
   refresh_cutoff_sec?: number
   gridoption_build?: any
@@ -126,6 +127,7 @@ const columnFormaters = {
     },
   },
 }
+
 
 const HyperlinkRenderer = (props: any) => {
   const linkField = props.column.colDef["linkField"];
@@ -238,6 +240,7 @@ const getGridOptions = () => {
     username,
     api,
     api_update,
+    api_ws = undefined,
     refresh_sec = undefined,
     refresh_cutoff_sec = 0,
     prod = true,
@@ -265,9 +268,51 @@ const getGridOptions = () => {
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [previousViewId, setpreviousViewId] = useState(89)
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-const [selectedColumnSetKeys, setSelectedColumnSetKeys] = useState<string[]>([]);
-const [initialColumnState, setInitialColumnState] = useState<any>(null);
-  const checkLastModified = async (): Promise<boolean> => {
+  const [selectedColumnSetKeys, setSelectedColumnSetKeys] = useState<string[]>([]);
+  const [initialColumnState, setInitialColumnState] = useState<any>(null);
+
+  const [selectedCellContent, setSelectedCellContent] = useState<string | null>(null);
+
+  const onCellClicked = (event: any) => {
+    if (event.value) {
+      setSelectedCellContent(event.value); // Set the clicked cell's value
+    }
+  };
+
+useEffect(() => {
+  if (!kwargs.api_ws) {
+    console.warn("api_ws is undefined, WebSocket not started.");
+    return;
+  }
+
+ const ws = new WebSocket(kwargs.api_ws);
+   
+ ws.onopen = () => {
+    ws.send(JSON.stringify({
+      username: username,
+      grid: rowData, // send the current grid data
+      api_key: api_key,
+    }));
+  };
+
+ws.onmessage = (event) => {
+  const { row_id, updates } = JSON.parse(event.data);
+  const existingNode = gridRef.current?.api.getRowNode(row_id);
+  if (existingNode && existingNode.data) {
+    const updatedRow = { ...existingNode.data, ...updates };
+    updatedRow[index] = row_id; // Ensure the id field is present
+    gridRef.current?.api.applyTransaction({
+      update: [updatedRow]
+    });
+  } else {
+    console.log("Row not found for update:", row_id);
+  }
+};
+  return () => ws.close();
+}, [kwargs.api_ws, index, rowData]);
+
+
+const checkLastModified = async (): Promise<boolean> => {
     try {
       if (api_lastmod_key === null) {
         console.log("api key is null, returning false");
@@ -315,6 +360,7 @@ const [initialColumnState, setInitialColumnState] = useState<any>(null);
     Streamlit.setFrameHeight();
   
     if (buttons.length) {
+      // console.log("Processing buttons:", buttons);
       buttons = deepMap(buttons, parseJsCodeFromPython, ["rowData"]); // process JsCode from buttons props
   
       buttons.forEach((button: any) => {
@@ -459,7 +505,6 @@ const [initialColumnState, setInitialColumnState] = useState<any>(null);
     const array = await fetchData();
     if (array === false) return false;
     setRowData(array);
-    // console.log("rowData", array);
     g_rowdata = array;
     return true;
   };
@@ -478,7 +523,6 @@ const [initialColumnState, setInitialColumnState] = useState<any>(null);
       // If view has changed, skip checkLastModified
       if (!hasViewChanged && refresh_sec && refresh_sec > 0) {
         const isLastModified = await checkLastModified();
-        // console.log("isLastModified", isLastModified, api);
         if (!isLastModified) {
           return false;
         }
@@ -626,28 +670,21 @@ const onFilterChanged = useCallback(() => {
     }
   }, [props, viewId])
 
-  // useEffect(() => {
-  //   const baseurl = api.split('/').slice(0, -1).join('/');
-  //   const socket = io(`${baseurl}/ws`);
 
-  //   socket.on("dataUpdated", () => {
-  //     console.log("Data update received via WebSocket");
-  //     onRefresh();
-  //   });
-
-  //   return () => {
-  //     socket.disconnect();
-  //   };
-  // }, []);
 
 
   const autoSizeAll = useCallback((skipHeader: boolean) => {
-    const allColumnIds: string[] = []
-    gridRef.current!.columnApi.getColumns()!.forEach((column: any) => {
-      allColumnIds.push(column.getId())
-    })
-    gridRef.current!.columnApi.autoSizeColumns(allColumnIds, skipHeader)
-  }, [])
+    const allColumnIds: string[] = [];
+    const columnApi = gridRef.current!.columnApi;
+    const gridColumnDefs = grid_options?.columnDefs || [];
+    columnApi.getColumns()!.forEach((column: any) => {
+      const colDef = gridColumnDefs.find((def: any) => def.field === column.getColDef().field);
+      if (!colDef || colDef.initialWidth === undefined) {
+        allColumnIds.push(column.getId());
+      }
+    });
+    columnApi.autoSizeColumns(allColumnIds, skipHeader);
+  }, []);
 
   const sizeToFit = useCallback(() => {
     gridRef.current!.api.sizeColumnsToFit({
@@ -658,6 +695,7 @@ const onFilterChanged = useCallback(() => {
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
       try {
+        console.log("ws api is", api_ws, kwargs.api_ws);
         const array = await fetchData();
         if (array === false) return;
         
@@ -927,91 +965,44 @@ const handleButtonFilter = (value: string | null) => {
 
   return (
     <>
-      <MyModal
-        isOpen={modalShow}
-        closeModal={() => setModalshow(false)}
-        modalData={modalData}
-        promptText={promptText}
-        setPromptText={setPromptText}
-        toastr={toastr}
-      />
-      <div
-        style={{ flexDirection: "row", height: "100%", width: "100%" }}
-        id="myGrid"
-      >
-        <div className="d-flex justify-content-between align-items-center">
-          {(refresh_sec == undefined || refresh_sec == 0) && (
-            <div style={{ display: "flex" }}>
-              <div style={{ margin: "5px 5px 5px 2px" }}>
-                <button
-                  className="btn"
-                  style={{
-                    backgroundColor: button_color,
-                    color: "white",
-                    padding: "2px 5px", // Smaller padding
-                    // fontSize: "12px", // Smaller font size
-                    borderRadius: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minWidth: "50px", // Ensure width stays the same during loading
-                  }}
-                  onClick={onRefresh}
-                  title="Refresh"
-                  disabled={loading} // Disable button while loading
-                >
-                  {loading ? (
-                    <div
-                      style={{
-                        width: "12px",
-                        height: "12px",
-                        border: "2px solid white",
-                        borderTop: "2px solid transparent",
-                        borderRadius: "50%",
-                        animation: "spin 0.8s linear infinite",
-                      }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: "25px", lineHeight: "1" }}>⟳</span>
-                  )}
-                </button>
 
-                {/* Add CSS for spinner animation */}
-                <style>
-                  {`
-                    @keyframes spin {
-                      to {
-                        transform: rotate(360deg);
-                      }
-                    }
-                  `}
-                </style>
-              </div>
-                <div style={{ margin: "5px 5px 5px 2px" }}>
-                <button
-                  className="btn"
-                  style={{
-                  backgroundColor: "green",
-                  color: "white",
-                  padding: "5px 8px",
-                  fontSize: "12px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  }}
-                  onClick={onUpdate}
-                  title="Update"
-                >
-                  <span style={{ fontSize: "18px", lineHeight: "1" }}>↑</span>
-                  {/* <span>Update</span> */}
-                </button>
-              </div>
-            </div>
-          )}
-          
-          
-          
+{kwargs.show_cell_content && selectedCellContent && (
+  <div
+    style={{
+      position: "absolute",
+      top: "10px",
+      right: "10px",
+      background: "white",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      padding: "10px",
+      boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+      zIndex: 1000,
+      maxWidth: "300px", // Limit the width
+      maxHeight: "200px", // Limit the height
+      overflow: "auto", // Add scrollbars for overflow
+      width: "fit-content",
+    }}
+  >
+    <p style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+      {selectedCellContent}
+    </p>
+    <button
+      onClick={() => setSelectedCellContent(null)}
+      style={{
+        background: "#3498db",
+        color: "white",
+        border: "none",
+        borderRadius: "2px",
+        padding: "3px 5px",
+        cursor: "pointer",
+      }}
+    >
+      <h5 style={{ fontSize: "8px", margin: "0 0 6px 0" }}>x</h5>
+    </button>
+  </div>
+)}
+
 {toggle_views && toggle_views.length > 0 && (
   <>
     <div
@@ -1022,7 +1013,7 @@ const handleButtonFilter = (value: string | null) => {
         fontSize: "15px",
       }}
     >
-      {kwargs.toggle_header ? kwargs.toggle_header : "Main Tabs"}
+      {kwargs.toggle_header ? kwargs.toggle_header : ""}
     </div>
     {toggle_views.length < 20 ? (
       // Render normal buttons if toggle_views is less than 20
@@ -1124,6 +1115,92 @@ const handleButtonFilter = (value: string | null) => {
     )}
   </>
 )}
+
+      <MyModal
+        isOpen={modalShow}
+        closeModal={() => setModalshow(false)}
+        modalData={modalData}
+        promptText={promptText}
+        setPromptText={setPromptText}
+        toastr={toastr}
+      />
+      <div
+        style={{ flexDirection: "row", height: "100%", width: "100%" }}
+        id="myGrid"
+      >
+
+
+        <div className="d-flex justify-content-between align-items-center">
+          {(refresh_sec == undefined || refresh_sec == 0) && (
+            <div style={{ display: "flex" }}>
+              <div style={{ margin: "5px 5px 5px 2px" }}>
+                <button
+                  className="btn"
+                  style={{
+                    backgroundColor: button_color,
+                    color: "white",
+                    padding: "2px 5px", // Smaller padding
+                    // fontSize: "12px", // Smaller font size
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: "50px", // Ensure width stays the same during loading
+                  }}
+                  onClick={onRefresh}
+                  title="Refresh"
+                  disabled={loading} // Disable button while loading
+                >
+                  {loading ? (
+                    <div
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        border: "2px solid white",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.8s linear infinite",
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: "25px", lineHeight: "1" }}>⟳</span>
+                  )}
+                </button>
+
+                {/* Add CSS for spinner animation */}
+                <style>
+                  {`
+                    @keyframes spin {
+                      to {
+                        transform: rotate(360deg);
+                      }
+                    }
+                  `}
+                </style>
+              </div>
+                <div style={{ margin: "5px 5px 5px 2px" }}>
+                <button
+                  className="btn"
+                  style={{
+                  backgroundColor: "green",
+                  color: "white",
+                  padding: "5px 8px",
+                  fontSize: "12px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  }}
+                  onClick={onUpdate}
+                  title="Update"
+                >
+                  <span style={{ fontSize: "18px", lineHeight: "1" }}>↑</span>
+                  {/* <span>Update</span> */}
+                </button>
+              </div>
+            </div>
+          )}
+          
         </div>
   
         <div
@@ -1346,6 +1423,7 @@ const handleButtonFilter = (value: string | null) => {
             onCellValueChanged={onCellValueChanged}
             columnTypes={columnTypes}
             sideBar={grid_options.sideBar === false ? false : sideBar}
+            onCellClicked={onCellClicked} // Attach the handler here
           />
         </div>
       </div>

@@ -114,14 +114,9 @@ showfileUploaderEncoding = true
 # Default: true
 showPyplotGlobalUse = true
 [theme]
-# Primary accent for interactive elements
-primaryColor = '#004e92'
-
-# Background color for the main content area
-backgroundColor = '#fcfdff'
-
-# Background color for sidebar and most interactive widgets
-secondaryBackgroundColor = '#d9e8ff'
+primaryColor = "#2d5161"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#E6F4FA"
 
 # Color used for almost all text
 textColor = '#003366'

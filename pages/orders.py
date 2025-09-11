@@ -139,6 +139,7 @@ def order_grid(client_user, config_cols, missing_cols, ip_address):
                 ],
         grid_height='650px',
         toggle_views = ['ORDERS', 'QUEEN'] + ['buys', 'sells', 'today', 'close today'] + list(star_names().keys()) + ['FINAL'],
+        show_cell_content = True,
     )
     st.write("prod", st.session_state['prod'])
     # ORDERS = init_queenbee(client_user, prod, orders_final=True).get('ORDERS_FINAL')

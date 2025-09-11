@@ -295,6 +295,7 @@ def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
                     missing_rules = [i for i in latest_rules if i not in waveblock_kor.keys()]                
                     # (missing_rules)
                     if len(missing_rules) > 0:
+                        print("ADDING NEW RULES", missing_rules, " Model: ", ticker, ticker_star, trigbee, blocktime)
                         save = True
                         new_rules_confirmation[ticker] = []
                         for new_rule in missing_rules:
@@ -514,7 +515,7 @@ def pollenq(sandbox=False, demo=False):
 
     with header_text_1.container():
         if not prod:
-            mark_down_text("SandBox Account", fontsize="28", color="#a8b702", align="left")
+            mark_down_text("SandBox Account", fontsize="28", color="#6b7407", align="left")
         else:
             mark_down_text("Live Account", fontsize="28", color="#03457C", align="left")
 
@@ -562,7 +563,7 @@ def pollenq(sandbox=False, demo=False):
         # switch_page('account')
 
     if menu_id == 'Orders':
-        # switch_page('orders')
+        st.switch_page('pages/orders.py')
         # queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
 
         # active_order_state_list = king_G.get('active_order_state_list')
@@ -735,6 +736,7 @@ def pollenq(sandbox=False, demo=False):
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
         # account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
+        st.info(f'{prod_name}, {prod}')
         queens_conscience(prod, revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1

@@ -33,7 +33,8 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     shape_chess_board,
                                     remove_symbol_from_chess_board,
                                     add_symbol_to_chess_board,
-                                    star_refresh_star_times
+                                    star_refresh_star_times,
+                                    assign_block_time
                                     )
 
 from chess_piece.queen_bee import execute_buy_order, get_priceinfo_snapshot, symbol_is_crypto, handle_broker
@@ -243,7 +244,7 @@ def validate_return_kors(king_order_rules, kors):
     if rule == 'wave_amo':
       if type(value) != float:
         value = float(value)
-    elif rule == 'close_order_today':
+    elif rule in['close_order_today', 'ignore_allocation_budget']:
         if type(value) != bool:
           print("ERRROR BOOL CLOSE ORDER")
           continue
@@ -273,13 +274,26 @@ def return_startime_from_ttf(ticker_time_frame):
    t,tt,f = ticker_time_frame.split("_")
    return f'{tt}_{f}'
 
-def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long'): # index & wave_amount
+def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long', wave_buy_orders=[], wave_buys=False): # index & wave_amount
   try:
+    #WORKERBEE Handling Crypto, # workerbee add check for buying amount allowed
+    
+    df_wave_buys = pd.DataFrame(wave_buy_orders)
+    if wave_buys:
+      if len(df_wave_buys) > 0:
+        df_wave_buys['close_order_today'] = df_wave_buys['close_order_today'].astype(bool)
+        df_wave_buys['buy_amount'] = pd.to_numeric(df_wave_buys['buy_amount'], errors='coerce').fillna(0)
+        df_wave_buys = df_wave_buys[(df_wave_buys['confirm_buy'] == True) & (df_wave_buys['buy_amount'] > 0)]
+        if df_wave_buys.empty:
+          return grid_row_button_resp(status='error', description='No valid wave buy orders to process.', message_type='fade', close_modal=False, color_text='red', error=True)
+      else:
+        return grid_row_button_resp(status='error', description='No valid wave buy orders to process.', message_type='fade', close_modal=False, color_text='red', error=True)
+
     # WORKERBEE handle long short
-    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, revrec=False, queen_heart=True, pg_migration=pg_migration)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
-    revrec = qb.get('revrec') # qb.get('queen_revrec')
+    # revrec = qb.get('revrec') # qb.get('queen_revrec') # WORKERBEE but shouldn't we just use RevRec anyways?
     QUEENsHeart = qb.get('QUEENsHeart')
     portfolio = QUEENsHeart['heartbeat'].get('portfolio')
 
@@ -292,113 +306,219 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     broker = handle_broker(broker)
     print("BROKER", broker)
     # Trading Model
-    symbol = selected_row.get('symbol')
-    if story:
-      ticker_time_frame = kors.get('star')
-      star_time = return_startime_from_ttf(ticker_time_frame)
-      if not revrec:
-         wave_blocktime = 'afternoon_2-4'
-      elif ticker_time_frame in revrec.get('waveview').index:
-        wave_blocktime = revrec.get('waveview').loc[ticker_time_frame].get('wave_blocktime')
+    if not wave_buys:
+      symbol = selected_row.get('symbol')
+      if story:
+        ticker_time_frame = kors.get('star')
+        tticker, tframe, frame = ticker_time_frame.split("_")
+        star_time = return_startime_from_ttf(ticker_time_frame)
+        wave_blocktime = assign_block_time(tframe)
       else:
-         wave_blocktime = 'afternoon_2-4'
+        star_time=star_names(kors.get('star_list')[0])
+        ticker_time_frame = f'{symbol}_{star_time}'
+        tticker, tframe, frame = ticker_time_frame.split("_")
+        wave_blocktime = assign_block_time(tframe)
+
+    wave_buy_cols_float = ['star_total_budget', 'remaining_budget',
+          'star_borrow_budget', 'remaining_budget_borrow', 'star_at_play',
+          'star_at_play_borrow', 'allocation_long', 'allocation_long_deploy',
+          'allocation_deploy', 'limit_price', 'take_profit', 'sell_out',
+          'buy_amount', ] # 'close_order_today', 'sell_trigbee_date', ''confirm_buy'
+    
+    orders_saved_msg = []
+    if wave_buys and len(df_wave_buys) > 0:
+      # sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M')
+      # df_wave_buys['sell_trigbee_date'] = df_wave_buys['sell_trigbee_date'].fillna(datetime.now(est).strftime('%m/%d/%YT%H:%M'))
+      df_wave_buys['close_order_today'] = df_wave_buys['close_order_today'].astype(bool)
+      for col in wave_buy_cols_float:
+        if col in df_wave_buys.columns:
+          df_wave_buys[col] = pd.to_numeric(df_wave_buys[col], errors='coerce').fillna(0)
+      for idx, row in df_wave_buys.iterrows():
+        # KORS
+        kors = {}
+        kors['take_profit'] = row.get('take_profit', 0)
+        kors['limit_price'] = row.get('limit_price', 0)
+        kors['sell_out'] = row.get('sell_out', 0)
+        kors['close_order_today'] = row.get('close_order_today', False)
+        kors['sell_trigbee_date'] = row.get('sell_trigbee_date', False)
+        kors['sell_trigbee_date'] = pd.to_datetime(kors['sell_trigbee_date']).strftime('%m/%d/%YT%H:%M')
+        kors['ignore_allocation_budget'] = row.get('ignore_allocation_budget', False)
+        # if kors['sell_trigbee_date'][:4].isdigit():
+        #    kors['sell_trigbee_date'] = pd.to_datetime(kors['sell_trigbee_date']).strftime('%m/%d/%YT%H:%M')
+        # else:
+        #     kors['sell_trigbee_date'] = False
+        # print(type(kors['sell_trigbee_date']), kors['sell_trigbee_date'], "sell_trigbee_date")
+        kors['wave_amo'] = row.get('buy_amount', 0)
+        kors['limit_price'] = row.get('limit_price', 0)
+        
+        # Trading Model
+        ticker_time_frame = row['ticker_time_frame']
+        trigbee = row.get('macd_state', 'buy_cross-0')
+        symbol, tframe, frame = ticker_time_frame.split("_")
+        star_time = f'{tframe}_{frame}'
+        wave_blocktime = assign_block_time(tframe)
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol) # main symbol for Model (SPY)
+        if not trading_model:
+          trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+        tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1]) # Ensure Trading Model TrigName
+        king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
+        
+        # Other Misc
+        crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+        crypto = True if symbol in crypto_currency_symbols else False
+        maker_middle = False
+        current_wave = {} # deprecate revrec['waveview'].get('current_wave')
+        current_macd_cross__wave = {} # deprecate
+        power_up_amo = power_amo() # deprecate?
+        borrowed_funds = True # USER INITIATE
+        latest_kors = kings_order_rules()
+        latest_kors = {k:v for k,v in latest_kors.items() if k not in king_order_rules} # remove any keys that we don't want to overwrite
+        king_order_rules = {**king_order_rules, **latest_kors} # add any new rules to the mix
+        kors = validate_return_kors(king_order_rules, kors)
+        wave_amo = kors.get('wave_amo')
+
+        blessing = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
+                                                    king_order_rules=kors, 
+                                                    order_side='buy', 
+                                                    wave_amo=wave_amo, 
+                                                    maker_middle=maker_middle, 
+                                                    origin_wave=current_wave, 
+                                                    power_up_rangers=power_up_amo, 
+                                                    ticker_time_frame_origin=ticker_time_frame, 
+                                                    double_down_trade=True, 
+                                                    wave_at_creation=current_macd_cross__wave,
+                                                    symbol=symbol,
+                                                    trigbee=trigbee,
+                                                    tm_trig=tm_trig,
+                                                    borrowed_funds=borrowed_funds,
+                                                    ready_buy=ready_buy,
+                                                    assigned_wave=current_macd_cross__wave,
+                                                    long_short=long_short,
+                                                    )
+        # print("BLESSING", blessing)
+
+        exx = execute_buy_order(
+                        broker=broker,
+                        order_key=QUEEN_KING.get('db_root'),
+                        prod=prod,
+                        api=api, 
+                        portfolio=portfolio, 
+                        blessing=blessing,
+                        trading_model=blessing.get('trading_model'),
+                        ticker=blessing.get('symbol'), 
+                        ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
+                        trig=blessing.get('trigbee'), 
+                        wave_amo=blessing.get('wave_amo'),
+                        order_type=blessing.get('order_type'),
+                        side=blessing.get('order_side'),
+                        limit_price=blessing.get('limit_price'),
+                        crypto=crypto
+                        )
+
+        if exx.get('executed'):
+          print("APP EXX Order")
+
+          buy_package.update({'new_queen_order_df': exx.get('new_queen_order_df')})   
+
+          # save
+          QUEEN_KING['buy_orders'].append(buy_package)
+
+          if pg_migration:
+            PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), key=QUEEN_KING.get('key'), value=QUEEN_KING)
+          else:
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+          
+          orders_saved_msg.append(f' >{symbol} purchased<')
+        else:
+          orders_saved_msg.append(f' >{symbol} purchase failed<')
+
+      return {'status': True, 'msg': orders_saved_msg}
+
+    elif story:
+      trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol) # main symbol for Model (SPY)
+      if not trading_model:
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+      # Ensure Trading Model TrigName
+      tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
+      if ready_buy:
+        tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
+      # Copy TM
+      king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
+      # Other Misc
+      crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+      crypto = True if symbol in crypto_currency_symbols else False
+      maker_middle = False
+      current_wave = {} # revrec['waveview'].get('current_wave')
+      current_macd_cross__wave = {}
+      power_up_amo = power_amo()
+      borrowed_funds = True # USER INITIATE
+      borrow_qty = False ## DEPRECIATE
+      latest_kors = kings_order_rules()
+      latest_kors = {k:v for k,v in latest_kors.items() if k not in king_order_rules} # remove any keys that we don't want to overwrite
+      king_order_rules = {**king_order_rules, **latest_kors} # add any new rules to the mix
+      kors = validate_return_kors(king_order_rules, kors)
+      wave_amo = kors.get('wave_amo')
+
+      order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
+                                                  king_order_rules=kors, 
+                                                  order_side='buy', 
+                                                  wave_amo=wave_amo, 
+                                                  maker_middle=maker_middle, 
+                                                  origin_wave=current_wave, 
+                                                  power_up_rangers=power_up_amo, 
+                                                  ticker_time_frame_origin=ticker_time_frame, 
+                                                  double_down_trade=True, 
+                                                  wave_at_creation=current_macd_cross__wave,
+                                                  symbol=symbol,
+                                                  trigbee=trigbee,
+                                                  tm_trig=tm_trig,
+                                                  borrowed_funds=borrowed_funds,
+                                                  ready_buy=ready_buy,
+                                                  assigned_wave=current_macd_cross__wave,
+                                                  borrow_qty=borrow_qty,
+                                                  long_short=long_short,
+                                                  )
+      blessing = order_vars
+
+      exx = execute_buy_order(
+                      broker=broker,
+                      order_key=QUEEN_KING.get('db_root'),
+                      prod=prod,
+                      api=api, 
+                      portfolio=portfolio, 
+                      blessing=blessing,
+                      trading_model=blessing.get('trading_model'),
+                      ticker=blessing.get('symbol'), 
+                      ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
+                      trig=blessing.get('trigbee'), 
+                      wave_amo=blessing.get('wave_amo'),
+                      order_type=blessing.get('order_type'),
+                      side=blessing.get('order_side'),
+                      limit_price=blessing.get('limit_price'),
+                      crypto=crypto
+                      )
+
+      if exx.get('executed'):
+        print("APP EXX Order")
+
+        buy_package.update({'new_queen_order_df': exx.get('new_queen_order_df')})   
+
+        # save
+        QUEEN_KING['buy_orders'].append(buy_package)
+
+        if pg_migration:
+          PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), key=QUEEN_KING.get('key'), value=QUEEN_KING)
+        else:
+          PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+
+        print("SAVED ORDER TO QK")
+        return {'status': True, 'msg': f'{symbol} purchased'}
+      else:
+        print("Ex Failed")
+        return {'status': False, 'msg': "Ex Failed"}
+    
     else:
-      star_time=star_names(kors.get('star_list')[0])
-      ticker_time_frame = f'{symbol}_{star_time}'
-      if not revrec:
-         wave_blocktime = 'afternoon_2-4'
-      elif ticker_time_frame in revrec.get('waveview').index:
-        wave_blocktime = revrec.get('waveview').loc[ticker_time_frame].get('wave_blocktime')
-      else:
-         wave_blocktime = 'afternoon_2-4'    
-
-    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol) # main symbol for Model (SPY)
-    if not trading_model:
-       trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
-    
-    # Ensure Symbol for Inverse Indexes
-    # main_indexes = main_index_tickers()
-    # symbol = find_symbol(main_indexes, symbol, trading_model, trigbee).get('ticker') # FOR BUYING
-    
-    # Ensure Trading Model TrigName
-    tm_trig = return_trading_model_trigbee(tm_trig=trigbee, trig_wave_length=trigbee.split("-")[-1])
-    if ready_buy:
-      tm_trig = f'sell_cross-0' if 'buy' in tm_trig else f'buy_cross-0'
-
-    # Copy TM
-    king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
-    
-    # Other Misc
-    crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-    crypto = True if symbol in crypto_currency_symbols else False
-    maker_middle = False
-    current_wave = {} # revrec['waveview'].get('current_wave')
-    current_macd_cross__wave = {}
-    power_up_amo = power_amo()
-    borrowed_funds = True # USER INITIATE
-    borrow_qty = False ## DEPRECIATE
-    # WORKERBEE fix sell_date format, keep as string
-    kors = validate_return_kors(king_order_rules, kors)
-    wave_amo = kors.get('wave_amo')
-
-    order_vars = order_vars__queen_order_items(trading_model=trading_model.get('theme'), 
-                                                king_order_rules=kors, 
-                                                order_side='buy', 
-                                                wave_amo=wave_amo, 
-                                                maker_middle=maker_middle, 
-                                                origin_wave=current_wave, 
-                                                power_up_rangers=power_up_amo, 
-                                                ticker_time_frame_origin=ticker_time_frame, 
-                                                double_down_trade=True, 
-                                                wave_at_creation=current_macd_cross__wave,
-                                                symbol=symbol,
-                                                trigbee=trigbee,
-                                                tm_trig=tm_trig,
-                                                borrowed_funds=borrowed_funds,
-                                                ready_buy=ready_buy,
-                                                assigned_wave=current_macd_cross__wave,
-                                                borrow_qty=borrow_qty,
-                                                long_short=long_short,
-                                                )
-    blessing = order_vars
-
-    exx = execute_buy_order(
-                    broker=broker,
-                    order_key=QUEEN_KING.get('db_root'),
-                    prod=prod,
-                    api=api, 
-                    portfolio=portfolio, 
-                    blessing=blessing,
-                    trading_model=blessing.get('trading_model'),
-                    ticker=blessing.get('symbol'), 
-                    ticker_time_frame=blessing.get('ticker_time_frame_origin'), 
-                    trig=blessing.get('trigbee'), 
-                    wave_amo=blessing.get('wave_amo'),
-                    order_type=blessing.get('order_type'),
-                    side=blessing.get('order_side'),
-                    limit_price=blessing.get('limit_price'),
-                    crypto=crypto
-                    )
-
-    if exx.get('executed'):
-      print("APP EXX Order")
-
-      buy_package.update({'new_queen_order_df': exx.get('new_queen_order_df')})   
-
-      # save
-      QUEEN_KING['buy_orders'].append(buy_package)
-
-      if pg_migration:
-        PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), key=QUEEN_KING.get('key'), value=QUEEN_KING)
-      else:
-        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-
-      print("SAVED ORDER TO QK")
-      return {'status': True, 'msg': f'{symbol} purchased'}
-    else:
-       print("Ex Failed")
-       return {'status': False, 'msg': "Ex Failed"}
-    
+       return {'status': False, 'msg': "Not an Options"}
   except Exception as e:
      y=print_line_of_error(f"fastapi buy button failed {e}")
     #  logging.error(("fastapi", e))
@@ -910,7 +1030,17 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       elif return_type == 'story':
         print('prod', prod)
         df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection, qk_chessboard)
-        
+        # for idx in df.index:
+        #     df.at[idx, 'nestedRows'] = [{
+        #         'count_on_me': 89,
+        #         'nestedRows': [{
+        #             'count_on_her': 89,
+        #             'nestedRows': [{
+        #                 'count_on_them': 89
+        #             }]
+        #         }]
+        #     }]
+
         json_data = df.to_json(orient='records')
         print("story runtime: ", (datetime.now() - s).total_seconds())
         return json_data
@@ -986,6 +1116,13 @@ def get_revrec_lastmod_time(client_user, prod, api_lastmod_key='REVREC'):
   dbs = {'lastModified': str(v) for k, v in dbs.items() if api_lastmod_key in k}
   return dbs
 
+def get_keyTable_lastmod_time(client_user, prod, table_key='REVREC'):
+  db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
+  table_name = 'db' if prod else 'db_sandbox'
+  dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
+  dbs = {'lastModified': str(v) for k, v in dbs.items() if table_key in k}
+  return dbs
+
 # Account Header account_header
 def header_account(client_user, prod):
   QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration).get('QUEENsHeart')
@@ -1057,17 +1194,16 @@ def header_account(client_user, prod):
 
     df_heart = pd.DataFrame([{'Broker': broker, 'Long': long, 'Short': short, 'Crypto': crypto_value, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
 
-    df_accountinfo = pd.DataFrame([{'Money': money_text, 'Todays Honey': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count}])
+    df_accountinfo = pd.DataFrame([{'Money': money_text, 'Day % Change': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count}])
 
 
     df_ = pd.concat([df_heart, df_accountinfo], axis=1)
 
-    df = pd.concat([df, df_])
+    df = pd.concat([df, df_]).reset_index(drop=True)
 
-    # k_colors = streamlit_config_colors()
-    # df['color_row'] = np.where(df['Broker'] == 'RobinHood', '#C0FBD3', k_colors.get('default_background_color'))
-    # df['color_row'] = '#C0FBD3'
-    # print(df.iloc[0])
+    # for idx in df.index:
+    #   df.at[idx, 'nestedRows'] = [{'count_on_me': 89, 'nestedRows': [{'count_on_her': 89}]}]
+    # print("acoucnt", df)
 
   return df.to_json(orient='records')
 

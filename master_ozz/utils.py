@@ -33,8 +33,6 @@ import argparse
 
 from pydub import AudioSegment
 
-from custom_voiceGPT import custom_voiceGPT, VoiceGPT_options_builder
-
 from bs4 import BeautifulSoup
 import re
 from streamlit_extras.switch_page_button import switch_page
@@ -97,11 +95,9 @@ def init_constants():
     PERSIST_PATH = f"{OZZ_DB}/STORAGE"
     OZZ_db_audio = f"{OZZ_DB}/audio"
     OZZ_db_images = f"{OZZ_DB}/images"
-    OZZ_BUILD_dir = f"{ROOT_PATH}/custom_voiceGPT/frontend/build"
 
     data_paths = {'DATA_PATH': DATA_PATH,
             'PERSIST_PATH':PERSIST_PATH,
-            'OZZ_BUILD_dir': OZZ_BUILD_dir,
             "OZZ_db_audio": OZZ_db_audio,
             "OZZ_db_images": OZZ_db_images,
             "ROOT_PATH": ROOT_PATH,
@@ -115,7 +111,6 @@ OZZ_DB = ozz_master_root_db()
 constants = init_constants()
 DATA_PATH = constants.get('DATA_PATH')
 PERSIST_PATH = constants.get('PERSIST_PATH')
-OZZ_BUILD_dir = constants.get('OZZ_BUILD_dir')
 OZZ_db_audio = constants.get('OZZ_db_audio')
 OZZ_db_images = constants.get('OZZ_db_images')
 

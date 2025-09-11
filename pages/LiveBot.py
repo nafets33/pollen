@@ -63,7 +63,6 @@ def demo_bot():
         # seconds_to_market_close = st.session_state['seconds_to_market_close'] if 'seconds_to_market_close' in st.session_state else 0
         # client_user = st.session_state['client_user']
         ip_address = st.session_state['ip_address']
-        prod = st.session_state['prod']
         queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
         king_G = kingdom__global_vars()
         active_order_state_list = king_G.get('active_order_state_list')

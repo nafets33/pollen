@@ -20,21 +20,64 @@ router = APIRouter(
 )
 
 # A set to store active WebSocket connections
-active_connections = set()
+active_connections = {}
 
-async def notify_websockets():
+async def notify_websockets(data):
+    to_remove = set()
     for connection in active_connections:
-        await connection.send_text("dataUpdated")
+        try:
+            await connection.send_json(data)
+        except Exception as e:
+            print(f"WebSocket send error: {e}")
+            to_remove.add(connection)
+    for connection in to_remove:
+        active_connections.remove(connection)
 
-@router.websocket("/ws")
+@router.websocket("/ws_story")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    active_connections.add(websocket)
+    initial_data = await websocket.receive_json()  # Receive initial data from frontend
+    active_connections[websocket] = initial_data
     try:
         while True:
-            await websocket.receive_text()
+            await asyncio.sleep(1)
     except WebSocketDisconnect:
-        active_connections.remove(websocket)
+        active_connections.pop(websocket, None)
+
+
+async def poll_table_and_notify():
+    while True:
+        to_remove = set()
+        # Print polling info only every 120 seconds
+        if not hasattr(poll_table_and_notify, "last_print_time"):
+            poll_table_and_notify.last_print_time = 0
+        now = asyncio.get_event_loop().time()
+        if now - poll_table_and_notify.last_print_time > 120:
+            print(f"Polling active WebSocket connections... {len(active_connections)}")
+            poll_table_and_notify.last_print_time = now
+        for connection, initial_data in active_connections.items():
+            try:
+                # Customize the data you send based on initial_data
+                # Example: send updates for the symbol requested by the client
+                client_user = initial_data.get("username")
+                print(f"Sending data to {client_user}")
+                data = initial_data.get("grid", {})
+                symbol = "SPY" # initial_data.get("symbol", "SPY")
+                json_data = {
+                    'row_id': symbol,
+                    'updates': {
+                        'symbol': symbol,
+                        'current_ask': random.uniform(100, 200),
+                        'broker_qty_delta': random.uniform(100, 200)
+                    }
+                }
+                await connection.send_json(json_data)
+            except Exception as e:
+                print(f"WebSocket send error: {e}")
+                to_remove.add(connection)
+        for connection in to_remove:
+            active_connections.pop(connection, None)
+        await asyncio.sleep(3)  # Poll every 3 seconds (adjust as needed)
 
 
 def check_authKey(api_key):
@@ -245,9 +288,15 @@ async def sell_order(request: Request, client_user: str=Body(...), username: str
 
 
 @router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK)
-def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
+async def buy_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
     if not check_authKey(api_key):
         return "NOTAUTH"
+
+    if request is not None and isinstance(request, Request):
+        data = await request.json()
+
+    print(data['default_value'].keys())
+    # print(data['default_value'].keys())
     story = True
     kors = default_value
     req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
@@ -258,12 +307,21 @@ def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Bo
 
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
-def buy_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+async def buy_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
+
+    if request is not None and isinstance(request, Request):
+        data = await request.json()
+
+    # print(data.keys())
+    wave_buy_orders = data.get('editable_orders', [])
+
+    # return JSONResponse(content=grid_row_button_resp(status="testing", description="ok"))
     story = False
+    wave_buys = True
     kors = default_value
-    req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
+    req = app_buy_order_request(client_user, prod, selected_row, kors, story=story, wave_buy_orders=wave_buy_orders, wave_buys=wave_buys)
     if req.get('status'):
         return JSONResponse(content=grid_row_button_resp(description=req.get('msg')))
     else:
@@ -338,12 +396,12 @@ async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), se
         print("Auth Failed", api_key)
         return "NOTAUTH"
 
-    # json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
+    json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
     return JSONResponse(content=json_data)
 
 
 @router.post("/update_queenking_symbol", status_code=status.HTTP_200_OK)
-def sell_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+def func_update_queenking_symbol(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
     json_data = queenking_symbol(client_user, prod, selected_row, default_value)

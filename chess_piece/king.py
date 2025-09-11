@@ -502,7 +502,7 @@ def streamlit_config_colors():
         "default_text_color": "#055A6E",
         "default_font": "sans serif",
         "default_yellow_color": "#E6C93B",
-        "default_background_color": '#f2f7ff',
+        "default_background_color": '#FFFFFF',
     }
 
     return k_colors

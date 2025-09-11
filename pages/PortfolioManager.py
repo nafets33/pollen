@@ -5,7 +5,7 @@ import re
 from master_ozz.utils import ozz_characters, hoots_and_hootie_keywords, ozz_master_root, print_line_of_error, Directory, CreateChunks, CreateEmbeddings, Retriever, init_constants, refreshAsk_kwargs
 # from streamlit_extras.switch_page_button import switch_page
 from dotenv import load_dotenv
-from custom_voiceGPT import custom_voiceGPT, VoiceGPT_options_builder
+from streamlit_ai_voice_chat import custom_voiceGPT, VoiceGPT_options_builder
 import requests
 import base64
 import ipdb

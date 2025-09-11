@@ -10,7 +10,7 @@ import streamlit as st
 import os
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
-from chess_piece.king import hive_master_root, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
+from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
 from chess_piece.queen_hive import fetch_portfolio_history, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee, star_refresh_star_times
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
@@ -280,25 +280,48 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
 
 button_suggestedallocation_style = JsCode("""
 function(p) {
+    // Check if this is the last pinned subtotal row
+    if (p.node && p.node.rowPinned === 'bottom') {
+        var value = p.value;
+        var color = value > 0 ? '#0a9d25' : '#ed370f'; // Green for >0, red otherwise
+        var formatted = '';
+        if (typeof value === 'number' && !isNaN(value)) {
+            formatted = value.toLocaleString();
+        } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+            formatted = parseFloat(value).toLocaleString();
+        } else {
+            formatted = value;
+        }
+        return {
+            color: color,
+            fontWeight: 'bold',
+            fontSize: '16px',
+            backgroundColor: '#fff',
+            border: '8px solid white',
+            textAlign: 'center',
+            value: formatted
+        };
+    }
+    // Default style for other rows
     if (p.data.allocation_long_deploy > 0) {
         return {
-            //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid' + '#bff0c7', // White border
-            color: 'red'
+            border: '8px solid' + '#f2f7ff',
+            color: 'green',
+            fontSize: '16px',
         };
     } else if (p.data.allocation_long_deploy < 0) {
         return {
-            //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid' + '#f8c6c6', // White border
-            color: 'red'
+            border: '8px solid' + '#f2f7ff',
+            color: 'red',
+            fontSize: '16px',
         };
     } else {
         return {
-            border: '3px solid white' // Default white border for other cases
+            border: '3px solid white'
         };
     }
 }
@@ -354,19 +377,35 @@ function(p) {
             value = parseFloat(parts[1]);
         }
     }
+    // Check if this is the subtotal row (usually has a property like 'isSubtotal' or 'ag-group-row')
+    if (p.node && p.node.rowPinned === 'bottom') {
+        return {
+            backgroundColor: '#f2f7ff', // Blue for subtotal row
+            color: '#fff',
+            padding: '3px',
+            boxSizing: 'border-box',
+            border: '8px solid #3498db'
+        };
+    }
     if (value > 0) {
         return {
             //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid #bff0c7' // White border
+            //border: '8px solid #bff0c7' // White border
+            border: '10px solid #f2f7ff', // Light grey border
+            color: 'green',
+            fontSize: '16px',
         };
     } else if (value < 0) {
         return {
             //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid #f8c6c6' // White border
+            //border: '8px solid #f8c6c6' // White border
+            border: '10px solid #f2f7ff', // Light grey border
+            color: 'red',
+            fontSize: '16px', 
         };
     } else {
         return null; // No style for other cases (e.g., money === 0)
@@ -377,10 +416,12 @@ function(p) {
 button_style_symbol = JsCode("""
 function(p) {
     return {
+        fontSize: '14px',
         boxSizing: 'border-box',
         padding: '5px',
         border: '10px solid #f2f7ff', // Light grey border
-        // backgroundColor: '#f5f5f5'   // Light grey background
+        //backgroundColor: '#f5f5f5'   // Light grey background
+        // color: p.value > 0 ? '#0a9d25' : '#ed370f',
     };
 }
 """)
@@ -388,25 +429,25 @@ function(p) {
 button_style_BUY_autopilot = JsCode("""
 function(color_autobuy) {
     if (color_autobuy.data.buy_autopilot === "ON") {
-        //console.log('buy_autopilot value:', color_autobuy.data.buy_autopilot);
         return {
-            //backgroundColor: '#bff0c7',
-            // color: 'red',
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid' + '#bff0c7',
-            // width: '100%',
+            //border: '8px solid',
+            color: '#0a9d25', // Green text for ON
+            backgroundColor: 'transparent',
+            fontSize: '15px'
         };
     } else if (color_autobuy.data.buy_autopilot === "OFF") {
         return {
-            //backgroundColor: '#f8c6c6', // Light red text
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid' + '#f8c6c6',
-            // color: 'yellow',
+            //border: '8px solid',
+            color: '#888', // Grey text for OFF
+            backgroundColor: 'transparent',
+            fontSize: '15px'
         };
     } else {
-        return {};
+        return { backgroundColor: 'transparent', fontSize: '15px' };
     }
 }
 """)
@@ -414,25 +455,25 @@ function(color_autobuy) {
 button_style_SELL_autopilot = JsCode("""
 function(color_autobuy) {
     if (color_autobuy.data.sell_autopilot === "ON") {
-        //console.log('sell_autopilot value:', color_autobuy.data.sell_autopilot);
         return {
-            //backgroundColor: '#bff0c7',
-            // color: 'red',
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid' + '#bff0c7',
-            // width: '100%',
+            //border: '8px solid',
+            color: '#0a9d25', // Green text for ON
+            backgroundColor: 'transparent',
+            fontSize: '15px'
         };
     } else if (color_autobuy.data.sell_autopilot === "OFF") {
         return {
-            //backgroundColor: '#f8c6c6', // Light red text
             padding: '3px',
             boxSizing: 'border-box',
-            border: '8px solid' + '#f8c6c6',
-            // color: 'yellow',
+            //border: '8px solid',
+            color: '#888', // Grey text for OFF
+            backgroundColor: 'transparent',
+            fontSize: '15px'
         };
     } else {
-        return {};
+        return { backgroundColor: 'transparent', fontSize: '15px' };
     }
 }
 """)
@@ -544,7 +585,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
         'Short',
         'Crypto',
         'Todays Money',
-        'Todays Honey',
+        'Todays % Change',
         'Portfolio Value',
         'Buying Power',
         'daytrade count'
@@ -558,13 +599,13 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             backgroundColor = k_colors.get('default_background_color')
             default_text_color = k_colors.get('default_text_color')
             return  {
-        'Broker': {'width': 130, 'cellStyle': button_style_broker},                  
+        'Broker': {'width': 130, 'cellStyle': button_style_broker }, #, 'cellRenderer': "agGroupCellRenderer" },                  
         'Cash': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
         'Long': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},                  
         'Short': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Crypto': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Money': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, "type": ["customNumberFormat", "numericColumn", "customCurrencyFormat"], 'custom_currency_symbol':"$"}, **animate_numbers},
-        'Todays Honey': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
+        'Day % Change': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
         'Portfolio Value': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Buying Power': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'daytrade count': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
@@ -590,18 +631,29 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             refresh_cutoff_sec=seconds_to_market_close, 
             prod=prod,
             grid_options=go,
-            key=f'{prod}account_header_grid',
+            key=f'{prod}account_header_grid{refresh_sec}',
             # kwargs from here
             prompt_message = None, #"symbol",
             prompt_field = None, #"symbol", # "current_macd_tier", # for signle value
             api_key=os.environ.get("fastAPI_key"),
             buttons=[],
-            grid_height='110px',
+            grid_height='129px',
             toggle_views=[],
             allow_unsafe_jscode=True,
             grid_type='account_header',
             subtotal_cols=[],
-            ) 
+            # nestedGridEnabled = True,
+            # detailGridOptions = {'columnDefs': [{'field': 'count_on_me', 'cellRenderer': "agGroupCellRenderer",}],
+            #                      'masterDetail': True,
+            #                     'detailCellRendererParams': {
+            #                         'detailGridOptions': {
+            #                             'columnDefs': [{'field': 'count_on_her', 'cellRenderer': "agGroupCellRenderer"}],  # Level 2 detail columns
+            #                             # You can add more options here for level 2
+            #                         },
+            #                      },
+                                 
+            # }
+        )
 
     except Exception as e:
         print_line_of_error(e)
@@ -650,12 +702,12 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
   
     def story_grid(prod, client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default', tab_view=None):
 
-        
+        king_G = kingdom__global_vars()
         try:
             gb = GridOptionsBuilder.create()
             gb.configure_grid_options(pagination=True, 
-                                      paginationPageSize=50, 
-                                      suppressPaginationPanel=True, 
+                                      paginationPageSize=100, 
+                                    #   suppressPaginationPanel=True, 
                                       enableRangeSelection=True, 
                                       copyHeadersToClipboard=True,
                                       sideBar=True,
@@ -670,7 +722,8 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                         autoHeight=True, 
                                         suppress_menu=False, 
                                         filter=True, 
-                                        cellStyle={"fontSize": "14px"})            
+                                        minWidth=89,
+                                        cellStyle={"fontSize": "15px"})            
             gb.configure_index('symbol')
             gb.configure_theme('ag-theme-material')
             if paginationOn:
@@ -726,6 +779,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'pinned': 'left',
                             'prompt_order_rules': [i for i in add_symbol_dict_items().keys()],
                             'cellStyle': button_style_symbol,
+                            'cellRenderer': "agGroupCellRenderer"
                             # 'add_symbol_row_info': ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
                             # 'display_grid_column': 'active_orders',
                             # 'editableCols': ['allocation_long'],
@@ -740,11 +794,33 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'col_width':100,
                             'sortable': True,
                             # 'pinned': 'left',
-                            'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
+                            'prompt_order_rules': ['broker'], #[i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
                             'cellStyle': button_suggestedallocation_style,
-                            'add_symbol_row_info': ['ticker_total_budget', 'star_buys_at_play', 'ticker_remaining_budget', 'allocation_long', 'current_ask',
-                                                       'ticker_remaining_borrow'],
-                            # 'editableCols': ['allocation_long'],
+                            'valueFormatter': JsCode("""
+                            function(params) {
+                                if (typeof params.value === 'number' && !isNaN(params.value)) {
+                                return '$' + params.value.toLocaleString();
+                                } else if (typeof params.value === 'string' && !isNaN(parseFloat(params.value))) {
+                                return '$' + parseFloat(params.value).toLocaleString();
+                                }
+                                return params.value;
+                            }
+                            """),
+                            
+                            'add_symbol_row_info': ['current_ask'],
+
+                            'display_grid_column': 'wave_data',
+                            'editableCols': [
+                                # { 'col_header': "buy_qty", 'dtype': "number" },
+                                { 'col_header': "buy_amount", 'dtype': "number" },
+                                { 'col_header': "limit_price", 'dtype': "number" },
+                                { 'col_header': "take_profit", 'dtype': "number" },
+                                { 'col_header': "sell_out", 'dtype': "number" },
+                                { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
+                                { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
+                                { 'col_header': "close_order_today", 'dtype': "checkbox" },
+                                { 'col_header': "confirm_buy", 'dtype': "checkbox" },
+                                ],
                             },
 
                             {'button_name': None,
@@ -764,7 +840,21 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                   'color': 'red',  # or button_style_sell, etc.
                                 # ...add any other params you want to pass to the renderer
                             },
-                            'add_symbol_row_info': ['qty_available', 'current_ask', 'star_buys_at_play', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow']
+                            'add_symbol_row_info': ['qty_available', 'current_ask', 
+                                                    'star_buys_at_play', 'ticker_total_budget', 
+                                                    'ticker_remaining_budget', 'ticker_remaining_borrow'],
+                            'editableCols': [
+                                { 'col_header': "sell_qty", 'dtype': "number", "display_name": "Sell Qty"},
+                                { 'col_header': "sell_amount", 'dtype': "number" ,"info": "This will overwrite Sell Qty"},
+                                { 'col_header': "take_profit", 'dtype': "number" },
+                                { 'col_header': "sell_out", 'dtype': "number" },
+                                { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
+                                { 'col_header': "close_order_today", 'dtype': "checkbox" },
+                                { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
+                                { 'col_header': "confirm_sell", 'dtype': "checkbox", "display_name": "Confirm Sell / Update Order"},
+                                { 'col_header': "queen_order_state", 'dtype': "list", "display_name": "queen_order_state", "values": king_G.get('active_order_state_list')},
+                                ],
+                            'display_grid_column': 'active_orders',
                             },
 
                             {'button_name': None,
@@ -847,9 +937,11 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 #                         'valueFormatter': value_format_pct
                 #                         },                   
 
+                'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'unrealized_pl': {'headerName':"Unrealized PL", 'cellStyle': honey_colors, 'sortable':'true',
                                         "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                        'valueFormatter': value_format
+                                        'valueFormatter': value_format,
+                                        'cellRenderer': "agGroupCellRenderer",
                                         },
                 'unrealized_plpc': {'headerName':"Unrealized PL %", 'cellStyle': honey_colors, 'sortable':'true',
                                         "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
@@ -861,10 +953,9 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                 "cellEditorParams": {"values": df_ticker_qcp_names},"editable":True, "cellEditor":"agSelectCellEditor",
                                                                     },
                 'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
-                'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'autoWidth': True, 'initialWidth': 110} ,
-                'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'autoWidth': True, 'initialWidth': 110},
-                'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'autoWidth': True, 'initialWidth': 110},              
+                'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
+                'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
+                'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
                 'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
                                 'cellStyle': generate_shaded_cell_style('trinity_w_L')},
                 'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -893,15 +984,19 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
             
             story_col_order = [
+                                'current_from_yesterday',
+                                'pct_portfolio',
+                                'star_buys_at_play',
+                                'total_budget',
+                                'allocation_long',
                                'queens_suggested_buy', 
                                'unrealized_pl', 
                                'unrealized_plpc', 
                                'queens_suggested_sell', 
                                'piece_name',
-                               'pct_portfolio', 
                                'buy_autopilot', 
                                'sell_autopilot',
-                               'current_ask', 
+                            #    'current_ask', 
             ]
             # with st.expander("default build check"):
             #     st.write(go)
@@ -1018,17 +1113,18 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
             go = gb.build()
             # go['pivotMode'] = True
 
-
+            print("STORY GRID refresh_sec", refresh_sec)
             st_custom_grid(
+                key=f'{prod}{tab_view}story_grid{ui_refresh_sec}',
                 client_user=client_user,
                 username=client_user, 
                 api=f"{ip_address}/api/data/story",
+                # api_ws=f"{ip_address}/api/data/ws_story",
                 api_update=f"{ip_address}/api/data/update_queenking_chessboard",
                 refresh_sec=refresh_sec, 
                 refresh_cutoff_sec=seconds_to_market_close, 
                 prod=st.session_state['prod'],
                 grid_options=go,
-                key=f'{prod}{tab_view}story_grid',
                 return_type='story',
                 # kwargs from here
                 api_lastmod_key=f"REVREC",
@@ -1063,9 +1159,33 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                 ],
                 filter_apply=True,
                 filter_button='piece_name',
+                show_clear_all_filters=True,
+                column_sets = {
+    "Simple View": ["symbol", "qty_available", "current_ask", "pct_portfolio", "star_buys_at_play", "star_sells_at_play"],
+    "Options Trader": ["broker", "allocation", "budget"],
+    "Research": ["pct_portfolio", "money", "Day_state"],
 
-            ) 
+  },
+  show_cell_content=True,
 
+#                 nestedGridEnabled=True,
+# detailGridOptions = {
+#     'columnDefs': [{'field': 'count_on_me', 'cellRenderer': "agGroupCellRenderer"}],
+#     'masterDetail': True,
+#     'detailCellRendererParams': {
+#         'detailGridOptions': {
+#             'masterDetail': True,
+#             'columnDefs': [{'field': 'count_on_her', 'cellRenderer': "agGroupCellRenderer"}],
+#             # 'detailCellRendererParams': {
+#             #     'detailGridOptions': {
+#             #         'masterDetail': True,
+#             #         'columnDefs': [{'field': 'count_on_them', 'cellRenderer': "agGroupCellRenderer"}],
+#             #     }
+#             # }
+#         }
+#     }
+# }
+        )
         except Exception as e:
             print_line_of_error(f"STORYGRID FAILED {e}")
 
@@ -1112,11 +1232,15 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
 
         # with story_tab:
-        refresh_sec = 60 if seconds_to_market_close > 0 and mkhrs == 'open' else 889
+        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 889
         refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
-        ui_refresh_sec = st.sidebar.number_input('story grid refresh sec', min_value=0)
-        if ui_refresh_sec > 0:
+        ui_refresh_sec = st.sidebar.number_input('story grid refresh sec', value=refresh_sec, min_value=0)
+        if ui_refresh_sec != ui_refresh_sec:
+            print("UI REFRESH SEC NOT EQUAL", ui_refresh_sec, refresh_sec)
             refresh_sec = ui_refresh_sec
+
+        refresh_sec = None if not refresh_grids else refresh_sec
+
 
         k_colors = streamlit_config_colors()
         default_text_color = k_colors['default_text_color'] # = '#59490A'
@@ -1131,58 +1255,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
             print("AI Portfolio Manager")
             ozz(st.session_state['authentication_status'])
             st.stop()
-            
-        # cols = st.columns((8,1,1))
- 
-                # with st.form("Margin Guage"):
-                #     for qcp in revrec['storygauge']:
 
-            # def chunk_list(data, chunk_size=6):
-            #     return [data[i:i+chunk_size] for i in range(0, len(data), chunk_size)]
- 
-            # if show_margin:
-            #     # Streamlit form
-            #     with st.form("slider_form"):
-            #         st.write("### Set Margin Budget")
-            #         # item_list = sorted(set(revrec['storygauge']['piece_name']))
-            #         for row in chunk_list(sorted(set(revrec['df_qcp']['piece_name'].tolist())), 3):
-            #             cols = st.columns(len(row))
-            #             for i, label in enumerate(row):
-            #                 token = revrec['df_qcp'].reset_index().set_index('piece_name')
-            #                 value = token.loc[label].get('margin_power', 0)
-            #                 # Assign slider with unique key
-            #                 cols[i].slider(label, min_value=-1.0, max_value=1.0, value=float(value), key=f"slider_{label}_margin")
-            #         submitted = st.form_submit_button("Submit")                    
-            #         # After form is submitted, collect values using keys
-            #         if submitted:
-            #             st.write("### Save")
-            #             # allocation save fastapi
-            # ticker_allowed = KING['alpaca_symbols_df'].index.tolist()
-            # crypto_symbols__tickers_avail = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
-            # ticker_allowed =  ticker_allowed + crypto_symbols__tickers_avail
-
-            # if show_budget:
-            #     with st.form("slider_form budget"):
-            #         st.write("### Set Budget")
-            #         # item_list = sorted(set(revrec['storygauge']['piece_name']))
-            #         for row in chunk_list(sorted(set(revrec['df_qcp']['piece_name'].tolist())), 3):
-            #             cols = st.columns(len(row))
-            #             for i, label in enumerate(row):
-            #                 token = revrec['df_qcp'].reset_index().set_index('piece_name')
-            #                 value = token.loc[label].get('buying_power', 0)
-            #                 t_budget = f'{round(float(token.loc[label].get("total_budget", 0)))}'
-            #                 tickers = token.loc[label]['tickers']
-            #                 print(tickers)
-            #                 cols[i].slider(f'{label}: Budget {t_budget}', min_value=-1.0, max_value=1.0, value=float(value), key=f"slider_{label}_budget")
-            #                 cols[i].multiselect(label=f'symbols', options=ticker_allowed, default=tickers, help='Castle Should Hold your Highest Valued Symbols', key=f'{label}tickers', label_visibility='hidden')
-
-            #         submitted = st.form_submit_button("Submit")                    
-            #         # After form is submitted, collect values using keys
-            #         if submitted:
-            #             st.write("### Save")
-            #             # allocation save fastapi
-        refresh_sec = None if not refresh_grids else refresh_sec
-        print("story_grid refresh timer", refresh_sec)
         story_grid(prod, client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec, tab_view=tab_view)
           
         if st.sidebar.toggle("Show Wave Grid"):

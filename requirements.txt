@@ -193,6 +193,7 @@ stack-data==0.6.3
 starlette==0.27.0
 stocksymbol==0.0.5
 streamlit==1.41.1
+streamlit-ai-voice-chat==0.1.8
 streamlit-aggrid==1.0.5
 streamlit-antd-components==0.3.2
 streamlit-authenticator==0.2.3

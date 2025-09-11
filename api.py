@@ -1,3 +1,4 @@
+import asyncio
 import uvicorn
 from fastapi import FastAPI, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,6 +53,7 @@ cache_manager = CacheManager()
 @app.on_event("startup")
 async def startup_event():
     await cache_manager.load()
+    asyncio.create_task(fastapi_router.poll_table_and_notify())
 
 
 @app.get("/cachedata")
