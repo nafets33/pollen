@@ -114,6 +114,21 @@ def load_ozz_voice():
     json_data = {'msg': 'test'}
     return JSONResponse(content=json_data)
 
+
+@router.post("/trig_rules", status_code=status.HTTP_200_OK)
+def return_trig_rules(client_user: str=Body(...),  prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    try:
+        if check_authKey(api_key) == False:
+            return "NOTAUTH"
+
+        # req = app_queen_order_update_order_rules(client_user, prod, selected_row, default_value)
+        req = {'status': 'success', 'description': 'No changes made', 'error': ''}
+        return JSONResponse(content=grid_row_button_resp(status=req.get('status'), description=req.get('description')))
+    
+    except Exception as e:
+        print("router queen error", e)
+
+
 @router.get("/lastmod_key", status_code=status.HTTP_200_OK)
 def get_revrec_lastmod(client_user: str = Query(...), prod: bool = Query(...), api_key: str = Query(...), api_lastmod_key: str = Query(...)):
     if check_authKey(api_key):
@@ -180,8 +195,6 @@ def load_account_header(client_user: str=Body(...),prod: bool=Body(...), api_key
     else:
         return "NOAUTH"
 
-
-
 @router.post("/ticker_time_frame", status_code=status.HTTP_200_OK)
 def load_trinity_graph(api_key=Body(...), symbols=Body(...), toggles_selection=Body(...)):
     
@@ -198,16 +211,6 @@ def load_symbol_graph(symbols: list=Body(...), prod: bool=Body(...), api_key=Bod
         return "NOTAUTH"
     json_data = get_ticker_data(symbols, toggles_selection)
     return JSONResponse(content=json_data)
-
-
-# @router.post("/symbol_graph_candle_stick", status_code=status.HTTP_200_OK)
-# def load_symbol_graph(selectedOption: list=Body(...), prod: bool=Body(...), api_key=Body(...)):
-#     if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-#         print("Auth Failed", api_key)
-#         return "NOTAUTH"
-#     json_data = get_ticker_data_candle_stick(selectedOption)
-#     return JSONResponse(content=json_data)
-
 
 
 @router.post("/queen_messages_logfile", status_code=status.HTTP_200_OK)
@@ -243,43 +246,97 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
         return JSONResponse(content=grid_row_button_resp(status='error'))
 
 @router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK)
-def archive_queen_order(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+def queen_order_kors(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     try:
         if check_authKey(api_key) == False:
             return "NOTAUTH"
 
-        req = app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value)
-        if req.get('status'):
-            return JSONResponse(content=grid_row_button_resp(description=req.get('description')))
-        else:
-            return JSONResponse(content=grid_row_button_resp(status='error', description=req.get('description')))
-        # json_data = app_archive_queen_order(username, prod, selected_row, default_value)
-        # app_queen_order_update_order_rules(username, prod, selected_row, default_value)
+        req = app_queen_order_update_order_rules(client_user, prod, selected_row, default_value)
+        return JSONResponse(content=grid_row_button_resp(status=req.get('status'), description=req.get('description')))
+    
     except Exception as e:
         print("router queen error", e)
 
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
 async def sell_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...),):
     try:
-        if request is not None and isinstance(request, Request):
-            data = await request.json()
-            df = data['default_value'].get('active_orders_with_qty', [])
-            df = pd.DataFrame(df)
-            if len(df) > 0:
-                df['sell_qty'] = pd.to_numeric(df['sell_qty'], errors='coerce')
-                df = df[df['sell_qty'] > 0]
-                if len(df) > 0:
-                    order_ids = df['client_order_id'].tolist()
-                    print("selected ORDER IDs to sell", order_ids)
-            # print("Request body as dict:", data.keys())
-            # print(data['buttons']) # remove the parts fo the body not needed ? promptText WORKERBEE
-            # print(data['default_value']['active_orders_with_qty']) # it has the orders --- selling can be done then with either OR not BOTH
-
         if not check_authKey(api_key):
             return "NOTAUTH"
+        if request is not None and isinstance(request, Request):
+            data = await request.json()
+            if not data:
+                return JSONResponse(content=grid_row_button_resp(status="ERROR", description="No data received"))
+            # dict_keys(['username', 'prod', 'selected_row', 'default_value', 'editable_orders', 'client_user', 'return_type', 'api_lastmod_key', 'prompt_message', 'prompt_field', 'api_key', 'symbols', 'grid_height', 'toggle_views', 'allow_unsafe_jscode', 'columnOrder', 'refresh_success', 'total_col', 'subtotal_cols', 'filter_apply', 'filter_button', 'show_clear_all_filters', 'column_sets', 'show_cell_content', 'buttons'])
+            client_order_id = selected_row.get('client_order_id', None)
+            df = data['editable_orders']
+            df_order_kors = selected_row.get('active_orders', [])
+            df_order_kors = pd.DataFrame(df_order_kors)
+            df = pd.DataFrame(df)
+            if len(df) > 0:
+                df['sell_qty'] = pd.to_numeric(df['sell_qty'], errors='coerce').fillna(0)
+                df['sell_amount'] = pd.to_numeric(df['sell_amount'], errors='coerce').fillna(0)
+                df_sells = df[(df['sell_qty'] > 0) | (df['sell_amount'] > 0) & (df['confirm_sell'] == True)]
+                df_kors =  df[df['confirm_sell'] == True]
 
-        rep = app_Sellorder_request(client_user, username, prod, selected_row, default_value)
-        # rep = grid_row_button_resp() # TESING 
+                if len(df_sells) > 0:
+                    order_ids = df_sells['client_order_id'].tolist()
+                    print("SELL", order_ids)
+                elif len(df_kors) > 0:
+                    df_kors['ignore_allocation_budget'] = df_kors['ignore_allocation_budget'].replace({'': False})
+                    order_ids = df_kors['client_order_id'].tolist()
+                    print("KORS", order_ids)
+                    kors_to_compare = ['queen_order_state', 'take_profit', 'sell_out', 'close_order_today', 'sell_trigbee_date', 'ignore_allocation_budget']
+                    update = False
+                    default_value = {} # kors
+                    reps = grid_row_button_resp(status='success', description='')
+                    for idx, row in df_kors.iterrows():
+                        for col in kors_to_compare:
+                            if col not in df_order_kors.columns:
+                                update = True
+                                default_value[col] = row[col]
+                                print("KORS MISMATCH Missing COL", col)
+                            else: 
+                                if row[col] != df_order_kors[col].iloc[idx]:
+                                    update = True
+                                    default_value[col] = row[col]
+                                    print("KORS MISMATCH", col, row[col], df_order_kors[col].iloc[idx])
+                        
+                        if update:
+                            print("KORS UPDATE NEEDED")
+                            selected_row = {'client_order_id': row['client_order_id']} # queen_order - order_rules
+                            req = app_queen_order_update_order_rules(client_user, prod, selected_row, default_value)
+                            # 'status': status, # success
+                            # 'description': description,
+                            # 'error': error,
+                            for col in ['description', 'error']:
+                                if col in reps:
+                                    reps[col] = f'{reps[col]} - {req.get(col)}'
+                                else:
+                                    reps[col] = req.get(col, '')
+                    if update:
+                        return JSONResponse(content=reps)
+                        
+
+
+            if client_order_id:
+                process_type = 'specific'
+            elif len(df_sells) > 0:
+                process_type = 'batch'
+            else:
+                process_type = 'single'
+            print("PROCESS TYPE", process_type)
+    # Index(['ticker_time_frame', 'wave_amo', 'cost_basis_current', 'filled_qty',
+    #        'qty_available', 'money', 'honey', 'queen_order_state', 'status',
+    #        'macd_state', 'trigname', 'client_order_id', 'created_at', 'side',
+    #        'queen_wants_to_sell_qty', 'qty', 'sell_trigbee_date', 'sell_out',
+    #        'take_profit', 'close_order_today', 'sell_qty', 'sell_amount',
+    #        'ignore_allocation_budget', 'confirm_sell'],
+    #       dtype='object')
+
+
+        # return JSONResponse(content=grid_row_button_resp())
+
+        rep = app_Sellorder_request(client_user, prod, process_type, selected_row, default_value, df_sells)
         return JSONResponse(content=rep)
 
     except Exception as e:

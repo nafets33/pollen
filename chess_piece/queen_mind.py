@@ -1691,8 +1691,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             # Group Trinity and Re-Calculate qcp buying power ??? # WORKERBEE
             
             # CONFIRM TRADING MODEL Ticker Budget Allocation #WORKEBEE trigger based on queen controls 
-            ticker_mapping = QUEEN_KING['king_controls_queen'].get('ticker_revrec_allocation_mapping')
-            ticker_mapping = ticker_mapping if ticker_mapping else {}
+
+            ############# Handled in KORS DELete
+            # ticker_mapping = QUEEN_KING['king_controls_queen'].get('ticker_revrec_allocation_mapping')
+            # ticker_mapping = ticker_mapping if ticker_mapping else {}
 
             # if ticker_trinity:
             #     # reallocate weights create a dictionary of ticker and triniity then create a weightet pct
@@ -1756,16 +1758,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         df_stars = df_stars.fillna(0) # tickers without budget move this to upstream in code and fillna only total budget column
         df_ticker['symbol'] = df_ticker.index
         df_stars['symbol'] = df_stars['ticker']
-
-        # # shape tickers
-        # df_qcp_og = pd.DataFrame(chessboard).T.explode('tickers')
-        # # Set 'tickers' as the index
-        # df_qcp_og = df_qcp_og.set_index('tickers')
-        # # Ensure that the index is unique if necessary
-        # df_qcp_og = df_qcp_og[~df_qcp_og.index.duplicated(keep='first')]
-        # df_qcp_og = df_qcp_og[['piece_name']]
-        # df_qcp_og = df_qcp_og[[i for i in df_qcp_og.columns if i not in df_ticker.columns]]
-        # df_ticker = pd.concat([df_ticker, df_qcp_og], axis=1)
 
 
         validate_qcp_balance(df_qcp)
@@ -2019,7 +2011,10 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             storygauge = storygauge.merge(ticker_autopilot, left_index=True, right_index=True, how='left')
             storygauge['buy_autopilot'] = storygauge['buy_autopilot'].fillna(False)
             storygauge['sell_autopilot'] = storygauge['sell_autopilot'].fillna(False)
-
+        
+        # # Join trigrules
+        # ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
+        # if type(ticker_trigrules) == pd.DataFrame:
 
         # Price Info data
         # if 'price_info_symbols' in QUEEN.keys(): # WORKERBEE handle in new table of all

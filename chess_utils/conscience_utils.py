@@ -86,8 +86,10 @@ def return_trading_model_kors_v2(QUEEN_KING, symbol='SPY', trigbee='buy_cross-0'
      print_line_of_error("wwwwtf")
      return {}
 
-def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=list(star_refresh_star_times().keys()), max_budget_allowed=None, star_powers=None, star_powers_borrow=None, symbol_qcp_group=None, broker=['alpaca', 'robinhood']):
+def add_symbol_dict_items(symbol='SPY', buying_power=89, borrow_power=0, status=['active', 'not active'], refresh_star=None, max_budget_allowed=None, star_powers=None, star_powers_borrow=None, symbol_qcp_group=[], broker=['alpaca', 'robinhood']):
     star_times = star_names().keys()
+    if refresh_star:
+        refresh_star = list(star_refresh_star_times().keys())
     var_s = {
                 'symbol': symbol,
                 'buying_power':buying_power,
@@ -217,8 +219,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df = revrec.get('storygauge')
         waveview = revrec.get('waveview')
         df_stars = revrec.get('df_stars')
-        df_qcp = revrec.get('df_qcp')
-        df_ticker = revrec.get('df_ticker')
 
 
         df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
@@ -243,7 +243,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         # elif toggle_view_selection == "Not On Board":
         #     toggle_view_selection = "non_active_stories"
 
-        # qcp_ticker = dict(zip(revrec.get('df_ticker')['qcp_ticker'],revrec.get('df_ticker')['qcp']))
         qcp_ticker = dict(zip(revrec.get('storygauge')['symbol'],revrec.get('storygauge')['piece_name']))
 
         # Normalize both qcp and toggle_view_selection for comparison
@@ -315,15 +314,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
             # kors per star
             df[f'{star}_kors'] = [kors_dict for _ in range(df.shape[0])]
 
-        df_ticker = revrec.get('df_ticker')
         for symbol in df.index.tolist():
             try:
-                if symbol in df_ticker.index:
-                    symbol_qcp_name = df_ticker.at[symbol, 'piece_name']
-                    symbol_qcp_group = [symbol_qcp_name] + [i for i in qcp_piece_names if i != symbol_qcp_name]
-                else:
-                    print("NO SYMBOL FOUND QMIND")
-                    symbol_qcp_group = []
+                symbol_qcp_group = list(set(df['piece_name'].tolist()))
 
                 trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
                 if not trading_model:
@@ -354,7 +347,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                     if tic_star and isinstance(tic_star, str):
                         refresh_star = [tic_star_name]
                     refresh_star = refresh_star + [i for i in refresh_star_names.keys() if i != tic_star_name]
-                    # buying_power = df_ticker.at[symbol, 'ticker_buying_power'] if symbol in df_ticker.index else 0
                     buying_power = trading_model.get('buyingpower_allocation_LongTerm')
                     borrow_power = trading_model.get('buyingpower_allocation_ShortTerm')
                     max_budget_allowed = trading_model.get('total_budget')
@@ -368,8 +360,8 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                                                    star_powers_borrow=star_powers_borrow,
                                                    symbol_qcp_group=symbol_qcp_group)
 
-                    #active orders
-                    df.at[symbol, 'active_orders'] = df.at[symbol, 'active_orders']
+                    # #active orders
+                    # df.at[symbol, 'active_orders'] = df.at[symbol, 'active_orders']
                     
                     remaining_budget__ = remaining_budget.get(symbol)
                     df.at[symbol, 'remaining_budget'] = remaining_budget__
@@ -378,7 +370,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
    
                     df.at[symbol, 'allocation_long'] = allocation_long.get(symbol)
 
-                    budget = df_ticker.at[symbol, 'ticker_total_budget']
+                    budget = df.at[symbol, 'ticker_total_budget']
                     df.at[symbol, 'total_budget'] = round(budget)
 
                     if not return_early:
@@ -438,8 +430,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         df['color_row'] = df['trinity_w_L'].apply(lambda x: generate_shade(x/100, shade_num_var=89))
         
         # AUTO PILOT 
-        # auto_pilot_df = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
-        # auto_pilot_df = storygauge['buy_autopilot']
         kors_dict = {'buy_autopilot': False}
         df['edit_buy_autopilot_option'] = [kors_dict for _ in range(df.shape[0])]
         kors_dict = {'sell_autopilot': False}

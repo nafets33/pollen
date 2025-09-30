@@ -129,7 +129,7 @@ def waves():
                 # Broker Data        
         df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
         df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
-        st.write([i for i in df_broker_portfolio.index if i not in revrec['df_ticker'].index])
+        st.write([i for i in df_broker_portfolio.index if i not in revrec['storygauge'].index])
     elif hc_source_option == 'King':
         revrec = QUEEN_KING.get('revrec')
     elif hc_source_option == 'Bishop':
@@ -178,7 +178,6 @@ def waves():
         # df_broker_portfolio = pd.DataFrame([v for i, v in QUEEN['portfolio'].items()])
         # df_broker_portfolio = df_broker_portfolio.set_index('symbol', drop=False)
         revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
-        # st.write([i for i in df_broker_portfolio.index if i not in revrec['df_ticker'].index])
         st.header(f'revrec {(datetime.now()-s).total_seconds()}')
 
     cols = st.columns(3)
@@ -218,11 +217,7 @@ def waves():
                 for k, data in obj.items():
                     st.write("wave analysis key", k)
                     st.dataframe(data) if isinstance(data, pd.DataFrame) else st.write(data)
-        elif revrec_key == 'df_qcp':
-            df.loc['Total', 'total_budget'] = df['total_budget'].sum()
-            df.loc['Total', 'borrow_budget'] = df['borrow_budget'].sum()
-            newIndex=['Total']+[ind for ind in df.index if ind!='Total']
-            df=df.reindex(index=newIndex)
+
         if isinstance(df, pd.DataFrame):
             standard_AGgrid(df, key=f'grid {revrec_key}')
         else:

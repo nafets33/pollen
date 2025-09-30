@@ -59,6 +59,30 @@ pg_migration = os.environ.get('pg_migration')
 
  ###### Helpers UTILS
 
+
+def parse_date(date_str):
+    date_formats = [
+       "%Y-%m-%dT%H:%M:%S",
+       "%Y-%m-%dT%H:%M",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S",
+        "%m-%d-%Y %H:%M:%S",
+        "%m/%d/%Y %H:%M:%S",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%m-%d-%Y",
+        "%m/%d/%Y",
+    ]
+    
+    for format_str in date_formats:
+        try:
+            parsed_date = datetime.strptime(date_str, format_str)
+            return parsed_date
+        except ValueError:
+            pass
+        
+    return None
+
 # WORKERBEE Update all ROUTERS to use fun resp return vs function
 def grid_row_button_resp(status='success', description='success', message_type='fade', close_modal=True, color_text='red', error=False):
     return {'status': status, # success
@@ -71,11 +95,20 @@ def grid_row_button_resp(status='success', description='success', message_type='
             },
             }
 
+def get_revrec_lastmod_time(client_user, prod, api_lastmod_key='REVREC'):
+  db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
+  table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+  dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
+  dbs = {'lastModified': str(v) for k, v in dbs.items() if api_lastmod_key in k}
+  return dbs
 
+def get_keyTable_lastmod_time(client_user, prod, table_key='REVREC'):
+  db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
+  table_name = 'db' if prod else 'db_sandbox'
+  dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
+  dbs = {'lastModified': str(v) for k, v in dbs.items() if table_key in k}
+  return dbs
 
-
-
-# the_type = get_type_by_name('float')
 def add_priorday_tic_value(df, story_indexes=1):
   try:
     split_day = split_today_vs_prior(df)
@@ -204,29 +237,6 @@ def create_AppRequest_package(request_name, archive_bucket=None, client_order_id
     }
 
 
-
-def parse_date(date_str):
-    date_formats = [
-       "%Y-%m-%dT%H:%M:%S",
-       "%Y-%m-%dT%H:%M",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y/%m/%d %H:%M:%S",
-        "%m-%d-%Y %H:%M:%S",
-        "%m/%d/%Y %H:%M:%S",
-        "%Y-%m-%d",
-        "%Y/%m/%d",
-        "%m-%d-%Y",
-        "%m/%d/%Y",
-    ]
-    
-    for format_str in date_formats:
-        try:
-            parsed_date = datetime.strptime(date_str, format_str)
-            return parsed_date
-        except ValueError:
-            pass
-        
-    return None
 
 ####### Router Calls
 
@@ -569,9 +579,11 @@ def process_clean_on_QK_requests(QUEEN, QUEEN_KING, request_name='sell_orders'):
        return False
 
 
-def app_Sellorder_request(client_user, username, prod, selected_row, default_value): # sell_orders
+def app_Sellorder_request(client_user, prod, process_type, selected_row, default_value, df_sells=[]): # sell_orders
   # WORKERBEE attempt to handle WashSale Rule
   try:
+    king_G = kingdom__global_vars()
+    RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
     qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, queen_king=True, api=True, orders=True, pg_migration=pg_migration)
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')
@@ -583,81 +595,131 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
     queen_order = ORDERS['queen_orders']
     queen_order['qty_available'] = pd.to_numeric(queen_order['qty_available'], errors='coerce')
 
-    king_G = kingdom__global_vars()
-    RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
 
-    # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
-    symbol = selected_row.get('symbol')
-    client_order_id = selected_row.get('client_order_id')
-    number_shares = int(default_value.get('sell_qty', 0))
-    sell_amount = int(default_value.get('sell_amount', 0))
-    limit_price = int(default_value.get('limit_price', 0))
-    crypto = symbol_is_crypto(symbol)
-    if number_shares == 0 and sell_amount == 0:
-        print("SELL AMOUNT IS 0")
-        return grid_row_button_resp(description="SELL AMOUNT IS 0")
-    if sell_amount > 0:
-       ask_price = get_priceinfo_snapshot(api=api, ticker=symbol, crypto=crypto).get('ask')
-       if not crypto:
-          if sell_amount < ask_price:
-             print("SELL AMOUNT LESS THAN ASK PRICE")
-             return grid_row_button_resp(description="SELL AMOUNT LESS THAN ASK PRICE")
-      
-       number_shares = sell_amount / ask_price #selected_row.get('current_ask') WORKERBEE until it can be trusted
-       print("SELL AMOUNT: ", number_shares, ' sell amount', sell_amount, ' ask price', ask_price)
-    
-    number_shares = max(1, int(number_shares)) if not crypto else round(number_shares,8)
-
-    if client_order_id:
-      # VALIDATE check against available_shares and validate amount
-      df = queen_order.loc[client_order_id]
-      qty_available = float(df.get('qty_available'))
-      number_shares = qty_available if number_shares > qty_available else number_shares 
-      selected_client_order_ids = {client_order_id: number_shares}
-    else:
-       print("SELL AMOUNT: Find Available Orders")
-       selected_client_order_ids = {}
-       orders_avial = queen_order[(queen_order['symbol']==symbol) & (queen_order['qty_available'] > 0) & (queen_order['queen_order_state'].isin(RUNNING_Orders)) & (queen_order['side'] == 'buy')]
-       # filter to available orders
-       if len(orders_avial) > 0:
-          # sort by borrowed = True
-          # sort by time purchased
-          orders_avial = orders_avial.sort_values(by=['borrowed_funds', 'datetime'], ascending=[False, True])
-          cumulative_sum = 0
-
-          # Iterate over DataFrame rows
-          for client_order_id, row in orders_avial.iterrows():
-              # Add qty_available to cumulative sum
-              qty_available = row.get('qty_available', 0)
-              if not isinstance(qty_available, (float, int)):
-                print("qty_available NOT AVAILABLE", qty_available)
-                continue
-              cumulative_sum += row.get('qty_available', 0)              
-              # Check if cumulative sum exceeds or equals numshares
-              if cumulative_sum >= number_shares:
-                  # Calculate remaining qty_available to satisfy numshares
-                  remaining_qty = number_shares - (cumulative_sum - row['qty_available'])
-                  selected_client_order_ids[client_order_id] = remaining_qty
-                  break
-              else:
-                  selected_client_order_ids[client_order_id] = row['qty_available']
-
+    selected_client_order_ids = {}
     status = ''
     save=False
-    for client_order_id, number_shares in selected_client_order_ids.items():
-      if client_order_id in queen_order.index:
-        # Sell Order
+    number_shares = 0
+    if len(df_sells) > 0 and process_type == 'batch':
+      for idx, row in df_sells.iterrows():
+        client_order_id = row.get('client_order_id')
+        symbol = row.get('ticker_time_frame').split("_")[0]
+        crypto = symbol_is_crypto(symbol)
+        if client_order_id in queen_order.index:
+            number_shares = int(row.get('sell_qty', 0))
+            sell_amount = int(row.get('sell_amount', 0))
+            if number_shares > 0:
+              number_shares = min(queen_order.loc[client_order_id, 'qty_available'], number_shares)
+              if number_shares <=0:
+                print("NO SHARES TO SELL", client_order_id)
+                continue
+            elif sell_amount > 0:
+              ask_price = get_priceinfo_snapshot(api=api, ticker=symbol, crypto=crypto).get('ask')
+              if not crypto:
+                if sell_amount < ask_price:
+                  print("SELL AMOUNT LESS THAN ASK PRICE")
+                  status = "SELL AMOUNT LESS THAN ASK PRICE"
+                elif ask_price > 0:
+                  number_shares = sell_amount / ask_price
+                  number_shares = max(1, int(number_shares)) if not crypto else round(number_shares, 8)
+              else: # crypto
+                number_shares = sell_amount / ask_price
+                number_shares = round(number_shares, 8)
+            else:
+              print("NO SELL QTY OR AMOUNT")
+              status = "NO SELL QTY OR AMOUNT"
+              continue
+
+            # limit_price = int(row.get('limit_price', 0))
+            # # Sell Order
+            df = queen_order.loc[client_order_id]
+            sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
+            sell_package['sell_qty'] = number_shares
+            sell_package['side'] = 'sell'
+            sell_package['type'] = 'market'
+            QUEEN_KING['sell_orders'].append(sell_package)
+            save=True
+            if status:
+              status = status + f' __ {client_order_id} : Selling {number_shares}'
+            else:
+              status = f'{client_order_id} : Selling {number_shares}'
+
+
+    # WORKERBEE validate to ensure number of shares available to SELL as user can click twice
+    if process_type in ['single', 'specific']:
+      symbol = selected_row.get('symbol')
+      client_order_id = selected_row.get('client_order_id')
+      number_shares = int(default_value.get('sell_qty', 0))
+      sell_amount = int(default_value.get('sell_amount', 0))
+      limit_price = int(default_value.get('limit_price', 0))
+      crypto = symbol_is_crypto(symbol)
+      if number_shares == 0 and sell_amount == 0:
+          print("SELL AMOUNT IS 0")
+          return grid_row_button_resp(status='error', description="SELL AMOUNT IS 0")
+      if sell_amount > 0:
+        ask_price = get_priceinfo_snapshot(api=api, ticker=symbol, crypto=crypto).get('ask')
+        if not crypto:
+            if sell_amount < ask_price:
+              print("SELL AMOUNT LESS THAN ASK PRICE")
+              return grid_row_button_resp(status='error', description="SELL AMOUNT LESS THAN ASK PRICE", error=True)
+        
+        number_shares = sell_amount / ask_price #selected_row.get('current_ask') WORKERBEE until it can be trusted
+        print("SELL AMOUNT: ", number_shares, ' sell amount', sell_amount, ' ask price', ask_price)
+      
+      number_shares = max(1, int(number_shares)) if not crypto else round(number_shares,8)
+
+      if client_order_id and process_type == 'specific':
+        # VALIDATE check against available_shares and validate amount
         df = queen_order.loc[client_order_id]
-        sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-        sell_package['sell_qty'] = number_shares
-        sell_package['side'] = 'sell'
-        sell_package['type'] = 'market'
-        QUEEN_KING['sell_orders'].append(sell_package)
-        save=True
-        if status:
-          status = status + f' __ {client_order_id} : Selling {number_shares}'
-        else:
-           status = f'{client_order_id} : Selling {number_shares}'
+        qty_available = float(df.get('qty_available'))
+        number_shares = qty_available if number_shares > qty_available else number_shares 
+        selected_client_order_ids = {client_order_id: number_shares}
+      elif len(df_sells) == 0 and process_type == 'single':
+        print("SELL AMOUNT: Find Available Orders")
+        selected_client_order_ids = {}
+        # define available orders # WORKERBEE FINISH STORE Func
+        orders_avial = queen_order[(queen_order['symbol']==symbol) & (queen_order['qty_available'] > 0) & (queen_order['queen_order_state'].isin(RUNNING_Orders)) & (queen_order['side'] == 'buy')]
+        # filter to available orders
+        if len(orders_avial) > 0:
+            # sort by borrowed = True
+            # sort by time purchased
+            orders_avial = orders_avial.sort_values(by=['borrowed_funds', 'datetime'], ascending=[False, True])
+            cumulative_sum = 0
+
+            # Iterate over DataFrame rows
+            for client_order_id, row in orders_avial.iterrows():
+                # Add qty_available to cumulative sum
+                qty_available = row.get('qty_available', 0)
+                if not isinstance(qty_available, (float, int)):
+                  print("qty_available NOT AVAILABLE", qty_available)
+                  continue
+                cumulative_sum += row.get('qty_available', 0)              
+                # Check if cumulative sum exceeds or equals numshares
+                if cumulative_sum >= number_shares:
+                    # Calculate remaining qty_available to satisfy numshares
+                    remaining_qty = number_shares - (cumulative_sum - qty_available)
+                    selected_client_order_ids[client_order_id] = remaining_qty
+                    break
+                else:
+                    selected_client_order_ids[client_order_id] = qty_available
+
+
+      for client_order_id, number_shares in selected_client_order_ids.items():
+        if client_order_id in queen_order.index:
+          # Sell Order
+          df = queen_order.loc[client_order_id]
+          sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
+          sell_package['sell_qty'] = number_shares
+          sell_package['side'] = 'sell'
+          sell_package['type'] = 'market'
+          QUEEN_KING['sell_orders'].append(sell_package)
+          save=True
+          if status:
+            status = status + f' __ {client_order_id} : Selling {number_shares}'
+          else:
+            status = f'{client_order_id} : Selling {number_shares}'
+      
+      
     if save:
       if pg_migration:
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
@@ -665,21 +727,6 @@ def app_Sellorder_request(client_user, username, prod, selected_row, default_val
       else:
         PickleData(QUEEN_KING.get('source'), QUEEN_KING)
 
-    # if len(df) > 0:
-    #     current_requests = [i for i in QUEEN_KING['sell_orders'] if client_order_id in i.keys()]
-    #     if len(current_requests) > 0:
-    #         status = "You Already Requested Queen To Sell order, Refresh Orders to View latest Status"
-    #     else:
-    #         sell_package = create_AppRequest_package(request_name='sell_orders', client_order_id=client_order_id)
-    #         sell_package['sell_qty'] = number_shares
-    #         sell_package['side'] = 'sell'
-    #         sell_package['type'] = 'market'
-    #         QUEEN_KING['sell_orders'].append(sell_package)
-    #         PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-    #         status = f'{client_order_id} : Selling {number_shares} share, Please wait for QueenBot to process'
-    # else:
-    #     status = "Nothing to Sell"
-    print(status)
     return grid_row_button_resp(description=status)
   except Exception as e:
      print("fapi e", e)
@@ -704,49 +751,54 @@ def app_archive_queen_order(username, prod, selected_row, default_value):
     return True
 
 
-def app_queen_order_update_order_rules(client_user, username, prod, selected_row, default_value):
+def app_queen_order_update_order_rules(client_user, prod, selected_row, default_value):
     try:
       current_kors = kings_order_rules()
       queen_order = selected_row
       client_order_id = queen_order.get('client_order_id')
-      # number_shares = default_value
+      kors = queen_order.get('order_rules', None) # need ruleS
       QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
       order_update_package = create_AppRequest_package(request_name='update_order_rules', client_order_id=client_order_id)
       order_update_package['update_order_rules'] = {}
 
-      update_dict = {}
-      kors = queen_order.get('order_rules')
-      for kor, newvalue in default_value.items():
-        if kor in kors.keys():
-          if newvalue == kors[kor]:
-            #  print("no update")
-            continue
-        current_value = current_kors[kor] # if current_value in current_kors else None
-        newvalue = validate_kors_valueType(newvalue, current_value)
-        if newvalue == 'error':
-          print('validation failed')
-          return {'status': False, 'description': f"date time conversion failed try mm/dd/yyyy"}
-        else:
-            update_dict[kor] = newvalue
+      if kors:
+        update_dict = {}
+        for kor, newvalue in default_value.items():
+          if kor in kors.keys():
+            if newvalue == kors[kor]:
+              #  print("no update")
+              continue
+          current_value = current_kors[kor] # if current_value in current_kors else None
+          newvalue = validate_kors_valueType(newvalue, current_value)
+          if newvalue == 'error':
+            print('validation failed')
+            return {'status': False, 'description': f"date time conversion failed try mm/dd/yyyy"}
+          else:
+              update_dict[kor] = newvalue
+      else:
+         update_dict = default_value
         
       if update_dict:
         order_update_package['update_order_rules'].update({client_order_id: update_dict})
         print(order_update_package['update_order_rules'])
       
         QUEEN_KING['update_order_rules'].append(order_update_package)
+        
         if pg_migration:
           table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
           PollenDatabase.upsert_data(table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
         else:
           PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-        return {'status': True, 'description': 'kors updates'}
+
+        return grid_row_button_resp(status="Success", description=str(order_update_package['update_order_rules']))
+
       else:
         msg = ("no updates to kors")
-        return {'status': False, 'description': msg}
+        return grid_row_button_resp(status="No Changes", description=msg, error=True)
          
     except Exception as e:
        print_line_of_error(e)
-       return {'status': False, 'description': str(e)}
+       return grid_row_button_resp(status="Error", description=str(e), error=True)
 
 ## MAIN GRIDS
 
@@ -1030,6 +1082,19 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
       elif return_type == 'story':
         print('prod', prod)
         df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection, qk_chessboard)
+        ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
+        if isinstance(ticker_trigrules, list):
+          ticker_trigrules = pd.DataFrame(ticker_trigrules)
+        # if isinstance(ticker_trigrules, pd.DataFrame):
+          if len(ticker_trigrules) > 0:
+            symbol_to_trig_rules = (
+                ticker_trigrules.groupby('symbol')
+                .apply(lambda group: group.drop(columns='symbol').to_dict(orient='records'))
+                .to_dict()
+            )
+            # Map the lists of dicts to the corresponding symbols in df
+            df['trig_rules'] = df['symbol'].apply(lambda symbol: symbol_to_trig_rules.get(symbol, []))
+
         # for idx in df.index:
         #     df.at[idx, 'nestedRows'] = [{
         #         'count_on_me': 89,
@@ -1109,19 +1174,6 @@ def update_queenking_chessboard(client_user, prod, selected_row, default_value):
    status = 'updated'
    return grid_row_button_resp(description=status)
 
-def get_revrec_lastmod_time(client_user, prod, api_lastmod_key='REVREC'):
-  db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
-  table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-  dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
-  dbs = {'lastModified': str(v) for k, v in dbs.items() if api_lastmod_key in k}
-  return dbs
-
-def get_keyTable_lastmod_time(client_user, prod, table_key='REVREC'):
-  db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)
-  table_name = 'db' if prod else 'db_sandbox'
-  dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
-  dbs = {'lastModified': str(v) for k, v in dbs.items() if table_key in k}
-  return dbs
 
 # Account Header account_header
 def header_account(client_user, prod):

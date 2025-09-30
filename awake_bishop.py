@@ -10,11 +10,15 @@ from chess_piece.pollen_db import PollenDatabase, MigratePostgres
 import pytz
 import pandas as pd
 from dotenv import load_dotenv
+import argparse
 
 
 load_dotenv()
 pg_migration = os.environ.get('pg_migration')
-
+parser = argparse.ArgumentParser(description="Run the Bishop Bees Scheduler")
+parser.add_argument("-run", action="store_true", help="Trigger the call_bishop_bees function immediately")
+parser.add_argument('-prod', default='true', help="Run in production mode")
+args = parser.parse_args()
 
 try:
     prod = sys.argv[2]
@@ -27,7 +31,7 @@ db=init_swarm_dbs(prod)
 
 def call_bishop_bees(prod=prod, upsert_to_main_server=False):
     print("HELLO BISHOP", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-    send_email(subject="BISHOP RUNNING")
+    # send_email(subject="BISHOP RUNNING")
     if pg_migration:
         BISHOP = read_swarm_db(prod, 'BISHOP')
     else:
@@ -76,33 +80,29 @@ def copy_pollen_store_to_MAIN_server(tables_to_migrate=['pollen_store']):
         print(e)
         send_email(subject=f"Pollen Store Server Sync FAILED", body=str(e))
 
-# run_time = "09:30"
-# a = schedule.every().day.at(run_time).do(call_job_workerbees)
-
-# run_times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"]
-b = schedule.every().day.at("09:35").do(call_bishop_bees)
-# bb = schedule.every().day.at("09:35").do(copy_pollen_store_to_MAIN_server)
-c = schedule.every().day.at("10:15").do(call_bishop_bees)
-# cc = schedule.every().day.at("10:15").do(copy_pollen_store_to_MAIN_server)
-d = schedule.every().day.at("11:00").do(call_bishop_bees)
-# dd = schedule.every().day.at("10:45").do(copy_pollen_store_to_MAIN_server)
-
-e = schedule.every().day.at("12:00").do(call_bishop_bees)
-# ee = schedule.every().day.at("13:04").do(copy_pollen_store_to_MAIN_server)
-
-f = schedule.every().day.at("13:00").do(call_bishop_bees)
-g = schedule.every().day.at("14:00").do(call_bishop_bees)
-h = schedule.every().day.at("15:00").do(call_bishop_bees)
-i = schedule.every().day.at("21:05").do(call_bishop_bees)
-
-# bb = schedule.every().day.at("21:34").do(lambda: call_bishop_bees(prod=prod, upsert_to_main_server=True))
 
 
+if __name__ == "__main__":
+# Parse command-line arguments
 
-all_jobs = schedule.get_jobs()
-for job in all_jobs:
-    print(job)
+    if args.run:
+        call_bishop_bees()
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+    # Schedule tasks
+    schedule.every().day.at("09:35").do(call_bishop_bees)
+    schedule.every().day.at("10:15").do(call_bishop_bees)
+    schedule.every().day.at("11:00").do(call_bishop_bees)
+    schedule.every().day.at("12:00").do(call_bishop_bees)
+    schedule.every().day.at("13:00").do(call_bishop_bees)
+    schedule.every().day.at("14:00").do(call_bishop_bees)
+    schedule.every().day.at("15:00").do(call_bishop_bees)
+
+    # Print all scheduled jobs
+    all_jobs = schedule.get_jobs()
+    for job in all_jobs:
+        print(job)
+
+    # Run the scheduler
+    while True:
+        schedule.run_pending()
+        time.sleep(1)

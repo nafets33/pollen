@@ -1,8 +1,6 @@
 import streamlit as st
 from streamlit_extras.stoggle import stoggle
 from PIL import Image
-import subprocess
-from custom_grid import st_custom_grid
 from pq_auth import signin_main
 from chess_piece.queen_hive import *
 from chess_piece.app_hive import *
@@ -28,12 +26,13 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from chess_piece.pollen_db import PollenDatabase
-from chess_piece.queen_bee import append_queen_order, get_priceinfo_snapshot, god_save_the_queen, init_broker_orders
+from chess_piece.queen_bee import god_save_the_queen, init_broker_orders # append_queen_order, 
 from chess_piece.queen_mind import refresh_chess_board__revrec
 
 from chess_piece.fastapi_queen import get_revrec_lastmod_time
 
 from tqdm import tqdm
+import sys
 
 pg_migration = os.getenv('pg_migration')
 
@@ -277,7 +276,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
 
                 # logging.info(f"SUCCESS on BUY for {ticker}")
                 # msg = (f'Ex BUY Order {trigbee} {ticker_time_frame} {round(wave_amo,2):,}')
-                append_queen_order(QUEEN, new_queen_order_df)
+                # append_queen_order(QUEEN, new_queen_order_df)
                 god_save = True
 
         # Refresh RevRec
@@ -320,11 +319,13 @@ def init_account_info(client_user, prod):
 def PlayGround():
 
     prod = st.session_state['prod']
+    if not prod:
+        st.warning("SANDBOX MODE")
     client_user=st.session_state['client_user']
     st.write("revrec last mod", get_revrec_lastmod_time(client_user, prod))
     if st.button("Sync Current Broker Account"):
-        # symbols = st.multiselect("symbols")
-        sync_current_broker_account(client_user, prod, symbols=None)
+        st.write("WORKERBEE NEED to FIX APPENDING AND SAVING AN OVERALL TESTING")
+        # sync_current_broker_account(client_user, prod, symbols=None)
     
     print("PLAYGROUND", st.session_state['client_user'])
     king_G = kingdom__global_vars()
@@ -355,23 +356,36 @@ def PlayGround():
     # client_user = 'stapinskiststefan@gmail.com'
     qb = init_queenbee(client_user=client_user, prod=prod, queen=True, orders=True, orders_v2=True, queen_king=True, api=True, broker=True, init=True, pg_migration=True, charlie_bee=True, revrec=True, 
                        main_server=False, demo=False)
-    
+    api = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, pg_migration=True, main_server=False, demo=False).get('api')
     QUEEN_KING = qb.get('QUEEN_KING')
+    st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-    db_root = qb.get('db_root')
-    master_conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY')
-    conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-CONVERSATIONAL_HISTORY')
-    session_state = PollenDatabase.retrieve_data(table_name, f'{db_root}-SESSION_STATE')
-    st.write(master_conversation_history, conversation_history, session_state)
-    st.stop()
+    # db_root = qb.get('db_root')
+    # master_conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY')
+    # conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-CONVERSATIONAL_HISTORY')
+    # session_state = PollenDatabase.retrieve_data(table_name, f'{db_root}-SESSION_STATE')
+    # st.write(master_conversation_history, conversation_history, session_state)
+    
     # st.write("QUEEN_KING", QUEEN_KING.keys())
     # st.write("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
-    api = qb.get('api')
     QUEENsHeart = qb.get('QUEENsHeart')
     BROKER = qb.get('BROKER')
-    # st.write("alpaca broker orders cols", BROKER['broker_orders'].columns.tolist())
-    # standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
+    st.write("alpaca broker orders cols", BROKER['broker_orders'].columns.tolist())
+    standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
     QUEEN = qb.get('QUEEN')
+    st.write(QUEEN['portfolio'])
+    # final_orders = QUEEN['queen_orders']
+    # final_orders = final_orders[final_orders['queen_order_state'].isin(['archived'])]
+    # standard_AGgrid(final_orders, key='queen_orders_index')
+    # table_name = 'queen_orders' if prod else 'queen_orders_sandbox'
+    # st.write(f"Deleting Archived Orders from PollenDB {table_name}")
+    # for order in final_orders.index.tolist():
+    #    key = final_orders.at[order, 'key']
+    # #    PollenDatabase.delete_key(table_name=table_name, key_column=key, console="deleted")
+    # api = qb.get('api')
+    
+
+    st.write(f"QUEEN object size: {sys.getsizeof(QUEEN)} bytes")
     df=return_active_orders(QUEEN)
     # for k, v in QUEEN.items():
     #     print(f"{k}: {sys.getsizeof(v)} bytes")
@@ -392,25 +406,25 @@ def PlayGround():
     symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
     STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
 
-    revrec = qb.get('revrec')
-    waveview = revrec['waveview']
-    revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
-    story = revrec['storygauge']
-    # is MinAllocation < Long?
-    story = story[story['allocation_deploy']> 0]
-    standard_AGgrid(story, key='storygauge_index')
-    for symbol in story.index.tolist():
-        wave = waveview[waveview['symbol']==symbol]
-        wave = wave[wave['allocation_deploy'] > 0]
-        wave = wave.sort_values('allocation_deploy', ascending=False)
-        wave['margin_buy'] = wave['allocation_long_deploy'] - wave['allocation_deploy']
-        not_enough = wave[(wave['allocation_deploy'] > 0) & (wave['allocation_deploy'] < story.at[symbol, 'current_ask'])].copy()
-        st.write("Margin Buy", wave['margin_buy'].sum())
-        if len(not_enough) > 0:
-            st.write(f"Not Enough Allocation Long Deploy for", not_enough)
-            # give budget to next wave
+    # revrec = qb.get('revrec')
+    # story = revrec['storygauge']
+    # waveview = revrec['waveview']
+    # revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
+    # # is MinAllocation < Long?
+    # story = story[story['allocation_deploy']> 0]
+    # standard_AGgrid(story, key='storygauge_index')
+    # for symbol in story.index.tolist():
+    #     wave = waveview[waveview['symbol']==symbol]
+    #     wave = wave[wave['allocation_deploy'] > 0]
+    #     wave = wave.sort_values('allocation_deploy', ascending=False)
+    #     wave['margin_buy'] = wave['allocation_long_deploy'] - wave['allocation_deploy']
+    #     not_enough = wave[(wave['allocation_deploy'] > 0) & (wave['allocation_deploy'] < story.at[symbol, 'current_ask'])].copy()
+    #     st.write("Margin Buy", wave['margin_buy'].sum())
+    #     if len(not_enough) > 0:
+    #         st.write(f"Not Enough Allocation Long Deploy for", not_enough)
+    #         # give budget to next wave
         
-        standard_AGgrid(wave, key=f'{symbol}_waveview_index', height=250)
+    #     standard_AGgrid(wave, key=f'{symbol}_waveview_index', height=250)
 
 
     st.write("BROKER Orders", BROKER['broker_orders'].shape)
@@ -428,13 +442,14 @@ def PlayGround():
     # st.write(len(queen_orders), type(queen_orders))
     print(qb.get('CHARLIE_BEE'))
     revrec = qb.get('revrec')
+    
     all_alpaca_tickers = api.list_assets()
     alpaca_symbols_dict = {}
     for n, v in enumerate(all_alpaca_tickers):
-    # if all_alpaca_tickers[n].status == "active": # and all_alpaca_tickers[n].tradable == True and all_alpaca_tickers[n].exchange != 'CRYPTO' and all_alpaca_tickers[n].exchange != 'OTC':
-        alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(
-            all_alpaca_tickers[n]
-        )
+        if all_alpaca_tickers[n].status == "active": # and all_alpaca_tickers[n].tradable == True and all_alpaca_tickers[n].exchange != 'CRYPTO' and all_alpaca_tickers[n].exchange != 'OTC':
+            alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(
+                all_alpaca_tickers[n]
+            )
     # st.write(api.get_snapshot("GOLD"))
 
     st.write("#ticker refresh star")

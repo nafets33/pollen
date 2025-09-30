@@ -1,3 +1,13 @@
+/* Aggrid Overlay */
+
+/* Highlight the row on hover with a light shade of dark blue */
+.ag-row:hover {
+  background-color: rgba(0, 0, 139, 0.1); /* Light shade of dark blue */
+  border-top: 1px solid rgba(0, 0, 139, 0.2); /* Optional: Add a top border */
+  border-bottom: 1px solid rgba(0, 0, 139, 0.2); /* Optional: Add a bottom border */
+}
+
+/* Modal Overlay */
 .my-modal {
   display: flex;
   align-items: center;
@@ -8,8 +18,8 @@
   top: 0;
   width: 100vw;
   height: 100vh;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.4);
+  overflow: auto; /* Allow scrolling if modal content exceeds viewport */
+  background-color: rgba(0, 0, 0, 0.4); /* Dim background */
   padding: 0;
 }
 
@@ -23,21 +33,98 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   max-width: 90vw;         /* Allow modal to grow wider */
   min-width: 300px;
-  width: auto;              /* Let content determine width */
-  max-height: 90vh;         /* Prevent modal from exceeding viewport */
-  overflow: auto;           /* Enable scrolling inside modal if needed */
+  width: auto;             /* Let content determine width */
+  max-height: 90vh;        /* Prevent modal from exceeding viewport */
   box-sizing: border-box;
   margin: 16px;
   animation-name: animatetop;
   animation-duration: 0.4s;
   font-size: 0.85rem;      /* Smaller base font size for modal */
-  padding: 12px; 
+  padding: 0;              /* Remove padding to avoid extra space */
 }
+
+/* Modal Header */
+.modal-header {
+  flex-shrink: 0;         /* Prevent the header from shrinking */
+  background-color: #f4f9fb;
+  border-bottom: 1px solid #eee;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 10px;
+  background-color: #f4f9fb;
+  border-bottom: 1px solid #eee;
+}
+
+.header-main {
+  flex: 7;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.header-actions {
+  flex: 3;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Modal Body */
+.modal-body {
+  flex: 1;                /* Allow the body to grow and take up available space */
+  overflow-y: auto;       /* Make the body scrollable */
+  padding: 12px;          /* Add padding for content */
+  background-color: #fefefe;
+}
+
+/* Modal Footer */
+.modal-footer {
+  flex-shrink: 0;         /* Prevent the footer from shrinking */
+  background-color: #f4f9fb;
+  border-top: 1px solid #eee;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+/* Table Styling */
+.table {
+  font-size: 0.75rem !important; /* Smaller table text */
+}
+
+.table td,
+.table th {
+  padding: 3px 6px !important;   /* Less cell padding */
+}
+
 .table-responsive {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: auto; /* Allow horizontal scrolling for tables */
 }
-/* Responsive for mobile */
+
+/* Close Button */
+.close {
+  color: white;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Responsive Design */
 @media (max-width: 600px) {
   .my-modal-content {
     max-width: 98vw !important;
@@ -47,10 +134,14 @@
     margin: 4px !important;
     max-height: 98vh !important;
   }
-  .modal-header, .modal-body {
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
     flex-direction: column !important;
     align-items: stretch !important;
   }
+
   .table {
     font-size: 0.9rem !important;
   }
@@ -79,69 +170,23 @@
   }
 }
 
-/* The Close Button */
-.close {
-  color: white;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+
+.spinner-border {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 0.15em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
 }
 
-.close:hover,
-.close:focus {
-  color: #000;
-  text-decoration: none;
-  cursor: pointer;
-}
-.modal-header,
-.modal-body {
-  padding: 6px 10px !important; /* Reduce padding in modal sections */
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.table {
-  font-size: 0.75rem !important; /* Smaller table text */
-}
-
-.table td,
-.table th {
-  padding: 3px 6px !important;   /* Less cell padding */
-}
-/* .modal-header {
-  padding: 1px 2px;
-  background-color: #f4f9fb;
-  color: white;
-}
-
-.modal-body {
-  padding: 2px 16px;
-  background-color: #fefefe;
-}
-
-.modal-footer {
-  padding: 1px 2px;
-  background-color: #f4f9fb;
-  color: white;
+/* div:hover {
+  background-color: #e8e9ea;
 } */
-
-.modal-header-inline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 6px 10px;
-  background-color: #f4f9fb;
-  border-bottom: 1px solid #eee;
-}
-.header-main {
-  flex: 7;
-  font-weight: bold;
-  font-size: 1rem;
-  /* Add more styles as needed */
-}
-
-.header-actions {
-  flex: 3;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}

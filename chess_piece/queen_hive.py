@@ -4039,23 +4039,25 @@ def generate_chessboards_trading_models(chessboard):
     return tradingmodels
 
 
-def Create_TrigRule(
-                    symbol,
-                    trigrule_type='trinity', # vwap, rsi, macd, trinity..
-                    trigrule_status='active',
+def create_TrigRule(
+                    symbol='SPY',
+                    trigrule_type='wave_trinity', # trading_pairs
+                    trigrule_status='not_active', # active, not_active
                     expire_date=datetime.now().strftime('%m/%d/%YT%H:%M'), 
                     user_accept=True, 
-                    max_order_nums=3, 
+                    max_order_nums=3, # to achieve max budget
                     max_budget=89, 
                     marker=None, # vwap, rsi, macd, trinity..
-                    marker_value=None, #
-                    deviation_symbols=[], 
-                    deviation_group=False, 
+                    marker_value=None, # -.2
+                    deviation_symbols=[], # list of symbols to compare against
+                    deviation_group=False, # compare on group std deviation
                     ttf=None, # Comparsion then only on TTF
-                    block_time=[] # trigging active when in block time
+                    block_times=[] # trigging active when in block time
                     ):
+    # all_vars = {key: value for key, value in globals().items() if not key.startswith("__") and not callable(value)}
     return {
         "symbol": symbol,
+        "trigrule_type": trigrule_type,
         "trigrule_status": trigrule_status,
         "expire_date": expire_date,
         "user_accept": user_accept,
@@ -4064,7 +4066,7 @@ def Create_TrigRule(
         "marker": marker,
         "deviation_symbols": deviation_symbols,
         "deviation_group": deviation_group,
-        "block_time": block_time,
+        "block_times": block_times,
         "marker_value": marker_value,
         "ttf": ttf,
     }
@@ -4088,17 +4090,16 @@ def return_queen_controls(stars=stars):
             # "ready_buy_cross": "not_active", # NOT USED
         },        
         # revrec
-        'ticker_revrec_allocation_mapping' : {}, # not needed done in KORS
         'ticker_autopilot' : pd.DataFrame([{'symbol': 'SPY', 'buy_autopilot': True, 'sell_autopilot': True}]).set_index('symbol'),
         'ticker_refresh_star': pd.DataFrame([{'symbol': 'SPY', 'ticker_refresh_star': None}]).set_index('symbol'),
-        # 'trade_only_margin': False, # control not adding WORKERBEE
+        'ticker_trigrules': [create_TrigRule()], # GAMBLE_v2
 
-        # working GAMBLE
-        'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
-        # GAMBLE_v2
-        # 'gamble': [], # based on every ticker or ttf - df of last time gambled, result of gamble, risk level allowed, ?
+        ## NOT USED ##
+        # 'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
+        # 'throttle': .5, # NOT USED
         # 'ticker_buying_powers': {'SPY': {'buying_power': 0, 'borrow_power': 0}}, # not needed done in KORS
-        'throttle': .5,
+        # 'ticker_revrec_allocation_mapping' : {}, # not needed done in KORS
+        # 'trade_only_margin': False, # control not adding WORKERBEE
 
     }
     return queen_controls_dict
