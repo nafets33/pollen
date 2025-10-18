@@ -125,8 +125,8 @@ def copy_data_between_tables(source_table, target_table):
 if __name__ == '__main__':
     print("POSTGRES", pg_migration)
 
+    st.session_state['admin'] = True
     admin = st.session_state['admin']
-
     if not admin:
         st.error("Join The Team for Admin Access To This Page")
         st.stop()

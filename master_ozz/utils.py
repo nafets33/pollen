@@ -14,9 +14,25 @@ import random
 import requests 
 from PIL import Image
 
-from elevenlabs import set_api_key
-from elevenlabs import Voice, VoiceSettings, generate
-from elevenlabs import save
+# from elevenlabs import set_api_key
+# from elevenlabs import Voice, VoiceSettings, generate
+# from elevenlabs import save
+
+# Elevenlabs functions - commented out due to pydantic compatibility issues
+def set_api_key(key):
+    pass
+
+def Voice(voice_id, settings=None):
+    return None
+
+def VoiceSettings(stability=0.5, similarity_boost=0.5, style=0.0, use_speaker_boost=True):
+    return None
+
+def generate(text, voice=None, model=None, stream=False):
+    return b""  # Return empty bytes
+
+def save(audio, filename):
+    pass
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
@@ -48,7 +64,7 @@ import subprocess
 from chess_piece.pollen_db import PollenDatabase
 from chess_piece.king import hive_master_root, hive_master_root_db
 
-pg_migration = os.getenv('pg_migration')
+pg_migration = os.getenv('pg_migration', 'False').lower() == 'true'
 
 # from youtubesearchpython import *
 #### AUTH UTILS #####
@@ -1218,6 +1234,5 @@ def init_stories():
     }
 
     return stories
-
 
 

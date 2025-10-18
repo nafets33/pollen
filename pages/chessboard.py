@@ -16,7 +16,8 @@ from streamlit_extras.switch_page_button import switch_page
 
 from pq_auth import signin_main
 from chess_piece.king import return_QUEEN_KING_symbols, master_swarm_QUEENBEE, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, return_QUEENs__symbols_data, kingdom__global_vars
-from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, shape_chess_board, generate_chess_board, refresh_account_info, init_queenbee, unshape_chess_board, setup_chess_board, add_trading_model, set_chess_pieces_symbols, read_swarm_db, refresh_broker_account_portolfio
+from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, shape_chess_board, generate_chess_board, refresh_account_info, init_queenbee, unshape_chess_board, setup_chess_board, add_trading_model, set_chess_pieces_symbols, read_swarm_db, refresh_broker_account_portolfio,init_swarm_dbs
+
 from chess_piece.queen_mind import refresh_chess_board__revrec, init_qcp
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
@@ -551,12 +552,22 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             st.write("# Setup Your Portfolio, Try Selecting a Hedge Fund and Edit from there ! :star2:")
             st.write(":warning: Symbols in the same Group will share a Budget - You can edit Exact Amounts Later :gear:")
 
-        hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
-        # print(len(hedge_funds))
-        # for fund in hedge_funds:
-            # print(len(fund))
-
-        hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
+        # Handle missing whalewisdom data with fallback
+        try:
+            whalewisdom_data = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom')
+            if whalewisdom_data and 'latest_filer_holdings' in whalewisdom_data:
+                hedge_funds = whalewisdom_data.get('latest_filer_holdings')
+                if hedge_funds is not None and not hedge_funds.empty and 'filer_name' in hedge_funds.columns:
+                    hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
+                else:
+                    print("Warning: whalewisdom data is empty or missing filer_name column")
+                    hedge_fund_names = []
+            else:
+                print("Warning: whalewisdom data not found or invalid")
+                hedge_fund_names = []
+        except Exception as e:
+            print(f"Error loading whalewisdom data: {e}")
+            hedge_fund_names = []
         all_portfolios = ['Queen']
         save_as_main_chessboard = st.sidebar.checkbox("Save as Main Chessboard", True)
 
@@ -576,18 +587,28 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             optoins.append({'id': op, 'icon': "fas fa-chess-pawn", 'label':op})
 
         # chessboard_selection = hc.option_bar(option_definition=optoins, title='Queen is Your Portfolio', key='chessboard_selections', horizontal_orientation=True) #,override_theme=over_theme,font_styling=font_fmt,horizontal_orientation=True)
-        chessboard_selection = st.selectbox("Select Portfolio", [None] + hedge_fund_names)
+        # Create portfolio options with fallback
+        portfolio_options = ['Queen']
+        if hedge_fund_names:
+            portfolio_options.extend(hedge_fund_names)
+        
+        chessboard_selection = st.selectbox("Select Portfolio", [None] + portfolio_options)
         if not chessboard_selection:
             chessboard_selection = 'Queen'
         if chessboard_selection == 'Queen':
             pass
-        if chessboard_selection in hedge_fund_names:
+        if chessboard_selection in hedge_fund_names and 'hedge_funds' in locals() and hedge_funds is not None:
             if save_as_main_chessboard == False:
                 qcp_bees_key = chessboard_selection
             if qcp_bees_key not in QUEEN_KING.keys():
                 QUEEN_KING[qcp_bees_key] = {}
             # data = hedge_funds.get(chessboard_selection)
-            data = hedge_funds[hedge_funds['filer_name'] == chessboard_selection]
+            try:
+                data = hedge_funds[hedge_funds['filer_name'] == chessboard_selection]
+            except Exception as e:
+                print(f"Error filtering hedge fund data: {e}")
+                st.error("Error loading hedge fund data")
+                return
             data = data.set_index('stock_ticker', drop=False)
             data = data.replace('DROPME', .001)
             data['current_percent_of_portfolio'] = pd.to_numeric(data['current_percent_of_portfolio'], errors='coerce')
@@ -766,6 +787,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 # update board
 
 if __name__ == '__main__':
+    init_swarm_dbs(prod=False)
 
     signin_main()
 
@@ -797,7 +819,12 @@ if __name__ == '__main__':
     # st.write(QUEEN_KING['chess_board'])
 
 
-    ticker_allowed = KING['alpaca_symbols_df'].index.tolist()
+    # Handle missing alpaca_symbols_df with fallback
+    if 'alpaca_symbols_df' in KING and not KING['alpaca_symbols_df'].empty:
+        ticker_allowed = KING['alpaca_symbols_df'].index.tolist()
+    else:
+        print("Warning: alpaca_symbols_df not found or empty, using fallback symbols")
+        ticker_allowed = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'BTC/USD', 'ETH/USD']
 
     alpaca_acct_info = refresh_account_info(api=api)
     with st.sidebar:

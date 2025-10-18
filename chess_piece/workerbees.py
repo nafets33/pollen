@@ -16,7 +16,7 @@ from datetime import datetime
 import threading
 import ipdb
 import requests
-from tqdm import tqdm
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import os
@@ -1024,8 +1024,8 @@ def queen_workerbees(
             s_mainbeetime = datetime.now(est)
             # WORKERBEE if backetesting no need to recall chart data
             df_all = {}
+            
             for ticker in master_tickers:
-                print("INITIATING CHARTS for ", ticker)
                 res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
                 df_tickers_data = res["init_charts"]
                 df_all.update(df_tickers_data)
@@ -1052,7 +1052,7 @@ def queen_workerbees(
             return pollen
         except Exception as e:
             print_line_of_error(f"BEES IINIT FAILED {e} ")
-            return None
+            raise e
 
     def chunk(it, size):
         it = iter(it)
@@ -1126,10 +1126,10 @@ def queen_workerbees(
                 if not qcp:
                     print("QCP", qcp_worker)
                     continue
-                master_tickers_og = qcp.get('tickers')
-                master_tickers = [i for i in master_tickers_og if i in queens_master_tickers]
+                master_tickers = qcp.get('tickers')
+                master_tickers = [i for i in master_tickers if i in queens_master_tickers]
                 if not master_tickers:
-                    print("not tics available in master", master_tickers_og)
+                    print("not tics available in master")
                     return None
                 # master_tickers = ['SPY', 'BTC/USD', 'ETH/USD', 'LTC/USD']
 
@@ -1159,9 +1159,6 @@ def queen_workerbees(
                     speed_gauges=speed_gauges,
                     reset_only=reset_only,
                 )
-                if not pollen:
-                    print("no pollen for ", qcp_worker)
-                    continue
                 WORKERBEE_QUEEN[qcp_worker]["pollencharts"] = pollen["pollencharts"]
                 WORKERBEE_QUEEN[qcp_worker]["pollencharts_nectar"] = pollen["pollencharts_nectar"]
                 WORKERBEE_queens[qcp_worker] = WORKERBEE_QUEEN
@@ -1175,7 +1172,9 @@ def queen_workerbees(
     def queens_court__WorkerBees(QUEENBEE, prod, qcp_s, run_all_pawns=False, streamit=False, reset_only=reset_only):
 
         if type(qcp_s) == str:
-            qcp_s = [qcp_s]
+            # qcp_s = [qcp_s]
+            # Handle comma-separated strings like "castle,bishop,knight"
+            qcp_s = [piece.strip() for piece in qcp_s.split(',')]
         queens_chess_pieces = qcp_s # pq.get("queens_chess_pieces")
 
         def confirm_tickers_available(alpaca_symbols_dict, symbols):
@@ -1250,7 +1249,7 @@ def queen_workerbees(
                 print("> 20 catch call pawns")
                 for i in range(0, len(tickers), CHUNK_SIZE):
                     chunk = tickers[i:i + CHUNK_SIZE]
-                    pawn = f'pawn_{len(QUEENBEE["workerbees"]) +1}'
+                    pawn = f'{str(chunk)}'
                     pawn_qcp = init_qcp_workerbees(
                         init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
                         ticker_list=chunk,
@@ -1273,12 +1272,12 @@ def queen_workerbees(
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items()]
             all_symbols = [item for sublist in list_of_lists for item in sublist]
             # ipdb.set_trace()
-            storygauge = init_queenbee(client_user='stefanstapinski@gmail.com', prod=True, revrec=True, pg_migration=True)['revrec'].get('storygauge')
+            # df_tickers = init_queenbee(client_user='stefanstapinski@gmail.com', prod=True, revrec=True, pg_migration=True)['revrec'].get('df_ticker')
             tickers_to_add = []
-            for ticker in storygauge.index:
-                if ticker not in all_symbols and storygauge.loc[ticker, 'ticker_buying_power'] > 0:
-                    # print(ticker, "NOT IN QUEENBEE adding to Castle")
-                    tickers_to_add.append(ticker)
+            # for ticker in df_tickers.index:
+            #     if ticker not in all_symbols and df_tickers.loc[ticker, 'ticker_buying_power'] > 0:
+            #         # print(ticker, "NOT IN QUEENBEE adding to Castle")
+            #         tickers_to_add.append(ticker)
 
             new_symbols = [i for i in tickers_to_add if i not in all_symbols] # and i not in all_values
             for i in new_symbols:
@@ -1310,17 +1309,23 @@ def queen_workerbees(
             
             if len(queens_master_tickers) > 89:
                 print("chunking queens")
-                QUEENBEE['workerbees'] = {}
-                QUEENBEE, queens_chess_pieces, queens_master_tickers =  handle_qcp_pawns(QUEENBEE, queens_master_tickers, queens_chess_pieces=[], queens_master_tickers=[])
-            
-
-            queen_workers = init_QueenWorkersBees(
-                QUEENBEE=QUEENBEE,
-                queens_chess_pieces=queens_chess_pieces,
-                MACD_WAVES=MACD_WAVES,
-                queens_master_tickers=queens_master_tickers,
-                reset_only=reset_only,
-            )
+                from tqdm import tqdm
+                for ticker in tqdm(queens_master_tickers):
+                    queen_workers = init_QueenWorkersBees(
+                        QUEENBEE=QUEENBEE,
+                        queens_chess_pieces=queens_chess_pieces,
+                        MACD_WAVES=MACD_WAVES,
+                        queens_master_tickers=[ticker],
+                        reset_only=reset_only,
+                    )
+            else:
+                queen_workers = init_QueenWorkersBees(
+                    QUEENBEE=QUEENBEE,
+                    queens_chess_pieces=queens_chess_pieces,
+                    MACD_WAVES=MACD_WAVES,
+                    queens_master_tickers=queens_master_tickers,
+                    reset_only=reset_only,
+                )
             if reset_only:
                 msg=("EXITING RESET ONLY")
                 print(msg)

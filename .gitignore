@@ -20,3 +20,4 @@ airflow_home
 env
 node_modules/*
 Honey.txt
+.venv/

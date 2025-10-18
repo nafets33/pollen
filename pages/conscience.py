@@ -11,13 +11,12 @@ import os
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
-from chess_piece.queen_hive import create_TrigRule, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee, star_refresh_star_times
+from chess_piece.queen_hive import fetch_portfolio_history, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee, star_refresh_star_times
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
 from pq_auth import signin_main
 from pages.PortfolioManager import ozz
-# from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
-from streamlit_custom_api_grid import st_custom_grid, GridOptionsBuilder, JsCode
+from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
 
 from custom_graph_v1 import st_custom_graph
 
@@ -705,6 +704,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
         king_G = kingdom__global_vars()
         try:
+            # Check if revrec is None or doesn't have required data
+            if revrec is None:
+                st.warning("RevRec data not available. Please refresh the page or check your connection.")
+                return
+            
+            if not hasattr(revrec, 'get') or 'storygauge' not in revrec:
+                st.warning("RevRec data is incomplete. Please refresh the page or check your connection.")
+                return
             gb = GridOptionsBuilder.create()
             gb.configure_grid_options(pagination=True, 
                                       paginationPageSize=100, 
@@ -769,7 +776,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 buttons = []
                 exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
                 buttons=[
-                            {'button_name': None, # MAIN SYMBOL BUTTON
+                            {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_queenking_symbol',
                             'prompt_message': 'Manage Board',
                             'prompt_field': 'add_symbol_option',
@@ -778,13 +785,9 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'col_width':100,
                             'sortable': True,
                             'pinned': 'left',
-                            'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None],
+                            'prompt_order_rules': [i for i in add_symbol_dict_items().keys()],
                             'cellStyle': button_style_symbol,
-                            'display_grid_column': 'trig_rules',
-                            'editableCols': [ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
-
-                            'cellRenderer': "agGroupCellRenderer",
-                            'pivot': True,
+                            'cellRenderer': "agGroupCellRenderer"
                             # 'add_symbol_row_info': ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
                             # 'display_grid_column': 'active_orders',
                             # 'editableCols': ['allocation_long'],
@@ -857,30 +860,11 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                 { 'col_header': "close_order_today", 'dtype': "checkbox" },
                                 { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
                                 { 'col_header': "confirm_sell", 'dtype': "checkbox", "display_name": "Confirm Sell / Update Order"},
-                                { 'col_header': "queen_order_state", 'dtype': "list", "display_name": "queen_order_state", "values": king_G.get('active_order_state_list'), "multi_select": True},
+                                { 'col_header': "queen_order_state", 'dtype': "list", "display_name": "queen_order_state", "values": king_G.get('active_order_state_list')},
                                 ],
                             'display_grid_column': 'active_orders',
                             },
 
-                            # """ WORKERBEE NOT SURE why the button doesnt behave correctly does not use Modal??"""
-                            # {'button_name': None, # TrigRules
-                            # 'col_headername': 'Trig Rules',
-                            # 'button_api': f'{ip_address}/api/data/trig_rules',
-                            # 'prompt_message': 'Trigger Rules',
-                            # 'prompt_field': 'sell_option', #'symbol', # 'trig_rules',
-                            # 'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
-                            # 'display_grid_column': 'trig_rules',
-                            # "col_header": "symbol",
-                            # 'col_width':100,
-                            # 'sortable': True,
-                            # 'pinned': 'right',
-                            # # 'cellStyle': button_style_symbol,
-                            # # 'cellRenderer': "agGroupCellRenderer"
-                            # # 'add_symbol_row_info': ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
-                            # 'editableCols': [ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
-                            # },
-                            
-                            
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_buy_autopilot',
                             'prompt_message': 'Edit AutoPilot',
@@ -944,11 +928,10 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 
                 return buttons
 
-            def config_cols(qcp_piece_names):
-                df_ticker_qcp_names = qcp_piece_names
+            def config_cols(df_qcp):
+                df_ticker_qcp_names = df_qcp['piece_name'].tolist()
                 configg =  {
                 # for col in cols:
-                'trig_rules': {"hide": True},
                 # 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
                 'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',
                                         'cellStyle': honey_colors,
@@ -1009,21 +992,28 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
             
             story_col_order = [
-                               'queens_suggested_buy', 
-                               'queens_suggested_sell', 
                                 'current_from_yesterday',
                                 'pct_portfolio',
                                 'star_buys_at_play',
                                 'total_budget',
                                 'allocation_long',
+                               'queens_suggested_buy', 
                                'unrealized_pl', 
                                'unrealized_plpc', 
+                               'queens_suggested_sell', 
                                'piece_name',
                                'buy_autopilot', 
                                'sell_autopilot',
                             #    'current_ask', 
             ]
-
+            # with st.expander("default build check"):
+            #     st.write(go)
+            # QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=True)
+            # df_broker_portfolio=pd.DataFrame(QUEENsHeart['heartbeat'].get('portfolio')).T
+            # missing_tickers = [i for i in df_broker_portfolio.index if i not in revrec['df_ticker'].index]
+            # if missing_tickers:
+            #     print("tickers missing", missing_tickers)
+            #     QUEEN_KING[chess_board]['non_active_stories'] = init_qcp_workerbees(piece_name='non_active_stories', ticker_list=missing_tickers, buying_power=0)
             toggle_view = []
             if client_user == 'stefanstapinski@gmail.com':
                 main_toggles = ["Portfolio", "King", '2025_Screen']
@@ -1085,8 +1075,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 #         if len(QUEEN_KING['chess_board'][qcp].get('tickers', [])) > 0
                 #     ]
                 story_col = revrec.get('storygauge').columns.tolist()
-                qcp_piece_names = revrec.get('storygauge')['piece_name'].unique().tolist() if 'piece_name' in revrec.get('storygauge').columns else []
-                config_cols_ = config_cols(qcp_piece_names)
+                config_cols_ = config_cols(revrec.get('df_qcp'))
                 mmissing = [i for i in story_col if i not in config_cols_.keys()]
                 if len(mmissing) > 0:
                     for col in mmissing:
