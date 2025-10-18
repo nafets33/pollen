@@ -43,7 +43,7 @@ from chess_piece.pollen_db import PollenDatabase
 
 import ipdb
 
-pg_migration = os.getenv('pg_migration')
+pg_migration = os.getenv('pg_migration', 'False').lower() == 'true'
 
 
 pd.options.mode.chained_assignment = None
@@ -417,6 +417,18 @@ def get_portfolio_performance(_api, periods):
     return perf_dict
 
 def pollenq(sandbox=False, demo=False):
+    # Initialize session state variables if they don't exist
+    if "authentication_status" not in st.session_state:
+        st.session_state["authentication_status"] = None
+    if "username" not in st.session_state:
+        st.session_state["username"] = None
+    if "name" not in st.session_state:
+        st.session_state["name"] = None
+    if "logout" not in st.session_state:
+        st.session_state["logout"] = None
+    if "authorized_user" not in st.session_state:
+        st.session_state["authorized_user"] = False
+    
     # st.write("pollenq", demo, sandbox)
     # print("pollenq", demo, sandbox)
     pollen = 'pollen' if not demo else 'demo'

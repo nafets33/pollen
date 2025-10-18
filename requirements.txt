@@ -1,6 +1,6 @@
 aiohttp==3.9.1
 aiosignal==1.3.1
-alpaca-trade-api==2.3.0
+alpaca-trade-api==3.2.0
 altair==4.2.2
 annotated-types==0.6.0
 anyio==3.7.1
@@ -40,7 +40,7 @@ distlib==0.3.9
 docx==0.2.4
 docx2txt==0.8
 ecdsa==0.14.1
-elevenlabs==0.2.26
+# elevenlabs==0.2.8  # Commented out due to pydantic compatibility issues
 emoji==2.10.1
 entrypoints==0.4
 exceptiongroup==1.2.0
@@ -117,7 +117,7 @@ numpy==1.26.4
 openai==0.27.8
 packaging==23.2
 pandas==2.0.3
-pandas-ta==0.3.14b0
+# pandas-ta==0.3.14b0  # Commented out due to dependency conflicts
 parso==0.8.3
 passlib==1.7.4
 peewee==3.17.8
@@ -141,8 +141,8 @@ pyarrow==14.0.1
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
-pydantic==2.5.2
-pydantic_core==2.14.5
+pydantic==2.3.0
+pydantic_core==2.6.3
 pydeck==0.8.1b0
 pydub==0.25.1
 Pygments==2.17.2
@@ -238,7 +238,7 @@ watchdog==3.0.0
 wcwidth==0.2.12
 webencodings==0.5.1
 websocket-client==1.4.1
-websockets==12.0
+websockets==10.4
 Werkzeug==3.0.1
 wrapt==1.16.0
 yarl==1.9.4

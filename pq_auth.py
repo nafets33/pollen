@@ -17,7 +17,7 @@ import ipdb
 
 main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
-pg_migration = os.getenv('pg_migration')
+pg_migration = os.getenv('pg_migration', 'False').lower() == 'true'
 testing = False
 
 def register_user(authenticator, con, cur):
