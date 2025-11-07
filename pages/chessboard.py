@@ -552,11 +552,14 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             st.write(":warning: Symbols in the same Group will share a Budget - You can edit Exact Amounts Later :gear:")
 
         hedge_funds = PollenDatabase.retrieve_data('db_sandbox', 'whalewisdom').get('latest_filer_holdings')
-        # print(len(hedge_funds))
-        # for fund in hedge_funds:
-            # print(len(fund))
+        if not isinstance(hedge_funds, pd.DataFrame) or hedge_funds.empty:
+            hedge_funds = None
+            st.write("No hedge funds found.")
+            hedge_fund_names = []
+        else:
+            st.write(hedge_funds)
+            hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
 
-        hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
         all_portfolios = ['Queen']
         save_as_main_chessboard = st.sidebar.checkbox("Save as Main Chessboard", True)
 
@@ -581,7 +584,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             chessboard_selection = 'Queen'
         if chessboard_selection == 'Queen':
             pass
-        if chessboard_selection in hedge_fund_names:
+        if hedge_fund_names and chessboard_selection in hedge_fund_names:
             if save_as_main_chessboard == False:
                 qcp_bees_key = chessboard_selection
             if qcp_bees_key not in QUEEN_KING.keys():

@@ -1272,13 +1272,13 @@ def queen_workerbees(
         if 'castle' in queens_chess_pieces:
             list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items()]
             all_symbols = [item for sublist in list_of_lists for item in sublist]
-            # ipdb.set_trace()
-            storygauge = init_queenbee(client_user='stefanstapinski@gmail.com', prod=True, revrec=True, pg_migration=True)['revrec'].get('storygauge')
             tickers_to_add = []
-            for ticker in storygauge.index:
-                if ticker not in all_symbols and storygauge.loc[ticker, 'ticker_buying_power'] > 0:
-                    # print(ticker, "NOT IN QUEENBEE adding to Castle")
-                    tickers_to_add.append(ticker)
+            if os.getenv('admin_user'):
+                storygauge = init_queenbee(client_user=os.getenv('admin_user'), prod=True, revrec=True, pg_migration=True)['revrec'].get('storygauge')
+                for ticker in storygauge.index:
+                    if ticker not in all_symbols and storygauge.loc[ticker, 'ticker_buying_power'] > 0:
+                        # print(ticker, "NOT IN QUEENBEE adding to Castle")
+                        tickers_to_add.append(ticker)
 
             new_symbols = [i for i in tickers_to_add if i not in all_symbols] # and i not in all_values
             for i in new_symbols:

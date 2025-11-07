@@ -433,7 +433,6 @@ def pollenq(sandbox=False, demo=False):
     ##### QuantQueen #####
     print(f'>>>> pollen START >>>> {return_timestamp_string()}' )
 
-
     pq_buttons = pollenq_button_source()
     s = datetime.now(est)
 
@@ -442,7 +441,6 @@ def pollenq(sandbox=False, demo=False):
     if 'refresh_times' not in st.session_state:
         st.session_state['refresh_times'] = 0
         pq_buttons['chess_board'] = True
-
 
     with st.spinner("Checking Your Keys...hang tight"):
         # print(st.session_state)
@@ -477,6 +475,8 @@ def pollenq(sandbox=False, demo=False):
         display_for_unAuth_client_user()
         st.stop()
     prod = st.session_state['prod']
+
+    init_swarm_dbs(prod, init=True)
     
     if not demo:
         if sandbox and prod:
@@ -638,15 +638,15 @@ def pollenq(sandbox=False, demo=False):
         if not demo:
             stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
 
-        init_swarm_dbs(prod, init=True)
+        
 
 
         ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
         if st.sidebar.button("Check for new KORs"):
             QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
         
-        
         APP_req = add_key_to_app(QUEEN_KING)
+        ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules', pd.DataFrame())
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
             print("Updating QK db")
@@ -735,8 +735,6 @@ def pollenq(sandbox=False, demo=False):
 
     if 'pollen' in menu_id:
         refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
-        # account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
-        st.info(f'{prod_name}, {prod}')
         queens_conscience(prod, revrec, KING, QUEEN_KING, api)
 
     st.session_state['refresh_times'] += 1

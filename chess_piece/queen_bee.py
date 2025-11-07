@@ -1503,6 +1503,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                         print("Margin Buy", wave_amo)
                         ## update KORS on based on trinity, ticker_time_frame
                         # king_order_rules.update('take_profit': ) 
+
+                        ## WORKERBEE Add TrigRule to king_order_rules
+                        trigRule = None
+                        # use trigRule Id (concat of symbol, trigrule_type,) How to establish unique ID?
+                        if trigRule:
+                            king_order_rules.update({'trigRule': trigRule})
+
+
                         order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
                                                                     king_order_rules=king_order_rules, 
                                                                     order_side='buy', 
@@ -1673,9 +1681,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             price_info_missing = [s for s in symbols if s not in QUEEN['price_info_symbols'].index]
             broker = 'alpaca' # WORKERBEE HOW TO DECIDE Which BROKER? Need Manual switch (per ticker?)-- brokers joined linked orders... :()
             storygauge = storygauge[(storygauge['allocation_deploy'] > 89)].copy()
-            # check for triggers
+            
+            ### WORKERBEE ###
+            # check for trigRule
+            # return a dict set of symbol and its list of trigRule
 
             for symbol in storygauge.index.tolist():
+                # If trigRule Calculate trigger info 
+                # check trigRule active & not expired
+                # check if TrigRule exists inside QUEEN['queen_orders']. iterate over active orders using qo_states check queen_order_state field, then check if TrigRule in order['king_order_rules'] (this also needs to be added on execute order  in order_vars__queen_order_items)
+                qo_states = RUNNING_CLOSE_Orders + RUNNING_OPEN
+                
                 crypto = True if symbol in crypto_currency_symbols else False
                 if stop_ticker(storygauge, symbol, QUEEN_KING):
                     continue

@@ -11,7 +11,7 @@ import os
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
-from chess_piece.queen_hive import create_TrigRule, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, bishop_ticker_info, init_queenbee, star_refresh_star_times
+from chess_piece.queen_hive import create_TrigRule, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, create_trig_rule_metadata, init_queenbee, star_refresh_star_times
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
 from pq_auth import signin_main
@@ -768,6 +768,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 # }}
                 buttons = []
                 exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
+                trig_data = create_trig_rule_metadata()
+                trig_editableCols = []
+                for trig in create_TrigRule().keys():
+                    if trig in trig_data.keys():
+                        trig_dict = trig_data.get(trig)
+                        trig_editableCols.append(trig_dict)
+
+
                 buttons=[
                             {'button_name': None, # MAIN SYMBOL BUTTON
                             'button_api': f'{ip_address}/api/data/update_queenking_symbol',
@@ -781,7 +789,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None],
                             'cellStyle': button_style_symbol,
                             'display_grid_column': 'trig_rules',
-                            'editableCols': [ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
+                            'editableCols': trig_editableCols, #[ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
 
                             'cellRenderer': "agGroupCellRenderer",
                             'pivot': True,

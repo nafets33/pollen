@@ -21,7 +21,7 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     power_amo,
                                     init_queenbee,
                                     return_trading_model_trigbee,
-                                    bishop_ticker_info,
+                                    create_TrigRule,
                                     ttf_grid_names,
                                     sell_button_dict_items,
                                     wave_buy__var_items,
@@ -1084,16 +1084,33 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection, qk_chessboard)
         ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
         if isinstance(ticker_trigrules, list):
-          ticker_trigrules = pd.DataFrame(ticker_trigrules)
-        # if isinstance(ticker_trigrules, pd.DataFrame):
-          if len(ticker_trigrules) > 0:
-            symbol_to_trig_rules = (
-                ticker_trigrules.groupby('symbol')
-                .apply(lambda group: group.drop(columns='symbol').to_dict(orient='records'))
-                .to_dict()
-            )
-            # Map the lists of dicts to the corresponding symbols in df
-            df['trig_rules'] = df['symbol'].apply(lambda symbol: symbol_to_trig_rules.get(symbol, []))
+            ticker_trigrules = pd.DataFrame(ticker_trigrules)
+            if len(ticker_trigrules) > 0:
+                # Create the initial mapping from existing trigger rules
+                symbol_to_trig_rules = (
+                    ticker_trigrules.groupby('symbol')
+                    .apply(lambda group: group.drop(columns='symbol').to_dict(orient='records'))
+                    .to_dict()
+                )
+            else:
+                symbol_to_trig_rules = {}
+        else:
+            symbol_to_trig_rules = {}
+
+        # Now ensure every symbol in df has trigger rules (existing + new one)
+        comprehensive_trig_rules = {}
+        for symbol in df['symbol']:  # Use df['symbol'] instead of df.index
+            # Get existing rules for this symbol (empty list if none exist)
+            existing_rules = symbol_to_trig_rules.get(symbol, [])
+            
+            # Create a new trigger rule for this symbol
+            new_rule = create_TrigRule(symbol=symbol)
+            
+            # Combine existing rules with the new rule
+            comprehensive_trig_rules[symbol] = existing_rules + [new_rule]
+
+        # Map the comprehensive trigger rules to the dataframe
+        df['trig_rules'] = df['symbol'].map(comprehensive_trig_rules)
 
         # for idx in df.index:
         #     df.at[idx, 'nestedRows'] = [{

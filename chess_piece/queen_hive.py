@@ -4071,6 +4071,91 @@ def create_TrigRule(
         "ttf": ttf,
     }
 
+def create_trig_rule_metadata():
+    # Define the keys and their metadata
+    trig_rule_keys = {
+        "symbol": {
+            "display_name": "Symbol",
+            "col_header": "symbol",
+            "dtype": "list",
+            "values": ["SPY", "AAPL", "GOOGL"]  # Single list because dtype is 'list'
+        },
+        "trigrule_type": {
+            "display_name": "Trigger Rule Type",
+            "col_header": "trigrule_type",
+            "dtype": "list",
+            "values": ["wave_trinity", "trading_pairs"]  # Multiple options for 'str'
+        },
+        "trigrule_status": {
+            "display_name": "Trigger Rule Status",
+            "col_header": "trigrule_status",
+            "dtype": "list",
+            "values": ["active", "not_active"]
+        },
+        "expire_date": {
+            "display_name": "Expiration Date",
+            "col_header": "expire_date",
+            "dtype": "datetime",
+            "values": []  # No predefined values for datetime
+        },
+        "user_accept": {
+            "display_name": "User Acceptance",
+            "col_header": "user_accept",
+            "dtype": "checkbox",
+            "values": [True, False]
+        },
+        "max_order_nums": {
+            "display_name": "Max Order Numbers",
+            "col_header": "max_order_nums",
+            "dtype": "int",
+            "values": [1, 2, 3, 5, 10]
+        },
+        "max_budget": {
+            "display_name": "Max Budget",
+            "col_header": "max_budget",
+            "dtype": "float",
+            "values": [50.0, 100.0, 500.0]
+        },
+        "marker": {
+            "display_name": "Marker",
+            "col_header": "marker",
+            "dtype": "list",
+            "values": ["vwap", "rsi", "macd", "trinity"]
+        },
+        "marker_value": {
+            "display_name": "Marker Value",
+            "col_header": "marker_value",
+            "dtype": "float",
+            "values": [-0.5, 0.0, 0.5, 1.0]
+        },
+        "deviation_symbols": {
+            "display_name": "Deviation Symbols",
+            "col_header": "deviation_symbols",
+            "dtype": "list",
+            "values": ["AAPL", "MSFT"]  # Single list because dtype is 'list'
+        },
+        "deviation_group": {
+            "display_name": "Deviation Group",
+            "col_header": "deviation_group",
+            "dtype": "checkbox",
+            "values": [True, False]
+        },
+        "ttf": {
+            "display_name": "Time to Frame",
+            "col_header": "ttf",
+            "dtype": "str",
+            "values": ["1Minute", "5Minute", "1Hour"]
+        },
+        "block_times": {
+            "display_name": "Block Times",
+            "col_header": "block_times",
+            "dtype": "list",
+            "values": ["morning_9-11", "afternoon_2-4"]  # Single list because dtype is 'list'
+        }
+    }
+
+    return trig_rule_keys
+
 def return_queen_controls(stars=stars):
 
     chessboard = generate_chess_board()
