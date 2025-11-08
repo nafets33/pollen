@@ -1264,7 +1264,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         else:
             return ''
 
-    def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, active_orders, active_queen_order_states):
+    def check_trigrule_conditions(symbol, storygauge, storygauge_original, QUEEN_KING, active_orders, active_queen_order_states):
         """
         Check if TrigRule conditions are met for a symbol.
         Returns first passing TrigRule dict with trigger_id, or None if none pass.
@@ -1276,12 +1276,23 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             if isinstance(ticker_trigrules, pd.DataFrame):
                 ticker_trigrules = ticker_trigrules.to_dict('records')
             
+            # Create test rule for current symbol
             if not any(r.get('symbol') == symbol and r.get('marker_value') == -0.2 for r in ticker_trigrules if isinstance(r, dict)):
                 ticker_trigrules.append(create_TrigRule(symbol=symbol, trigrule_type='wave_trinity', 
                                                        trigrule_status='active', marker_value=-0.2,
                                                        expire_date=(datetime.now() + timedelta(days=30)).strftime('%m/%d/%YT%H:%M')))
                 QUEEN_KING['king_controls_queen']['ticker_trigrules'] = ticker_trigrules
                 print(f"[TEST] Created test TrigRule for {symbol}")
+            
+            # Also create test rules for crypto testing
+            for crypto_sym in crypto_currency_symbols:
+                if crypto_sym in storygauge_original.index and not any(r.get('symbol') == crypto_sym and r.get('marker_value') == 0.4 for r in ticker_trigrules if isinstance(r, dict)):
+                    # Use positive marker_value (0.4) since crypto often has positive trinity_w_L
+                    ticker_trigrules.append(create_TrigRule(symbol=crypto_sym, trigrule_type='wave_trinity', 
+                                                           trigrule_status='active', marker_value=0.4,
+                                                           expire_date=(datetime.now() + timedelta(days=30)).strftime('%m/%d/%YT%H:%M')))
+                    QUEEN_KING['king_controls_queen']['ticker_trigrules'] = ticker_trigrules
+                    print(f"[TEST] Created test TrigRule for {crypto_sym} (marker_value=0.4 for crypto testing)")
             
             if not ticker_trigrules:
                 return None
@@ -1842,7 +1853,15 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             s_time = datetime.now(est)
             price_info_missing = [s for s in symbols if s not in QUEEN['price_info_symbols'].index]
             broker = 'alpaca' # WORKERBEE HOW TO DECIDE Which BROKER? Need Manual switch (per ticker?)-- brokers joined linked orders... :()
+            # Save original storygauge before filtering (needed for crypto test rule creation)
+            storygauge_original = storygauge.copy()
             storygauge = storygauge[(storygauge['allocation_deploy'] > 89)].copy()
+            
+            # Add crypto symbols to processing list if they exist in original storygauge (for TrigRule testing)
+            for crypto_sym in crypto_currency_symbols:
+                if crypto_sym in storygauge_original.index and crypto_sym not in storygauge.index:
+                    storygauge = pd.concat([storygauge, storygauge_original.loc[[crypto_sym]]])
+                    print(f"[TRIGRULE DEBUG] Added {crypto_sym} to processing list for TrigRule check")
             
             ### WORKERBEE ###
             # check for trigRule
@@ -1882,6 +1901,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 trigrule_result = check_trigrule_conditions(
                     symbol=symbol,
                     storygauge=storygauge,
+                    storygauge_original=storygauge_original,
                     QUEEN_KING=QUEEN_KING,
                     active_orders=active_orders,
                     active_queen_order_states=active_queen_order_states
