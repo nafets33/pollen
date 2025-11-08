@@ -49,6 +49,7 @@ from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     update_sell_date,
                                     return_Ticker_Universe,
                                     refresh_broker_account_portolfio,
+                                    create_TrigRule,
                                     )
 from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys, kings_order_rules
 from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonDecoder
@@ -1263,7 +1264,164 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         else:
             return ''
 
-    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False, WT=WT, order_type='buy'):
+    def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, active_orders, active_queen_order_states):
+        """
+        Check if TrigRule conditions are met for a symbol.
+        Returns first passing TrigRule dict with trigger_id, or None if none pass.
+        """
+        try:
+            print(f"[TRIGRULE DEBUG] check_trigrule_conditions called for symbol: {symbol}")
+            # TEST: Create test TrigRule for this symbol (only once)
+            ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules', [])
+            if isinstance(ticker_trigrules, pd.DataFrame):
+                ticker_trigrules = ticker_trigrules.to_dict('records')
+            
+            if not any(r.get('symbol') == symbol and r.get('marker_value') == -0.2 for r in ticker_trigrules if isinstance(r, dict)):
+                ticker_trigrules.append(create_TrigRule(symbol=symbol, trigrule_type='wave_trinity', 
+                                                       trigrule_status='active', marker_value=-0.2,
+                                                       expire_date=(datetime.now() + timedelta(days=30)).strftime('%m/%d/%YT%H:%M')))
+                QUEEN_KING['king_controls_queen']['ticker_trigrules'] = ticker_trigrules
+                print(f"[TEST] Created test TrigRule for {symbol}")
+            
+            if not ticker_trigrules:
+                return None
+            
+            df_trigrules = pd.DataFrame(ticker_trigrules) if isinstance(ticker_trigrules, list) else ticker_trigrules
+            if len(df_trigrules) == 0:
+                return None
+            
+            # Filter for active rules for this symbol
+            symbol_rules = df_trigrules[
+                (df_trigrules['symbol'] == symbol) & 
+                (df_trigrules['trigrule_status'] == 'active')
+            ].copy()
+            
+            if len(symbol_rules) == 0:
+                return None
+            
+            # Get trinity_w_L for the symbol
+            if symbol not in storygauge.index:
+                return None
+            
+            ticker_trinity_w_L = storygauge.loc[symbol].get('trinity_w_L')
+            if pd.isna(ticker_trinity_w_L):
+                print(f"[TRIGRULE DEBUG] Symbol {symbol} has no trinity_w_L value in storygauge")
+                return None
+            
+            print(f"[TRIGRULE DEBUG] Symbol {symbol} trinity_w_L: {ticker_trinity_w_L}")
+            
+            # Check each rule - return first one that passes
+            for idx, rule in symbol_rules.iterrows():
+                trigrule_type = rule.get('trigrule_type')
+                marker_value = rule.get('marker_value')
+                
+                print(f"[TRIGRULE DEBUG] Checking rule {idx}: type={trigrule_type}, marker_value={marker_value}")
+                
+                if pd.isna(marker_value):
+                    print(f"[TRIGRULE DEBUG] Rule {idx} skipped: marker_value is NaN")
+                    continue
+                
+                # Check if this trigger_id already has an order (max_order_nums = 1)
+                trigger_id = f"{symbol}_{rule.get('trigrule_type')}_{idx}"
+                existing_orders = active_orders[
+                    (active_orders['queen_order_state'].isin(active_queen_order_states)) &
+                    (active_orders['symbol'] == symbol)
+                ].copy()
+                
+                # Check if any existing order has this trigger_id
+                has_existing_order = False
+                if len(existing_orders) > 0:
+                    for _, order in existing_orders.iterrows():
+                        order_vars = order.get('order_vars', {})
+                        # Handle case where order_vars might be stored as string (JSON)
+                        if isinstance(order_vars, str):
+                            try:
+                                order_vars = ast.literal_eval(order_vars)
+                            except:
+                                continue
+                        
+                        if isinstance(order_vars, dict):
+                            king_order_rules = order_vars.get('king_order_rules', {})
+                            # Handle case where king_order_rules might be stored as string
+                            if isinstance(king_order_rules, str):
+                                try:
+                                    king_order_rules = ast.literal_eval(king_order_rules)
+                                except:
+                                    continue
+                            
+                            if isinstance(king_order_rules, dict):
+                                if king_order_rules.get('trigger_id') == trigger_id:
+                                    has_existing_order = True
+                                    break
+                
+                if has_existing_order:
+                    print(f"[TRIGRULE DEBUG] Rule {idx} skipped: existing order found with trigger_id: {trigger_id}")
+                    continue  # Skip this rule, already has an order
+                
+                # Check wave_trinity type
+                if trigrule_type == 'wave_trinity':
+                    # Compare trinity_w_L against marker_value
+                    if marker_value is not None:
+                        # Trigger when trinity_w_L meets the marker_value threshold
+                        # If marker_value is negative, trigger when trinity_w_L <= marker_value (more negative)
+                        # If marker_value is positive, trigger when trinity_w_L >= marker_value (more positive)
+                        if marker_value < 0:
+                            condition_met = ticker_trinity_w_L <= marker_value
+                            print(f"[TRIGRULE DEBUG] wave_trinity check: {ticker_trinity_w_L} <= {marker_value} = {condition_met}")
+                        else:
+                            condition_met = ticker_trinity_w_L >= marker_value
+                            print(f"[TRIGRULE DEBUG] wave_trinity check: {ticker_trinity_w_L} >= {marker_value} = {condition_met}")
+                        
+                        if condition_met:
+                            print(f"[TRIGRULE DEBUG] TrigRule PASSED for {symbol}! trigger_id: {trigger_id}")
+                            rule_dict = rule.to_dict()
+                            rule_dict['trigger_id'] = trigger_id
+                            return rule_dict
+                        else:
+                            print(f"[TRIGRULE DEBUG] TrigRule NOT PASSED for {symbol} (condition not met)")
+                
+                # Check trading_pairs type
+                elif trigrule_type == 'trading_pairs':
+                    deviation_symbols = rule.get('deviation_symbols', [])
+                    if not deviation_symbols or len(deviation_symbols) == 0:
+                        continue
+                    
+                    # Calculate deviation for each deviation symbol
+                    for dev_symbol in deviation_symbols:
+                        if dev_symbol not in storygauge.index:
+                            continue
+                        
+                        dev_symbol_trinity_w_L = storygauge.loc[dev_symbol].get('trinity_w_L')
+                        if pd.isna(dev_symbol_trinity_w_L) or dev_symbol_trinity_w_L == 0:
+                            continue
+                        
+                        # Calculate deviation: (ticker_trinity_w_L - deviation_symbol_trinity_w_L) / deviation_symbol_trinity_w_L
+                        deviation = (ticker_trinity_w_L - dev_symbol_trinity_w_L) / dev_symbol_trinity_w_L
+                        
+                        # Compare deviation against marker_value
+                        if marker_value is not None:
+                            # Trigger when deviation meets or exceeds the marker_value threshold
+                            # If marker_value is negative, trigger when deviation <= marker_value (ticker is lower)
+                            # If marker_value is positive, trigger when deviation >= marker_value (ticker is higher)
+                            if marker_value < 0:
+                                condition_met = deviation <= marker_value
+                            else:
+                                condition_met = deviation >= marker_value
+                            
+                            if condition_met:
+                                rule_dict = rule.to_dict()
+                                rule_dict['trigger_id'] = trigger_id
+                                return rule_dict
+                                break
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error checking TrigRule conditions for {symbol}: {e}")
+            print_line_of_error()
+            return None
+
+    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False, WT=WT, order_type='buy', trigger_id=None):
         s_ = datetime.now(est)
 
         """answer all questions for order to be placed, compare against the rules"""
@@ -1389,6 +1547,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             king_order_rules = trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][current_wave_blocktime]
             maker_middle = ticker_priceinfo['maker_middle'] if str(trading_model_star.get('trade_using_limits')) == 'true' else False
             king_order_rules['sell_trigbee_date'] = update_sell_date(star_time)
+            
+            # Store trigger_id in king_order_rules if provided
+            if trigger_id:
+                king_order_rules['trigger_id'] = trigger_id
 
             power_up_amo = power_amo()
 
@@ -1693,6 +1855,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 qo_states = RUNNING_CLOSE_Orders + RUNNING_OPEN
                 
                 crypto = True if symbol in crypto_currency_symbols else False
+                print(f"[TRIGRULE DEBUG] Processing symbol: {symbol}, crypto: {crypto}")
                 if stop_ticker(storygauge, symbol, QUEEN_KING):
                     continue
 
@@ -1705,12 +1868,48 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 if len(wave) == 0:
                     continue
 
+                print(f"[TRIGRULE DEBUG] Symbol {symbol} has {len(wave)} waves, proceeding")
                 wave = wave.sort_values('allocation_deploy', ascending=False)
 
                 not_enough = wave[(wave['allocation_deploy'] < wave['current_ask']) & (wave['allocation_deploy'] > 0)].copy()
                 if len(not_enough) > 0:
                     wave_amo_for_next_wave = not_enough['allocation_deploy'].sum()
                     print(wave_amo_for_next_wave, symbol, "NOT ENOUGH WAVE AMO FOR NEXT WAVE")
+
+                # Check TrigRule conditions at symbol level (before ticker_time_frame loop)
+                # This allows testing even when markets are closed
+                print(f"[TRIGRULE DEBUG] About to check TrigRule conditions for {symbol} (symbol level)")
+                trigrule_result = check_trigrule_conditions(
+                    symbol=symbol,
+                    storygauge=storygauge,
+                    QUEEN_KING=QUEEN_KING,
+                    active_orders=active_orders,
+                    active_queen_order_states=active_queen_order_states
+                )
+                print(f"[TRIGRULE DEBUG] trigrule_result for {symbol} (symbol level): {trigrule_result}")
+                
+                # Extract trigger_id if TrigRule passed (will be used later in ticker_time_frame loop)
+                trigger_id = trigrule_result.get('trigger_id') if trigrule_result else None
+                
+                # If symbol has active TrigRules but none passed, skip this symbol entirely
+                ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
+                if ticker_trigrules:
+                    if isinstance(ticker_trigrules, list) and len(ticker_trigrules) > 0:
+                        df_check = pd.DataFrame(ticker_trigrules)
+                    elif isinstance(ticker_trigrules, pd.DataFrame) and len(ticker_trigrules) > 0:
+                        df_check = ticker_trigrules
+                    else:
+                        df_check = pd.DataFrame()
+                    
+                    if len(df_check) > 0:
+                        symbol_has_rules = len(df_check[
+                            (df_check['symbol'] == symbol) & 
+                            (df_check['trigrule_status'] == 'active')
+                        ]) > 0
+                        
+                        if symbol_has_rules and not trigrule_result:
+                            print(f"[TRIGRULE DEBUG] Symbol {symbol} has active TrigRules but none passed - skipping symbol")
+                            continue
 
                 # if crypto and QUEEN['prod']: # TEMP UNTIL CRYPTO handled in QUEEN CONTROLS WORKERBEE
                 #     print("PRODUCTION OF CRYPTO ACCOUNT")
@@ -1810,7 +2009,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                         trading_model=trading_model, 
                         trig_action=trig_action, 
                         crypto=crypto, 
-                        app_trig=app_trig)
+                        app_trig=app_trig,
+                        trigger_id=trigger_id)
                     charlie_bee['queen_cyle_times']['cc_knights_request__cc'] = (datetime.now(est) - s_time).total_seconds()
                     if king_resp.get('kings_blessing'):
                         for blessing in king_resp.get('blessings'):
