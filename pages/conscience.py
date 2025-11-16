@@ -11,13 +11,14 @@ import os
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
-from chess_piece.queen_hive import create_TrigRule, kingdom__grace_to_find_a_Queen, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, create_trig_rule_metadata, init_queenbee, star_refresh_star_times
+from chess_piece.queen_hive import stars, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, init_queenbee, kingdom__grace_to_find_a_Queen
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
+from chess_utils.trigrule_utils import create_trig_rule_metadata
 from pq_auth import signin_main
 from pages.PortfolioManager import ozz
-# from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
-from streamlit_custom_api_grid import st_custom_grid, GridOptionsBuilder, JsCode
+from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
+# from streamlit_custom_api_grid import st_custom_grid, GridOptionsBuilder, JsCode
 
 from custom_graph_v1 import st_custom_graph
 
@@ -30,7 +31,6 @@ scriptname = os.path.basename(__file__)
 queens_chess_piece = os.path.basename(__file__)
 
 page = 'QueensConscience'
-
 
 main_root = hive_master_root() # os.getcwd()  # hive root
 load_dotenv(os.path.join(main_root, ".env"))
@@ -638,11 +638,12 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             prompt_field = None, #"symbol", # "current_macd_tier", # for signle value
             api_key=os.environ.get("fastAPI_key"),
             buttons=[],
-            grid_height='129px',
+            grid_height='133px',
             toggle_views=[],
             allow_unsafe_jscode=True,
             grid_type='account_header',
-            subtotal_cols=[],
+            # total_col="Broker",
+            # subtotal_cols=['Cash', 'Long', 'Short',  'Portfolio Value', 'Buying Power'],
             # nestedGridEnabled = True,
             # detailGridOptions = {'columnDefs': [{'field': 'count_on_me', 'cellRenderer': "agGroupCellRenderer",}],
             #                      'masterDetail': True,
@@ -757,9 +758,10 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             '1Day_1Year_change': {'headerName':"1 Year Change", 'cellStyle': honey_colors, 'sortable':'true',
                                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                                     'valueFormatter': value_format_pct_2
-                                                    } 
+                                                    },
+
             }
-            def story_grid_buttons(hf=False):
+            def story_grid_buttons(storygauge, hf=False):
                 # try:
                 active_orders_order_book = ['ticker_time_frame', 'side', 'wave_amo', 'filled_qty', 'qty_available', 'qty', 'money', 'honey', 'trigname', 'order_rules']
                 # data  ={
@@ -768,12 +770,11 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 # }}
                 buttons = []
                 exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
-                trig_data = create_trig_rule_metadata()
+                trig_data = create_trig_rule_metadata(list(storygauge.index), list(set(storygauge['qcp'])), list(stars().keys()))
                 trig_editableCols = []
-                for trig in create_TrigRule().keys():
-                    if trig in trig_data.keys():
-                        trig_dict = trig_data.get(trig)
-                        trig_editableCols.append(trig_dict)
+                for trig in trig_data.keys():
+                    trig_dict = trig_data.get(trig)
+                    trig_editableCols.append(trig_dict)
 
 
                 buttons=[
@@ -786,14 +787,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'col_width':100,
                             'sortable': True,
                             'pinned': 'left',
-                            'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None],
+                            'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None and i != 'symbol'],
                             'cellStyle': button_style_symbol,
-                            'display_grid_column': 'trig_rules',
+                            'display_grid_column': 'trig_data',
                             'editableCols': trig_editableCols, #[ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
 
                             'cellRenderer': "agGroupCellRenderer",
                             'pivot': True,
-                            # 'add_symbol_row_info': ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
+                            'add_symbol_row_info': ['buy_autopilot', 'sell_autopilot', 'trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'] # ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
                             # 'display_grid_column': 'active_orders',
                             # 'editableCols': ['allocation_long'],
                             },
@@ -869,25 +870,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                 ],
                             'display_grid_column': 'active_orders',
                             },
-
-                            # """ WORKERBEE NOT SURE why the button doesnt behave correctly does not use Modal??"""
-                            # {'button_name': None, # TrigRules
-                            # 'col_headername': 'Trig Rules',
-                            # 'button_api': f'{ip_address}/api/data/trig_rules',
-                            # 'prompt_message': 'Trigger Rules',
-                            # 'prompt_field': 'sell_option', #'symbol', # 'trig_rules',
-                            # 'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
-                            # 'display_grid_column': 'trig_rules',
-                            # "col_header": "symbol",
-                            # 'col_width':100,
-                            # 'sortable': True,
-                            # 'pinned': 'right',
-                            # # 'cellStyle': button_style_symbol,
-                            # # 'cellRenderer': "agGroupCellRenderer"
-                            # # 'add_symbol_row_info': ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
-                            # 'editableCols': [ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
-                            # },
-                            
                             
                             {'button_name': None,
                             'button_api': f'{ip_address}/api/data/update_buy_autopilot',
@@ -962,13 +944,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                         'cellStyle': honey_colors,
                                         "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                         'valueFormatter': value_format_pct
-                                        }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                # 'ticker_buying_power': {'headerName':'BuyingPower Allocation', 'editable':True, }, #  'cellEditorPopup': True "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                # 'current_from_open': {'headerName':"% From Open", 'sortable':'true', 
-                #                         'cellStyle': honey_colors,
-                #                         "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                #                         'valueFormatter': value_format_pct
-                #                         },                   
+                                        }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                                      
 
                 'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
                 'unrealized_pl': {'headerName':"Unrealized PL", 'cellStyle': honey_colors, 'sortable':'true',
@@ -990,7 +966,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
                 'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
                 'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
-                                'cellStyle': generate_shaded_cell_style('trinity_w_L')},
+                                'cellStyle': generate_shaded_cell_style('trinity_w_L'), 'pinned': 'right'},
                 'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                                 'cellStyle': generate_shaded_cell_style('trinity_w_15')},
                 'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
@@ -1002,6 +978,10 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
                 'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
                 'broker_qty_available': {},
+                'trinity_deviation_from_qcp': {'headerName':"Trinity Deviation", 'cellStyle': generate_shaded_cell_style('trinity_deviation_from_qcp'), 'sortable':'true',
+                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                        'valueFormatter': value_format_pct
+                                        },
                 # 'shortName' : {'headerName':'Symbol Name', 'initialWidth':110,},
                 # 'sector' : {'headerName':'Sector', 'initialWidth':110,},
                 # 'shortRatio' : {'headerName':'Short Ratio', 'initialWidth':89, 'sortable':'true',},
@@ -1027,6 +1007,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                'unrealized_pl', 
                                'unrealized_plpc', 
                                'piece_name',
+                               'trinity_deviation_from_qcp',
                                'buy_autopilot', 
                                'sell_autopilot',
                             #    'current_ask', 
@@ -1077,28 +1058,15 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 }}
                 # Build toggle_view as list of "piece_name (XX%)" where XX is total portfolio_pct for that qcp
                 toggle_view = []
-                # if 'storygauge' in revrec and 'piece_name' in revrec['storygauge'].columns and 'pct_portfolio' in revrec['storygauge'].columns:
-                #     qcp_pct = (
-                #         revrec['storygauge']
-                #         .groupby('piece_name')['pct_portfolio']
-                #         .sum()
-                #         .sort_values(ascending=False)
-                #     )
-                #     for qcp, pct in qcp_pct.items():
-                #         toggle_view.append(f"{qcp} - {round(pct * 100, 2)}%")
-                # else:
-                #     toggle_view = [
-                #         QUEEN_KING['chess_board'][qcp].get('piece_name')
-                #         for qcp in QUEEN_KING['chess_board'].keys()
-                #         if len(QUEEN_KING['chess_board'][qcp].get('tickers', [])) > 0
-                #     ]
-                story_col = revrec.get('storygauge').columns.tolist()
-                qcp_piece_names = revrec.get('storygauge')['piece_name'].unique().tolist() if 'piece_name' in revrec.get('storygauge').columns else []
+                storygauge = revrec['storygauge']
+
+                story_col = storygauge.columns.tolist()
+                qcp_piece_names = storygauge['piece_name'].unique().tolist() if 'piece_name' in storygauge.columns else []
                 config_cols_ = config_cols(qcp_piece_names)
                 mmissing = [i for i in story_col if i not in config_cols_.keys()]
                 if len(mmissing) > 0:
                     for col in mmissing:
-                        col_dtype = revrec.get('storygauge')[col].dtype if col in revrec.get('storygauge').columns else None
+                        col_dtype = storygauge[col].dtype if col in storygauge.columns else None
                         if col_dtype is not None and pd.api.types.is_string_dtype(col_dtype):
                             extra = {'pivotable': True, 'enableRowGroup': True}
                         elif col_dtype is not None and pd.api.types.is_float_dtype(col_dtype):
@@ -1112,7 +1080,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                         #     extra = {**extra, **{'aggFunc': 'sum', 'enableValue': True, 'pivotable': True, 'initialWidth': 100,}}
                         gb.configure_column(col, {**data, **{'hide': True}, **extra})
                 for col, config_values in config_cols_.items():
-                    col_dtype = revrec.get('storygauge')[col].dtype if col in revrec.get('storygauge').columns else None
+                    col_dtype = storygauge[col].dtype if col in storygauge.columns else None
                     if col_dtype is not None and pd.api.types.is_string_dtype(col_dtype):
                         extra = {'pivotable': True, 'enableRowGroup': True}
                     elif col_dtype is not None and pd.api.types.is_float_dtype(col_dtype):
@@ -1136,7 +1104,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 #   'popupHeight': '300'}})
 
             toggle_views = main_toggles + toggle_view
-            g_buttons = story_grid_buttons(hf)
+            g_buttons = story_grid_buttons(storygauge, hf)
             go = gb.build()
             # go['pivotMode'] = True
 
@@ -1188,11 +1156,124 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 filter_button='piece_name',
                 show_clear_all_filters=True,
                 column_sets = {
-    "Simple View": ["symbol", "qty_available", "current_ask", "pct_portfolio", "star_buys_at_play", "star_sells_at_play"],
-    "Options Trader": ["broker", "allocation", "budget"],
-    "Research": ["pct_portfolio", "money", "Day_state"],
+    "Simple View": [
+        "symbol", 
+        "qty_available", 
+        "current_ask", 
+        "pct_portfolio", 
+        "star_buys_at_play", 
+        "star_sells_at_play",
+        "money",
+        "unrealized_pl"
+    ],
+    
+    "Trading View": [
+        "queens_suggested_buy",
+        "queens_suggested_sell",
+        "current_ask",
+        "current_bid",
+        "qty_available",
+    ],
+    
+    "Budget Manager": [
+        "symbol",
+        "piece_name",
+        "total_budget",
+        "remaining_budget",
+        "remaining_budget_borrow",
+        "allocation_long",
+        "star_buys_at_play",
+    ],
+    
+    "Performance Analysis": [
+        "symbol",
+        "pct_portfolio",
+        "money",
+        "honey",
+        "unrealized_pl",
+        "unrealized_plpc",
+        "current_from_yesterday",
+        "1Day_1Year_change",
+        "30Minute_1Month_change",
+        "5Minute_5Day_change"
+    ],
+    
+    "Technical Indicators": [
+        "symbol",
+        "trinity_w_L",
+        "trinity_w_15",
+        "trinity_w_30",
+        "trinity_w_54",
+        "Day_state",
+        "Week_state",
+        "Month_state"
+    ],
+    
 
-  },
+    "Time Frames": [
+        "Day_state",
+        "Day_value",
+        "Week_state",
+        "Week_value",
+        "Month_state",
+        "Month_value",
+        "Quarter_state",
+        "Quarter_value",
+        "Year_state",
+        "Year_value"
+    ],
+    
+
+    "Quick Stats": [
+        "symbol",
+        "current_ask",
+        "current_from_yesterday",
+        "qty_available",
+        "money",
+        "pct_portfolio",
+        "Day_state"
+    ],
+    
+    # "Broker Info": [
+    #     "symbol",
+    #     "qty_available",
+    #     "broker_qty_available",
+    #     "broker_qty_delta",
+    #     "current_ask",
+    #     "unrealized_pl",
+    #     "wash_loss"
+    # ],
+    
+    "Full Technical": [
+        "symbol",
+        "trinity_w_L",
+        "trinity_w_S",
+        "trinity_w_15",
+        "trinity_w_30",
+        "trinity_w_54",
+        "w_L_macd_tier_position",
+        "w_L_vwap_tier_position",
+        "w_L_rsi_tier_position",
+        "w_15_macd_tier_position",
+        "w_15_vwap_tier_position",
+        "w_15_rsi_tier_position",
+        "w_30_macd_tier_position",
+        "w_30_vwap_tier_position",
+        "w_30_rsi_tier_position"
+    ],
+    
+    # "All Changes": [
+    #     "symbol",
+    #     "current_from_open",
+    #     "current_from_yesterday",
+    #     "1Minute_1Day_change",
+    #     "5Minute_5Day_change",
+    #     "30Minute_1Month_change",
+    #     "1Hour_3Month_change",
+    #     "2Hour_6Month_change",
+    #     "1Day_1Year_change"
+    # ]
+},
   show_cell_content=True,
 
 #                 nestedGridEnabled=True,
@@ -1259,7 +1340,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
 
         # with story_tab:
-        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 889
+        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
         refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
         ui_refresh_sec = st.sidebar.number_input('story grid refresh sec', value=refresh_sec, min_value=0)
         if ui_refresh_sec != ui_refresh_sec:

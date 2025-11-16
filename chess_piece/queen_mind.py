@@ -10,6 +10,7 @@ import logging
 import copy
 from chess_piece.king import print_line_of_error, return_QUEEN_KING_symbols, stars, kingdom__global_vars
 from chess_piece.pollen_db import PollenDatabase
+from chess_utils.trigrule_utils import create_TrigRule, get_existing_trigrule_orders
 
 prod = True
 pg_migration = True
@@ -1852,15 +1853,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         
         ########### gauge ############
         s = datetime.now()
-
-        def revrec_lastmod(QUEEN):
-            if not pg_migration:
-                return datetime.fromtimestamp(os.stat(QUEEN['dbs'].get('PB_RevRec_PICKLE')).st_mtime).astimezone(est)
-            keys = PollenDatabase.get_all_keys_with_timestamps(table_name=QUEEN['table_name'], db_root=QUEEN['db_root'])
-            df = pd.DataFrame(keys)
-            df['key_name'] = df[0].apply(lambda x: x.split("-")[-1])
-            df = df.set_index('key_name', drop=False)
-            return df.at['revrec', 1].tz_localize('UTC').astimezone(est)
         
         def calculate_wave_gauge(symbols, waveview, weight_team_keys=weight_team_keys):
             
@@ -1900,19 +1892,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
        'w_54_macd_tier_position', 'w_54_vwap_tier_position',
        'w_54_rsi_tier_position', 'trinity_w_L', 'trinity_w_S', 'trinity_w_15',
        'trinity_w_30', 'trinity_w_54',]
-        # revrec = QUEEN.get('revrec')
-        # story_g = True if revrec else None
-        # if story_g:
-        #     story_g = revrec.get('storygauge')
-        #     last_mod_revrec = revrec_lastmod(QUEEN)
-        #     print(last_mod_revrec)
-        #     if (datetime.now(est) - last_mod_revrec).total_seconds() > 500:
-        #         print("Refresh Story Gauge")
-        #         df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
-        #     else:
-        #         df_storygauge = story_g
-        # else:
-        #     df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
+
         if check_portfolio:
             df_storygauge = calculate_wave_gauge(wave_symbols, waveview)
         else:
@@ -2012,27 +1992,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             storygauge['buy_autopilot'] = storygauge['buy_autopilot'].fillna(False)
             storygauge['sell_autopilot'] = storygauge['sell_autopilot'].fillna(False)
         
-        # # Join trigrules
-        # ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
-        # if type(ticker_trigrules) == pd.DataFrame:
-
-        # Price Info data
-        # if 'price_info_symbols' in QUEEN.keys(): # WORKERBEE handle in new table of all
-        #     price_info_symbols = QUEEN['price_info_symbols']
-        #     df_new = pd.json_normalize(price_info_symbols['priceinfo']).set_index('ticker')
-        #     # storygauge = pd.concat([storygauge, df_new], axis=1, join='outer')
-        #     storygauge = storygauge.merge(df_new, left_index=True, right_index=True, how='left')
-        #     for col in df_new.columns:
-        #         storygauge[col] = storygauge[col].fillna(0)
-        # price_info = [STORY_bee[pi]['story'] for pi in STORY_bee.keys() if pi.endswith("1Minute_1Day")]
-        # for symbol in storygauge.index:
-        #     ttf = f'{symbol}_1Minute_1Day'
-        #     if ttf in STORY_bee.keys():
-        #         storygauge.at[symbol, 'ask'] = STORY_bee[ttf]['story'].get('current_ask', 0)
-        #         storygauge.at[symbol, 'bid'] = STORY_bee[ttf]['story'].get('current_bid', 0)
-        #     else:
-        #         storygauge.at[symbol, 'ask'] = 0
-        #         storygauge.at[symbol, 'bid'] = 0
         # Build a DataFrame from STORY_bee
         story_data = []
         for ttf, val in STORY_bee.items():
@@ -2059,6 +2018,114 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
             for star in stars().keys():
                 storygauge.at[symbol, f'{star}_change'] = storybee_pct_change.get(f'{symbol}{star}_change', 0)
 
+        # Group by qcp and calculate trinity_w_L average
+        qcp_trinity_avg = storygauge.groupby('qcp')['trinity_w_L'].mean().to_dict()
+        # Add the average trinity to each row
+        storygauge['qcp_trinity_avg'] = storygauge['qcp'].map(qcp_trinity_avg)
+        # Optional: Calculate deviation from qcp average
+        storygauge['trinity_deviation_from_qcp'] = storygauge['trinity_w_L'] - storygauge['qcp_trinity_avg']
+
+        # WORKERBEE join in add in Order activity ?
+        ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
+        if isinstance(ticker_trigrules, list):
+            ticker_trigrules = pd.DataFrame(ticker_trigrules)
+            if len(ticker_trigrules) > 0:
+                # Create the initial mapping from existing trigger rules
+                symbol_to_trig_rules = (
+                    ticker_trigrules.groupby('symbol')
+                    .apply(lambda group: group.to_dict(orient='records'))
+                    .to_dict()
+                )
+            else:
+                symbol_to_trig_rules = {}
+        else:
+            symbol_to_trig_rules = {}
+
+        # Get existing orders and aggregate by trigger_id
+        existing_orders_df = get_existing_trigrule_orders(symbols, df_active_orders)
+
+        # Aggregate by trigger_id
+        if len(existing_orders_df) > 0:
+            aggregated_orders = existing_orders_df.groupby('trigger_id').agg({
+                'symbol': 'first',
+                'cost_basis_current': 'sum',
+                'filled_qty': 'sum',
+                'qty_available': 'sum',
+                'money': 'sum',
+                'honey': 'sum',
+            }).reset_index()
+            
+            # Add count of orders
+            order_counts = existing_orders_df.groupby('trigger_id').size().reset_index(name='num_orders')
+            aggregated_orders = aggregated_orders.merge(order_counts, on='trigger_id')
+            
+            # Rename columns for clarity
+            aggregated_orders = aggregated_orders.rename(columns={
+                'cost_basis_current': 'total_cost_basis',
+                'filled_qty': 'total_filled_qty',
+                'qty_available': 'total_qty_available',
+                'money': 'total_money',
+                'honey': 'total_honey'
+            })
+            
+            # Create lookup dict by trigger_id
+            orders_by_trigger = aggregated_orders.set_index('trigger_id').to_dict('index')
+            
+            print(f"📊 Aggregated {len(aggregated_orders)} trigger_ids with orders")
+        else:
+            orders_by_trigger = {}
+            print("📊 No existing orders with trigger_ids")
+
+        # Build comprehensive trigger rules with order data
+        comprehensive_trig_rules = {}
+        for symbol in storygauge['symbol']:
+            # Get existing rules for this symbol (empty list if none exist)
+            existing_rules = symbol_to_trig_rules.get(symbol, [])
+            
+            # Create a new trigger rule for this symbol
+            new_rule = create_TrigRule(symbol=symbol, marker='trinity')
+            
+            # Combine existing rules with the new rule
+            all_rules = existing_rules + [new_rule]
+            
+            # Join order data to each trigger rule
+            for rule in all_rules:
+                # Ensure trigger_id exists
+                if 'trigger_id' not in rule:
+                    trigger_id = f"{symbol}_{rule.get('trigrule_type')}_{rule.get('ttf')}"
+                    rule['trigger_id'] = trigger_id
+                else:
+                    trigger_id = rule['trigger_id']
+                
+                # Find matching order data from aggregated_orders
+                if trigger_id in orders_by_trigger:
+                    order_data = orders_by_trigger[trigger_id]
+                    
+                    # Add aggregated order fields to the rule
+                    rule['num_orders'] = int(order_data['num_orders'])
+                    rule['total_cost_basis'] = float(order_data['total_cost_basis'])
+                    rule['total_filled_qty'] = float(order_data['total_filled_qty'])
+                    rule['total_qty_available'] = float(order_data['total_qty_available'])
+                    rule['total_money'] = float(order_data['total_money'])
+                    rule['total_honey'] = float(order_data['total_honey'])
+                    rule['has_active_orders'] = True
+                else:
+                    # No active orders for this trigger_id
+                    rule['num_orders'] = 0
+                    rule['total_cost_basis'] = 0.0
+                    rule['total_filled_qty'] = 0.0
+                    rule['total_qty_available'] = 0.0
+                    rule['total_money'] = 0.0
+                    rule['total_honey'] = 0.0
+                    rule['has_active_orders'] = False
+            
+            comprehensive_trig_rules[symbol] = all_rules
+
+        # Map the comprehensive trigger rules to the dataframe
+        storygauge['trig_data'] = storygauge['symbol'].map(comprehensive_trig_rules)
+
+        # existing_orders_df = get_existing_trigrule_orders(symbols, df_active_orders)
+        # WORKERBEE JOIN Agg Numers from existing orders add to trig_data
 
         rr_run_cycle.update({'story gauge': (datetime.now() - s).total_seconds()})
         total = sum(rr_run_cycle.values())

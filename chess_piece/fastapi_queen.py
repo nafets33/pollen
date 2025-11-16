@@ -12,7 +12,6 @@ from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_
                               kingdom__global_vars, main_index_tickers, streamlit_config_colors, 
                               hive_master_root, stars, PickleData, hive_master_root_db, 
                               read_QUEENs__pollenstory, print_line_of_error)
-
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
                                     add_trading_model, 
                                     find_symbol_in_chess_board, 
@@ -21,7 +20,6 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     power_amo,
                                     init_queenbee,
                                     return_trading_model_trigbee,
-                                    create_TrigRule,
                                     ttf_grid_names,
                                     sell_button_dict_items,
                                     wave_buy__var_items,
@@ -888,7 +886,7 @@ def get_queen_orders_json(client_user, username, prod, toggle_view_selection): #
     print_line_of_error(f"{e} Orders Failed")
 
 
-def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, grid_custom_options=None, return_type='waves', revrec=None):
+def get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selection=['queen'], return_type='waves', revrec=None):
     toggle_view_selection = toggle_view_selection.split("-")[0].strip()
     def update_col_number_format(df, float_cols=['trinity', 'current_profit', 'maxprofit', 'current_profit_deviation']):
       for col in df.columns:
@@ -1080,37 +1078,9 @@ def queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_sele
         return json_data
 
       elif return_type == 'story':
+        
         print('prod', prod)
         df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection, qk_chessboard)
-        ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules')
-        if isinstance(ticker_trigrules, list):
-            ticker_trigrules = pd.DataFrame(ticker_trigrules)
-            if len(ticker_trigrules) > 0:
-                # Create the initial mapping from existing trigger rules
-                symbol_to_trig_rules = (
-                    ticker_trigrules.groupby('symbol')
-                    .apply(lambda group: group.drop(columns='symbol').to_dict(orient='records'))
-                    .to_dict()
-                )
-            else:
-                symbol_to_trig_rules = {}
-        else:
-            symbol_to_trig_rules = {}
-
-        # Now ensure every symbol in df has trigger rules (existing + new one)
-        comprehensive_trig_rules = {}
-        for symbol in df['symbol']:  # Use df['symbol'] instead of df.index
-            # Get existing rules for this symbol (empty list if none exist)
-            existing_rules = symbol_to_trig_rules.get(symbol, [])
-            
-            # Create a new trigger rule for this symbol
-            new_rule = create_TrigRule(symbol=symbol)
-            
-            # Combine existing rules with the new rule
-            comprehensive_trig_rules[symbol] = existing_rules + [new_rule]
-
-        # Map the comprehensive trigger rules to the dataframe
-        df['trig_rules'] = df['symbol'].map(comprehensive_trig_rules)
 
         # for idx in df.index:
         #     df.at[idx, 'nestedRows'] = [{
@@ -1141,6 +1111,7 @@ def chessboard_view(client_user, prod, symbols, toggle_view_selection):
   #    df.at[idx, 'kors'] = kors_dict
   return df.to_json(orient='records')
 
+
 def update_buy_autopilot(client_user, prod, selected_row, default_value, status='-'):
     print(client_user, default_value) 
     buy_autopilot = default_value.get('buy_autopilot')
@@ -1159,6 +1130,7 @@ def update_buy_autopilot(client_user, prod, selected_row, default_value, status=
        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     print(status)
     return grid_row_button_resp(description=status)
+
 
 def update_sell_autopilot(client_user, prod, selected_row, default_value, status='-'):
     print(client_user, default_value) 
@@ -1180,7 +1152,7 @@ def update_sell_autopilot(client_user, prod, selected_row, default_value, status
     return grid_row_button_resp(description=status)
 
 
-def update_queenking_chessboard(client_user, prod, selected_row, default_value):
+def update_queenking_chessboard(client_user, prod, selected_row, default_value): # DEPRECATED NOT USED
    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
    print("KOR", default_value)
   #  df = pd.DataFrame(new_data).T
@@ -1278,7 +1250,7 @@ def header_account(client_user, prod):
 
 
 # Add Symbol to Board
-def queenking_symbol(client_user, prod, selected_row, default_value):
+def queenking_symbol(client_user, prod, selected_row, default_value, triggers):
     starnames = star_names()
     starnames_margin = {f'{i} Margin': v for i, v in starnames.items()}
 
@@ -1289,9 +1261,38 @@ def queenking_symbol(client_user, prod, selected_row, default_value):
     
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     chess_board = QUEEN_KING['chess_board']
-    # symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None)
-    # if ticker in symbols:
-    #    return grid_row_button_resp(description="Symbol Already Exists on Board")
+    
+    # WORKERBEE only update if triggers differ for now just replace
+    # Simple trigger update: find by trigger_id and replace, or add if new
+    existing_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules', [])
+    if not isinstance(existing_trigrules, list):
+        existing_trigrules = []
+    
+    # Create dict of existing triggers by trigger_id for easy lookup
+    existing_by_id = {rule.get('trigger_id'): rule for rule in existing_trigrules if rule.get('trigger_id')}
+    
+    # Process triggers marked for saving
+    triggers_to_save = [t for t in triggers if t.get('save_to_db') == True]
+    if triggers_to_save:
+      for trig in triggers_to_save:
+          # Set Trigger ID
+          trigger_id = f"{symbol}_{trig.get('trigrule_type')}_{trig.get('ttf')}"
+          trig['trigger_id'] = trigger_id
+          trig['save_to_db'] = False  # Flip save back
+          
+          # Replace or add
+          if trigger_id in existing_by_id:
+              # Update existing trigger
+              existing_by_id[trigger_id] = trig
+              print(f"✏️  Updated trigger: {trigger_id}")
+          else:
+              # Add new trigger
+              existing_by_id[trigger_id] = trig
+              print(f"➕ New trigger: {trigger_id}")
+      
+      # Convert back to list and save
+      QUEEN_KING['king_controls_queen']['ticker_trigrules'] = list(existing_by_id.values())
+
     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
     if not trading_model:
         print("MISSING TRADING MODEL adding model", symbol)
@@ -1301,29 +1302,19 @@ def queenking_symbol(client_user, prod, selected_row, default_value):
         if key == 'buying_power':
             if 'buyingpower_allocation_LongTerm' in trading_model:
                 trading_model['buyingpower_allocation_LongTerm'] = value
-            else:
-                print(f"Error: 'buyingpower_allocation_LongTerm' key not found in trading_model for {key}")
         elif key == 'borrow_power':
             if 'buyingpower_allocation_ShortTerm' in trading_model:
                 trading_model['buyingpower_allocation_ShortTerm'] = value
-            else:
-                print(f"Error: 'buyingpower_allocation_ShortTerm' key not found in trading_model for {key}")
         elif key == 'max_budget_allowed':
             if 'total_budget' in trading_model:
                 trading_model['total_budget'] = value
-            else:
-                print(f"Error: 'total_budget' key not found in trading_model for {key}")
         elif key in starnames.keys():
             if 'stars_kings_order_rules' in trading_model and starnames[key] in trading_model['stars_kings_order_rules']:
                 trading_model['stars_kings_order_rules'][starnames[key]]['buyingpower_allocation_LongTerm'] = value
-            else:
-                print(f"Error: '{starnames[key]}' key not found in trading_model['stars_kings_order_rules'] for {key}")
         elif key in starnames_margin.keys():
             margin_key = starnames[key.split(" ")[0]]
             if 'stars_kings_order_rules' in trading_model and margin_key in trading_model['stars_kings_order_rules']:
                 trading_model['stars_kings_order_rules'][margin_key]['buyingpower_allocation_ShortTerm'] = value
-            else:
-                print(f"Error: '{margin_key}' key not found in trading_model['stars_kings_order_rules'] for {key}")
         elif key == 'symbol_group':  # qcp data
             qcp = find_symbol_in_chess_board(chess_board, symbol)
             if qcp and value in chess_board.keys():

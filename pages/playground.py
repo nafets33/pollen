@@ -1,3 +1,4 @@
+from chess_utils.trigrule_utils import *
 import streamlit as st
 from streamlit_extras.stoggle import stoggle
 from PIL import Image
@@ -387,6 +388,7 @@ def PlayGround():
 
     st.write(f"QUEEN object size: {sys.getsizeof(QUEEN)} bytes")
     df=return_active_orders(QUEEN)
+    active_orders = df.copy()
     # for k, v in QUEEN.items():
     #     print(f"{k}: {sys.getsizeof(v)} bytes")
     queen_orders = QUEEN['queen_orders'] #['datetime'].max())
@@ -406,8 +408,13 @@ def PlayGround():
     symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
     STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
 
-    # revrec = qb.get('revrec')
-    # story = revrec['storygauge']
+
+    revrec = qb.get('revrec')
+    storygauge = revrec['storygauge']
+    symbol = "ETH/USD"
+    existing_orders_df = get_existing_trigrule_orders(symbols, active_orders) #checking all symbols
+    check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df)
+
     # waveview = revrec['waveview']
     # revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
     # # is MinAllocation < Long?

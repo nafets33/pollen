@@ -179,3 +179,10 @@ if __name__ == '__main__':
     missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
 
     order_grid(client_user, config_cols, missing_cols, ip_address)
+
+    if st.toggle("Queen Orders"):
+        ORDERS = init_queenbee(client_user, prod, orders_v2=True).get('ORDERS')
+        df = ORDERS['queen_orders']
+        for col in df:
+            df[col] = df[col].astype(str)
+        standard_AGgrid(df)

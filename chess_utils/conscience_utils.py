@@ -3,8 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from chess_piece.king import ReadPickleData, print_line_of_error, streamlit_config_colors
-from chess_piece.queen_hive import init_swarm_dbs, star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date, star_refresh_star_times
-from chess_piece.pollen_db import PollenDatabase
+from chess_piece.queen_hive import star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date, star_refresh_star_times
 import pytz
 from datetime import datetime, timedelta
 import os
@@ -227,8 +226,6 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         else:
             symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
 
-        qcp_piece_names = [QUEEN_KING['chess_board'][qcp].get('piece_name') for qcp in QUEEN_KING['chess_board'].keys()]
-
         qcp_name = {data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() }
         qcp_name['Queen'] = 'Queen'
         qcp_name['King'] = 'King'
@@ -239,12 +236,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
             pass
         else:
             return_early = True
-        #     toggle_view_selection = qcp_name[toggle_view_selection]
-        # elif toggle_view_selection == "Not On Board":
-        #     toggle_view_selection = "non_active_stories"
 
         qcp_ticker = dict(zip(revrec.get('storygauge')['symbol'],revrec.get('storygauge')['piece_name']))
-
+        
         # Normalize both qcp and toggle_view_selection for comparison
         ticker_filter = [
             ticker for (ticker, qcp) in qcp_ticker.items()
@@ -264,39 +258,25 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
 
         df_wave_symbol = waveview.groupby("symbol")[num_cols].sum().reset_index().set_index('symbol', drop=False)
 
-
-        
         df_wave_symbol['buy_msg'] = df_wave_symbol.apply(lambda row: '${:,.0f}'.format(row['allocation_long_deploy']), axis=1)
 
         remaining_budget = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget']))
         remaining_budget_borrow = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['remaining_budget_borrow']))
-        
         buy_msg = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['buy_msg']))
         buy_alloc_deploy = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['allocation_long_deploy']))
-
         allocation_long = dict(zip(df_wave_symbol['symbol'], df_wave_symbol['allocation_long']))
         
         # display whole number
         for col in df.columns:
             if 'trinity' in col:
-                df[col] = round(pd.to_numeric(df[col]),2) * 100
+                df[col] = round(pd.to_numeric(df[col]),3) * 100
 
-        
         df['queens_suggested_buy'] = df['symbol'].map(buy_msg)
         df['queens_suggested_sell'] = round(df['money'])
         df['queens_suggested_sell'] = df.apply(lambda row: '${:,.0f}'.format(row['queens_suggested_sell']), axis=1)
 
         refresh_star_names = star_refresh_star_times()
         refresh_star_names_switched = {v: k for k, v in refresh_star_names.items()}
-
-        # df["active_orders"] = df["active_orders"].astype(str)
-        # df["active_orders"] = df["active_orders"].apply(json.dumps)
-        # print(df.iloc[-1]['active_orders'])
-        # sample = df.iloc[-1]["active_orders"]
-        # print("typing sample", type(sample))
-        # # if not isinstance(sample, dict):
-        # #     sample = json.loads(sample)
-        # df["active_orders"] = [sample for _ in range(df.shape[0])]
 
         kors_dict = add_symbol_dict_items()
         df['add_symbol_option'] = [kors_dict for _ in range(df.shape[0])]

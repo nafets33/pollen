@@ -167,8 +167,8 @@ def send_email(recipient, subject, body):
 def sac_menu_buttons(main='pollen'):
     if main=='pollen':
         menu_buttons = sac.buttons([
-            sac.ButtonsItem(label=main, icon='robot'),
-            sac.ButtonsItem(label='Portfolio Allocations', icon='box'),
+            sac.ButtonsItem(label=main, icon='bi bi-activity'),
+            sac.ButtonsItem(label='Portfolio Allocations', icon='pie-chart'),
             sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
             # sac.ButtonsItem(label='PlayGround', icon='fire'),
             # sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
@@ -176,14 +176,14 @@ def sac_menu_buttons(main='pollen'):
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
             # sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
-        ], format_func='title', align='end')
+        ], format_func='title', align='left')
     elif main == 'Account':
         menu_buttons = sac.buttons([
             sac.ButtonsItem(label='account', icon='key'),
 
             sac.ButtonsItem(label='Queen', icon='house'),
             # sac.ButtonsItem(label='Log Out', icon='key'),
-        ], format_func='title', align='end')
+        ], format_func='title', align='center')
 
     elif main == 'demo':
             menu_buttons = sac.buttons([

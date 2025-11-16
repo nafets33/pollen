@@ -26,11 +26,12 @@ from pages.conscience import queens_conscience
 # main chess piece
 # from chess_piece.workerbees import queen_workerbees
 # from chess_piece.workerbees_manager import workerbees_multiprocess_pool
-from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator
+from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator, standard_AGgrid
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData, return_app_ip
-from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, add_key_to_KING, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import kings_order_rules
-from pages.conscience import account_header_grid
+from chess_utils.trigrule_utils import create_TrigRule
+
 # componenets
 # import streamlit_antd_components as sac
 # from streamlit_extras.switch_page_button import switch_page
@@ -305,7 +306,7 @@ def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
     if save:
         st.write(new_rules_confirmation)
         if pg_migration:
-            PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+            save_king_queen(QUEEN_KING)
         else:
             PickleData(st.session_state["PB_App_Pickle"], QUEEN_KING)
     
@@ -376,8 +377,7 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets, prod):
                 save = True
     if save:
         if pg_migration:
-            table_name = 'client_user_store' if prod else "client_user_store_sandbox"
-            PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+            save_king_queen(QUEEN_KING)
         else:
             PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
             st.success(f"Cleared App Request from {request_buckets}")
@@ -398,13 +398,12 @@ def fetch_portfolio_history(_api, period='3M', timeframe='1D'):
         df = pd.DataFrame(history)
 
         df = df[df['profit_loss'] != 0]
-        print(len(df), "rows in portfolio history for period:", period)
 
         return df
     except Exception as e:
         print("Error fetching portfolio history:", e)
 
-@st.cache_data(ttl=timedelta(days=1))
+# @st.cache_data(ttl=timedelta(minutes=5))
 def get_portfolio_performance(_api, periods):
     perf_dict = {}
     for period in periods:
@@ -426,8 +425,7 @@ def pollenq(sandbox=False, demo=False):
     king_G = kingdom__global_vars()
     main_root = hive_master_root()
     load_dotenv(os.path.join(main_root, ".env"))
-    set_streamlit_page_config_once()
-
+    
     # st.write(st.query_params)
 
     ##### QuantQueen #####
@@ -478,7 +476,7 @@ def pollenq(sandbox=False, demo=False):
 
     init_swarm_dbs(prod, init=True)
     
-    if not demo:
+    if not demo and os.getenv('server', False):
         if sandbox and prod:
             st.switch_page('pollen.py')
         if not sandbox and not prod:
@@ -515,17 +513,18 @@ def pollenq(sandbox=False, demo=False):
 
     with header_text_1.container():
         if not prod:
-            mark_down_text("SandBox Account", fontsize="28", color="#6b7407", align="left")
+            mark_down_text("SandBox Account", fontsize="28", color="#b0b029", align="left")
         else:
             mark_down_text("Live Account", fontsize="28", color="#03457C", align="left")
 
         # if show_acct:
         with cols[3]:
-            with st.expander("Portfolio Performance", expanded=True):
+            # with st.expander("Portfolio Performance", expanded=True):
             # Show all portfolio history periods in columns
-                periods = ['7D', '1M', '3M', '6M', '1A']
-                perf_cols = st.columns(len(periods))
-                perf_containers = [col.container() for col in perf_cols]
+            st.write("Portfolio Performance")
+            periods = ['7D', '1M', '3M', '6M', '1A']
+            perf_cols = st.columns(len(periods))
+            perf_containers = [col.container() for col in perf_cols]
 
 
     table_name = 'db' if prod else 'db_sandbox'
@@ -546,9 +545,9 @@ def pollenq(sandbox=False, demo=False):
                 else:
                     PickleData(KING.get('source'), KING)
                     st.success("KING Saved")
-
-    menu_id = sac_menu_buttons(pollen)
-    # with cols[0]:
+    cols = st.columns((4,2))
+    with cols[0]:
+        menu_id = sac_menu_buttons(pollen)
     with st.sidebar:
         st.write(f'menu selection {menu_id}')
     if menu_id == 'PlayGround':
@@ -637,21 +636,23 @@ def pollenq(sandbox=False, demo=False):
         
         if not demo:
             stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
-
         
-
+        with st.sidebar:
+            show_trig_rules = st.toggle("Show TrigRules", key='show_trig_rules', value=False)
+        if show_trig_rules:
+            data = pd.DataFrame(QUEEN_KING['king_controls_queen']['ticker_trigrules'])
+            standard_AGgrid(data)
 
         ## add new keys add new keys should come from KING timestamp or this becomes a airflow job
         if st.sidebar.button("Check for new KORs"):
             QUEEN_KING = add_new_trading_models_settings(QUEEN_KING) ## fix to add new keys at global level, star level, trigbee/waveBlock level
         
         APP_req = add_key_to_app(QUEEN_KING)
-        ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules', pd.DataFrame())
         QUEEN_KING = APP_req['QUEEN_KING']
         if APP_req['update']:
             print("Updating QK db")
             if pg_migration:
-                PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+                save_king_queen(QUEEN_KING)
             else:
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
 
@@ -692,11 +693,7 @@ def pollenq(sandbox=False, demo=False):
             st.session_state['chessboard_setup'] = True
             # switch_page('chessboard')
             st.switch_page('pages/chessboard.py')
-
-        # QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_heart=True, pg_migration=False).get('QUEENsHeart')
-        # st.write(QUEENsHeart)
-        # if 'storygauge' not in revrec.keys(): # NOT NEEDED?
-
+        
 
 
         trading_days = hive_dates(api=api)['trading_days']
@@ -717,16 +714,9 @@ def pollenq(sandbox=False, demo=False):
 
     portfolio_performance = get_portfolio_performance(api, periods)
     for i, period in enumerate(periods):
-        # if i == 0:
-        #     with perf_containers[i]:
-        #         # mark_down_text('Portfolio', fontsize='23')
-        #         cust_Button("misc/dollar-symbol-unscreen.gif", hoverText='Portfolio', key='portfolio_ahe', )
-        # else:
-        # df = fetch_portfolio_history(api, period=period)
+
         portfolio_perf = portfolio_performance.get(period)
         if portfolio_perf is not None:
-        # if df is not None and not df.empty:
-            # portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
             with perf_containers[i]:
                 color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
                 mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
@@ -745,9 +735,15 @@ def pollenq(sandbox=False, demo=False):
             king_controls_queen=return_queen_controls(stars)
             QUEEN_KING['king_controls_queen'] = king_controls_queen
             if st.session_state.get('pg_migration'):
-                PollenDatabase.upsert_data(table_name=table_name, key=QUEEN_KING.get('key'), value=QUEEN_KING)
+                save_king_queen(QUEEN_KING)
             else:
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
+        if st.button("Reset TrigRules"):
+            QUEEN_KING['king_controls_queen']['ticker_trigrules'] = [create_TrigRule(symbol='SPY')]
+            if pg_migration:
+                save_king_queen(QUEEN_KING)
+            else:
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="RESET TRIGRULES")
 
     print(f'>>>> pollen END >>>> {(datetime.now() - main_page_start).total_seconds()}' )
 
@@ -761,6 +757,6 @@ if __name__ == '__main__':
     # parser = createParser()
     # namespace = parser.parse_args()
     # admin_pq = namespace.admin
-
+    set_streamlit_page_config_once()
     pollenq()
     # st.write(st.session_state.items())

@@ -32,6 +32,7 @@ import copy
 from chess_piece.pollen_db import PostgresHandler, PollenDatabase
 from chess_piece.king import master_swarm_KING, return_db_root, PickleData, ReadPickleData, hive_master_root, local__filepaths_misc, kingdom__global_vars
 from chess_piece.queen_mind import init_qcp, kings_order_rules, generate_TradingModel
+from chess_utils.trigrule_utils import create_TrigRule
 # WORKERBEE MOVE STREAMLIT OUT OF HIVE
 
 queens_chess_piece = os.path.basename(__file__)
@@ -56,48 +57,6 @@ server = os.getenv('server')
 current_day = datetime.now(est).day
 current_month = datetime.now(est).month
 current_year = datetime.now(est).year
-
-# def init_logging(queens_chess_piece, db_root, prod, loglevel='info', max_log_size=10 * 1024 * 1024, backup_count=5):
-#     log_dir = os.path.join(db_root, "logs")
-#     log_dir_logs = os.path.join(log_dir, "logs")
-
-#     if not os.path.exists(log_dir):
-#         os.mkdir(log_dir)
-#     if not os.path.exists(log_dir_logs):
-#         os.mkdir(log_dir_logs)
-
-#     if prod:
-#         log_name = f'log_{queens_chess_piece}.log'
-#     else:
-#         log_name = f'log_{queens_chess_piece}_sandbox.log'
-
-#     log_file = os.path.join(log_dir, log_name)
-
-#     # Determine the logging level
-#     level = logging.INFO if loglevel.lower() == 'info' else logging.WARNING
-
-#     # Clear any existing handlers to prevent duplicate logs
-#     root_logger = logging.getLogger()
-#     if root_logger.hasHandlers():
-#         root_logger.handlers.clear()
-
-#     # Set the logging level for the root logger
-#     root_logger.setLevel(level)
-
-#     # Create a formatter
-#     formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
-
-#     # Create a rotating file handler
-#     file_handler = RotatingFileHandler(log_file, mode="a", maxBytes=max_log_size, backupCount=backup_count)
-#     file_handler.setFormatter(formatter)
-#     root_logger.addHandler(file_handler)
-
-#     # Create a stream handler (console)
-#     stream_handler = logging.StreamHandler()
-#     stream_handler.setFormatter(formatter)
-#     root_logger.addHandler(stream_handler)
-
-#     return True
 
 
 def init_logging(queens_chess_piece, prod, loglevel='info', db_root=''):
@@ -408,36 +367,6 @@ def init_queen(queens_chess_piece):
 
     return QUEEN
 
-# def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, 
-#              ticker_list=['SPY'], 
-#              theme='nuetral', 
-#              model='MACD', 
-#              piece_name='king', 
-#              buying_power=1, 
-#              borrow_power=0, 
-#              picture='knight_png', 
-#              margin_power=0, 
-#              trade_only_margin=False, 
-#              refresh_star='1Minute_1Day',
-#              max_budget_allowed=None, # if int use in logic
-#              ):
-#     return {
-#         "picture": picture,
-#         "piece_name": piece_name,
-#         "model": model,
-#         "MACD_fast_slow_smooth": init_macd_vars,
-#         "tickers": ticker_list,
-#         "stars": stars(),
-#         "theme": theme,
-#         "total_buyng_power_allocation": buying_power,
-#         "total_borrow_power_allocation": borrow_power,
-#         "margin_power": margin_power,
-#         "trade_only_margin": trade_only_margin,
-#         'refresh_star': refresh_star, # anchor to use as reallocation # WORKERBEE..chess_board not Saving correclty or being overwritten?
-#         'trade_only_margin': trade_only_margin,
-#         'refresh_star': refresh_star,
-#         'max_budget_allowed': max_budget_allowed,
-#     }
 
 def generate_chess_board(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9}, qcp_tickers={'castle': ["SPY"], 'bishop': ["GOOG"], 'knight': ["OXY"], 'castle_coin':["BTC/USD", "ETH/USD"] }, qcp_theme={'castle': "nuetral", 'bishop': "nuetral", 'knight': "nuetral", 'castle_coin':"nuetral" }):
     chess_board = {}
@@ -3743,6 +3672,7 @@ def order_vars__queen_order_items(
     ready_buy=False,
     borrow_qty=0,
     long_short='long',
+    trigger_model={},
 ):
     if not order_side:
         return "You're better then this"
@@ -3776,8 +3706,8 @@ def order_vars__queen_order_items(
         order_vars["updated_at"] = updated_at
         order_vars["symbol"] = symbol
         order_vars["long_short"] = long_short
-        
-        
+        order_vars["trigger_model"] = trigger_model
+
         return order_vars
 
     elif order_side == "buy":
@@ -3812,9 +3742,9 @@ def order_vars__queen_order_items(
         order_vars["trigbee"] = trigbee
         order_vars["tm_trig"] = tm_trig
         order_vars["borrowed_funds"] = borrowed_funds
-        # order_vars["ready_buy"] = ready_buy
         order_vars["borrow_qty"] = borrow_qty
         order_vars["long_short"] = long_short
+        order_vars["trigger_model"] = trigger_model
 
         return order_vars
 
@@ -4039,123 +3969,6 @@ def generate_chessboards_trading_models(chessboard):
     return tradingmodels
 
 
-def create_TrigRule(
-                    symbol='SPY',
-                    trigrule_type='wave_trinity', # trading_pairs
-                    trigrule_status='not_active', # active, not_active
-                    expire_date=datetime.now().strftime('%m/%d/%YT%H:%M'), 
-                    user_accept=True, 
-                    max_order_nums=3, # to achieve max budget
-                    max_budget=89, 
-                    marker=None, # vwap, rsi, macd, trinity..
-                    marker_value=None, # -.2
-                    deviation_symbols=[], # list of symbols to compare against
-                    deviation_group=False, # compare on group std deviation
-                    ttf=None, # Comparsion then only on TTF
-                    block_times=[] # trigging active when in block time
-                    ):
-    # all_vars = {key: value for key, value in globals().items() if not key.startswith("__") and not callable(value)}
-    return {
-        "symbol": symbol,
-        "trigrule_type": trigrule_type,
-        "trigrule_status": trigrule_status,
-        "expire_date": expire_date,
-        "user_accept": user_accept,
-        "max_order_nums": max_order_nums,
-        "max_budget": max_budget,
-        "marker": marker,
-        "deviation_symbols": deviation_symbols,
-        "deviation_group": deviation_group,
-        "block_times": block_times,
-        "marker_value": marker_value,
-        "ttf": ttf,
-    }
-
-def create_trig_rule_metadata():
-    # Define the keys and their metadata
-    trig_rule_keys = {
-        "symbol": {
-            "display_name": "Symbol",
-            "col_header": "symbol",
-            "dtype": "list",
-            "values": ["SPY", "AAPL", "GOOGL"]  # Single list because dtype is 'list'
-        },
-        "trigrule_type": {
-            "display_name": "Trigger Rule Type",
-            "col_header": "trigrule_type",
-            "dtype": "list",
-            "values": ["wave_trinity", "trading_pairs"]  # Multiple options for 'str'
-        },
-        "trigrule_status": {
-            "display_name": "Trigger Rule Status",
-            "col_header": "trigrule_status",
-            "dtype": "list",
-            "values": ["active", "not_active"]
-        },
-        "expire_date": {
-            "display_name": "Expiration Date",
-            "col_header": "expire_date",
-            "dtype": "datetime",
-            "values": []  # No predefined values for datetime
-        },
-        "user_accept": {
-            "display_name": "User Acceptance",
-            "col_header": "user_accept",
-            "dtype": "checkbox",
-            "values": [True, False]
-        },
-        "max_order_nums": {
-            "display_name": "Max Order Numbers",
-            "col_header": "max_order_nums",
-            "dtype": "int",
-            "values": [1, 2, 3, 5, 10]
-        },
-        "max_budget": {
-            "display_name": "Max Budget",
-            "col_header": "max_budget",
-            "dtype": "float",
-            "values": [50.0, 100.0, 500.0]
-        },
-        "marker": {
-            "display_name": "Marker",
-            "col_header": "marker",
-            "dtype": "list",
-            "values": ["vwap", "rsi", "macd", "trinity"]
-        },
-        "marker_value": {
-            "display_name": "Marker Value",
-            "col_header": "marker_value",
-            "dtype": "float",
-            "values": [-0.5, 0.0, 0.5, 1.0]
-        },
-        "deviation_symbols": {
-            "display_name": "Deviation Symbols",
-            "col_header": "deviation_symbols",
-            "dtype": "list",
-            "values": ["AAPL", "MSFT"]  # Single list because dtype is 'list'
-        },
-        "deviation_group": {
-            "display_name": "Deviation Group",
-            "col_header": "deviation_group",
-            "dtype": "checkbox",
-            "values": [True, False]
-        },
-        "ttf": {
-            "display_name": "Time to Frame",
-            "col_header": "ttf",
-            "dtype": "str",
-            "values": ["1Minute", "5Minute", "1Hour"]
-        },
-        "block_times": {
-            "display_name": "Block Times",
-            "col_header": "block_times",
-            "dtype": "list",
-            "values": ["morning_9-11", "afternoon_2-4"]  # Single list because dtype is 'list'
-        }
-    }
-
-    return trig_rule_keys
-
 def return_queen_controls(stars=stars):
 
     chessboard = generate_chess_board()
@@ -4177,7 +3990,7 @@ def return_queen_controls(stars=stars):
         # revrec
         'ticker_autopilot' : pd.DataFrame([{'symbol': 'SPY', 'buy_autopilot': True, 'sell_autopilot': True}]).set_index('symbol'),
         'ticker_refresh_star': pd.DataFrame([{'symbol': 'SPY', 'ticker_refresh_star': None}]).set_index('symbol'),
-        'ticker_trigrules': [create_TrigRule()], # GAMBLE_v2
+        'ticker_trigrules': [create_TrigRule(symbol='SPY')], # GAMBLE_v2
 
         ## NOT USED ##
         # 'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
@@ -4196,7 +4009,7 @@ def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme='nuetral'):
     return QUEEN_KING
 
 
-def return_Ticker_Universe():  # Return Ticker and Acct Info
+def return_Ticker_Universe():  # Return Ticker and Acct Info #WORKERBEE THIS NEEDS FIXED for when New User doesn't have correct Keys to Call data I guess?
     api = return_alpaca_api_keys(prod=False)["api"]
     # Initiate Code File Creation
     index_list = [

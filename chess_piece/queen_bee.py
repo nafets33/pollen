@@ -27,8 +27,6 @@ from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     init_queenbee, 
                                     power_amo, 
                                     return_queenking_board_symbols,
-                                    broker_orders_fields, 
-                                    star_refresh_star_seconds, 
                                     star_ticker_WaveAnalysis, 
                                     return_queen_orders__query, 
                                     initialize_orders, 
@@ -42,14 +40,15 @@ from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     order_vars__queen_order_items, 
                                     logging_log_message, 
                                     return_market_hours, 
-                                    check_order_status,  
+                                    check_order_status, stars,  
                                     timestamp_string, 
                                     submit_order, 
                                     add_key_to_QUEEN, 
                                     update_sell_date,
                                     return_Ticker_Universe,
-                                    refresh_broker_account_portolfio,
+                                    refresh_broker_account_portolfio
                                     )
+from chess_utils.trigrule_utils import check_trigrule_conditions, get_existing_trigrule_orders
 from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys, kings_order_rules
 from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonDecoder
 from chess_utils.robinhood_crypto_utils import CryptoAPITrading
@@ -180,14 +179,53 @@ def init_broker_orders(api, BROKER, start_date=None, end_date=None):
 def update_broker_order_status(BROKER, order_status):
     try:
         broker_orders = BROKER['broker_orders']
-        df_token = pd.DataFrame([order_status]).set_index('client_order_id', drop=False)
-        if df_token.index[0] in broker_orders.index:
-            broker_orders = broker_orders[broker_orders['client_order_id'] != df_token.index[0]]
+        client_order_id = order_status.get('client_order_id')
         
+        # Check if order exists and compare dictionaries
+        if client_order_id in broker_orders.index:
+            existing_order = broker_orders.loc[client_order_id].to_dict()
+            
+            # Find and print differences
+            differences = {}
+            for key in set(list(existing_order.keys()) + list(order_status.keys())):
+                existing_value = existing_order.get(key)
+                new_value = order_status.get(key)
+                
+                if existing_value != new_value:
+                    differences[key] = {
+                        'old': existing_value,
+                        'new': new_value
+                    }
+            
+            # If no differences, return False
+            if not differences:
+                # print("no changes detected for order:", client_order_id)
+                return False
+            
+            # Print the differences
+            print(f"\n{'='*60}")
+            print(f"Broker Order Update Detected: {client_order_id}")
+            print(f"{'='*60}")
+            for key, values in differences.items():
+                print(f"  {key}:")
+                print(f"    OLD: {values['old']}")
+                print(f"    NEW: {values['new']}")
+            print(f"{'='*60}\n")
+        
+        # Create new order DataFrame
+        df_token = pd.DataFrame([order_status]).set_index('client_order_id', drop=False)
+        
+        # Remove old order if it exists
+        if client_order_id in broker_orders.index:
+            broker_orders = broker_orders[broker_orders['client_order_id'] != client_order_id]
+        
+        # Add updated order
         broker_orders = pd.concat([broker_orders, df_token])
         BROKER['broker_orders'] = broker_orders
         
+        print(f"Broker order updated: {client_order_id}")
         return True
+        
     except Exception as e:
         print_line_of_error("broker update failed")
         return False
@@ -219,7 +257,7 @@ def submit_order_validation(ticker, qty, side, portfolio, run_order_idx=False, c
         }
     try:
         ticker = ticker.replace('/', '') if crypto else ticker
-        print("START of submit order validation  crypto: ", crypto, ticker, qty, side)
+        # print("START of submit order validation  crypto: ", crypto, ticker, qty, side)
         position = int(float(portfolio[ticker]['qty_available'])) if portfolio.get(ticker) else 0
 
         if side == 'buy':
@@ -336,7 +374,7 @@ def handle_broker(broker):
     return broker
 
 
-def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
+def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS, trigger_buy=False):
     try:
         def update__validate__qty(crypto, current_price, limit_price, wave_amo):
             if crypto:
@@ -418,7 +456,7 @@ def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_tim
 
         # logging.info("order submit")
         order = vars(order_submit.get('order'))['_raw']
-        print("SUBMIT ORDER", client_order_id__gen, order.get('client_order_id'))
+        # print("SUBMIT ORDER", client_order_id__gen, order.get('client_order_id'))
 
         if 'borrowed_funds' not in order_vars.keys():
             order_vars['borrowed_funds'] = False
@@ -441,7 +479,7 @@ def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_tim
         # logging.info(f"SUCCESS on BUY for {ticker}")
         msg = (f'EXECUTE BUY ORDER {ticker} {trig} {ticker_time_frame} {round(wave_amo,2):,}')
 
-        return {'executed': True, 'msg': msg, 'new_queen_order_df': new_queen_order_df, 'priceinfo_order': priceinfo_order}
+        return {'executed': True, 'msg': msg, 'new_queen_order_df': new_queen_order_df, 'priceinfo_order': priceinfo_order, 'trigger_buy': trigger_buy}
 
     except Exception as e:
         print_line_of_error(f"ERROR Ex BUY Order..Full Failure {ticker_time_frame} ERROR is {e}")
@@ -748,8 +786,6 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
         sys.exit()
 
 
-
-
 def queenbee(client_user, prod, queens_chess_piece='queen', server=server, loglevel='info'):
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     if client_user in ['stapinskistefan@gmail.com'] and not prod: #'stefanstapinski@gmail.com', 
@@ -985,6 +1021,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             print("INIT Broker ORDERS")
             BROKER = init_broker_orders(api, BROKER)
             if pg_migration:
+                print("UPSERT BROKER ORDERS TO MAIN SERVER --- INIT")
                 PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER, main_server=server)
             else:
                 PickleData(BROKER.get('source'), BROKER, console=False)
@@ -1263,20 +1300,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         else:
             return ''
 
-    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, crypto=False, WT=WT, order_type='buy'):
+    def king_knights_requests(QUEEN, STORY_bee, revrec, tm_trig, trigbee, ticker, ticker_time_frame, trading_model, trig_action, app_trig, trigger_model={}, crypto=False, WT=WT, order_type='buy'):
         s_ = datetime.now(est)
 
-        """answer all questions for order to be placed, compare against the rules"""
-        # measure len of trigbee how long has trigger been there?
-        # Std Deivation from last X trade prices
-        # Jump on wave if NOT on Wave?
-        # collective BUY only when story MACD tier aligns to certian power NEW THEME
-        # how many vwap crosses have their been and whats been the frequency
-        # take chances buys and sells, allowed default 3, 1 for each blocktime
+        """Confirming King's Blessing"""
 
-        # Scenario: buys: :afternoon: if morning > x% then load up vs load down
-        # Scenario: sells: :afternoon: if morning > x% & lunch > x% then load up vs load down (look for a quick heavy pull)
-        # Scenarios: buys: morning: has push been made? which direction, from vwap
 
         ####### Allow Stars to borrow power if cash available ###### its_morphin_time
         
@@ -1329,33 +1357,34 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         ticker, tframe, tperiod = ticker_time_frame.split("_")
         symbol = ticker
         star_time = f'{tframe}{"_"}{tperiod}'
-        # # Ensure STORYBee
-        # if ticker_time_frame not in STORY_bee.keys():
-        #     print("TICKER TIME FRAME NOT IN STORY_bee")
-        #     STORY_bee[ticker_time_frame] = STORY_bee[f'SPY_{tframe}_{tperiod}'].copy()
 
-         # if 'buy' in tm_trig else 'sell' # always buy until shorting allowed WORKERBEE
         waveview = revrec.get('waveview')
         storygauge = revrec.get('storygauge')
 
         trinity = storygauge.loc[ticker].get(f'{TRINITY_}w_L')
         waveguage_meter = storygauge.loc[ticker].get(f'{TRINITY_}{WT[star_time]}')
 
-            # how many trades have we completed today? whats our total profit loss with wave trades
-            # should you override your original order rules? ### Handled in Allocation ###### 
         try:
+            borrowed_funds = False
+            kings_blessing = False
             alloc_deploy = waveview.at[ticker_time_frame, 'allocation_deploy']
             alloc_deploy_margin = waveview.at[ticker_time_frame, 'allocation_long_deploy'] - alloc_deploy
-            wave_amo=alloc_deploy
+            wave_amo = alloc_deploy
+            if trigger_model:
+                wave_amo = float(trigger_model.get('wave_amo', wave_amo))
+
             if symbol not in QUEEN['price_info_symbols'].index:
                 msg = f'{symbol} NOT in QUEENs price_info_symbols'
+                print(msg)
                 return {'kings_blessing': False, 'msg': 'missing price info'}
             
             ticker_priceinfo = QUEEN['price_info_symbols'].at[symbol, 'priceinfo']
             star_total_budget_remaining = revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget")
             star_total_borrow_remaining = revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget_borrow")
+            # test replacement
+            # star_total_budget_remaining = revrec['storygauge'].loc[ticker_time_frame].get("ticker_remaining_budget")
+            # star_total_borrow_remaining = revrec['storygauge'].loc[ticker_time_frame].get("ticker_remaining_budget_borrow")
 
-            kings_blessing = False
 
             # trade scenarios / power ups / 
             trig_action_num = len(trig_action) # get trading model amount allowed?
@@ -1381,7 +1410,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame)['current_active_waves'][tm_trig]
             current_wave_blocktime = current_wave['wave_blocktime']
 
-
             # Trading Model Vars
             # Global switch to user power rangers at ticker or portfolio level 
             if trading_model_theme == 'story__AI':
@@ -1390,52 +1418,39 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             maker_middle = ticker_priceinfo['maker_middle'] if str(trading_model_star.get('trade_using_limits')) == 'true' else False
             king_order_rules['sell_trigbee_date'] = update_sell_date(star_time)
 
-            power_up_amo = power_amo()
+            if trigger_model:
+                app_trig['trig'] = True
+                # Update KORS
+                king_order_rules['ignore_allocation_budget'] = True
+                king_order_rules['trigger_id'] = trigger_model['trigger_id']
+                king_order_rules['take_profit'] = trigger_model['take_profit']
+                king_order_rules['sell_out'] = trigger_model['sell_out']
+                king_order_rules['sell_trigbee_date'] = trigger_model['sell_trigbee_date']
 
+
+            power_up_amo = power_amo() # deprecated WORKERBEE
             if kings_blessing_checks(ticker_time_frame, acct_info, wave_amo, king_order_rules, trig_action_num, time_delta, macd_tier, trigbee, crypto):
                 return {'kings_blessing': False}
-
-            def ready_buy_star_timeduration_delay(star_time):
-                if star_time == '1Minute_1Day':
-                    return 5
-                elif star_time == '5Minute_5Day':
-                    return 10
-                elif star_time == '30Minute_1Month':
-                    return 30
-                elif star_time == '1Hour_3Month':
-                    return 60
-                elif star_time == '2Hour_6Month':
-                    return 120
-                elif star_time == '1Day_1Year':
-                    return 360 # fix to days
-                else:
-                    print("star_time not defined", star_time)
-                    return 500
-            
 
             overrule_power = king_order_rules.get('overrule_power')
             overrule_power = 0 if king_order_rules.get('overrule_power') is None else overrule_power
 
             blessings = {'kings_blessing': kings_blessing, 'blessings': []}
 
-
-
             # if star_total_budget_remaining > 0: # STAR
-            borrowed_funds = False
-            wave_amo = alloc_deploy
-            order_side = 'buy'
-            
-            if wave_amo > star_total_budget_remaining:
-                borrowed_funds = True
-                if wave_amo < star_total_borrow_remaining:
-                    msg = (f"KNIGHT {ticker_time_frame} Wave Amo > then star budget using borrowed funds {round(wave_amo)}")
-                    # logging.warning(msg)
-                    print(msg)
-                else:
-                    msg = (f"KNIGHT {ticker_time_frame} Wave Amo > then star BORROW Budget using Remaining borrowed funds {round(wave_amo)}")
-                    # logging.warning(msg)
-                    print(msg)
-                    wave_amo = star_total_borrow_remaining
+
+            if not trigger_model:
+                if wave_amo > star_total_budget_remaining:
+                    borrowed_funds = True
+                    if wave_amo < star_total_borrow_remaining:
+                        msg = (f"KNIGHT {ticker_time_frame} Wave Amo > then star budget using borrowed funds {round(wave_amo)}")
+                        # logging.warning(msg)
+                        print(msg)
+                    else:
+                        msg = (f"KNIGHT {ticker_time_frame} Wave Amo > then star BORROW Budget using Remaining borrowed funds {round(wave_amo)}")
+                        # logging.warning(msg)
+                        print(msg)
+                        wave_amo = star_total_borrow_remaining
 
             ticker_current_ask = ticker_priceinfo['current_ask']
             if not ticker_current_ask:
@@ -1489,6 +1504,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                                             borrowed_funds=borrowed_funds,
                                                             assigned_wave=current_macd_cross__wave,
                                                             borrow_qty=0,
+                                                            trigger_model=trigger_model,
                                                             )                
                 blessings['blessings'].append(order_vars)
 
@@ -1502,14 +1518,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                         wave_amo = star_total_borrow_remaining * trinity
                         print("Margin Buy", wave_amo)
                         ## update KORS on based on trinity, ticker_time_frame
-                        # king_order_rules.update('take_profit': ) 
-
-                        ## WORKERBEE Add TrigRule to king_order_rules
-                        trigRule = None
-                        # use trigRule Id (concat of symbol, trigrule_type,) How to establish unique ID?
-                        if trigRule:
-                            king_order_rules.update({'trigRule': trigRule})
-
 
                         order_vars = order_vars__queen_order_items(trading_model=trading_model_theme, 
                                                                     king_order_rules=king_order_rules, 
@@ -1527,6 +1535,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                                                     borrowed_funds=True,
                                                                     assigned_wave=current_macd_cross__wave,
                                                                     borrow_qty=0,
+                                                                    trigger_model=trigger_model,
                                                                     )
                         blessings['blessings'].append(order_vars)
                 
@@ -1619,21 +1628,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             symbols = symbols.index.tolist()
             if len(symbols) == 0:
                 symbols = ['SPY']
-            # active_tickers = QUEEN['heartbeat']['active_tickers'] # ttf
-
-            # # check for missing tickers in price_info
-            # try:
-            #     price_info_missing = [s for s in symbols if s not in QUEEN['price_info_symbols'].index]
-            #     if price_info_missing:
-            #         msg = (f"Symbols MISSING PriceInfo Adding In {price_info_missing}")
-            #         # logging.info(msg)
-            #         print(msg)
-            #         snapshot_price_symbols = async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN)
-            #         df_priceinfo_symbols = pd.DataFrame(snapshot_price_symbols)
-            #         df_priceinfo_symbols = df_priceinfo_symbols.set_index('ticker', drop=False)
-            #         update_queens_priceinfo_symbols(QUEEN, df_priceinfo_symbols)
-            # except Exception as e:
-            #     print_line_of_error(f'whaaaa {e}')
             
             if 'stars' not in QUEEN.keys():
                 QUEEN['stars'] = {ttf: {'last_buy': datetime.now(est).replace(year=1989)} for ttf in symbols}           
@@ -1642,8 +1636,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             active_orders = all_orders[all_orders['queen_order_state'].isin(active_queen_order_states)].copy()
             app_wave_trig_req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='wave_triggers')
             app_trig = {'trig': False}
-            app_trig_ttf = False
-            if app_wave_trig_req.get('app_flag'):
+            if app_wave_trig_req.get('app_flag'): ## DEPRECATED? 
                 print('app flag', app_wave_trig_req.get('ticker_time_frame'))
                 # app_wave_trig_req = wave_buy__var_items(ticker_time_frame=app_wave_trig_req.get('ticker_time_frame'), 
                 #                                         trigbee=app_wave_trig_req.get('trigbee'), 
@@ -1672,25 +1665,37 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             
             df['priceinfo_ast'] = df['priceinfo'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
             df['current_ask'] = df['priceinfo_ast'].apply(lambda d: d.get('current_ask') if isinstance(d, dict) else None)
-            # df['current_ask'] = df['priceinfo'].apply(lambda x: get_priceinfo_ask(x))
             dict_join = dict(zip(df.index, df['current_ask']))
             waveview['current_ask'] = waveview['symbol'].map(dict_join).fillna(8989)
-
 
             s_time = datetime.now(est)
             price_info_missing = [s for s in symbols if s not in QUEEN['price_info_symbols'].index]
             broker = 'alpaca' # WORKERBEE HOW TO DECIDE Which BROKER? Need Manual switch (per ticker?)-- brokers joined linked orders... :()
-            storygauge = storygauge[(storygauge['allocation_deploy'] > 89)].copy()
-            
-            ### WORKERBEE ###
-            # check for trigRule
-            # return a dict set of symbol and its list of trigRule
 
+            existing_orders_df = get_existing_trigrule_orders(symbols, active_orders) # these symbols only checking on Symbols with Budget
+
+            triggers = {}
+            trigger_symbols = []
             for symbol in storygauge.index.tolist():
                 # If trigRule Calculate trigger info 
-                # check trigRule active & not expired
-                # check if TrigRule exists inside QUEEN['queen_orders']. iterate over active orders using qo_states check queen_order_state field, then check if TrigRule in order['king_order_rules'] (this also needs to be added on execute order  in order_vars__queen_order_items)
-                qo_states = RUNNING_CLOSE_Orders + RUNNING_OPEN
+                # print("CONSCIENCE CHECKING SYMBOL FOR BUY:", symbol)
+                trigger_model = check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df)
+                if trigger_model:
+                    if trigger_model.get('ttf') in stars().keys():
+                        ttf = f'{symbol}_{trigger_model.get("ttf")}'
+                    else:
+                        ttf = f'{symbol}_{"1Minute_1Day"}' # default
+                    
+                    triggers[ttf] = trigger_model
+                    trigger_symbols.append(symbol)
+
+            storygauge = storygauge[(storygauge['allocation_deploy'] > 89) | (storygauge.index.isin(trigger_symbols))].copy()
+
+            for symbol in storygauge.index.tolist():
+                trigger_id = False
+                if symbol in triggers.keys():
+                    print(f'TRIGRULE Triggered for {symbol} : {triggers[symbol]}')
+                    trigger_id = triggers[symbol]
                 
                 crypto = True if symbol in crypto_currency_symbols else False
                 if stop_ticker(storygauge, symbol, QUEEN_KING):
@@ -1698,19 +1703,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
                 wave = waveview[waveview['symbol']==symbol]
                 if not crypto:
-                    wave = wave[(wave['allocation_deploy'] > 89) & (wave['allocation_deploy'] > wave['current_ask'])]
+                    wave = wave[(wave['allocation_deploy'] > 89) & (wave['allocation_deploy'] > wave['current_ask']) | (wave.index.isin(triggers.keys()))].copy()
                 else:
-                    wave = wave[(wave['allocation_deploy'] > 89)]
+                    wave = wave[(wave['allocation_deploy'] > 89) | (wave.index.isin(triggers.keys()))].copy()
                 
                 if len(wave) == 0:
                     continue
 
                 wave = wave.sort_values('allocation_deploy', ascending=False)
 
-                not_enough = wave[(wave['allocation_deploy'] < wave['current_ask']) & (wave['allocation_deploy'] > 0)].copy()
-                if len(not_enough) > 0:
-                    wave_amo_for_next_wave = not_enough['allocation_deploy'].sum()
-                    print(wave_amo_for_next_wave, symbol, "NOT ENOUGH WAVE AMO FOR NEXT WAVE")
+                if not trigger_id:
+                    not_enough = wave[(wave['allocation_deploy'] < wave['current_ask']) & (wave['allocation_deploy'] > 0)].copy()
+                    if len(not_enough) > 0:
+                        wave_amo_for_next_wave = not_enough['allocation_deploy'].sum()
+                        print(wave_amo_for_next_wave, symbol, "NOT ENOUGH WAVE AMO FOR NEXT WAVE")
 
                 # if crypto and QUEEN['prod']: # TEMP UNTIL CRYPTO handled in QUEEN CONTROLS WORKERBEE
                 #     print("PRODUCTION OF CRYPTO ACCOUNT")
@@ -1720,7 +1726,10 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
                 queen_orders = QUEEN['queen_orders']
                 for ticker_time_frame in wave.index.tolist():
+                    # if ticker_time_frame == 'ETH/USD_1Minute_1Day':
+                    #     ipdb.set_trace()
                     s_time = datetime.now(est)
+                    trigger_model = triggers.get(ticker_time_frame, False)
                     # path to Knight
                     # ticker, tframe, frame = ticker_time_frame.split("_")
                     # frame_block = f'{tframe}{"_"}{frame}' # frame_block = "1Minute_1Day"
@@ -1730,11 +1739,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
                     if not crypto and mkhrs != 'open':
                         continue
-                    if refresh_star_check(QUEEN_KING, queen_orders, symbol, ticker_time_frame):
+                    # if refresh_star_check(QUEEN_KING, queen_orders, symbol, ticker_time_frame):
+                    #     continue
+                    if repeat_purchase_delay(wave, ticker_time_frame, QUEEN): # WORKERBEE deprecate?
                         continue
-                    if repeat_purchase_delay(wave, ticker_time_frame, QUEEN):
-                        continue
-                    if autopilot_check(QUEEN_KING, symbol):
+                    if autopilot_check(QUEEN_KING, symbol) and not trigger_model:
                         continue
                     """# wash sale rule check"""
                     # now_time = datetime.now()
@@ -1757,6 +1766,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
                     # trading model
                     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
+
                     # trigbee
                     trig = wave.at[ticker_time_frame, 'macd_state']
                     tm_trig = 'buy_cross-0' #trig # point to only 1
@@ -1764,24 +1774,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                     trig_wave_length = waveview.at[ticker_time_frame, 'length']
                     trig_wave_length_num = int(trig_wave_length)
   
+                    if not trigger_model:
+                        """ THE NEXT 2 CHECKS NOT NEEDED due to allocation_deploy > 0 ? WORKERBEE"""
+                        # CHECK STAR TOTAL BUDGETS 
+                        star_total_budgets = wave.loc[ticker_time_frame].get("remaining_budget", 0) + wave.loc[ticker_time_frame].get("remaining_budget_borrow", 0)
+                        if star_total_budgets <= 0:
+                            msg=(f'{ticker_time_frame} remaining budget used up', star_total_budgets)
+                            # print(msg)
+                            continue
+                        # CHECK SYMBOL TOTAL BUDGETS
+                        symbol_total_budgets = storygauge.loc[symbol].get("ticker_remaining_budget", 0) + storygauge.loc[symbol].get("ticker_remaining_borrow", 0)
+                        if symbol_total_budgets <= 0:
+                            msg=(f'{symbol} remaining budget used up', symbol_total_budgets)
+                            # print(msg)
+                            continue
 
-                    """ THE NEXT 2 CHECKS NOT NEEDED due to allocation_deploy > 0 ? WORKERBEE"""
-                    # CHECK STAR TOTAL BUDGETS 
-                    star_total_budgets = wave.loc[ticker_time_frame].get("remaining_budget", 0) + wave.loc[ticker_time_frame].get("remaining_budget_borrow", 0)
-                    if star_total_budgets <= 0:
-                        msg=(f'{ticker_time_frame} remaining budget used up', star_total_budgets)
-                        # print(msg)
-                        continue
-                    # CHECK SYMBOL TOTAL BUDGETS
-                    symbol_total_budgets = storygauge.loc[symbol].get("ticker_remaining_budget", 0) + storygauge.loc[symbol].get("ticker_remaining_borrow", 0)
-                    if symbol_total_budgets <= 0:
-                        msg=(f'{symbol} remaining budget used up', symbol_total_budgets)
-                        # print(msg)
-                        continue
-
-                    elif 'sell' in trig and trig_wave_length_num < 3: # WORKERBEE This needs to be in king_controls_queen[{'1_Minute_1Day: 3}...] ?? different for each star!!
-                        # print("Not Buying until Wave is longer then 22")
-                        continue
+                        elif 'sell' in trig and trig_wave_length_num < 3: # WORKERBEE This needs to be in king_controls_queen[{'1_Minute_1Day: 3}...] ?? different for each star!!
+                            # print("Not Buying until Wave is longer then 22")
+                            continue
 
                     # try: # """ Trigger Bees"""                         
                     # check if you already placed order or if a workerbee in transit to place order
@@ -1810,7 +1820,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                         trading_model=trading_model, 
                         trig_action=trig_action, 
                         crypto=crypto, 
-                        app_trig=app_trig)
+                        app_trig=app_trig,
+                        trigger_model=trigger_model,
+                    )
                     charlie_bee['queen_cyle_times']['cc_knights_request__cc'] = (datetime.now(est) - s_time).total_seconds()
                     if king_resp.get('kings_blessing'):
                         for blessing in king_resp.get('blessings'):
@@ -1842,7 +1854,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                         QUEEN['stars'] = {ticker_time_frame: {'last_buy': datetime.now(est), 'msg': msg}}
                                     else:
                                         QUEEN['stars'].update({ticker_time_frame: {'last_buy': datetime.now(est), 'msg': msg}})
-
+                                    if exx.get('trigger_buy'):
+                                        # WORKERBEE Save Queen KING and turn off Trigger OR Just let Max Orders Handle? I think turn off
+                                        pass
                         QUEEN = refresh_broker_account_portolfio(api, QUEEN)
                         acct_info = QUEEN['account_info']
                         """Rev Rec"""
@@ -2492,10 +2506,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             elif run_order['queen_order_state'] not in RUNNING_Orders:
                 print(ttf, run_order['client_order_id'], ": QUEEN ORDER STATE NOT RUNNING")
                 return True
+            elif run_order['status_q'] != 'filled':
+                print(ttf, run_order['client_order_id'], ": QUEEN ORDER STATUS NOT FILLED")
+                return True
             elif float(run_order['qty_available']) == 0:
                 print(ttf, run_order['client_order_id'], ": QUEEN ORDER QTY AVAILABLE IS ZERO 0")
-                QUEEN['queen_orders'].at[client_order_id, 'queen_order_state'] = 'completed'
-                save_queen_order(QUEEN, prod=QUEEN['prod'], client_order_id=client_order_id, upsert_to_main_server=upsert_to_main_server)
                 return True
             else:
                 return False
@@ -2573,12 +2588,13 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                             adhoc_handle_queen_order_broker_failure(order_status, QUEEN, c_order_id)
                             continue
                         
-                        save_b = True
-                        update_broker_order_status(BROKER, order_status)
+                        if update_broker_order_status(BROKER, order_status):
+                            save_b = True
 
 
                 if save_b:
                     if pg_migration:
+                        print("DEBUG: UPDATING BROKER ORDERS TO POLLEN DB")
                         PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER, main_server=server)
                     else:
                         PickleData(BROKER.get('source'), BROKER, console=False)
@@ -2940,6 +2956,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         save_b, BROKER, QUEEN = reconcile_broker_orders_with_queen_orders(BROKER, api, QUEEN, active_queen_order_states)
         if save_b:
             if pg_migration:
+                print("DEBUG SAVING BROKER ORDERS TO POLLEN DB ------ RECONCILE QUEEN ORDERS")
                 PollenDatabase.upsert_data(BROKER.get('table_name'), key=BROKER.get('key'), value=BROKER, main_server=server)
             else:
                 PickleData(BROKER.get('source'), BROKER, console=False)
@@ -3053,6 +3070,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             acct_info = QUEEN['account_info']
             # portfolio = QUEEN['portfolio']
 
+            # Save Account WORKERBEE unessecary SAVING only save whats needed ! Handle via conscience_utils / websockets
             god_save_the_queen(QUEEN, save_acct=True, console=False, upsert_to_main_server=upsert_to_main_server)
 
             charlie_bee['queen_cyle_times']['cc_block1_account'] = (datetime.now(est) - s_time).total_seconds()
@@ -3068,7 +3086,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
             charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
             QUEEN['revrec'] = revrec
-            
+            # Save Revrec WORKERBEE unessecary SAVING only save whats needed ! Handle via conscience_utils / websockets
             god_save_the_queen(QUEEN, save_rr=True, console=False, upsert_to_main_server=upsert_to_main_server) # WORKERBEE unessecary SAVING only save whats needed
 
             # Process All Orders

@@ -52,7 +52,7 @@ async def poll_table_and_notify():
         if not hasattr(poll_table_and_notify, "last_print_time"):
             poll_table_and_notify.last_print_time = 0
         now = asyncio.get_event_loop().time()
-        if now - poll_table_and_notify.last_print_time > 120:
+        if now - poll_table_and_notify.last_print_time > 4089:
             print(f"Polling active WebSocket connections... {len(active_connections)}")
             poll_table_and_notify.last_print_time = now
         for connection, initial_data in active_connections.items():
@@ -157,7 +157,7 @@ def load_wavestories_json(client_user: str=Body(...), symbols: list=Body(...), t
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type=return_type)
+        json_data = get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selection, return_type=return_type)
         # print(json_data)
         return JSONResponse(content=json_data)
     except Exception as e:
@@ -170,7 +170,7 @@ def load_story_json(client_user: str=Body(...), toggle_view_selection: str=Body(
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = queen_wavestories__get_macdwave(client_user, prod, symbols, toggle_view_selection, return_type='story')
+        json_data = get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selection, return_type='story')
         # print(json_data)
         return JSONResponse(content=json_data)
     except Exception as e:
@@ -364,17 +364,15 @@ async def buy_order(request: Request, client_user: str=Body(...), username: str=
 
 
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
-async def buy_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+async def buy_order(request: Request, client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
-
     if request is not None and isinstance(request, Request):
         data = await request.json()
-
     # print(data.keys())
     wave_buy_orders = data.get('editable_orders', [])
-
     # return JSONResponse(content=grid_row_button_resp(status="testing", description="ok"))
+    
     story = False
     wave_buys = True
     kors = default_value
@@ -396,8 +394,6 @@ def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data=
     return JSONResponse(content=grid_row_button_resp())
 
 
-# info = api.get_account()
-# alpaca_acct_info = refresh_account_info(api=api)
 @router.post("/text", status_code=status.HTTP_200_OK)
 def get_text(api_key = Body(...)):
     print(api_key.get("prod"))
@@ -458,10 +454,14 @@ async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), se
 
 
 @router.post("/update_queenking_symbol", status_code=status.HTTP_200_OK)
-def func_update_queenking_symbol(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
+async def func_update_queenking_symbol(request: Request, client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
-    json_data = queenking_symbol(client_user, prod, selected_row, default_value)
+    if request is not None and isinstance(request, Request):
+        data = await request.json()
+    triggers = data.get('editable_orders', [])
+    
+    json_data = queenking_symbol(client_user, prod, selected_row, default_value, triggers)
     return JSONResponse(content=json_data)
 
 
