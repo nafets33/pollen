@@ -10,9 +10,7 @@ import json
 import psycopg2
 from psycopg2 import sql
 from psycopg2 import extras
-import pickle
-import streamlit as st
-import sys
+import math
 
 server = os.getenv("server", False)
 
@@ -20,11 +18,19 @@ server = os.getenv("server", False)
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
-            # Handle NumPy types
-            if isinstance(obj, (np.int32, np.int64)):  # Add np.int32 here
-                return {"_type": "np.int64", "value": int(obj)}
-            if isinstance(obj, (np.float32, np.float64)):  # Handle float types as well
-                return {"_type": "float", "value": float(obj)}
+            # ✅ Handle NaN/Inf FIRST - most critical!
+            if isinstance(obj, (float, np.floating)):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+                return float(obj)
+            
+            # Handle numpy integers
+            if isinstance(obj, (np.int32, np.int64)):
+                return int(obj)
+            
+            # Handle pandas NA
+            if pd.isna(obj):
+                return None
             
             # Handle pandas types
             if isinstance(obj, pd.DataFrame):
@@ -41,6 +47,10 @@ class PollenJsonEncoder(json.JSONEncoder):
             # Handle collections.deque
             if isinstance(obj, collections.deque):
                 return {"_type": "collections.deque", "value": list(obj)}
+            
+            # Handle numpy arrays
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
             
             # Default handling
             return super(PollenJsonEncoder, self).default(obj)
@@ -414,7 +424,7 @@ class PollenDatabase:
 
 
     @staticmethod
-    def retrieve_all_story_bee_data(symbols, main_server=server):
+    def retrieve_all_story_bee_data(symbols, server=server):
         conn = None
         merged_data = {"STORY_bee": {}}
 
@@ -680,7 +690,8 @@ class PollenDatabase:
     @staticmethod
     def get_all_keys_with_timestamps_and_sizes(table_name='db', db_root=None):
         """
-        Fetch all keys along with their last modified timestamp and human-readable size from the specified table.
+        Fetch all keys along with their last modified timestamp and size from the specified table.
+        Returns raw bytes AND human-readable format.
         """
         def format_size(size_in_bytes):
             """Convert bytes to a human-readable format."""
@@ -697,7 +708,7 @@ class PollenDatabase:
             try:
                 if db_root:
                     query = f"""
-                        SELECT key, last_modified, pg_column_size(key) AS size
+                        SELECT key, last_modified, pg_column_size(data) AS size
                         FROM {table_name}
                         WHERE key LIKE %s
                         ORDER BY last_modified DESC;
@@ -705,7 +716,7 @@ class PollenDatabase:
                     cur.execute(query, (f'%{db_root}%',))
                 else:
                     query = f"""
-                        SELECT key, last_modified, pg_column_size(key) AS size
+                        SELECT key, last_modified, pg_column_size(data) AS size
                         FROM {table_name}
                         ORDER BY last_modified DESC;
                     """
@@ -714,8 +725,8 @@ class PollenDatabase:
                 # Fetch all keys, timestamps, and sizes
                 results = cur.fetchall()
 
-                # Convert sizes to human-readable format
-                return [(key, last_modified, format_size(size)) for key, last_modified, size in results]
+                # Return raw bytes AND formatted string
+                return [(key, last_modified, size, format_size(size)) for key, last_modified, size in results]
 
             except Exception as e:
                 if table_name != 'client_users':
@@ -811,7 +822,7 @@ class PollenDatabase:
                     conn.commit()
                     if console:
                         msg=(f"Row with key = '{key_column}' has been deleted successfully from table '{table_name}'.")
-                        st.write(console+msg)
+                        print(console+msg)
                     return True
         except Exception as e:
             print(f"Error deleting row with key = '{key_column}' from table '{table_name}': {e}")

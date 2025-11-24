@@ -19,6 +19,7 @@ const Main = (props: ComponentProps) => {
     gridoption_build,
     enable_JsCode,
     prod,
+    autoUpdate = false,
   } = props.args
   const { grid_options, kwargs = {} } = props.args
   const { index, theme } = grid_options
@@ -36,7 +37,9 @@ const Main = (props: ComponentProps) => {
         grid_options={grid_options}
         index={index}
         kwargs={kwargs} 
-        enable_JsCode={enable_JsCode}      />
+        enable_JsCode={enable_JsCode}      
+        autoUpdate={autoUpdate}
+      />
     </div>
   )
 }

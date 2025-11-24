@@ -1,5 +1,4 @@
 import pandas as pd
-import logging
 import os
 import pandas as pd
 from datetime import datetime, timedelta, date
@@ -16,7 +15,7 @@ from chess_piece.app_hive import trigger_py_script, standard_AGgrid
 from chess_piece.pollen_db import PollenDatabase, MigratePostgres
 from tqdm import tqdm
 
-import ipdb
+import sys
 
 pg_migration = os.environ.get('pg_migration')
 
@@ -37,8 +36,112 @@ if not prod:
 
 
 
-# QUEENBEE = PollenDatabase.retrieve_data('db_sandbox', key='QUEEN')
+def get_size_of_object(obj):
+    """Get approximate size of object in bytes."""
+    if isinstance(obj, pd.DataFrame):
+        return obj.memory_usage(deep=True).sum()
+    else:
+        return sys.getsizeof(obj)
 
+def inspect_key_breakdown(table_name, key):
+    """Show size breakdown of nested keys using existing retrieve_data."""
+    st.subheader(f"📊 Data Breakdown for: `{key}`")
+    
+    # Use your existing retrieve_data function
+    with st.spinner(f"Loading {key}..."):
+        data = PollenDatabase.retrieve_data(table_name, key)
+    
+    if not data:
+        st.error(f"No data found for key: {key}")
+        return
+    
+    # Calculate sizes
+    size_data = []
+    total_size = 0
+    
+    if isinstance(data, dict):
+        for nested_key, value in data.items():
+            # Skip metadata fields added by retrieve_data
+            if nested_key in ['key', 'table_name', 'db_root']:
+                continue
+                
+            size_bytes = get_size_of_object(value)
+            total_size += size_bytes
+            
+            # Get type info
+            if isinstance(value, pd.DataFrame):
+                value_type = f"DataFrame ({len(value)} rows × {len(value.columns)} cols)"
+            elif isinstance(value, dict):
+                value_type = f"dict ({len(value)} keys)"
+            elif isinstance(value, list):
+                value_type = f"list ({len(value)} items)"
+            else:
+                value_type = type(value).__name__
+            
+            size_data.append({
+                'nested_key': nested_key,
+                'type': value_type,
+                'size_bytes': size_bytes,
+                'size_kb': round(size_bytes / 1024, 2),
+                'size_mb': round(size_bytes / (1024**2), 3),
+            })
+    
+    if not size_data:
+        st.warning("No nested data found (or data is not a dict)")
+        return
+    
+    # Calculate percentages
+    for item in size_data:
+        item['pct_of_total'] = round((item['size_bytes'] / total_size) * 100, 2)
+    
+    # Create DataFrame and sort by size
+    df_sizes = pd.DataFrame(size_data).sort_values('size_bytes', ascending=False)
+    
+    # Display metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Size", f"{total_size / (1024**2):.2f} MB")
+    with col2:
+        st.metric("Nested Keys", len(df_sizes))
+    with col3:
+        if len(df_sizes) > 0:
+            largest = df_sizes.iloc[0]['nested_key']
+            st.metric("Largest Key", largest)
+    
+    # Show table
+    st.dataframe(
+        df_sizes[['nested_key', 'type', 'size_mb', 'pct_of_total']],
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    # Show chart
+    if len(df_sizes) > 1:
+        st.bar_chart(df_sizes.set_index('nested_key')['size_mb'])
+    
+    # Quick preview option
+    st.divider()
+    selected_key = st.selectbox(
+        "Preview nested key:",
+        options=df_sizes['nested_key'].tolist(),
+        key=f"preview_{table_name}_{key}"
+    )
+    
+    if st.button("Show Preview", key=f"btn_preview_{table_name}_{key}"):
+        nested_value = data[selected_key]
+        
+        st.write(f"**Type:** `{type(nested_value).__name__}`")
+        
+        if isinstance(nested_value, pd.DataFrame):
+            st.write(f"**Shape:** {nested_value.shape}")
+            st.dataframe(nested_value.head(20))
+        elif isinstance(nested_value, dict):
+            st.json({k: str(type(v).__name__) for k, v in list(nested_value.items())[:20]})
+        elif isinstance(nested_value, list):
+            st.write(f"**Length:** {len(nested_value)}")
+            st.json(nested_value[:20])
+        else:
+            st.write(nested_value)
 
 def create_pg_table():
     table_name = st.text_input('Table Name', 'db_store')
@@ -170,8 +273,14 @@ if __name__ == '__main__':
         for table in tables:
             with tabs[s_t]:
                 st.write(table)
-                df=(pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps_and_sizes(table))).rename(columns={0:'key', 1:'timestamp'})
-                # df[2] = pd.to_numeric(2)
+                df = pd.DataFrame(
+                    PollenDatabase.get_all_keys_with_timestamps_and_sizes(table)
+                ).rename(columns={
+                    0: 'key', 
+                    1: 'timestamp', 
+                    2: 'size_bytes',      # Add raw bytes
+                    3: 'size_display'     # Human readable
+                })                # df[2] = pd.to_numeric(2)
                 # st.write(sum(df[2]))
                 if table == 'client_user_store':
                     try:
@@ -182,6 +291,18 @@ if __name__ == '__main__':
                     dat = df.iloc[0].get('timestamp')
 
                 st.write(df)
+
+                # Key Inspector
+                st.divider()
+                if len(df) > 0:
+                    selected_key = st.selectbox(
+                        f"Select key to inspect:",
+                        options=df['key'].tolist(),
+                        key=f"select_{table}"
+                    )
+                    
+                    if st.button("🔍 Inspect Key", key=f"inspect_{table}"):
+                        inspect_key_breakdown(table, selected_key)
 
                 s_t+=1
 

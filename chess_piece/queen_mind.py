@@ -1007,43 +1007,6 @@ def return_trading_model_mapping(QUEEN_KING, waveview):
     return return_main
 
 
-def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy/sell cross
-    """ Waves: Current Wave, answer questions about proir waves """
-    
-    # index                                                                 0
-    # wave_n                                                               37
-    # length                                                              8.0
-    # wave_blocktime                                            afternoon_2-4
-    # wave_start_time                               2022-08-31 15:52:00-04:00
-    # wave_end_time                          2022-08-31 16:01:00.146718-04:00
-    # trigbee                                                    sell_cross-0
-    # maxprofit                                                        0.0041
-    # time_to_max_profit                                                  8.0
-    # macd_wave_n                                                           0
-    # macd_wave_length                                        0 days 00:11:00    
-
-    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['buy_cross-0']).T
-    current_buywave = token_df.iloc[0]
-
-    token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['sell_cross-0']).T
-    current_sellwave = token_df.iloc[0]
-
-    # token_df = pd.DataFrame(STORY_bee[ticker_time_frame]['waves']['ready_buy_cross']).T
-    # ready_buy_cross = token_df.iloc[0]
-
-
-    if current_buywave['wave_start_time'] > current_sellwave['wave_start_time']:
-        current_wave = current_buywave
-    else:
-        current_wave = current_sellwave
-
-
-    d_return = {'buy_cross-0': current_buywave, 'sell_cross-0':current_sellwave }
-
-
-
-    return {'current_wave': current_wave, 'current_active_waves': d_return}
-
 # Convert sell_trigbee_date to string for all rows
 def to_iso_datetime(val):
     # Handles "DD/MM/YYYYTHH:mm" -> "YYYY-MM-DDTHH:mm"
@@ -1059,7 +1022,19 @@ def to_iso_datetime(val):
         # If already in ISO or invalid, return as-is or blank
         return str(val) if "T" in str(val) else ''
 
-def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=kingdom__global_vars().get('active_queen_order_states'), wave_blocktime='Day', check_portfolio=True, chess_board='chess_board', wash_sale_rule=None, ticker_trinity=False, exit_early=False): # WORKERBEE remove queen order states
+def refresh_chess_board__revrec( 
+        acct_info, 
+        QUEEN, 
+        QUEEN_KING, 
+        STORY_bee, 
+        active_queen_order_states=kingdom__global_vars().get('active_queen_order_states'), 
+        wave_blocktime='Day', 
+        check_portfolio=True, 
+        chess_board='chess_board', 
+        wash_sale_rule=None, 
+        ticker_trinity=False, 
+        exit_early=False
+        ):
     # WORKERBEE move out QUEEN_KING and only bring in chess_board *
     try:
         if not STORY_bee:
@@ -1145,10 +1120,7 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                         'daytrade_count': 0,
                         'last_equity': 100000,
                         'portfolio_value': 100000,}
-        # if not wave_blocktime:
-        #     wave_blocktime = 'Day'
-            # current_wave = star_ticker_WaveAnalysis(STORY_bee=STORY_bee, ticker_time_frame="SPY_1Minute_1Day").get('current_wave')
-            # wave_blocktime = current_wave.get('wave_blocktime')
+
     except Exception as e:
         print_line_of_error(f"RevRec Setup Error {e}")
         return None
@@ -1416,7 +1388,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
 
             waveview_map = return_trading_model_mapping(QUEEN_KING, waveview)
             waveview['king_order_rules'] = waveview['ticker_time_frame'].map(waveview_map)
-            # print(waveview['king_order_rules'])
 
             """ CALCULATOR """
             ## base calc variables ##
@@ -1734,14 +1705,6 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
                     revrec__ticker_borrow[ticker] = (weight / total_weight_borrow) * qcp_borrow_power
                 else:
                     revrec__ticker_borrow[ticker] = 0
-                    # if ticker_mapping_enabled:
-                    #     print("Ticker Mapping Enabled")
-                    # # if ticker in ticker_mapping.keys():
-                    #     # Adjust allocation based on ticker_mapping weight
-                    #     weight = ticker_mapping[ticker]
-                    #     revrec__ticker[ticker] = (weight / total_weight) * qcp_power
-                    # else:
-                    #     revrec__ticker[ticker] = qcp_power / num_tickers ## equal number disribution
 
                 # Star Allocation Budget
                 for star in tm_keys:
@@ -2138,15 +2101,17 @@ def refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_
         
         # print(rr_run_cycle)
         
-        return {'cycle_time': cycle_time, 
-                'df_qcp': df_qcp, 
-                'df_ticker': df_ticker, 
-                'df_stars':df_stars, 
+        return {
+                # 'df_qcp': df_qcp, 
+                # 'df_ticker': df_ticker, 
+                # 'df_stars':df_stars, 
                 'waveview': waveview, 
                 'storygauge': storygauge,
                 'symbols_failed': symbols_failed, 
                 'ttf_failed': ttf_errors, 
-                'rr_run_cycle': rr_run_cycle}
+                'rr_run_cycle': rr_run_cycle,
+                'cycle_time': cycle_time, 
+                }
     
     except Exception as e:
         print_line_of_error(f'REVREC FAILED {e}')

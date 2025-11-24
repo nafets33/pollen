@@ -9,8 +9,8 @@ import argparse
 from dotenv import load_dotenv
 
 from chess_piece import fastapi_router
-from chess_piece.king import get_ip_address
-from chess_piece.queen_hive import read_swarm_db
+# from chess_piece.king import get_ip_address
+# from chess_piece.queen_hive import read_swarm_db
 
 load_dotenv()
 prod = True
@@ -50,10 +50,11 @@ def check():
 
 cache_manager = CacheManager()
 
-@app.on_event("startup")
-async def startup_event():
-    await cache_manager.load()
-    asyncio.create_task(fastapi_router.poll_table_and_notify())
+# on_event is deprecated, use lifespan event handlers instead.
+# @app.on_event("startup")
+# async def startup_event():
+#     await cache_manager.load()
+    # asyncio.create_task(fastapi_router.poll_table_and_notify())
 
 
 @app.get("/cachedata")

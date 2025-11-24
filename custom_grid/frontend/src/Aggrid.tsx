@@ -41,7 +41,7 @@ import {
   SideBarDef,
   ValueParserParams,
 } from "ag-grid-community"
-import {deepMap} from "./utils"
+import { deepMap } from "./utils"
 
 
 type Props = {
@@ -57,6 +57,7 @@ type Props = {
   index: string
   enable_JsCode: boolean
   kwargs: any,
+  autoUpdate?: boolean;
 }
 
 let g_rowdata: any[] = []
@@ -156,83 +157,83 @@ toastr.options = {
 
 
 const AgGrid = (props: Props) => {
-const BtnCellRenderer = (props: any) => {
-  const btnClickedHandler = () => {
-    props.clicked(props.node.id)
-  };
-  if (!props || !props.node) return null;
-  if (props.node.rowPinned === 'bottom') {
-    return <span>{props.value}</span>;
-  }
-  // Use subtotal row style if present
-  const subtotalStyle =
-    props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
-      ? props.data[`${props.col_header}_cellStyle`]
-      : props.cellStyle;
-
-  return (
-    <button
-      onClick={btnClickedHandler}
-      style={{
-        background: "transparent",
-        border: subtotalStyle?.border || "none",
-        width: props.width ? props.width : "100%",
-        color: subtotalStyle?.color || "inherit",
-        ...subtotalStyle,
-      }}
-    >
-      {props.col_header ? props.value : props.buttonName}
-    </button>
-  );
-};
-function buildDetailGridOptions(detailGridOptions: any, level: number): any {
-  const options = { ...detailGridOptions, masterDetail: true };
-
-  options.getDetailRowData = (params: any) => {
-    let nestedRows = [];
-    if (Array.isArray(params.data.nestedRows)) {
-      nestedRows = params.data.nestedRows;
-    } else if (params.data.nestedRows) {
-      nestedRows = [params.data.nestedRows];
-    }
-    params.successCallback(nestedRows.length ? nestedRows : []);
-  };
-
-  if (
-    options.detailCellRendererParams &&
-    options.detailCellRendererParams.detailGridOptions
-  ) {
-    options.detailCellRendererParams.detailGridOptions = buildDetailGridOptions(
-      options.detailCellRendererParams.detailGridOptions,
-      level + 1
-    );
-  }
-
-  return options;
-}
-
-const getGridOptions = () => {
-  let options = { ...grid_options };
-  if (kwargs.nestedGridEnabled && kwargs.detailGridOptions) {
-    options.masterDetail = true;
-    options.detailCellRendererParams = {
-      detailGridOptions: buildDetailGridOptions(kwargs.detailGridOptions, 1),
-      getDetailRowData: (params: any) => {
-        let nestedRows = [];
-        if (Array.isArray(params.data.nestedRows)) {
-          nestedRows = params.data.nestedRows;
-        } else if (params.data.nestedRows) {
-          nestedRows = [params.data.nestedRows];
-        }
-        params.successCallback(nestedRows.length ? nestedRows : []);
-      },
+  const BtnCellRenderer = (props: any) => {
+    const btnClickedHandler = () => {
+      props.clicked(props.node.id)
     };
-  } else {
-    options.masterDetail = false;
-    options.detailCellRendererParams = undefined;
+    if (!props || !props.node) return null;
+    if (props.node.rowPinned === 'bottom') {
+      return <span>{props.value}</span>;
+    }
+    // Use subtotal row style if present
+    const subtotalStyle =
+      props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
+        ? props.data[`${props.col_header}_cellStyle`]
+        : props.cellStyle;
+
+    return (
+      <button
+        onClick={btnClickedHandler}
+        style={{
+          background: "transparent",
+          border: subtotalStyle?.border || "none",
+          width: props.width ? props.width : "100%",
+          color: subtotalStyle?.color || "inherit",
+          ...subtotalStyle,
+        }}
+      >
+        {props.col_header ? props.value : props.buttonName}
+      </button>
+    );
+  };
+  function buildDetailGridOptions(detailGridOptions: any, level: number): any {
+    const options = { ...detailGridOptions, masterDetail: true };
+
+    options.getDetailRowData = (params: any) => {
+      let nestedRows = [];
+      if (Array.isArray(params.data.nestedRows)) {
+        nestedRows = params.data.nestedRows;
+      } else if (params.data.nestedRows) {
+        nestedRows = [params.data.nestedRows];
+      }
+      params.successCallback(nestedRows.length ? nestedRows : []);
+    };
+
+    if (
+      options.detailCellRendererParams &&
+      options.detailCellRendererParams.detailGridOptions
+    ) {
+      options.detailCellRendererParams.detailGridOptions = buildDetailGridOptions(
+        options.detailCellRendererParams.detailGridOptions,
+        level + 1
+      );
+    }
+
+    return options;
   }
-  return options;
-};
+
+  const getGridOptions = () => {
+    let options = { ...grid_options };
+    if (kwargs.nestedGridEnabled && kwargs.detailGridOptions) {
+      options.masterDetail = true;
+      options.detailCellRendererParams = {
+        detailGridOptions: buildDetailGridOptions(kwargs.detailGridOptions, 1),
+        getDetailRowData: (params: any) => {
+          let nestedRows = [];
+          if (Array.isArray(params.data.nestedRows)) {
+            nestedRows = params.data.nestedRows;
+          } else if (params.data.nestedRows) {
+            nestedRows = [params.data.nestedRows];
+          }
+          params.successCallback(nestedRows.length ? nestedRows : []);
+        },
+      };
+    } else {
+      options.masterDetail = false;
+      options.detailCellRendererParams = undefined;
+    }
+    return options;
+  };
 
 
   const gridRef = useRef<AgGridReact>(null)
@@ -258,8 +259,8 @@ const getGridOptions = () => {
   }
 
   const [subtotalsRow, setSubtotalsRow] = useState<any[]>([]);
-  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder=[], 
-    refresh_success=null, total_col=false, subtotal_cols=[], filter_button=''} = kwargs
+  let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder = [],
+    refresh_success = null, total_col = false, subtotal_cols = [], filter_button = '' } = kwargs
   const [rowData, setRowData] = useState<any[]>([])
   const [modalShow, setModalshow] = useState(false)
   const [modalData, setModalData] = useState({})
@@ -281,38 +282,131 @@ const getGridOptions = () => {
 
 useEffect(() => {
   if (!kwargs.api_ws) {
-    console.warn("api_ws is undefined, WebSocket not started.");
+    console.warn("⚠️  api_ws is undefined, WebSocket not started.");
     return;
   }
 
- const ws = new WebSocket(kwargs.api_ws);
-   
- ws.onopen = () => {
-    ws.send(JSON.stringify({
-      username: username,
-      grid: rowData, // send the current grid data
-      api_key: api_key,
-    }));
+  console.log("🔌 Attempting WebSocket connection to:", kwargs.api_ws);
+  
+  let ws: WebSocket | null = null;
+  let reconnectTimeout: NodeJS.Timeout;
+  let isIntentionallyClosed = false;
+
+  const connectWebSocket = () => {
+    try {
+      ws = new WebSocket(kwargs.api_ws);
+
+      ws.onopen = () => {
+        console.log("✅ WebSocket connected!");
+        
+        const handshake = {
+          username: username,
+          toggle_view_selection: toggle_views ? toggle_views[viewId] : 'queen',
+          api_key: api_key,
+        };
+        
+        console.log("📤 Sending handshake:", handshake);
+        ws?.send(JSON.stringify(handshake));
+      };
+
+      ws.onmessage = (event) => {
+        console.log("📥 WebSocket message received");
+        try {
+          const data = JSON.parse(event.data);         
+          // Handle connection confirmation
+          if (data.type === 'connection_established') {
+            console.log("✅ Handshake confirmed:", data.message);
+            return;
+          }
+          
+          // Handle array of updates (batch)
+          if (Array.isArray(data)) {
+            console.log(`📥 Received ${data.length} row updates`);
+            
+            const rowsToUpdate: any[] = [];
+            
+            data.forEach(({ row_id, updates }) => {
+              const existingNode = gridRef.current?.api.getRowNode(row_id);
+              if (existingNode && existingNode.data) {
+                const updatedRow = { ...existingNode.data, ...updates };
+                updatedRow[index] = row_id;
+                rowsToUpdate.push(updatedRow);
+              } else {
+                console.log("⚠️  Row not found for update:", row_id);
+              }
+            });
+            
+            // Apply all updates in ONE transaction
+            if (rowsToUpdate.length > 0) {
+              gridRef.current?.api.applyTransaction({
+                update: rowsToUpdate
+              });
+              console.log(`✅ Updated ${rowsToUpdate.length} rows`);
+              
+              // Recalculate subtotals if needed
+              if (subtotal_cols && subtotal_cols.length > 0) {
+                setTimeout(() => calculateSubtotals(), 100);
+              }
+            }
+          }
+          // Handle single row update
+          else if (data.row_id && data.updates) {
+            const { row_id, updates } = data;
+            const existingNode = gridRef.current?.api.getRowNode(row_id);
+            if (existingNode && existingNode.data) {
+              const updatedRow = { ...existingNode.data, ...updates };
+              updatedRow[index] = row_id;
+              gridRef.current?.api.applyTransaction({
+                update: [updatedRow]
+              });
+              console.log(`✅ Updated single row: ${row_id}`);
+            }
+          }
+        } catch (error) {
+          console.error("❌ Error processing WebSocket message:", error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("❌ WebSocket error:", error);
+      };
+
+      ws.onclose = (event) => {
+        console.log("🔌 WebSocket closed:", {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean
+        });
+        
+        // Attempt reconnect if not intentionally closed
+        if (!isIntentionallyClosed && !event.wasClean) {
+          console.log("🔄 Attempting to reconnect in 3 seconds...");
+          reconnectTimeout = setTimeout(() => {
+            console.log("🔄 Reconnecting WebSocket...");
+            connectWebSocket();
+          }, 3000);
+        }
+      };
+    } catch (error) {
+      console.error("❌ Error creating WebSocket:", error);
+    }
   };
 
-ws.onmessage = (event) => {
-  const { row_id, updates } = JSON.parse(event.data);
-  const existingNode = gridRef.current?.api.getRowNode(row_id);
-  if (existingNode && existingNode.data) {
-    const updatedRow = { ...existingNode.data, ...updates };
-    updatedRow[index] = row_id; // Ensure the id field is present
-    gridRef.current?.api.applyTransaction({
-      update: [updatedRow]
-    });
-  } else {
-    console.log("Row not found for update:", row_id);
-  }
-};
-  return () => ws.close();
-}, [kwargs.api_ws, index, rowData]);
+  // Initial connection
+  connectWebSocket();
 
+  // Cleanup
+  return () => {
+    console.log("🧹 Cleaning up WebSocket connection");
+    isIntentionallyClosed = true;
+    clearTimeout(reconnectTimeout);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+  };
+}, [kwargs.api_ws, index, viewId, username, api_key, subtotal_cols, toggle_views]);
 
-const checkLastModified = async (): Promise<boolean> => {
+  const checkLastModified = async (): Promise<boolean> => {
     try {
       if (api_lastmod_key === null) {
         console.log("api key is null, returning false");
@@ -328,9 +422,7 @@ const checkLastModified = async (): Promise<boolean> => {
             api_lastmod_key: api_lastmod_key,
           },
         });
-        // console.log("fetching data...", res.data.lastModified);
         if (res.data?.lastModified !== lastModified) {
-          // console.log("setting modified changed, fetching data...", res.data.lastModified, lastModified);
           setLastModified(res.data.lastModified);
           return true;
         } else {
@@ -346,11 +438,9 @@ const checkLastModified = async (): Promise<boolean> => {
 
   const checkViewIdChanged = async (currentViewId: number, previousViewId: number): Promise<boolean> => {
     if (currentViewId !== previousViewId) {
-      // console.log("viewId has changed from", previousViewId, "to", currentViewId);
       setpreviousViewId(currentViewId);
       return true;
     } else {
-      // console.log("viewId has not changed");
       return false;
     }
   };
@@ -358,13 +448,12 @@ const checkLastModified = async (): Promise<boolean> => {
   // BUTTONS, MOVE OUT OF USEEFFECT
   useEffect(() => {
     Streamlit.setFrameHeight();
-  
+
     if (buttons.length) {
-      // console.log("Processing buttons:", buttons);
       buttons = deepMap(buttons, parseJsCodeFromPython, ["rowData"]); // process JsCode from buttons props
-  
+
       buttons.forEach((button: any) => {
-        
+
         const {
           prompt_field,
           prompt_message,
@@ -414,15 +503,15 @@ const checkLastModified = async (): Promise<boolean> => {
                   const selectedField =
                     typeof str === "string"
                       ? JSON.parse(
-                          selectedRow[prompt_field]
-                            .replace(/'/g, '"')
-                            .replace(/\n/g, "")
-                            .replace(/\s/g, "")
-                            .replace(/False/g, "false")
-                            .replace(/True/g, "true")
-                        )
+                        selectedRow[prompt_field]
+                          .replace(/'/g, '"')
+                          .replace(/\n/g, "")
+                          .replace(/\s/g, "")
+                          .replace(/False/g, "false")
+                          .replace(/True/g, "true")
+                      )
                       : str;
-  
+
                   setModalshow(true);
                   setModalData({
                     prompt_message,
@@ -438,12 +527,12 @@ const checkLastModified = async (): Promise<boolean> => {
                     display_grid_column,
                     editableCols,
                   });
-  
+
                   const rules_value: any = {};
                   prompt_order_rules.forEach((rule: string) => {
                     rules_value[rule] = selectedField[rule];
                   });
-  
+
                   setPromptText(rules_value);
                 } else if (prompt_field && prompt_message) {
                   setModalshow(true);
@@ -475,26 +564,26 @@ const checkLastModified = async (): Promise<boolean> => {
         });
       });
     }
-  
+
     // Reorder columns based on a predefined list
     // const columnOrder = ["sector", "broker_qty_available", "queens_suggested_sell"]; // Replace with your desired column order
-    
+
     if (columnOrder.length > 0 && grid_options.columnDefs) {
       grid_options.columnDefs.sort((a: any, b: any) => {
-      // If both columns are in the columnOrder array, maintain their order
-      if (columnOrder.indexOf(a.field) !== -1 && columnOrder.indexOf(b.field) !== -1) {
-        return columnOrder.indexOf(a.field) - columnOrder.indexOf(b.field);
-      }
-    
-      // If one of the columns isn't in columnOrder, keep its original position
-      if (columnOrder.indexOf(a.field) === -1) return 1;
-      if (columnOrder.indexOf(b.field) === -1) return -1;
-    
-      return 0;
+        // If both columns are in the columnOrder array, maintain their order
+        if (columnOrder.indexOf(a.field) !== -1 && columnOrder.indexOf(b.field) !== -1) {
+          return columnOrder.indexOf(a.field) - columnOrder.indexOf(b.field);
+        }
+
+        // If one of the columns isn't in columnOrder, keep its original position
+        if (columnOrder.indexOf(a.field) === -1) return 1;
+        if (columnOrder.indexOf(b.field) === -1) return -1;
+
+        return 0;
       });
     }
-    
-  
+
+
     // Optional: Refresh header if necessary (if needed)
     if (gridRef.current?.api) {
       gridRef.current.api.refreshHeader();
@@ -518,7 +607,6 @@ const checkLastModified = async (): Promise<boolean> => {
     try {
       let toggle_view = toggle_views ? toggle_views[viewId] : "none";
       const hasViewChanged = await checkViewIdChanged(viewId, previousViewId);
-      // console.log("hasViewChanged", hasViewChanged, viewId, previousViewId);
 
       // If view has changed, skip checkLastModified
       if (!hasViewChanged && refresh_sec && refresh_sec > 0) {
@@ -546,129 +634,133 @@ const checkLastModified = async (): Promise<boolean> => {
     }
   };
 
- /// for title outside grid
-// const [subtotals, setSubtotals] = useState<any>(null);
+  /// for title outside grid
+  // const [subtotals, setSubtotals] = useState<any>(null);
 
-// const calculateSubtotals = useCallback(() => {
-//   if (!gridRef.current) return;
-//   if (!subtotal_cols || subtotal_cols.length === 0) {
-//     setSubtotals(null);
-//     return;
-//   }
-//   const api = gridRef.current.api;
-//   let filteredRows: any[] = [];
-//   api.forEachNodeAfterFilterAndSort((node) => {
-//     if (node.data) filteredRows.push(node.data);
-//   });
+  // const calculateSubtotals = useCallback(() => {
+  //   if (!gridRef.current) return;
+  //   if (!subtotal_cols || subtotal_cols.length === 0) {
+  //     setSubtotals(null);
+  //     return;
+  //   }
+  //   const api = gridRef.current.api;
+  //   let filteredRows: any[] = [];
+  //   api.forEachNodeAfterFilterAndSort((node) => {
+  //     if (node.data) filteredRows.push(node.data);
+  //   });
 
-//   if (filteredRows.length === 0) {
-//     setSubtotals(null);
-//     return;
-//   }
+  //   if (filteredRows.length === 0) {
+  //     setSubtotals(null);
+  //     return;
+  //   }
 
-//   let subtotal: any = {};
-//   subtotal[total_col] = "Subtotal";
-//   subtotal_cols.forEach((col: string) => {
-//     subtotal[col] = filteredRows.reduce((sum, row) => sum + (Number(row[col]) || 0), 0);
-//   });
+  //   let subtotal: any = {};
+  //   subtotal[total_col] = "Subtotal";
+  //   subtotal_cols.forEach((col: string) => {
+  //     subtotal[col] = filteredRows.reduce((sum, row) => sum + (Number(row[col]) || 0), 0);
+  //   });
 
-//   setSubtotals(subtotal);
-// }, [subtotal_cols, total_col]);
-// const onFilterChanged = useCallback(() => {
-//   calculateSubtotals();
-// }, [calculateSubtotals]);
+  //   setSubtotals(subtotal);
+  // }, [subtotal_cols, total_col]);
+  // const onFilterChanged = useCallback(() => {
+  //   calculateSubtotals();
+  // }, [calculateSubtotals]);
 
-// const [subtotalsRow, setSubtotalsRow] = useState<any[]>([]);
+  // const [subtotalsRow, setSubtotalsRow] = useState<any[]>([]);
 
-const calculateSubtotals = useCallback(() => {
-  if (!gridRef.current) return;
-  if (!subtotal_cols || subtotal_cols.length === 0) {
-    setSubtotalsRow([]);
-    return;
-  }
-  const api = gridRef.current.api;
-  let filteredRows: any[] = [];
-  api.forEachNodeAfterFilterAndSort((node) => {
-    if (node.data) filteredRows.push(node.data);
-  });
-
-  if (filteredRows.length === 0) {
-    setSubtotalsRow([]);
-    return;
-  }
-
-let subtotal: any = {};
-// Ensure total_col is a valid string and exists in the columns
-let allCols: string[] = [];
-if (grid_options && grid_options.columnDefs) {
-  allCols = grid_options.columnDefs.map((colDef: any) => colDef.field).filter(Boolean);
-} else if (filteredRows.length > 0) {
-  allCols = Object.keys(filteredRows[0]);
-}
-
-// Place "subTotals" label in the correct column
-if (typeof total_col === "string" && allCols.includes(total_col)) {
-  subtotal[total_col] = "subTotals";
-} else if (allCols.length > 0) {
-  subtotal[allCols[0]] = "subTotals"; // fallback to first column
-}
-
-
-
-// Add button columns if not already present
-if (Array.isArray(buttons)) {
-  buttons.forEach((btn: any) => {
-    if (btn.col_header && btn.cellStyle) {
-      subtotal[`${btn.col_header}_cellStyle`] = btn.cellStyle;
+  const calculateSubtotals = useCallback(() => {
+    if (!gridRef.current) return;
+    if (!subtotal_cols || subtotal_cols.length === 0) {
+      setSubtotalsRow([]);
+      return;
     }
-  });
-}
+    const api = gridRef.current.api;
+    let filteredRows: any[] = [];
+    api.forEachNodeAfterFilterAndSort((node) => {
+      if (node.data) filteredRows.push(node.data);
+    });
 
-allCols.forEach((col: string) => {
-  if (subtotal_cols.includes(col)) {
-    // Try to split by $ and sum the numeric part if possible
-    const sum = filteredRows.reduce((sum, row) => {
-      let val = row[col];
-      if (typeof val === "string" && val.includes("$")) {
-        // Try to extract number after $
-        const match = val.match(/\$([\d,.\-]+)/);
-        if (match && match[1]) {
-          val = match[1].replace(/,/g, "");
+
+    if (filteredRows.length === 0) {
+      setSubtotalsRow([]);
+      return;
+    }
+
+    let subtotal: any = {};
+    // Ensure total_col is a valid string and exists in the columns
+    let allCols: string[] = [];
+    if (grid_options && grid_options.columnDefs) {
+      allCols = grid_options.columnDefs.map((colDef: any) => colDef.field).filter(Boolean);
+    } else if (filteredRows.length > 0) {
+      allCols = Object.keys(filteredRows[0]);
+    }
+
+    // Place "subTotals" label in the correct column
+    if (typeof total_col === "string" && allCols.includes(total_col)) {
+      subtotal[total_col] = "subTotals";
+    } else if (allCols.length > 0) {
+      subtotal[allCols[0]] = "subTotals"; // fallback to first column
+    }
+
+
+
+    // Add button columns if not already present
+    if (Array.isArray(buttons)) {
+      buttons.forEach((btn: any) => {
+        if (btn.col_header && btn.cellStyle) {
+          subtotal[`${btn.col_header}_cellStyle`] = btn.cellStyle;
         }
-      }
-      const num = Number(val);
-      return sum + (isNaN(num) ? 0 : num);
-    }, 0);
-    subtotal[col] = isNaN(sum) ? "" : sum;
-  } else if (subtotal[total_col] !== "subTotals" || col !== total_col) {
-    subtotal[col] = ""; // or null, or a placeholder
-  }
-});
-
-  setSubtotalsRow([subtotal]);
-}, [subtotal_cols, total_col]);
-const onFilterChanged = useCallback(() => {
-  calculateSubtotals();
-}, [calculateSubtotals]);
-
-  useEffect(() => {
-    if (refresh_sec && refresh_sec > 0) {
-      const interval = setInterval(fetchAndSetData, refresh_sec * 1000)
-      let timeout: NodeJS.Timeout
-      if (refresh_cutoff_sec > 0) {
-        console.log(refresh_cutoff_sec)
-        timeout = setTimeout(() => {
-          clearInterval(interval)
-          console.log("Fetching data ended, refresh rate:", refresh_sec)
-        }, refresh_cutoff_sec * 1000)
-      }
-      console.error("rendered==========", props)
-      return () => {
-        clearInterval(interval)
-        if (timeout) clearTimeout(timeout)
-      }
+      });
     }
-  }, [props, viewId])
+
+    allCols.forEach((col: string) => {
+      if (subtotal_cols.includes(col)) {
+        // Try to split by $ and sum the numeric part if possible
+        const sum = filteredRows.reduce((sum, row) => {
+          let val = row[col];
+          if (typeof val === "string" && val.includes("$")) {
+            // Try to extract number after $
+            const match = val.match(/\$([\d,.\-]+)/);
+            if (match && match[1]) {
+              val = match[1].replace(/,/g, "");
+            }
+          }
+          const num = Number(val);
+          return sum + (isNaN(num) ? 0 : num);
+        }, 0);
+        subtotal[col] = isNaN(sum) ? "" : sum;
+      } else if (subtotal[total_col] !== "subTotals" || col !== total_col) {
+        subtotal[col] = ""; // or null, or a placeholder
+      }
+    });
+
+    setSubtotalsRow([subtotal]);
+  }, [subtotal_cols, total_col]);
+  
+  const onFilterChanged = useCallback(() => {
+    calculateSubtotals();
+  }, [calculateSubtotals]);
+
+useEffect(() => {
+  // ✅ Only poll if WebSocket is NOT available
+  if (!api_ws && refresh_sec && refresh_sec > 0) {
+    console.log("📡 Starting polling (no WebSocket available)");
+    const interval = setInterval(fetchAndSetData, refresh_sec * 1000)
+    let timeout: NodeJS.Timeout
+    if (refresh_cutoff_sec > 0) {
+      timeout = setTimeout(() => {
+        clearInterval(interval)
+        console.log("⏹️ Polling stopped (cutoff reached)")
+      }, refresh_cutoff_sec * 1000)
+    }
+    return () => {
+      clearInterval(interval)
+      if (timeout) clearTimeout(timeout)
+    }
+  } else if (api_ws) {
+    console.log("🔌 WebSocket active, polling disabled");
+  }
+}, [api_ws, refresh_sec, refresh_cutoff_sec, props, viewId])
 
 
 
@@ -695,10 +787,10 @@ const onFilterChanged = useCallback(() => {
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
       try {
-        console.log("ws api is", api_ws, kwargs.api_ws);
+        console.log("websocket api is", api_ws, kwargs.api_ws);
         const array = await fetchData();
         if (array === false) return;
-        
+
         setRowData(array);
         g_rowdata = array;
 
@@ -710,10 +802,10 @@ const onFilterChanged = useCallback(() => {
         // Autosize all columns after data is set
         autoSizeAll(true);
 
-      // Store initial column state
-      if (params.columnApi) {
-        setInitialColumnState(params.columnApi.getColumnState());
-      }
+        // Store initial column state
+        if (params.columnApi) {
+          setInitialColumnState(params.columnApi.getColumnState());
+        }
 
       } catch (error: any) {
         toastr.error(`Error: ${error.message}`)
@@ -727,11 +819,12 @@ const onFilterChanged = useCallback(() => {
     }
   }, [])
 
-  const getRowId = useMemo<GetRowIdFunc>(() => {
-    return (params: GetRowIdParams) => {
-      return params.data[index]
-    }
-  }, [index])
+const getRowId = useMemo<GetRowIdFunc>(() => {
+  return (params: GetRowIdParams) => {
+    // ✅ Always return a string
+    return String(params.data[index]);
+  }
+}, [index])
 
   const sideBar = useMemo<
     SideBarDef | string | string[] | boolean | null
@@ -757,11 +850,42 @@ const onFilterChanged = useCallback(() => {
     }
   }, [])
 
-  const onCellValueChanged = useCallback((event) => {
-    if (g_newRowData === null) g_newRowData = {}
-    g_newRowData[event.data[index]] = event.data
-    console.log("Data after change is", g_newRowData)
-  }, [])
+  const onCellValueChanged = useCallback(
+    async (event: any) => {
+      if (props.autoUpdate) {
+        try {
+          const updatedRow = event.data; // The updated row data
+          console.log("Auto-updating row:", updatedRow);
+
+          // Send the updated row to the API
+          const response = await axios.post(api_update, {
+            username: username,
+            prod: prod,
+            updated_row: updatedRow, // Send the updated row
+            ...kwargs, // Include any additional parameters
+          });
+
+          if (response.status === 200) {
+            toastr.success("Row updated successfully!");
+          } else {
+            toastr.error("Failed to update row.");
+          }
+        } catch (error) {
+          if (error && typeof error === "object" && "message" in error) {
+            toastr.error(`Error updating row: ${(error as any).message}`);
+          } else {
+            toastr.error(`Error updating row: ${String(error)}`);
+          }
+        }
+      } else {
+        // Store changes for manual update
+        if (g_newRowData === null) g_newRowData = {};
+        g_newRowData[event.data[index]] = event.data;
+        console.log("Data after change is", g_newRowData);
+      }
+    },
+    [props.autoUpdate, api_update, username, prod, kwargs, index]
+  );
 
 
   const [loading, setLoading] = useState(false);
@@ -771,7 +895,7 @@ const onFilterChanged = useCallback(() => {
     setLoading(true);
     try {
       const success = await fetchAndSetData();
-      
+
       refresh_success && success && toastr.success("Refresh success!");
     } catch (error: any) {
       toastr.error(`Refresh Failed! ${error.message}`);
@@ -870,11 +994,11 @@ const onFilterChanged = useCallback(() => {
     let funcReg = new RegExp(
       `${JS_PLACEHOLDER}\\s*((function|class)\\s*.*)\\s*${JS_PLACEHOLDER}`
     )
-  
+
     let match = funcReg.exec(v)
-  
+
     if (match) {
-  
+
       const funcStr = match[1]
       // eslint-disable-next-line
       return new Function("return " + funcStr)()
@@ -884,7 +1008,7 @@ const onFilterChanged = useCallback(() => {
   }
 
   const getRowStyle = (params: RowClassParams<any>): RowStyle | undefined => {
-        if (params.data && params.data[total_col] === "subTotals") {
+    if (params.data && params.data[total_col] === "subTotals") {
       return { fontWeight: "bold", background: "#f8f8f8" }; // Add background if you want
     }
     try {
@@ -916,47 +1040,35 @@ const onFilterChanged = useCallback(() => {
 
   const button_color = "#3498db"; // Set your custom button color here
 
-  // let pinnedTopRowData: any[] = [];
-  // let filteredRowData = rowData;
-  
-  // console.log("total_col", total_col)
-  // if (total_col) {
-  //   // Use total_col as the column to check for "Total" row
-  //   const totalRow = rowData.find(row => row[total_col] === "Total");
-  //   pinnedTopRowData = totalRow ? [totalRow] : [];
-  //   filteredRowData = rowData.filter(row => row[total_col] !== "Total");
-  // }
-
-
   const getUniqueColumnValues = (column: string, rowData: any[]) => {
     return Array.from(new Set(rowData.map(row => row[column]))).filter(
       v => v !== undefined && v !== null
     );
   };
-// let filter_button = "piece_name";
+  // let filter_button = "piece_name";
 
-const uniqueValues = useMemo(
-  () => getUniqueColumnValues(filter_button, rowData),
-  [rowData, filter_button]
-);
+  const uniqueValues = useMemo(
+    () => getUniqueColumnValues(filter_button, rowData),
+    [rowData, filter_button]
+  );
 
-const handleButtonFilter = (value: string | null) => {
-  setActiveFilter(value);
+  const handleButtonFilter = (value: string | null) => {
+    setActiveFilter(value);
 
-  if (gridRef.current && gridRef.current.api) {
-    const api = gridRef.current.api;
-    if (value) {
-      api.setFilterModel({
-        ...api.getFilterModel(),
-        [filter_button]: { filterType: "set", values: [value] }
-      });
-    } else {
-      const model = api.getFilterModel();
-      delete model[filter_button];
-      api.setFilterModel(model);
+    if (gridRef.current && gridRef.current.api) {
+      const api = gridRef.current.api;
+      if (value) {
+        api.setFilterModel({
+          ...api.getFilterModel(),
+          [filter_button]: { filterType: "set", values: [value] }
+        });
+      } else {
+        const model = api.getFilterModel();
+        delete model[filter_button];
+        api.setFilterModel(model);
+      }
     }
-  }
-};
+  };
 
 
 
@@ -966,155 +1078,155 @@ const handleButtonFilter = (value: string | null) => {
   return (
     <>
 
-{kwargs.show_cell_content && selectedCellContent && (
-  <div
-    style={{
-      position: "absolute",
-      top: "10px",
-      right: "10px",
-      background: "white",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      padding: "10px",
-      boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
-      zIndex: 1000,
-      maxWidth: "300px", // Limit the width
-      maxHeight: "200px", // Limit the height
-      overflow: "auto", // Add scrollbars for overflow
-      width: "fit-content",
-    }}
-  >
-    <p style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-      {selectedCellContent}
-    </p>
-    <button
-      onClick={() => setSelectedCellContent(null)}
-      style={{
-        background: "#3498db",
-        color: "white",
-        border: "none",
-        borderRadius: "2px",
-        padding: "3px 5px",
-        cursor: "pointer",
-      }}
-    >
-      <h5 style={{ fontSize: "8px", margin: "0 0 6px 0" }}>x</h5>
-    </button>
-  </div>
-)}
+      {kwargs.show_cell_content && selectedCellContent && (
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            background: "white",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            padding: "10px",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+            zIndex: 1000,
+            maxWidth: "300px", // Limit the width
+            maxHeight: "200px", // Limit the height
+            overflow: "auto", // Add scrollbars for overflow
+            width: "fit-content",
+          }}
+        >
+          <p style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {selectedCellContent}
+          </p>
+          <button
+            onClick={() => setSelectedCellContent(null)}
+            style={{
+              background: "#3498db",
+              color: "white",
+              border: "none",
+              borderRadius: "2px",
+              padding: "3px 5px",
+              cursor: "pointer",
+            }}
+          >
+            <h5 style={{ fontSize: "8px", margin: "0 0 6px 0" }}>x</h5>
+          </button>
+        </div>
+      )}
 
-{toggle_views && toggle_views.length > 0 && (
-  <>
-    <div
-      style={{
-        fontWeight: "bold",
-        color: "#055A6E",
-        marginBottom: "4px",
-        fontSize: "15px",
-      }}
-    >
-      {kwargs.toggle_header ? kwargs.toggle_header : ""}
-    </div>
-    {toggle_views.length < 20 ? (
-      // Render normal buttons if toggle_views is less than 20
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-          padding: "10px",
-          marginBottom: "10px",
-        }}
-      >
-        {toggle_views.map((view: string, index: number) => (
-          <button
-            key={index}
-            className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
+      {toggle_views && toggle_views.length > 0 && (
+        <>
+          <div
             style={{
-              ...buttonStyle,
-              borderRadius: "8px",
-              color: "#055A6E",
-              backgroundColor: "#F3FAFD",
               fontWeight: "bold",
-            }}
-            onClick={() => {
-              setViewId(index);
-              setpreviousViewId(viewId);
-            }}
-            disabled={loading}
-          >
-            {view}
-            {loading && viewId === index ? (
-              <div
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  border: "2px solid black",
-                  borderTop: "2px solid transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                  marginLeft: "8px",
-                }}
-              />
-            ) : null}
-          </button>
-        ))}
-      </div>
-    ) : (
-      // Render overlap container if toggle_views is 20 or more
-      <div
-        className="toggle-view-container"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
-          gap: "10px",
-          overflowY: "auto",
-          maxHeight: "200px",
-          padding: "10px",
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-          backgroundColor: "#eef9f8",
-          width: "100%",
-          marginBottom: "10px",
-        }}
-      >
-        {toggle_views.map((view: string, index: number) => (
-          <button
-            key={index}
-            className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
-            style={{
-              ...buttonStyle,
-              borderRadius: "8px",
               color: "#055A6E",
-              backgroundColor: "#F3FAFD",
-              fontWeight: "bold",
+              marginBottom: "4px",
+              fontSize: "15px",
             }}
-            onClick={() => {
-              setViewId(index);
-              setpreviousViewId(viewId);
-            }}
-            disabled={loading}
           >
-            {view}
-            {loading && viewId === index ? (
-              <div
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  border: "2px solid black",
-                  borderTop: "2px solid transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                  marginLeft: "8px",
-                }}
-              />
-            ) : null}
-          </button>
-        ))}
-      </div>
-    )}
-  </>
-)}
+            {kwargs.toggle_header ? kwargs.toggle_header : ""}
+          </div>
+          {toggle_views.length < 20 ? (
+            // Render normal buttons if toggle_views is less than 20
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "10px",
+                padding: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              {toggle_views.map((view: string, index: number) => (
+                <button
+                  key={index}
+                  className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
+                  style={{
+                    ...buttonStyle,
+                    borderRadius: "8px",
+                    color: "#055A6E",
+                    backgroundColor: "#F3FAFD",
+                    fontWeight: "bold",
+                  }}
+                  onClick={() => {
+                    setViewId(index);
+                    setpreviousViewId(viewId);
+                  }}
+                  disabled={loading}
+                >
+                  {view}
+                  {loading && viewId === index ? (
+                    <div
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid black",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.8s linear infinite",
+                        marginLeft: "8px",
+                      }}
+                    />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : (
+            // Render overlap container if toggle_views is 20 or more
+            <div
+              className="toggle-view-container"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+                gap: "10px",
+                overflowY: "auto",
+                maxHeight: "200px",
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                backgroundColor: "#eef9f8",
+                width: "100%",
+                marginBottom: "10px",
+              }}
+            >
+              {toggle_views.map((view: string, index: number) => (
+                <button
+                  key={index}
+                  className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
+                  style={{
+                    ...buttonStyle,
+                    borderRadius: "8px",
+                    color: "#055A6E",
+                    backgroundColor: "#F3FAFD",
+                    fontWeight: "bold",
+                  }}
+                  onClick={() => {
+                    setViewId(index);
+                    setpreviousViewId(viewId);
+                  }}
+                  disabled={loading}
+                >
+                  {view}
+                  {loading && viewId === index ? (
+                    <div
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid black",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.8s linear infinite",
+                        marginLeft: "8px",
+                      }}
+                    />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       <MyModal
         isOpen={modalShow}
@@ -1178,31 +1290,32 @@ const handleButtonFilter = (value: string | null) => {
                   `}
                 </style>
               </div>
+              {!props.autoUpdate && (
                 <div style={{ margin: "5px 5px 5px 2px" }}>
-                <button
-                  className="btn"
-                  style={{
-                  backgroundColor: "green",
-                  color: "white",
-                  padding: "5px 8px",
-                  fontSize: "12px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  }}
-                  onClick={onUpdate}
-                  title="Update"
-                >
-                  <span style={{ fontSize: "18px", lineHeight: "1" }}>↑</span>
-                  {/* <span>Update</span> */}
-                </button>
-              </div>
+                  <button
+                    className="btn"
+                    style={{
+                      backgroundColor: "green",
+                      color: "white",
+                      padding: "5px 8px",
+                      fontSize: "12px",
+                      borderRadius: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                    onClick={onUpdate}
+                    title="Update"
+                  >
+                    <span style={{ fontSize: "18px", lineHeight: "1" }}>↑</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
-          
+
         </div>
-  
+
         <div
           className={grid_options.theme || "ag-theme-alpine-dark"}
           style={{
@@ -1211,130 +1324,130 @@ const handleButtonFilter = (value: string | null) => {
           }}
         >
 
-{kwargs.column_sets && (
+          {kwargs.column_sets && (
 
-  <div style={{ marginBottom: 12, display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ marginBottom: 12, display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 
-<button
-  onClick={() => {
-    setSelectedColumnSetKeys([]);
-    setTimeout(() => {
-      const columnApi = gridRef.current?.columnApi;
-      if (columnApi && initialColumnState) {
-        columnApi.applyColumnState({
-          state: initialColumnState,
-          applyOrder: true,
-        });
-      }
-    }, 0);
-  }}
-    style={{
-      background: "rgb(194, 194, 194)",
-      color: "white",
-      border: "1.5px solid rgb(213, 213, 213)",
-      borderRadius: "6px",
-      fontWeight: "bold",
-      fontSize: "12px",
-      padding: "5px 10px",
-      margin: "0 4px 4px 0",
-      boxShadow: "0 2px 6px rgb(216, 216, 216)",
-      transition: "all 0.15s",
-      cursor: "pointer",
-    }}
->
-  Reset Columns
-</button>
+              <button
+                onClick={() => {
+                  setSelectedColumnSetKeys([]);
+                  setTimeout(() => {
+                    const columnApi = gridRef.current?.columnApi;
+                    if (columnApi && initialColumnState) {
+                      columnApi.applyColumnState({
+                        state: initialColumnState,
+                        applyOrder: true,
+                      });
+                    }
+                  }, 0);
+                }}
+                style={{
+                  background: "rgb(194, 194, 194)",
+                  color: "white",
+                  border: "1.5px solid rgb(213, 213, 213)",
+                  borderRadius: "6px",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  padding: "5px 10px",
+                  margin: "0 4px 4px 0",
+                  boxShadow: "0 2px 6px rgb(216, 216, 216)",
+                  transition: "all 0.15s",
+                  cursor: "pointer",
+                }}
+              >
+                Reset Columns
+              </button>
 
-    
-    {Object.keys(kwargs.column_sets).map(key => (
-      
-      
-      <button
-        key={key}
-        onClick={() => {
-          setSelectedColumnSetKeys(prev =>
-            prev.includes(key)
-              ? prev.filter(k => k !== key)
-              : [...prev, key]
-          );
-          setTimeout(() => {
-            const keys = selectedColumnSetKeys.includes(key)
-              ? selectedColumnSetKeys.filter(k => k !== key)
-              : [...selectedColumnSetKeys, key];
-            const columnsToShow = Array.from(
-              new Set(keys.flatMap(k => kwargs.column_sets[k]))
-            );
-            const columnApi = gridRef.current?.columnApi;
-            if (columnApi && Array.isArray(grid_options.columnDefs)) {
-              grid_options.columnDefs.forEach((col: any) => {
-                columnApi.setColumnVisible(
-                  col.field,
-                  columnsToShow.includes(col.field)
-                );
-              });
-              columnsToShow.forEach((field, idx) => {
-                columnApi.moveColumn(field, idx);
-              });
-            }
-          }, 0);
-        }}
-        style={{
-          background: selectedColumnSetKeys.includes(key) ? "#3498db" : "#F3FAFD",
-          color: selectedColumnSetKeys.includes(key) ? "white" : "#055A6E",
-          border: selectedColumnSetKeys.includes(key) ? "2px solid #1abc9c" : "1px solid #ddd",
-          borderRadius: "6px",
-          fontWeight: "bold",
-          fontSize: "12px",
-          padding: "5px 10px",
-          margin: "0 4px 4px 0",
-          boxShadow: selectedColumnSetKeys.includes(key) ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
-          transition: "all 0.15s",
-          cursor: "pointer",
-        }}
-      >
-        {key}
-      </button>
-    ))}
 
-  </div>
-)}
+              {Object.keys(kwargs.column_sets).map(key => (
+
+
+                <button
+                  key={key}
+                  onClick={() => {
+                    setSelectedColumnSetKeys(prev =>
+                      prev.includes(key)
+                        ? prev.filter(k => k !== key)
+                        : [...prev, key]
+                    );
+                    setTimeout(() => {
+                      const keys = selectedColumnSetKeys.includes(key)
+                        ? selectedColumnSetKeys.filter(k => k !== key)
+                        : [...selectedColumnSetKeys, key];
+                      const columnsToShow = Array.from(
+                        new Set(keys.flatMap(k => kwargs.column_sets[k]))
+                      );
+                      const columnApi = gridRef.current?.columnApi;
+                      if (columnApi && Array.isArray(grid_options.columnDefs)) {
+                        grid_options.columnDefs.forEach((col: any) => {
+                          columnApi.setColumnVisible(
+                            col.field,
+                            columnsToShow.includes(col.field)
+                          );
+                        });
+                        columnsToShow.forEach((field, idx) => {
+                          columnApi.moveColumn(field, idx);
+                        });
+                      }
+                    }, 0);
+                  }}
+                  style={{
+                    background: selectedColumnSetKeys.includes(key) ? "#3498db" : "#F3FAFD",
+                    color: selectedColumnSetKeys.includes(key) ? "white" : "#055A6E",
+                    border: selectedColumnSetKeys.includes(key) ? "2px solid #1abc9c" : "1px solid #ddd",
+                    borderRadius: "6px",
+                    fontWeight: "bold",
+                    fontSize: "12px",
+                    padding: "5px 10px",
+                    margin: "0 4px 4px 0",
+                    boxShadow: selectedColumnSetKeys.includes(key) ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
+                    transition: "all 0.15s",
+                    cursor: "pointer",
+                  }}
+                >
+                  {key}
+                </button>
+              ))}
+
+            </div>
+          )}
           {/* Streamer for streaming_list_text if present */}
           {kwargs.streaming_list_text && Array.isArray(kwargs.streaming_list_text) && (
             <div
               style={{
-              width: "100%",
-              background: "#F3FAFD", // Match toggle_views button background
-              color: "#055A6E",      // Match toggle_views button text color
-              padding: "4px 10px",
-              fontSize: "13px",
-              borderBottom: "1px solid #ddd",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              marginBottom: "4px",
-              fontWeight: "bold",    // Match bold style from buttons
+                width: "100%",
+                background: "#F3FAFD", // Match toggle_views button background
+                color: "#055A6E",      // Match toggle_views button text color
+                padding: "4px 10px",
+                fontSize: "13px",
+                borderBottom: "1px solid #ddd",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                marginBottom: "4px",
+                fontWeight: "bold",    // Match bold style from buttons
               }}
             >
               <div
-              style={{
-                display: "block",
-                width: "100%",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                position: "relative",
-              }}
-              >
-              <div
                 style={{
-                display: "inline-block",
-                paddingLeft: "100%",
-                animation: "scroll-left 40s linear infinite",
+                  display: "block",
+                  width: "100%",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  position: "relative",
                 }}
               >
-                {kwargs.streaming_list_text.join("   |   ")}
-              </div>
-              <style>
-                {`
+                <div
+                  style={{
+                    display: "inline-block",
+                    paddingLeft: "100%",
+                    animation: "scroll-left 40s linear infinite",
+                  }}
+                >
+                  {kwargs.streaming_list_text.join("   |   ")}
+                </div>
+                <style>
+                  {`
                 @keyframes scroll-left {
                   0% {
                   transform: translateX(0%);
@@ -1344,65 +1457,65 @@ const handleButtonFilter = (value: string | null) => {
                   }
                 }
                 `}
-              </style>
+                </style>
               </div>
             </div>
           )}
 
-{kwargs['filter_button'] && kwargs['filter_button'] !== '' && (
-  <div style={{ marginBottom: 8 }}>
+          {kwargs['filter_button'] && kwargs['filter_button'] !== '' && (
+            <div style={{ marginBottom: 8 }}>
 
 
-{kwargs['show_clear_all_filters'] && (
-  <button
-    onClick={() => {
-      if (gridRef.current && gridRef.current.api) {
-        gridRef.current.api.setFilterModel({});
-      }
-    }}
-    style={{
-      background: "rgb(194, 194, 194)",
-      color: "white",
-      border: "1.5px solid rgb(213, 213, 213)",
-      borderRadius: "6px",
-      fontWeight: "bold",
-      fontSize: "12px",
-      padding: "5px 10px",
-      margin: "0 4px 4px 0",
-      boxShadow: "0 2px 6px rgb(216, 216, 216)",
-      transition: "all 0.15s",
-      cursor: "pointer",
-    }}
-  >
-    Clear Filters
-  </button>
-)}
+              {kwargs['show_clear_all_filters'] && (
+                <button
+                  onClick={() => {
+                    if (gridRef.current && gridRef.current.api) {
+                      gridRef.current.api.setFilterModel({});
+                    }
+                  }}
+                  style={{
+                    background: "rgb(194, 194, 194)",
+                    color: "white",
+                    border: "1.5px solid rgb(213, 213, 213)",
+                    borderRadius: "6px",
+                    fontWeight: "bold",
+                    fontSize: "12px",
+                    padding: "5px 10px",
+                    margin: "0 4px 4px 0",
+                    boxShadow: "0 2px 6px rgb(216, 216, 216)",
+                    transition: "all 0.15s",
+                    cursor: "pointer",
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
 
-    
-    {uniqueValues.map(val => (
-      <button
-        key={val}
-        onClick={() => handleButtonFilter(val)}
-        style={{
-          background: activeFilter === val ? "#3498db" : "#F3FAFD", // match main button color and toggle_views bg
-          color: activeFilter === val ? "white" : "#055A6E",        // match toggle_views text color
-          border: activeFilter === val ? "2px solid #1abc9c" : "1px solid #ddd",
-          borderRadius: "6px",
-          fontWeight: "bold",
-          fontSize: "12px",
-          padding: "5px 10px",
-          margin: "0 4px 4px 0",
-          boxShadow: activeFilter === val ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
-          transition: "all 0.15s",
-          cursor: "pointer",
-        }}
-      >
-        {val}
-      </button>
-    ))}
 
-  </div>
-)}
+              {uniqueValues.map(val => (
+                <button
+                  key={val}
+                  onClick={() => handleButtonFilter(val)}
+                  style={{
+                    background: activeFilter === val ? "#3498db" : "#F3FAFD", // match main button color and toggle_views bg
+                    color: activeFilter === val ? "white" : "#055A6E",        // match toggle_views text color
+                    border: activeFilter === val ? "2px solid #1abc9c" : "1px solid #ddd",
+                    borderRadius: "6px",
+                    fontWeight: "bold",
+                    fontSize: "12px",
+                    padding: "5px 10px",
+                    margin: "0 4px 4px 0",
+                    boxShadow: activeFilter === val ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
+                    transition: "all 0.15s",
+                    cursor: "pointer",
+                  }}
+                >
+                  {val}
+                </button>
+              ))}
+
+            </div>
+          )}
 
 
           <AgGridReact

@@ -1,83 +1,188 @@
 from fastapi import APIRouter, status, Header, Body, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, FileResponse
-import pandas as pd
+from dotenv import load_dotenv
+from fastapi import Request
+
+import asyncio
+from typing import Dict, Set, Optional
 import os
 import random
-from dotenv import load_dotenv
-from chess_piece.fastapi_queen import *
+import pandas as pd
+
 from master_ozz.utils import init_constants
-from fastapi import Request
-import asyncio
-
-
-# WORKERBEE FIX TO AVOID WARNING STREAMLIT ERROR..WARNING streamlit.runtime.scriptrunner_utils.script_run_context
 from master_ozz.ozz_query import ozz_query
-# from master_ozz.utils import ozz_master_root, init_constants
+from chess_piece.fastapi_queen import *
+from chess_utils.websocket_manager import manager
+from chess_utils.websocket_updates import send_story_grid_update
 
 router = APIRouter(
     prefix="/api/data",
     tags=["auth"]
 )
 
-# A set to store active WebSocket connections
-active_connections = {}
+logging.basicConfig(level=logging.ERROR)
 
-async def notify_websockets(data):
-    to_remove = set()
-    for connection in active_connections:
-        try:
-            await connection.send_json(data)
-        except Exception as e:
-            print(f"WebSocket send error: {e}")
-            to_remove.add(connection)
-    for connection in to_remove:
-        active_connections.remove(connection)
-
+### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
+# ✅ Store active WebSocket connections by username
+active_connections: Dict[str, Set[WebSocket]] = {}
 @router.websocket("/ws_story")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    initial_data = await websocket.receive_json()  # Receive initial data from frontend
-    active_connections[websocket] = initial_data
+async def websocket_story_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time story grid updates.
+    """
+    client_user = None
+    
     try:
+        # ✅ Accept connection FIRST
+        await websocket.accept()
+        logging.info("🔌 WebSocket connection accepted, waiting for handshake...")
+        
+        # ✅ Wait for handshake with timeout
+        try:
+            handshake_data = await asyncio.wait_for(
+                websocket.receive_text(), 
+                timeout=10.0
+            )
+        except asyncio.TimeoutError:
+            logging.error("❌ Handshake timeout - no data received from client")
+            await websocket.close()
+            return
+        
+        handshake = json.loads(handshake_data)
+        
+        client_user = handshake.get('username')
+        api_key = handshake.get('api_key')
+        toggle_view = handshake.get('toggle_view_selection', 'queen')
+        
+        logging.info(f"📥 Received handshake from: {client_user}")
+        
+        # ✅ Validate API key
+        expected_key = os.getenv('fastAPI_key')
+        if api_key != expected_key:
+            logging.error(f"❌ Invalid API key from {client_user}")
+            await websocket.send_text(json.dumps({
+                'type': 'error',
+                'message': 'Invalid API key'
+            }))
+            await websocket.close()
+            return
+        
+        # ✅ Register connection with manager
+        async with manager.lock:
+            manager.active_connections[websocket] = {
+                'username': client_user,
+                'toggle_view_selection': toggle_view,
+                'connected_at': str(datetime.now())
+            }
+        
+        logging.info(f"✅ WebSocket registered: {client_user} | Total: {len(manager.active_connections)}")
+        
+        # ✅ Send confirmation
+        await websocket.send_text(json.dumps({
+            'type': 'connection_established',
+            'message': f'Connected as {client_user}',
+            'toggle_view': toggle_view
+        }))
+        
+        logging.info(f"✅ Confirmation sent to {client_user}, entering message loop...")
+        
+        # ✅ Keep connection alive
         while True:
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        active_connections.pop(websocket, None)
-
-
-async def poll_table_and_notify():
-    while True:
-        to_remove = set()
-        # Print polling info only every 120 seconds
-        if not hasattr(poll_table_and_notify, "last_print_time"):
-            poll_table_and_notify.last_print_time = 0
-        now = asyncio.get_event_loop().time()
-        if now - poll_table_and_notify.last_print_time > 4089:
-            print(f"Polling active WebSocket connections... {len(active_connections)}")
-            poll_table_and_notify.last_print_time = now
-        for connection, initial_data in active_connections.items():
             try:
-                # Customize the data you send based on initial_data
-                # Example: send updates for the symbol requested by the client
-                client_user = initial_data.get("username")
-                print(f"Sending data to {client_user}")
-                data = initial_data.get("grid", {})
-                symbol = "SPY" # initial_data.get("symbol", "SPY")
-                json_data = {
-                    'row_id': symbol,
-                    'updates': {
-                        'symbol': symbol,
-                        'current_ask': random.uniform(100, 200),
-                        'broker_qty_delta': random.uniform(100, 200)
-                    }
-                }
-                await connection.send_json(json_data)
+                # Wait for client messages (ping/pong, etc.)
+                data = await websocket.receive_text()
+                logging.debug(f"📥 Received from {client_user}: {data}")
+                
+                # Handle ping
+                if data == 'ping':
+                    await websocket.send_text('pong')
+                    logging.debug(f"🏓 Pong sent to {client_user}")
+                    
+            except WebSocketDisconnect:
+                logging.info(f"🔌 Client {client_user} disconnected gracefully")
+                break
             except Exception as e:
-                print(f"WebSocket send error: {e}")
-                to_remove.add(connection)
-        for connection in to_remove:
-            active_connections.pop(connection, None)
-        await asyncio.sleep(3)  # Poll every 3 seconds (adjust as needed)
+                logging.error(f"❌ Error in message loop for {client_user}: {e}")
+                break
+                
+    except WebSocketDisconnect:
+        logging.info(f"🔌 WebSocket disconnected during setup: {client_user}")
+    except json.JSONDecodeError as e:
+        logging.error(f"❌ Invalid JSON in handshake: {e}")
+    except Exception as e:
+        logging.error(f"❌ WebSocket error for {client_user}: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        # ✅ Clean up
+        logging.info(f"🧹 Cleaning up connection for {client_user}")
+        await manager.disconnect(websocket)
+        try:
+            await websocket.close()
+        except:
+            pass
+
+@router.post("/trigger_story_grid_update")
+async def trigger_story_grid_update(request: Request):
+    """
+    Trigger story grid update via WebSocket.
+    Called by Queen Bee after calculating revrec.
+    """
+    try:
+        # Get payload
+        body = await request.body()
+        from chess_piece.pollen_db import PollenJsonDecoder
+        payload = json.loads(body, cls=PollenJsonDecoder)
+        
+        client_user = payload.get('client_user')
+        api_key = payload.get('api_key')
+        QUEEN_KING = payload.get('QUEEN_KING')
+        revrec = payload.get('revrec')
+        toggle_view_selection = payload.get('toggle_view_selection', 'queen')
+        qk_chessboard = payload.get('qk_chessboard')
+        
+        # ✅ Validate API key
+        if api_key != os.getenv('fastAPI_key'):
+            return {"status": "error", "message": "Invalid API key"}
+        
+        # ✅ Check if user is connected
+        if not manager.is_connected(client_user):
+            logging.warning(f"⚠️  User {client_user} not connected via WebSocket")
+            return {
+                "status": "warning",
+                "message": f"User {client_user} not connected",
+                "connected_users": manager.get_active_users()
+            }
+        
+        # ✅ Send update
+        success = await send_story_grid_update(
+            client_user=client_user,
+            QUEEN_KING=QUEEN_KING,
+            revrec=revrec,
+            toggle_view_selection=toggle_view_selection,
+            qk_chessboard=qk_chessboard
+        )
+        
+        if success:
+            return {
+                "status": "success",
+                "message": f"Story grid update sent to {client_user}"
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Failed to send update to {client_user}"
+            }
+            
+    except Exception as e:
+        logging.error(f"❌ Error in trigger_story_grid_update: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
 
 
 def check_authKey(api_key):

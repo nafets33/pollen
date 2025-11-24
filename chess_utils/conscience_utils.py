@@ -1,16 +1,16 @@
-
-import streamlit as st
 import pandas as pd
 import numpy as np
-from chess_piece.king import ReadPickleData, print_line_of_error, streamlit_config_colors
-from chess_piece.queen_hive import star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date, star_refresh_star_times
 import pytz
 from datetime import datetime, timedelta
 import os
 import json
-pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
+from chess_piece.queen_hive import star_names, bishop_ticker_info, sell_button_dict_items, update_sell_date, star_refresh_star_times
+from chess_piece.king import ReadPickleData, print_line_of_error, streamlit_config_colors
+from chess_piece.pollen_db import PollenJsonDecoder
 
 import ipdb
+
+pd.options.mode.chained_assignment = None  # default='warn' Set copy warning
 
 est = pytz.timezone("US/Eastern")
 
@@ -197,9 +197,6 @@ def return_waveview_fillers(QUEEN_KING, waveview):
         # print(remaining_budget, remaining_budget_borrow)
         raise e
 
-
-
-
 def get_powers(trading_model):
     starnames = {v: k for k, v in star_names().items()}
     star_powers = {}
@@ -210,17 +207,47 @@ def get_powers(trading_model):
     
     return star_powers, star_powers_borrow
 
-def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', qk_chessboard=None):
-
-
+def story_return(QUEEN_KING, revrec, toggle_view_selection='Queen', qk_chessboard=None):
+    """
+    Generate story grid data from QUEEN_KING and revrec.
+    
+    Args:
+        QUEEN_KING: Queen King dict (may be JSON-encoded from WebSocket)
+        revrec: Revenue recognition dict (may be JSON-encoded from WebSocket)
+        toggle_view_selection: View filter ('Queen', 'King', piece name, etc.)
+        qk_chessboard: Optional chessboard data
+    
+    Returns:
+        DataFrame: Story grid data
+    """
     try:
+        # ✅ Decode if received as JSON-encoded dict from WebSocket
+        if isinstance(QUEEN_KING, str):
+            QUEEN_KING = json.loads(QUEEN_KING, cls=PollenJsonDecoder)
+        
+        if isinstance(revrec, str):
+            revrec = json.loads(revrec, cls=PollenJsonDecoder)
+        
+        if isinstance(revrec.get('storygauge'), (list, dict)):
+            df_storygauge = pd.DataFrame(revrec['storygauge'])
+            if 'symbol' in df_storygauge.columns:
+                df_storygauge = df_storygauge.set_index('symbol', drop=False)
+            revrec['storygauge'] = df_storygauge
+
+        if isinstance(revrec.get('waveview'), (list, dict)):
+            df_waveview = pd.DataFrame(revrec['waveview'])
+            if 'ticker_time_frame' in df_waveview.columns:
+                df_waveview = df_waveview.set_index('ticker_time_frame', drop=False)
+            revrec['waveview'] = df_waveview
+        if not isinstance(toggle_view_selection, str):
+            toggle_view_selection = str(toggle_view_selection)
+        
+
         toggle_view_selection = toggle_view_selection.split("-")[0].strip()
         df = revrec.get('storygauge')
         waveview = revrec.get('waveview')
-        df_stars = revrec.get('df_stars')
-
-
         df_waveview = return_waveview_fillers(QUEEN_KING, waveview)
+
         if qk_chessboard:
             symbols = [item for sublist in [v.get('tickers') for v in qk_chessboard.values()] for item in sublist]
         else:
@@ -378,9 +405,9 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
                         df.at[symbol, f'{star}_kors'] = star_kors
                         # message
                         wavestate = f'{df_waveview.at[ttf, "bs_position"]}({df_waveview.at[ttf, "length"]})'
-                        alloc_deploy_msg = '${:,.0f}'.format(round(df_stars.at[ttf, "star_buys_at_play"]))
+                        alloc_deploy_msg = '${:,.0f}'.format(round(waveview.at[ttf, "star_buys_at_play"]))
                         df.at[symbol, f'{star}_state'] = f"{wavestate} {alloc_deploy_msg}"
-                        df.at[symbol, f'{star}_value'] = df_stars.at[ttf, "star_buys_at_play"]
+                        df.at[symbol, f'{star}_value'] = waveview.at[ttf, "star_buys_at_play"]
                     
             except Exception as e:
                 print("mmm error", symbol, print_line_of_error(e))
@@ -450,8 +477,7 @@ def story_return(QUEEN_KING, revrec, prod=True, toggle_view_selection='Queen', q
         # except Exception as e:
         #     print("BISHOP", e)
 
-
-
+        
         return df
     except Exception as e:
         print_line_of_error(f"CONSCIENCE UTILS {e}")

@@ -249,7 +249,7 @@ def waves():
 
     if st.toggle("test story fastappi return", True):
         st.write(QUEEN['price_info_symbols'])
-        df = story_return(QUEEN_KING, revrec, prod=True)
+        df = story_return(QUEEN_KING, revrec)
         standard_AGgrid(df)
         print("HERE")
 

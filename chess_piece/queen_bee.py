@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import sys
 from datetime import datetime, timedelta, date
 import pytz
-import ipdb
 import asyncio
 import aiohttp
 from collections import defaultdict, deque
@@ -38,7 +37,6 @@ from chess_piece.queen_hive import (kingdom__grace_to_find_a_Queen,
                                     init_logging, 
                                     convert_to_float, 
                                     order_vars__queen_order_items, 
-                                    logging_log_message, 
                                     return_market_hours, 
                                     check_order_status, stars,  
                                     timestamp_string, 
@@ -55,30 +53,6 @@ from chess_utils.robinhood_crypto_utils import CryptoAPITrading
 
 import copy
 from tqdm import tqdm
-
-import os, psutil
-print("Memory usage (MB):", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
-
-def print_object_memory(label, obj):
-    if isinstance(obj, pd.DataFrame):
-        print(f"{label} DataFrame mem (MB):", obj.memory_usage(deep=True).sum() / 1024 ** 2)
-    elif isinstance(obj, dict):
-        total = sys.getsizeof(obj)
-        for k, v in obj.items():
-            if isinstance(v, pd.DataFrame):
-                total += v.memory_usage(deep=True).sum()
-            elif isinstance(v, dict):
-                total += sys.getsizeof(v)
-            elif isinstance(v, list):
-                total += sys.getsizeof(v)
-            else:
-                try:
-                    total += sys.getsizeof(v)
-                except:
-                    pass
-        print(f"{label} dict mem (approx MB):", total / 1024 ** 2)
-    else:
-        print(f"{label} object mem (MB):", sys.getsizeof(obj) / 1024 ** 2)
 
 
 pg_migration = os.getenv('pg_migration')
@@ -909,7 +883,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
                     else:
                         print("Critical Error New Order Side")
-                        logging_log_message(log_type='error', msg='Critical Error New Order Side')
                 else:
                     print("critical errror new order type received")
                     logging.error(f"WTF Route me {queen_order_idx}")
@@ -1379,12 +1352,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 return {'kings_blessing': False, 'msg': 'missing price info'}
             
             ticker_priceinfo = QUEEN['price_info_symbols'].at[symbol, 'priceinfo']
-            star_total_budget_remaining = revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget")
-            star_total_borrow_remaining = revrec['df_stars'].loc[ticker_time_frame].get("remaining_budget_borrow")
-            # test replacement
-            # star_total_budget_remaining = revrec['storygauge'].loc[ticker_time_frame].get("ticker_remaining_budget")
-            # star_total_borrow_remaining = revrec['storygauge'].loc[ticker_time_frame].get("ticker_remaining_budget_borrow")
 
+            star_total_budget_remaining = waveview.loc[ticker_time_frame].get("remaining_budget")
+            star_total_borrow_remaining = waveview.loc[ticker_time_frame].get("remaining_budget_borrow")
 
             # trade scenarios / power ups / 
             trig_action_num = len(trig_action) # get trading model amount allowed?
@@ -2212,6 +2182,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
             sell_order = False # #### >>> convince me to sell  $$
 
+            # WORKERBEE this can be replaced with a deque list
             macd_gauge = macdGauge_metric(STORY_bee=STORY_bee, ticker_time_frame=ticker_time_frame, trigbees=['buy_cross-0', 'sell_cross-0'], number_ranges=[5, 11, 16, 24, 33])
             # honey_gauge = honeyGauge_metric(run_order)
 
@@ -3040,24 +3011,27 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             s = datetime.now(est)
             # refresh db
             s_time = datetime.now(est)
-            # QUEEN Databases
+            # QUEEN Databases # ABDUL Send data to API on RevRec when QUEEN_KING Refreshes 
+            send_revrec_update = False
             if pg_migration:
                 qk_lastmod = db_keys_df.at['QUEEN_KING', 'timestamp']
                 if str(qk_lastmod) != str(pq_qk_lastmod):
                     pq_qk_lastmod = qk_lastmod
                     print("PGM: QUEENKING Updated Read New Data")
+                    send_revrec_update = True
                     QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration, main_server=server).get('QUEEN_KING')
                     QUEEN['chess_board'] = QUEEN_KING['chess_board']
             else:
                 if str(os.stat(QUEEN['dbs'].get('PB_App_Pickle')).st_mtime) != QUEEN_KING['last_modified']:
                     print("QUEENKING Updated Read New Data")
+                    send_revrec_update = True
                     QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, main_server=server).get('QUEEN_KING')
                     QUEEN['chess_board'] = QUEEN_KING['chess_board']
 
             # symbol ticker data >>> 1 all current pieces on chess board && all current running orders
             if pg_migration:
                 symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
-                STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols, main_server=server).get('STORY_bee')
+                STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols, server).get('STORY_bee')
                 # Ticker database of pollenstory ## Need to seperate out into tables 
             else:
                 STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
@@ -3082,6 +3056,9 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             charlie_bee['queen_cyle_times']['app'] = (datetime.now(est) - s_time).total_seconds()
 
             # Refresh Board
+            if send_revrec_update:
+                print("SEND REVREC UPDATE TO API SERVER")
+                pass
             revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states, wash_sale_rule=wash_sale_rule) ## Setup Board
 
             charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
@@ -3125,7 +3102,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             
             if beat > 23:
                 logging.warning((queens_chess_piece, ": SLOW cycle Heart Beat: ", beat, "use price gauge"))
-                # print('use price gauge') # (STORY_bee["SPY_1Minute_1Day"]["story"]["price_gauge"])
 
             # Should you operate now? I thnik the brain never sleeps ?
             if 'crypto' not in queens_chess_piece:

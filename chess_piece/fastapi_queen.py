@@ -906,7 +906,7 @@ def get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selecti
         revrec = qb.get('revrec')
         QUEEN_KING = qb.get('QUEEN_KING')
 
-      elif toggle_view_selection.lower() == 'king':
+      elif toggle_view_selection.lower() == 'king': # revrec refresh
         king_G = kingdom__global_vars()
         qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
@@ -1080,7 +1080,7 @@ def get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selecti
       elif return_type == 'story':
         
         print('prod', prod)
-        df = story_return(QUEEN_KING, revrec, prod, toggle_view_selection, qk_chessboard)
+        df = story_return(QUEEN_KING, revrec, toggle_view_selection, qk_chessboard)
 
         # for idx in df.index:
         #     df.at[idx, 'nestedRows'] = [{

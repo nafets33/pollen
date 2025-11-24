@@ -246,8 +246,6 @@ const MyModal: React.FC<MyModalProps> = ({
               </div>
             )}
 
-
-
             {/* Add Symbol Row Info Column */}
             {add_symbol_row_info && Array.isArray(add_symbol_row_info) && (
               <div
@@ -830,13 +828,6 @@ const MyModal: React.FC<MyModalProps> = ({
                   })()}
                 </div>
               )}
-
-
-
-
-
-
-
           </div>
         </div>
 
