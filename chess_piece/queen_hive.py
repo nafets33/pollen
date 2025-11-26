@@ -3521,13 +3521,14 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
 def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False, main_server=server, orders_v2=False):
     db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)    
-    table_name = "client_user_store" if prod else 'client_user_store_sandbox'
 
     if demo:
         db_root = 'db__stapinskistefan_99757341'
         prod = False
         main_server = True
 
+    table_name = "client_user_store" if prod else 'client_user_store_sandbox'
+    
     init_pollen = init_pollen_dbs(db_root=db_root, prod=prod, queens_chess_piece=queens_chess_piece, init=init, pg_migration=pg_migration, table_name=table_name)
     if init_pollen_ONLY:
         return {'init_pollen': init_pollen}

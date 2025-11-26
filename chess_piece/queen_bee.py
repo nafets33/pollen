@@ -15,6 +15,8 @@ from collections import defaultdict, deque
 import argparse
 import ast ## WORKERBEE TEMP FIX UNTIL LATER FIX PRICEINFO STORAGE
 from decimal import Decimal, ROUND_DOWN
+import ipdb
+
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -102,7 +104,7 @@ def init_broker_orders(api, BROKER, start_date=None, end_date=None):
     # Start and end dates for the last 100 days
     if not start_date:
         end_date = datetime.now() + timedelta(days=1)
-        start_date = datetime.now() - timedelta(days=100)
+        start_date = datetime.now() - timedelta(days=365)
 
     # Initialize an empty DataFrame for broker orders
     broker_orders = BROKER.get('broker_orders', pd.DataFrame())
@@ -677,7 +679,7 @@ def update_queen_order_profits(QUEEN, ticker, queen_order, queen_order_idx, pric
         
         # priceinfo = {'price': current_price, 'bid': current_bid, 'ask': current_ask}
         order_price = float(queen_order['filled_avg_price'])
-        if order_price > 0:
+        if isinstance(order_price, float) and isinstance(current_price, float):
             current_profit_loss = (current_price - order_price) / order_price
             QUEEN['queen_orders'].at[queen_order_idx, 'honey'] = current_profit_loss
             QUEEN['queen_orders'].at[queen_order_idx, 'money'] = (current_price * float(queen_order['qty_available'])) - ( float(queen_order['filled_avg_price']) * float(queen_order['qty_available']) )
@@ -691,9 +693,8 @@ def update_queen_order_profits(QUEEN, ticker, queen_order, queen_order_idx, pric
                     QUEEN['queen_orders'].at[queen_order_idx, 'honey_time_in_profit'] = 1 + current_iter_num
                 else:
                     QUEEN['queen_orders'].at[queen_order_idx, 'honey_time_in_profit'] = 1
-            # if 'honey_gauge' in queen_order.keys():
-            #     QUEEN['queen_orders'].at[queen_order_idx, 'honey_gauge'].append(current_profit_loss)
         else:
+            print("ERROR calculating current profit loss, setting to 0", ticker, queen_order_idx, order_price, current_price)
             current_profit_loss = 0
             QUEEN['queen_orders'].at[queen_order_idx, 'honey'] = 0
             QUEEN['queen_orders'].at[queen_order_idx, 'money'] = 0
@@ -1022,6 +1023,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             for client_order_id in qo_active_index:
                 if client_order_id not in broker_corder_ids and client_order_id != 'init':
                     print(f"ALERT NEW CLIENT ORDER ID {client_order_id}")
+                    time.sleep(1)
                     order_status = check_order_status(broker='alpaca', api=api, client_order_id=client_order_id)
                     if not order_status:
                         adhoc_handle_queen_order_broker_failure(order_status, QUEEN, client_order_id, upsert_to_main_server=upsert_to_main_server)

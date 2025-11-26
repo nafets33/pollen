@@ -466,25 +466,10 @@ def pollenq(sandbox=False, demo=False):
             revrec = qb.get('revrec')
         else:
             authenticator = signin_main(page="pollenq")
-    
-    admin_pq = st.session_state.get('admin', False)
-    if st.session_state['authentication_status'] != True: ## None or False
-        st.warning("Sign In")
-        display_for_unAuth_client_user()
-        st.stop()
-    prod = st.session_state['prod']
 
-    init_swarm_dbs(prod, init=True)
-    
-    if not demo and os.getenv('server', False):
-        if sandbox and prod:
-            st.switch_page('pollen.py')
-        if not sandbox and not prod:
-            st.switch_page('pages/sandbox.py')
-    
-    # check if main
     authorized_user = st.session_state['authorized_user']
     client_user = st.session_state["username"]
+    prod = st.session_state['prod']
     
     if authorized_user != True:
         st.error("Your Account is Not Yet Authorized by a pollenq admin")
@@ -494,11 +479,29 @@ def pollenq(sandbox=False, demo=False):
         else:
             st.stop()
 
-    ip_address = st.session_state['ip_address'] # return_app_ip()
-    # db_root = st.session_state['db_root']
+    admin_pq = st.session_state.get('admin', False)
+    if st.session_state['authentication_status'] != True: ## None or False
+        st.warning("Sign In")
+        display_for_unAuth_client_user()
+        st.stop()
+    # check if main
+    # use API keys from user            
+    prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] or sandbox else prod
+    print("PROD STATUS:", prod)
+    sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] or client_user == 'stefanstapinski@yahoo.com' else False
+    st.session_state['prod'] = prod
 
+    init_swarm_dbs(prod, init=True)
+    
+    if not demo and os.getenv('server', False):
+        if prod:
+            st.switch_page('pollen.py')
+        else:
+            st.switch_page('pages/sandbox.py')
+    
+
+    ip_address = st.session_state['ip_address'] # return_app_ip()
     st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
-    # print("SNEAKPEAK", st.session_state['sneak_name'], st.session_state['username'], return_timestamp_string())
 
     # HEADER
     cols = st.columns((1,2,2,4))
@@ -563,13 +566,6 @@ def pollenq(sandbox=False, demo=False):
 
     if menu_id == 'Orders':
         st.switch_page('pages/orders.py')
-        # queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
-
-        # active_order_state_list = king_G.get('active_order_state_list')
-        # config_cols = config_orders_cols(active_order_state_list)
-        # missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
-        # order_grid(client_user, config_cols, KING, missing_cols, ip_address, seconds_to_market_close)
-
         st.stop()
 
     if menu_id == 'Trading Models':
@@ -583,10 +579,7 @@ def pollenq(sandbox=False, demo=False):
 
         ####### Welcome to Pollen ##########
 
-        # use API keys from user            
-        prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else prod
-        sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else False
-        sneak_peak = True if client_user == 'stefanstapinski@yahoo.com' else False
+
         if not demo:
             qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
             api = qb.get('api')

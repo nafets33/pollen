@@ -10,27 +10,17 @@ import json
 import psycopg2
 from psycopg2 import sql
 from psycopg2 import extras
-import math
 
 server = os.getenv("server", False)
-
 
 class PollenJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
-            # ✅ Handle NaN/Inf FIRST - most critical!
-            if isinstance(obj, (float, np.floating)):
-                if math.isnan(obj) or math.isinf(obj):
-                    return None
-                return float(obj)
-            
-            # Handle numpy integers
-            if isinstance(obj, (np.int32, np.int64)):
-                return int(obj)
-            
-            # Handle pandas NA
-            if pd.isna(obj):
-                return None
+            # Handle NumPy types
+            if isinstance(obj, (np.int32, np.int64)):  # Add np.int32 here
+                return {"_type": "np.int64", "value": int(obj)}
+            if isinstance(obj, (np.float32, np.float64)):  # Handle float types as well
+                return {"_type": "float", "value": float(obj)}
             
             # Handle pandas types
             if isinstance(obj, pd.DataFrame):
@@ -47,10 +37,6 @@ class PollenJsonEncoder(json.JSONEncoder):
             # Handle collections.deque
             if isinstance(obj, collections.deque):
                 return {"_type": "collections.deque", "value": list(obj)}
-            
-            # Handle numpy arrays
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
             
             # Default handling
             return super(PollenJsonEncoder, self).default(obj)
